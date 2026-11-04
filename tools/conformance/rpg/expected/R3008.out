@@ -1,0 +1,11 @@
+# R3008 V7R5M0 pub400.com
+# captured 2026-11-04 by rpg-oracle
+created: yes
+diag: QRG7031 00 line 300 seq 
+diag: QRG7031 00 line 400 seq 
+diag: QRG7031 00 line 1200 seq 
+diag: QRG7031 00 line 1400 seq 
+run: ok
+spool: QSYSPRT
+  |1/1       FIRSTS  EC          12.34-      78          5-
+  |1/2   ABC00123       A CONSTANT 1,234.50   O0020022    2      123

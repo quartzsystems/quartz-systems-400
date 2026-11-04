@@ -1,0 +1,7 @@
+# R3007 V7R5M0 pub400.com
+# captured 2026-11-04 by rpg-oracle
+created: yes
+diag: QRG7031 00 line 300 seq 
+run: ok
+spool: QSYSPRT
+  |1/1   HELLO WORLD          HELLO     WORLD      AB  CD       5   6   3       4 30    ELL   HE001

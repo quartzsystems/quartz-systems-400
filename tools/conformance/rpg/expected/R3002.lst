@@ -1,0 +1,225 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3002
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3002
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3002
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   * Arithmetic: ADD SUB MULT DIV MVR Z-ADD Z-SUB SQRT, half adjust.
+-      200  H
+-      300  FQSYSPRT O   F     132     OF     PRINTER
+-      400  C                     Z-ADD100       A       50
+       500  C                     Z-ADD7         B       30
+       600  C           A         DIV  B         Q       72H
+       700  C           A         DIV  B         Q0      50
+       800  C                     MVR            R       30
+       900  C           A         MULT 1.5       M       92
+      1000  C           B         SUB  A         S       50 101112                1 2 3
+      1100  C           A         ADD  B         T       50
+      1200  C                     ADD  5         T
+      1300  C                     SQRT A         SQ      74H
+      1400  C                     SQRT B         SQ2     74
+      1500  C                     Z-SUBA         N       50
+      1600  C                     Z-ADD99999     BIG     50
+      1700  C           BIG       ADD  1         OV      50     13                    3
+      1800  C           BIG       MULT BIG       OV2     50
+      1900  C                     Z-ADD2.555     HA      53
+      2000  C                     Z-ADDHA        HB      32H
+      2100  C                     Z-ADDHA        HC      32
+      2200  C                     MULT 2         HA
+      2300  C                     SUB  5.11      HA           14                    2
+      2400  C                     EXCPTLINE
+      2500  C                     SETON                     LR                    1
+-     2600  OQSYSPRT E  1             LINE
+      2700  O                         Q     J   10
+      2800  O                         Q0    J   20
+      2900  O                         R     J   30
+      3000  O                         M     J   45
+      3100  O                         S     J   55
+      3200  O                         T     J   65
+      3300  O                         SQ    J   80
+      3400  O                         SQ2   J   95
+      3500  O                         N     J  105
+      3600  OQSYSPRT E  1             LINE
+      3700  O                         OV    J   10
+      3800  O                         OV2   J   20
+      3900  O                         HB    J   30
+      4000  O                         HC    J   40
+      4100  O                         HA    J   50
+      4200  O                 10                53 '10'
+      4300  O                 11                56 '11'
+      4400  O                 12                59 '12'
+      4500  O                 13                62 '13'
+1{heading} page 3
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0     4600  O                 14                65 '14'
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  QSYSPRT     PRINTER      300D 2600  3600
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        A           P(5,0)   400D  600   700   900  1000  1100  1300  1500
+         B           P(3,0)   500D  600   700  1000  1100  1400
+         BIG         P(5,0)  1600D 1700  1800  1800
+         HA          P(5,3)  1900D 2000  2100  2200M 2300M 4100
+         HB          P(3,2)  2000D 3900
+         HC          P(3,2)  2100D 4000
+         LINE        EXCPT   2400  2600  3600
+         M           P(9,2)   900D 3000
+         N           P(5,0)  1500D 3500
+         OV          P(5,0)  1700D 3700
+         OV2         P(5,0)  1800D 3800
+         Q           P(7,2)   600D 2700
+         Q0          P(5,0)   700D 2800
+         R           P(3,0)   800D 2900
+         S           P(5,0)  1000D 3100
+         SQ          P(7,4)  1300D 3300
+         SQ2         P(7,4)  1400D 3400
+         T           P(5,0)  1100D 1200M 3200
+         1           LITERAL 1700
+         1.5         LITERAL  900
+         100         LITERAL  400
+         2           LITERAL 2200
+         2.555       LITERAL 1900
+         5           LITERAL 1200
+         5.11        LITERAL 2300
+         7           LITERAL  500
+         99999       LITERAL 1600
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR         2500M
+ * 7031  OF          300D
+         10         1000M 4200
+         11         1000M 4300
+         12         1000M 4400
+1{heading} page 5
+0        13         1700M 4500
+         14         2300M 4600
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               1       1      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   46
+     Specifications  . . . . . . :   45
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   1
+0 PRM has been called.
+0 Program R3002 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

@@ -1,0 +1,248 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3013
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3013
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3013
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   *; dds: CUSTF
+       200   *; sqlfile: CUSTF
+       300   * An externally described keyed file: READ, CHAIN, SETLL, READE.
+-      400  H
+-      500  FCUSTF   IF  E           K        DISK
+             RECORD FORMAT(S):  LIBRARY {lib} FILE CUSTF.
+                      EXTERNAL FORMAT CUSTR RPG NAME CUSTR
+0      600  FQSYSPRT O   F     132     OF     PRINTER
+-  A000000   INPUT  FIELDS FOR RECORD CUSTR FILE CUSTF FORMAT CUSTR.
+   A000001                                       P   1   30CUSNO
+   A000002                                           4  23 NAME
+   A000003                                          24  35 CITY
+   A000004                                       P  36  402BAL
+       700  C                     READ CUSTF                    90                    3
+       800  C           *IN90     DOWEQ'0'                                               B001
+       900  C                     EXCPTLINE                                               001
+      1000  C                     READ CUSTF                    90                    3   001
+      1100  C                     END                                                    E001
+      1200  C                     Z-ADD104       KEY     50
+      1300  C           KEY       CHAINCUSTF                91                    1
+      1400  C  N91                EXCPTLINE
+      1500  C                     Z-ADD999       K2      50
+      1600  C           K2        CHAINCUSTF                92                    1
+      1700  C   92                EXCPTNF
+      1800  C                     Z-ADD106       K3      50
+      1900  C           K3        SETLLCUSTF                    93                    3
+      2000  C                     READ CUSTF                    94                    3
+      2100  C  N94                EXCPTLINE
+      2200  C                     READPCUSTF                    95                    3
+      2300  C                     READPCUSTF                    95                    3
+      2400  C  N95                EXCPTLINE
+      2500  C                     Z-ADD102       K4      50
+      2600  C           K4        SETLLCUSTF                    96                    3
+      2700  C           K4        READECUSTF                    97                    3
+      2800  C  N97                EXCPTLINE
+      2900  C           K4        READECUSTF                    97                    3
+      3000  C   97                EXCPTNF
+      3100  C                     SETON                     LR                    1
+-     3200  OQSYSPRT E  1             LINE
+      3300  O                         CUSNO Z    6
+      3400  O                         NAME      28
+      3500  O                         CITY      41
+      3600  O                         BAL   J   55
+      3700  OQSYSPRT E  1             NF
+1{heading} page 3
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0     3800  O                                   10 'NOT FOUND'
+      3900  O                 93                13 '93'
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+-                   K e y   F i e l d   I n f o r m a t i o n
+-
+                        PHYSICAL    LOGICAL
+         FILE/RCD       FIELD       FIELD       ATTRIBUTES
+-
+     01  CUSTF
+              CUSTR
+                        CUSNO                   PACK  5,0  SIGNED
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  CUSTF       DISK            500D     700     1000     1300     1600
+                                    1900     2000     2200     2300     2600
+                                    2700     2900
+           CUSTR                     500D A000000
+     02  QSYSPRT     PRINTER         600D    3200     3700
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        *IN90       A(1)        800
+         BAL         P(9,2)  A000004D    3600
+         CITY        A(12)   A000003D    3500
+         CUSNO       P(5,0)  A000001D    3300
+         KEY         P(5,0)     1200D    1300
+         K2          P(5,0)     1500D    1600
+         K3          P(5,0)     1800D    1900
+         K4          P(5,0)     2500D    2600     2700     2900
+         LINE        EXCPT       900     1400     2100     2400     2800
+                                3200
+         NAME        A(20)   A000002D    3400
+         NF          EXCPT      1700     3000     3700
+         '0'         LITERAL     800
+         102         LITERAL    2500
+         104         LITERAL    1200
+         106         LITERAL    1800
+         999         LITERAL    1500
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        *IN            800
+         LR            3100M
+ * 7031  OF             600D
+         90             700M     800     1000M
+         91            1300M    1400
+         92            1600M    1700
+         93            1900M    3900
+         94            2000M    2100
+         95            2200M    2300M    2400
+ * 7031  96            2600M
+         97            2700M    2800     2900M    3000
+1{heading} page 6
+-      * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    2
+           Message . . . . :   The Name or indicator is not referenced.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               2       2      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   39
+     Specifications  . . . . . . :   36
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   3
+0 PRM has been called.
+0 Program R3013 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

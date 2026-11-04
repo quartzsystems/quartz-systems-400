@@ -1,0 +1,51 @@
+# R3008 CVTRPGSRC pub400.com
+      * Data structures from I specifications.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     D DS1             DS
+     D  PART1                  1      6
+     D  PART2                  7     10
+     D  WHOLE                  1     10
+     D  NUM                   11     15  2
+     D  PNUM                  16     18P 0
+     D  BNUM                  19     22B 0
+     D DS2             DS                  INZ
+     D  SUBA                   1      3    INZ('ABC')
+     D  SUBN                   4      8  0 INZ(123)
+     D  SUBC                   9     12
+     D MO              DS             8    OCCURS(3)
+     D  MOA                    1      4
+     D  MOB                    5      8  0
+     D CON1            C                   CONST('A CONSTANT')
+     D CON2            C                   CONST(1234.5)
+     C                   MOVEL     'FIRSTSEC'    WHOLE
+     C                   Z-ADD     -12.34        NUM
+     C                   Z-ADD     789           PNUM
+     C                   Z-ADD     -5            BNUM
+     C                   Z-ADD     CON2          CN                7 2
+     C                   Z-ADD     1             O                 3 0
+     C                   DO        3             O
+     C     O             OCCUR     MO
+     C                   MOVEL     'OC'          MOA
+     C                   MOVE      O             MOA
+     C                   Z-ADD     O             MOB
+     C                   MULT      11            MOB
+     C                   END
+     C     2             OCCUR     MO
+     C                   MOVEL     MO            MO2               8
+     C                   OCCUR     MO            CUR               3 0
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       PART1               10
+     O                       PART2               16
+     O                       NUM           J     30
+     O                       PNUM          J     40
+     O                       BNUM          J     50
+     OQSYSPRT   E            LINE           1
+     O                       DS2                 12
+     O                       CON1                25
+     O                       CN            J     35
+     O                       MO2                 45
+     O                       CUR           Z     50
+     O                       SUBN          J     60

@@ -1,0 +1,199 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3018
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3018
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3018
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   *; dds: ORDF
+       200   *; sqlfile: ORDF
+       300   * KLIST and KFLD: CHAIN, READE by a partial key, SETGT, READP.
+-      400  H
+-      500  FORDF    IF  E           K        DISK
+             RECORD FORMAT(S):  LIBRARY {lib} FILE ORDF.
+                      EXTERNAL FORMAT ORDR RPG NAME ORDR
+0      600  FQSYSPRT O   F     132     OF     PRINTER
+-  A000000   INPUT  FIELDS FOR RECORD ORDR FILE ORDF FORMAT ORDR.
+   A000001                                       P   1   30ORDCUS
+   A000002                                       P   4   60ORDNO
+   A000003                                           7  16 ITEM
+   A000004                                       P  17  190QTY
+   A000005                                       P  20  232PRICE
+       700  C           FULL      KLIST
+       800  C                     KFLD           KCUS
+       900  C                     KFLD           KORD
+      1000  C           PART      KLIST
+      1100  C                     KFLD           KCUS
+      1200  C                     Z-ADD101       KCUS    50
+      1300  C                     Z-ADD2         KORD    50
+      1400  C           FULL      CHAINORDF                 91                    1
+      1500  C  N91                EXCPTLINE
+      1600  C           PART      SETLLORDF
+      1700  C           PART      READEORDF                     92                    3
+      1800  C           *IN92     DOWEQ'0'                                               B001
+      1900  C                     EXCPTLINE                                               001
+      2000  C           PART      READEORDF                     92                    3   001
+      2100  C                     END                                                    E001
+      2200  C                     Z-ADD104       KCUS
+      2300  C           PART      SETGTORDF
+      2400  C                     READPORDF                     93                    3
+      2500  C  N93                EXCPTLINE
+      2600  C                     SETON                     LR                    1
+-     2700  OQSYSPRT E  1             LINE
+      2800  O                         ORDCUSZ    6
+      2900  O                         ORDNO Z   12
+      3000  O                         ITEM      24
+      3100  O                         QTY   Z   30
+      3200  O                         PRICE J   40
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+1{heading} page 3
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0                   K e y   F i e l d   I n f o r m a t i o n
+-
+                        PHYSICAL    LOGICAL
+         FILE/RCD       FIELD       FIELD       ATTRIBUTES
+-
+     01  ORDF
+              ORDR
+                        ORDCUS                  PACK  5,0  SIGNED
+                        ORDNO                   PACK  5,0  SIGNED
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  ORDF        DISK            500D    1400     1600     1700     2000
+                                    2300     2400
+           ORDR                      500D A000000
+     02  QSYSPRT     PRINTER         600D    2700
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        *IN92       A(1)       1800
+         FULL        KLIST       700D    1400
+         ITEM        A(10)   A000003D    3000
+         KCUS        P(5,0)      800     1100     1200D    2200M
+         KORD        P(5,0)      900     1300D
+         LINE        EXCPT      1500     1900     2500     2700
+         ORDCUS      P(5,0)  A000001D    2800
+         ORDNO       P(5,0)  A000002D    2900
+         PART        KLIST      1000D    1600     1700     2000     2300
+         PRICE       P(7,2)  A000005D    3200
+         QTY         P(5,0)  A000004D    3100
+         '0'         LITERAL    1800
+         101         LITERAL    1200
+         104         LITERAL    2200
+         2           LITERAL    1300
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        *IN           1800
+         LR            2600M
+ * 7031  OF             600D
+         91            1400M    1500
+         92            1700M    1800     2000M
+         93            2400M    2500
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+1{heading} page 5
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               1       1      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   32
+     Specifications  . . . . . . :   29
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   3
+0 PRM has been called.
+0 Program R3018 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

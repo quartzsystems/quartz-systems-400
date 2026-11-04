@@ -1,0 +1,43 @@
+# R3005 CVTRPGSRC pub400.com
+      * MOVE, MOVEL with and without padding, numeric and character.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C                   MOVE      'ABCDEFGH'    C8                8
+     C                   MOVE      'XY'          C8
+     C                   MOVEL     'XY'          C8B               8
+     C                   MOVE      'ABCDEFGH'    C8B
+     C                   MOVEL     'XY'          C8B
+     C                   MOVE      'ABCDEFGH'    C8C               8
+     C                   MOVE(P)   'XY'          C8C
+     C                   MOVE      'ABCDEFGH'    C8D               8
+     C                   MOVEL(P)  'XY'          C8D
+     C                   Z-ADD     -12345        N5                5 0
+     C                   MOVE      N5            C3                3
+     C                   MOVEL     N5            C4                4
+     C                   MOVE      '987'         N5
+     C                   Z-ADD     N5            N5B               5 0
+     C                   MOVEL     '42'          N5B
+     C                   MOVE      '1234567'     N3                3 0
+     C                   MOVE      C8            C12              12
+     C                   MOVEL     C8            C12B             12
+     C                   Z-ADD     123.45        P52               5 2
+     C                   MOVE      P52           C6                6
+     C                   MOVE      'J'           C1                1
+     C                   MOVE      C1            N1                1 0
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       C8                  10
+     O                       C8B                 20
+     O                       C8C                 30
+     O                       C8D                 40
+     O                       C3                  50
+     O                       C4                  55
+     O                       N5            J     65
+     O                       N5B           J     75
+     O                       N3            J     85
+     OQSYSPRT   E            LINE           1
+     O                       C12                 14
+     O                       C12B                28
+     O                       C6                  36
+     O                       N1                  40

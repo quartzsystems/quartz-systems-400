@@ -39,9 +39,11 @@ impl Input {
             out.push(Sect::D, &ds_line(r), at);
             return;
         }
+        // A record line names its file or format from column 7.
         let rec_name = cut3("I", r, "name");
         let rel = cut3("I", r, "relation");
-        let record_line = !rec_name.is_empty() || rel == "AND" || rel == "OR";
+        let col7 = r.chars().nth(6).is_some_and(|c| c != ' ');
+        let record_line = (col7 && !rec_name.is_empty()) || rel == "AND" || rel == "OR";
         if record_line {
             self.in_ds = false;
             // An externally described record has no sequence.

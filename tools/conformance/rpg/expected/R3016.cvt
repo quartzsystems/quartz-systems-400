@@ -1,0 +1,21 @@
+# R3016 CVTRPGSRC pub400.com
+      * Form length 20, overflow line 15, headings again on overflow.
+     H
+     FQSYSPRT   O    F   80        PRINTER OFLIND(*INOF)
+     F                                     FORMLEN(20)
+     F                                     FORMOFL(15)
+     C                   EXCEPT    HEAD
+     C     1             DO        25            I                 3 0
+     C                   EXCEPT    DET
+     C   OF              EXCEPT    HEAD
+     C   OF              SETOFF                                       OF
+     C                   END
+     C                   SETON                                        LR
+     OQSYSPRT   E            HEAD           2  2
+     O                                           20 'HEADING'
+     O                       PAGE          Z     30
+     OQSYSPRT   E            DET            1
+     O                                            8 'LINE'
+     O                       I             Z     12
+     OQSYSPRT   T    LR                  2
+     O                                           12 'END'

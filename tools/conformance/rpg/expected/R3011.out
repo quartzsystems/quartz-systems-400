@@ -1,0 +1,27 @@
+# R3011 V7R5M0 pub400.com
+# captured 2026-11-04 by rpg-oracle
+created: yes
+diag: QRG7086 00 line 500 seq 
+run: ok
+spool: QSYSPRT
+  |1/1        SALES BY REGION                PAGE    1
+  |1/3     E1  R001  Widget          25.00     10        250.00
+  |1/4               Gadget         199.90     10      1,999.00
+  |1/5               Gizmo            7.50     10         75.00
+  |1/6         R001   REP TOTAL                                       2,324.00
+  |1/7         R002  Widget          12.50      5         62.50
+  |1/8               Bolt             1.25     25         31.25
+  |1/9         R002   REP TOTAL                                          93.75
+  |1/10    E1      REGION TOTAL                                                      2,417.75
+  |1/12    N1  R003  Sprocket        31.00     10        310.00
+  |1/13        R003   REP TOTAL                                         310.00
+  |1/14    N1      REGION TOTAL                                                        310.00
+  |1/16    W1  R004  Widget          50.00     20      1,000.00
+  |1/17              Gadget          39.98      2         79.96
+  |1/18        R004   REP TOTAL                                       1,079.96
+  |1/19        R005  Gizmo             .75      1           .75
+  |1/20              Bolt             5.00    100        500.00
+  |1/21              Widget           2.50      1          2.50
+  |1/22        R005   REP TOTAL                                         503.25
+  |1/23    W1      REGION TOTAL                                                      1,583.21
+  |1/26             GRAND TOTAL      11                                                             4,310.96

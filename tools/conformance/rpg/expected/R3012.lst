@@ -1,0 +1,189 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3012
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3012
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3012
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   *; dds: MSTF
+       200   *; sqlfile: MSTF
+       300   *; dds: ACTF
+       400   *; sqlfile: ACTF
+       500   * Matching records: masters primary, activity secondary, M1 and MR.
+-      600  H
+-      700  FMSTF    IP  F      13            DISK
+       800  FACTF    IS  F       8            DISK
+       900  FQSYSPRT O   F     132     OF     PRINTER
+-     1000  IMSTF    AA  01
+      1100  I                                        1   3 MCUS    M1
+      1200  I                                        4  13 MNAME
+      1300  IACTF    BB  02
+      1400  I                                        1   3 ACUS    M1
+      1500  I                                        4   80AAMT
+-     1600  C   02 MR             ADD  AAMT      TOT     70
+      1700  C   02NMR             ADD  1         UNM     30
+-     1800  OQSYSPRT D  1     01 MR
+      1900  O                         MCUS       3
+      2000  O                         MNAME     15
+      2100  O                                   37 'master with activity'
+      2200  OQSYSPRT D  1     01NMR
+      2300  O                         MCUS       3
+      2400  O                         MNAME     15
+      2500  O                                   29 'master alone'
+      2600  OQSYSPRT D  1     02 MR
+      2700  O                         ACUS       7
+      2800  O                         AAMT  Z   15
+      2900  O                                   24 'matched'
+      3000  OQSYSPRT D  1     02NMR
+      3100  O                         ACUS       7
+      3200  O                         AAMT  Z   15
+      3300  O                                   26 'unmatched'
+      3400  OQSYSPRT T 1      LR
+      3500  O                         TOT   Z   10
+      3600  O                         UNM   Z   15
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+-
+1{heading} page 3
+0* 7086       700   RPG PROVIDES BLOCK OR UNBLOCK SUPPORT FOR FILE MSTF.
+ * 7086       800   RPG PROVIDES BLOCK OR UNBLOCK SUPPORT FOR FILE ACTF.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    02  ACTF        DISK         800D 1300
+     01  MSTF        DISK         700D 1000
+     03  QSYSPRT     PRINTER      900D 1800  2200  2600  3000  3400
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        AAMT        P(5,0)  1500D 1600  2800  3200
+         ACUS        A(3)    1400D 2700  3100
+         MCUS        A(3)    1100D 1900  2300
+         MNAME       A(10)   1200D 2000  2400
+         TOT         P(7,0)  1600D 3500
+         UNM         P(3,0)  1700D 3600
+         1           LITERAL 1700
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR          700D 3400
+         MR         1600  1700  1800  2200  2600  3000
+         M1         1100M 1400M
+ * 7031  OF          900D
+         01         1000M 1800  2200
+         02         1300M 1600  1700  2600  3000
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+1{heading} page 5
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0* QRG7086 Severity:  00   Number:    2
+           Message . . . . :   RPG handles blocking function for file. INFDS
+             updated only when blocks of data transferred.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               3       3      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   36
+     Specifications  . . . . . . :   31
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   5
+0 PRM has been called.
+0 Program R3012 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

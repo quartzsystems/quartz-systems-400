@@ -1,0 +1,35 @@
+# R3014 CVTRPGSRC pub400.com
+      *; dds: CUSTF
+      *; sqlfile: CUSTF
+      * Update, write and delete through an externally described file.
+     H
+     FCUSTF     UF A E           K DISK
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C                   Z-ADD     102           K                 5 0
+     C     K             CHAIN     CUSTF                              91
+     C  N91              ADD       100           BAL
+     C  N91              UPDATE    CUSTR
+     C                   Z-ADD     109           CUSNO
+     C                   MOVEL(P)  'Ida Ives'    NAME
+     C                   MOVEL(P)  'Erie'        CITY
+     C                   Z-ADD     7.77          BAL
+     C                   WRITE     CUSTR                                93
+     C                   WRITE     CUSTR                                94
+     C                   Z-ADD     103           K
+     C     K             CHAIN     CUSTF                              91
+     C  N91              DELETE    CUSTR
+     C                   Z-ADD     105           K
+     C     K             CHAIN     CUSTF                              91
+     C     *LOVAL        SETLL     CUSTF
+     C                   READ      CUSTR                                  90
+     C     *IN90         DOWEQ     '0'
+     C                   EXCEPT    LINE
+     C                   READ      CUSTR                                  90
+     C                   END
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       CUSNO         Z      6
+     O                       NAME                28
+     O                       BAL           J     55
+     O               93                          58 '93'
+     O               94                          61 '94'

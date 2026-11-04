@@ -1,0 +1,226 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3008
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3008
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3008
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   * Data structures from I specifications.
+-      200  H
+-      300  FQSYSPRT O   F     132     OF     PRINTER
+-      400  IDS1         DS
+       500  I                                        1   6 PART1
+       600  I                                        7  10 PART2
+       700  I                                        1  10 WHOLE
+       800  I                                       11  152NUM
+       900  I                                    P  16  180PNUM
+      1000  I                                    B  19  220BNUM
+      1100  IDS2        IDS
+      1200  I I            'ABC'                     1   3 SUBA
+      1300  I I            123                       4   80SUBN
+      1400  I                                        9  12 SUBC
+      1500  IMO          DS                          3   8
+      1600  I                                        1   4 MOA
+      1700  I                                        5   80MOB
+      1800  I              'A CONSTANT'          C         CON1
+      1900  I              1234.5                C         CON2
+-     2000  C                     MOVEL'FIRSTSEC'WHOLE
+      2100  C                     Z-ADD-12.34    NUM
+      2200  C                     Z-ADD789       PNUM
+      2300  C                     Z-ADD-5        BNUM
+      2400  C                     Z-ADDCON2      CN      72
+      2500  C                     Z-ADD1         O       30
+      2600  C                     DO   3         O                                       B001
+      2700  C           O         OCUR MO                                                 001
+      2800  C                     MOVEL'OC'      MOA                                      001
+      2900  C                     MOVE O         MOA                                      001
+      3000  C                     Z-ADDO         MOB                                      001
+      3100  C                     MULT 11        MOB                                      001
+      3200  C                     END                                                    E001
+      3300  C           2         OCUR MO
+      3400  C                     MOVELMO        MO2     8
+      3500  C                     OCUR MO        CUR     30
+      3600  C                     EXCPTLINE
+      3700  C                     SETON                     LR                    1
+-     3800  OQSYSPRT E  1             LINE
+      3900  O                         PART1     10
+      4000  O                         PART2     16
+      4100  O                         NUM   J   30
+      4200  O                         PNUM  J   40
+      4300  O                         BNUM  J   50
+1{heading} page 3
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0     4400  OQSYSPRT E  1             LINE
+      4500  O                         DS2       12
+      4600  O                         CON1      25
+      4700  O                         CN    J   35
+      4800  O                         MO2       45
+      4900  O                         CUR   Z   50
+      5000  O                         SUBN  J   60
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  QSYSPRT     PRINTER      300D 3800  4400
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        BNUM        B(9,0)  1000D 2300M 4300
+         CN          P(7,2)  2400D 4700
+         CON1        CONST   1800D 4600
+         CON2        CONST   1900D 2400
+         CUR         P(3,0)  3500D 4900
+ * 7031  DS1         DS(22)   400D
+         DS2         DS(12)  1100D 4500
+         LINE        EXCPT   3600  3800  4400
+         MO(3)       DS(8)   1500D 2700  3300  3400  3500
+         MOA         A(4)    1600D 2800M 2900M
+         MOB         Z(4,0)  1700D 3000M 3100M
+         MO2         A(8)    3400D 4800
+         NUM         Z(5,2)   800D 2100M 4100
+         O           P(3,0)  2500D 2600M 2700  2900  3000
+         PART1       A(6)     500D 3900
+         PART2       A(4)     600D 4000
+         PNUM        P(5,0)   900D 2200M 4200
+ * 7031  SUBA        A(3)    1200D
+ * 7031  SUBC        A(4)    1400D
+         SUBN        Z(5,0)  1300D 5000
+         WHOLE       A(10)    700D 2000M
+         -12.34      LITERAL 2100
+         -5          LITERAL 2300
+         'FIRSTSEC'  LITERAL 2000
+         'OC'        LITERAL 2800
+         1           LITERAL 2500
+         11          LITERAL 3100
+         2           LITERAL 3300
+         3           LITERAL 2600
+         789         LITERAL 2200
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR         3700M
+ * 7031  OF          300D
+1{heading} page 5
+-      * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    4
+           Message . . . . :   The Name or indicator is not referenced.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               4       4      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   50
+     Specifications  . . . . . . :   49
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   1
+0 PRM has been called.
+0 Program R3008 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

@@ -1,0 +1,21 @@
+# R3025 CVTRPGSRC pub400.com
+      * Signs and zones: MOVE of negative numbers, zoned results.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C                   Z-ADD     -7            N2                2 0
+     C                   MOVE      N2            C2                2
+     C                   MOVE      '1P'          N2B               2 0
+     C                   Z-ADD     N2B           P3                3 0
+     C                   MOVE      -12.5         C5                5
+     C                   Z-ADD     0             Z5                5 2
+     C                   SUB       0.01          Z5
+     C                   MULT      -1            Z5
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       C2                   5
+     O                       N2B           J     15
+     O                       P3            J     25
+     O                       C5                  35
+     O                       Z5            J     45
+     O                       Z5                  55

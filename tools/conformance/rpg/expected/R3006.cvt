@@ -1,0 +1,53 @@
+# R3006 CVTRPGSRC pub400.com
+      * Arrays and tables from E specifications, with compile-time data.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     D ARR             S              3  0 DIM(8) CTDATA PERRCD(4)
+     D TABA            S              3    DIM(4) CTDATA PERRCD(1) ASCEND
+     D TABB            S             10    DIM(4) ALT(TABA)
+     D RUN             S              5  2 DIM(5)
+     D NAM             S              6    DIM(3) CTDATA PERRCD(3)
+     C                   XFOOT     ARR           SUM               7 0
+     C                   Z-ADD     1             I                 3 0
+     C                   Z-ADD     40            S1                3 0
+     C                   Z-ADD     99            S2                3 0
+     C     S1            LOOKUP    ARR(I)                                 20
+     C                   Z-ADD     1             J                 3 0
+     C     S2            LOOKUP    ARR(J)                                 21
+     C     'B02'         LOOKUP    TABA          TABB                     22
+     C     'B05'         LOOKUP    TABA          TABB                 23
+     C                   Z-ADD     1             K                 3 0
+     C                   DO        5             K
+     C                   Z-ADD     K             RUN(K)
+     C                   MULT      1.5           RUN(K)
+     C                   END
+     C     RUN(2)        ADD       RUN(5)        TOT               7 2
+     C                   SORTA     ARR
+     C                   MOVEA     NAM           ALL              18
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       SUM           Z     10
+     O                       I             Z     15
+     O                       J             Z     20
+     O               20                          23 '20'
+     O               21                          26 '21'
+     O               22                          29 '22'
+     O               23                          32 '23'
+     O                       TABB                45
+     O                       TABA                50
+     O                       TOT           J     62
+     OQSYSPRT   E            LINE           1
+     O                       ARR           Z     40
+     O                       RUN           J     70
+     O                       ALL                 90
+**
+050020040010
+070080030060
+**
+B01Alpha
+B02Beta
+B03Gamma
+B04Delta
+**
+ONE   TWO   THREE

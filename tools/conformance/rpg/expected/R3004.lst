@@ -1,0 +1,247 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3004
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3004
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3004
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   * Comparison and structured operations.
+-      200  H
+-      300  FQSYSPRT O   F     132     OF     PRINTER
+-      400  C                     Z-ADD5         X       30
+       500  C           X         COMP 3                    101112                1 2 3
+       600  C                     EXCPTCMP
+       700  C           X         COMP 5                    101112                1 2 3
+       800  C                     EXCPTCMP
+       900  C           X         IFGT 4                                                 B001
+      1000  C                     MOVE 'GT4'     MSG    10                                001
+      1100  C                     ELSE                                                   X001
+      1200  C                     MOVE 'LE4'     MSG                                      001
+      1300  C                     END                                                    E001
+      1400  C                     EXCPTMSGL
+      1500  C                     Z-ADD0         I       30
+      1600  C           I         DOWLT3                                                 B001
+      1700  C                     ADD  1         I                                        001
+      1800  C                     EXCPTLOOP                                               001
+      1900  C                     END                                                    E001
+      2000  C           I         DOUGE5                                                 B001
+      2100  C                     ADD  1         I                                        001
+      2200  C                     EXCPTLOOP                                               001
+      2300  C                     ENDDO                                                  E001
+      2400  C           I         CABEQ5         SKIP
+      2500  C                     MOVEL'NOT SKIP'MSG
+      2600  C                     EXCPTMSGL
+      2700  C           SKIP      TAG
+      2800  C                     Z-ADD2         X
+      2900  C           X         CASEQ1         SR1
+      3000  C           X         CASEQ2         SR2
+      3100  C                     CAS            SR3
+      3200  C                     END
+      3300  C                     SELEC                                                  B001
+      3400  C           X         WHEQ 1                                                 X001
+      3500  C                     MOVEL'WHEN 1'  MSG                                      001
+      3600  C           X         WHGT 1                                                 X001
+      3700  C           X         ANDLT9                                                  001
+      3800  C                     MOVEL'WHEN GT1'MSG                                      001
+      3900  C                     OTHER                                                  X001
+      4000  C                     MOVEL'OTHER'   MSG                                      001
+      4100  C                     ENDSL                                                  E001
+      4200  C                     EXCPTMSGL
+      4300  C           X         IFEQ 7                                                 B001
+      4400  C           X         OREQ 2                                                  001
+      4500  C                     MOVEL'OR TRUE' MSG                                      001
+      4600  C                     EXCPTMSGL                                               001
+      4700  C                     ENDIF                                                  E001
+1{heading} page 3
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0     4800  C                     GOTO DONE
+      4900  C                     MOVEL'NOT HERE'MSG
+      5000  C                     EXCPTMSGL
+      5100  C           DONE      TAG
+      5200  C                     SETON                     LR                    1
+      5300  C           SR1       BEGSR
+      5400  C                     MOVEL'SR1'     MSG
+      5500  C                     EXCPTMSGL
+      5600  C                     ENDSR
+      5700  C           SR2       BEGSR
+      5800  C                     MOVEL'SR2 RAN' MSG
+      5900  C                     EXCPTMSGL
+      6000  C                     ENDSR
+      6100  C           SR3       BEGSR
+      6200  C                     MOVEL'SR3'     MSG
+      6300  C                     EXCPTMSGL
+      6400  C                     ENDSR
+-     6500  OQSYSPRT E  1             CMP
+      6600  O                         X     Z    5
+      6700  O                 10                10 'HI'
+      6800  O                 11                15 'LO'
+      6900  O                 12                20 'EQ'
+      7000  OQSYSPRT E  1             MSGL
+      7100  O                         MSG       12
+      7200  OQSYSPRT E  1             LOOP
+      7300  O                                    6 'LOOP'
+      7400  O                         I     Z   10
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  QSYSPRT     PRINTER      300D 6500  7000  7200
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        CMP         EXCPT    600   800  6500
+         DONE        TAG     4800  5100D
+         I           P(3,0)  1500D 1600  1700M 2000  2100M 2400  7400
+         LOOP        EXCPT   1800  2200  7200
+         MSG         A(10)   1000D 1200M 2500M 3500M 3800M 4000M 4500M 4900M
+                             5400M 5800M 6200M 7100
+         MSGL        EXCPT   1400  2600  4200  4600  5000  5500  5900  6300
+                             7000
+         SKIP        TAG     2400  2700D
+         SR1         BEGSR   2900  5300D
+         SR2         BEGSR   3000  5700D
+         SR3         BEGSR   3100  6100D
+         X           P(3,0)   400D  500   700   900  2800M 2900  3000  3400
+                             3600  3700  4300  4400  6600
+         'GT4'       LITERAL 1000
+         'LE4'       LITERAL 1200
+         'NOT HERE'  LITERAL 4900
+         'NOT SKIP'  LITERAL 2500
+         'OR TRUE'   LITERAL 4500
+         'OTHER'     LITERAL 4000
+         'SR1'       LITERAL 5400
+         'SR2 RAN'   LITERAL 5800
+         'SR3'       LITERAL 6200
+         'WHEN GT1'  LITERAL 3800
+         'WHEN 1'    LITERAL 3500
+         0           LITERAL 1500
+         1           LITERAL 1700  2100  2900  3400  3600
+         2           LITERAL 2800  3000  4400
+         3           LITERAL  500  1600
+         4           LITERAL  900
+         5           LITERAL  400   700  2000  2400
+         7           LITERAL 4300
+         9           LITERAL 3700
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+1{heading} page 5
+-        LR         5200M
+ * 7031  OF          300D
+         10          500M  700M 6700
+         11          500M  700M 6800
+         12          500M  700M 6900
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               1       1      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   74
+     Specifications  . . . . . . :   73
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   1
+0 PRM has been called.
+0 Program R3004 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

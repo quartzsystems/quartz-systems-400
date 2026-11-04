@@ -1,0 +1,76 @@
+# R3001 CVTRPGSRC pub400.com
+      * Edit codes: every code on a negative and a zero value.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C                   Z-ADD     -1234.56      AMT               7 2
+     C                   Z-ADD     0             ZRO               7 2
+     C                   Z-ADD     70426         DAT               6 0
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                                            4 '1'
+     O                       AMT           1     18
+     O                       ZRO           1     32
+     O                                           34 '2'
+     O                       AMT           2     48
+     O                       ZRO           2     62
+     O                                           64 '3'
+     O                       AMT           3     78
+     O                       ZRO           3     92
+     O                                           94 '4'
+     O                       AMT           4    108
+     O                       ZRO           4    122
+     OQSYSPRT   E            LINE           1
+     O                                            4 'A'
+     O                       AMT           A     18
+     O                       ZRO           A     32
+     O                                           34 'B'
+     O                       AMT           B     48
+     O                       ZRO           B     62
+     O                                           64 'C'
+     O                       AMT           C     78
+     O                       ZRO           C     92
+     O                                           94 'D'
+     O                       AMT           D    108
+     O                       ZRO           D    122
+     OQSYSPRT   E            LINE           1
+     O                                            4 'J'
+     O                       AMT           J     18
+     O                       ZRO           J     32
+     O                                           34 'K'
+     O                       AMT           K     48
+     O                       ZRO           K     62
+     O                                           64 'L'
+     O                       AMT           L     78
+     O                       ZRO           L     92
+     O                                           94 'M'
+     O                       AMT           M    108
+     O                       ZRO           M    122
+     OQSYSPRT   E            LINE           1
+     O                                            4 'N'
+     O                       AMT           N     18
+     O                       ZRO           N     32
+     O                                           34 'O'
+     O                       AMT           O     48
+     O                       ZRO           O     62
+     O                                           64 'P'
+     O                       AMT           P     78
+     O                       ZRO           P     92
+     O                                           94 'Q'
+     O                       AMT           Q    108
+     O                       ZRO           Q    122
+     OQSYSPRT   E            LINE           1
+     O                                            4 'X'
+     O                       AMT           X     18
+     O                       ZRO           X     32
+     O                                           34 'Y'
+     O                       AMT           Y     48
+     O                       ZRO           Y     62
+     O                                           64 'Z'
+     O                       AMT           Z     78
+     O                       ZRO           Z     92
+     OQSYSPRT   E            LINE           1
+     O                       AMT           J     20 '*'
+     O                       AMT           1     40 '$'
+     O                       DAT           Y     60
+     O                       ZRO           1     80 '*'

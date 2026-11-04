@@ -1,0 +1,228 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3006
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3006
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3006
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   * Arrays and tables from E specifications, with compile-time data.
+-      200  H
+-      300  FQSYSPRT O   F     132     OF     PRINTER
+-      400  E                    ARR     4   8  3 0
+       500  E                    TABA    1   4  3  ATABB   10
+       600  E                    RUN         5  5 2
+       700  E                    NAM     3   3  6
+-      800  C                     XFOOTARR       SUM     70
+       900  C                     Z-ADD1         I       30
+      1000  C                     Z-ADD40        S1      30
+      1100  C                     Z-ADD99        S2      30
+      1200  C           S1        LOKUPARR,I                    20                    3
+      1300  C                     Z-ADD1         J       30
+      1400  C           S2        LOKUPARR,J                    21                    3
+      1500  C           'B02'     LOKUPTABA      TABB           22                    3
+      1600  C           'B05'     LOKUPTABA      TABB       23                    1
+      1700  C                     Z-ADD1         K       30
+      1800  C                     DO   5         K                                       B001
+      1900  C                     Z-ADDK         RUN,K                                    001
+      2000  C                     MULT 1.5       RUN,K                                    001
+      2100  C                     END                                                    E001
+      2200  C           RUN,2     ADD  RUN,5     TOT     72
+      2300  C                     SORTAARR
+      2400  C                     MOVEANAM       ALL    18
+      2500  C                     EXCPTLINE
+      2600  C                     SETON                     LR                    1
+-     2700  OQSYSPRT E  1             LINE
+      2800  O                         SUM   Z   10
+      2900  O                         I     Z   15
+      3000  O                         J     Z   20
+      3100  O                 20                23 '20'
+      3200  O                 21                26 '21'
+      3300  O                 22                29 '22'
+      3400  O                 23                32 '23'
+      3500  O                         TABB      45
+      3600  O                         TABA      50
+      3700  O                         TOT   J   62
+      3800  OQSYSPRT E  1             LINE
+      3900  O                         ARR   Z   40
+      4000  O                         RUN   J   70
+      4100  O                         ALL       90
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+1{heading} page 3
+0SEQUENCE                                                                                             LAST
+  NUMBER    *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8          UPDATE
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0                     C o m p i l e - T i m e   T a b l e s
+0 Table/Array  . . . . . . :   ARR
+0     4300  050020040010
+      4400  070080030060
+  Table/Array  . . . . . . :   TABA
+  Table/Array  . . . . . . :   TABB
+0     4600  B01Alpha
+      4700  B02Beta
+      4800  B03Gamma
+      4900  B04Delta
+  Table/Array  . . . . . . :   NAM
+0     5100  ONE   TWO   THREE
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  QSYSPRT     PRINTER      300D 2700  3800
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        ALL         A(18)   2400D 4100
+         ARR(8)      P(3,0)   400D  800  2300  3900
+           ARR,I             1200
+           ARR,J             1400
+         I           P(3,0)   900D 1200M 2900
+         J           P(3,0)  1300D 1400M 3000
+         K           P(3,0)  1700D 1800M 1900  1900  2000
+         LINE        EXCPT   2500  2700  3800
+         NAM(3)      A(6)     700D 2400
+         RUN(5)      P(5,2)   600D 4000
+           RUN,K             1900M 2000M
+           RUN,2             2200
+           RUN,5             2200
+         SUM         P(7,0)   800D 2800
+         S1          P(3,0)  1000D 1200
+         S2          P(3,0)  1100D 1400
+         TABA(4)     A(3)     500D 1500  1600  3600
+         TABB(4)     A(10)    500D 1500  1600  3500
+         TOT         P(7,2)  2200D 3700
+         'B02'       LITERAL 1500
+         'B05'       LITERAL 1600
+         1           LITERAL  900  1300  1700
+         1.5         LITERAL 2000
+         2           LITERAL 2200
+         40          LITERAL 1000
+         5           LITERAL 1800  2200
+         99          LITERAL 1100
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR         2600M
+ * 7031  OF          300D
+         20         1200M 3100
+         21         1400M 3200
+         22         1500M 3300
+1{heading} page 5
+0        23         1600M 3400
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               1       1      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   51
+     Specifications  . . . . . . :   40
+     Table Records . . . . . . . :   7
+     Comments  . . . . . . . . . :   1
+0 PRM has been called.
+0 Program R3006 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

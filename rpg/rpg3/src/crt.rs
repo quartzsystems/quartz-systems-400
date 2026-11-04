@@ -194,6 +194,83 @@ fn unused_overflow(main: &Member, diags: &mut Vec<Diag>) {
     }
 }
 
+/// An indicator 01-99 that is set (a resulting, record identifying or
+/// field indicator) and never used is not referenced (`QRG7031` on
+/// the statement that first sets it), as RPG/400's cross-reference
+/// says; the ILE compiler counts only those never set.
+fn unused_indicators(main: &Member, diags: &mut Vec<Diag>) {
+    let c = rpgspecs::rpg3_form("C");
+    let ix = rpgspecs::rpg3_form("IX");
+    let numeric = |t: &str| t.len() == 2 && t.chars().all(|ch| ch.is_ascii_digit()) && t != "00";
+    let mut set: Vec<(String, u32)> = Vec::new();
+    let mut used: Vec<String> = Vec::new();
+    let mut whole_array = false;
+    for r in main.records.iter().take_while(|r| !r.text.starts_with("**")) {
+        let t = r.text.to_ascii_uppercase();
+        if t.chars().nth(6) == Some('*') {
+            continue;
+        }
+        let stmt = stmt_of(&r.seq);
+        let mut sets = |n: String| {
+            if numeric(&n) && !set.iter().any(|(x, _)| *x == n) {
+                set.push((n, stmt));
+            }
+        };
+        match t.chars().nth(5) {
+            Some('C') => {
+                let cond = rpgspecs::cut(&t, 9, 17);
+                for k in 0..3 {
+                    used.push(cond.chars().skip(k * 3 + 1).take(2).collect());
+                }
+                for n in ["hi", "lo", "eq"] {
+                    sets(c.cut(&t, n).trim().to_string());
+                }
+                for n in ["factor1", "factor2", "result"] {
+                    let f = c.cut(&t, n).trim().to_string();
+                    if let Some(rest) = f.strip_prefix("*IN") {
+                        let idx = rest.trim_start_matches(',');
+                        if numeric(idx) {
+                            used.push(idx.to_string());
+                        } else {
+                            whole_array = true;
+                        }
+                    }
+                }
+            }
+            Some('O') => {
+                let cond = rpgspecs::cut(&t, 23, 31);
+                for k in 0..3 {
+                    used.push(cond.chars().skip(k * 3 + 1).take(2).collect());
+                }
+            }
+            Some('I') => {
+                if t.chars().nth(6).is_some_and(|ch| ch != ' ') {
+                    sets(rpgspecs::cut(&t, 19, 20).trim().to_string());
+                } else {
+                    for n in ["plus", "minus", "zero"] {
+                        sets(ix.cut(&t, n).trim().to_string());
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    if whole_array {
+        return;
+    }
+    for (n, stmt) in set {
+        if !used.contains(&n) && !diags.iter().any(|d| d.msgid == "QRG7031" && d.args.first() == Some(&n)) {
+            diags.push(Diag {
+                stmt,
+                msgid: "QRG7031".into(),
+                severity: 0,
+                place: Place::Xref,
+                args: vec![n],
+            });
+        }
+    }
+}
+
 /// A program-described output file no output specification names
 /// (`QRG7064`, severity 40).
 fn no_output(main: &Member, diags: &mut Vec<Diag>) {
@@ -292,6 +369,7 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
     }
     unreferenced(main, &inner, &mut diags);
     unused_overflow(main, &mut diags);
+    unused_indicators(main, &mut diags);
     no_output(main, &mut diags);
     diags.sort();
     let max_severity = diags.iter().map(|d| d.severity).max().unwrap_or(0);

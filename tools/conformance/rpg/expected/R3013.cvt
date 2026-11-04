@@ -1,0 +1,40 @@
+# R3013 CVTRPGSRC pub400.com
+      *; dds: CUSTF
+      *; sqlfile: CUSTF
+      * An externally described keyed file: READ, CHAIN, SETLL, READE.
+     H
+     FCUSTF     IF   E           K DISK
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C                   READ      CUSTF                                  90
+     C     *IN90         DOWEQ     '0'
+     C                   EXCEPT    LINE
+     C                   READ      CUSTF                                  90
+     C                   END
+     C                   Z-ADD     104           KEY               5 0
+     C     KEY           CHAIN     CUSTF                              91
+     C  N91              EXCEPT    LINE
+     C                   Z-ADD     999           K2                5 0
+     C     K2            CHAIN     CUSTF                              92
+     C   92              EXCEPT    NF
+     C                   Z-ADD     106           K3                5 0
+     C     K3            SETLL     CUSTF                                  93
+     C                   READ      CUSTF                                  94
+     C  N94              EXCEPT    LINE
+     C                   READP     CUSTF                                  95
+     C                   READP     CUSTF                                  95
+     C  N95              EXCEPT    LINE
+     C                   Z-ADD     102           K4                5 0
+     C     K4            SETLL     CUSTF                                  96
+     C     K4            READE     CUSTF                                  97
+     C  N97              EXCEPT    LINE
+     C     K4            READE     CUSTF                                  97
+     C   97              EXCEPT    NF
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       CUSNO         Z      6
+     O                       NAME                28
+     O                       CITY                41
+     O                       BAL           J     55
+     OQSYSPRT   E            NF             1
+     O                                           10 'NOT FOUND'
+     O               93                          13 '93'

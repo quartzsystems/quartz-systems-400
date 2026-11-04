@@ -1,0 +1,33 @@
+# R3007 CVTRPGSRC pub400.com
+      * CAT, CHECK, CHEKR, SCAN, SUBST, XLATE.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     D DIG             C                   CONST(' 0123456789')
+     C                   MOVEL     'HELLO'       A                10
+     C                   MOVEL     'WORLD'       B                10
+     C     A             CAT       B:1           R                20
+     C     A             CAT       B             R2               20
+     C     'AB'          CAT(P)    'CD':2        R3               10
+     C                   MOVEL     '  12X4 '     S                 7
+     C     DIG           CHECK     S             P1                3 0
+     C     ' '           CHECKR    S             P2                3 0
+     C     'L'           SCAN      A             P3                3 0    30
+     C     'Q'           SCAN      A             P4                3 0    31
+     C     'L'           SCAN      A:4           P5                3 0
+     C     3             SUBST(P)  A:2           SB                5
+     C     'LO':'01'     XLATE     A             X                10
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       R                   20
+     O                       R2                  41
+     O                       R3                  52
+     O                       P1            Z     56
+     O                       P2            Z     60
+     O                       P3            Z     64
+     O                       P4            Z     68
+     O                       P5            Z     72
+     O               30                          75 '30'
+     O               31                          78 '31'
+     O                       SB                  84
+     O                       X                   95

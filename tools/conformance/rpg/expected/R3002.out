@@ -1,0 +1,8 @@
+# R3002 V7R5M0 pub400.com
+# captured 2026-11-04 by rpg-oracle
+created: yes
+diag: QRG7031 00 line 300 seq 
+run: ok
+spool: QSYSPRT
+  |1/1       14.29        14         2         150.00        93-      112        10.0000         2.6457       100-
+  |1/2           0         1      2.56      2.55      .000     11    13

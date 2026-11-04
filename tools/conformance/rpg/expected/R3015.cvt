@@ -1,0 +1,33 @@
+# R3015 CVTRPGSRC pub400.com
+      * Subroutines, *INZSR, DO with a step, ITER and LEAVE.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C     1             DO        10            I                 3 0
+     C     I             DIV       2             H                 3 0
+     C                   MVR                     RM                1 0
+     C     RM            IFEQ      0
+     C                   ITER
+     C                   END
+     C     I             IFGT      7
+     C                   LEAVE
+     C                   END
+     C                   EXSR      SHOW
+     C                   END
+     C     2             DO        LIM           J                 3 0
+     C                   EXCEPT    JL
+     C                   ENDDO     3
+     C                   SETON                                        LR
+     C     *INZSR        BEGSR
+     C                   Z-ADD     11            LIM               3 0
+     C                   Z-ADD     0             CNT               3 0
+     C                   ENDSR
+     C     SHOW          BEGSR
+     C                   ADD       1             CNT
+     C                   EXCEPT    IL
+     C                   ENDSR
+     OQSYSPRT   E            IL             1
+     O                       I             Z      5
+     O                       CNT           Z     10
+     OQSYSPRT   E            JL             1
+     O                                            8 'J'
+     O                       J             Z     12

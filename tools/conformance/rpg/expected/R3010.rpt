@@ -1,0 +1,56 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CVTRPGSRC
+     Issued by  . . . . . . . . . . :     {user}
+0  From file  . . . . . . . . . . . :   QRPGSRC
+     Library  . . . . . . . . . . . :     {lib}
+   From member  . . . . . . . . . . :   R3010
+0  To file. . . . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+   To member  . . . . . . . . . . . :   *FROMMBR
+0  Log file . . . . . . . . . . . . :   *NONE
+     Library  . . . . . . . . . . . :
+   Log member . . . . . . . . . . . :   *FIRST
+0  Expand copy members. . . . . . . :   *NO
+   Print conversion report  . . . . :   *YES
+   Include second level text. . . . :   *NO
+   Insert specification template. . :   *NO
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0  From file  . . . . . . . . . . . :   {lib}/QRPGSRC(R3010)
+   To file. . . . . . . . . . . . . :   {lib}/QRPGLESRC(R3010)
+   Log file . . . . . . . . . . . . :   *NONE
+-                       C o n v e r s i o n    R e p o r t
+-                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        0
+     Warning      (10) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        0
+-  Source Totals:
+0    Original Records Read . . . . . . :       35
+     Converted Records Written . . . . :       36
+     Highest Severity Message Issued . :        0
+-         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+-          * * * * *   E N D   O F   C O N V E R S I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-

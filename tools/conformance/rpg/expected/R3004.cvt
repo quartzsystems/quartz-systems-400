@@ -1,0 +1,75 @@
+# R3004 CVTRPGSRC pub400.com
+      * Comparison and structured operations.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C                   Z-ADD     5             X                 3 0
+     C     X             COMP      3                                  101112
+     C                   EXCEPT    CMP
+     C     X             COMP      5                                  101112
+     C                   EXCEPT    CMP
+     C     X             IFGT      4
+     C                   MOVE      'GT4'         MSG              10
+     C                   ELSE
+     C                   MOVE      'LE4'         MSG
+     C                   END
+     C                   EXCEPT    MSGL
+     C                   Z-ADD     0             I                 3 0
+     C     I             DOWLT     3
+     C                   ADD       1             I
+     C                   EXCEPT    LOOP
+     C                   END
+     C     I             DOUGE     5
+     C                   ADD       1             I
+     C                   EXCEPT    LOOP
+     C                   ENDDO
+     C     I             CABEQ     5             SKIP
+     C                   MOVEL     'NOT SKIP'    MSG
+     C                   EXCEPT    MSGL
+     C     SKIP          TAG
+     C                   Z-ADD     2             X
+     C     X             CASEQ     1             SR1
+     C     X             CASEQ     2             SR2
+     C                   CAS                     SR3
+     C                   END
+     C                   SELECT
+     C     X             WHENEQ    1
+     C                   MOVEL     'WHEN 1'      MSG
+     C     X             WHENGT    1
+     C     X             ANDLT     9
+     C                   MOVEL     'WHEN GT1'    MSG
+     C                   OTHER
+     C                   MOVEL     'OTHER'       MSG
+     C                   ENDSL
+     C                   EXCEPT    MSGL
+     C     X             IFEQ      7
+     C     X             OREQ      2
+     C                   MOVEL     'OR TRUE'     MSG
+     C                   EXCEPT    MSGL
+     C                   ENDIF
+     C                   GOTO      DONE
+     C                   MOVEL     'NOT HERE'    MSG
+     C                   EXCEPT    MSGL
+     C     DONE          TAG
+     C                   SETON                                        LR
+     C     SR1           BEGSR
+     C                   MOVEL     'SR1'         MSG
+     C                   EXCEPT    MSGL
+     C                   ENDSR
+     C     SR2           BEGSR
+     C                   MOVEL     'SR2 RAN'     MSG
+     C                   EXCEPT    MSGL
+     C                   ENDSR
+     C     SR3           BEGSR
+     C                   MOVEL     'SR3'         MSG
+     C                   EXCEPT    MSGL
+     C                   ENDSR
+     OQSYSPRT   E            CMP            1
+     O                       X             Z      5
+     O               10                          10 'HI'
+     O               11                          15 'LO'
+     O               12                          20 'EQ'
+     OQSYSPRT   E            MSGL           1
+     O                       MSG                 12
+     OQSYSPRT   E            LOOP           1
+     O                                            6 'LOOP'
+     O                       I             Z     10

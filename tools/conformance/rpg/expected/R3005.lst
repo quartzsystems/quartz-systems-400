@@ -1,0 +1,177 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3005
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3005
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3005
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   * MOVE, MOVEL with and without padding, numeric and character.
+-      200  H
+-      300  FQSYSPRT O   F     132     OF     PRINTER
+-      400  C                     MOVE 'ABCDEFGH'C8      8
+       500  C                     MOVE 'XY'      C8
+       600  C                     MOVEL'XY'      C8B     8
+       700  C                     MOVE 'ABCDEFGH'C8B
+       800  C                     MOVEL'XY'      C8B
+       900  C                     MOVE 'ABCDEFGH'C8C     8
+      1000  C                     MOVE 'XY'      C8C       P
+      1100  C                     MOVE 'ABCDEFGH'C8D     8
+      1200  C                     MOVEL'XY'      C8D       P
+      1300  C                     Z-ADD-12345    N5      50
+      1400  C                     MOVE N5        C3      3
+      1500  C                     MOVELN5        C4      4
+      1600  C                     MOVE '987'     N5
+      1700  C                     Z-ADDN5        N5B     50
+      1800  C                     MOVEL'42'      N5B
+      1900  C                     MOVE '1234567' N3      30
+      2000  C                     MOVE C8        C12    12
+      2100  C                     MOVELC8        C12B   12
+      2200  C                     Z-ADD123.45    P52     52
+      2300  C                     MOVE P52       C6      6
+      2400  C                     MOVE 'J'       C1      1
+      2500  C                     MOVE C1        N1      10
+      2600  C                     EXCPTLINE
+      2700  C                     SETON                     LR                    1
+-     2800  OQSYSPRT E  1             LINE
+      2900  O                         C8        10
+      3000  O                         C8B       20
+      3100  O                         C8C       30
+      3200  O                         C8D       40
+      3300  O                         C3        50
+      3400  O                         C4        55
+      3500  O                         N5    J   65
+      3600  O                         N5B   J   75
+      3700  O                         N3    J   85
+      3800  OQSYSPRT E  1             LINE
+      3900  O                         C12       14
+      4000  O                         C12B      28
+      4100  O                         C6        36
+      4200  O                         N1        40
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+1{heading} page 3
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  QSYSPRT     PRINTER      300D 2800  3800
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        C1          A(1)    2400D 2500
+         C12         A(12)   2000D 3900
+         C12B        A(12)   2100D 4000
+         C3          A(3)    1400D 3300
+         C4          A(4)    1500D 3400
+         C6          A(6)    2300D 4100
+         C8          A(8)     400D  500M 2000  2100  2900
+         C8B         A(8)     600D  700M  800M 3000
+         C8C         A(8)     900D 1000M 3100
+         C8D         A(8)    1100D 1200M 3200
+         LINE        EXCPT   2600  2800  3800
+         N1          P(1,0)  2500D 4200
+         N3          P(3,0)  1900D 3700
+         N5          P(5,0)  1300D 1400  1500  1600M 1700  3500
+         N5B         P(5,0)  1700D 1800M 3600
+         P52         P(5,2)  2200D 2300
+         -12345      LITERAL 1300
+         'ABCDEFGH'  LITERAL  400   700   900  1100
+         'J'         LITERAL 2400
+         'XY'        LITERAL  500   600   800  1000  1200
+         '1234567'   LITERAL 1900
+         '42'        LITERAL 1800
+         '987'       LITERAL 1600
+         123.45      LITERAL 2200
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR         2700M
+ * 7031  OF          300D
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+1{heading} page 4
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               1       1      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   42
+     Specifications  . . . . . . :   41
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   1
+0 PRM has been called.
+0 Program R3005 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

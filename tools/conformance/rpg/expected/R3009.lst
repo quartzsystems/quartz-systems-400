@@ -1,0 +1,153 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3009
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3009
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3009
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   *; call: CALL PGM(älibü/änameü) PARM('ABC' 41.5)
+       200   * The program status data structure and *ENTRY parameters.
+-      300  H
+-      400  FQSYSPRT O   F     132     OF     PRINTER
+-      500  IPSDS       SDS
+       600  I                                     *PROGRAM PGMNAM
+       700  I                                     *STATUS  STS
+       800  I                                     *PARMS   PRMS
+       900  I                                     *ROUTINE RTN
+-     1000  C           *ENTRY    PLIST
+      1100  C                     PARM           P1      3
+      1200  C                     PARM           P2     155
+      1300  C                     ADD  1         P2
+      1400  C                     EXCPTLINE
+      1500  C                     SETON                     LR                    1
+-     1600  OQSYSPRT E  1             LINE
+      1700  O                         PGMNAM    10
+      1800  O                         STS       20
+      1900  O                         PRMS  Z   25
+      2000  O                         RTN       35
+      2100  O                         P1        40
+      2200  O                         P2    J   65
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+-
+-
+-
+-
+-
+1{heading} page 3
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  QSYSPRT     PRINTER      400D 1600
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        *ENTRY      PLIST   1000D
+         LINE        EXCPT   1400  1600
+         PGMNAM      A(10)    600D 1700
+         PRMS        Z(3,0)   800D 1900
+ * 7031  PSDS        DS(39)   500D
+         P1          A(3)    1100D 2100
+         P2          P(15,5) 1200D 1300M 2200
+         RTN         A(8)     900D 2000
+         STS         Z(5,0)   700D 1800
+         1           LITERAL 1300
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR         1500M
+ * 7031  OF          400D
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    2
+           Message . . . . :   The Name or indicator is not referenced.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               2       2      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   22
+     Specifications  . . . . . . :   20
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   2
+0 PRM has been called.
+0 Program R3009 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

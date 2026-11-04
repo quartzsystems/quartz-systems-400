@@ -1,0 +1,11 @@
+# R3018 V7R5M0 pub400.com
+# captured 2026-11-04 by rpg-oracle
+created: yes
+diag: QRG7031 00 line 600 seq 
+run: ok
+spool: QSYSPRT
+  |1/1      101     2  Gadget         1    19.99
+  |1/2      101     1  Widget         5     2.50
+  |1/3      101     2  Gadget         1    19.99
+  |1/4      101     3  Gizmo         10      .75
+  |1/5      104     2  Widget         1     2.50

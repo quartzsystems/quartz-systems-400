@@ -1,0 +1,33 @@
+# R3018 CVTRPGSRC pub400.com
+      *; dds: ORDF
+      *; sqlfile: ORDF
+      * KLIST and KFLD: CHAIN, READE by a partial key, SETGT, READP.
+     H
+     FORDF      IF   E           K DISK
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C     FULL          KLIST
+     C                   KFLD                    KCUS
+     C                   KFLD                    KORD
+     C     PART          KLIST
+     C                   KFLD                    KCUS
+     C                   Z-ADD     101           KCUS              5 0
+     C                   Z-ADD     2             KORD              5 0
+     C     FULL          CHAIN     ORDF                               91
+     C  N91              EXCEPT    LINE
+     C     PART          SETLL     ORDF
+     C     PART          READE     ORDF                                   92
+     C     *IN92         DOWEQ     '0'
+     C                   EXCEPT    LINE
+     C     PART          READE     ORDF                                   92
+     C                   END
+     C                   Z-ADD     104           KCUS
+     C     PART          SETGT     ORDF
+     C                   READP     ORDF                                   93
+     C  N93              EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       ORDCUS        Z      6
+     O                       ORDNO         Z     12
+     O                       ITEM                24
+     O                       QTY           Z     30
+     O                       PRICE         J     40

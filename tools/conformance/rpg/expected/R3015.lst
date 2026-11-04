@@ -1,0 +1,165 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3015
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3015
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3015
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   * Subroutines, *INZSR, DO with a step, ITER and LEAVE.
+-      200  H
+-      300  FQSYSPRT O   F     132     OF     PRINTER
+-      400  C           1         DO   10        I       30                              B001
+       500  C           I         DIV  2         H       30                               001
+       600  C                     MVR            RM      10                               001
+       700  C           RM        IFEQ 0                                                 B002
+       800  C                     ITER                                                    002
+       900  C                     END                                                    E002
+      1000  C           I         IFGT 7                                                 B002
+      1100  C                     LEAVE                                                   002
+      1200  C                     END                                                    E002
+      1300  C                     EXSR SHOW                                               001
+      1400  C                     END                                                    E001
+      1500  C           2         DO   LIM       J       30                              B001
+      1600  C                     EXCPTJL                                                 001
+      1700  C                     ENDDO3                                                 E001
+      1800  C                     SETON                     LR                    1
+      1900  C           *INZSR    BEGSR
+      2000  C                     Z-ADD11        LIM     30
+      2100  C                     Z-ADD0         CNT     30
+      2200  C                     ENDSR
+      2300  C           SHOW      BEGSR
+      2400  C                     ADD  1         CNT
+      2500  C                     EXCPTIL
+      2600  C                     ENDSR
+-     2700  OQSYSPRT E  1             IL
+      2800  O                         I     Z    5
+      2900  O                         CNT   Z   10
+      3000  OQSYSPRT E  1             JL
+      3100  O                                    8 'J'
+      3200  O                         J     Z   12
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+-
+-
+-
+1{heading} page 3
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  QSYSPRT     PRINTER      300D 2700  3000
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        *INZSR      BEGSR   1900D
+         CNT         P(3,0)  2100D 2400M 2900
+         H           P(3,0)   500D
+         I           P(3,0)   400D  500  1000  2800
+         IL          EXCPT   2500  2700
+         J           P(3,0)  1500D 3200
+         JL          EXCPT   1600  3000
+         LIM         P(3,0)  1500  2000D
+         RM          P(1,0)   600D  700
+         SHOW        BEGSR   1300  2300D
+         0           LITERAL  700  2100
+         1           LITERAL  400  2400
+         10          LITERAL  400
+         11          LITERAL 2000
+         2           LITERAL  500  1500
+         3           LITERAL 1700
+         7           LITERAL 1000
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR         1800M
+ * 7031  OF          300D
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+1{heading} page 4
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               1       1      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   32
+     Specifications  . . . . . . :   31
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   1
+0 PRM has been called.
+0 Program R3015 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

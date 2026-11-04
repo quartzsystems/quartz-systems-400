@@ -1,0 +1,23 @@
+# R3009 CVTRPGSRC pub400.com
+      *; call: CALL PGM({lib}/{name}) PARM('ABC' 41.5)
+      * The program status data structure and *ENTRY parameters.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     D PSDS           SDS
+     D  PGMNAM           *PROC
+     D  STS              *STATUS
+     D  PRMS             *PARMS
+     D  RTN              *ROUTINE
+     C     *ENTRY        PLIST
+     C                   PARM                    P1                3
+     C                   PARM                    P2               15 5
+     C                   ADD       1             P2
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       PGMNAM              10
+     O                       STS                 20
+     O                       PRMS          Z     25
+     O                       RTN                 35
+     O                       P1                  40
+     O                       P2            J     65
