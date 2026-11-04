@@ -1107,7 +1107,7 @@ Version 7, as built on 2026-11-04 (draft; decisions made in the build, for Cody 
   PTF database (`text` the status's text, as no PTF carries one;
   not-loaded, ordered and cover-letter-only PTFs are `SaveFileOnly`),
   the disk configuration as DST shows it without a service tools
-  sign-on (an ASP's capacity counts a mirrored pair once, its
+  sign-on (units numbered from 1 as DST shows them; an ASP's capacity counts a mirrored pair once, its
   threshold DST's), the LIC record's last IPL (type, mode, slot, its
   final SRC) with `QABNORMSW`, the next slot a LIC PTF arms, and
   `restricted` when no subsystem is active; `ipl_time` is the system

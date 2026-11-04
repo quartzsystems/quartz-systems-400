@@ -111,7 +111,8 @@ pub fn disks(system: &mut System, ctx: &JobCtx) -> Result<DiskUnits, QapRefused>
         .map(|u| {
             let capacity = u.size_mib * MIB;
             DiskUnit {
-                unit: u.unit,
+                // Numbered from 1, as DST shows them; 0 is not configured.
+                unit: u.unit + 1,
                 asp: u.asp,
                 resource: u.resource.clone(),
                 type_model: u.type_model.clone(),
@@ -135,7 +136,7 @@ pub fn disks(system: &mut System, ctx: &JobCtx) -> Result<DiskUnits, QapRefused>
         if u.protection == Protection::Mirrored
             && configured
                 .iter()
-                .any(|c| c.unit == u.unit && c.partner.is_some_and(|p| p < u.unit))
+                .any(|c| c.unit + 1 == u.unit && c.partner.is_some_and(|p| p < c.unit))
         {
             continue;
         }
