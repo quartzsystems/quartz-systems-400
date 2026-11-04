@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `qsfuzz list | run TARGET [SECS] | all [SECS] | repro TARGET FILE`.
+//! `qsfuzz list | run TARGET [SECS] | all [SECS [JOBS]] | repro TARGET FILE`.
 
 use std::path::PathBuf;
 use std::time::Duration;
@@ -60,10 +60,24 @@ fn main() -> Result<()> {
             }
         }
         Some("all") => {
+            // `all SECS [JOBS]`: each target in its own process, JOBS at once.
+            let jobs: usize = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(1).max(1);
+            let exe = std::env::current_exe()?;
             let mut bad = Vec::new();
-            for t in TARGETS {
-                if !run(t, secs(1))? {
-                    bad.push(t.name);
+            for chunk in TARGETS.chunks(jobs) {
+                let kids: Vec<_> = chunk
+                    .iter()
+                    .map(|t| {
+                        std::process::Command::new(&exe)
+                            .args(["run", t.name, &secs(1).to_string()])
+                            .spawn()
+                            .map(|c| (t.name, c))
+                    })
+                    .collect::<Result<_, _>>()?;
+                for (name, mut c) in kids {
+                    if !c.wait()?.success() {
+                        bad.push(name);
+                    }
                 }
             }
             if !bad.is_empty() {

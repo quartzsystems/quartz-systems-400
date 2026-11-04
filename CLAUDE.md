@@ -534,7 +534,7 @@ cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo run -p fmtcheck [-- update] # the format freeze; update only after a version bump
-cargo run -p build -- fuzz [--target NAME] [--secs N]   # every fuzz target, instrumented (30 min each)
+cargo run -p build -- fuzz [--target NAME] [--secs N] [--jobs N]   # every fuzz target, instrumented (3 min each, 6 at once)
 cargo clippy --workspace --all-targets    # must be warning-free
 cargo clippy -p slic -p console --all-targets --target x86_64-unknown-linux-musl
 QS400_QEMU=1 cargo test -p conformance    # the suite as a cargo test

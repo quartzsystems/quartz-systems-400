@@ -23,8 +23,8 @@ const SANCOV: &str = "-C passes=sancov-module -C llvm-args=-sanitizer-coverage-l
 /// build scripts and proc macros, which must not be instrumented.
 const HOST: &str = "x86_64-unknown-linux-gnu";
 
-/// Runs `target` (every one when `None`) for `secs` seconds each.
-pub fn fuzz(ctx: &Ctx, target: Option<&str>, secs: u64) -> Result<()> {
+/// Runs `target` (every one when `None`, `jobs` at once) for `secs` seconds each.
+pub fn fuzz(ctx: &Ctx, target: Option<&str>, secs: u64, jobs: usize) -> Result<()> {
     // MSVC's linker cannot take the counters' sections (LLVM's COMDAT
     // error); the fuzzer runs on Linux, like the rest of the pipeline.
     anyhow::ensure!(cfg!(target_os = "linux"), "build fuzz runs on Linux (WSL)");
@@ -40,6 +40,9 @@ pub fn fuzz(ctx: &Ctx, target: Option<&str>, secs: u64) -> Result<()> {
         None => c.arg("all"),
     };
     c.arg(secs.to_string());
+    if target.is_none() {
+        c.arg(jobs.to_string());
+    }
     info!("fuzz: {} for {secs} s each", target.unwrap_or("every target"));
     c.run(ctx)
 }

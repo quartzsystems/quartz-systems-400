@@ -92,8 +92,11 @@ enum Command {
         #[arg(long)]
         target: Option<String>,
         /// Seconds per target.
-        #[arg(long, default_value_t = 1800)]
+        #[arg(long, default_value_t = 180)]
         secs: u64,
+        /// Targets run at once.
+        #[arg(long, default_value_t = 6)]
+        jobs: usize,
     },
 }
 
@@ -146,7 +149,7 @@ fn main() -> Result<()> {
         } => host::testrun::test(&ctx, media, install, bench, pulls)?,
         Command::Doctor => host::doctor::doctor(&ctx)?,
         Command::Deny => host::deny::deny(&ctx)?,
-        Command::Fuzz { target, secs } => host::fuzz::fuzz(&ctx, target.as_deref(), secs)?,
+        Command::Fuzz { target, secs, jobs } => host::fuzz::fuzz(&ctx, target.as_deref(), secs, jobs)?,
     }
     Ok(())
 }

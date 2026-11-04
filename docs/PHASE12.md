@@ -40,10 +40,10 @@ handled as follows (each is also a row in the acceptance table):
   enforces. The fuzz targets run under a fuzzer written in Rust in the
   tree instead (`tools/fuzz`, `build fuzz`), with the same target shape
   (`fn(&[u8])`), saved corpora and crash minimisation.
-- **The 72-hour soak** is wall-clock time on Cody's PC. `build soak`
-  takes a duration; the one-hour smoke is run here, and the 72-hour run
-  is a `NEEDS-CODY` checkpoint unless it can run unattended to the end
-  of the phase.
+- **Long runs are short.** At Cody's request (2026-11-03) nothing in
+  Phase 12 runs for hours: each fuzz target runs 3 minutes, six at a
+  time (about 10 minutes for all 18), the soak runs one hour, and QEMU
+  runs only the steps a change touches.
 - **The SMTP server.** QS/400 has an SMTP client (`net/mail`, with
   `STARTTLS`, `AUTH PLAIN` and `AUTH LOGIN` already) and no SMTP
   server. Section 1 closes the client's credential storage; a server is
@@ -227,7 +227,7 @@ Exact steps are filled in as each item is reached.
 | 6 | `QSHWQUAL` on the Dell with the PERC H330 | `QUALIFIED_HARDWARE.md` | open |
 | 7 | Goldens that need a command run on the primary | | open |
 | 8 | `QRPG` on pub400 or the primary for Section 8 | | open |
-| 9 | The 72-hour soak, unless it completes unattended | `build soak --hours 72` | open |
+| 9 | (dropped: the 72-hour soak; Phase 12 runs a one-hour soak) | | closed |
 
 ## Acceptance
 
@@ -243,9 +243,9 @@ Exact steps are filled in as each item is reached.
 | `QSHWQUAL` runs from media under QEMU; qualified-hardware doc written | |
 | QAP spec frozen; guest agent recognised by QEMU as a guest agent | |
 | 20 RPG III programs conformant; `CVTRPGSRC` report diffs clean | |
-| All fuzz targets 30 minutes crash-free (Rust fuzzer, see Notes) | |
+| All fuzz targets 3 minutes crash-free, 6 at once (Rust fuzzer, see Notes; shortened from 30 min at Cody's request) | |
 | `QSSECCHK` clean on a fresh install | |
-| 72-hour soak clean | |
+| Soak clean: one-hour run (the 72-hour run dropped at Cody's request) | |
 | Knowledge Center builds and is served; release notes written | |
 | `build release` produces a signed, bootable, installable ISO | |
 | `CLAUDE.md` accurately describes the system as shipped | |
