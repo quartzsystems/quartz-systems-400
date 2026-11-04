@@ -49,6 +49,11 @@ frozen_at = "V1R1M0"
 version = '"QS400-MEDIA 1"/"QS400-OPTVOL 1"/"QS400-IMGCLG 1"/"QS400-INSTALL-RSP 1"'
 hash = "32813b4ab3014938f3b8da2d2b679ff86644b820a25e98c761b7286afa053a99"
 
+[format.mgtcol]
+frozen_at = "V1R1M0"
+version = "1"
+hash = "c25e6a85ecb3c2d86617e67e9973d69684cb61a512f885036b935e8f8afdb017"
+
 [format.net-objects]
 frozen_at = "V1R1M0"
 version = "1/1/1/1"
@@ -82,7 +87,7 @@ hash = "b72809bdaea4a59970f33a5ae766678dcf3d1c1064c5065e44feba85be92a714"
 [format.store]
 frozen_at = "V1R1M0"
 version = "2/2/1"
-hash = "b58d8dabeb52917e1f28d16367e8d0e907638af5b0a31a5f7337c944fff5512f"
+hash = "9c9dc6e9647be9767e5479486a45dcefb31ac8e860f40c095e6438c471b29c0c"
 
 [format.ui-objects]
 frozen_at = "V1R1M0"

@@ -220,6 +220,13 @@ version = ["work/wm/src/obj/splf.rs::VERSION"]
 files = ["work/wm/src/obj/splf.rs"]
 
 [[format]]
+name = "mgtcol"
+frozen_at = "V1R1M0"
+doc = "docs/PERF.md"
+version = ["work/perf/src/mgtcol.rs::VERSION"]
+files = ["work/perf/src/mgtcol.rs", "work/perf/src/sample.rs"]
+
+[[format]]
 name = "wm-objects"
 frozen_at = "V1R1M0"
 doc = "docs/WORKMGMT.md"

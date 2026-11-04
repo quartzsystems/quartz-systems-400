@@ -129,6 +129,8 @@ pub const EXITRG: u16 = 0x0029;
 pub const PRDDFN: u16 = 0x002A;
 /// Code of `*PRDLOD`: a product load.
 pub const PRDLOD: u16 = 0x002B;
+/// Code of `*MGTCOL`: a management collection (`docs/PERF.md`).
+pub const MGTCOL: u16 = 0x002C;
 
 /// Every type, in code order.
 pub static TYPES: &[TypeInfo] = &[
@@ -195,6 +197,7 @@ pub static TYPES: &[TypeInfo] = &[
     t(EXITRG, "*EXITRG", false, false, false, true, Module::Opaque),
     t(PRDDFN, "*PRDDFN", true, false, false, false, Module::Opaque),
     t(PRDLOD, "*PRDLOD", true, false, false, false, Module::Opaque),
+    t(MGTCOL, "*MGTCOL", false, false, false, false, Module::Opaque),
     t(MBR, "*MBR", false, true, false, false, Module::Opaque),
     t(SYSVAL, "*SYSVAL", false, false, true, true, Module::SysVal),
 ];
@@ -221,7 +224,7 @@ mod tests {
         codes.sort_unstable();
         codes.dedup();
         assert_eq!(codes.len(), TYPES.len(), "codes unique");
-        assert_eq!(TYPES.len(), 41);
+        assert_eq!(TYPES.len(), 42);
         assert!(TYPES.iter().all(|t| t.name.starts_with('*')));
         assert_eq!(type_by_name("*dtaara").unwrap().code, DTAARA);
         assert_eq!(type_by_code(SYSVAL).unwrap().module, Module::SysVal);
