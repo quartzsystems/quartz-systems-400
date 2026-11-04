@@ -39,6 +39,11 @@
 //!   several CCSIDs (one mixed), links, a directory `BOB` may not use, a
 //!   file another job holds, `/QSYS.LIB` and a 200 MiB file made on
 //!   demand, for the `Ifs` service;
+//! - management ([`manage`], version 7, draft): subsystems, system values,
+//!   PTFs, disk units, hardware and the IPL; profiles `OPER` (`OPERPW1`,
+//!   `*JOBCTL`) and `SECOFR` (`SECPW01`, every special authority) beside
+//!   `BOB`, who has none; an exit program tests set
+//!   ([`manage::Manage::exit_refuses`]);
 //! - the ends a client must meet: the server ending ([`System::end`]:
 //!   every connection gets `ServerEnding` and the [`Listener`] refuses
 //!   connects until [`System::restart`]), an operator ending one job, a
@@ -51,6 +56,7 @@ pub mod files;
 pub mod fixtures;
 mod host;
 mod listen;
+pub mod manage;
 pub mod messages;
 pub mod spool;
 pub mod sql;
@@ -113,6 +119,8 @@ pub struct User {
     pub invalid: u32,
     /// When the password expires, Unix seconds; `None` for never.
     pub expires: Option<u64>,
+    /// Special authorities (`*JOBCTL`, ...).
+    pub special: Vec<String>,
 }
 
 /// The system: what every connection shares.
@@ -168,6 +176,9 @@ pub struct System {
     pub sql: Mutex<sql::Db>,
     /// The integrated file system ([`files`]).
     pub files: files::Files,
+    /// Subsystems, system values, PTFs, disks, hardware, the IPL
+    /// ([`manage`]).
+    pub manage: Mutex<manage::Manage>,
     /// The commands running, by job, while they run.
     running: Mutex<HashMap<u32, String>>,
     started: Condvar,
@@ -231,6 +242,7 @@ impl System {
             crash: Mutex::new(None),
             sql: Mutex::new(sql::Db::default()),
             files: files::Files::new(),
+            manage: Mutex::new(manage::Manage::shipped()),
             running: Mutex::new(HashMap::new()),
             started: Condvar::new(),
             sockets: Mutex::new(HashMap::new()),
@@ -241,6 +253,12 @@ impl System {
         s.user("WARN", "WARNPW1");
         s.edit("WARN", |u| u.expires = Some(EPOCH + 3 * 86_400));
         s.user("ANN", "ANNPW01");
+        s.user("OPER", "OPERPW1");
+        s.edit("OPER", |u| u.special = vec!["*JOBCTL".into()]);
+        s.user("SECOFR", "SECPW01");
+        s.edit("SECOFR", |u| {
+            u.special = ["*ALLOBJ", "*SECADM", "*JOBCTL", "*AUDIT", "*IOSYSCFG"].map(String::from).to_vec();
+        });
         fixtures::install(&mut lock(&s.spool));
         messages::install(&mut lock(&s.messages));
         Arc::new(s)

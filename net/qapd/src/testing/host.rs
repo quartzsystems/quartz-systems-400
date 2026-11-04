@@ -10,6 +10,10 @@ use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
+use qap_proto::ops::manage::{
+    DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType, SetSystemValue, Subsystem,
+    SystemValue, SystemValues,
+};
 use qap_proto::ops::messages::{
     ListMessages, MessageType, Messages, QueuedMessage, RemoveMessages, ReplyMessage, SendMessage, Sent,
 };
@@ -32,6 +36,7 @@ use ifscmd::{Msg, Reply};
 use super::commands::{self, definition, find, parse};
 use super::{Crash, System, lock};
 use crate::host::{Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
+use crate::manage::ExitRequest;
 use crate::sessions::{EndedBy, Gone};
 use crate::sql::SqlResult;
 use crate::tickets::TICKET_SECS;
@@ -698,5 +703,92 @@ impl ThreadHost for MemThread {
         let (sys, job) = (Arc::clone(&self.sys), self.job);
         let msg = move |id: &str, data: &[&str]| message(&sys, job, id, data);
         super::sql::list_columns(&lock(&self.sys.sql), &me, req, &msg)
+    }
+
+    fn exit_allows(&mut self, _point: &str, _format: &str, req: &ExitRequest) -> Result<(), Refusal> {
+        if lock(&self.sys.manage).exit(req) {
+            lock(&self.sys.audit).push(format!("GR F {}", req.user));
+            return Err(self.refuse(Status::NotAuthorized, crate::manage::EXIT_REFUSED, &["QAPXEXIT", "QGPL"]));
+        }
+        Ok(())
+    }
+
+    fn subsystems(&mut self, library: &str) -> Result<Vec<Subsystem>, Refusal> {
+        Ok(lock(&self.sys.manage).list(library))
+    }
+
+    fn start_subsystem(&mut self, sbsd: &ObjectName) -> Result<(), Refusal> {
+        self.special(&["*JOBCTL"])?;
+        let r = lock(&self.sys.manage).start(sbsd);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn end_subsystem(&mut self, req: &EndSubsystem) -> Result<(), Refusal> {
+        self.special(&["*JOBCTL"])?;
+        let r = lock(&self.sys.manage).end(req);
+        r.map_err(|n| self.no(&n))
+    }
+
+    fn system_values(&mut self, names: &[String]) -> Result<SystemValues, Refusal> {
+        let r = lock(&self.sys.manage).values(names);
+        r.map(|values| SystemValues { values }).map_err(|n| self.no(&n))
+    }
+
+    fn set_system_value(&mut self, req: &SetSystemValue) -> Result<SystemValue, Refusal> {
+        let name = req.name.trim().to_ascii_uppercase();
+        let old = lock(&self.sys.manage).values(std::slice::from_ref(&name));
+        let old = old.map_err(|n| self.no(&n))?;
+        let needs = lock(&self.sys.manage).needs(&name);
+        self.special(needs)?;
+        let r = lock(&self.sys.manage).set(req);
+        let v = r.map_err(|n| self.no(&n))?;
+        if old[0].value != v.value {
+            lock(&self.sys.audit).push(format!("SV A {name}"));
+        }
+        Ok(v)
+    }
+
+    fn ptfs(&mut self, product: &str) -> Result<Vec<Ptf>, Refusal> {
+        Ok(lock(&self.sys.manage).ptfs(product))
+    }
+
+    fn disk_units(&mut self) -> Result<DiskUnits, Refusal> {
+        Ok(lock(&self.sys.manage).disks.clone())
+    }
+
+    fn hardware_resources(&mut self, kind: ResourceType) -> Result<HardwareResources, Refusal> {
+        Ok(lock(&self.sys.manage).hardware(kind))
+    }
+
+    fn ipl_status(&mut self) -> Result<IplStatus, Refusal> {
+        Ok(lock(&self.sys.manage).ipl.clone())
+    }
+
+    fn power_down(&mut self, req: &PowerDown) -> Result<(), Refusal> {
+        self.special(&["*JOBCTL"])?;
+        lock(&self.sys.manage).powered = Some(req.clone());
+        // The reply goes first; then the server ends, as PWRDWNSYS ends
+        // the subsystem the connection jobs run in.
+        let sys = Arc::clone(&self.sys);
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(50));
+            sys.end(Ending::Server);
+        });
+        Ok(())
+    }
+}
+
+impl MemThread {
+    /// The special authorities `needs` names, all of them; else
+    /// `NotAuthorized` with `CPF222E` naming the first missing, and an
+    /// `AF K` entry.
+    fn special(&mut self, needs: &[&str]) -> Result<(), Refusal> {
+        let me = self.me().unwrap_or_default();
+        let has = self.sys.get(&me).special;
+        if let Some(miss) = needs.iter().find(|n| !has.iter().any(|h| h == *n)) {
+            lock(&self.sys.audit).push(format!("AF K {me}"));
+            return Err(self.refuse(Status::NotAuthorized, "CPF222E", &[miss]));
+        }
+        Ok(())
     }
 }

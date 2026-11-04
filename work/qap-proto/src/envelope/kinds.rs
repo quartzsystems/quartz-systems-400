@@ -46,6 +46,8 @@ pub enum Service {
     Ifs,
     /// Message queues (version 6).
     Messages,
+    /// Managing the system (version 7, draft).
+    Manage,
 }
 
 wire_enum!(Service {
@@ -57,11 +59,12 @@ wire_enum!(Service {
     5 => Sql,
     6 => Ifs,
     7 => Messages,
+    8 => Manage,
 });
 
 impl Service {
     /// Every service, in value order.
-    pub const ALL: [Service; 8] = [
+    pub const ALL: [Service; 9] = [
         Service::Connection,
         Service::SignOn,
         Service::System,
@@ -70,6 +73,7 @@ impl Service {
         Service::Sql,
         Service::Ifs,
         Service::Messages,
+        Service::Manage,
     ];
 
     /// The protocol version that defines it.
@@ -82,6 +86,7 @@ impl Service {
             Service::Sql => 4,
             Service::Ifs => 5,
             Service::Messages => 6,
+            Service::Manage => 7,
         }
     }
 

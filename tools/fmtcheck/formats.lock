@@ -71,8 +71,8 @@ hash = "9f1e2579a42d04c64591462d00a221b3d142785897f612505240ee962afd5654"
 
 [format.qap]
 frozen_at = "V1R1M0"
-version = "6"
-hash = "d0e3cbd5517b001a350ab104a3714cca7fd12a6a8e8145b7049ec73296535f79"
+version = "7"
+hash = "d11d8e44e79554b841497dcb1acca036480a35e2f31fbd79ee8d6734243d9264"
 
 [format.save]
 frozen_at = "V1R1M0"

@@ -329,6 +329,75 @@ Paths are absolute and UTF-8 (`/home/BOB/a.txt`, `/QSYS.LIB/QGPL.LIB`). Every `I
   - The queue the inquiry went to keeps it, with its `reply` set and `needs_reply` 0, followed by a `Reply` of its own whose `answers` is the inquiry's key there.
 - A `Recipient` `User` is the profile's message queue, as the profile names it; an unknown profile is `NotFound` (`CPF2204`).
 
+### Service 8 `Manage`: managing the system (version 7, draft)
+
+**Draft until QS/400 ships it.** Version 7 is the management API of Phase 12 Section 7: one protocol surface for QS/MC and for scripts, so neither drives the system through screens. Nothing in versions 1 to 6 changes; a peer that negotiates 6 or less never sees `Manage`.
+
+Every operation runs as the signed-on profile, concurrently on the connection's secondary threads (never in the lane), and does what the command it stands for does: the same authority checks, the same messages, the same audit journal entries. There is no other way in: no operation is allowed before sign-on, and no operation skips the command's checks because the request came over QAP.
+
+- `SubsystemStatus` enum: `Active` 0, `Inactive` 1, `Ending` 2, `Starting` 3.
+- `Subsystem` = { `sbsd` ObjectName, `status` SubsystemStatus, `jobs` u32 (active jobs), `monitor` Option of JobId (while it runs), `text` String }.
+- `EndHow` enum: `Controlled` 0 (`*CNTRLD`), `Immediate` 1 (`*IMMED`).
+- `ValueKind` enum: `Character` 0, `Decimal` 1, `Integer` 2, `List` 3.
+- `SystemValue` = { `name` String, `kind` ValueKind, `value` String (as `CHGSYSVAL VALUE()` takes it, without apostrophes; a list's entries separated by one blank), `text` String, `category` String (the catalog group: `SEC`, `DATTIM`, `SYSCTL`, `LIBL`...) }.
+- `PtfStatus` enum: `NotApplied` 0, `TemporarilyApplied` 1, `PermanentlyApplied` 2, `TemporarilyRemoved` 3, `PermanentlyRemoved` 4, `Superseded` 5, `Damaged` 6, `SaveFileOnly` 7 (only its save file or cover letter is here).
+- `IplAction` enum: `None` 0, `Apply` 1, `Remove` 2 (at the next IPL).
+- `Ptf` = { `product` String, `id` String, `release` String, `status` PtfStatus, `ipl_action` IplAction, `delayed` flag, `text` String }.
+- `UnitStatus` enum: `Active` 0, `Suspended` 1, `Resuming` 2, `Failed` 3, `NonConfigured` 4. `Protection` enum: `Unprotected` 0, `Mirrored` 1, `Parity` 2.
+- `DiskUnit` = { `unit` u16 (0: not configured), `asp` u16 (0: none), `resource` String (`DD001`), `type_model` String, `serial` String, `capacity` u64 (bytes), `used` u64, `status` UnitStatus, `protection` Protection }. `Asp` = { `asp` u16, `capacity` u64, `used` u64, `threshold` u8 (percent) }.
+- `ResourceType` enum, the `WRKHDWRSC TYPE` values: `All` 0 (`*AHW`), `Communication` 1 (`*CMN`), `LocalWorkStation` 2 (`*LWS`), `Processor` 3 (`*PRC`), `Storage` 4 (`*STG`), `Coupled` 5 (`*CSA`), `Cryptographic` 6 (`*CRP`). `ResourceStatus` enum: `Operational` 0, `NotDetected` 1.
+- `HardwareResource` = { `name` String (`CMN01`), `depth` u8 (levels below the top of the list), `type_model` String (`290A-001`, or the type alone), `status` ResourceStatus, `text` String, `location` String, `serial` String, `parent` String (empty at the top) }.
+- `IplMode` enum: `Normal` 0, `Manual` 1. `PreviousEnd` enum: `Normal` 0, `Abnormal` 1. `IplSource` enum: `Panel` 0 (`*PANEL`), `A` 1, `B` 2.
+
+| Service | Op | Request body | Reply body | Allowed before sign-on |
+| --- | --- | --- | --- | --- |
+| Manage | 1 `ListSubsystems` | `library` String (`*ALL`, `*LIBL` or a library), `start` u32, `max` u32 | `total` u32, `subsystems` list of `Subsystem` (active first, then by name) | no |
+| Manage | 2 `StartSubsystem` | `sbsd` ObjectName | — | no |
+| Manage | 3 `EndSubsystem` | `sbsd` Option of ObjectName (none: `*ALL`), `how` EndHow, `delay` Option of u32 (seconds; none: `*NOLIMIT`) | — | no |
+| Manage | 4 `GetSystemValues` | `names` list of String (empty: every value) | `values` list of `SystemValue` (in the order asked; by name for all) | no |
+| Manage | 5 `SetSystemValue` | `name` String, `value` String | `SystemValue` (as it now is) | no |
+| Manage | 6 `ListPtfs` | `product` String (`*ALL` or a product), `start` u32, `max` u32 | `total` u32, `ptfs` list of `Ptf` (by product, then identifier) | no |
+| Manage | 7 `ListDiskUnits` | — | `units` list of `DiskUnit` (configured by unit number, then the others), `asps` list of `Asp` | no |
+| Manage | 8 `ListHardwareResources` | `kind` ResourceType | `resources` list of `HardwareResource` (in tree order, as the list shows them) | no |
+| Manage | 9 `IplStatus` | — | `ipl_time` i64, `ipl_type` String, `mode` IplMode, `slot` String, `next_slot` Option of String, `last_src` String (eight characters), `src_text` String, `previous_end` PreviousEnd, `restricted` flag | no |
+| Manage | 10 `PowerDown` | `how` EndHow, `delay` Option of u32, `restart` flag, `ipl_source` IplSource | — | no |
+
+| Op | Stands for | Statuses |
+| --- | --- | --- |
+| `ListSubsystems` | `WRKSBS` | `Ok`; `NotFound` (the library); `NotAuthorized` |
+| `StartSubsystem` | `STRSBS` | `Ok`; `NotFound` (`CPF9801`); `NotAuthorized` (`CPF222E`: `*JOBCTL`); `Error` (`CPF1010`: already active) |
+| `EndSubsystem` | `ENDSBS` | `Ok`; `NotFound`; `NotAuthorized` (`*JOBCTL`); `Error` (`CPF1054`: not active; `CPF1034`: the controlling subsystem alone) |
+| `GetSystemValues` | `RTVSYSVAL`, `DSPSYSVAL` | `Ok`; `NotFound` (`CPF1842`, naming the first unknown value; nothing else is returned) |
+| `SetSystemValue` | `CHGSYSVAL` | `Ok`; `NotFound` (`CPF1842`); `NotAuthorized` (`CPF222E`; `CPF18B4` when DST locks security values); `Error` (`TCP1A5F`: a value it does not take) |
+| `ListPtfs` | `DSPPTF` | `Ok`; `NotAuthorized` |
+| `ListDiskUnits` | `WRKDSKSTS`, DST's configuration display | `Ok`; `NotAuthorized` |
+| `ListHardwareResources` | `WRKHDWRSC` | `Ok`; `NotAuthorized` |
+| `IplStatus` | `DSPSYSSTS`, the control panel | `Ok` |
+| `PowerDown` | `PWRDWNSYS` | `Ok`; `NotAuthorized` (`*JOBCTL`); `Error` (a power down already started) |
+
+**Authentication and authority.**
+
+- The profile signed on with `SignOn`, `Resume` or `Attach` is the only identity; there are no keys or tokens of another kind.
+- Each operation applies its command's checks in the connection job, as that profile, with its groups and the authority it adopts: `STRSBS`, `ENDSBS` and `PWRDWNSYS` need `*JOBCTL`; `CHGSYSVAL` needs `*ALLOBJ`, and for security values `*ALLOBJ` and `*SECADM`, for the auditing values `*AUDIT`, and DST's "allow system value security changes" for either (`sec::sysval`). Reads need what their displays need.
+- A refusal for a missing special authority is audited as the command's is (`AF` type `K`).
+
+**Exit point.** Every `Manage` request passes the exit point `QS400_QAP_MGMT`, format `QAPX0100`, before it runs, as the host servers' requests pass theirs:
+
+- registered at the first IPL with the shipped points (`WRKREGINF`); no deregistration, change allowed, at most one program, as the host servers' points;
+- the program gets two parameters, the return code (CHAR(1), `1` allows, anything else refuses) and the request: user CHAR(10), server CHAR(10) `*QAPMGMT`, format CHAR(8) `QAPX0100`, operation BINARY(4) (the `Manage` op code), operation name CHAR(20) (`EndSubsystem`), target CHAR(64) (`LIB/SBSD`, `*ALL`, a system value's name, a product, a `*CMN`-style type; blank when none), detail length BINARY(4), detail CHAR(*) (`*CNTRLD 600`, the new value, `*IMMED *NOLIMIT RESTART(*YES)`); big-endian, CCSID 37;
+- a refusal is `NotAuthorized` with `TCP1A5E` naming the program, audited `GR` (`F`, the function refused), and the operation does nothing; a program that cannot be called or ends in an exception refuses, as for the host servers. A point with no program allows everything.
+
+**Audit journal.** Beside the `AF` and `GR` entries above, the entries are the commands' own: `SV` for a system value changed (old and new value, as `CHGSYSVAL` writes it), and the job entries the subsystem and power commands write with `*JOBDTA` and `*SYSMGT` auditing. QAP adds no entry type and no entry of its own.
+
+**Rules.**
+
+- Lists that can be long (`ListSubsystems`, `ListPtfs`) take `start` and `max` and answer `total`, as every QAP list does. The others are short and come whole.
+- `EndSubsystem` with `sbsd` none is `ENDSBS *ALL`: the system is in restricted state when it answers, and `IplStatus` says so. The connection's own job ends with its subsystem (`QUSRWRK`): the client gets the reply, then `ServerEnding`.
+- `PowerDown` answers `Ok` once the power down has started, then every connection gets `ServerEnding` as the subsystems end. With `restart` the system comes back with an IPL; a client reconnects and reads `IplStatus` to see it complete.
+- `SetSystemValue`'s reply is the value as the system keeps it; a value that takes effect at the next IPL is the new value, as `DSPSYSVAL` shows it.
+- `ListHardwareResources` lists what `WRKHDWRSC TYPE()` lists, in its order, the guest agent's channel among the `*CMN` resources when the system runs under a hypervisor that offers one.
+- No event: a client that follows subsystems or IPL state asks again; message queue watches (version 6) carry the operator's messages.
+
 ### `SignOn` additions (version 2)
 
 | Service | Op | Request body | Reply body | Allowed before sign-on |
@@ -404,6 +473,10 @@ Version 6 is:
 - `Ifs` operation 9 `Stat`.
 
 It introduces no status: every status these operations answer exists in an earlier version. Events are sent from the concurrent lane, as every operation outside the lane runs. A version 1 to 5 peer never receives the `Messages` service, a watch's event or any of these bodies. The server accepts versions 1 to 6 and picks the highest both sides support.
+
+### Version 7 (draft)
+
+Version 7 is `Manage` (service 8) operations 1 `ListSubsystems` to 10 `PowerDown`, with the types and rules above, and the exit point `QS400_QAP_MGMT`. It introduces no status and no event: every status these operations answer exists in an earlier version. A version 1 to 6 peer never receives the `Manage` service or any of its bodies, and its requests for them get `InvalidRequest`. The server accepts versions 1 to 7 and picks the highest both sides support. Until QS/400 ships version 7 its operations and bodies may still change; versions 1 to 6 may not.
 
 ## Open questions
 
@@ -971,6 +1044,40 @@ Version 6, as built on 2026-11-03 (decisions made in the build, for Cody to revi
 - The test system's `Files::change_twice(path)` changes a file twice
   with its `modified` held, for the client's test of two changes in one
   millisecond.
+
+Version 7, as built on 2026-11-04 (draft; decisions made in the build, for Cody to review):
+
+- `qap-proto` speaks 1 to 7 (`VERSION` 7, `tools/fmtcheck`'s lock bumped
+  with it); every value of versions 1 to 6 keeps its number and meaning
+  (`qap-proto` test `version7::versions_1_to_6_unchanged`, `fmtcheck`).
+  `Manage` is service 8; its ten operations are 1 to 10 and none is in
+  the lane or allowed before sign-on.
+- The service's rules live in `net/qapd/src/manage.rs`: the body
+  decoded (`InvalidRequest` when it does not), the exit request built
+  and given to `ThreadHost::exit_allows`, then the host's method; lists
+  are paged there from the host's whole list. A host without management
+  answers every operation `Error` with `TCP1A5D`; `TCP1A5E` (an exit
+  program refused) and `TCP1A5F` (a value a system value does not take)
+  are in `QTCPMSG` beside it.
+- `QS400_QAP_MGMT` (`QAPX0100`) is a shipped exit point of the
+  registration facility (`net/regfac/src/shipped.rs`), with the host
+  servers' flags and two parameters, so `regfac::call_exit` calls its
+  program with `ExitRequest::host("QAPX0100", ..)` and `GR` entries come
+  from the registry as for the host servers. `*QAP`'s row in the servers
+  table names it.
+- The test system (`qapd::testing::manage`): subsystems, system values,
+  PTFs, disks, hardware and the IPL under the commands' rules, its
+  fixtures in the module's documentation; profiles `OPER` (`*JOBCTL`)
+  and `SECOFR` (every special authority); `Manage::exit_refuses` is the
+  exit program, `exit_calls` what it was given. `PowerDown` answers, then
+  ends the server 50 ms later, so the client sees `ServerEnding`.
+- BLOCKED(phase12): the connection job (`work/qsjob/src/work/qap/`) does
+  not yet implement the `Manage` methods over its links: a real
+  `QAPCNN` answers `TCP1A5D` for each. The storage service already has
+  every function the operations stand for (`stgsvc/sbs.rs`, the system
+  value table, `cpp/ptfcmd.rs`, the disk configuration, the hardware
+  service's table, `ipl/power.rs`); wiring them is the next step before
+  version 7 ships.
 
 ## Frozen at V1R1M0
 

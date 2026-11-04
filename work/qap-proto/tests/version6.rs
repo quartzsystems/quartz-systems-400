@@ -205,7 +205,7 @@ fn stat_body() {
 
 #[test]
 fn version_6_values() {
-    assert_eq!(VERSION, 6);
+    const { assert!(VERSION >= 6) };
     assert_eq!(encode(&Service::Messages), [7]);
     assert_eq!(Service::Messages.since(), 6);
     let names = [
@@ -232,7 +232,7 @@ fn version_6_values() {
     for v in 1..=5 {
         assert!(!Service::of_version(v).contains(&Service::Messages));
     }
-    assert_eq!(Service::of_version(6), Service::ALL.to_vec());
+    assert_eq!(Service::of_version(6), Service::ALL[..8].to_vec());
     // Version 6 adds no status.
     assert_eq!(Status::ALL.len(), 16);
     assert!(Status::ALL.iter().all(|s| s.since() <= 5));
@@ -274,7 +274,7 @@ fn negotiation_of_1_to_6() {
         assert_eq!(choose_version(1, max, VERSION), Some(max));
         assert_eq!(choose_version(max, max, VERSION), Some(max));
     }
-    assert_eq!(choose_version(1, 9, VERSION), Some(6));
-    assert_eq!(choose_version(6, 6, VERSION), Some(6));
-    assert_eq!(choose_version(7, 9, VERSION), None);
+    assert_eq!(choose_version(1, 9, 6), Some(6));
+    assert_eq!(choose_version(6, 6, 6), Some(6));
+    assert_eq!(choose_version(7, 9, 6), None);
 }

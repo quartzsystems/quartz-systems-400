@@ -13,6 +13,10 @@ use std::sync::Arc;
 
 use ifs::client::IfsClient;
 use qap_proto::ops::command::{CommandDefinition, CommandReply};
+use qap_proto::ops::manage::{
+    DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType, SetSystemValue, Subsystem,
+    SystemValue, SystemValues,
+};
 use qap_proto::ops::messages::{ListMessages, Messages, RemoveMessages, ReplyMessage, SendMessage, Sent};
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
@@ -26,6 +30,7 @@ use qap_proto::ops::system::SystemInfo;
 use qap_proto::types::ObjectName;
 use qap_proto::{Secret, ServerMessage, Status, Token};
 
+use crate::manage::ExitRequest;
 use crate::sessions::EndedBy;
 use crate::sql::{SqlResult, SqlStop};
 
@@ -270,6 +275,59 @@ pub trait ThreadHost {
     /// profile's own queue.
     fn send_message(&mut self, _req: &SendMessage) -> Result<Sent, Refusal> {
         Err(no_database(self.message(NO_MESSAGES, &[])))
+    }
+
+    /// Ask the exit programs registered on `point` with `format`
+    /// whether `req` may run (version 7); a refusal is the status and
+    /// message the client gets (`NotAuthorized`, [`crate::manage::EXIT_REFUSED`]).
+    /// A host without exit programs allows everything.
+    fn exit_allows(&mut self, _point: &str, _format: &str, _req: &ExitRequest) -> Result<(), Refusal> {
+        Ok(())
+    }
+    /// Subsystem descriptions of `library` (`*ALL`, `*LIBL`) and their
+    /// states, as `WRKSBS` lists them: active first, then by name. Every
+    /// management method answers `Error` with [`crate::manage::NO_MANAGE`]
+    /// unless the host has them.
+    fn subsystems(&mut self, _library: &str) -> Result<Vec<Subsystem>, Refusal> {
+        Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
+    }
+    /// `STRSBS`.
+    fn start_subsystem(&mut self, _sbsd: &ObjectName) -> Result<(), Refusal> {
+        Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
+    }
+    /// `ENDSBS`.
+    fn end_subsystem(&mut self, _req: &EndSubsystem) -> Result<(), Refusal> {
+        Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
+    }
+    /// System values by name (all when `names` is empty), as
+    /// `RTVSYSVAL` reads them.
+    fn system_values(&mut self, _names: &[String]) -> Result<SystemValues, Refusal> {
+        Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
+    }
+    /// `CHGSYSVAL`; the value as it now is.
+    fn set_system_value(&mut self, _req: &SetSystemValue) -> Result<SystemValue, Refusal> {
+        Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
+    }
+    /// PTFs of `product` (`*ALL`), as `DSPPTF` lists them.
+    fn ptfs(&mut self, _product: &str) -> Result<Vec<Ptf>, Refusal> {
+        Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
+    }
+    /// Disk units and ASPs, as `WRKDSKSTS` and DST show them.
+    fn disk_units(&mut self) -> Result<DiskUnits, Refusal> {
+        Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
+    }
+    /// Hardware resources of a type, as `WRKHDWRSC` lists them.
+    fn hardware_resources(&mut self, _kind: ResourceType) -> Result<HardwareResources, Refusal> {
+        Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
+    }
+    /// The IPL's state and the last SRC.
+    fn ipl_status(&mut self) -> Result<IplStatus, Refusal> {
+        Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
+    }
+    /// `PWRDWNSYS`: started once answered; the connection then ends
+    /// with the server.
+    fn power_down(&mut self, _req: &PowerDown) -> Result<(), Refusal> {
+        Err(no_database(self.message(crate::manage::NO_MANAGE, &[])))
     }
 }
 

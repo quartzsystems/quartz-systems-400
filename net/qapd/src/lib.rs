@@ -23,6 +23,7 @@
 //! - [`spool`]: `ReadSpooledFile` over a file's data.
 //! - [`files`]: the `Ifs` service over an `IfsClient`.
 //! - [`sql`]: the `Sql` service's answers and cancel rules.
+//! - [`manage`]: the `Manage` service (version 7, draft) and its exit point.
 //! - [`sessions`], [`tickets`]: the storage service's tables.
 //! - [`testing`]: a system in memory for tests, QS/400 Access's too.
 
@@ -32,6 +33,7 @@
 pub mod files;
 pub mod frames;
 pub mod host;
+pub mod manage;
 pub mod sessions;
 pub mod spool;
 pub mod sql;

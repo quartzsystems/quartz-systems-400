@@ -8,6 +8,7 @@
 pub mod command;
 pub mod connection;
 pub mod ifs;
+pub mod manage;
 pub mod messages;
 pub mod signon;
 pub mod spool;
@@ -118,11 +119,31 @@ pub enum Op {
     UnwatchSpool,
     /// `Ifs` 9: one entry and its change counter (version 6).
     Stat,
+    /// `Manage` 1: subsystems and their states (version 7).
+    ListSubsystems,
+    /// `Manage` 2: start a subsystem (version 7).
+    StartSubsystem,
+    /// `Manage` 3: end a subsystem, or all (version 7).
+    EndSubsystem,
+    /// `Manage` 4: system values (version 7).
+    GetSystemValues,
+    /// `Manage` 5: change a system value (version 7).
+    SetSystemValue,
+    /// `Manage` 6: PTFs (version 7).
+    ListPtfs,
+    /// `Manage` 7: disk units and ASPs (version 7).
+    ListDiskUnits,
+    /// `Manage` 8: hardware resources of a type (version 7).
+    ListHardwareResources,
+    /// `Manage` 9: the IPL's state and the last SRC (version 7).
+    IplStatus,
+    /// `Manage` 10: power down, or restart (version 7).
+    PowerDown,
 }
 
 impl Op {
     /// Every operation.
-    pub const ALL: [Op; 49] = [
+    pub const ALL: [Op; 59] = [
         Op::Hello,
         Op::Ping,
         Op::SignOn,
@@ -172,6 +193,16 @@ impl Op {
         Op::WatchSpool,
         Op::UnwatchSpool,
         Op::Stat,
+        Op::ListSubsystems,
+        Op::StartSubsystem,
+        Op::EndSubsystem,
+        Op::GetSystemValues,
+        Op::SetSystemValue,
+        Op::ListPtfs,
+        Op::ListDiskUnits,
+        Op::ListHardwareResources,
+        Op::IplStatus,
+        Op::PowerDown,
     ];
 
     /// Its service and code.
@@ -227,6 +258,16 @@ impl Op {
             Op::WatchSpool => (Service::Spool, 8),
             Op::UnwatchSpool => (Service::Spool, 9),
             Op::Stat => (Service::Ifs, 9),
+            Op::ListSubsystems => (Service::Manage, 1),
+            Op::StartSubsystem => (Service::Manage, 2),
+            Op::EndSubsystem => (Service::Manage, 3),
+            Op::GetSystemValues => (Service::Manage, 4),
+            Op::SetSystemValue => (Service::Manage, 5),
+            Op::ListPtfs => (Service::Manage, 6),
+            Op::ListDiskUnits => (Service::Manage, 7),
+            Op::ListHardwareResources => (Service::Manage, 8),
+            Op::IplStatus => (Service::Manage, 9),
+            Op::PowerDown => (Service::Manage, 10),
         }
     }
 
@@ -273,6 +314,16 @@ impl Op {
             | Op::WatchSpool
             | Op::UnwatchSpool
             | Op::Stat => 6,
+            Op::ListSubsystems
+            | Op::StartSubsystem
+            | Op::EndSubsystem
+            | Op::GetSystemValues
+            | Op::SetSystemValue
+            | Op::ListPtfs
+            | Op::ListDiskUnits
+            | Op::ListHardwareResources
+            | Op::IplStatus
+            | Op::PowerDown => 7,
         }
     }
 

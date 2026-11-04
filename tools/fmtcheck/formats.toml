@@ -185,6 +185,7 @@ files = [
     "work/qap-proto/src/ops/command.rs",
     "work/qap-proto/src/ops/connection.rs",
     "work/qap-proto/src/ops/ifs.rs",
+    "work/qap-proto/src/ops/manage.rs",
     "work/qap-proto/src/ops/messages.rs",
     "work/qap-proto/src/ops/signon.rs",
     "work/qap-proto/src/ops/spool.rs",

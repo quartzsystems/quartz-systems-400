@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! Version negotiation (docs/QAP.md, "Compatibility of new values"):
-//! the server speaks 1 to 6 and picks the highest both sides do; a
+//! the server speaks 1 to 7 and picks the highest both sides do; a
 //! version-1 client sees exactly the version-1 protocol.
 
 mod common;
@@ -16,7 +16,7 @@ use common::{cfg, start};
 
 #[test]
 fn the_highest_common_version() {
-    for (min, max, want) in [(1, 1, 1), (1, 2, 2), (2, 2, 2), (1, 3, 3), (3, 3, 3), (1, 4, 4), (4, 4, 4), (1, 5, 5), (5, 5, 5), (1, 6, 6), (6, 6, 6), (1, 9, 6), (3, 9, 6)] {
+    for (min, max, want) in [(1, 1, 1), (1, 2, 2), (2, 2, 2), (1, 3, 3), (3, 3, 3), (1, 4, 4), (4, 4, 4), (1, 5, 5), (5, 5, 5), (1, 6, 6), (6, 6, 6), (1, 7, 7), (7, 7, 7), (1, 9, 7), (3, 9, 7)] {
         let mut r = start(cfg());
         let h: HelloReply = r.client.hello_range(min, max).body_as().unwrap();
         assert_eq!(h.version, want, "{min}..{max}");
@@ -26,7 +26,7 @@ fn the_highest_common_version() {
     let refused = r.client.call(
         Op::Hello,
         &Hello {
-            min_version: 7,
+            min_version: 8,
             max_version: 9,
             ..Hello::default()
         },

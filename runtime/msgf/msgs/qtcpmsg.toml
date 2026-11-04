@@ -846,3 +846,24 @@ sev = 40
 text = "Message queues are not available through this QAP server."
 help = "The server has no message queue support. Use a display session to work with messages."
 vars = []
+
+[[msg]]
+id = "TCP1A5D"
+sev = 40
+text = "System management is not available through this QAP server."
+help = "The server does not offer the Manage service's operations. Use the system's commands from a display session or the service console instead."
+vars = []
+
+[[msg]]
+id = "TCP1A5E"
+sev = 40
+text = "Exit program &1 in &2 refused the request."
+help = "A program registered on exit point QS400_QAP_MGMT did not allow this management request. Ask the security officer which requests the program allows; WRKREGINF shows the programs."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "TCP1A5F"
+sev = 40
+text = "Value &2 is not valid for system value &1."
+help = "The system value takes only values of its type and, for some, only the values listed for it. Check the value with WRKSYSVAL and try again."
+vars = ["*CHAR 10", "*CHAR *VARY 2"]

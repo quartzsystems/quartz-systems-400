@@ -277,6 +277,16 @@ static ROWS: &[Row] = &[
         Some(("QSYS", "QTVADDP", "QTVRMVP")),
         "Telnet session end",
     ),
+    // QAP management (docs/QAP.md, version 7): the host servers' two
+    // parameters.
+    row(
+        "QS400_QAP_MGMT",
+        "QAPX0100",
+        HOST,
+        Some(1),
+        None,
+        "QAP system management requests",
+    ),
 ];
 
 /// The shipped points, registered and without programs.

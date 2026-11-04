@@ -120,7 +120,7 @@ pub const HOST_FORMATS: &[&str] = &[
 pub fn known() -> Vec<&'static str> {
     let mut v = HOST_FORMATS.to_vec();
     v.extend([
-        "VLRQ0100", "TCPL0100", "TCPL0200", "TCPL0300", "INIT0100", "TERM0100",
+        "VLRQ0100", "TCPL0100", "TCPL0200", "TCPL0300", "INIT0100", "TERM0100", "QAPX0100",
     ]);
     v
 }
