@@ -55,7 +55,6 @@ pub struct Collector {
     /// The collection in progress.
     pub active: Option<Active>,
     adjust: Option<(Instant, Sample)>,
-    ipl_adjusted: bool,
     /// Each pool's defined size and level (`CHGSHRPOOL`, the IPL) and
     /// what `QPFRADJ` last set.
     defined: std::collections::BTreeMap<String, (u64, u32)>,
@@ -352,16 +351,11 @@ pub fn tick(system: &mut System) {
     adjust_tick(system);
 }
 
-/// `QPFRADJ`: at the first tick of an IPL with 1 or 2, and every minute
-/// with 2 or 3.
+/// `QPFRADJ` 2 and 3: every minute. (1 and 2 adjust at IPL on IBM's
+/// systems; here the pools start at their defined sizes, which are the
+/// cgroups' limits, so there is nothing to adjust before data arrives.)
 fn adjust_tick(system: &mut System) {
     let mode = sysval_text(system, "QPFRADJ");
-    if !system.stats.perf.ipl_adjusted {
-        system.stats.perf.ipl_adjusted = true;
-        if matches!(mode.as_str(), "1" | "2") {
-            ipl_adjust(system);
-        }
-    }
     if !matches!(mode.as_str(), "2" | "3") {
         system.stats.perf.adjust = None;
         return;
@@ -384,22 +378,6 @@ fn main_kb() -> u64 {
         .ok()
         .and_then(|t| wm::stats::mem_total_kb(&t))
         .unwrap_or(0)
-}
-
-/// At IPL: `*BASE` holds what the other pools leave of main storage.
-fn ipl_adjust(system: &mut System) {
-    let main = main_kb();
-    if main == 0 {
-        return;
-    }
-    let others: u64 = system.pools.info().iter().filter(|p| p.name != "*BASE").map(|p| p.size_kb).sum();
-    let Some(base) = system.pools.get("*BASE").cloned() else {
-        return;
-    };
-    let size = main.saturating_sub(others);
-    if size > base.size_kb {
-        system.pools.define("*BASE", size, base.actlvl);
-    }
 }
 
 /// The changes `perf::adjust` makes for interval `i`, applied.

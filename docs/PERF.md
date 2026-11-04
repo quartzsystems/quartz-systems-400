@@ -135,8 +135,7 @@ Fields this release fills (others are zero or blank):
 
 ## QPFRADJ
 
-`QPFRADJ` 1 and 2 give `*BASE` what the other pools leave of main
-storage at the first tick after IPL. 2 and 3 adjust the shared pools
+`QPFRADJ` 2 and 3 adjust the shared pools
 every minute (`work/perf/src/adjust.rs`): each pool has IBM's tuning
 defaults (`WRKSHRPOOL` F11: priority, minimum and maximum size, the
 fault guideline as a minimum, a part per active thread and a maximum);
@@ -174,6 +173,11 @@ basic assistance level is "Display System Status"; QS/400 shows the
 intermediate panel.
 
 ## Deviations
+
+- `QPFRADJ` 1 (and the IPL half of 2) adjusts nothing at IPL: the pools
+  start at their defined sizes, which are the cgroups' limits, and
+  there is no data before the first minute. Giving `*BASE` the rest of
+  main storage, as IBM's IPL does, would take its limit away.
 
 - The collector's interval is the configured one; IBM keeps separate
   intervals per category. All categories share the collection's.
