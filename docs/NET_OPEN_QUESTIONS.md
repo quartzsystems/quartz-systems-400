@@ -45,8 +45,16 @@ and how to settle each against the oracle.
    writes are not split at line ends. QS/400 does all of this. Open:
    the binary read after that write gave back only the eight bytes, not
    a padded record; QS/400 gives the record padded with blanks. A QSH
-   write to a data member (`PF-DTA`) left it empty on IBM; QS/400 writes
-   the bytes as fixed-length records.
+   write to a data member (`PF-DTA`) left it empty on pub400 (V7R5M0);
+   on the primary (V7R1M0, 2026-11-03, `probes/phase12/questions71.tn`,
+   `golden/verified/oracle71/questions/qsh-pfdta`) `echo hello >` a
+   member of a 20-byte `PF` in `QSTEST` ended with status 0 and `wc -c`
+   read back 20 bytes, one record: QS/400 writes the bytes as
+   fixed-length records, as V7R1M0 does, and keeps that. Still open: the
+   binary read after a binary write; QSH has no binary write, so it needs
+   a client (JTOpen `IFSFileOutputStream`, or an API program) against the
+   primary, which has no compiler but CL. `NEEDS-CODY`: run the 2026-10-29
+   JTOpen probe against the primary with a scratch member in `QSTEST`.
 9. **Fallback owner.** A node without metadata whose UID maps to no
    profile is owned by `QDFTOWN`. IBM's `RCLLNK` may assign `QDFTOWN`
    only for objects whose owner profile was deleted; nodes made outside
@@ -961,14 +969,26 @@ Captured from pub400 (V7R5M0): `golden/phase11/hwrsrc/` (`*STG`, `*PRC`,
 `*LWS`, `*CRP`, `*CSA`, the details of options 7 and 9, the `DSPFFD` of
 `QSYS/QARZALLF`). Open:
 
-1. **`DSPHDWRSC` is not authorized to the pub400 account**, so its
-   panels (`DSPTYPE`, `DSPTM`) and its printed list have no golden; they
-   are the lists without options. `*AHW` is refused on `WRKHDWRSC` by
-   the oracle (`wrkhdwrsc-ahw`), and our definition now refuses it too.
+1. **`DSPHDWRSC` panels.** Settled on the primary as `QSECOFR` (V7R1M0,
+   2026-11-03, `probes/phase12/goldens71-keys.tn`,
+   `golden/verified/oracle71/panels/dsphdwrsc-*`): they are not the
+   lists without options. Each type's list is `WRKHDWRSC`'s with
+   `Display` in the title and display options: `*CMN` and `*CRP`
+   5=Display configuration descriptions and 7, `*LWS` 5=Display
+   controller descriptions and 7, `*STG` 7 and 9=Display associated
+   resources with the type alone (no model), `*PRC` 7 with the type-model
+   and 23 columns of text, `*CSA` 7 with the system column; keys F3, F5,
+   F6=Print, F12. QS/400's panels `DCMN`, `DCRP`, `DLWS`, `DSTG`, `DPRC`,
+   `DCSA` follow them (`ui/uim/tests/hwrsrc_panels.rs`). The printed list
+   is still not captured. `*AHW` is refused on `WRKHDWRSC` by the oracle
+   (`wrkhdwrsc-ahw`), and our definition refuses it too.
 2. **The detail area below the location.** IBM shows the SPD/PCI bus
    address of its own machine; ours shows the PCI address, the SCSI
    address, a port's interface, adapter address and link, the parents
-   and the resources attached, in IBM's column layout.
+   and the resources attached, in IBM's column layout. Stays open: the
+   2026-11-03 session captured the lists, not option 7 on the primary;
+   its detail would show a POWER machine's bus addresses, which ours
+   (PCI and SCSI) cannot have anyway.
 3. **Option 5 of `*LWS`** ("Work with Controller Descriptions") has a
    layout of its own (`wrkhdwrsc-lws-ctl01-5`, F23=More options); ours
    shows the configuration description panel of `*CMN`.

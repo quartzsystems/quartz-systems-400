@@ -37,11 +37,16 @@ fn panel_of(spec: &TypeSpec, work: bool) -> (&'static str, &'static str) {
         (_, TypeCol::TypeModel) => "RSCTMS",
     };
     if work {
-        (spec.panel, list)
-    } else if spec.col == TypeCol::Type {
-        ("DSPTYPE", "RSCS")
-    } else {
-        ("DSPTM", "RSCTMS")
+        return (spec.panel, list);
+    }
+    // DSPHDWRSC: the display options; storage with the type alone.
+    match spec.ty {
+        "*CMN" => ("DCMN", "RSCS"),
+        "*CRP" => ("DCRP", "RSCS"),
+        "*LWS" => ("DLWS", "RSCS"),
+        "*STG" => ("DSTG", "RSCS"),
+        "*CSA" => ("DCSA", "RSCCSA"),
+        _ => ("DPRC", "RSCTMS"),
     }
 }
 
@@ -53,7 +58,8 @@ fn rows(rows: &[view::Row], list: &str) -> Rows {
             match list {
                 "RSCS" => vec![
                     v("RSCNAME", r.indented()),
-                    v("RSCTYPE", r.type_col.clone()),
+                    // The type of a type-model.
+                    v("RSCTYPE", r.type_col.trim().split('-').next().unwrap_or("").to_string()),
                     v("RSCSTS", r.status.clone()),
                     v("RSCTEXT", r.text.clone()),
                 ],

@@ -255,19 +255,107 @@ fn configuration_descriptions() {
     compare_in(&dir("phase10/cmn"), "wrkhdwrsc-cmn04-5", &render(&g, "CFGD", &d, &opts()).unwrap());
 }
 
-/// DSPHDWRSC has no golden (not authorized to the pub400 account): its
-/// panels are the lists' without options.
+// --- DSPHDWRSC against the V7R1M0 captures (golden/verified/oracle71/panels)
+
+const V71: &str = "verified/oracle71/panels";
+
 #[test]
-fn dsphdwrsc_has_the_list_without_options() {
+fn dsphdwrsc_cmn() {
     let g = shipped("QUIHDWRSC");
-    let mut d = kind("Hardware");
-    d.set_list("RSCTMS", tm_rows(&[("CMB01", "QB01-001", "Operational", "PCI Bridge")]));
-    let s = render(&g, "DSPTM", &d, &opts()).unwrap();
-    let rows = s.text_rows();
-    assert!(rows[0].contains("Display Hardware Resources"));
-    assert!(!rows.iter().any(|r| r.contains("Type options")));
-    assert!(rows.iter().any(|r| r.contains("CMB01            QB01-001   Operational")), "{rows:#?}");
-    assert!(rows[22].contains("F3=Exit") && rows[22].contains("F12=Cancel"));
+    let mut d = kind("Communication");
+    d.set_list(
+        "RSCS",
+        type_rows(&[
+            ("CMB02", "6B03", "Operational", "Comm Processor"),
+            ("  LIN03", "6B03", "Operational", "Comm Adapter"),
+            ("    CMN01", "6B03", "Operational", "Comm Port"),
+            ("CMB03", "6B03", "Operational", "Comm Processor"),
+            ("  LIN02", "6B03", "Operational", "Comm Adapter"),
+            ("    CMN02", "6B03", "Operational", "Comm Port"),
+            ("CMB04", "1819", "Operational", "Comm Processor"),
+            ("  LIN01", "1819", "Operational", "Comm Adapter"),
+            ("    CMN03", "1819", "Operational", "Ethernet Port"),
+            ("    CMN04", "1819", "Operational", "Ethernet Port"),
+            ("    CMN05", "1819", "Operational", "Ethernet Port"),
+            ("    CMN06", "1819", "Operational", "Ethernet Port"),
+            ("CMB05", "268C", "Operational", "Combined function IOP"),
+            ("  LIN04", "6B26", "Operational", "Comm Adapter"),
+        ]),
+    );
+    compare_in(&dir(V71), "dsphdwrsc-cmn", &render(&g, "DCMN", &d, &opts()).unwrap());
+}
+
+#[test]
+fn dsphdwrsc_stg() {
+    let g = shipped("QUIHDWRSC");
+    let mut d = kind("Storage");
+    d.set_list(
+        "RSCS",
+        type_rows(&[
+            ("CMB01", "57B8", "Operational", "Storage Controller"),
+            ("  DC01", "57B8", "Operational", "Storage Controller"),
+            ("CMB05", "268C", "Operational", "Combined function IOP"),
+            ("  DC02", "6B02", "Operational", "Storage Controller"),
+            ("CMB06", "572A", "Operational", "Storage Controller"),
+            ("  DC03", "572A", "Operational", "Storage Controller"),
+            ("CMB07", "57B7", "Operational", "Storage Controller"),
+            ("  DC04", "57B7", "Operational", "Storage Controller"),
+        ]),
+    );
+    compare_in(&dir(V71), "dsphdwrsc-stg", &render(&g, "DSTG", &d, &opts()).unwrap());
+}
+
+#[test]
+fn dsphdwrsc_prc() {
+    let g = shipped("QUIHDWRSC");
+    let mut d = kind("Processor");
+    let mut l = tm_rows(&[
+        ("CEC01", "8203-E4A", "Operational", "Main Card Enclosure"),
+        ("PN01", "296C", "Operational", "System Control Panel"),
+        ("MP01", "53DE", "Operational", "System Processor Card"),
+        ("PV01", "52A9", "Operational", "Processor Capacity Card"),
+        ("SP01", "53DE", "Operational", "Service Processor Card"),
+        ("BCC02", "", "Operational", "Bus Adapter"),
+        ("BCC03", "53DE", "Operational", "Bus Adapter"),
+        ("BCC04", "53DE", "Operational", "Bus Adapter"),
+        ("BCC05", "53DE", "Operational", "Bus Adapter"),
+        ("BCC06", "53DE", "Operational", "Bus Adapter"),
+        ("BCC07", "53DE", "Operational", "Bus Adapter"),
+        ("BCC08", "53DE", "Operational", "Bus Adapter"),
+        ("BCC09", "53DE", "Operational", "Bus Adapter"),
+        ("BCC10", "53DE", "Operational", "Bus Adapter"),
+        ("MS01", "31A6", "Operational", "4096MB Main Storage Card"),
+    ]);
+    l.complete = false;
+    l.total = None;
+    d.set_list("RSCTMS", l);
+    compare_in(&dir(V71), "dsphdwrsc-prc", &render(&g, "DPRC", &d, &opts()).unwrap());
+}
+
+#[test]
+fn dsphdwrsc_lws() {
+    let g = shipped("QUIHDWRSC");
+    let mut d = kind("Local Work Station");
+    d.set_list(
+        "RSCS",
+        type_rows(&[
+            ("CMB05", "268C", "Operational", "Combined function IOP"),
+            ("  CTL01", "6A59", "Operational", "Work Station Controller"),
+        ]),
+    );
+    compare_in(&dir(V71), "dsphdwrsc-lws", &render(&g, "DLWS", &d, &opts()).unwrap());
+}
+
+/// The empty lists: their text is Quartz's, compared for its place.
+#[test]
+fn dsphdwrsc_crp_and_csa_empty() {
+    let g = shipped("QUIHDWRSC");
+    let mut d = kind("Cryptographic");
+    d.set_list("RSCS", type_rows(&[]));
+    compare_but(V71, "dsphdwrsc-crp", &render(&g, "DCRP", &d, &opts()).unwrap(), 8);
+    let mut d = kind("Coupled");
+    d.set_list("RSCCSA", list(&[], 0));
+    compare_but(V71, "dsphdwrsc-csa", &render(&g, "DCSA", &d, &opts()).unwrap(), 8);
 }
 
 #[test]
