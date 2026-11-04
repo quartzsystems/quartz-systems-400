@@ -94,6 +94,12 @@ files = [
     "database/jrn/src/journal/mod.rs",
     "database/jrn/src/rcv/mod.rs",
 ]
+# Job names kept in memory for the entries, not stored.
+exclude = [
+    "database/jrn/src/entry/mod.rs::fn name_job",
+    "database/jrn/src/entry/mod.rs::fn named_jobs",
+    "database/jrn/src/entry/mod.rs::fn forget_job",
+]
 
 # --- Save, PTFs, the update protocol, licensed programs, media ---
 

@@ -32,7 +32,7 @@ hash = "2b691842bc5c9223a459aa85666583568379126ed72e7037ca36f281f432bb63"
 [format.journal]
 frozen_at = "V1R1M0"
 version = "1/1"
-hash = "0c0e54ad4b27006a3a2034a989a8cd4a3c3801b295d4ec00b4a6336918669254"
+hash = "7bd218412c6071dcbc26c5e38e5773e7099660944eca2d37588596da13f90233"
 
 [format.licpart]
 frozen_at = "V1R1M0"

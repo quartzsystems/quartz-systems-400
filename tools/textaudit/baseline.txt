@@ -2572,6 +2572,12 @@ lic/slic/src/stgsvc/acg.rs	CPD0074 ACGCDE: at most 15 characters
 lic/slic/src/stgsvc/acg.rs	CPF1070 job {job} not found
 lic/slic/src/stgsvc/acg.rs	CPF1070 job {job} not found
 lic/slic/src/stgsvc/acg.rs	CPF1070 job {number:06} not found
+lic/slic/src/stgsvc/census.rs	active {} attrs {} job_seen {} queued {} pending {} jobq_attach {} end_requests {} self_ending {}
+lic/slic/src/stgsvc/census.rs	connections {} jobs {} threads {threads}\njob log entries {log} wrapped {wrapped} open splfs {splfs} profile handles {handles} embedded SQL {sql} console SQL {console_sql} xfer {xfer}\n
+lic/slic/src/stgsvc/census.rs	page cache {} of {} pages
+lic/slic/src/stgsvc/census.rs	record locks {locks} journal job names {} host server tokens {} svc xfer {}
+lic/slic/src/stgsvc/census.rs	spool files {} writers {} sbs {} ended_sbs {} break_alloc {} break_pending {} joblog_pending {}
+lic/slic/src/stgsvc/census.rs	stats aux_io {} taken {} io {} txns {} inflight {}
 lic/slic/src/stgsvc/certs.rs	CPF9898 no certificate display {other}
 lic/slic/src/stgsvc/certs.rs	certificate key
 lic/slic/src/stgsvc/certs.rs	certificate store *SYSTEM created
