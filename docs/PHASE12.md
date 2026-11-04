@@ -176,7 +176,15 @@ ones pub400 refused can be captured there (V7R1M0).
 |---|---|
 | `0f7d4df1` | this file; `CLAUDE.md` rewritten for Phases 0 to 11 and every crate |
 | `de57ebda` | `tools/fmtcheck`: 23 frozen formats, their lock, `build test` runs it; "Frozen at V1R1M0" in ten format documents; version constants for the PTF header, `QAUDJRN` layouts, authority structures, host-server codec and oracle fixtures |
-| (next) | `RELEASE` is V1R1M0; install step 10 installs V1R0M0 media and upgrades it with user data; the kernel's drivers (§6); `tools/fuzz` and `build fuzz` (§9) |
+| `24d2be6c`, `73309c30` | the kernel's drivers (§6); `RELEASE` is V1R1M0, install step 10 installs V1R0M0 media and upgrades it with user data |
+| `c0b679b1`..`18df4491` | `tools/fuzz` (`qsfuzz`) and `build fuzz`; two crashes it found fixed (RPG reader, SQL nesting `SQL0101`); the corpora |
+| `bdb100b1` | `tools/kcbuild`, the Knowledge Center |
+| `febab6a3`, `16024e0a` | §1 DDM (server on 446, DDM files, remote RLA, server authentication entries) and `*WSCST` (tag language, the 153 shipped objects); QEMU 100, 101 |
+| `add7abc6`..`dd5b7698` | §1 RPG: `LIKEFILE`, `DATA-INTO`/`DATA-GEN` with shipped parsers and `QOAR` members, Open Access, `DUMP(A)` (`QPPGMDMP`); batches b17-b21 |
+| `554dfad1`..`cc0e5e61` | §1 CL `%OFFSET`, `ENDSBS *ALL` (restricted state, `SAVSYS` refused outside it), the MIGRATE and TODO markers, the "not available" sites; QEMU 103-105 |
+| `d0e9c79e`..`e3bb6e57` | §1 the "no golden" tests (19 captured on the primary), the layout ignores, the open questions the primary answers |
+| `d5ae3d31`..`34ed14e9` | §1 DHCPv4 client (`net/dhcp`), the response file over HTTP(S)/TFTP/PXE, telnet `INIT0100`, spooled bytes from the print server, SMTP relay credentials; QEMU 96-98, install 15 |
+| `6dc772b6`..`e66aabe3` | §3 Collection Services, `*MGTCOL`, `CRTPFRDTA`, the QAPM files, `WRKSYSACT` under QS00PT1, `QPFRADJ`; QEMU 106 |
 
 ## Format freeze (Section 2)
 
@@ -198,6 +206,7 @@ records a bump.
 
 ## Deviations
 
+- **Adding an object type is not a format change.** A new type code in `storage/store/src/obj/types.rs` (`*MGTCOL`, 0x002C) moves the frozen `store` hash; existing stores read the same, and a V1R0M0 system never opens a V1R1M0 store (the release rule refuses the downgrade). Such additions are recorded with `fmtcheck update --force` and named here; a change to an existing layout still needs the version bump.
 - **The fuzzer is ours.** `cargo fuzz` runs libFuzzer, which is C++
   compiled by `libfuzzer-sys`'s build script; that breaks the pure-Rust
   rule. `tools/fuzz` (`qsfuzz`) is coverage-guided the same way: the
