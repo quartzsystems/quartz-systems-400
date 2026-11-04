@@ -18,6 +18,7 @@ anyhow.workspace = true
 cmd = { path = "../../command/cmd", version = "0.1.0" }
 sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
 msgf = { path = "../../runtime/msgf", version = "0.1.0" }
+uim = { path = "../../ui/uim", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
 
 [lints]

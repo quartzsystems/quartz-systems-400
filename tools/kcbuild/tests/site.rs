@@ -31,6 +31,10 @@ fn builds_every_section() {
     }
     let page = std::fs::read_to_string(out.join("commands/CRTLIB.html")).unwrap();
     assert!(page.contains("<a id=\"LIB\"></a>LIB"));
+    // The command's and each parameter's help, from the help modules.
+    assert!(page.contains("Use the Create Library (CRTLIB) command"), "{page}");
+    assert!(page.contains("<a id=\"help-LIB\"></a>Library (LIB)"));
+    assert!(!page.contains("No help is written"));
     assert!(page.contains(&format!("QS/400 {}", release::RELEASE)));
     let _ = std::fs::remove_dir_all(&out);
 }

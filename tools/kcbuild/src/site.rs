@@ -14,6 +14,7 @@ use std::path::Path;
 use cmd::def::{CmdDef, Parm};
 use sys_cpps::Site;
 
+use crate::help::Help;
 use crate::md::{self, esc, inline};
 use crate::page::Page;
 
@@ -60,7 +61,7 @@ fn parm_type(p: &Parm) -> String {
     }
 }
 
-fn command_page(def: &CmdDef, entry: Option<&sys_cpps::Entry>) -> String {
+fn command_page(def: &CmdDef, entry: Option<&sys_cpps::Entry>, help: &mut Help) -> String {
     let mut b = String::new();
     let _ = writeln!(
         b,
@@ -74,6 +75,10 @@ fn command_page(def: &CmdDef, entry: Option<&sys_cpps::Entry>) -> String {
         entry.map_or("System (storage service)", |e| site_text(e.site)),
         def.thdsafe,
     );
+    // What the command does, from its help module (the prompter's F1).
+    if let Some(h) = help.module(def, None) {
+        b.push_str(&crate::help::html(&h.body));
+    }
     if let Some(e) = entry.filter(|e| e.site == Site::Stub) {
         let _ = writeln!(
             b,
@@ -103,7 +108,7 @@ fn command_page(def: &CmdDef, entry: Option<&sys_cpps::Entry>) -> String {
             }
             let _ = writeln!(
                 b,
-                "<tr{}><td class=\"mono\"><a id=\"{kw}\"></a>{kw}</td><td>{}</td><td class=\"mono\">{}</td>\
+                "<tr{}><td class=\"mono\"><a id=\"{kw}\"></a>{kw}</td><td><a href=\"#help-{kw}\">{}</a></td><td class=\"mono\">{}</td>\
                  <td class=\"mono\">{}</td><td class=\"mono\">{}</td><td>{}</td></tr>",
                 if i % 2 == 1 { " class=\"alt\"" } else { "" },
                 esc(prompt),
@@ -115,18 +120,33 @@ fn command_page(def: &CmdDef, entry: Option<&sys_cpps::Entry>) -> String {
             );
         }
         b.push_str("</table>\n");
+        // Each parameter's help, as the prompter shows it.
+        b.push_str("<h2>Parameter help</h2>\n");
+        for p in def.parms.iter().filter(|p| p.constant.is_none()) {
+            let _ = writeln!(
+                b,
+                "<h3><a id=\"help-{kw}\"></a>{} ({kw})</h3>",
+                esc(p.prompt_text()),
+                kw = esc(&p.kwd)
+            );
+            match help.module(def, Some(&p.kwd)) {
+                Some(h) => b.push_str(&crate::help::html(&h.body)),
+                None => b.push_str("<p>No help is written for this parameter.</p>\n"),
+            }
+        }
     }
     b
 }
 
 fn commands(out: &Path, n: &mut Summary) -> io::Result<Vec<(String, String, Site)>> {
     let mut rows = Vec::new();
+    let mut help = Help::default();
     for (name, source) in sys_cpps::defs::DEFS {
         let Ok(def) = cmd::source::compile(name, source) else {
             continue;
         };
         let entry = sys_cpps::entry(name);
-        let body = command_page(&def, entry);
+        let body = command_page(&def, entry, &mut help);
         let html = Page {
             depth: 1,
             crumb: &[("Command finder", "commands/index.html"), (name, "")],

@@ -10,6 +10,7 @@
 //! the install media carries it and `QS00AFW` serves it from
 //! `/QQS/ProdData/KnowledgeCenter`.
 
+mod help;
 pub mod md;
 mod page;
 mod site;
