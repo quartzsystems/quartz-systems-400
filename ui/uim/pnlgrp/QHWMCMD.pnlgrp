@@ -917,6 +917,41 @@ Collection Services.
 :PD.No.
 :EPARML.
 :EHELP.
+:HELP NAME=CHGACGCDE.Change Accounting Code (CHGACGCDE)
+:P.Use the Change Accounting Code (CHGACGCDE) command to change the
+accounting code of a job; with QACGLVL(*JOB) the resources used so far
+are journaled under the old code.
+:EHELP.
+:HELP NAME='CHGACGCDE/JOB'.Job name (JOB)
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *.
+:P.User&colon. the name can be qualified by it.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Number&colon. the name can be qualified by it.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 6 characters. The value must be from 000000 to 999999.
+:EPARML.
+:EHELP.
+:HELP NAME='CHGACGCDE/ACGCDE'.Accounting code (ACGCDE)
+:P.The accounting code the job's resources are charged to.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PK.*BLANK:EPK.
+:PD.Blanks&colon. no value.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 15 characters.
+:EPARML.
+:EHELP.
 :HELP NAME=CHGBCKUP.Change Backup Options (CHGBCKUP)
 :P.Use the Change Backup Options (CHGBCKUP) command to change what a
 backup saves and where.
@@ -5694,6 +5729,19 @@ library.
 :PD.The value of the job description.
 :PT.:PV.name:EPV.
 :PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='SBMJOB/ACGCDE'.Accounting code (ACGCDE)
+:P.The accounting code the job's resources are charged to.
+:PARML.
+:PT.:PK DEF.*CURRENT:EPK.
+:PD.The current one.
+:PT.:PK.*USRPRF:EPK.
+:PD.The value of the user profile the job runs under.
+:PT.:PK.*BLANK:EPK.
+:PD.Blanks&colon. no value.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 15 characters.
 :EPARML.
 :EHELP.
 :HELP NAME='SBMJOB/PRTTXT'.Print text (PRTTXT)

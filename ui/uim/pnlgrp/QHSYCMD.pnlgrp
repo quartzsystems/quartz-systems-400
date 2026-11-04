@@ -5701,6 +5701,23 @@ an application ID a user registered.
 :PD.Type up to 100 characters.
 :EPARML.
 :EHELP.
+:HELP NAME=QSSECCHK.Check System Security (QSSECCHK)
+:P.Use the Check System Security (QSSECCHK) command to check the running
+system against the security model and print pass, warning or failure for
+each check.
+:EHELP.
+:HELP NAME='QSSECCHK/OUTPUT'.Output (OUTPUT)
+:P.Where the command sends what it produces&colon. to the display of an
+interactive job, or to a spooled file of the job's printer file. Some
+commands can also write it to a database file.
+:PARML.
+:PT.:PK.*:EPK.
+:PD.The output is shown at the display of an interactive job, and
+printed for a batch job.
+:PT.:PK DEF.*PRINT:EPK.
+:PD.The output is printed with the job's spooled output.
+:EPARML.
+:EHELP.
 :HELP NAME=QSWRKAPPID.Work with Cert Applications (QSWRKAPPID)
 :P.Use the Work with Cert Applications (QSWRKAPPID) command to work with
 the certificate application IDs.

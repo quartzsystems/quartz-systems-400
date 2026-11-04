@@ -442,7 +442,9 @@ pub(super) fn hardware_resources(cx: &Ctx<'_>, kind: ResourceType) -> Result<Har
         return Ok(HardwareResources::default());
     };
     let mut parents: Vec<String> = Vec::new();
-    let resources = hwrsrc::view::list(&table, spec)
+    // The lists' words in the job's language, from QSTXTMSG.
+    let mut words = |id: &str, v: &[&str]| super::host::message(&mut cx.link(), id, v).text;
+    let resources = hwrsrc::view::list(&table, spec, &mut words)
         .into_iter()
         .map(|row| {
             parents.truncate(row.depth);

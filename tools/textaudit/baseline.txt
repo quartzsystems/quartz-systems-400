@@ -2566,6 +2566,12 @@ lic/slic/src/cpp/updcmd.rs	{SENT} problem {id} sent: {t}
 lic/slic/src/cpp/updcmd.rs	{SENT} test request answered by {}: {ticket}\n
 lic/slic/src/cpp/updcmd.rs	{m} is not known to the update service
 lic/slic/src/cpp/updcmd.rs	{out}{SENT} {sent} prepared problem reports sent\n
+lic/slic/src/stgsvc/acg.rs	Accounting code changed for job {number:06}/{}/{}.
+lic/slic/src/stgsvc/acg.rs	Accounting code not changed.
+lic/slic/src/stgsvc/acg.rs	CPD0074 ACGCDE: at most 15 characters
+lic/slic/src/stgsvc/acg.rs	CPF1070 job {job} not found
+lic/slic/src/stgsvc/acg.rs	CPF1070 job {job} not found
+lic/slic/src/stgsvc/acg.rs	CPF1070 job {number:06} not found
 lic/slic/src/stgsvc/certs.rs	CPF9898 no certificate display {other}
 lic/slic/src/stgsvc/certs.rs	certificate key
 lic/slic/src/stgsvc/certs.rs	certificate store *SYSTEM created
@@ -2985,6 +2991,8 @@ lic/slic/src/stgsvc/qap.rs	Not signed on.
 lic/slic/src/stgsvc/qap.rs	Password or user profile is not correct.
 lic/slic/src/stgsvc/qap.rs	The connection is signed on already.
 lic/slic/src/stgsvc/qap.rs	The connection is signed on already.
+lic/slic/src/stgsvc/qap/manage.rs	A power down of the system has already started.
+lic/slic/src/stgsvc/qap/manage.rs	power down the system
 lic/slic/src/stgsvc/qsh.rs	An environment variable {} is already at level *SYS.
 lic/slic/src/stgsvc/qsh.rs	System-level environment variables
 lic/slic/src/stgsvc/qsh.rs	The limit of {MAX_VARS} environment variables has been reached.
