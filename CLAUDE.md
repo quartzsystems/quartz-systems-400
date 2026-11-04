@@ -630,7 +630,7 @@ SIGKILL a job). Parameters are IBM-style `KEYWORD(value)`. Boot parameters: `qs4
 `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`, `qs400.pace=MS` (each IPL code and
 install step stays up this long; 400 by default, 0 for none).
 
-`QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on
+`QS400_JOBS=N` caps the kernel build's `make -j` (default: every core). `QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on
 `/mnt/c`; drvfs is far too slow for a kernel build). `-v` streams tool output;
 otherwise logs go to `target/logs/`.
 

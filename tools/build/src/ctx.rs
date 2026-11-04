@@ -24,7 +24,12 @@ impl Ctx {
     /// Discover paths and host parallelism.
     pub fn new(verbose: bool) -> Result<Self> {
         let paths = Paths::discover()?;
-        let jobs = std::thread::available_parallelism().map_or(1, NonZero::get);
+        // `QS400_JOBS` caps the kernel's `make -j` (a shared PC); else every core.
+        let jobs = std::env::var("QS400_JOBS")
+            .ok()
+            .and_then(|s| s.parse::<usize>().ok())
+            .filter(|&n| n > 0)
+            .unwrap_or_else(|| std::thread::available_parallelism().map_or(1, NonZero::get));
         Ok(Self {
             paths,
             verbose,
