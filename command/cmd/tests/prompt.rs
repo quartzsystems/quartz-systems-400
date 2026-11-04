@@ -221,3 +221,32 @@ fn crtsbsd_pmtctl_two_step() {
         Step::Done("CRTSBSD SBSD(QGPL/MYSBS) MAXJOBS(5)".into())
     );
 }
+
+#[test]
+fn help_key_names_the_parameter_under_the_cursor() {
+    let text = CRTLIB.replacen(
+        "MAXPOS(2)",
+        "MAXPOS(2) HLPPNLGRP(QHLICMD) HLPID(CRTLIB)",
+        1,
+    );
+    let mut src = MemSource::default();
+    src.add("CRTLIB", &text).unwrap();
+    let r = {
+        let mut env = Env::new(&mut src);
+        analyze(&mut env, "CRTLIB TESTLIB").unwrap()
+    };
+    let mut p = Prompter::new(&r);
+    let s = p.screen();
+    let lib = s.fields.first().expect("the LIB field");
+    let h = p.help(Some((lib.row, lib.col))).expect("help");
+    assert_eq!(h.module, "QHLICMD/CRTLIB/LIB");
+    assert!(!h.extended_first);
+    assert_eq!(h.extended[0], "QHLICMD/CRTLIB");
+    assert!(h.extended.contains(&"QHLICMD/CRTLIB/TEXT".to_string()));
+    let title = p.help(Some((1, 30))).expect("help");
+    assert!(title.extended_first);
+    assert_eq!(title.title, "Create Library - Help");
+    let mut env = Env::new(&mut src);
+    p.set_cursor(Some((lib.row, lib.col)));
+    assert!(matches!(p.key(1, &[], &mut env), Step::Help(_)));
+}

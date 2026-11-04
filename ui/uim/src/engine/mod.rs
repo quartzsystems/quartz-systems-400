@@ -462,7 +462,10 @@ pub struct Engine {
     /// (`QUISETSA`).
     pub cursor_field: Option<String>,
     /// The screen under a pop-up panel or help window.
-    pub(crate) under: Option<Screen>,
+    pub under: Option<Screen>,
+    /// Extended help (F2) for help shown with no panel, as the command
+    /// prompter's: its title and modules.
+    pub extended_help: Option<(String, Vec<String>)>,
     /// A menu option's help was shown: show the menu again.
     pub(crate) redisplay: bool,
 }
@@ -554,6 +557,7 @@ impl Engine {
             incomplete_returns: false,
             cursor_field: None,
             under: None,
+            extended_help: None,
             redisplay: false,
         }
     }

@@ -5,6 +5,7 @@
 /* QSDLTCRTS: delete a certificate store and its stash (Quartz        */
 /* extension).                                                        */
              CMD        PROMPT('Delete Certificate Store') MAXPOS(2) +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSDLTCRTS) +
                           ALLOW(*ALL)
              PARM       KWD(KEYSTORE) TYPE(*PNAME) LEN(256) MIN(1) +
                           SPCVAL((*SYSTEM) (*LCLCA)) CASE(*MIXED) +

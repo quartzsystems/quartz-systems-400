@@ -5,6 +5,7 @@
 /* QSWRKCRT: work with the certificates of a store (Quartz            */
 /* extension).                                                        */
              CMD        PROMPT('Work with Certificates') MAXPOS(1) +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSWRKCRT) +
                           ALLOW(*ALL)
              PARM       KWD(KEYSTORE) TYPE(*PNAME) LEN(256) DFT(*SYSTEM) +
                           SPCVAL((*SYSTEM) (*LCLCA)) CASE(*MIXED) +

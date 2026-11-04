@@ -5,6 +5,7 @@
 /* QSADDAPPID: register an application ID for certificates (Quartz    */
 /* extension).                                                        */
              CMD        PROMPT('Add Certificate Application') +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSADDAPPID) +
                           MAXPOS(2) ALLOW(*ALL)
              PARM       KWD(APPID) TYPE(*CHAR) LEN(100) MIN(1) +
                           CASE(*MIXED) PROMPT('Application ID')

@@ -26,6 +26,7 @@ pub mod generate;
 pub mod groups;
 pub mod messages;
 pub mod panels;
+pub mod phrasing;
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
@@ -188,6 +189,7 @@ pub fn audit(root: &Path) -> Result<Report> {
     report.categories.push(cmds);
     report.categories.push(parms);
     report.categories.push(messages::audit(root)?);
+    report.categories.push(phrasing::audit(root)?);
     Ok(report)
 }
 

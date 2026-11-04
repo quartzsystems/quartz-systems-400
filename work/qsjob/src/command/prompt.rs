@@ -7,7 +7,7 @@
 //! has a command string or was cancelled.
 
 use cmd::analyze::{Env, Setting};
-use cmd::prompt::{Prompter, Screen, Step};
+use cmd::prompt::{HelpRequest, Prompter, Screen, Step};
 use cmd::{Resolved, analyze};
 use mi::Job;
 use wm::ctl::Panel;
@@ -24,6 +24,7 @@ pub fn session(job: &mut Job, host: &Host, r: &Resolved) -> Result<Option<Resolv
         let Some((key, fields)) = host.wait_input(job) else {
             return Ok(None);
         };
+        p.set_cursor(host.cursor());
         let step = {
             let mut cmds = host.cmds.borrow_mut();
             let attrs = host.attrs();
@@ -39,6 +40,7 @@ pub fn session(job: &mut Job, host: &Host, r: &Resolved) -> Result<Option<Resolv
         };
         match step {
             Step::Show => {}
+            Step::Help(h) => show_help(host, &h, &screen),
             Step::Cancel => return Ok(None),
             Step::Done(text) => {
                 let mut cmds = host.cmds.borrow_mut();
@@ -65,6 +67,29 @@ pub fn session(job: &mut Job, host: &Host, r: &Resolved) -> Result<Option<Resolv
             }
         }
     }
+}
+
+/// Show the prompter's help (F1 field help in a window over the
+/// prompt, F2 extended help) until the operator leaves it.
+pub fn show_help(host: &Host, h: &HelpRequest, under: &Screen) {
+    use std::rc::Rc;
+    let mut term = crate::display::surface::Surface::new(host.clone());
+    let system = crate::display::dds::system_name(host);
+    let mut e = uim::engine::Engine::new(Rc::new(uim::PanelGroup::default()), &system);
+    let mut shown = uim::Screen::new(24, 80);
+    for (i, row) in under.rows.iter().enumerate() {
+        shown.put(i + 1, 1, uim::render::Attr::Normal, row.trim_end());
+    }
+    e.under = Some(shown);
+    if let Some((r, c)) = host.cursor() {
+        e.cursor = (usize::from(r), usize::from(c));
+    }
+    e.extended_help = Some((h.title.clone(), h.extended.clone()));
+    let _ = if h.extended_first {
+        e.show_help(&mut term, &h.extended, true, false)
+    } else {
+        e.show_help(&mut term, std::slice::from_ref(&h.module), false, false)
+    };
 }
 
 /// A prompter screen as a panel.

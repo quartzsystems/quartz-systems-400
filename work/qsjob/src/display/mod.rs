@@ -146,6 +146,8 @@ pub struct Display {
     pub device: String,
     /// The device shows 27x132; what is shown picks the mode.
     pub wide: bool,
+    /// Where the cursor was in the last record read, 1-based.
+    cursor: Option<(u8, u8)>,
 }
 
 impl Display {
@@ -203,7 +205,14 @@ impl Display {
             last: None,
             device: device.to_string(),
             wide: model.wide(),
+            cursor: None,
         })
+    }
+
+    /// Where the cursor was in the last record read, 1-based.
+    #[must_use]
+    pub fn cursor(&self) -> Option<(u8, u8)> {
+        self.cursor
     }
 
     /// Show a panel and open the keyboard.
@@ -281,6 +290,7 @@ impl Display {
             return key_of(flags_, 0).map(|k| (k, None));
         }
         let inb = self.model.accept(data)?;
+        self.cursor = Some((inb.row, inb.col));
         let k = key_of(flags_, inb.aid)?;
         Some((k, Some(inb)))
     }
@@ -292,6 +302,7 @@ impl Display {
             return key_of(flags_, 0).map(|k| (k, self.model.values()));
         }
         let inb = self.model.accept(data)?;
+        self.cursor = Some((inb.row, inb.col));
         let k = key_of(flags_, inb.aid)?;
         Some((k, self.model.values()))
     }

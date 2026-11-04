@@ -34,6 +34,24 @@ pub enum Step {
     Done(String),
     /// Cancelled (`F3`, `F12`): `CPF6801`.
     Cancel,
+    /// Help (`F1`, Help): show the modules, then the display again.
+    Help(HelpRequest),
+}
+
+/// What the Help key asks for: the help module of the parameter under
+/// the cursor (the command's on the title row or where no parameter
+/// is), and for extended help (`F2`) the command's module followed by
+/// every parameter's. Names are `[LIB/]GROUP/HLPID[/KWD]`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HelpRequest {
+    /// The module to show first.
+    pub module: String,
+    /// The modules of extended help, in order.
+    pub extended: Vec<String>,
+    /// The title of extended help.
+    pub title: String,
+    /// Show extended help at once (the cursor was on the title row).
+    pub extended_first: bool,
 }
 
 /// A window over the prompt: the choices of a field, the command
@@ -84,6 +102,8 @@ pub struct Prompter {
     label: Option<String>,
     /// A source line's label and comment (SEU's prompt of a CL line).
     source: Option<(String, String)>,
+    /// Where the cursor was when the last key came, 1-based.
+    cursor: Option<(u8, u8)>,
 }
 
 /// The parameter index of the label and comment fields of a source
@@ -157,7 +177,59 @@ impl Prompter {
             window: None,
             label: r.label.clone(),
             source: None,
+            cursor: None,
         }
+    }
+
+    /// Where the cursor was when the next key was pressed (Help uses it).
+    pub fn set_cursor(&mut self, cursor: Option<(u8, u8)>) {
+        self.cursor = cursor;
+    }
+
+    /// The help the Help key shows with the cursor at `cursor`; `None`
+    /// when the definition names no help.
+    #[must_use]
+    pub fn help(&self, cursor: Option<(u8, u8)>) -> Option<HelpRequest> {
+        let group = self.def.hlppnlgrp.as_ref()?;
+        let id = self.def.hlpid.clone().unwrap_or_else(|| self.def.name.clone());
+        let base = if group.lib.is_empty() || group.lib.starts_with('*') {
+            format!("{}/{id}", group.name)
+        } else {
+            format!("{}/{}/{id}", group.lib, group.name)
+        };
+        let mut extended = vec![base.clone()];
+        extended.extend(
+            self.def
+                .parms
+                .iter()
+                .filter(|p| p.constant.is_none())
+                .map(|p| format!("{base}/{}", p.kwd)),
+        );
+        let shown = self.screen();
+        // The parameter of the field on the cursor's row, or of the
+        // nearest field above it (a list's or group's heading row).
+        let last_row = u8::try_from(FIRST_ROW + PAGE_ROWS).unwrap_or(21);
+        let parm = cursor.filter(|(r, _)| (2..last_row).contains(r)).and_then(|(row, _)| {
+            shown
+                .fields
+                .iter()
+                .filter(|f| f.row <= row)
+                .filter_map(|f| f.path.as_ref().map(|p| (f.row, p.parm)))
+                .filter(|(_, p)| *p != SOURCE_PARM)
+                .max_by_key(|(r, _)| *r)
+                .map(|(_, p)| p)
+        });
+        let title_row = cursor.is_some_and(|(r, _)| r == 1);
+        let module = match parm.and_then(|i| self.def.parms.get(i)) {
+            Some(p) if !title_row => format!("{base}/{}", p.kwd),
+            _ => base,
+        };
+        Some(HelpRequest {
+            module,
+            extended,
+            title: format!("{} - Help", self.def.prompt),
+            extended_first: title_row || parm.is_none(),
+        })
     }
 
     /// A session over a line of CL source (SEU's `F4`): the display
@@ -505,6 +577,13 @@ impl Prompter {
                 self.window = Some(Window::Help);
                 Step::Show
             }
+            1 | 27 => match self.help(self.cursor) {
+                Some(h) => Step::Help(h),
+                None => {
+                    self.message = "No help is available for this command.".into();
+                    Step::Show
+                }
+            },
             14 => {
                 self.window = Some(Window::Command(self.command_text()));
                 Step::Show

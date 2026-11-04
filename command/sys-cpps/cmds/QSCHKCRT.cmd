@@ -5,4 +5,5 @@
 /* QSCHKCRT: check the system's certificates for expiry now; warnings */
 /* go to QSYSOPR (Quartz extension).                                  */
              CMD        PROMPT('Check Certificate Expiry') MAXPOS(0) +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSCHKCRT) +
                           ALLOW(*ALL)

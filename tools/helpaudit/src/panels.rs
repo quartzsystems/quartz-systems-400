@@ -36,6 +36,7 @@ fn text(spans: &[Span]) -> String {
     Span::plain(spans).trim().to_string()
 }
 
+#[allow(clippy::many_single_char_names)] // the model's usual names
 fn items(
     groups: &Groups,
     g: &PanelGroup,

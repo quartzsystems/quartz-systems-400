@@ -5,6 +5,7 @@
 /* QSCRTCRTS: create a certificate store (Quartz extension).          */
 /* KEYSTORE(*LCLCA) makes the local CA.                               */
              CMD        PROMPT('Create Certificate Store') MAXPOS(2) +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSCRTCRTS) +
                           ALLOW(*ALL)
              PARM       KWD(KEYSTORE) TYPE(*PNAME) LEN(256) MIN(1) +
                           SPCVAL((*SYSTEM) (*LCLCA)) CASE(*MIXED) +

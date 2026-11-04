@@ -5,6 +5,7 @@
 /* QSIMPCRT: import certificates and keys from a PEM or PKCS#12       */
 /* stream file (Quartz extension).                                    */
              CMD        PROMPT('Import Certificate') MAXPOS(2) +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSIMPCRT) +
                           ALLOW(*ALL)
              PARM       KWD(FROMSTMF) TYPE(*PNAME) LEN(5000) MIN(1) +
                           CASE(*MIXED) PROMPT('Stream file to import')

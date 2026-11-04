@@ -5,6 +5,7 @@
 /* QSEXPCRT: export a certificate, with its key, or a request to a    */
 /* stream file (Quartz extension).                                    */
              CMD        PROMPT('Export Certificate') MAXPOS(2) +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSEXPCRT) +
                           ALLOW(*ALL)
              PARM       KWD(LABEL) TYPE(*CHAR) LEN(64) MIN(1) +
                           CASE(*MIXED) PROMPT('Certificate label')

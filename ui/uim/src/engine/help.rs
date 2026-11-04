@@ -44,27 +44,42 @@ impl Engine {
     /// `GROUP/MODULE` or `LIB/GROUP/MODULE` through the terminal.
     fn resolve<T: Terminal + ?Sized>(&self, term: &mut T, name: &str) -> Option<Part> {
         let name = name.trim().to_ascii_uppercase();
-        let parts: Vec<&str> = name.split('/').collect();
-        let (group, module) = match parts.as_slice() {
-            [m] => {
-                if self.group.help(m).is_some() {
-                    (Rc::clone(&self.group), (*m).to_string())
-                } else {
-                    let imp = self
-                        .group
-                        .imports
-                        .iter()
-                        .filter(|i| i.name == *m || i.name == "*")
-                        .find_map(|i| {
-                            let (lib, grp) = split_qualified(&i.pnlgrp);
-                            term.group(&lib, &grp).filter(|g| g.help(m).is_some())
-                        })?;
-                    (imp, (*m).to_string())
-                }
+        let local = || -> Option<Rc<PanelGroup>> {
+            if self.group.help(&name).is_some() {
+                return Some(Rc::clone(&self.group));
             }
-            [g, m] => (term.group("*LIBL", g)?, (*m).to_string()),
-            [l, g, m] => (term.group(l, g)?, (*m).to_string()),
-            _ => return None,
+            None
+        };
+        let imported = |term: &mut T| -> Option<Rc<PanelGroup>> {
+            self.group
+                .imports
+                .iter()
+                .filter(|i| i.name == name || i.name == "*")
+                .find_map(|i| {
+                    let (lib, grp) = split_qualified(&i.pnlgrp);
+                    term.group(&lib, &grp).filter(|g| g.help(&name).is_some())
+                })
+        };
+        let parts: Vec<&str> = name.split('/').collect();
+        let (group, module) = if let Some(g) = local() {
+            (g, name.clone())
+        } else if let Some(g) = imported(term) {
+            (g, name.clone())
+        } else {
+            // A module name may hold `/` itself (`CMD/KWD`, command help):
+            // `GROUP/MODULE...` first, then `LIB/GROUP/MODULE...`.
+            let [g, rest @ ..] = parts.as_slice() else {
+                return None;
+            };
+            if rest.is_empty() {
+                return None;
+            }
+            let module = rest.join("/");
+            match term.group("*LIBL", g).filter(|gr| gr.help(&module).is_some()) {
+                Some(gr) => (gr, module),
+                None if rest.len() >= 2 => (term.group(g, rest[0])?, rest[1..].join("/")),
+                None => return None,
+            }
         };
         let h = group.help(&module)?;
         Some(Part {
@@ -310,20 +325,25 @@ impl Engine {
                     }
                 }
                 Key::F(2) if !frame.extended => {
-                    let Some(panel) = panel else {
-                        message = Some(LineMsg::error(NO_HELP, &[]));
-                        continue;
+                    let (title, names) = match (panel, &self.extended_help) {
+                        (Some(panel), _) => (
+                            panel
+                                .helptitle
+                                .clone()
+                                .unwrap_or_else(|| help_title(&Span::plain(&panel.title))),
+                            extended_modules(&self.group, panel),
+                        ),
+                        (None, Some((t, n))) => (t.clone(), n.clone()),
+                        (None, None) => {
+                            message = Some(LineMsg::error(NO_HELP, &[]));
+                            continue;
+                        }
                     };
-                    let names = extended_modules(&self.group, panel);
                     let parts: Vec<Part> =
                         names.iter().filter_map(|n| self.resolve(term, n)).collect();
                     if parts.is_empty() {
                         message = Some(LineMsg::error(NO_HELP, &[]));
                     } else {
-                        let title = panel
-                            .helptitle
-                            .clone()
-                            .unwrap_or_else(|| help_title(&Span::plain(&panel.title)));
                         stack.push(Frame {
                             parts,
                             title,

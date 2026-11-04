@@ -5,6 +5,7 @@
 /* QSWRKAPPID: work with the certificate application IDs (Quartz      */
 /* extension).                                                        */
              CMD        PROMPT('Work with Cert Applications') +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSWRKAPPID) +
                           MAXPOS(1) ALLOW(*ALL)
              PARM       KWD(APPID) TYPE(*CHAR) LEN(100) DFT(*ALL) +
                           SPCVAL((*ALL)) CASE(*MIXED) PROMPT('Application ID')

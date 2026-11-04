@@ -4,7 +4,8 @@
 
 /* CRTSCHIDX: create an empty search index for help. */
              CMD        PROMPT('Create Search Index') MAXPOS(2) +
-                          ALLOW(*ALL)
+                          ALLOW(*ALL) +
+                          HLPPNLGRP(QHUICMD) HLPID(CRTSCHIDX)
              PARM       KWD(SCHIDX) TYPE(Q1) MIN(1) PROMPT('Search index')
              PARM       KWD(TEXT) TYPE(*CHAR) LEN(50) DFT(*BLANK) +
                           SPCVAL((*BLANK ' ')) +

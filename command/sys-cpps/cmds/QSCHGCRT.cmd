@@ -5,6 +5,7 @@
 /* QSCHGCRT: change a certificate's label, trust, default or text     */
 /* (Quartz extension).                                                */
              CMD        PROMPT('Change Certificate') MAXPOS(1) +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSCHGCRT) +
                           ALLOW(*ALL)
              PARM       KWD(LABEL) TYPE(*CHAR) LEN(64) MIN(1) +
                           CASE(*MIXED) PROMPT('Certificate label')

@@ -121,10 +121,12 @@ pub fn prompt(ctx: &mut Ctx<'_>, s: &mut Session, t: Target) {
     };
     let mut p = Prompter::for_source_line(&r, &comment);
     let done = loop {
-        ctx.host.show(panel(&p.screen()));
+        let screen = p.screen();
+        ctx.host.show(panel(&screen));
         let Some((key, fields)) = ctx.host.wait_input(ctx.job) else {
             return;
         };
+        p.set_cursor(ctx.host.cursor());
         let step = {
             let mut cmds = ctx.host.cmds.borrow_mut();
             let mut env = Env::new(&mut *cmds);
@@ -136,6 +138,7 @@ pub fn prompt(ctx: &mut Ctx<'_>, s: &mut Session, t: Target) {
         };
         match step {
             Step::Show => {}
+            Step::Help(h) => crate::command::prompt::show_help(ctx.host, &h, &screen),
             Step::Cancel => return,
             Step::Done(t) => break t,
         }

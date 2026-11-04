@@ -5,6 +5,7 @@
 /* CHGQAPA: the QAP server's attributes (docs/QAP.md), kept in the      */
 /* TCP/IP server table in QUSRSYS.                                      */
              CMD        PROMPT('Change QAP Attributes') MAXPOS(1) +
+                          HLPPNLGRP(QHTOCCMD) HLPID(CHGQAPA) +
                           ALLOW(*ALL)
              PARM       KWD(AUTOSTART) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*SAME) VALUES(*YES *NO *SAME) +

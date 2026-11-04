@@ -71,6 +71,14 @@ fn about(def: &CmdDef, source: &str, dict: &Dict) -> String {
     }
     let lead = format!("The {} ({}) command", def.prompt, def.name);
     match comment_sentence(source, &def.name) {
+        Some(s) if s.contains("(Quartz extension)") => format!(
+            "Use the {} ({}) command to {}.
+
+This command is a QS/400 extension.",
+            def.prompt,
+            def.name,
+            s.replace(" (Quartz extension)", "")
+        ),
         Some(s) => {
             let first = s.split_whitespace().next().unwrap_or_default();
             if matches!(first, "the" | "a" | "an") {
@@ -103,9 +111,29 @@ fn opening(def: &CmdDef, p: &Parm, dict: &Dict) -> String {
         return t.to_string();
     }
     if let Some(t) = dict.keywords.get(&p.kwd) {
-        return t.to_string();
+        return t.clone();
     }
     let prompt = p.prompt_text();
+    if p.rtnval {
+        let what = prompt
+            .strip_prefix("CL var for ")
+            .map(|w| w.split(" (").next().unwrap_or(w).trim().to_string());
+        let l = p.length();
+        let kind = match p.ty {
+            ParmType::Dec => format!("a decimal variable of {} digits, {} after the point", l.len, l.dec),
+            ParmType::Int2 | ParmType::Int4 | ParmType::Uint2 | ParmType::Uint4 => {
+                "an integer variable".to_string()
+            }
+            ParmType::Lgl => "a logical variable".to_string(),
+            _ => format!("a character variable of at least {} characters", l.len),
+        };
+        return match what {
+            Some(w) => format!(
+                "The CL variable that receives the value of {w}. Give {kind}."
+            ),
+            None => format!("The CL variable that receives the {}. Give {kind}.", lc_first(prompt)),
+        };
+    }
     if yes_no(p) {
         return format!("Whether to {}.", lc_first(prompt));
     }
@@ -166,10 +194,9 @@ fn rel_text(op: RelOp) -> &'static str {
         RelOp::Eq => "equal to",
         RelOp::Ne => "other than",
         RelOp::Gt => "greater than",
-        RelOp::Ge => "at least",
+        RelOp::Ge | RelOp::Nl => "at least",
         RelOp::Lt => "less than",
         RelOp::Le | RelOp::Ng => "at most",
-        RelOp::Nl => "at least",
     }
 }
 
@@ -197,26 +224,28 @@ fn choices(def: &CmdDef, kwd: &str, p: &Parm, dict: &Dict, b: &mut String) {
         .chain(&p.spcval)
         .map(|s| s.from.clone())
         .chain(p.values.iter().filter(|v| v.starts_with('*')).cloned());
-    for v in specials {
+    let all: Vec<String> = specials.collect();
+    let types = dict.are_types(all.iter().map(String::as_str));
+    for v in all {
         if seen.contains(&v) {
             continue;
         }
         seen.push(v.clone());
-        match dict.value(&def.name, kwd, &v) {
+        match dict.value(&def.name, kwd, &v, types) {
             Some(t) => entries.push((v, t.to_string())),
             None => unexplained.push(v),
         }
     }
     let plain: Vec<&String> = p.values.iter().filter(|v| !v.starts_with('*')).collect();
-    let typed = if p.rstd { None } else { type_sentence(p) };
-    if !entries.is_empty() || typed.is_some() {
+    let kind = if p.rstd { None } else { type_sentence(p) };
+    if !entries.is_empty() || kind.is_some() {
         b.push_str(":PARML.\n");
         for (v, t) in &entries {
             let def_attr = if p.dft.as_deref() == Some(v.as_str()) { " DEF" } else { "" };
             let _ = writeln!(b, ":PT.:PK{def_attr}.{}:EPK.", esc(v));
             b.push_str(&tagged(":PD.", t));
         }
-        if let Some((pv, t)) = &typed {
+        if let Some((pv, t)) = &kind {
             let _ = writeln!(b, ":PT.:PV.{pv}:EPV.");
             let mut t = t.clone();
             for l in limits(p) {
@@ -317,7 +346,7 @@ fn parm_module(def: &CmdDef, id: &str, p: &Parm, dict: &Dict) -> String {
         .sngval
         .iter()
         .map(|s| s.from.clone())
-        .filter_map(|v| dict.value(&def.name, &p.kwd, &v).map(|t| (v, t.to_string())))
+        .filter_map(|v| dict.value(&def.name, &p.kwd, &v, false).map(|t| (v, t.to_string())))
         .collect();
     let mut p2 = p.clone();
     if matches!(p.ty, ParmType::Elem { .. } | ParmType::Qual { .. }) && !p.sngval.is_empty() {
@@ -372,11 +401,11 @@ pub fn group_of(def: &CmdDef) -> String {
 pub fn generate(root: &Path) -> Result<BTreeMap<String, String>> {
     let dict = Dict::load(root)?;
     let mut by_group: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    let mut done: BTreeMap<(String, String), ()> = BTreeMap::new();
+    let mut done: std::collections::BTreeSet<(String, String)> = std::collections::BTreeSet::new();
     for (def, source) in crate::commands::definitions(root)? {
         let group = group_of(&def);
         let id = def.hlpid.clone().unwrap_or_else(|| def.name.clone());
-        if done.insert((group.clone(), id.clone()), ()).is_some() {
+        if !done.insert((group.clone(), id.clone())) {
             continue;
         }
         let mut m = command_module(&def, &id, &source, &dict);

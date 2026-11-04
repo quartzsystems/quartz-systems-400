@@ -5,6 +5,7 @@
 /* QSASNCRT: assign a certificate of *SYSTEM to an application ID     */
 /* (Quartz extension).                                                */
              CMD        PROMPT('Assign Certificate') MAXPOS(2) +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSASNCRT) +
                           ALLOW(*ALL)
              PARM       KWD(APPID) TYPE(*CHAR) LEN(100) MIN(1) +
                           CASE(*MIXED) PROMPT('Application ID')

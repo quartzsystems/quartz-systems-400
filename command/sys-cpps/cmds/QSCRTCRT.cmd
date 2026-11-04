@@ -5,6 +5,7 @@
 /* QSCRTCRT: create a certificate with a new key: self-signed, signed */
 /* by the local CA, or a request (Quartz extension).                  */
              CMD        PROMPT('Create Certificate') MAXPOS(2) +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSCRTCRT) +
                           ALLOW(*ALL)
              PARM       KWD(LABEL) TYPE(*CHAR) LEN(64) MIN(1) +
                           CASE(*MIXED) PROMPT('Certificate label')

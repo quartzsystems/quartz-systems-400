@@ -5,6 +5,7 @@
 /* QSRMVAPPID: remove an application ID a user registered (Quartz     */
 /* extension).                                                        */
              CMD        PROMPT('Remove Certificate Application') +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSRMVAPPID) +
                           MAXPOS(1) ALLOW(*ALL)
              PARM       KWD(APPID) TYPE(*CHAR) LEN(100) MIN(1) +
                           CASE(*MIXED) PROMPT('Application ID')

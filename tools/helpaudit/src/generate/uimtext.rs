@@ -25,20 +25,22 @@ pub fn tagged(tag: &str, text: &str) -> String {
     let body = esc(text.trim());
     let mut out = String::new();
     let mut line = String::from(tag);
+    let mut empty = true;
     for w in body.split_whitespace() {
         let w = if let Some(rest) = w.strip_prefix('.') {
             format!("&period.{rest}")
         } else {
             w.to_string()
         };
-        if line.len() + 1 + w.len() > 72 && line.len() > tag.len() {
+        if !empty && line.len() + 1 + w.len() > 72 {
             out.push_str(&line);
             out.push('\n');
             line.clear();
-        } else if line.len() > tag.len() {
+        } else if !empty {
             line.push(' ');
         }
         line.push_str(&w);
+        empty = false;
     }
     out.push_str(&line);
     out.push('\n');

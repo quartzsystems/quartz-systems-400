@@ -117,6 +117,12 @@ impl Host {
         self.inbox.recv_timeout(d)
     }
 
+    /// Where the cursor was in the last record the display sent.
+    #[must_use]
+    pub fn cursor(&self) -> Option<(u8, u8)> {
+        self.display.borrow().as_ref().and_then(crate::display::Display::cursor)
+    }
+
     /// Wait for the display to answer: the key (0 for Enter) and the
     /// fields. Breaks are taken meanwhile, and System Request,
     /// Attention and Print are the system's (`crate::sysdsp::keys`);

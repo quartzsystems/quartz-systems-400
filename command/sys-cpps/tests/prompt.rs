@@ -155,6 +155,7 @@ fn enter_round_trips() {
                 assert!(!s.message.is_empty(), "{name}: shown again without a message");
             }
             Step::Cancel => panic!("{name}: cancelled"),
+            Step::Help(_) => panic!("{name}: help"),
         }
     }
 }

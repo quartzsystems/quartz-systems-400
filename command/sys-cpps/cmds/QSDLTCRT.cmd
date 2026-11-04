@@ -4,6 +4,7 @@
 
 /* QSDLTCRT: remove a certificate from a store (Quartz extension).    */
              CMD        PROMPT('Delete Certificate') MAXPOS(1) +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSDLTCRT) +
                           ALLOW(*ALL)
              PARM       KWD(LABEL) TYPE(*CHAR) LEN(64) MIN(1) +
                           CASE(*MIXED) PROMPT('Certificate label')

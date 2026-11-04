@@ -29,6 +29,9 @@ pub struct Dict {
     /// Special value texts for one keyword: `[kwvalues.OUTPUT]`.
     #[serde(default)]
     pub kwvalues: BTreeMap<String, BTreeMap<String, String>>,
+    /// Object types: `"*FILE" = "Files."`, for values that are types.
+    #[serde(default)]
+    pub objtypes: BTreeMap<String, String>,
     /// Per command: `about`, `KWD` and `"KWD.*VALUE"`.
     #[serde(default)]
     pub commands: BTreeMap<String, BTreeMap<String, String>>,
@@ -42,6 +45,8 @@ struct File {
     values: BTreeMap<String, String>,
     #[serde(default)]
     kwvalues: BTreeMap<String, BTreeMap<String, String>>,
+    #[serde(default)]
+    objtypes: BTreeMap<String, String>,
     #[serde(flatten)]
     commands: BTreeMap<String, BTreeMap<String, String>>,
 }
@@ -55,6 +60,7 @@ impl Dict {
                 .map_err(|e| AuditError::Compile(p.display().to_string(), e.to_string()))?;
             d.keywords.extend(f.keywords);
             d.values.extend(f.values);
+            d.objtypes.extend(f.objtypes);
             for (k, v) in f.kwvalues {
                 d.kwvalues.entry(k).or_default().extend(v);
             }
@@ -71,11 +77,23 @@ impl Dict {
         self.commands.get(cmd)?.get(key).map(String::as_str)
     }
 
-    /// What a value means for a keyword of a command.
+    /// What a value means for a keyword of a command; `types` when the
+    /// parameter's values are object types.
     #[must_use]
-    pub fn value(&self, cmd: &str, kwd: &str, value: &str) -> Option<&str> {
+    pub fn value(&self, cmd: &str, kwd: &str, value: &str, types: bool) -> Option<&str> {
         self.command(cmd, &format!("{kwd}.{value}"))
             .or_else(|| self.kwvalues.get(kwd).and_then(|m| m.get(value)).map(String::as_str))
+            .or_else(|| {
+                types
+                    .then(|| self.objtypes.get(value).map(String::as_str))
+                    .flatten()
+            })
             .or_else(|| self.values.get(value).map(String::as_str))
+    }
+
+    /// Whether a list of values is mostly object types.
+    #[must_use]
+    pub fn are_types<'a>(&self, values: impl Iterator<Item = &'a str>) -> bool {
+        values.filter(|v| self.objtypes.contains_key(*v)).count() >= 5
     }
 }

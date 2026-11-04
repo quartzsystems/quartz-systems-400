@@ -1,0 +1,47 @@
+# Help texts of single commands: `about` is what the command does (the
+# definition's comment is used when it is missing), `notes` a paragraph
+# after it, `KWD` a parameter's opening text and "KWD.*VALUE" what a
+# value means for that parameter. Paragraphs are separated by a blank
+# line.
+
+[CHGDEVD]
+about = "Use the Change Device Description (CHGDEVD) command to change the attributes that every device description has, whatever its category."
+
+[CHGQAPA]
+about = "Use the Change QAP Attributes (CHGQAPA) command to change the attributes of the QAP server, kept in the TCP/IP server table in QUSRSYS and read when the server starts."
+
+[TRCINT]
+about = "Use the Trace Internal (TRCINT) command to start, stop and list the system's internal trace points, for problem analysis with your service provider."
+
+[CHGDDMTCPA]
+about = "Use the Change DDM TCP/IP Attributes (CHGDDMTCPA) command to change the attributes of the DDM and DRDA server: whether it starts with TCP/IP and how clients must authenticate. The server reads them when it starts."
+
+[OTHERWISE]
+about = "OTHERWISE starts the group of commands of a SELECT group that runs when no WHEN condition is true. It is valid only in a CL program or procedure."
+
+[WRKF]
+about = "Use the Work with Files (WRKF) command to show a list of files and work with them through options."
+
+[WRKLIB]
+about = "Use the Work with Libraries (WRKLIB) command to show a list of libraries and work with them through options."
+
+[WRKOBJ]
+about = "Use the Work with Objects (WRKOBJ) command to show a list of objects and work with them through options."
+
+[WRKOBJLCK]
+about = "Use the Work with Object Locks (WRKOBJLCK) command to show the jobs that hold or wait for locks on an object, and release them."
+
+[WRKMSG]
+about = "Use the Work with Messages (WRKMSG) command to show the messages of a message queue, answer them and remove them."
+
+[WRKMSGD]
+about = "Use the Work with Message Descriptions (WRKMSGD) command to show the message descriptions of a message file and work with them."
+
+[WRKMSGQ]
+about = "Use the Work with Message Queues (WRKMSGQ) command to show a list of message queues and work with them."
+
+[WRKRPYLE]
+about = "Use the Work with Reply List Entries (WRKRPYLE) command to show the entries of the system reply list and work with them."
+
+[STRTCPFTP]
+about = "Use the Start TCP/IP File Transfer (STRTCPFTP) command, or its short form FTP, to start the FTP client and transfer files with a remote system."

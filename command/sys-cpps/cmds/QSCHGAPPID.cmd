@@ -5,6 +5,7 @@
 /* QSCHGAPPID: change an application ID's client authentication, CA   */
 /* trust list or text (Quartz extension).                             */
              CMD        PROMPT('Change Certificate Application') +
+                          HLPPNLGRP(QHSYCMD) HLPID(QSCHGAPPID) +
                           MAXPOS(1) ALLOW(*ALL)
              PARM       KWD(APPID) TYPE(*CHAR) LEN(100) MIN(1) +
                           CASE(*MIXED) PROMPT('Application ID')

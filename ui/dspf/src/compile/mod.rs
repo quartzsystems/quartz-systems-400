@@ -115,13 +115,12 @@ fn build(
                     df.records.push(r);
                 }
             }
-            Some(NameType::Help) if skipping => {}
-            Some(NameType::Help) => match df.records.last_mut() {
+            Some(NameType::Help) if !skipping => match df.records.last_mut() {
                 Some(rec) => record::help(&cx, rec, spec, entry, diags),
                 None => diags.push(dds_ids::spec_before_format(spec.line, "help")),
             },
+            Some(NameType::Help) | None if skipping => {}
             Some(other) => diags.push(ids::spec_not_in_dspf(spec.line, other.what())),
-            None if skipping => {}
             None => {
                 let Some(rec) = df.records.last_mut() else {
                     diags.push(dds_ids::spec_before_format(spec.line, "field"));
