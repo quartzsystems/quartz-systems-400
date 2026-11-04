@@ -223,10 +223,11 @@ fn mapper(port: u16) -> bool {
 }
 
 /// Whether a series grew past `bound` from its first value and ended
-/// at its highest: growth that never came back down.
+/// near its highest (within 3%): growth that never came back down.
 fn grew(series: &[u64], bound: u64) -> bool {
+    let peak = series.iter().copied().max().unwrap_or(0);
     match (series.first(), series.last()) {
-        (Some(&a), Some(&z)) => z > a + bound && series.iter().all(|&v| v <= z),
+        (Some(&a), Some(&z)) => z > a + bound && z * 100 >= peak * 97,
         _ => false,
     }
 }
@@ -524,6 +525,7 @@ mod tests {
     #[test]
     fn growth_that_stays() {
         assert!(grew(&[100, 150, 200, 260], 100));
+        assert!(grew(&[1000, 1500, 2080, 2050], 500));
         assert!(!grew(&[100, 300, 150, 210], 100));
         assert!(!grew(&[100, 120, 130], 100));
     }
