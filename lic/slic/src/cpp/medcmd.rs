@@ -37,7 +37,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CHGDEVTAP" | "CHGDEVOPT" | "CHGDEVMLB" => chgdev(system, name, parms),
         "CRTIMGCLG" => crtimgclg(system, parms),
         "DLTIMGCLG" => dltimgclg(system, parms),
-        "ADDIMGCLGE" => addimgclge(parms),
+        "ADDIMGCLGE" => addimgclge(system, parms),
         "RMVIMGCLGE" => rmvimgclge(parms),
         "CHGIMGCLGE" => chgimgclge(parms),
         "LODIMGCLG" => lodimgclg(system, parms),
@@ -260,9 +260,6 @@ fn chgdev(system: &mut System, cmd: &str, parms: &Parms) -> Result<CmdReply, Str
 
 fn crtimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let name = parms.name("IMGCLG");
-    if parms.yes("IMPORT") {
-        return Err("CPF9B70 IMPORT(*YES) is not available in this release".into());
-    }
     let kind = if parms.name("TYPE") == "*TAP" { ImgType::Tap } else { ImgType::Opt };
     let add = match parms.int("ADDVRTVOL").unwrap_or(0) {
         0 => AddVrtVol::None,
@@ -281,6 +278,7 @@ fn crtimgclg(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
         add,
         text: text.clone(),
         epoch: now_unix(),
+        import: parms.yes("IMPORT"),
     };
     media::with_catalogs(|r| r.crtimgclg(&p))?;
     let who = owner(system);
@@ -314,12 +312,46 @@ fn index_of(parms: &Parms) -> Option<u16> {
     parms.int("IMGCLGIDX").and_then(|i| u16::try_from(i).ok()).filter(|i| *i > 0)
 }
 
-fn addimgclge(parms: &Parms) -> Result<CmdReply, String> {
-    let name = parms.name("IMGCLG");
-    if parms.specified("FROMDEV") {
-        return Err("CPF9B70 FROMDEV: images from an optical device are not available in this release; give FROMFILE".into());
+/// `ADDIMGCLGE FROMDEV(dev)`: the volume in an optical device. A virtual
+/// device's is its catalog's mounted image, copied; a real drive's
+/// medium is read whole into a new image.
+enum FromDev {
+    Image(String),
+    Drive(String),
+}
+
+fn from_dev(system: &mut System, dev: &str) -> Result<FromDev, String> {
+    let t = drive::target(system, dev)?;
+    if t.kind != MediaKind::Optical {
+        return Err(format!("OPT1203 device {} is not an optical device", t.dev));
     }
-    let from = parms.text("FROMFILE");
+    if t.virtual_ {
+        let c = media::catalog_on(&t.dev).ok_or_else(|| format!("OPT1660 optical device {} is empty", t.dev))?;
+        let e = c.mounted().ok_or_else(|| format!("OPT1660 optical device {} is empty", t.dev))?;
+        return Ok(FromDev::Image(c.path_of(e)));
+    }
+    let node = devices::node_of(system, &t.rsrc)
+        .ok_or_else(|| format!("CPF6760 device {} not ready: resource {} not found", t.dev, t.rsrc))?;
+    Ok(FromDev::Drive(format!("/dev/{node}")))
+}
+
+fn addimgclge(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
+    let name = parms.name("IMGCLG");
+    let dev = if parms.specified("FROMDEV") {
+        let d = parms.name("FROMDEV");
+        (!d.is_empty() && !d.starts_with('*')).then_some(d)
+    } else {
+        None
+    };
+    let from_dev = match &dev {
+        Some(d) => Some(from_dev(system, d)?),
+        None => None,
+    };
+    let from = match &from_dev {
+        Some(FromDev::Image(p)) => p.clone(),
+        Some(FromDev::Drive(_)) => "*NEW".to_string(),
+        None => parms.text("FROMFILE"),
+    };
     let from = from.trim().trim_matches('\'');
     if from.is_empty() {
         return Err("CPD0084 FROMFILE is needed".into());
@@ -343,11 +375,20 @@ fn addimgclge(parms: &Parms) -> Result<CmdReply, String> {
         epoch: now_unix(),
     };
     let replace = parms.yes("REPLACE");
+    let mut drive = match &from_dev {
+        Some(FromDev::Drive(node)) => {
+            Some(std::fs::File::open(node).map_err(|e| format!("CPF6760 {} not ready: {e}", dev.clone().unwrap_or_default()))?)
+        }
+        _ => None,
+    };
     let i = media::with_catalogs(|r| {
         if replace && let Some(i) = p.index {
             let _ = r.rmvimgclge(&name, i, true);
         }
-        r.addimgclge(&name, &p)
+        match drive.as_mut() {
+            Some(f) => r.addimgclge_from(&name, &p, f),
+            None => r.addimgclge(&name, &p),
+        }
     })?;
     Ok(ok(&format!("Entry {i} added to image catalog {name}.\n"), CLGE_ADDED, &[(&name, 10), (&i.to_string(), 3)]))
 }

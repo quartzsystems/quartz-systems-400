@@ -741,9 +741,9 @@ it did not add alone).
 
 | Command | Parameters | Does |
 |---|---|---|
-| `CRTIMGCLG` | `IMGCLG DIR TYPE CRTDIR ADDVRTVOL TEXT` | a catalog over a directory no other catalog uses; `ADDVRTVOL(*DIR)` adds the images already there (in `VOLUME_LIST` order when that file exists, one name a line, `#` comments; else by name), `ADDVRTVOL(n)` makes `n` new volumes of `IMGSIZ` |
+| `CRTIMGCLG` | `IMGCLG DIR TYPE CRTDIR ADDVRTVOL IMPORT TEXT` | a catalog over a directory no other catalog uses; `IMPORT(*YES)` takes over the `QS400CLG.INF` already in the directory (another catalog's, here or on another system) under the new name, not loaded, keeping the entries whose images are there; `ADDVRTVOL(*DIR)` adds the images already there (in `VOLUME_LIST` order when that file exists, one name a line, `#` comments; else by name), `ADDVRTVOL(n)` makes `n` new volumes of `IMGSIZ` |
 | `DLTIMGCLG` | `IMGCLG KEEP` | not while `*READY`; `KEEP(*NO)` deletes the images and the directory |
-| `ADDIMGCLGE` | `IMGCLG FROMFILE TOFILE IMGCLGIDX IMGSIZ VOLNAM WRTPTC TEXT` | `FROMFILE(name)` takes a file in the directory, `FROMFILE('/path')` copies it in (`TOFILE(*FROMFILE)`, a name, or `*GEN`: `<catalog><nnn>`, `.ISO` for optical); `FROMFILE(*NEW)` makes an empty writable volume of `IMGSIZ` MiB (optical) or calls the tape constructor; `IMGCLGIDX(*AVAIL)` takes the lowest free index; volumes are unique in a catalog; a read-only image is always write protected |
+| `ADDIMGCLGE` | `IMGCLG FROMFILE FROMDEV TOFILE IMGCLGIDX IMGSIZ VOLNAM WRTPTC TEXT` | `FROMDEV(OPTnn)` takes the volume in an optical device: a virtual one's mounted image is copied in, a real drive's medium is read whole into a new image (`*GEN` unless `TOFILE` names it); `FROMFILE(name)` takes a file in the directory, `FROMFILE('/path')` copies it in (`TOFILE(*FROMFILE)`, a name, or `*GEN`: `<catalog><nnn>`, `.ISO` for optical); `FROMFILE(*NEW)` makes an empty writable volume of `IMGSIZ` MiB (optical) or calls the tape constructor; `IMGCLGIDX(*AVAIL)` takes the lowest free index; volumes are unique in a catalog; a read-only image is always write protected |
 | `RMVIMGCLGE` | `IMGCLG IMGCLGIDX KEEP` | `KEEP(*NO)` deletes the image |
 | `CHGIMGCLGE` | `IMGCLG IMGCLGIDX WRTPTC TEXT` | `WRTPTC(*NO)` only for a writable image |
 | `LODIMGCLGE` | `IMGCLG IMGCLGIDX OPTION` | `*LOAD`, `*UNLOAD`, `*MOUNT` as above |

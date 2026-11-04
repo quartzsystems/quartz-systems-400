@@ -89,6 +89,9 @@ pub struct CrtImgClg {
     pub text: String,
     /// Unix time now.
     pub epoch: u64,
+    /// `IMPORT(*YES)`: the catalog file already in the directory (from
+    /// another catalog, here or on another system) is taken over.
+    pub import: bool,
 }
 
 /// `FROMFILE` of `ADDIMGCLGE`.
@@ -391,6 +394,9 @@ impl Registry {
                 catalog: c.name.clone(),
             });
         }
+        if p.import {
+            return self.import(&name, &dir, p);
+        }
         if !self.fs.is_dir(&dir) {
             if !p.create_dir {
                 return Err(Error::NoDir(dir));
@@ -432,6 +438,64 @@ impl Registry {
             return Err(e);
         }
         self.save(&name)
+    }
+
+    /// `CRTIMGCLG IMPORT(*YES)`: the catalog file in `dir` under the new
+    /// name, not loaded, its entries those of the file whose images are
+    /// there.
+    fn import(&mut self, name: &str, dir: &str, p: &CrtImgClg) -> Result<()> {
+        if !self.fs.is_dir(dir) {
+            return Err(Error::NoDir(dir.to_string()));
+        }
+        let meta = join(dir, META_FILE);
+        if !self.fs.exists(&meta) {
+            return Err(Error::NoImage(meta));
+        }
+        let mut c = Catalog::parse(&String::from_utf8_lossy(&self.fs.read(&meta)?))?;
+        c.name = name.to_string();
+        c.dir = dir.to_string();
+        c.status = CatalogStatus::NotReady;
+        c.device = None;
+        if !p.text.is_empty() {
+            c.text.clone_from(&p.text);
+        }
+        c.entries.retain(|e| self.fs.exists(&join(dir, &e.file)));
+        self.catalogs.insert(name.to_string(), c);
+        self.save(name)
+    }
+
+    /// `ADDIMGCLGE FROMDEV` from a real drive: the medium read from
+    /// `src` into a new image file of the catalog (named as `to_file`
+    /// says, `*GEN` by default), then added as `p` says.
+    pub fn addimgclge_from(&mut self, name: &str, p: &AddImgClgE, src: &mut dyn std::io::Read) -> Result<u16> {
+        let c = self.catalog(name)?;
+        let (kind, dir, cname) = (c.kind, c.dir.clone(), c.name.clone());
+        if kind != ImgType::Opt {
+            return Err(Error::Invalid("FROMDEV needs an optical image catalog".into()));
+        }
+        let index = p
+            .index
+            .or_else(|| (1..=MAX_ENTRIES).find(|i| c.entry(*i).is_none()))
+            .ok_or_else(|| Error::Full(cname.clone()))?;
+        let file = match &p.to_file {
+            ToFile::Name(n) if !n.is_empty() => n.clone(),
+            _ => format!("{cname}{index:03}.ISO"),
+        };
+        let path = join(&dir, &file);
+        if self.fs.exists(&path) {
+            return Err(Error::Invalid(format!("{path} already exists")));
+        }
+        let store = self.fs.create_image(&path)?;
+        if let Err(e) = store.replace(&mut |w| std::io::copy(src, w).map(|_| ())) {
+            let _ = self.fs.remove_file(&path);
+            return Err(e.into());
+        }
+        let mut a = p.clone();
+        a.from = FromFile::Path(file);
+        a.index = Some(index);
+        self.addimgclge(name, &a).inspect_err(|_| {
+            let _ = self.fs.remove_file(&path);
+        })
     }
 
     /// `ADDVRTVOL(*DIR)`: the images in the directory, in `VOLUME_LIST`
