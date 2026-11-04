@@ -93,6 +93,7 @@ pub enum IfsOp {
     Rcllnk { check_only: bool },
     ObjectLocks { path: String },
     OwnerLocks,
+    JobLocks { job: u32, user: String },
 }
 
 wire_enum!(IfsOp {
@@ -161,6 +162,7 @@ wire_enum!(IfsOp {
     62 => ObjectLocks { path },
     63 => OwnerLocks,
     64 => Lchown { path, uid, gid },
+    65 => JobLocks { job, user },
 });
 
 /// What an operation answers: the value its method returns, or the
@@ -414,6 +416,7 @@ pub fn serve(c: &dyn IfsClient, op: IfsOp) -> IfsReply {
             r: c.object_locks(&path),
         },
         IfsOp::OwnerLocks => R::OwnerLocks { r: c.owner_locks() },
+        IfsOp::JobLocks { job, user } => R::OwnerLocks { r: c.job_locks(job, &user) },
     }
 }
 

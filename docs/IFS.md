@@ -810,7 +810,9 @@ The names a header `#pragma map`s to another export (`QlgOpen` to
 `QlgProcessSubtree`, `QlgCvtPathToQSYSObjName` to their `Qp0l` names)
 are registered under both. `QP0LROR` and `QP0LRRO` are program APIs
 (OS linkage, every parameter by reference, an error code last);
-`QP0LRRO` answers for the calling job (`*` in `JIDF0100`) only.
+`QP0LRRO` answers for the calling job (`*` in `JIDF0100`) or, from the
+service's lock table, for another job by number: its own user or `*JOBCTL`
+(`CPF1344` otherwise).
 
 **How a job reaches the IFS.** `sysapi::ifs::configure(job, client,
 ccsid)` gives a job an `ifs::client::IfsClient` and its CCSID; the job

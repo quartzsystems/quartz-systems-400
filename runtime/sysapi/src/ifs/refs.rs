@@ -129,13 +129,20 @@ fn qp0lrro(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
         if jfmt != "JIDF0100" {
             return Err(ApiFail::id("CPF3C21").text(&jfmt, 8));
         }
+        // JIDF0100: job name, user name, number; `*` is this job.
         let name = a.char(3, 10);
-        if name != "*" {
-            // Another job's references are the storage service's to tell.
-            // MIGRATE(phase11): other jobs through the service's lock table.
-            return Err(ApiFail::id("CPF3C58"));
+        let held = if name == "*" {
+            client(j).owner_locks()
+        } else {
+            let id = a.bytes(3, 26);
+            let user = ccsid::decode_trimmed(&id[10..20]);
+            let number: u32 = ccsid::decode_trimmed(&id[20..26]).parse().map_err(|_| ApiFail::id("CPF3C58"))?;
+            client(j).job_locks(number, user.trim())
         }
-        let held = client(j).owner_locks().map_err(|e| ApiFail::id(&e.message_id()))?;
+        .map_err(|e| match e {
+            ifs::Errno::EPERM => ApiFail::id("CPF1344"),
+            e => ApiFail::id(&e.message_id()),
+        })?;
         // One entry per object, with every reference this job has on it.
         let mut objs: Vec<(ifs::lock::ObjKey, Vec<LockInfo>)> = Vec::new();
         for (k, li) in held {

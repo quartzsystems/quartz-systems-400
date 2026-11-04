@@ -79,6 +79,32 @@ fn share_mode_matrix_through_open() {
 }
 
 #[test]
+fn another_jobs_locks() {
+    use ifs::client::{Direct, IfsClient};
+    let s = sys();
+    let sec = user("QSECOFR");
+    let a = s.cx(&sec, 1);
+    let b = s.cx(&sec, 2);
+    s.put(&a, "/tmp/j", &[0u8; 10]);
+    let fb = s.ifs.open(&b, "/tmp/j", OpenArgs::new(O_RDWR)).unwrap();
+    s.ifs
+        .lock_range(&b, fb, F_SETLK, RangeKind::Write, SEEK_SET, 0, 4)
+        .unwrap();
+    // Job 1 sees job 2's open and its range lock.
+    let seen = Direct { ifs: &s.ifs, cx: &a }.job_locks(2, "QSECOFR").unwrap();
+    assert!(seen.iter().any(|(_, l)| matches!(l.what, Held::Open(..))));
+    assert!(seen.iter().all(|(_, l)| l.owner == Owner(2)));
+    assert!(seen.len() >= 2);
+    // Another user without *JOBCTL may not look.
+    let bob = user("BOB");
+    let c = s.cx(&bob, 3);
+    assert_eq!(
+        Direct { ifs: &s.ifs, cx: &c }.job_locks(2, "QSECOFR").unwrap_err(),
+        Errno::EPERM
+    );
+}
+
+#[test]
 fn byte_range_locks() {
     let s = sys();
     let p = user("QSECOFR");

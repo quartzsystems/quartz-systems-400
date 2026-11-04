@@ -194,6 +194,10 @@ pub trait IfsClient {
     fn object_locks(&self, path: &str) -> Result<Vec<LockInfo>>;
     /// Everything the caller's job holds.
     fn owner_locks(&self) -> Result<Vec<(ObjKey, LockInfo)>>;
+    /// Another job's references and locks (`QP0LRRO` of a job): its
+    /// connection's and its console lines'. `*JOBCTL` or the job's own
+    /// user is needed (`EPERM`).
+    fn job_locks(&self, job: u32, user: &str) -> Result<Vec<(ObjKey, LockInfo)>>;
 }
 
 /// An [`Ifs`] with a caller's context: what the service and
@@ -447,6 +451,16 @@ impl<B: Backend> IfsClient for Direct<'_, B> {
     fn owner_locks(&self) -> Result<Vec<(ObjKey, LockInfo)>> {
         Ok(self.ifs.owner_locks(self.cx.owner))
     }
+    fn job_locks(&self, job: u32, user: &str) -> Result<Vec<(ObjKey, LockInfo)>> {
+        let p = self.cx.principal;
+        if !p.user.eq_ignore_ascii_case(user) && !p.has(sec::profile::SpecialAuth::JOBCTL) {
+            return Err(crate::Errno::EPERM);
+        }
+        let h = u64::from(job);
+        let mut v = self.ifs.owner_locks(crate::lock::Owner(h));
+        v.extend(self.ifs.owner_locks(crate::lock::Owner(h | 1 << 63)));
+        Ok(v)
+    }
 }
 
 /// An [`IfsClient`] in the process: one caller over a shared [`Ifs`],
@@ -568,6 +582,7 @@ macro_rules! every_method {
         fn rcllnk(check_only: bool) -> Result<Report>;
         fn object_locks(path: &str) -> Result<Vec<LockInfo>>;
         fn owner_locks() -> Result<Vec<(ObjKey, LockInfo)>>;
+        fn job_locks(job: u32, user: &str) -> Result<Vec<(ObjKey, LockInfo)>>;
     } };
 }
 
