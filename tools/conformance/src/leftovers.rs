@@ -100,7 +100,7 @@ impl Suite {
         let mut ctx = Context::new(&c, &options);
         secofr(&mut d, &mut ctx)?;
         run(&mut d, &mut ctx, "wait \"Main Menu\"\ntype call qcmd\nkey enter\nwait \"Command Entry\"\n")?;
-        run(&mut d, &mut ctx, "type FTP RMTSYS(LOOPBACK)\nkey enter\nwait \"File Transfer Protocol\"\n")?;
+        run(&mut d, &mut ctx, "type FTP RMTSYS(*INTNETADR) INTNETADR('127.0.0.1')\nkey enter\nwait \"File Transfer Protocol\"\n")?;
         run(&mut d, &mut ctx, "wait \"Enter login ID\"\n")?;
         run(&mut d, &mut ctx, "type QSECOFR\nkey enter\nwait \"Enter password\"\n")?;
         run(&mut d, &mut ctx, &format!("type {SECOFR_PASSWORD}\nkey enter\nwait \"230\"\n"))?;
