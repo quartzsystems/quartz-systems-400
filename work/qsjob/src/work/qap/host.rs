@@ -360,6 +360,12 @@ fn reply_of(s: &QapSession) -> SignOnReply {
     }
 }
 
+// BLOCKED(phase12): the `Manage` service (QAP version 7, draft) is not
+// wired here yet; every operation answers `TCP1A5D` (the trait's default).
+// Each must run as its command does, with the command's authority checks
+// (`STRSBS`, `ENDSBS`, `CHGSYSVAL`, `PWRDWNSYS` through the analyzer, the
+// lists over `sbs_list`, `sysval`, `hw_table`, `sst_disks`), and call
+// `QS400_QAP_MGMT`'s exit programs through the registry.
 impl ThreadHost for JobThread {
     fn system_id(&mut self) -> SystemId {
         let system_name = sysval_text(&mut self.link(), "QSYSNAME");
