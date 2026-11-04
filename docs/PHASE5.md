@@ -91,7 +91,7 @@ before it is taken.
   communications and devices (`RMTSYS` queues and LAN printers closed
   in Phase 10).
 - Display files and `DSPLY` on a workstation (display files closed in
-  Phase 8, `DSPLY` on Display Program Messages in Phase 12); the
+  Phase 8, a `DSPLY` reply on Display Program Messages in Phase 12); the
   console's Command Entry is `QCMD`'s own panel.
 - `DEVTYPE` is `*SCS` only; `CHLVAL` channels are not supported (FCFC
   channels map to fixed lines).

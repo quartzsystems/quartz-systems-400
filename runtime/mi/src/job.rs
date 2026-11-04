@@ -169,7 +169,7 @@ pub struct Job {
     /// Lines `dsply` wrote in a job without a display; the command that
     /// ran the program shows them.
     pub console: Vec<String>,
-    /// A job at a display shows `dsply` there instead
+    /// A job at a display asks its operator there for a `dsply` reply
     /// (Display Program Messages).
     pub dsply: Option<DisplayFn>,
     /// Replies `dsply` reads, oldest first.

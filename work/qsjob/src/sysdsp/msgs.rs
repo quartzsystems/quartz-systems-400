@@ -8,7 +8,7 @@
 //! after. An inquiry a program sends to the external queue (`*EXT`,
 //! the job's `INQMSGRPY(*RQD)`, a function check's `CEE9901`) comes up
 //! on Display Program Messages, whose reply goes back to the program;
-//! so does a program's `DSPLY`.
+//! so does the reply a program's `DSPLY` asks for.
 
 use mi::job::Inquiry;
 use stg::Client;

@@ -343,14 +343,15 @@ pub extern "sysv64" fn unresolved(env: *mut Env) {
 }
 
 /// `dsply(env, src, sty, reply, rty)`: the text goes to the job's
-/// display, or without one to its console lines; a reply, when asked
-/// for, is the operator's, else the queued one's, else blank.
+/// console lines; a reply, when asked for, is the operator's at a
+/// display, else the queued one's, else blank.
 pub extern "sysv64" fn dsply(env: *mut Env, src: i64, sty: i64, reply: i64, rty: i64) {
     let line = display_text(src, sty);
     let j = job(env);
-    // At a display the operator reads it and answers; queued replies
-    // (a test's, a batch job's) come first.
-    let shown = if j.replies.is_empty() {
+    // A reply is asked of the operator at a display (queued replies, a
+    // test's or a batch job's, come first); a line alone goes with the
+    // command's messages, where IBM i would also stop for Enter.
+    let shown = if reply != 0 && j.replies.is_empty() {
         j.dsply.as_mut().and_then(|show| show(&line, reply != 0))
     } else {
         None
