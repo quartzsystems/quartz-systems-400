@@ -80,26 +80,34 @@ fn exists(system: &mut System, q: &str) -> bool {
 }
 
 /// The output queue a file of job `job` opened through `f` goes to:
-/// the file's `OUTQ`, else the job's, else `QGPL/QPRINT`
-/// (`MIGRATE(phase10)`: the printer device's queue before that).
+/// the file's `OUTQ`, else the job's, else the printer device's
+/// (`QUSRSYS/<device>`), else `QGPL/QPRINT`.
 pub fn outq_of(system: &mut System, f: &Prtf, job: u32) -> String {
     outq_checked(system, f, job).0
 }
 
 /// [`outq_of`] and the queues named that were not found.
 pub fn outq_checked(system: &mut System, f: &Prtf, job: u32) -> (String, Vec<String>) {
-    let job_q = system
+    let (job_q, job_dev) = system
         .attrs
         .get(&job)
-        .map(|a| a.outq.clone())
+        .map(|a| (a.outq.clone(), a.prtdev.clone()))
         .unwrap_or_default();
+    let qprtdev = system
+        .sysvals
+        .as_ref()
+        .and_then(|v| v.get("QPRTDEV").ok())
+        .map(|v| v.text())
+        .unwrap_or_default();
+    let dev = wm::obj::prtf::device_of(&f.dev, &job_dev, &qprtdev);
+    let dev_q = if dev.is_empty() { String::new() } else { format!("QUSRSYS/{dev}") };
     let mut known = std::collections::BTreeMap::new();
-    for q in [f.outq.as_str(), job_q.as_str()] {
+    for q in [f.outq.as_str(), job_q.as_str(), dev_q.as_str()] {
         if !q.is_empty() && !q.starts_with('*') && !known.contains_key(q) {
             known.insert(q.to_string(), exists(system, q));
         }
     }
-    wm::obj::prtf::pick_outq(&f.outq, &job_q, |q| known.get(q).copied().unwrap_or(false))
+    wm::obj::prtf::pick_outq(&f.outq, &job_q, &dev_q, |q| known.get(q).copied().unwrap_or(false))
 }
 
 /// `CPF3357` for each queue a printer file or job named that was not

@@ -528,21 +528,43 @@ impl Prtf {
 pub const DEFAULT_OUTQ: &str = "QGPL/QPRINT";
 
 /// The output queue a file opened through a printer file goes to: the
-/// file's `OUTQ` (`file_q`), else the job's (`job_q`), else
-/// [`DEFAULT_OUTQ`], the first that `exists`. Also the queues named
-/// that were not found, in order, for the job log.
-pub fn pick_outq(file_q: &str, job_q: &str, exists: impl Fn(&str) -> bool) -> (String, Vec<String>) {
+/// file's `OUTQ` (`file_q`), else the job's (`job_q`), else the queue
+/// of the printer device (`dev_q`, `QUSRSYS/<device>`), else
+/// [`DEFAULT_OUTQ`], the first that `exists`; `*DEV` in either names the
+/// device's queue. Also the queues named that were not found, in order,
+/// for the job log (the device's own is only looked for).
+pub fn pick_outq(file_q: &str, job_q: &str, dev_q: &str, exists: impl Fn(&str) -> bool) -> (String, Vec<String>) {
     let mut missing = Vec::new();
     for q in [file_q, job_q] {
+        let q = if q == "*DEV" { dev_q } else { q };
         if q.is_empty() || q.starts_with('*') {
             continue;
         }
         if exists(q) {
             return (q.to_string(), missing);
         }
-        missing.push(q.to_string());
+        if !missing.iter().any(|m| m == q) {
+            missing.push(q.to_string());
+        }
+    }
+    if !dev_q.is_empty() && !dev_q.starts_with('*') && exists(dev_q) {
+        return (dev_q.to_string(), missing);
     }
     (DEFAULT_OUTQ.into(), missing)
+}
+
+/// The printer device a file uses: its `DEV`, the job's `PRTDEV` for
+/// `*JOB`, `QPRTDEV` (`sysval`) for `*SYSVAL`; empty for none.
+#[must_use]
+pub fn device_of(file_dev: &str, job_dev: &str, sysval: &str) -> String {
+    let mut d = file_dev.trim();
+    if d.is_empty() || d == "*JOB" {
+        d = job_dev.trim();
+    }
+    if d == "*SYSVAL" || d == "*USRPRF" || d == "*WRKSTN" {
+        d = sysval.trim();
+    }
+    if d.is_empty() || d.starts_with('*') { String::new() } else { d.to_ascii_uppercase() }
 }
 
 #[cfg(test)]
@@ -552,23 +574,36 @@ mod tests {
     #[test]
     fn outq_choice() {
         let have = |q: &str| matches!(q, "QUSRSYS/P1" | "QGPL/QPRINT");
-        assert_eq!(pick_outq("*JOB", "QUSRSYS/P1", have), ("QUSRSYS/P1".into(), vec![]));
-        assert_eq!(pick_outq("QUSRSYS/P1", "QGPL/GONE", have), ("QUSRSYS/P1".into(), vec![]));
+        assert_eq!(pick_outq("*JOB", "QUSRSYS/P1", "", have), ("QUSRSYS/P1".into(), vec![]));
+        assert_eq!(pick_outq("QUSRSYS/P1", "QGPL/GONE", "", have), ("QUSRSYS/P1".into(), vec![]));
         // The job's queue was deleted: QPRINT, and the job log names it.
         assert_eq!(
-            pick_outq("*JOB", "QUSRSYS/GONE", have),
+            pick_outq("*JOB", "QUSRSYS/GONE", "", have),
             ("QGPL/QPRINT".into(), vec!["QUSRSYS/GONE".into()])
         );
         assert_eq!(
-            pick_outq("QGPL/X", "QUSRSYS/Y", have),
+            pick_outq("QGPL/X", "QUSRSYS/Y", "", have),
             ("QGPL/QPRINT".into(), vec!["QGPL/X".into(), "QUSRSYS/Y".into()])
         );
         assert_eq!(
-            pick_outq("QGPL/X", "QUSRSYS/P1", have),
+            pick_outq("QGPL/X", "QUSRSYS/P1", "", have),
             ("QUSRSYS/P1".into(), vec!["QGPL/X".into()])
         );
         // *DEV and *WRKSTN name no queue: nothing to report.
-        assert_eq!(pick_outq("*JOB", "*DEV", have), ("QGPL/QPRINT".into(), vec![]));
+        assert_eq!(pick_outq("*JOB", "*DEV", "", have), ("QGPL/QPRINT".into(), vec![]));
+        // The printer device's queue: for *DEV, and before QPRINT.
+        assert_eq!(pick_outq("*JOB", "*DEV", "QUSRSYS/P1", have), ("QUSRSYS/P1".into(), vec![]));
+        assert_eq!(pick_outq("*DEV", "QGPL/X", "QUSRSYS/P1", have), ("QUSRSYS/P1".into(), vec![]));
+        assert_eq!(
+            pick_outq("*JOB", "QUSRSYS/GONE", "QUSRSYS/P1", have),
+            ("QUSRSYS/P1".into(), vec!["QUSRSYS/GONE".into()])
+        );
+        // *DEV names the device's queue: missing, the job log says so.
+        assert_eq!(pick_outq("*JOB", "*DEV", "QUSRSYS/P9", have), ("QGPL/QPRINT".into(), vec!["QUSRSYS/P9".into()]));
+        assert_eq!(device_of("*JOB", "PRT01", "PRT09"), "PRT01");
+        assert_eq!(device_of("*SYSVAL", "PRT01", "PRT09"), "PRT09");
+        assert_eq!(device_of("LAN1", "PRT01", "PRT09"), "LAN1");
+        assert_eq!(device_of("*JOB", "*SYSVAL", "*NONE"), "");
     }
 
     #[test]

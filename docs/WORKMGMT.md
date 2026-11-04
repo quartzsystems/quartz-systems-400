@@ -825,7 +825,8 @@ The file opens `OPN`; at close it is `RDY`, `HLD` for `HOLD(*YES)`, or
 `CLO` until the job ends for `SCHEDULE(*JOBEND)`.
 
 The output queue of a new file: the printer file's `OUTQ`, else the
-job's, else `QGPL/QPRINT` (`MIGRATE(phase10)`: the printer device's).
+job's, else the printer device's (`QUSRSYS/<device>`, the file's `DEV`, the
+job's `PRTDEV` or `QPRTDEV`; `*DEV` names it too), else `QGPL/QPRINT`.
 A queue the file or the job names that is not found (deleted since
 `CHGJOB OUTQ`, say) is not passed over silently: the job log gets the
 diagnostic `CPF3357` naming it, and the file goes to the next choice.
