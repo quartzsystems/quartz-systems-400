@@ -84,8 +84,11 @@ impl Suite {
         // An image catalog's directory copied and imported.
         s.command("CRTIMGCLG IMGCLG(LEFTA) DIR('/leftover/a') TYPE(*OPT) CRTDIR(*YES) ADDVRTVOL(1) IMGSIZ(48)", CMD)?;
         let _ = s.command("MKDIR DIR('/leftover/b')", CMD);
-        let cpy = s.command("CPY OBJ('/leftover/a') TODIR('/leftover/b') SUBTREE(*ALL)", CMD)?;
-        let imp = s.command("CRTIMGCLG IMGCLG(LEFTB) DIR('/leftover/b/a') TYPE(*OPT) IMPORT(*YES)", CMD)?;
+        let mut cpy = String::new();
+        for f in ["LEFTA001.ISO", "QS400CLG.INF"] {
+            cpy += &s.command(&format!("CPY OBJ('/leftover/a/{f}') TODIR('/leftover/b')"), CMD)?;
+        }
+        let imp = s.command("CRTIMGCLG IMGCLG(LEFTB) DIR('/leftover/b') TYPE(*OPT) IMPORT(*YES)", CMD)?;
         let entries = s.command("WRKIMGCLGE IMGCLG(LEFTB)", CMD)?;
         let _ = s.command("DLTIMGCLG IMGCLG(LEFTB) KEEP(*NO)", CMD);
         let _ = s.command("DLTIMGCLG IMGCLG(LEFTA) KEEP(*NO)", CMD);
