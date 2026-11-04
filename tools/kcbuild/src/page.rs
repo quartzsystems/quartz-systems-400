@@ -34,7 +34,7 @@ impl Page<'_> {
         for (name, href) in NAV {
             let _ = writeln!(
                 nav,
-                "<div class=\"navitem\"><a href=\"{up}{href}\">{name}</a></div>\n"
+                "<div class=\"navitem\"><a href=\"{up}{href}\">{name}</a></div>"
             );
         }
         let mut crumb = String::from("Knowledge Center");
