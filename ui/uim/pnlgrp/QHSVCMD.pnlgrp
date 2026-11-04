@@ -2126,6 +2126,31 @@ system more of ASP 1 now.
 :EPARML.
 :P.Also accepted&colon. *STEP.
 :EHELP.
+:HELP NAME=QSHWQUAL.Qualify Hardware (QSHWQUAL)
+:P.Use the Qualify Hardware (QSHWQUAL) command to check this machine's
+hardware for QS/400 and grade each resource pass, warn or fail; shown,
+printed, or also written to a FAT USB stick.
+:EHELP.
+:HELP NAME='QSHWQUAL/OUTPUT'.Output (OUTPUT)
+:P.Where the command sends what it produces&colon. to the display of an
+interactive job, or to a spooled file of the job's printer file. Some
+commands can also write it to a database file.
+:PARML.
+:PT.:PK DEF.*:EPK.
+:PD.The output is shown at the display of an interactive job, and
+printed for a batch job.
+:PT.:PK.*PRINT:EPK.
+:PD.The output is printed with the job's spooled output.
+:EPARML.
+:EHELP.
+:HELP NAME='QSHWQUAL/TODEV'.Also write to device (TODEV)
+:P.The device the data goes to.
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *USB.
+:EHELP.
 :HELP NAME=RMVPTF.Remove PTF (RMVPTF)
 :P.Use the Remove PTF (RMVPTF) command to remove program temporary
 fixes.
