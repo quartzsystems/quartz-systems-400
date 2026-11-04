@@ -1183,6 +1183,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "fuzz"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ccsid",
+ "cl",
+ "cmd",
+ "ddm",
+ "dds",
+ "ftp",
+ "hex",
+ "hostsvr",
+ "instmedia",
+ "ipc",
+ "jrn",
+ "mail",
+ "optical",
+ "ptf",
+ "qap-proto",
+ "qapd",
+ "rpgfront",
+ "savfmt",
+ "servers",
+ "sha2",
+ "sql",
+ "sshd",
+ "sys-cpps",
+ "tls",
+ "tn5250",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

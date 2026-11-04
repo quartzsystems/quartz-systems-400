@@ -146,6 +146,10 @@ tools/        host-side tools
   rpg-oracle/   the RPG differential oracle: cases, operator keys, listing masks, outcomes,
                 the grammar fuzzer's programs; the binary fills outcomes from pub400
   pase-probe/   what a PASE program sees (built for musl and run by step 65)
+  fmtcheck/     the format freeze: formats.toml every frozen format's sources and version
+                constants, formats.lock their hashes; build test runs it
+  fuzz/         qsfuzz, the Rust fuzzer: cov.rs SanitizerCoverage counters, mutate.rs,
+                engine.rs the loop, targets.rs every parser of outside bytes; corpus/, crashes/
 lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   slic/         PID 1, as `/init qsstg` the storage service and as `/init qshwr` the hardware
                 resource service (src/hwsvc/: the one sysfs walk, uevents, its socket): src/ipl/,
@@ -529,6 +533,8 @@ cargo run -p conformance -- --only 71,75   # some steps only (the boot step alwa
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
+cargo run -p fmtcheck [-- update] # the format freeze; update only after a version bump
+cargo run -p build -- fuzz [--target NAME] [--secs N]   # every fuzz target, instrumented (30 min each)
 cargo clippy --workspace --all-targets    # must be warning-free
 cargo clippy -p slic -p console --all-targets --target x86_64-unknown-linux-musl
 QS400_QEMU=1 cargo test -p conformance    # the suite as a cargo test
@@ -646,7 +652,8 @@ otherwise logs go to `target/logs/`.
   `net/nettools/src/sys/raw.rs` (`setsockopt`, `recvmsg` with control data,
   `AF_PACKET`), `media/tape/src/st/raw.rs` (the `st` and `sg` ioctls),
   `work/qsjob/src/platform/clock.rs` (`adjtimex`, which musl's libc binding lacks) and
-  `lic/slic/src/stgsvc/fiber.rs` (the running statement's yielder, on its own stack).
+  `lic/slic/src/stgsvc/fiber.rs` (the running statement's yielder, on its own stack) and
+  `tools/fuzz/src/cov.rs` (the fuzzer reading LLVM's coverage counters; host tool only).
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in

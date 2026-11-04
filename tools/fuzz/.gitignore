@@ -1,0 +1,2 @@
+# The input running when a hang stopped the fuzzer.
+crashes/*/running

@@ -125,6 +125,7 @@ members = [
     # The PASE test fixture, built by the harness and never shipped.
     "tools/pase-probe",
     "tools/fmtcheck",
+    "tools/fuzz",
     # Media: tape, optical, image catalogs.
     "media/tape",
     "media/medio",
@@ -197,3 +198,15 @@ codegen-units = 1
 panic = "abort"
 strip = "symbols"
 debug = false
+
+# The fuzzer (`build fuzz`): optimized, but a panic unwinds so the loop
+# catches it, and arithmetic is checked as in tests.
+[profile.fuzz]
+inherits = "release"
+panic = "unwind"
+lto = false
+codegen-units = 16
+opt-level = 2
+debug-assertions = true
+overflow-checks = true
+strip = "none"

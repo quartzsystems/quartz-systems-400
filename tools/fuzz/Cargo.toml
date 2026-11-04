@@ -1,0 +1,45 @@
+[package]
+name = "fuzz"
+description = "QS/400 fuzzer: coverage-guided by SanitizerCoverage counters, in Rust, over every parser of outside bytes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "qsfuzz"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+sha2.workspace = true
+hex.workspace = true
+dds = { path = "../../database/dds", version = "0.1.0" }
+cl = { path = "../../command/cl", version = "0.1.0" }
+cmd = { path = "../../command/cmd", version = "0.1.0" }
+sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
+rpgfront = { path = "../../rpg/front", version = "0.1.0" }
+sql = { path = "../../database/sql", version = "0.1.0" }
+tn5250 = { path = "../../ui/tn5250", version = "0.1.0" }
+qapd = { path = "../../net/qapd", version = "0.1.0" }
+qap-proto = { path = "../../work/qap-proto", version = "0.1.0" }
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+hostsvr = { path = "../../net/hostsvr", version = "0.1.0" }
+savfmt = { path = "../../save/savfmt", version = "0.1.0" }
+ptf = { path = "../../ptf/ptf", version = "0.1.0" }
+instmedia = { path = "../../media/instmedia", version = "0.1.0" }
+optical = { path = "../../media/optical", version = "0.1.0" }
+jrn = { path = "../../database/jrn", version = "0.1.0" }
+ddm = { path = "../../net/ddm", version = "0.1.0" }
+mail = { path = "../../net/mail", version = "0.1.0" }
+ftp = { path = "../../net/ftp", version = "0.1.0" }
+servers = { path = "../../net/servers", version = "0.1.0" }
+sshd = { path = "../../net/sshd", version = "0.1.0" }
+tls = { path = "../../net/tls", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+
+[lints]
+workspace = true

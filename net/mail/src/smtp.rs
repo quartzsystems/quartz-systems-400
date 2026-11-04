@@ -193,6 +193,31 @@ fn read_reply(s: &mut dyn Stream) -> io::Result<(u16, Vec<String>)> {
     }
 }
 
+/// Every reply in `bytes`, read as the client reads a relay's (for the
+/// fuzzer and tests); stops at the first that does not parse.
+pub fn replies(bytes: &[u8]) -> Vec<(u16, Vec<String>)> {
+    struct Bytes<'a>(io::Cursor<&'a [u8]>);
+    impl Read for Bytes<'_> {
+        fn read(&mut self, b: &mut [u8]) -> io::Result<usize> {
+            self.0.read(b)
+        }
+    }
+    impl Write for Bytes<'_> {
+        fn write(&mut self, b: &[u8]) -> io::Result<usize> {
+            Ok(b.len())
+        }
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+    let mut s = Bytes(io::Cursor::new(bytes));
+    let mut out = Vec::new();
+    while let Ok(r) = read_reply(&mut s) {
+        out.push(r);
+    }
+    out
+}
+
 /// The connection: plain TCP until TLS starts.
 enum Conn {
     Plain(TcpStream),

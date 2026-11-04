@@ -86,6 +86,15 @@ enum Command {
     Doctor,
     /// Run cargo-deny plus the C-linkage lockfile check.
     Deny,
+    /// Fuzz every parser of outside bytes (`tools/fuzz`), instrumented.
+    Fuzz {
+        /// One target (`qsfuzz list` names them); all when absent.
+        #[arg(long)]
+        target: Option<String>,
+        /// Seconds per target.
+        #[arg(long, default_value_t = 1800)]
+        secs: u64,
+    },
 }
 
 fn main() -> Result<()> {
@@ -98,7 +107,7 @@ fn main() -> Result<()> {
 
     let cli = Cli::parse();
     let ctx = Ctx::new(cli.verbose)?;
-    if !cfg!(target_os = "linux") && !matches!(cli.command, Command::Doctor | Command::Deny) {
+    if !cfg!(target_os = "linux") && !matches!(cli.command, Command::Doctor | Command::Deny | Command::Fuzz { .. }) {
         tracing::warn!("the pipeline needs a Linux host; run this from WSL");
     }
 
@@ -137,6 +146,7 @@ fn main() -> Result<()> {
         } => host::testrun::test(&ctx, media, install, bench, pulls)?,
         Command::Doctor => host::doctor::doctor(&ctx)?,
         Command::Deny => host::deny::deny(&ctx)?,
+        Command::Fuzz { target, secs } => host::fuzz::fuzz(&ctx, target.as_deref(), secs)?,
     }
     Ok(())
 }

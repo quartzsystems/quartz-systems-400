@@ -7,6 +7,7 @@
 pub mod cmd;
 pub mod deny;
 pub mod doctor;
+pub mod fuzz;
 pub mod hash;
 pub mod paths;
 pub mod testrun;
