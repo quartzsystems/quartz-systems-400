@@ -70,9 +70,10 @@ fn space(txn: &mut Txn<'_>, qsys: ObjectId, name: &str, text: &str, create: bool
         now: now_unix(),
         by_system: true,
     };
-    usrspc::create(txn, &params, 16, true, 0)
-        .map(Some)
-        .map_err(|e| e.to_string())
+    let id = usrspc::create(txn, &params, 16, true, 0).map_err(|e| e.to_string())?;
+    // Shipped *PUBLIC *USE, as QSYS's other objects.
+    sec::auth::grant::set_public(txn, id, Some(sec::auth::bits::Auth::USE)).map_err(|e| e.to_string())?;
+    Ok(Some(id))
 }
 
 /// The text a user space in `QSYS` keeps (a length, then the bytes);

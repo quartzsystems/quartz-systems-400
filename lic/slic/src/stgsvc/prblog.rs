@@ -55,9 +55,12 @@ fn space(
         now: now_unix(),
         by_system: true,
     };
-    usrspc::create(txn, &params, 16, true, 0)
-        .map(Some)
-        .map_err(|e| e.to_string())
+    let id = usrspc::create(txn, &params, 16, true, 0).map_err(|e| e.to_string())?;
+    // QSYS's own spaces are shipped *PUBLIC *USE (QSSECCHK checks it).
+    if lib_id == qsys {
+        sec::auth::grant::set_public(txn, id, Some(sec::auth::bits::Auth::USE)).map_err(|e| e.to_string())?;
+    }
+    Ok(Some(id))
 }
 
 fn with_store<T>(
@@ -66,7 +69,9 @@ fn with_store<T>(
 ) -> Result<T, String> {
     let s = system.storage.as_mut().ok_or("object store not open")?;
     let qsys = s.qsys.ok_or("object store not initialized")?;
-    crate::svc::db::with_txn(&mut s.store, |txn| f(txn, qsys))
+    // The system's own record: a job that logs a problem need not
+    // have authority to the space.
+    sec::guard::as_system(|| crate::svc::db::with_txn(&mut s.store, |txn| f(txn, qsys)))
 }
 
 /// The text a text space holds; `None` when there is no such space.
