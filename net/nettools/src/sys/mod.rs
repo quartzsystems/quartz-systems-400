@@ -15,6 +15,12 @@ mod raw;
 #[cfg(target_os = "linux")]
 pub use linux::{Capture, Pinger, ProbeKind, RouteProber, ifindex};
 
+/// vsock, for the guest agent (`lic/guestagent`).
+#[cfg(target_os = "linux")]
+pub mod vsock {
+    pub use super::raw::{accept, vsock_listen as listen};
+}
+
 #[cfg(not(target_os = "linux"))]
 mod host;
 

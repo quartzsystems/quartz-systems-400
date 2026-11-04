@@ -49,11 +49,14 @@ pub enum Kind {
     Processor,
     /// Main storage: `MSnn`.
     Memory,
+    /// A hypervisor's channel to the guest (the guest agent's virtio-serial
+    /// port, vsock): `CMNnn`, numbered with the ports.
+    Channel,
 }
 
 impl Kind {
     /// Every kind.
-    pub const ALL: [Kind; 13] = [
+    pub const ALL: [Kind; 14] = [
         Kind::Bridge,
         Kind::Lan,
         Kind::Storage,
@@ -67,6 +70,7 @@ impl Kind {
         Kind::TapeLibrary,
         Kind::Processor,
         Kind::Memory,
+        Kind::Channel,
     ];
 
     /// The name prefix.
@@ -78,7 +82,7 @@ impl Kind {
             Kind::Storage => "DC",
             Kind::Disk => "DD",
             Kind::Optical => "OPT",
-            Kind::Comm | Kind::Port => "CMN",
+            Kind::Comm | Kind::Port | Kind::Channel => "CMN",
             Kind::Keyboard => "KBD",
             Kind::Other => "OTH",
             Kind::Tape => "TAP",
@@ -117,6 +121,7 @@ impl Kind {
             Kind::TapeLibrary => "Tape Library",
             Kind::Processor => "Processor",
             Kind::Memory => "Main Storage",
+            Kind::Channel => "Virtual Channel",
         }
     }
 
@@ -136,6 +141,7 @@ impl Kind {
             Kind::TapeLibrary => ("QT02", "001"),
             Kind::Processor => ("QP01", "001"),
             Kind::Memory => ("QM01", "001"),
+            Kind::Channel => ("QV01", "001"),
         }
     }
 }
@@ -259,6 +265,7 @@ impl Table {
         for name in sorted_dir(&root.join("class/tty")) {
             t.add_tty(root, &name);
         }
+        t.add_channels(root);
         for name in sorted_dir(&root.join("class/input")) {
             t.add_input(root, &name);
         }
@@ -311,7 +318,7 @@ impl Table {
         let relevant = matches!(ev.action.as_str(), "add" | "remove" | "change")
             && matches!(
                 ev.subsystem.as_str(),
-                "pci" | "block" | "net" | "tty" | "input" | "scsi_tape" | "scsi_generic" | "virtio" | "scsi"
+                "pci" | "block" | "net" | "tty" | "input" | "scsi_tape" | "scsi_generic" | "virtio" | "scsi" | "virtio-ports"
             );
         if relevant { self.rescan(root) } else { Vec::new() }
     }
@@ -651,6 +658,28 @@ impl Table {
         let devpath = devpath_in(root, &sys)?;
         let desc = format!("serial port {name}");
         Some(self.add(Kind::Comm, name.to_string(), desc, devpath).name.clone())
+    }
+
+    /// The hypervisor's channels to the guest: each named virtio-serial
+    /// port (`class/virtio-ports`, the guest agent's
+    /// `org.qemu.guest_agent.0` among them), located by its name, and
+    /// the virtio vsock device when its transport is bound.
+    pub fn add_channels(&mut self, root: &Path) {
+        let dir = root.join("class/virtio-ports");
+        for port in sorted_dir(&dir) {
+            let name = read_trim(&dir.join(&port).join("name"));
+            if name.is_empty() {
+                continue;
+            }
+            let Some(devpath) = devpath_in(root, &dir.join(&port)) else { continue };
+            let desc = format!("virtual channel {name} ({port})");
+            self.add(Kind::Channel, name, desc, devpath);
+        }
+        let vsock = root.join("bus/virtio/drivers/vmw_vsock_virtio_transport");
+        for dev in sorted_dir(&vsock).into_iter().filter(|d| d.starts_with("virtio")) {
+            let Some(devpath) = devpath_in(root, &vsock.join(&dev)) else { continue };
+            self.add(Kind::Channel, "vsock".into(), format!("virtual socket device ({dev})"), devpath);
+        }
     }
 
     /// Input devices that report keys.

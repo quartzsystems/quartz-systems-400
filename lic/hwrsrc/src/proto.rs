@@ -25,6 +25,7 @@ wire_enum!(Kind {
     10 => TapeLibrary,
     11 => Processor,
     12 => Memory,
+    13 => Channel,
 });
 
 wire_enum!(Status {

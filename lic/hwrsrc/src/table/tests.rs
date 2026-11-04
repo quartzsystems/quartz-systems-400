@@ -230,3 +230,36 @@ fn processors_and_main_storage() {
     assert_eq!(t.resources[2].description, "main storage 256 MiB");
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn the_guest_agent_channel_is_a_communications_resource() {
+    let root = fresh_root("vport");
+    let virtio = root.join("devices/pci0000:00/0000:00:05.0/virtio3/virtio-ports");
+    for (port, name) in [("vport3p1", "org.qemu.guest_agent.0"), ("vport3p2", "")] {
+        let d = virtio.join(port);
+        fs::create_dir_all(&d).unwrap();
+        fs::write(d.join("name"), format!("{name}\n")).unwrap();
+        fs::create_dir_all(root.join("class/virtio-ports")).unwrap();
+        symlink(&d, root.join("class/virtio-ports").join(port)).unwrap();
+    }
+    let vsock = root.join("devices/pci0000:00/0000:00:06.0/virtio4");
+    fs::create_dir_all(&vsock).unwrap();
+    let drv = root.join("bus/virtio/drivers/vmw_vsock_virtio_transport");
+    fs::create_dir_all(&drv).unwrap();
+    symlink(&vsock, drv.join("virtio4")).unwrap();
+    let mut t = Table::default();
+    t.add(Kind::Comm, "ttyS0".into(), "serial port ttyS0".into(), "/devices/platform/serial8250/tty/ttyS0".into());
+    t.add_channels(&root);
+    // An unnamed port is not one; the names follow the serial port's.
+    assert_eq!(names(&t), [("CMN01", "ttyS0"), ("CMN02", "org.qemu.guest_agent.0"), ("CMN03", "vsock")]);
+    assert_eq!(t.resources[1].kind, Kind::Channel);
+    assert_eq!(t.resources[1].type_model(), ("QV01".to_string(), "001".to_string()));
+    let rows = crate::view::list(&t, crate::view::spec("*CMN").unwrap());
+    let row = rows.iter().find(|r| r.name == "CMN02").unwrap();
+    assert_eq!((row.type_col.as_str(), row.status.as_str(), row.text.as_str()), ("QV01", "Operational", "Virtual Channel"));
+    // A port that goes away is not detected; one that comes keeps the next name.
+    fs::remove_file(root.join("class/virtio-ports/vport3p1")).unwrap();
+    t.rescan(&root);
+    assert_eq!(t.get("CMN02").unwrap().status, Status::NotDetected);
+    fs::remove_dir_all(root).unwrap();
+}

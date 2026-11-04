@@ -8,6 +8,7 @@
 //! the service console job `QSVCJOB`, which runs the console's commands.
 
 pub mod console;
+pub mod guest;
 pub mod hwr;
 pub mod spawn;
 pub mod stg;
@@ -19,6 +20,8 @@ pub mod sysjobs;
 pub struct Procs {
     /// The hardware resource service.
     pub hwr: Option<hwr::HwrProc>,
+    /// The guest agent, under a hypervisor that offers it a channel.
+    pub guest: Option<guest::GuestProc>,
     /// The storage service.
     pub stg: Option<stg::StgProc>,
     /// The service console job.

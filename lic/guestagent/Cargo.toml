@@ -1,0 +1,19 @@
+[package]
+name = "guestagent"
+description = "The QS/400 guest agent: the QEMU guest agent protocol over virtio-serial and vsock, the system's state for the hypervisor and graceful power down"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+release = { path = "../release", version = "0.1.0" }
+serde_json.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+netlink = { path = "../../net/netlink", version = "0.1.0" }
+nettools = { path = "../../net/nettools", version = "0.1.0" }
+rustix = { version = "1.1.5", features = ["fs", "process", "system"] }
+
+[lints]
+workspace = true

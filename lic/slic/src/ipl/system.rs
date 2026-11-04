@@ -257,10 +257,36 @@ impl System {
             code: src.code.to_string(),
             text: src.text.to_string(),
         });
+        self.write_status(Some(src));
         // Each code stays up long enough to be read.
         if !self.pace.is_zero() {
             std::thread::sleep(self.pace);
         }
+    }
+
+    /// Rewrite the state file the guest agent reads (`guestagent::status`):
+    /// `src` is the code just shown, else the last one logged.
+    pub fn write_status(&self, src: Option<&Src>) {
+        let last = src.or_else(|| self.log.entries().last().map(|e| e.src));
+        let state = if last.is_some_and(|s| s.phase == crate::src::Phase::PowerDown) {
+            "ending"
+        } else if self.complete {
+            "complete"
+        } else {
+            "ipl"
+        };
+        let s = guestagent::status::Status {
+            system: self.system_name(),
+            release: release::RELEASE.to_string(),
+            state: state.into(),
+            mode: format!("{:?}", self.mode).to_ascii_lowercase(),
+            ipl_type: format!("{:?}", self.ipl_type()),
+            slot: format!("{:?}", self.boot.slot),
+            src: last.map(|s| s.code.to_string()).unwrap_or_default(),
+            src_text: last.map(|s| s.text.to_string()).unwrap_or_default(),
+            ipl_time: self.start_time,
+        };
+        let _ = std::fs::write(guestagent::status::PATH, s.render());
     }
 
     /// Send a command to the console thread, if there is one.

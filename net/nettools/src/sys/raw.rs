@@ -5,7 +5,8 @@
 //! The socket calls the tools need that the safe crates do not offer:
 //! `setsockopt` of an integer (`IP_RECVERR`, `IP_RECVTTL`, `IP_TTL`),
 //! `recvmsg` with a control buffer (the error queue), and `AF_PACKET`
-//! bound to one link with the `sockaddr_ll` of each frame. Each is one
+//! bound to one link with the `sockaddr_ll` of each frame, and an
+//! `AF_VSOCK` listener for the guest agent. Each is one
 //! libc call on memory this module owns; this is the crate's only
 //! `unsafe`.
 
@@ -199,4 +200,32 @@ pub fn packet_recv(fd: &OwnedFd, buf: &mut [u8]) -> io::Result<(usize, bool)> {
         )
     })?;
     Ok((n, ll.sll_pkttype == libc::PACKET_OUTGOING))
+}
+
+/// A vsock stream socket listening on `port` of any CID (the guest
+/// agent's channel where the hypervisor offers vsock).
+pub fn vsock_listen(port: u32) -> io::Result<OwnedFd> {
+    let fd = socket(libc::AF_VSOCK, libc::SOCK_STREAM, 0)?;
+    // SAFETY: plain data; zeros are valid.
+    let mut vm: libc::sockaddr_vm = unsafe { zeroed() };
+    vm.svm_family = libc::sa_family_t::try_from(libc::AF_VSOCK).unwrap_or_default();
+    vm.svm_port = port;
+    vm.svm_cid = libc::VMADDR_CID_ANY;
+    // SAFETY: `vm` is a `sockaddr_vm` this function owns, its size given;
+    // the descriptor is open for the call.
+    check(unsafe { libc::bind(fd.as_raw_fd(), std::ptr::from_ref(&vm).cast(), len_of::<libc::sockaddr_vm>()) })?;
+    // SAFETY: integers only; the descriptor is open.
+    check(unsafe { libc::listen(fd.as_raw_fd(), 4) })?;
+    Ok(fd)
+}
+
+/// The next connection on a listening socket, close-on-exec.
+pub fn accept(fd: &OwnedFd) -> io::Result<OwnedFd> {
+    // SAFETY: no address is asked for (null pointers are allowed); the
+    // descriptor is open for the call.
+    let c = check(unsafe {
+        libc::accept4(fd.as_raw_fd(), std::ptr::null_mut(), std::ptr::null_mut(), libc::SOCK_CLOEXEC)
+    })?;
+    // SAFETY: `c` was just returned by `accept4` and nothing else owns it.
+    Ok(unsafe { OwnedFd::from_raw_fd(c) })
 }

@@ -545,6 +545,7 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
     }
     lic::complete(system);
     system.emit(&src::IPL_COMPLETE);
+    procs::guest::start(system);
     // The console becomes a 5250 display: QCONSOLE holds QSCONSOLE,
     // the console's terminal is its client.
     if system.procs.stg.is_some() {
@@ -784,6 +785,7 @@ fn reaped(system: &mut System, pids: &[u32], tx: &mpsc::Sender<Event>) {
         }
         procs::console::gone(system, pid, tx);
         procs::hwr::reaped(system, pid);
+        procs::guest::reaped(system, pid);
         if system.procs.svcjob.as_ref().is_some_and(|j| j.pid == pid) {
             system.procs.svcjob = None;
             system

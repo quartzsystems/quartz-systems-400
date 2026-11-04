@@ -202,7 +202,7 @@ fn asp_protection(units: &[DiskUnit]) -> String {
 /// Where a kind of resource is listed.
 fn hw_category(k: Kind) -> &'static str {
     match k {
-        Kind::Lan | Kind::Port | Kind::Comm => "Communications",
+        Kind::Lan | Kind::Port | Kind::Comm | Kind::Channel => "Communications",
         Kind::Storage | Kind::Disk | Kind::Optical | Kind::Tape | Kind::TapeLibrary => "Storage",
         Kind::Processor | Kind::Memory => "Processor",
         Kind::Keyboard => "Workstation",

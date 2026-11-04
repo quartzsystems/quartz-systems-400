@@ -142,6 +142,7 @@ pub fn complete(system: &mut System) {
         }
     }
     system.complete = true;
+    system.write_status(None);
 }
 
 /// A fatal SRC: record the failed IPL. The in-progress flag is cleared
