@@ -37,7 +37,24 @@ settle it.
    commands that need a special authority the user lacks report
    `CPF222E` (read with DSPMSGD on pub400, V7R5M0). Per-command IDs
    are still open. Oracle: `STRSBS` without `*JOBCTL`, `CHGSYSVAL`
-   without `*ALLOBJ`.
+   without `*ALLOBJ`. `NEEDS-CODY` (2026-11-03): the primary's only
+   profiles are `QSECOFR`, IBM's and `GRPA`/`OWNA` (passwords unknown), and
+   making a profile is a configuration change agents may not do. Steps:
+   `CRTUSRPRF USRPRF(QSTSPC) PASSWORD(...) USRCLS(*USER) SPCAUT(*NONE)
+   TEXT('Phase 12 probe')`; sign on as `QSTSPC`; at Command Entry run
+   `STRSBS SBSD(QGPL/QBATCH)`, `CHGSYSVAL SYSVAL(QDATFMT) VALUE(MDY)`,
+   `CRTUSRPRF USRPRF(QSTSPC2)`, `STRSST`, `DSPAUDJRNE`, and `F1` on each
+   message for its ID; sign off and `DLTUSRPRF USRPRF(QSTSPC)
+   OWNOBJOPT(*DLT)`.
+
+   **`DSPAUDJRNE`** has no golden for the same reason the audit questions
+   below stay open: the primary has no `QAUDJRN` (`DSPSECAUD` 2026-11-03:
+   the journal does not exist, `QAUDCTL` and `QAUDLVL` `*NONE`), and
+   creating it is a configuration change. `NEEDS-CODY`: `CHGSECAUD
+   QAUDCTL(*AUDLVL) QAUDLVL(*SECURITY *SERVICE)`, run `DSPAUDJRNE
+   ENTTYP(*SV)` and `STRSST` once, capture both with `tn5250-driver`, then
+   `CHGSECAUD QAUDCTL(*NONE)` (the journal and receiver stay; Cody decides
+   whether to delete them).
 
 6. **Owner and public authority of a new profile.** Settled: the
    creator (`QSECOFR`) owns a new profile.

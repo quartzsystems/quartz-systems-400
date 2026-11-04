@@ -16,12 +16,15 @@ oracle (V7R1M0) answers no screen questions.
    (24), Transparent Data `0x10`, Move Cursor `0x14`.
 3. **Record length.** Resolved: the two-byte length counts the whole
    record including itself (791 for a record of 791 bytes).
-4. **The start-up response record.** Open. pub400 sends none when no
-   `DEVNAME` is asked for. QS/400 sends `I902` + the device name after
-   the header when a device was named, per RFC 2877 as read; the
-   bytes a real system sends to ACS could not be captured (no telnet
-   on the primary oracle). Needs Cody: an ACS trace, or a session to
-   pub400 asking for a named device the account may use.
+4. **The start-up response record.** Settled 2026-11-03 on the primary
+   (V7R1M0, telnet as `QSECOFR`): a session asking for an existing,
+   free display (`DEVNAME=QPADEV0003`) gets no start-up response record;
+   the first record after `DO BINARY` is the sign-on display (opcode 3,
+   flags 0, `QPADEV0003` shown as the display). pub400 sends none when no
+   `DEVNAME` is asked for. QS/400 sends none to a display either
+   (`work/qsjob/src/work/telnet.rs`); the record goes only to printer
+   sessions, per RFC 4777. The trace is
+   `golden/verified/oracle71/questions/ui4-named-device.trace`.
 5. **The cursor without an Insert Cursor order.** Resolved from the
    same trace: pub400's sign-on sends no `IC`; ACS shows the cursor in
    the first input field. The terminal rests the cursor in the first
@@ -31,7 +34,10 @@ oracle (V7R1M0) answers no screen questions.
    and Record Backspace send only the cursor and AID; System Request,
    Attention and Test Request are header flags. A probe with a DDS
    display file that reads after each key would settle it on a system
-   where objects may be created.
+   where objects may be created. Not settled 2026-11-03: a telnet trace
+   shows what our client sends, not what a 5250 sends; the probe needs a
+   display file and a CL program in `QSTEST` on the primary (DDS source
+   sent by FTP, `CRTDSPF`, `CRTBNDCL`), left for a session of its own.
 7. **Start of Header and the format table.** Assumed: `SOH` clears the
    format table, locks the keyboard and homes the cursor (a full
    screen write begins with it; partial updates do not send it).
@@ -40,7 +46,11 @@ oracle (V7R1M0) answers no screen questions.
    as a GDS record (opcode 0) and waits for a record back; RFC 2877's
    exact printer header and the client's response codes could not be
    checked (no printer client reachable). Needs an ACS printer session
-   against QS/400, or a trace of one against a real system.
+   against QS/400, or a trace of one against a real system. Not settled
+   2026-11-03: a printer session to the primary would make a virtual
+   printer device (`QAUTOVRT`), a configuration change. `NEEDS-CODY`:
+   an ACS printer session to the primary, recorded with `tn5250-driver
+   hostsvr-trace --ports 23`, and the device it made deleted.
 9. **Password tokens for auto-signon.** Resolved by design: the
    profile keeps the RFC 4777 DES and SHA-1 tokens of its password
    beside the Argon2id hashes; SHA-1 verified against pub400's server
@@ -65,4 +75,7 @@ oracle (V7R1M0) answers no screen questions.
     with an ID of their own (`CPF2292` for CRTUSRPRF) keep theirs.
 12. **SST's audit code.** Open. An SST sign-on is audited as `SS`,
     an entry type of ours beside DST's `DS`; IBM's code for it was
-    not found.
+    not found. Not settled 2026-11-03: the primary has no `QAUDJRN`
+    (`DSPSECAUD`), and `STRSST` needs a service tools user. `NEEDS-CODY`:
+    the auditing steps under "Missing special authority" in
+    `SEC_OPEN_QUESTIONS.md`, then `STRSST` and `DSPAUDJRNE` for the entry.

@@ -1,0 +1,24 @@
+   rc=0                                                                         
+         20 /qsys.lib/qstest.lib/qsdtaf.file/qsdtaf.mbr                         
+   Press ENTER to end terminal session.                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ ===>                                                                           
+                                                                                
+ F3=Exit F4=End of File F6=Print F9=Retrieve F17=Top                            
+ F18=Bottom  F19=Left   F20=Right F21=User Window                               
+                                                                                
