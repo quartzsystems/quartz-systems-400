@@ -12,7 +12,7 @@ use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap, VecDeque};
 use std::rc::Rc;
 
-use dspf::rt::{DateOrder, Env, Problem, Runtime};
+use dspf::rt::{Env, Problem, Runtime};
 use mi::io::IoFail;
 use mi::io::display::{DisplayInput, DisplayOpen, DisplaySource};
 use rpg_oracle::keys;
@@ -63,8 +63,7 @@ impl KitDisplay {
                 date: (2026, 10, 23),
                 sys_date: (2026, 10, 23),
                 time: (12, 0, 0),
-                datfmt: DateOrder::Mdy,
-                datsep: '/',
+                formats: ccsid::nls::Formats::default(),
                 user: "QSECOFR".into(),
                 sysname: "QS400".into(),
                 messages,

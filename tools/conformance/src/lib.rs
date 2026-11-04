@@ -44,6 +44,7 @@ mod perfstep;
 mod lpstep;
 pub mod media;
 mod netauto;
+mod nlsstep;
 mod netinst;
 mod nettools;
 mod phase2;
