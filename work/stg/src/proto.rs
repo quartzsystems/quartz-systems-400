@@ -13,6 +13,7 @@ use msgf::MsgDesc;
 use qap_proto::ops::spool::{
     ListOutputQueues, ListSpooledFiles, OutputQueues, ReadSpooledFile, SpooledData, SpooledFileId, SpooledFiles,
 };
+use qap_proto::ops::manage::{DiskUnits, IplStatus, PowerDown, Ptf};
 use qap_proto::ops::messages::{Queue, Recipient};
 use qap_proto::types::ObjectName;
 use sysapi::{
@@ -716,6 +717,18 @@ ipc::rpc! {
     /// `SendMessage`, as `SNDMSG`; an inquiry's reply comes to the
     /// user's own queue: the key it will answer.
     763 => fn qap_msg_send / QapMsgSend (to: Recipient, text: String, inquiry: bool) -> Result<Option<u32>, QapRefused>;
+    // --- QAP management (770-779; docs/QAP.md, stgsvc/qap/manage.rs).
+    // Only a QAP connection job asks, for what it cannot read through
+    // the commands' own requests; as the job's user.
+    /// `ListPtfs`, as `DSPPTF` reads the PTF database: by product, then
+    /// identifier.
+    770 => fn qap_mgmt_ptfs / QapMgmtPtfs (product: String) -> Result<Vec<Ptf>, QapRefused>;
+    /// `ListDiskUnits`: the disk configuration and the ASPs.
+    771 => fn qap_mgmt_disks / QapMgmtDisks () -> Result<DiskUnits, QapRefused>;
+    /// `IplStatus`: the LIC record's last IPL and the next slot.
+    772 => fn qap_mgmt_ipl / QapMgmtIpl () -> Result<IplStatus, QapRefused>;
+    /// `PowerDown`, checked as `PWRDWNSYS` (`*JOBCTL`), then handed to `slic`.
+    773 => fn qap_mgmt_power / QapMgmtPower (req: PowerDown) -> Result<(), QapRefused>;
 
     // --- communications objects (1180-1189; net/cmncfg, stgsvc/cmn.rs)
     /// A communications display's data: `LIND` (`WRKLIND`; args the

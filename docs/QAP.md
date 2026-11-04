@@ -1071,13 +1071,48 @@ Version 7, as built on 2026-11-04 (draft; decisions made in the build, for Cody 
   and `SECOFR` (every special authority); `Manage::exit_refuses` is the
   exit program, `exit_calls` what it was given. `PowerDown` answers, then
   ends the server 50 ms later, so the client sees `ServerEnding`.
-- BLOCKED(phase12): the connection job (`work/qsjob/src/work/qap/`) does
-  not yet implement the `Manage` methods over its links: a real
-  `QAPCNN` answers `TCP1A5D` for each. The storage service already has
-  every function the operations stand for (`stgsvc/sbs.rs`, the system
-  value table, `cpp/ptfcmd.rs`, the disk configuration, the hardware
-  service's table, `ipl/power.rs`); wiring them is the next step before
-  version 7 ships.
+- The connection job (`work/qsjob/src/work/qap/manage.rs`) answers
+  every `Manage` operation on a secondary thread's link, as the
+  signed-on profile. `StartSubsystem`, `EndSubsystem`,
+  `SetSystemValue` and `PowerDown` are first analyzed as the command
+  strings `STRSBS SBSD()`, `ENDSBS SBS() OPTION() DELAY()`,
+  `CHGSYSVAL SYSVAL() VALUE('')` and `PWRDWNSYS OPTION() DELAY()
+  RESTART() IPLSRC()` (the `*CMD` found and its authority checked as
+  for a typed line). `ENDSBS` and `CHGSYSVAL` then run their
+  processing programs in the service (`run_cmd`), with their checks
+  and `SV` entries; `STRSBS` asks the service's check (`sbs_check`,
+  `*JOBCTL`) and starts the monitor as the job's `STRSBS` does;
+  `PowerDown` goes to the service's request 773, which requires
+  `*JOBCTL` there (so a refusal is audited `AF K`) and hands the power
+  down to `slic` as `PWRDWNSYS` from a job does.
+- `SetSystemValue` checks the name (`CPF1842`) and the value against
+  the catalog's type, allowed values and range before the command
+  (`TCP1A5F`), and answers the value read back; a value the command
+  did not take is `TCP1A5F` too.
+- The lists: `ListSubsystems` from `sbs_list` and the `*SBSD` objects
+  of the library (`*ALL` every library, `*LIBL` the job's list; an
+  unknown library is `NotFound` `CPF2110`), a monitor's job named as
+  its subsystem under `QSYS`; `GetSystemValues` from `DSPSYSVAL`'s
+  data, `value` its elements joined by one blank, `category` the
+  group without `*`, `kind` the catalog's type (no value is
+  `Integer`); `ListHardwareResources` from the hardware table in
+  `WRKHDWRSC TYPE()`'s order, `parent` the row above at one level
+  less. `ListPtfs`, `ListDiskUnits` and `IplStatus` come from the
+  storage service's requests 770 to 772 (`stgsvc/qap/manage.rs`): the
+  PTF database (`text` the status's text, as no PTF carries one;
+  not-loaded, ordered and cover-letter-only PTFs are `SaveFileOnly`),
+  the disk configuration as DST shows it without a service tools
+  sign-on (an ASP's capacity counts a mirrored pair once, its
+  threshold DST's), the LIC record's last IPL (type, mode, slot, its
+  final SRC) with `QABNORMSW`, the next slot a LIC PTF arms, and
+  `restricted` when no subsystem is active; `ipl_time` is the system
+  job `SCPF`'s start, as `SystemInfo` has it.
+- `QS400_QAP_MGMT`'s programs are listed through the registry
+  (`RemoteRegistry`); when one is registered the thread builds a
+  runtime job of its own over its link to call it, so a program runs
+  in the connection job beside the lane, never in it.
+- QEMU step 123 runs the service end to end as a user without special
+  authority and as `QSECOFR`.
 
 ## Frozen at V1R1M0
 

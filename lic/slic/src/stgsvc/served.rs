@@ -897,6 +897,22 @@ impl Service for Served<'_> {
         r
     }
 
+    fn qap_mgmt_ptfs(&mut self, product: String) -> Result<Vec<qap_proto::ops::manage::Ptf>, stg::QapRefused> {
+        super::qap::manage::ptfs(self.system, self.ctx, &product)
+    }
+
+    fn qap_mgmt_disks(&mut self) -> Result<qap_proto::ops::manage::DiskUnits, stg::QapRefused> {
+        super::qap::manage::disks(self.system, self.ctx)
+    }
+
+    fn qap_mgmt_ipl(&mut self) -> Result<qap_proto::ops::manage::IplStatus, stg::QapRefused> {
+        super::qap::manage::ipl(self.system, self.ctx)
+    }
+
+    fn qap_mgmt_power(&mut self, req: qap_proto::ops::manage::PowerDown) -> Result<(), stg::QapRefused> {
+        super::qap::manage::power(self.system, self.ctx, &req)
+    }
+
     fn telnet_ticket(
         &mut self,
         user: String,

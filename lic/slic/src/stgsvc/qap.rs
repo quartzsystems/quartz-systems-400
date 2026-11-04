@@ -9,6 +9,7 @@
 //! and only the listener (`QAPD`) ends every session. Passwords and
 //! tokens are never logged.
 
+pub mod manage;
 pub mod messages;
 pub mod spool;
 

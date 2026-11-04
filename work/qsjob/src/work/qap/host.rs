@@ -16,7 +16,9 @@
 //! requests every job uses (`stg::remote::RemoteIfs`), so its authority
 //! checks and audit entries are the file-system commands' (`qapd::files`).
 //! `Messages` runs on a thread's link through the service's message
-//! queue functions, the message commands' (`messages.rs`).
+//! queue functions, the message commands' (`messages.rs`). `Manage`
+//! runs on a thread's link through the commands it stands for, the
+//! analyzer first (`manage.rs`).
 
 use std::cell::{RefCell, RefMut};
 use std::path::Path;
@@ -31,6 +33,10 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use ipc::WireError;
 use ipc::chan::Chan;
 use qap_proto::ops::command::CommandDefinition;
+use qap_proto::ops::manage::{
+    DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType, SetSystemValue, Subsystem,
+    SystemValue, SystemValues,
+};
 use qap_proto::ops::messages::{ListMessages, Messages, RemoveMessages, ReplyMessage, SendMessage, Sent};
 use qap_proto::ops::signon::{PasswordStatus, SignOnReply, TelnetTicketReply};
 use qap_proto::ops::spool::{
@@ -43,12 +49,14 @@ use qap_proto::ops::sql::{
 use qap_proto::ops::system::{Product, SystemInfo};
 use qap_proto::types::ObjectName;
 use qap_proto::{Secret, ServerMessage, Status, Token};
+use qapd::manage::ExitRequest;
 use qapd::sessions::EndedBy;
 use qapd::sql::SqlResult;
 use qapd::{Canceller, Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
 use stg::{Client, Link, QapRefused, QapSession, Shared};
 use wm::ctl::{Start, ToJob};
 
+use super::manage;
 use super::sql::{COMMAND, IDLE, LaneDb, Running, SQL, ThreadDb};
 use crate::console::Console;
 use crate::qapsql::{Lane, catalog};
@@ -101,7 +109,7 @@ pub(super) fn message(link: &mut Link, id: &str, data: &[&str]) -> ServerMessage
 
 /// Message `id` with substitution data already laid out (a command's),
 /// looked up as [`message`] looks it up.
-fn message_bytes(link: &mut Link, id: &str, data: &[u8]) -> ServerMessage {
+pub(super) fn message_bytes(link: &mut Link, id: &str, data: &[u8]) -> ServerMessage {
     let file = sysapi::param::file_of(id);
     let desc = link.with(|l| l.describe(id.to_string(), file.into(), "*LIBL".into()));
     match desc {
@@ -326,6 +334,11 @@ impl JobThread {
         self.shared.borrow_mut()
     }
 
+    /// What the `Manage` operations reach.
+    fn cx(&self) -> manage::Ctx<'_> {
+        manage::Ctx { shared: &self.shared }
+    }
+
     /// A refusal from the service: its status, and the message as a 5250
     /// display shows it (the service's text, no more) or from the file.
     fn refusal(&mut self, r: &QapRefused) -> Refusal {
@@ -360,12 +373,6 @@ fn reply_of(s: &QapSession) -> SignOnReply {
     }
 }
 
-// BLOCKED(phase12): the `Manage` service (QAP version 7, draft) is not
-// wired here yet; every operation answers `TCP1A5D` (the trait's default).
-// Each must run as its command does, with the command's authority checks
-// (`STRSBS`, `ENDSBS`, `CHGSYSVAL`, `PWRDWNSYS` through the analyzer, the
-// lists over `sbs_list`, `sysval`, `hw_table`, `sst_disks`), and call
-// `QS400_QAP_MGMT`'s exit programs through the registry.
 impl ThreadHost for JobThread {
     fn system_id(&mut self) -> SystemId {
         let system_name = sysval_text(&mut self.link(), "QSYSNAME");
@@ -562,5 +569,63 @@ impl ThreadHost for JobThread {
             .link()
             .with(|l| l.qap_msg_send(req.to.clone(), req.text.clone(), req.inquiry));
         r.map(|k| Sent { key: k.map(u32::to_be_bytes) }).map_err(|e| self.refusal(&e))
+    }
+
+    // `Manage` (version 7): `manage.rs`, and the service's parts.
+
+    fn exit_allows(&mut self, point: &str, format: &str, req: &ExitRequest) -> Result<(), Refusal> {
+        manage::exit_allows(&self.cx(), point, format, req)
+    }
+
+    fn subsystems(&mut self, library: &str) -> Result<Vec<Subsystem>, Refusal> {
+        manage::subsystems(&self.cx(), library)
+    }
+
+    fn start_subsystem(&mut self, sbsd: &ObjectName) -> Result<(), Refusal> {
+        manage::start_subsystem(&self.cx(), sbsd)
+    }
+
+    fn end_subsystem(&mut self, req: &EndSubsystem) -> Result<(), Refusal> {
+        manage::end_subsystem(&self.cx(), req)
+    }
+
+    fn system_values(&mut self, names: &[String]) -> Result<SystemValues, Refusal> {
+        manage::system_values(&self.cx(), names)
+    }
+
+    fn set_system_value(&mut self, req: &SetSystemValue) -> Result<SystemValue, Refusal> {
+        manage::set_system_value(&self.cx(), req)
+    }
+
+    fn ptfs(&mut self, product: &str) -> Result<Vec<Ptf>, Refusal> {
+        let r = self.link().with(|l| l.qap_mgmt_ptfs(product.to_string()));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn disk_units(&mut self) -> Result<DiskUnits, Refusal> {
+        let r = self.link().with(Client::qap_mgmt_disks);
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn hardware_resources(&mut self, kind: ResourceType) -> Result<HardwareResources, Refusal> {
+        manage::hardware_resources(&self.cx(), kind)
+    }
+
+    /// The service's answer, the IPL's time the system job `SCPF`'s
+    /// start, as `SystemInfo` gives it.
+    fn ipl_status(&mut self) -> Result<IplStatus, Refusal> {
+        let r = self.link().with(Client::qap_mgmt_ipl);
+        let mut st = r.map_err(|e| self.refusal(&e))?;
+        let jobs = self.link().with(Client::active_jobs);
+        if let Some(j) = jobs.iter().find(|j| j.kind == 'X') {
+            st.ipl_time = i64::try_from(j.started).unwrap_or(0).saturating_mul(1000);
+        }
+        Ok(st)
+    }
+
+    fn power_down(&mut self, req: &PowerDown) -> Result<(), Refusal> {
+        manage::power_down_allowed(&self.cx(), req)?;
+        let r = self.link().with(|l| l.qap_mgmt_power(req.clone()));
+        r.map_err(|e| self.refusal(&e))
     }
 }
