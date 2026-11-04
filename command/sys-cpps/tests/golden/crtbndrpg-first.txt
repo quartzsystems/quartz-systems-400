@@ -2,7 +2,7 @@
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
- Program  . . . . . . . . . . . . > HELLO         Name                          
+ Program  . . . . . . . . . . . . > HELLO         Name, *CTLSPEC                
    Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
  Source file  . . . . . . . . . .   QRPGLESRC     Name                          
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        

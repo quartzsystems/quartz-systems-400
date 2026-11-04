@@ -6,7 +6,7 @@
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
  Source member  . . . . . . . . . > SETUP         Name                          
  Source stream file . . . . . . .                                               
- Commitment control . . . . . . .   *CHG          *CHG, *UR, *CS, *ALL, *RS,... 
+ Commitment control . . . . . . .   *CHG          *CHG, *UR, *CS, *ALL, *RS...  
  Naming . . . . . . . . . . . . .   *SYS          *SYS, *SQL                    
  Severity level . . . . . . . . .   10            0-40                          
                                                                                 

@@ -5,7 +5,7 @@
  Subsystem  . . . . . . . . . . . > MYSBS         Name, *ALL                    
  How to end . . . . . . . . . . .   *CNTRLD       *CNTRLD, *IMMED               
  Controlled end delay time  . . .   *NOLIMIT      1-99999, *NOLIMIT             
- End subsystem option . . . . . .   *DFT          *DFT, *NOJOBLOG, *CHGPTY, ... 
+ End subsystem option . . . . . .   *DFT          *DFT, *NOJOBLOG, *CHGPTY...   
                        + for more values                                        
  Batch time limit . . . . . . . .   *NONE         1-99999, *NONE                
                                                                                 

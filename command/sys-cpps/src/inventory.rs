@@ -553,6 +553,9 @@ pub const JOB_SITE: &[&str] = &[
     // --- UIM APIs (work/qsjob/src/command/uiapi.rs)
     "CRTSCHIDX",
     "ADDSCHIDXE",
+    "RMVSCHIDXE",
+    "STRSCHIDX",
+    "DSPHLPDOC",
     // --- panels batch 2: work, spool, journals (panels/work2.rs)
     "WRKSBMJOB",
     "WRKSHRPOOL",

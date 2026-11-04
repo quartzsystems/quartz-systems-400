@@ -2143,6 +2143,7 @@ dependencies = [
  "cmd",
  "dspf",
  "ile",
+ "ipc",
  "licpgm",
  "lpstore",
  "menus",

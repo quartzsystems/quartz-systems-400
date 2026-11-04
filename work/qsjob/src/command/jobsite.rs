@@ -133,7 +133,8 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "STRPDM" | "WRKLIBPDM" | "WRKOBJPDM" | "WRKMBRPDM" | "FNDSTRPDM" => {
             return crate::devtools::pdm::run(job, host, r, out);
         }
-        "CRTSCHIDX" | "ADDSCHIDXE" => return super::uiapi::command(host, r),
+        "CRTSCHIDX" | "ADDSCHIDXE" | "RMVSCHIDXE" => return super::uiapi::command(host, r),
+        "STRSCHIDX" | "DSPHLPDOC" => return super::uiapi::display(host, r),
         // --- STRSST (devtools/sst)
         "STRSST" => return crate::devtools::sst::run(job, host, r, out),
         // --- DFU and RLU (devtools/dfu)

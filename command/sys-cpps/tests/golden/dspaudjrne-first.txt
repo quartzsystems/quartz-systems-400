@@ -5,7 +5,7 @@
  Entry types  . . . . . . . . . . > AF            AD, AF, AP, AU, AX, CA, CD... 
                        + for more values                                        
  User profile . . . . . . . . . .   *ALL          Name, *ALL                    
- Journal receiver . . . . . . . .   *CURRENT      Name                          
+ Journal receiver . . . . . . . .   *CURRENT      Name, *CURRENT, *CURCHAIN     
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Start time:                                                                    
    Start date . . . . . . . . . .     *FIRST        Date, *FIRST                

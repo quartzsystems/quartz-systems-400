@@ -4,9 +4,9 @@
                                                                                 
  Command to run . . . . . . . . . > CRTLIB LIB(X)                               
  Job name . . . . . . . . . . . .   *JOBD         Name, *JOBD                   
- Job description  . . . . . . . . > QBATCH        Name                          
+ Job description  . . . . . . . . > QBATCH        Name, *USRPRF                 
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
- Job queue  . . . . . . . . . . .   *JOBD         Name                          
+ Job queue  . . . . . . . . . . .   *JOBD         Name, *JOBD                   
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Job priority . . . . . . . . . .   *JOBD         1-9, *JOBD                    
                                                                                 
@@ -16,7 +16,7 @@
    Level  . . . . . . . . . . . .     *JOBD         0-4                         
    Severity . . . . . . . . . . .     0             0-99                        
    Text . . . . . . . . . . . . .     *NOLIST       *MSG, *SECLVL, *NOLIST      
- Initial library list . . . . . .   *JOBD         Name, *JOBD, *SYSVAL, *NON... 
+ Initial library list . . . . . .   *JOBD         Name, *JOBD, *SYSVAL...       
                        + for more values                                        
                                                                                 
                                                                         More... 

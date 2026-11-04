@@ -1,0 +1,53 @@
+# Section 4 on the 7.1 oracle: the keywords (F11) of the search index and
+# help document prompts. Read-only.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type CRTSCHIDX
+key f4
+settle 3000
+key f10
+settle 2000
+key f11
+settle 2000
+snap prompt-crtschidx-f11
+key f12
+settle 1500
+type STRSCHIDX
+key f4
+settle 3000
+key f11
+settle 2000
+snap prompt-strschidx-f11
+key f12
+settle 1500
+type RMVSCHIDXE
+key f4
+settle 3000
+key f11
+settle 2000
+snap prompt-rmvschidxe-f11
+key f12
+settle 1500
+type DSPHLPDOC
+key f4
+settle 3000
+key f11
+settle 2000
+snap prompt-dsphlpdoc-f11
+key f12
+settle 1500
+type ADDSCHIDXE
+key f4
+settle 3000
+key f11
+settle 2000
+snap prompt-addschidxe-f11
+key f12
+settle 1500

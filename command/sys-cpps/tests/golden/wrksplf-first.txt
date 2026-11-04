@@ -7,7 +7,7 @@
    Print device . . . . . . . . .     *ALL          Name, *ALL, *OUTQ           
    Form type  . . . . . . . . . .     *ALL          *ALL, *STD                  
    User data  . . . . . . . . . .     *ALL          *ALL                        
-   ASP  . . . . . . . . . . . . .     *ALL          *ALL, *ASPDEV, *CURASPGR... 
+   ASP  . . . . . . . . . . . . .     *ALL          *ALL, *ASPDEV...            
    ASP device . . . . . . . . . .     *             Name, *, *ALL, *SYSBAS      
  Time period:                                                                   
    Start:                                                                       

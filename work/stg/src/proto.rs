@@ -488,6 +488,8 @@ ipc::rpc! {
     221 => fn schidx_create / SchidxCreate (name: String, lib: String, text: String, replace: bool) -> Result<String, String>;
     /// `ADDSCHIDXE`: a panel group's `:ISCH.` topics into a search index.
     222 => fn schidx_add / SchidxAdd (name: String, lib: String, pnlgrp: String, pnlgrp_lib: String) -> Result<String, String>;
+    /// `RMVSCHIDXE`: a panel group's topics out of a search index.
+    223 => fn schidx_remove / SchidxRemove (name: String, lib: String, pnlgrp: String) -> Result<String, String>;
     // --- panels batch 2: work, spool, journals (240-269)
     /// A batch 2 display's data (`work/qsjob/src/panels/work2.rs`):
     /// `what` names the display (`SBMJOB`, `SHRPOOL`, `SYSSTS`, ...),

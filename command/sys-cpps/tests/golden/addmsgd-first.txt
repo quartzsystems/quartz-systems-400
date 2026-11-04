@@ -9,7 +9,7 @@
  Second-level message text  . . .   *NONE                                       
  Severity code  . . . . . . . . .   0             0-99                          
  Message data fields:                                                           
-   Data type  . . . . . . . . . .     *NONE         *QUAL, *CHAR, *CCHAR, *H... 
+   Data type  . . . . . . . . . .     *NONE         *QUAL, *CHAR, *CCHAR...     
    Length . . . . . . . . . . . .                   1-32767, *VARY              
    Decimal positions  . . . . . .                   0-9                         
                        + for more values                                        

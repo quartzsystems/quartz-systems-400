@@ -407,26 +407,63 @@ search index for help.
 :PD.Type a name of up to 10 characters.
 :EPARML.
 :EHELP.
+:HELP NAME='CRTSCHIDX/TITLE'.Display title (TITLE)
+:P.The display title for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 55 characters.
+:EPARML.
+:EHELP.
 :HELP NAME='CRTSCHIDX/TEXT'.Text 'description' (TEXT)
 :P.A short description of the object, up to 50 characters, shown by the
 work-with and display commands next to its name.
 :PARML.
-:PT.:PK DEF.*BLANK:EPK.
+:PT.:PK.*BLANK:EPK.
 :PD.No text.
 :PT.:PV.character-value:EPV.
 :PD.Type up to 50 characters.
 :EPARML.
+:P.Also accepted&colon. *TITLE.
 :EHELP.
-:HELP NAME='CRTSCHIDX/REPLACE'.Replace search index (REPLACE)
-:P.Whether an existing object of the same name is replaced. A replaced
-object is moved to library QRPLOBJ when it is in use.
+:HELP NAME='CRTSCHIDX/CHRID'.Character identifier (CHRID)
+:P.The graphic character set and code page of the data.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
-:PT.:PK.*YES:EPK.
-:PD.An existing object of the same name is replaced.
-:PT.:PK DEF.*NO:EPK.
-:PD.The command ends with a message when an object of the same name
-exists.
+:PT.:PK DEF.*SYSVAL:EPK.
+:PD.The value of the system value that holds the default.
+:EPARML.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Graphic character set
+:PARML.
+:PT.:PV.number:EPV.
+:PD.Type a whole number.
+:EPARML.
+:H4.Part 2&colon. Code page
+:PARML.
+:PT.:PV.number:EPV.
+:PD.Type a whole number.
+:EPARML.
+:EHELP.
+:HELP NAME='CRTSCHIDX/AUT'.Authority (AUT)
+:P.The authority the public (users with no private authority and no
+group authority) gets to the new object.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*LIBCRTAUT:EPK.
+:PD.The create authority of the library the object is created in (CRTAUT
+of the library).
+:PT.:PK.*CHANGE:EPK.
+:PD.Change authority&colon. all data authorities and operational
+authority. The object can be used and its contents changed.
+:PT.:PK.*ALL:EPK.
+:PD.All authority&colon. the user can do anything with the object except
+change its owner or what secures it.
+:PT.:PK.*USE:EPK.
+:PD.Use authority&colon. the object can be read and run but not changed.
+:PT.:PK.*EXCLUDE:EPK.
+:PD.No authority&colon. the object cannot be used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
 :EPARML.
 :EHELP.
 :HELP NAME=DLTMNU.Delete Menu (DLTMNU)
@@ -484,6 +521,86 @@ with them.
 :PT.:PK.*ALLUSR:EPK.
 :PD.Every user library&colon. libraries whose names do not start with Q,
 and the Q libraries that hold user data (QGPL, QUSRSYS and the like).
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME=DSPHLPDOC.Display Help Document (DSPHLPDOC)
+:P.Use the Display Help Document (DSPHLPDOC) command to show help by
+name&colon. DOC is the panel group, FLR its library (blank for the
+library list) and HLPLBL the help module.
+:EHELP.
+:HELP NAME='DSPHLPDOC/DOC'.Document (DOC)
+:P.The document for this command.
+:P.A value is required.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 12 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='DSPHLPDOC/FLR'.Folder (FLR)
+:P.The folder for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 63 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='DSPHLPDOC/HLPLBL'.Help text label (HLPLBL)
+:P.The help text label for this command.
+:PARML.
+:PT.:PK DEF.*FIRST:EPK.
+:PD.The first one.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 32 characters.
+:EPARML.
+:EHELP.
+:HELP NAME=RMVSCHIDXE.Remove Search Index Entry (RMVSCHIDXE)
+:P.Use the Remove Search Index Entry (RMVSCHIDXE) command to remove a
+panel group's help topics from a search index.
+:EHELP.
+:HELP NAME='RMVSCHIDXE/SCHIDX'.Search index (SCHIDX)
+:P.The search index for this command.
+:P.A value is required.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RMVSCHIDXE/PNLGRP'.Panel group (PNLGRP)
+:P.The panel group, by name and library.
+:P.A value is required.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME=STRSCHIDX.Start Search Index (STRSCHIDX)
+:P.Use the Start Search Index (STRSCHIDX) command to search a help index
+for topics and show their help.
+:EHELP.
+:HELP NAME='STRSCHIDX/SCHIDX'.Search index (SCHIDX)
+:P.The search index for this command.
+:PARML.
+:PT.:PK DEF.*USER:EPK.
+:PD.The user.
+:EPARML.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
 :PT.:PV.name:EPV.
 :PD.Type a name of up to 10 characters.
 :EPARML.

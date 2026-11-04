@@ -3,7 +3,7 @@
  Type choices, press Enter.                                                     
                                                                                 
  Autostart server . . . . . . . .   *SAME         *SAME, *NO, *YES              
- Lowest authentication method . .   *SAME         *SAME, *USRID, *VLDONLY, *... 
+ Lowest authentication method . .   *SAME         *SAME, *USRID, *VLDONLY...    
  Lowest encryption algorithm  . .   *SAME         *SAME, *DES, *AES             
                                                                                 
                                                                                 

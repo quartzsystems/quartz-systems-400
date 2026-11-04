@@ -8,7 +8,7 @@
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
  Source member  . . . . . . . . .   *OBJ          Name, *OBJ                    
  Source stream file . . . . . . .                                               
- Commitment control . . . . . . .   *CHG          *CHG, *UR, *ALL, *RS, *CS,... 
+ Commitment control . . . . . . .   *CHG          *CHG, *UR, *ALL, *RS, *CS...  
  Database to connect  . . . . . .   *LOCAL              *LOCAL                  
  Kind of object . . . . . . . . .   *PGM          *PGM, *SRVPGM, *MODULE        
  Precompiler listing  . . . . . .   *NONE         *NONE, *PRINT                 

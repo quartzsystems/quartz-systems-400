@@ -1868,6 +1868,13 @@ impl Service for Served<'_> {
         r
     }
 
+    fn schidx_remove(&mut self, name: String, lib: String, pnlgrp: String) -> Result<String, String> {
+        self.own_libl();
+        let r = super::uiapi::schidx_remove(self.system, (&name, &lib), &pnlgrp);
+        ile::set_libl(None);
+        r
+    }
+
     // --- panels batch 2: work, spool, journals (240-269)
 
     fn panel2_data(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::PanelData, String> {

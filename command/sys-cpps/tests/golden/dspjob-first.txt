@@ -6,7 +6,7 @@
    User . . . . . . . . . . . . .                   Name                        
    Number . . . . . . . . . . . .                   Character value             
  Output . . . . . . . . . . . . .   *             *, *PRINT                     
- Option . . . . . . . . . . . . .   *SELECT       *SELECT, *ALL, *STSA, *DFN... 
+ Option . . . . . . . . . . . . .   *SELECT       *SELECT, *ALL, *STSA...       
  Duplicate job option . . . . . .   *SELECT       *SELECT, *MSG                 
                                                                                 
                                                                                 

@@ -3,7 +3,7 @@
  Type choices, press Enter.                                                     
                                                                                 
  Message text . . . . . . . . . . > 'note'                                      
- To user profile  . . . . . . . . > *SYSOPR       Name, *SYSOPR, *ALLACT, *R... 
+ To user profile  . . . . . . . . > *SYSOPR       Name, *SYSOPR, *ALLACT...     
  To message queue . . . . . . . .                 Name                          
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
                        + for more values                                        

@@ -404,7 +404,13 @@ impl Engine {
     /// F11: search the group's index (`SCHIDX`) and show a topic.
     fn search<T: Terminal + ?Sized>(&mut self, term: &mut T) -> Option<()> {
         let name = self.group.schidx.clone().unwrap_or_default();
-        let (lib, idx) = split_qualified(&name);
+        self.start_search(term, &name)
+    }
+
+    /// The search index panels over index `name` (`LIB/NAME` or `NAME`),
+    /// as F11 and `STRSCHIDX` show them; `None` when the display is gone.
+    pub fn start_search<T: Terminal + ?Sized>(&mut self, term: &mut T, name: &str) -> Option<()> {
+        let (lib, idx) = split_qualified(name);
         let Some(entries) = term.search_index(&lib, &idx) else {
             self.error("CPF9801", &[&idx, &lib]);
             return Some(());

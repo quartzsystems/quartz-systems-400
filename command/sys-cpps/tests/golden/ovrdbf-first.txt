@@ -3,11 +3,11 @@
  Type choices, press Enter.                                                     
                                                                                 
  File being overridden  . . . . . > CUST          Name                          
- Overriding to database file  . . > CUST2         Name                          
+ Overriding to database file  . . > CUST2         Name, *FILE                   
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
  Member . . . . . . . . . . . . .                 Name, *FIRST, *LAST, *ALL     
  Starting position in file:                                                     
-   Retrieve order . . . . . . . .                   *RRN, *KEYB, *KEYBE, *KE... 
+   Retrieve order . . . . . . . .                   *RRN, *KEYB, *KEYBE...      
    Record number or key fields  .                   1-4294967288                
    Record format  . . . . . . . .                   Name                        
    Key value  . . . . . . . . . .                                               
@@ -17,7 +17,7 @@
    Lock state . . . . . . . . . .                   *SHRRD, *SHRNUP, *SHRUPD... 
                        + for more values                                        
  Records to force a write . . . .                 1-32767, *NONE                
- Format selector program  . . . .                 Name                          
+ Format selector program  . . . .                 Name, *NONE                   
                                                                                 
                                                                         More... 
  F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  

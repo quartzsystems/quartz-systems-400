@@ -4,7 +4,7 @@
                                                                                 
  Object . . . . . . . . . . . . . > CUST          Name                          
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
- Object type  . . . . . . . . . . > *FILE         *ALRTBL, *AUTL, *BNDDIR, *... 
+ Object type  . . . . . . . . . . > *FILE         *ALRTBL, *AUTL, *BNDDIR...    
  ASP device . . . . . . . . . . .   *             Name, *, *SYSBAS, *CURASPGRP  
  Output . . . . . . . . . . . . .   *             *, *PRINT, *OUTFILE           
                                                                                 

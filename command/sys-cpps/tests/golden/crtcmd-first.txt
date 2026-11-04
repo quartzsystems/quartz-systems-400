@@ -4,7 +4,7 @@
                                                                                 
  Command  . . . . . . . . . . . . > MYCMD         Name                          
    Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
- Program to process command . . . > MYPGM         Name                          
+ Program to process command . . . > MYPGM         Name, *REXX                   
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
  Source file  . . . . . . . . . .   QCMDSRC       Name                          
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        

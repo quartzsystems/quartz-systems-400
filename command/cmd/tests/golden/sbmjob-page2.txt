@@ -3,7 +3,7 @@
  Type choices, press Enter.                                                     
                                                                                 
  Hold on job queue  . . . . . . .   *JOBD         *JOBD, *NO, *YES              
- Schedule date  . . . . . . . . .   *CURRENT      Date, *CURRENT, *MONTHSTR,... 
+ Schedule date  . . . . . . . . .   *CURRENT      Date, *CURRENT, *MONTHSTR...  
                                                                                 
                                                                                 
                                                                                 

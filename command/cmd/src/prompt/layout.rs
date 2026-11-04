@@ -323,17 +323,20 @@ fn group_or_qual(
                     q.prompt_text().to_string()
                 };
                 let ind = if k == 0 { indent } else { indent + 2 };
-                value_line(
-                    q,
-                    &path.step(k),
-                    ind,
-                    &lbl,
-                    sel,
-                    marker && k == 0,
-                    choices(q),
-                    v,
-                    out,
-                );
+                // The name's row lists the parameter's single values
+                // too (`Name, *USRPRF`), as IBM's prompter does.
+                let mut c = choices(q);
+                if k == 0 && !v.keywords {
+                    for s in &p.sngval {
+                        if !c.split(", ").any(|x| x == s.from) {
+                            if !c.is_empty() {
+                                c.push_str(", ");
+                            }
+                            c.push_str(&s.from);
+                        }
+                    }
+                }
+                value_line(q, &path.step(k), ind, &lbl, sel, marker && k == 0, c, v, out);
             }
         }
         ParmType::Elem { .. } => {

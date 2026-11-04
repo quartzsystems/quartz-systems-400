@@ -13,10 +13,10 @@
  Display any file . . . . . . . .   *NO           *NO, *YES, *OWNER             
  Job separators . . . . . . . . .   0             0-9, *MSG                     
  Operator controlled  . . . . . .   *YES          *YES, *NO                     
- Data queue . . . . . . . . . . .   *NONE         Name                          
+ Data queue . . . . . . . . . . .   *NONE         Name, *NONE                   
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Authority to check . . . . . . .   *OWNER        *OWNER, *DTAAUT               
- Public authority . . . . . . . .   *USE          Name, *USE, *ALL, *CHANGE,... 
+ Public authority . . . . . . . .   *USE          Name, *USE, *ALL, *CHANGE...  
  Description  . . . . . . . . . .   *BLANK                                      
                                                                                 
                                                                          Bottom 

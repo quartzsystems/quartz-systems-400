@@ -10,7 +10,7 @@
    Starting position  . . . . . .     1             1-80                        
  Program to call  . . . . . . . . > QCMD          Name                          
    Library  . . . . . . . . . . .     QSYS          Name, *LIBL, *CURLIB        
- Class  . . . . . . . . . . . . .   *SBSD         Name                          
+ Class  . . . . . . . . . . . . .   *SBSD         Name, *SBSD                   
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Maximum active routing steps . .   *NOMAX        1-1000, *NOMAX                
  Storage pool identifier  . . . .   1             1-10                          

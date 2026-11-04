@@ -373,7 +373,25 @@ impl Prompter {
                     let room = COLS - ccol;
                     let mut c: String = choices.chars().take(room).collect();
                     if choices.chars().count() > room {
-                        c.truncate(room.saturating_sub(3));
+                        // Whole choices that fit, then `...` (`Name,
+                        // *LIBCRTAUT, *CHANGE...`), as IBM's prompter cuts.
+                        let mut kept = String::new();
+                        for item in choices.split(", ") {
+                            let next = if kept.is_empty() {
+                                item.to_string()
+                            } else {
+                                format!("{kept}, {item}")
+                            };
+                            if next.chars().count() + 3 > room {
+                                break;
+                            }
+                            kept = next;
+                        }
+                        c = if kept.is_empty() {
+                            choices.chars().take(room.saturating_sub(3)).collect()
+                        } else {
+                            kept
+                        };
                         c.push_str("...");
                     }
                     s.put(row, ccol, &c);

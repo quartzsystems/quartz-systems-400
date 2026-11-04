@@ -1,0 +1,24 @@
+                         Create Search Index (CRTSCHIDX)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Search index . . . . . . . . . . SCHIDX                                        
+   Library  . . . . . . . . . . .                  *CURLIB                      
+ Display title  . . . . . . . . . TITLE                                         
+                                                                                
+ Text 'description' . . . . . . . TEXT           *TITLE                         
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Character identifier:            CHRID                                         
+   Graphic character set  . . . .                *SYSVAL                        
+   Code page  . . . . . . . . . .                                               
+ Authority  . . . . . . . . . . . AUT            *LIBCRTAUT                     
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -8,7 +8,7 @@
    Restart after power down . . .     *NO           *NO, *YES                   
    Restart type . . . . . . . . .     *IPLA         *IPLA, *SYS, *FULL          
  IPL source . . . . . . . . . . .   *PANEL        *PANEL, A, B, D, *IMGCLG      
- End subsystem option . . . . . .   *DFT          *DFT, *NOJOBLOG, *CHGPTY, ... 
+ End subsystem option . . . . . .   *DFT          *DFT, *NOJOBLOG, *CHGPTY...   
                        + for more values                                        
  Timeout option . . . . . . . . .   *CONTINUE     *CONTINUE, *POWEROFF          
  Confirm  . . . . . . . . . . . .   *YES          *YES, *NO                     

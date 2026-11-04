@@ -5,7 +5,7 @@
  File . . . . . . . . . . . . . . > CUST          Name                          
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
  Member . . . . . . . . . . . . .   *FIRST        Name, *FIRST, *LAST           
- Key file . . . . . . . . . . . .   *NONE         Name                          
+ Key file . . . . . . . . . . . .   *NONE         Name, *NONE, *FILE...         
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Source update options  . . . . .   *SAME         *SAME, *SEQNBR                
                        + for more values                                        

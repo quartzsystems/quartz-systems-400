@@ -154,3 +154,24 @@ pub fn schidx_add(
         ))
     })
 }
+
+/// `RMVSCHIDXE`: the topics of a panel group (of any library) out of a
+/// search index.
+pub fn schidx_remove(system: &mut System, (name, lib): (&str, &str), pnlgrp: &str) -> Result<String, String> {
+    in_store(system, |txn, qsys, names| {
+        let (id, _) = find(txn, qsys, names, (name, lib), schidx_type())
+            .map_err(|e| format!("CPF6E13 {e}"))?;
+        let mut all = entries(txn, id)?;
+        let group = pnlgrp.to_ascii_uppercase();
+        let before = all.len();
+        all.retain(|e| e.2.rsplit('/').next() != Some(group.as_str()));
+        let n = before - all.len();
+        if n == 0 {
+            return Err(format!("CPF6E14 {pnlgrp} is not in search index {name}"));
+        }
+        wm::obj::write(txn, id, &ipc::encode(&all)).map_err(|e| e.to_string())?;
+        Ok(format!(
+            "{n} topics of panel group {pnlgrp} removed from search index {name}.\n"
+        ))
+    })
+}

@@ -1309,6 +1309,20 @@ help = "The panel group's index entries could not be added to the search index; 
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
+id = "CPF6E13"
+sev = 40
+text = "Panel group &1 was not removed from search index &2."
+help = "The search index does not exist, or you are not authorized to change it. The messages before this one give the reason."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6E14"
+sev = 40
+text = "Search index &2 holds no topics of panel group &1."
+help = "No entry of the search index came from the panel group named, so nothing was removed. Check the panel group name."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
 id = "CPF6E62"
 sev = 40
 text = "Panel group &1 in &2 is in search index &3 already."

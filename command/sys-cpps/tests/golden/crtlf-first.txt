@@ -10,12 +10,12 @@
  Generation severity level  . . .   20            0-30                          
  Flagging severity level  . . . .   0             0-30                          
  File type  . . . . . . . . . . .   *DATA         *DATA, *SRC                   
- Source listing options . . . . .   *SRC          *SRC, *SOURCE, *NOSRC, *NO... 
+ Source listing options . . . . .   *SRC          *SRC, *SOURCE, *NOSRC...      
                        + for more values                                        
  System . . . . . . . . . . . . .   *LCL          *LCL, *RMT, *FILETYPE         
  Physical file data members:                                                    
    Physical file  . . . . . . . .                   Name                        
-     Library  . . . . . . . . . .                     Name, *CURRENT, *LIBL,... 
+     Library  . . . . . . . . . .                     Name, *CURRENT, *LIBL...  
    Members  . . . . . . . . . . .                   Name, *NONE                 
                          + for more values                                      
                                                                                 

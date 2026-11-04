@@ -5,7 +5,8 @@
 //! The UIM APIs in the job (`sysapi::uiapi` over the job's display and
 //! the panel groups the storage service opens), printing panels and
 //! help to `QSYSPRT`, help search indexes, and the commands that make
-//! them: `CRTSCHIDX`, `ADDSCHIDXE`.
+//! them: `CRTSCHIDX`, `ADDSCHIDXE`, `RMVSCHIDXE`, and the displays over
+//! them: `STRSCHIDX`, `DSPHLPDOC`.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -97,19 +98,25 @@ pub fn print_rows(host: &Host, _title: &str, rows: &[String]) -> Result<LineMsg,
     Ok(LineMsg::info(uim::engine::msgid::PRINTED, &[]))
 }
 
-/// `CRTSCHIDX` and `ADDSCHIDXE`.
+/// `CRTSCHIDX`, `ADDSCHIDXE` and `RMVSCHIDXE`.
 pub fn command(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let parms = parms_of(r);
     let (name, lib) = parms.qual("SCHIDX");
     let reply = if r.name == "CRTSCHIDX" {
+        let title = parms.text("TITLE");
         let text = match parms.text("TEXT").as_str() {
             "*BLANK" => String::new(),
+            "*TITLE" => title,
             t => t.to_string(),
         };
-        let replace = parms.name("REPLACE") == "*YES";
         host.link
             .borrow_mut()
-            .with(|l| l.schidx_create(name.clone(), lib.clone(), text, replace))
+            .with(|l| l.schidx_create(name.clone(), lib.clone(), text, false))
+    } else if r.name == "RMVSCHIDXE" {
+        let g = parms.name("PNLGRP");
+        host.link
+            .borrow_mut()
+            .with(|l| l.schidx_remove(name.clone(), lib.clone(), g))
     } else {
         let (g, gl) = parms.qual("PNLGRP");
         host.link
@@ -125,4 +132,49 @@ pub fn command(host: &Host, r: &Resolved) -> Result<String, Fail> {
             .to_string();
         Fail::new(&id, e)
     })
+}
+
+/// `STRSCHIDX` (the search index panels; `*USER` is the system's index,
+/// `QHSS1`) and `DSPHLPDOC` (help module `HLPLBL` of panel group `DOC`
+/// in library `FLR`, the library list when blank; `*FIRST` is the
+/// group's first module), full screen.
+pub fn display(host: &Host, r: &Resolved) -> Result<String, Fail> {
+    if host.display.borrow().is_none() {
+        return Err(Fail::new("CPF6A1E", format!("{} needs a display.", r.name)));
+    }
+    let parms = parms_of(r);
+    let system = crate::display::dds::system_name(host);
+    let mut term = Surface::new(host.clone());
+    let mut e = uim::engine::Engine::new(Rc::new(uim::PanelGroup::default()), &system);
+    e.full_screen_help = true;
+    if r.name == "STRSCHIDX" {
+        let (name, lib) = parms.qual("SCHIDX");
+        let qualified = if name.is_empty() || name == "*USER" {
+            "*LIBL/QHSS1".to_string()
+        } else {
+            format!("{}/{name}", if lib.is_empty() { "*LIBL" } else { &lib })
+        };
+        e.start_search(&mut term, &qualified);
+        return Ok(String::new());
+    }
+    let doc = parms.name("DOC");
+    let lib = match parms.text("FLR").trim() {
+        "" => "*LIBL".to_string(),
+        l => l.to_ascii_uppercase(),
+    };
+    let g = crate::panels::group(host, &lib, &doc).map_err(|f| Fail::new("CPF6E3B", f.text))?;
+    let label = parms.text("HLPLBL").trim().to_ascii_uppercase();
+    let module = if label.is_empty() || label == "*FIRST" {
+        g.helps
+            .first()
+            .map(|h| h.name.clone())
+            .ok_or_else(|| Fail::new("CPF6E3B", format!("Panel group {doc} has no help.")))?
+    } else {
+        label
+    };
+    let shown = e.show_help(&mut term, &[format!("{lib}/{doc}/{module}")], false, true);
+    if shown == Some(false) {
+        return Err(Fail::new("CPF6E3B", format!("No help module {module} in {doc}.")));
+    }
+    Ok(String::new())
 }

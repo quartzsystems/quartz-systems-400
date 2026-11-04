@@ -500,9 +500,22 @@ call the APIs again.
 | QUHPRTH | help identifiers, count, errc | spooled to `QSYSPRT` |
 
 `*SCHIDX` objects (type 0x0023) hold search topics: `CRTSCHIDX` makes an
-empty one, `ADDSCHIDXE` copies a panel group's `:ISCH.` topics into it
-(CPF6E11, CPF6E12, CPF6E62); requests 220-222 of the storage service.
-The search panels are the shipped `QUHSCHIDX` group.
+empty one (its text `*TITLE` is the display title), `ADDSCHIDXE` copies a
+panel group's `:ISCH.` topics into it (CPF6E11, CPF6E12, CPF6E62),
+`RMVSCHIDXE` takes a panel group's topics out (CPF6E13, CPF6E14);
+requests 220-223 of the storage service. `STRSCHIDX` shows the search
+panels (the shipped `QUHSCHIDX` group) over an index, `*USER` meaning
+`QHSS1`; F11 in help does the same over the group's `SCHIDX`.
+`QSYS/QHSS1` is shipped: a topic for every help module of every shipped
+panel group (its `:ISCH.` topics, else its title with the title's words
+as roots), made again at the IPL that installs or replaces any shipped
+group (`lic/osobjects/src/ui.rs`; a shipped group whose source changed
+is replaced). `DSPHLPDOC` shows a help module full screen: `DOC` names
+the panel group, `FLR` its library (blank: the library list) and
+`HLPLBL` the module (`*FIRST`: the group's first); IBM's document and
+folder are not kept, so the parameters name UIM help instead. The
+prompts of these commands are the 7.1 oracle's
+(`oracle71/help/prompt-*`, `command/sys-cpps/tests/schidx.rs`).
 
 ## 9. Open questions
 

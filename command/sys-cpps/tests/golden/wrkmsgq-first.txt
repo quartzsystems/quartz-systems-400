@@ -3,7 +3,7 @@
  Type choices, press Enter.                                                     
                                                                                 
  Message queue  . . . . . . . . . > *ALL          Name, generic*, *ALL          
-   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB, *U... 
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB...     
                                                                                 
                                                                                 
                                                                                 

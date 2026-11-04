@@ -4,8 +4,11 @@
 
 //! Panel groups and menus: `*PNLGRP` objects hold a compiled UIM
 //! payload, `*MENU` objects their attributes. The shipped ones (the
-//! command menus and the task menus) are compiled and created in
-//! `QSYS` when missing.
+//! system's panels, the command help, the command menus and the task
+//! menus) are compiled and created in `QSYS` when missing, and replaced
+//! when the shipped source changed (an upgrade's new help). The search
+//! index `QSYS/QHSS1` holds a topic for every help module of them and is
+//! made again when any of them was.
 
 use qsname::Name;
 use store::obj::library::Library;
@@ -101,58 +104,133 @@ fn replace_existing(
     Ok(())
 }
 
-/// The shipped panel groups and menus missing from `QSYS`, compiled
-/// from their UIM and created (a `*MENU` of the same name over each);
-/// how many objects were made.
+/// The search index of the system's help.
+pub const QHSS1: &str = "QHSS1";
+
+/// The object type code of `*SCHIDX`.
+#[must_use]
+pub fn schidx_type() -> u16 {
+    types::type_by_name("*SCHIDX").map_or(0x0023, |t| t.code)
+}
+
+/// Whether the stored panel group `id` was compiled from `text`.
+fn same_source(txn: &mut Txn<'_>, id: ObjectId, text: &str) -> bool {
+    let Ok(bytes) = wm::obj::read(txn, id) else {
+        return false;
+    };
+    let Ok(p) = uim::payload::decode(&bytes) else {
+        return false;
+    };
+    let stored = p.source.iter().map(|l| l.text.as_str());
+    // Trimmed as the compiler trims a source line.
+    let shipped = text
+        .lines()
+        .map(|l| l.trim_end_matches(|c: char| c == ' ' || c.is_ascii_control()));
+    stored.eq(shipped)
+}
+
+/// A shipped panel group into `QSYS`: created when missing, replaced
+/// when its source changed; whether it was made.
+fn ship_group(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    stamp: &wm::obj::Stamp,
+    (name, text, what): (&str, &str, &str),
+) -> Result<bool, String> {
+    let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
+    let n = Name::parse(name).map_err(|e| format!("{name}: {e}"))?;
+    let have = lib.lookup(txn, pnlgrp_type(), n).map_err(|e| e.to_string())?;
+    if have.is_some_and(|id| same_source(txn, id, text)) {
+        return Ok(false);
+    }
+    let (payload, _) = compile(text, name, "QSYS")
+        .map_err(|l| format!("shipped panel group {name} does not compile:\n{l}"))?;
+    create_pnlgrp(
+        txn,
+        qsys,
+        n,
+        &format!("Shipped {what} {name}"),
+        stamp,
+        &payload,
+        have.is_some(),
+    )?;
+    Ok(true)
+}
+
+/// A topic for every help module of the shipped groups: its own
+/// `:ISCH.` topics, else its title with the title's words as roots.
+#[must_use]
+pub fn qhss1_entries() -> Vec<(String, Vec<String>, String, String)> {
+    let mut out = Vec::new();
+    for (name, text) in uim::shipped::FILES.iter().chain(menus::shipped::FILES) {
+        let c = uim::compile(text, &uim::NoImbeds, &uim::NoImports, &uim::CompileOpts::default());
+        let Some(g) = c.group else {
+            continue;
+        };
+        let qualified = format!("QSYS/{name}");
+        let topics = uim::engine::IndexEntry::of_group(&g, &qualified);
+        for h in &g.helps {
+            let own: Vec<_> = topics.iter().filter(|t| t.module == h.name).collect();
+            if !own.is_empty() {
+                out.extend(
+                    own.into_iter()
+                        .map(|t| (t.title.clone(), t.roots.clone(), t.pnlgrp.clone(), t.module.clone())),
+                );
+                continue;
+            }
+            let title = uim::model::Span::plain(&h.title).trim().to_string();
+            let roots: Vec<String> = title
+                .split(|c: char| !c.is_alphanumeric())
+                .filter(|w| w.len() > 2)
+                .map(str::to_ascii_uppercase)
+                .filter(|w| !matches!(w.as_str(), "THE" | "AND" | "FOR" | "HELP" | "WITH"))
+                .collect();
+            if title.is_empty() || roots.is_empty() {
+                continue;
+            }
+            out.push((title, roots, qualified.clone(), h.name.clone()));
+        }
+    }
+    out
+}
+
+/// `QSYS/QHSS1` made again from the shipped groups.
+fn ship_qhss1(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Result<(), String> {
+    let n = Name::parse(QHSS1).map_err(|e| e.to_string())?;
+    replace_existing(txn, qsys, n, schidx_type(), true)?;
+    let entries = qhss1_entries();
+    wm::obj::create_attr(
+        txn,
+        qsys,
+        (n, schidx_type(), ""),
+        "System help search index",
+        stamp,
+        &ipc::encode(&entries),
+    )
+    .map(|_| ())
+    .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF6E11")))
+}
+
+/// The shipped panel groups and menus missing from `QSYS` or changed,
+/// compiled from their UIM and created (a `*MENU` of the same name over
+/// each), and `QHSS1` when any was; how many objects were made.
 pub fn install_shipped(
     txn: &mut Txn<'_>,
     qsys: ObjectId,
     stamp: &wm::obj::Stamp,
 ) -> Result<usize, String> {
-    let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
     let mut made = 0;
     for (name, text) in uim::shipped::FILES {
-        let n = Name::parse(name).map_err(|e| format!("{name}: {e}"))?;
-        if lib
-            .lookup(txn, pnlgrp_type(), n)
-            .map_err(|e| e.to_string())?
-            .is_some()
-        {
-            continue;
+        if ship_group(txn, qsys, stamp, (name, text, "panel group"))? {
+            made += 1;
         }
-        let (payload, _) = compile(text, name, "QSYS")
-            .map_err(|l| format!("shipped panel group {name} does not compile:\n{l}"))?;
-        create_pnlgrp(
-            txn,
-            qsys,
-            n,
-            &format!("Shipped panel group {name}"),
-            stamp,
-            &payload,
-            false,
-        )?;
-        made += 1;
     }
     for (name, text) in menus::shipped::FILES {
         let n = Name::parse(name).map_err(|e| format!("{name}: {e}"))?;
-        let have_group = lib
-            .lookup(txn, pnlgrp_type(), n)
-            .map_err(|e| e.to_string())?
-            .is_some();
-        if !have_group {
-            let (payload, _) = compile(text, name, "QSYS")
-                .map_err(|l| format!("shipped panel group {name} does not compile:\n{l}"))?;
-            create_pnlgrp(
-                txn,
-                qsys,
-                n,
-                &format!("Shipped menu {name}"),
-                stamp,
-                &payload,
-                false,
-            )?;
+        if ship_group(txn, qsys, stamp, (name, text, "menu"))? {
             made += 1;
         }
+        let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
         let have_menu = lib
             .lookup(txn, menu_type(), n)
             .map_err(|e| e.to_string())?
@@ -166,5 +244,23 @@ pub fn install_shipped(
             made += 1;
         }
     }
+    let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
+    let idx = Name::parse(QHSS1).map_err(|e| e.to_string())?;
+    if made > 0 || lib.lookup(txn, schidx_type(), idx).map_err(|e| e.to_string())?.is_none() {
+        ship_qhss1(txn, qsys, stamp)?;
+        made += 1;
+    }
     Ok(made)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn qhss1_holds_every_kind_of_help() {
+        let e = super::qhss1_entries();
+        assert!(e.len() > 5000, "{}", e.len());
+        assert!(e.iter().any(|t| t.2 == "QSYS/QHWMCMD" && t.3 == "ADDLIBLE/LIB"));
+        assert!(e.iter().any(|t| t.2 == "QSYS/QUIWRKLIB" && t.3 == "WRKLIB"));
+        assert!(e.iter().all(|t| !t.1.is_empty()));
+    }
 }

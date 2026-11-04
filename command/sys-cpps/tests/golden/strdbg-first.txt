@@ -2,16 +2,16 @@
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
- Program  . . . . . . . . . . . . > HELLO         Name                          
+ Program  . . . . . . . . . . . . > HELLO         Name, *NONE                   
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
                        + for more values                                        
- Default program  . . . . . . . .   *PGM          Name                          
+ Default program  . . . . . . . .   *PGM          Name, *PGM, *NONE             
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Max trace statements . . . . . .   200           0-99999                       
  Trace full . . . . . . . . . . .   *STOPTRC      *STOPTRC, *WRAP               
  Update production files  . . . .   *NO           *NO, *YES                     
  OPM source level debug . . . . .   *NO           *NO, *YES                     
- Service program  . . . . . . . .   *NONE         Name                          
+ Service program  . . . . . . . .   *NONE         Name, *NONE                   
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
                        + for more values                                        
  Class file . . . . . . . . . . .   *NONE                                       

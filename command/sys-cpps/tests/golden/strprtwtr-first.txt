@@ -3,11 +3,11 @@
  Type choices, press Enter.                                                     
                                                                                 
  Printer  . . . . . . . . . . . . > QSCAPTURE     Name, *ALL                    
- Output queue . . . . . . . . . .   *DEV          Name                          
+ Output queue . . . . . . . . . .   *DEV          Name, *DEV                    
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Form type options:                                                             
    Form type  . . . . . . . . . .     *ALL          *ALL, *STD, *FORMS          
-   Message option . . . . . . . .     *INQMSG       *INQMSG, *MSG, *NOMSG, *... 
+   Message option . . . . . . . .     *INQMSG       *INQMSG, *MSG, *NOMSG...    
  File separators  . . . . . . . .   *FILE         0-9, *FILE                    
  Drawer for separators  . . . . .   *DEVD         1-255, *DEVD, *FILE           
                                                                                 

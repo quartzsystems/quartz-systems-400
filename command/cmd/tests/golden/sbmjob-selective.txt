@@ -4,9 +4,9 @@
                                                                                 
  Command to run . . . . . . . . . > CRTLIB LIB(X)                               
  Job name . . . . . . . . . . . . > NIGHT         Name, *JOBD                   
- Job description  . . . . . . . .   *USRPRF       Name                          
+ Job description  . . . . . . . .   *USRPRF       Name, *USRPRF                 
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
- Job queue  . . . . . . . . . . .   *JOBD         Name                          
+ Job queue  . . . . . . . . . . .   *JOBD         Name, *JOBD                   
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
                                                                                 
                                                                                 

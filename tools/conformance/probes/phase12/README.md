@@ -20,6 +20,7 @@ cargo run -p tn5250-driver -- run --target oracle \
 | `goldens71-dspmod.tn` | `DSPMOD` `*BASIC` and `*PROCLIST` over a CL module made in `QSTEST` (its four-line source sent by FTP first; module and member removed after) |
 | `goldens71-keys.tn` | `DSPDEVD` and `DSPAUTUSR` after F11, `DSPHDWRSC` of `*CMN`, `*STG`, `*PRC`, `*LWS`, `*CRP` and `*CSA` |
 | `questions71.tn`, `questions71b.tn` | `ENDCMTCTL` with a file open under commitment control, a QSH write to a data member, `CHKOBJITG`'s prompt and run (the first pass typed over refused commands; the second presses Erase Input first; with no violation CHKOBJITG made no outfile, so its DSPFFD steps found none) |
+| `help71.tn`, `help71-kw.tn` (2026-11-04, goldens in `.../oracle71/help/`) | the prompts of `CRTSCHIDX`, `ADDSCHIDXE`, `RMVSCHIDXE`, `STRSCHIDX` and `DSPHLPDOC` with F10 and F11, and the help window over the `ADDLIBLE` prompt: F1 on a parameter, F24, F2, Page Down, F12, F3, F1 on the title row (the oracle has no `QHLPSYS`, so the windows say help is not available; `STRSCHIDX SCHIDX(QHSS1)` was refused for the same reason) |
 | `questions71c.tn`, `dspffd-qasychki.tn` | `CHKOBJITG`'s model outfile found through `QSYS2.SYSTABLES` (QSH `db2`, the job's CCSID set to 37 first), then its `DSPFFD` |
 
 Everything made for a capture lives in `QSTEST` and is deleted by the

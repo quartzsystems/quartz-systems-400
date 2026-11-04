@@ -6,12 +6,12 @@
  User password  . . . . . . . . .   *SAME                                       
  Set password to expired  . . . .   *SAME         *SAME, *NO, *YES              
  Status . . . . . . . . . . . . .   *SAME         *SAME, *ENABLED, *DISABLED    
- User class . . . . . . . . . . .   *SAME         *SAME, *USER, *SYSOPR, *PG... 
- Assistance level . . . . . . . .   *SAME         *SAME, *SYSVAL, *BASIC, *I... 
+ User class . . . . . . . . . . .   *SAME         *SAME, *USER, *SYSOPR...      
+ Assistance level . . . . . . . .   *SAME         *SAME, *SYSVAL, *BASIC...     
  Current library  . . . . . . . .   *SAME         Name, *SAME, *CRTDFT          
- Initial program to call  . . . .   *SAME         Name                          
+ Initial program to call  . . . .   *SAME         Name, *SAME, *NONE            
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
- Initial menu . . . . . . . . . .   *SAME         Name                          
+ Initial menu . . . . . . . . . .   *SAME         Name, *SAME, *SIGNOFF         
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  Limit capabilities . . . . . . .   *SAME         *SAME, *NO, *PARTIAL, *YES    
  Description  . . . . . . . . . .   *SAME                                       

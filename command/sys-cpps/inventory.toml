@@ -151,6 +151,18 @@ note = "a *SCHIDX for help's F11; the storage service makes it"
 site = "job"
 note = "a panel group's :ISCH. topics into a *SCHIDX"
 
+[cmd.RMVSCHIDXE]
+site = "job"
+note = "a panel group's topics out of a *SCHIDX"
+
+[cmd.STRSCHIDX]
+site = "job"
+note = "the search index panels over a *SCHIDX (QHSS1 for *USER)"
+
+[cmd.DSPHLPDOC]
+site = "job"
+note = "a help module by panel group and name, in the help display"
+
 # --- panels batch 2: work, spool, journals (panels/work2.rs)
 [cmd.WRKSHRPOOL]
 site = "job"

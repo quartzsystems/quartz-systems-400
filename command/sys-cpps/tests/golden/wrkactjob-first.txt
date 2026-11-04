@@ -8,7 +8,7 @@
                        + for more values                                        
  CPU percent limit  . . . . . . .   *NONE         0-99.9, *NONE                 
  Response time limit  . . . . . .   *NONE         0-999.9, *NONE                
- Sequence . . . . . . . . . . . .   *SBS          *SBS, *CPUPCT, *FUNCTION, ... 
+ Sequence . . . . . . . . . . . .   *SBS          *SBS, *CPUPCT, *FUNCTION...   
  Job name . . . . . . . . . . . .   *ALL          Name, generic*, *ALL          
    User . . . . . . . . . . . . .     *ALL          Name, *ALL                  
    Number . . . . . . . . . . . .     *ALL          000000-999999, *ALL         
