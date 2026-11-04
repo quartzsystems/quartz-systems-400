@@ -1,0 +1,7 @@
+PGM *C 
+MONMSG †bÿÿ«ÔLENÿ±N23@Ða®½‘t?ñÆ-LENPENˆ©ëÔ³@Ða®½‘r?ñÆ-LENPENˆ©ëÔCHG›}ÿÿÿ
+†bÂ&€Ï¸ÿÿÿÿ"«ÔMONMSG LENïÿ"Piâaõv›}ÿÿÿ
+†bÂ&€Ï¸ÿÿÿÿ"«ÔMONMSG LPGM@Ða®½‘v?ñÆ-LENPENç©TYPE(*CHARTIF COND(& ÙEN(10)ND(&A *EQ 'X') VACÿÿÿÿ„«ÔLENtR 
+DCL VAR(&A) LYPB(*CAT*Cÿÿÿÿ"«ÔLENtÿÿ„«ÔLENtR 
+DCL VAR(&A) LYP10)
+IF 

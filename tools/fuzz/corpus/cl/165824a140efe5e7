@@ -1,0 +1,4 @@
+PGM PARÿÿÿ)
+DCL VAR(&A) TYPB(*Cÿÿÿÿ ÿÿÿÿNt10)
+MONMSG IF COND(&A *EQ 'X') TH('Y')
+E

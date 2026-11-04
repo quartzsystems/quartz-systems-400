@@ -1,0 +1,4 @@
+PGM &–#ƒόPGM &–#ƒόδDδR(&A) TYPE(*CHAR) LEN(10)M(&A)
+DCL VAR(&A) TYPE(*CHAR) 
+IF CONDN(10)
+IF COND(

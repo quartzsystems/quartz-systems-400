@@ -1,0 +1,13 @@
+**free
+dcl-s);ndcl indcl-s in;
+1= 1;
+dsply dcl-proc*-s);oc 1;
+dsplc*-s);oc 1;
+dsply xy x;
+= 1;
+d(10) 1;
+dsply x;
+= 1;
+d(10)txtx =     H x;
+*lr = *on;inlr = *on1;
+dsply x;*= lrn;

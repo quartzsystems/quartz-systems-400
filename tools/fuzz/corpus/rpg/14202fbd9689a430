@@ -1,0 +1,11 @@
+¦l-    dcl-ds nt(10);
+x = 1;
+d(10)
+x = 1;
+dsply x;
+*inlr    dcl-ds nt(10);
+x = 1;
+d(10)
+x = 1;
+dsply x;
+*in= *n;

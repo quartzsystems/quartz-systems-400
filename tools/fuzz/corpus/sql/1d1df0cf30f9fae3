@@ -1,0 +1,1 @@
+SELECT A, COUNT(*) FROM T WHERE B >  Y

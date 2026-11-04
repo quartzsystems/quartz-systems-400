@@ -1,0 +1,7 @@
+PGM PAWHEN Rÿÿÿÿ)
+DCL {Â ØVAR(&A) TYPB(*Cÿÿÿÿ «ÔLENt10)
+I0)
+IF CÿND(&A *EQ'X) TH|N(DOL NM@:&A)
+SG GM PAROF CÿND(&A *EQ'X') TH|N(DOL NMO:&A)
+SG GM PARO(&A)
+DCL& VA

@@ -243,7 +243,7 @@ Exact steps are filled in as each item is reached.
 | `QSHWQUAL` runs from media under QEMU; qualified-hardware doc written | |
 | QAP spec frozen; guest agent recognised by QEMU as a guest agent | |
 | 20 RPG III programs conformant; `CVTRPGSRC` report diffs clean | |
-| All fuzz targets 3 minutes crash-free, 6 at once (Rust fuzzer, see Notes; shortened from 30 min at Cody's request) | |
+| All fuzz targets 3 minutes crash-free, 6 at once (Rust fuzzer, see Notes; shortened from 30 min at Cody's request) | Pass 2026-11-03: 18 targets, 0.26M-1.13M execs each, 0 crashes (two crashes found earlier and fixed: `02ed74f3`, `7eb1c250`) |
 | `QSSECCHK` clean on a fresh install | |
 | Soak clean: one-hour run (the 72-hour run dropped at Cody's request) | |
 | Knowledge Center builds and is served; release notes written | |

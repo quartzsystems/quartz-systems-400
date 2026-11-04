@@ -1,0 +1,5 @@
+PGM PARÿÿÿÿ)
+DCL VAR(&A) TYPB(*Cÿÿÿÿ «ÔLENTYPB(*Cÿÿÿÿ «ÔLEN(10)t10)
+IF CÿND(&A **CAT') TH|N(DO)
+CHGVAR VAR(&) TYPB(*Cÿÿÿÿ =M PARDCL MSG¦(A)
+DEL VMONMSG A¡P½AR

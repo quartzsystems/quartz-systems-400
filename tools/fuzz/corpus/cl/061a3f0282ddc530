@@ -1,0 +1,5 @@
+PGM PARO(&A á˜5{Üž
+%BIN£­¾ù“‰ÿ§^ïŸ£/A) TYPE(*]HAR) LEN(10)
+IF CONDCHGVAR (&A *EQ 'X')
+DCL VAR(&A) TYP5{Üž
+%BIN£­¾ù“‰ÿ§^ïŸ£/A) TYPE(*]HAR) LEN(10)E(*CYPEH

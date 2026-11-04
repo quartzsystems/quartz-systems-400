@@ -1,0 +1,3 @@
+PGM PARM(Nt10)
+IF CO
+IF COND(& CONDND(& COND(&A X') 

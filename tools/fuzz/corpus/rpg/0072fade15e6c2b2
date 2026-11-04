@@ -1,0 +1,5 @@
+**f/copy ree
+dcl-s);
+x = 1;dcl-proc  DoH 1;
+dsply x;
+*lr = *on;inlr = *on;

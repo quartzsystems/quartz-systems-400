@@ -1,0 +1,4 @@
+PGM PARM(&AØ
+DN(10Á]ç≤ÿ1È¥)
+IF COND(&A PGM 'X') DOFOR O)
+CHGVAR VAR(A) 

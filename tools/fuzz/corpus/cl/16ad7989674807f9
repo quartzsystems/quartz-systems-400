@@ -1,0 +1,3 @@
+PAR VAR(&A) VALUE('Y')
+ENDDO
+ENDPGÎ

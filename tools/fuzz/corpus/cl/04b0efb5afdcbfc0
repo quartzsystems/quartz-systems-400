@@ -1,0 +1,5 @@
+PGM PARM(Nt10)
+	F COND(&A *EQ 'X') THEN(ÄO)
+CHWHE VAR(&) TYPB(*Cÿÿÿÿ µÔLEN(10)
+GM 'X') DOFOR ô³O)
+CHGVAR VAR(A) 

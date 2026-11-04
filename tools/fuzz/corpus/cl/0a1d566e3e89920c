@@ -1,0 +1,14 @@
+PGM PARM(&A)
+DCL VAR(&A) TYPB(*Cÿÿÿÿ½/v¼Ö"¿+
+«ÔLENPGMt10)
+IF COYPB(*Cÿÿÿÿ «ÔLENTYPB(*Cÿÿÿÿ «ÔLEN(10)t10)
+IF hP;Xù×‚ ½CÿND(&A*CAT') TH|N(DO)
+CHGVAR N ÿÿÿ)
+DCL V[
+-¶ÿˆÈ×BAR(&A) TYPB(*Cÿÿÿÿ «ÔLENTYPB(*Cÿÿÿÿ «ÔLEN(10)t10)
+IF CÿND(&A*CAT') TH|N(DO)
+CHGVAR VAR(&) TYPB(*Cÿÿÿÿ «ÔLEN(10)
+IF CONg(&A *EQ 'X') THEN(D%BIN(GVAR VAR(A) ‡³Ü
+CHGVAR VAR(&) TYPB(*Cÿÿÿÿ «ÔLEN(10)
+I')
+ENÄDM

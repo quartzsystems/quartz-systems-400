@@ -1,0 +1,10 @@
+PGM PARM(&A)
+DCL VAR(&A+ TYž“PB˜ï(&A)
+DCLf Uf†¼Ûä„GÛä„GGÓZf Lf Uf†¼Ûä„GGÓZA˜ïGÓZA˜ï( Lf Uf†¼Ûä„†¼Ûä„GGÓZA˜ï(&A)&A)
+DCLf Lf UfÛä„GGÓZA˜ïGÓZA˜ï(&A)
+DCLf Lf Lf Uf†¼Ûä„GÛä„GGÓZf Lf Uf†¼Ûä„GGÓZA˜ïGÓZA˜ï(&A)
+DCLf Lf UfÛä„G
+DCLf Lf UfÛä„GGÓZA˜ïGÓZA˜ï(&A)
+DCLf Lf Uf†¼Ûä„†¼Ûä„GGÓZGÓZA˜ïGÓZA˜ï(&A)
+DCLf Lf Uf†¼Ûä„†¼Ûä„GGÓZA˜ï(&A)
+DCLf VAVA

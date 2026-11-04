@@ -1,0 +1,2 @@
+PGM PARM(Nt X10)
+IF COND(&A DCL X

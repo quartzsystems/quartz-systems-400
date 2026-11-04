@@ -1,0 +1,18 @@
+PGM0PARM(&A)
+DCL VAR(ùA) TY­“PB(*MÿÿVALî((&A) VALî('Y')
+E&A) VALî((&A) VALî('Y')
+END('Y' î î('Y')
+END('Y')
+EN'Y')
+ND('Y' î î('Y')
+END('Y')
+EN'Y')
+END('Y' î î('D('Y')
+EN'Y')
+ND('Y' î î('Y')
+END('Y')
+EN'Y')
+END('Y' î î('Y')
+END('Y')
+ENDDO
+MONMSG DPGÎ

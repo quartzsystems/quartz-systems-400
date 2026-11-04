@@ -1,0 +1,9 @@
+PGM PARM(&A)
+DCL VAR(&A) TYPB(*Cÿÿÿÿ½/v¼Ö"¿+
+«ÔLENt10)
+IF COND(&A *EQ 'X') THEN(DO)
+CHGVAR VAR(&) TYPB(*Cÿÿÿÿ«ÔLEIB COND(&¡
+'ÜÍ”A *EQ 'X') THEND(&A *EQ 'X') THN(DO)
+CHGVARVAR(A) VALUE(%Y')
+ENDDO
+ENDPÿÿM

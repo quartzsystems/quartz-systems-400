@@ -1,0 +1,10 @@
+PGM PAR TYPB(*Cÿÿÿÿ «ÔLENt10)
+E˜IF COND(&A *EQCÿÿÿÿÿÿÿ)
+DCL VAR(&A) TYPB(*Cÿÿÿÿ «ÔLENt10)
+E˜IF COND(&A *EQCÿÿÿÿ «ÔLEFt10)
+E 'X') THEN(DO)
+CH(*Cÿÿÿÿ «ÔLEN(10)
+IF COND(&A *EQ 'X')GM
+ THEN(D%BIN(GVAR VAR(A) VALUE('Y')
+ENDDO
+ENDP2GM

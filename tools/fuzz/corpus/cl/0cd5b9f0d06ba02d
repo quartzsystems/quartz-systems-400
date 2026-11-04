@@ -1,0 +1,7 @@
+PGM PARM(LA)
+D§ömÂÚG*Ý-CL VAR(&A) TYPB(*CHAR) LEN(10)
+IF (&A) TYPB(*CHAR) LEN(10)
+IF COND(&"xÄ¶Él¶A *EWHEN ) THN(DO)N(DO)
+CHGVAR VAR(&A*CAT) VALUE('Y')
+ENDDO
+ENDPGâíøÔ	«KÖ0Ö|4¬
