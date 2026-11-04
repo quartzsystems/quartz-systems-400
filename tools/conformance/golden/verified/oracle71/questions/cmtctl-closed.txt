@@ -1,0 +1,24 @@
+                                 Command Entry                         S062B175 
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > OPNDBF FILE(QSTEST/QSCMT) OPTION(*ALL) COMMIT(*YES)                       
+      Member QSCMT file QSCMT opened with no sharing allowed.                   
+      Member QSCMT file QSCMT in QSTEST opened.                                 
+    > ENDCMTCTL                                                                 
+      ENDCMTCTL not allowed. Pending changes active.                            
+    > DSPMSGD RANGE(CPF8355) MSGF(QCPFMSG)                                      
+    > DSPMSGD RANGE(CPF8367) MSGF(QCPFMSG)                                      
+    > CLOF OPNID(QSCMT)                                                         
+      No file open with identifier QSCMT.                                       
+    > ENDCMTCTLD(QSCMT)                                                         
+      String beginning 'ENDCMTCTLD' not valid command name.                     
+      Error found on *N command.                                                
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===> ENDCMTCTLD(QSCMT)                                                         
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

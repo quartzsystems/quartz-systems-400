@@ -7737,10 +7737,10 @@ help = "STRCMTCTL was run while a commitment definition exists. End it with ENDC
 vars = []
 
 [[msg]]
-id = "CPF8367"
+id = "CPF8355"
 sev = 40
-text = "The commitment control operation could not be done."
-help = "Files are open under commitment control. Close them before ending commitment control."
+text = "Commitment control cannot end while files are open under it."
+help = "ENDCMTCTL was run while a file opened under the commitment definition is still open, so changes may be pending. Close the files, commit or roll back, then end commitment control."
 vars = []
 
 [[msg]]

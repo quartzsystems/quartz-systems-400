@@ -280,7 +280,7 @@ impl DbError {
             Self::CommitOpen => "CPF4293",
             Self::CommitNotActive => "CPF8350",
             Self::CommitActive => "CPF8351",
-            Self::CommitFilesOpen => "CPF8367",
+            Self::CommitFilesOpen => "CPF8355",
             Self::Corrupt { .. } => "CPF3113",
             Self::MemberFull { .. }
             | Self::RecordLength { .. }

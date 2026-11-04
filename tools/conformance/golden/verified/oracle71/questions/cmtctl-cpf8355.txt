@@ -1,0 +1,24 @@
+                       Select Message Details to Display                        
+                                                             System:   SYSNAME  
+ Message ID . . . . . . . . . :   CPF8355                                       
+ Message file . . . . . . . . :   QCPFMSG                                       
+   Library  . . . . . . . . . :     QSYS                                        
+ Message text . . . . . . . . :   ENDCMTCTL not allowed. Pending changes active.
+                                                                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display message text                                                   
+      2. Display field data                                                     
+                                                                                
+      5. Display message attributes                                             
+                                                                                
+     30. All of the above                                                       
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

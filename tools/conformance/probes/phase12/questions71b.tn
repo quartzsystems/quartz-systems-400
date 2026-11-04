@@ -1,0 +1,129 @@
+# Open questions on the 7.1 oracle, second pass (Erase Input before each
+# command: Command Entry keeps a refused one): ENDCMTCTL before and after
+# the file is closed, CHKOBJITG's prompt and outfile. Only QSTEST is
+# written, and what is made there is deleted.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type DSPLIB QSTEST
+key enter
+settle 3000
+snap qstest-before
+key f3
+settle 1500
+key eraseinput
+type CRTPF FILE(QSTEST/QSCMT) RCDLEN(10)
+key enter
+settle 3000
+key eraseinput
+type CRTJRNRCV JRNRCV(QSTEST/QSCMTR)
+key enter
+settle 3000
+key eraseinput
+type CRTJRN JRN(QSTEST/QSCMTJ) JRNRCV(QSTEST/QSCMTR)
+key enter
+settle 3000
+key eraseinput
+type STRJRNPF FILE(QSTEST/QSCMT) JRN(QSTEST/QSCMTJ)
+key enter
+settle 3000
+key eraseinput
+type STRCMTCTL LCKLVL(*CHG)
+key enter
+settle 3000
+key eraseinput
+type OPNDBF FILE(QSTEST/QSCMT) OPTION(*ALL) COMMIT(*YES) OPNID(QSCMT)
+key enter
+settle 3000
+key eraseinput
+type ENDCMTCTL
+key enter
+settle 3000
+snap cmtctl-open-2
+key eraseinput
+type CLOF OPNID(QSCMT)
+key enter
+settle 3000
+key eraseinput
+type ENDCMTCTL
+key enter
+settle 3000
+snap cmtctl-closed-2
+key eraseinput
+type ENDJRNPF FILE(QSTEST/QSCMT)
+key enter
+settle 3000
+key eraseinput
+type DLTF FILE(QSTEST/QSCMT)
+key enter
+settle 3000
+key eraseinput
+type DLTJRN JRN(QSTEST/QSCMTJ)
+key enter
+settle 3000
+key eraseinput
+type DLTJRNRCV JRNRCV(QSTEST/QSCMTR) DLTOPT(*IGNINQMSG)
+key enter
+settle 3000
+snap cmtctl-cleanup-2
+key eraseinput
+type CHKOBJITG
+key f4
+settle 3000
+snap chkobjitg-prompt
+key f12
+settle 2000
+key eraseinput
+type CHKOBJITG OBJ('/QSYS.LIB/QSTEST.LIB/*') OUTFILE(QSTEST/QSITG)
+key enter
+settle 20000
+snap chkobjitg-run
+key eraseinput
+type DSPFFD FILE(QSTEST/QSITG)
+key enter
+settle 4000
+snap chkobjitg-ffd-1
+key pgdn
+settle 1200
+snap chkobjitg-ffd-2
+key pgdn
+settle 1200
+snap chkobjitg-ffd-3
+key pgdn
+settle 1200
+snap chkobjitg-ffd-4
+key pgdn
+settle 1200
+snap chkobjitg-ffd-5
+key pgdn
+settle 1200
+snap chkobjitg-ffd-6
+key pgdn
+settle 1200
+snap chkobjitg-ffd-7
+key pgdn
+settle 1200
+snap chkobjitg-ffd-8
+key f3
+settle 2000
+key eraseinput
+type DLTF FILE(QSTEST/QSITG)
+key enter
+settle 3000
+key eraseinput
+type DLTF FILE(QSTEST/QSDTAF)
+key enter
+settle 3000
+key eraseinput
+type DSPLIB QSTEST
+key enter
+settle 3000
+snap qstest-after
+key f3
+settle 1500

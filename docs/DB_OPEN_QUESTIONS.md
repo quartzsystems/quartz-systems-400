@@ -380,9 +380,17 @@ undoing an update writes `R BR` and `R UR`, undoing a delete writes
 flag what they write (bit 3) and skip flagged entries when run again.
 Test: `DSPJRN` after `ROLLBCK` and after `RMVJRNCHG` on the machine.
 
-**`ENDCMTCTL` with files open.** Refused with CPF8367 while a path opened
-with `COMMIT(*YES)` is open; with nothing open an unfinished cycle is
-rolled back first. Test: `ENDCMTCTL` from a program with the file open.
+**`ENDCMTCTL` with files open.** Settled on the primary (V7R1M0,
+2026-11-03, `tools/conformance/probes/phase12/questions71b.tn`, captures in
+`golden/verified/oracle71/questions/cmtctl-*`): after `STRCMTCTL` and
+`OPNDBF ... COMMIT(*YES)` from Command Entry, with no change made,
+`ENDCMTCTL` is refused with `CPF8355` (pending changes active), not
+`CPF8367` (an operation that could not be done). QS/400 now sends
+`CPF8355` while a path opened under the definition is open. A second
+`ENDCMTCTL` then ended commitment control with no message: the open was
+already gone (`CLOF` found no open of that ID; an `OPNDBF` from the
+command line is scoped to its call level). With nothing open an
+unfinished cycle is rolled back first.
 
 **Lock levels.** `*CHG` locks records read for update and keeps changed
 ones to the boundary; `*CS` locks every record read until the next read
@@ -396,7 +404,7 @@ gives way to its own update when no other job shares it. `*CS` input
 paths and queries take no read locks (a record being changed is still
 locked for update). The
 record a path still holds at `COMMIT` is released too. Message IDs
-CPF4293, CPF4328, CPF8350, CPF8351 and CPF8367 are placeholders. Test: `*CS` with
+CPF4293, CPF4328, CPF8350 and CPF8351 are placeholders. Test: `*CS` with
 two jobs reading the same record.
 
 **Recovery.** After an abnormal end every journal in every library is

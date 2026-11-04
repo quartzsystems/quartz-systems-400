@@ -251,7 +251,7 @@ the sender moved to IBM's identifier for the case, or to ours
 | Production file under UPDPROD(*NO) | CPF4188 | CPD9D0B |
 | Display file runtime; subfile update before a read | CPF5123; CPF5034 | CPD9D08; CPD9D09 |
 | Journal: no receiver; receiver used | CPF7006; CPF7010 | CPD9D0A; CPF701A |
-| Commitment: no journal; active; files open | CPF8351; CPF8355; CPF8356 | CPF4328; CPF8351; CPF8367 |
+| Commitment: no journal; active; files open | CPF8351; CPF8355; CPF8356 | CPF4328; CPF8351; CPF8355 (V7R1M0, 2026-11-03) |
 | QAUTOVRT reached (to QSYSOPR) | CPF8955 (not in QCPFMSG) | CPF8940 |
 | IFS escapes | CPFA0DC, CPFA0DE (never produced) | removed |
 

@@ -143,7 +143,7 @@ locks are held to the commit boundary per `LCKLVL(*CHG|*CS|*ALL)` (under
 `*ALL` a record read without update is read-locked: shared with other
 readers, held off from other jobs' changes);
 `COMMIT` writes `C CM`, `ROLLBCK` undoes the cycle from the before
-images and writes `C RB`; `ENDCMTCTL` with files open is `CPF8367`. A
+images and writes `C RB`; `ENDCMTCTL` with files open is `CPF8355`. A
 journaled file is required (`CPF4328`). At IPL, after the store is
 open, slic rolls back every cycle any journal left open and reports
 `C1001082` with the count (`db::journal::recover_all`).

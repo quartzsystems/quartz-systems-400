@@ -1,0 +1,288 @@
+[[golden]]
+name = "cmtctl-open"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71"
+width = 80
+
+[[golden]]
+name = "cmtctl-cpf8355"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71"
+width = 80
+
+[[golden]]
+name = "cmtctl-cpf8367"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71"
+width = 80
+
+[[golden]]
+name = "cmtctl-closed"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71"
+width = 80
+
+[[golden]]
+name = "cmtctl-cleanup"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71"
+width = 80
+
+[[golden]]
+name = "qsh-pfdta"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71"
+width = 80
+
+[[golden]]
+name = "qstest-before"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "cmtctl-open-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "cmtctl-closed-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "cmtctl-cleanup-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-prompt"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-run"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-ffd-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-ffd-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-ffd-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-ffd-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-ffd-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-ffd-6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-ffd-7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-ffd-8"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "qstest-after"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71b"
+width = 80
+
+[[golden]]
+name = "chkobjitg-model"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "questions71c"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-8"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-9"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-12"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-13"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
+[[golden]]
+name = "dspffd-qasychki-14"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "dspffd-qasychki"
+width = 80
+
