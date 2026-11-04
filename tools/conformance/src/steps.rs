@@ -304,7 +304,7 @@ impl Suite {
             return Err("sign-on display is not showing".into());
         }
         let asp = s.command("svc.asp", CMD)?;
-        if !asp.contains("created by V1R0M0") {
+        if !asp.contains("created by V1R") {
             return Err(format!("svc.asp did not report the store: {asp}"));
         }
         if !s.log.contains("SRC C6004130") {
@@ -393,7 +393,7 @@ impl Suite {
             return Err("sign-on display is not showing".into());
         }
         let asp = s.command("svc.asp", CMD)?;
-        if !asp.contains("created by V1R0M0") {
+        if !asp.contains("created by V1R") {
             return Err(format!("svc.asp did not report the store: {asp}"));
         }
         let last = seen.last().map_or(0.0, |(_, t)| t.as_secs_f64());

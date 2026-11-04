@@ -265,9 +265,13 @@ replacement with RSTLICPGM's semantics:
   makes every native copy; a slip install translates only code an older
   code generator made.
 
-A test build claims another release with `QS400_RELEASE=V1R1M0` at
-build time (`lic/release/build.rs`); the harness's slip step installs
-such a build's ISO (`QS400_SLIP_ISO`) over V1R0M0.
+The current release is V1R1M0. A build claims another release with
+`QS400_RELEASE=VxRyMz` at build time (`lic/release/build.rs`); the
+harness's step 10 installs a `QS400_RELEASE=V1R0M0` build's ISO
+(`QS400_OLD_ISO`) on a blank disk, makes user data (a data area, a
+journaled table with rows, spooled files, a `SAVLIB` in a save file),
+upgrades it with the suite's V1R1M0 media, checks every piece, restores
+the V1R0M0 save with `RSTLIB`, and has the V1R0M0 media refused.
 
 ## 5. QEMU
 

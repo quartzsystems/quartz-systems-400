@@ -170,9 +170,48 @@ ones pub400 refused can be captured there (V7R1M0).
 | `SVC_OPEN_QUESTIONS.md` 33 | the recovery's `RST` leaving 7 links | §1 | open |
 | `UI_OPEN_QUESTIONS.md` 4, 6, 8, 12 | start-up response record; keys that carry data; the printer data stream; SST's audit code | §1: the primary's telnet | open |
 
+## Inventory
+
+| Commit | What |
+|---|---|
+| `0f7d4df1` | this file; `CLAUDE.md` rewritten for Phases 0 to 11 and every crate |
+| `de57ebda` | `tools/fmtcheck`: 23 frozen formats, their lock, `build test` runs it; "Frozen at V1R1M0" in ten format documents; version constants for the PTF header, `QAUDJRN` layouts, authority structures, host-server codec and oracle fixtures |
+| (next) | `RELEASE` is V1R1M0; install step 10 installs V1R0M0 media and upgrades it with user data; the kernel's drivers (§6); `tools/fuzz` and `build fuzz` (§9) |
+
+## Format freeze (Section 2)
+
+`tools/fmtcheck/formats.toml` names every frozen format: the object
+store (pages, superblock, units, WAL, B+tree nodes, allocation, parity,
+the IFS map, the object header and the store's own payloads), the LIC
+partition, the database and journal payloads, the save stream and its
+outfiles, PTF packages, the update protocol, product payloads, virtual
+tape and the media labels, QAP versions 1 to 6, the host-server codec,
+spooled files and the other work management payloads, `QAUDJRN`
+layouts, `*USRPRF`, the stored authority structures, ILE objects and the
+IR's binary module, the command, message, display file, panel group and
+menu payloads, IFS metadata, communications, registration facility and
+certificate store payloads, and the oracle fixture formats. The hash is
+over Rust tokens (comments, formatting and test items do not count).
+`cargo test -p fmtcheck` and `build test` fail on a frozen definition
+changed without its version constant; `cargo run -p fmtcheck -- update`
+records a bump.
+
 ## Deviations
 
-(none yet)
+- **The fuzzer is ours.** `cargo fuzz` runs libFuzzer, which is C++
+  compiled by `libfuzzer-sys`'s build script; that breaks the pure-Rust
+  rule. `tools/fuzz` (`qsfuzz`) is coverage-guided the same way: the
+  build passes LLVM's SanitizerCoverage flags (`-C passes=sancov-module`,
+  inline 8-bit counters), and `tools/fuzz/src/cov.rs` receives the
+  counter arrays and reads them after every input. Mutations, corpus,
+  crash minimisation and a hang watchdog are in `engine.rs` and
+  `mutate.rs`. `build fuzz` builds it instrumented and runs each target.
+- **Console drivers.** The console stays on the firmware's framebuffer
+  through `simpledrm` (`CONSOLE.md`): Intel, AMD, Matrox G200 (iDRAC,
+  iLO) and ASPEED BMC graphics all hand over a UEFI GOP framebuffer, so
+  no native DRM driver is built. Native drivers would modeset, which
+  QS/400 does not do, and i915/amdgpu need firmware files a
+  `MODULES=n` kernel with no firmware in the initramfs cannot load.
 
 ## NEEDS-CODY
 

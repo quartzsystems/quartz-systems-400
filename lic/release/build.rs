@@ -8,7 +8,7 @@
 //! Without git the ID is `unknown`.
 //!
 //! `QS400_RELEASE` (`VxRyMz`) makes a test build claim another release,
-//! for the upgrade path (docs/INSTALL.md); V1R0M0 when absent.
+//! for the upgrade path (docs/INSTALL.md); V1R1M0 when absent.
 
 use std::env;
 use std::path::Path;
@@ -38,7 +38,7 @@ fn main() {
     println!("cargo:rustc-env=QS400_BUILD_ID={id}");
     println!("cargo:rerun-if-env-changed=QS400_RELEASE");
     let rel = env::var("QS400_RELEASE").unwrap_or_default();
-    let (v, r, m) = parse_release(rel.trim()).unwrap_or((1, 0, 0));
+    let (v, r, m) = parse_release(rel.trim()).unwrap_or((1, 1, 0));
     println!("cargo:rustc-env=QS400_RELEASE_V={v}");
     println!("cargo:rustc-env=QS400_RELEASE_R={r}");
     println!("cargo:rustc-env=QS400_RELEASE_M={m}");

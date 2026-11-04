@@ -333,7 +333,7 @@ L0:
     let pr = bytes(&p, "pr");
     assert_eq!(chars(&pr, 12, 7), "QS00SS1");
     assert_eq!(chars(&pr, 63, 2), "90");
-    assert_eq!(chars(&pr, 19, 6), "V1R0M0");
+    assert_eq!(chars(&pr, 19, 6), "V1R1M0");
     assert_eq!(text(&p, "out"), "10212026130509250");
     assert_eq!(text(&p, "back"), "20261021130509250", "*DTS round trip");
     assert_ne!(bytes(&p, "stamp")[..8], [0; 8]);

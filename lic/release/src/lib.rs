@@ -7,9 +7,9 @@
 //!
 //! `VxRyMz`: V changes for a new generation, R for a release that adds
 //! function (and may change on-disk formats), M for maintenance only.
-//! R0 is the development release; V1R1M0 is the first release meant for use
+//! V1R0M0 was the development release; V1R1M0 is the first release meant for use
 //! outside development. Pre-release builds carry the stream plus a build
-//! ID: `V1R0M0 build a1b2c3d[-dirty]`. No alpha, beta or rc words.
+//! ID: `V1R1M0 build a1b2c3d[-dirty]`. No alpha, beta or rc words.
 
 #![forbid(unsafe_code)]
 
@@ -94,12 +94,12 @@ pub fn build_id() -> &'static str {
     env!("QS400_BUILD_ID")
 }
 
-/// `V1R0M0 build a1b2c3d`.
+/// `V1R1M0 build a1b2c3d`.
 pub fn full() -> String {
     RELEASE.full()
 }
 
-/// `QS/400 V1R0M0 build a1b2c3d`, the line slic prints at IPL.
+/// `QS/400 V1R1M0 build a1b2c3d`, the line slic prints at IPL.
 pub fn banner() -> String {
     format!("QS/400 {}", full())
 }

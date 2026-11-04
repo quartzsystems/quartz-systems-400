@@ -23,7 +23,7 @@ fn os_prdr0100(echo: &str) -> Want {
         .bin(4, 108)
         .bin(8, 0)
         .ch(12, 7, echo)
-        .ch(19, 6, "V1R0M0")
+        .ch(19, 6, "V1R1M0")
         .ch(25, 4, "0000")
         .ch(29, 4, "5050")
         .ch(33, 10, "*CODE")
@@ -36,8 +36,8 @@ fn os_prdr0100(echo: &str) -> Want {
         .ch(82, 2, "")
         .bin(84, 0)
         .ch(88, 4, "2924")
-        .ch(92, 6, "V1R0M0")
-        .ch(98, 6, "V1R0M0")
+        .ch(92, 6, "V1R1M0")
+        .ch(98, 6, "V1R1M0")
         .ch(104, 1, "1")
         .ch(105, 3, "L00");
     w
@@ -62,7 +62,7 @@ fn prdr0100_of_the_operating_system() {
         &sys(),
         200,
         "PRDR0100",
-        &prdi("5770SS1", "V1R0M0", "0000", "*CODE"),
+        &prdi("5770SS1", "V1R1M0", "0000", "*CODE"),
         None,
     )
     .unwrap();
@@ -90,7 +90,7 @@ fn prdr0100_of_a_language_load_and_an_option() {
         &sys(),
         200,
         "PRDR0100",
-        &prdi("QS00WDS", "V1R0M0", "0031", "2924"),
+        &prdi("QS00WDS", "V1R1M0", "0031", "2924"),
         None,
     )
     .unwrap();
@@ -98,7 +98,7 @@ fn prdr0100_of_a_language_load_and_an_option() {
     w.bin(0, 108)
         .bin(4, 108)
         .ch(12, 7, "QS00WDS")
-        .ch(19, 6, "V1R0M0")
+        .ch(19, 6, "V1R1M0")
         .ch(25, 4, "0031")
         .ch(29, 4, "2924")
         .ch(33, 10, "*LNG")
@@ -111,8 +111,8 @@ fn prdr0100_of_a_language_load_and_an_option() {
         .ch(82, 2, "")
         .bin(84, 0)
         .ch(88, 4, "2924")
-        .ch(92, 6, "V1R0M0")
-        .ch(98, 6, "V1R0M0")
+        .ch(92, 6, "V1R1M0")
+        .ch(98, 6, "V1R1M0")
         .ch(104, 1, "0")
         .ch(105, 3, "");
     assert_eq!(got, w.0);
@@ -126,7 +126,7 @@ fn prdr0100_of_a_reserved_product_is_defined() {
         &sys(),
         200,
         "PRDR0100",
-        &prdi("QS00AFW", "V1R0M0", "0000", "*CODE"),
+        &prdi("QS00AFW", "V1R1M0", "0000", "*CODE"),
         None,
     )
     .unwrap();
@@ -271,7 +271,7 @@ fn prdr0500_definition() {
         w.ch(at, 4, o)
             .ch(at + 4, 1, "0")
             .ch(at + 5, 7, m)
-            .ch(at + 12, 6, "V1R0M0");
+            .ch(at + 12, 6, "V1R1M0");
     }
     w.bin(0, 232).bin(4, 232);
     assert_eq!(got, w.0);
@@ -316,7 +316,7 @@ fn prdr0600_loads_and_0700_releases() {
         .bin(4, 22)
         .bin(8, 1)
         .bin(12, 0)
-        .ch(16, 6, "V1R0M0");
+        .ch(16, 6, "V1R1M0");
     assert_eq!(got, w.0);
 }
 
@@ -392,7 +392,7 @@ fn errors() {
         err(qszrtvpr(&s, &sys(), 200, "PRDR0100", &none, None)),
         "CPF0C1F"
     );
-    let bad_opt = prdi("*OPSYS", "V1R0M0", "0099", "*CODE");
+    let bad_opt = prdi("*OPSYS", "V1R1M0", "0099", "*CODE");
     assert_eq!(
         err(qszrtvpr(&s, &sys(), 200, "PRDR0100", &bad_opt, None)),
         "CPF0C1F"

@@ -46,7 +46,7 @@ fn shipped_system_rows() {
     assert_eq!(os.len(), 6);
     assert!(
         os.iter()
-            .all(|(_, rel, st)| rel == "V1R0M0" && *st == "*COMPATIBLE")
+            .all(|(_, rel, st)| rel == "V1R1M0" && *st == "*COMPATIBLE")
     );
     assert_eq!(os[0].0, "*BASE");
     assert!(
@@ -132,7 +132,7 @@ fn status_follows_the_loads() {
                 && l.key.load_type == LoadType::Code
         })
         .unwrap();
-    l.key.release = release::Release { v: 1, r: 1, m: 0 };
+    l.key.release = release::Release { v: 1, r: 2, m: 0 };
     s.update_load(&q, &l).unwrap();
     assert_eq!(st(&s, 12), Some(InstalledStatus::BklvlOpt));
     // A vendor product's compatibility is not known.
@@ -202,7 +202,7 @@ fn chkprdopt_finds_missing_and_damaged_and_recovers() {
     // A wrong release and a missing object: state 64.
     s.objects.insert(
         ObjEntry::new("INVPRD", "INVMAIN", "*PGM"),
-        ObjStatus::Present(Some(release::Release { v: 1, r: 1, m: 0 })),
+        ObjStatus::Present(Some(release::Release { v: 1, r: 2, m: 0 })),
     );
     let objs = s.clone();
     let r = chkprdopt(&mut s, &objs, &pid, Some(OptionNo::BASE), None).unwrap();

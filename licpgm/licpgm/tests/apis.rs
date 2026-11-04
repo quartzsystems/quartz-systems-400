@@ -33,7 +33,7 @@ fn qual(n: &str, l: &str) -> Vec<u8> {
 
 fn pd_info(product: &str) -> Vec<u8> {
     let mut b = e(product, 7);
-    b.extend(e("V1R0M0", 6));
+    b.extend(e("V1R1M0", 6));
     b.extend(e("APPMSG", 10));
     b.extend(e("2025", 10));
     b.extend(e("*CURRENT", 10));
@@ -85,7 +85,7 @@ fn create(s: &mut MemStore) -> Result<(), licpgm::api::ApiError> {
 
 fn pl_info(option: &str, t: &str, id: &str) -> Vec<u8> {
     let mut b = e("2AP0001", 7);
-    b.extend(e("V1R0M0", 6));
+    b.extend(e("V1R1M0", 6));
     b.extend(e(option, 4));
     b.extend(e(t, 10));
     b.extend(e(id, 8));
@@ -210,7 +210,7 @@ fn create_package_support_delete() {
 
     // QSZSPTPR.
     let mut sp = e("2AP0001", 7);
-    sp.extend(e("V1R0M0", 6));
+    sp.extend(e("V1R1M0", 6));
     sp.extend(e("0000", 4));
     sp.extend(e("*CODE", 10));
     sp.extend(e("", 10));
@@ -306,6 +306,10 @@ fn crtpd_checks() {
 #[test]
 fn chktg() {
     let mut s = sys();
+    // At V1R0M0 first, whatever release this build is.
+    let v10 = release::Release { v: 1, r: 0, m: 0 };
+    s.release = v10;
+    s.known_releases = vec![v10];
     let list = |v: &[&str]| v.iter().map(|x| (*x).to_string()).collect::<Vec<_>>();
     let r = qszchktg(&s, "*CURRENT", &list(&["V1R0M0"])).unwrap();
     assert_eq!(
@@ -322,7 +326,7 @@ fn chktg() {
     );
     let v11 = release::Release { v: 1, r: 1, m: 0 };
     s.release = v11;
-    s.known_releases = vec![release::RELEASE, v11];
+    s.known_releases = vec![v10, v11];
     let r = qszchktg(&s, "*PRV", &list(&["V1R0M0", "V1R1M0"])).unwrap();
     assert_eq!(
         (r.validated.as_str(), r.equivalent.as_str()),

@@ -9,7 +9,7 @@
 //! |---|---|
 //! | 8 | a response file on a FAT32 copy of the media: no prompts, two disks mirrored, the answers applied, every licensed program installed, signatures clean |
 //! | 9 | `SAVSYS` to a virtual tape, the system disk wiped, the recovery from the tape: LIC, operating system, profiles, configuration |
-//! | 10 | an upgrade to a V1R1M0 build over V1R0M0 with option 1 (`QS400_SLIP_ISO`): user data kept, release recorded, the downgrade refused |
+//! | 10 | V1R0M0 media (`QS400_OLD_ISO`) installed, user data made (a journaled table, spooled files, a SAVLIB in a save file), upgraded with option 1 to the suite's V1R1M0 media: the data kept, the release recorded, RSTLIB of the V1R0M0 save, the downgrade refused |
 //! | 11 | a power pull in the middle of a LIC install, then a clean reinstall |
 //! | 14 | option 1, Restore Licensed Internal Code, over step 1's disk with user data: the data kept, the new slot booted |
 
@@ -336,17 +336,37 @@ impl Suite {
         if self.skipped(name) {
             return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
         }
-        let Some(newer) = std::env::var_os("QS400_SLIP_ISO").map(PathBuf::from) else {
-            println!("  SKIP {name:<24}  QS400_SLIP_ISO names no V1R1M0 media");
+        // The suite's media is the current release (V1R1M0); the system
+        // upgraded is installed from V1R0M0 media, a build made with
+        // `QS400_RELEASE=V1R0M0` (`QS400_OLD_ISO`).
+        let Some(older) = std::env::var_os("QS400_OLD_ISO").map(PathBuf::from) else {
+            println!("  SKIP {name:<24}  QS400_OLD_ISO names no V1R0M0 media");
             return Ok(StepReport {
                 name,
                 elapsed: Duration::ZERO,
-                detail: "skipped: QS400_SLIP_ISO not set".into(),
+                detail: "skipped: QS400_OLD_ISO not set".into(),
             });
         };
+        let _ = installed;
         let system = self.out_dir.join("slip-system.img");
-        fs::copy(installed, &system)?;
-        // User data first, on the V1R0M0 system.
+        blank(&system, 4 * GIB)?;
+        let old_media = Launch {
+            image: Some(system.clone()),
+            cdrom: Some(older.clone()),
+            cdrom_first: true,
+            extra_disks: Vec::new(),
+            ..self.launch.clone()
+        };
+        let mut s = Session::spawn(&old_media)?;
+        if let Err(e) = self.automatic_install(&mut s) {
+            return report(name, start, Err((format!("V1R0M0 install: {e}"), s.log.clone())));
+        }
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(30));
+        drop(s);
+        // User data on the V1R0M0 system: a library with a data area, a
+        // journaled table with rows, spooled files, and a save file
+        // holding a SAVLIB made by V1R0M0.
         let disk = Launch {
             image: Some(system.clone()),
             cdrom: None,
@@ -355,22 +375,56 @@ impl Suite {
             ..self.launch.clone()
         };
         let mut s = Session::spawn(&disk)?;
-        let r = (|| -> Result<(), String> {
+        let r = (|| -> Result<Vec<String>, String> {
             s.expect(SRC_IPL_COMPLETE, self.boot_timeout * 2)?;
             s.expect(crate::PROMPT, CMD)?;
-            s.command("crtlib LIB(SLIPUSR) TEXT('user data')", CMD)?;
-            s.command("svc.obj crt *DTAARA SLIPUSR/KEEPME kept", CMD)?;
-            Ok(())
+            let asp = s.command("svc.asp", CMD)?;
+            if !asp.contains("V1R0M0") {
+                return Err(format!("QS400_OLD_ISO is not V1R0M0 media:\n{asp}"));
+            }
+            for (line, want) in [
+                ("crtlib LIB(SLIPUSR) TEXT('user data')", ""),
+                ("crtdtaara DTAARA(SLIPUSR/KEEPME) TYPE(*CHAR) LEN(20) VALUE('kept value')", ""),
+                ("runsql SQL('CREATE TABLE SLIPUSR.ORDERS (ID INTEGER, ITEM CHAR(10))') COMMIT(*NONE)", ""),
+                ("crtjrnrcv SLIPUSR/RCV0001", "created"),
+                ("crtjrn SLIPUSR/JRN JRNRCV(SLIPUSR/RCV0001)", "created"),
+                ("strjrnpf SLIPUSR/ORDERS JRN(SLIPUSR/JRN) IMAGES(*BOTH)", "started"),
+                ("runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(1, ''bolts'')') COMMIT(*NONE)", ""),
+                ("runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(2, ''nuts'')') COMMIT(*NONE)", ""),
+                ("DSPLIBL OUTPUT(*PRINT)", ""),
+                ("crtlib LIB(SLIPSAV) TEXT('saved by V1R0M0')", ""),
+                ("crtdtaara DTAARA(SLIPSAV/OLDSAVE) TYPE(*CHAR) LEN(20) VALUE('from V1R0M0')", ""),
+                ("crtsavf FILE(SLIPUSR/OLDSAVF)", ""),
+                ("savlib LIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)", "CPC3722"),
+                ("dltlib LIB(SLIPSAV)", ""),
+            ] {
+                let out = s.command(line, CMD)?;
+                if out.contains("CPF") || !out.contains(want) {
+                    return Err(format!("{line}:\n{out}"));
+                }
+            }
+            // The ready spooled files, by name, to find again after the upgrade.
+            let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
+            let names: Vec<String> = files
+                .lines()
+                .filter(|l| l.contains("RDY"))
+                .filter_map(|l| l.split_whitespace().next().map(str::to_string))
+                .collect();
+            if names.is_empty() {
+                return Err(format!("no spooled file before the upgrade:\n{files}"));
+            }
+            Ok(names)
         })();
-        if let Err(e) = r {
-            return report(name, start, Err((e, s.log.clone())));
-        }
+        let spooled = match r {
+            Ok(n) => n,
+            Err(e) => return report(name, start, Err((e, s.log.clone()))),
+        };
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(30));
         drop(s);
         let upgrade = Launch {
             image: Some(system.clone()),
-            cdrom: Some(newer),
+            cdrom: self.iso.clone(),
             cdrom_first: true,
             ..disk.clone()
         };
@@ -382,9 +436,28 @@ impl Suite {
             if !asp.contains("V1R1M0") {
                 return Err(format!("the store does not record V1R1M0:\n{asp}"));
             }
-            let kept = s.command("svc.obj ls SLIPUSR", CMD)?;
-            if !kept.contains("KEEPME") {
-                return Err(format!("user data lost:\n{kept}"));
+            let checks: [(&str, &[&str]); 4] = [
+                ("svc.dtaara get SLIPUSR/KEEPME", &["kept value"]),
+                ("dsppfm FILE(SLIPUSR/ORDERS)", &["bolts", "nuts"]),
+                ("dspjrn JRN(SLIPUSR/JRN)", &["PT", "ORDERS"]),
+                (
+                    "rstlib SAVLIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)",
+                    &["CPC3703", "SLIPSAV"],
+                ),
+            ];
+            for (line, wants) in checks {
+                let out = s.command(line, CMD)?;
+                if let Some(w) = wants.iter().find(|w| !out.contains(**w)) {
+                    return Err(format!("{line}: no {w} after the upgrade:\n{out}"));
+                }
+            }
+            let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
+            if let Some(f) = spooled.iter().find(|f| !files.contains(f.as_str())) {
+                return Err(format!("spooled file {f} lost in the upgrade:\n{files}"));
+            }
+            let v = s.command("svc.dtaara get SLIPSAV/OLDSAVE", CMD)?;
+            if !v.contains("from V1R0M0") {
+                return Err(format!("RSTLIB of the V1R0M0 save lost the data:\n{v}"));
             }
             let sig = signatures_clean(&mut s)?;
             let last = tr
@@ -395,7 +468,10 @@ impl Suite {
                 .unwrap_or_default()
                 .trim()
                 .to_string();
-            Ok(format!("upgraded to V1R1M0; SLIPUSR/KEEPME kept; {last}; {sig}"))
+            Ok(format!(
+                "V1R0M0 installed, upgraded to V1R1M0; the data area, the journaled table and \
+                 its entries, the spooled files kept; RSTLIB of a V1R0M0 SAVLIB; {last}; {sig}"
+            ))
         })()
         .map_err(|e| (e, s.log.clone()));
         s.command("pwrdwn", CMD).ok();
@@ -407,7 +483,7 @@ impl Suite {
         };
         // The V1R0M0 media over it now: refused.
         let back = Launch {
-            cdrom: self.iso.clone(),
+            cdrom: Some(older),
             ..upgrade
         };
         let mut s = Session::spawn(&back)?;

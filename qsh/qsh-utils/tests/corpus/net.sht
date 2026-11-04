@@ -710,7 +710,7 @@ www.example.com has IPv6 address 2606:2800:220:1:248:1893:25c8:1946
 dig www.example.com
 --- out
 
-; <<>> dig (QS/400 V1R0M0) <<>> www.example.com
+; <<>> dig (QS/400 V1R1M0) <<>> www.example.com
 ;; global options: +cmd
 ;; Got answer:
 ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1
@@ -776,7 +776,7 @@ www.example.com.	300	IN	A	93.184.216.34
 dig nosuch.example.com; echo status $?
 --- out
 
-; <<>> dig (QS/400 V1R0M0) <<>> nosuch.example.com
+; <<>> dig (QS/400 V1R1M0) <<>> nosuch.example.com
 ;; global options: +cmd
 ;; Got answer:
 ;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 1

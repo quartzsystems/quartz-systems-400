@@ -367,7 +367,7 @@ QS400
 ### uname -r and -v
 uname -r; uname -v
 --- out
-0
+1
 1
 
 ### uname -m
@@ -378,7 +378,7 @@ uname -m
 ### uname -a
 uname -a
 --- out
-OS400 QS400 0 1 0000000
+OS400 QS400 1 1 0000000
 
 ### uname -sn
 uname -sn

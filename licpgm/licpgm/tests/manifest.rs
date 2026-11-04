@@ -44,7 +44,7 @@ fn a_good_manifest_builds_its_objects() {
     assert_eq!(base.directories[0].home, "INV");
     assert_eq!(
         base.agreements,
-        ["/QIBM/ProdData/LicenseDoc/1AB1234_V1R0M0/2924.txt"]
+        ["/QIBM/ProdData/LicenseDoc/1AB1234_V1R1M0/2924.txt"]
     );
     assert_eq!(p.agreement.as_deref(), Some("Use it well."));
     let (_, lng) = &p.loads[1];
