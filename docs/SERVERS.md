@@ -129,7 +129,8 @@ the exit points through the registration facility: before the device
 is chosen, `QIBM_QTG_DEVINIT` `INIT0100` with the user, device,
 connection and workstation type; a program that answers "do not allow"
 ends the connection, and a device name it returns is the device asked
-for. When the session ends, `QIBM_QTG_DEVTERM` `TERM0100`. The programs
+for. An answer that allows automatic sign-on signs the user profile it
+returned on without a password (`TN5250.md`, step 4). When the session ends, `QIBM_QTG_DEVTERM` `TERM0100`. The programs
 run in a runtime job on `QTVTELNET`'s main thread (IBM runs them in the
 `QTVDEVICE` job), built the first time a point has programs; a point
 without programs costs one registry question. A session whose call

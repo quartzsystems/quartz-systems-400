@@ -445,3 +445,48 @@ pub fn telnet_ticket(
     }
     sign_on_ticket(system, &user, device)
 }
+
+/// `telnet_verify`: whether `proof` is `user`'s password, before the
+/// device exists (the `INIT0100` "client password validated"). Nothing
+/// is changed: the sign-on that follows counts a wrong one.
+pub fn telnet_verify(system: &mut System, ctx: &JobCtx, user: &str, proof: &sec::signon::Substitute) -> bool {
+    if ctx.job.name != TELNET {
+        return false;
+    }
+    let user = user.trim().to_ascii_uppercase();
+    let Some(p) = read(system, &user) else {
+        return false;
+    };
+    if p.disabled || p.pwd_none {
+        return false;
+    }
+    let values = sec::signon::Values::from_sysvals(&|n: &str| sysval_text(system, n));
+    sec::password::verify_substitute(&p, &user, proof, values.policy.pwdlvl)
+}
+
+/// `telnet_exit_signon`: an `INIT0100` exit program allowed automatic
+/// sign-on as `user`; every sign-on check but the password, as IBM's
+/// "anonymous" Telnet does. Only `QTVTELNET` may ask.
+pub fn telnet_exit_signon(
+    system: &mut System,
+    ctx: &JobCtx,
+    user: &str,
+    device: &str,
+) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
+    if ctx.job.name != TELNET {
+        return Err(sec::signon::Refused {
+            msgid: "CPF1107".into(),
+            text: "Password or user profile is not correct.".into(),
+            vary_off: false,
+        });
+    }
+    let user = user.trim().to_ascii_uppercase();
+    sec::audit::record(
+        sec::audit::Event::new(sec::audit::Kind::Ps)
+            .set("ETYP", "V")
+            .set("USRP", user.as_str())
+            .set("NUSR", user.as_str())
+            .set("RSLT", "A"),
+    );
+    sign_on_ticket(system, &user, device)
+}

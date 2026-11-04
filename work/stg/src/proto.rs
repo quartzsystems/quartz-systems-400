@@ -691,6 +691,14 @@ ipc::rpc! {
     /// `ListOutputQueues`, as `WRKOUTQ` lists.
     756 => fn qap_outq_list / QapOutqList (req: ListOutputQueues) -> Result<OutputQueues, QapRefused>;
 
+    // --- Telnet sign-on before the device (757-759; work/qsjob/src/work/telnet.rs)
+    /// Whether `proof` is `user`'s password, nothing changed: what the
+    /// `INIT0100` exit program is told. Only `QTVTELNET` may ask.
+    757 => fn telnet_verify / TelnetVerify (user: String, proof: sec::signon::Substitute) -> bool;
+    /// An `INIT0100` exit program allowed automatic sign-on as `user`:
+    /// every sign-on check but the password. Only `QTVTELNET` may ask.
+    758 => fn telnet_exit_signon / TelnetExitSignon (user: String, device: String) -> Result<sec::signon::SignedOn, sec::signon::Refused>;
+
     // --- QAP messages (760-769; docs/QAP.md, stgsvc/qap/messages.rs).
     // Only a QAP connection job asks; each is checked as the message
     // command it stands for, as the job's user. Messages come as the

@@ -899,6 +899,18 @@ impl Service for Served<'_> {
         super::qap::telnet_ticket(self.system, self.ctx, &user, &ticket, &device, tls)
     }
 
+    fn telnet_verify(&mut self, user: String, proof: sec::signon::Substitute) -> bool {
+        super::qap::telnet_verify(self.system, self.ctx, &user, &proof)
+    }
+
+    fn telnet_exit_signon(
+        &mut self,
+        user: String,
+        device: String,
+    ) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
+        super::qap::telnet_exit_signon(self.system, self.ctx, &user, &device)
+    }
+
     fn host_token(
         &mut self,
         user: String,

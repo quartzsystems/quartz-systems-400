@@ -617,8 +617,8 @@ points); each item below waits for an oracle program or panel.
    programs in the `QTVDEVICE` job; ours run in a runtime job on
    `QTVTELNET`'s main thread (a session thread holds no runtime). A
    program that reads its job's name sees `QTVTELNET`. An `INIT0100`
-   program's "allow automatic sign-on" is read and not acted on: it needs
-   a storage service request that signs on a profile without a password.
+   program's "allow automatic sign-on" is acted on since Phase 12
+   (`TN5250.md`, step 4).
 7. **HTTP administration jobs.** pub400 shows `ADMIN` jobs (several, user
    `QTMHHTTP`) in `QHTTPSVR`; ours is one `ADMIN` job serving every
    connection on threads. The page's URL paths are `/`, `/index.html`

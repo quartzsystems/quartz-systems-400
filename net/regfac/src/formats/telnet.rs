@@ -132,7 +132,8 @@ pub struct Session {
     pub addrs: (String, String),
     /// Workstation type (`IBM-3179-2` ...).
     pub ws_type: String,
-    /// Whether a valid secure password substitute came, and TLS.
+    /// Whether the client's encrypted password was validated (`SECPWD`
+    /// 2, else 0), and TLS.
     pub secure: (bool, bool),
     /// Environment options as the client sent them.
     pub env: Vec<u8>,
@@ -183,7 +184,7 @@ pub fn conn_desc(s: &Session) -> Vec<u8> {
     let mut r = CONN_DESC.blank();
     r.bin4("LEN", n32(CONN_DESC.size))
         .text("IPADDR", &s.addrs.0)
-        .ch("SECPWD", yes(s.secure.0))
+        .ch("SECPWD", if s.secure.0 { '2' } else { '0' })
         .text("WSTYPE", &s.ws_type)
         .ch("SSL", yes(s.secure.1))
         .text("LCLADDR", &s.addrs.1)

@@ -850,6 +850,13 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
     let neg = server.negotiated.clone();
     let mut requested = neg.var("DEVNAME").unwrap_or_default().to_ascii_uppercase();
     let mut desc = exit_session(&neg, &requested, at.addrs, at.secure);
+    // The exit program is told whether the client's password checked
+    // out before it decides (`INIT0100` connection description).
+    desc.secure.0 = at.ask.is_some() && verify_client(&neg, seed, link);
+    // An exit program that ran decides automatic sign-on, whatever
+    // QRMTSIGN says; `Some` holds the profile, library, program and menu.
+    let mut exit_decides = false;
+    let mut exit_user: Option<(String, String, String, String)> = None;
     let printer = printer_type_model(&neg.terminal_type).is_some();
     if let Some(ask) = at.ask {
         // The console display is the console's, never a network session's.
@@ -877,10 +884,12 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
             requested = out.device.to_ascii_uppercase();
             desc.device.clone_from(&requested);
         }
-        // BLOCKED(phase10): an INIT0100 program's automatic sign-on needs a
-        // service request that signs on the profile it names without a
-        // password; the answer is read and not acted on.
-        let _ = out.autosignon;
+        if !init.called.is_empty() {
+            exit_decides = true;
+            if out.autosignon && !out.user.0.trim().is_empty() {
+                exit_user = Some(out.user.clone());
+            }
+        }
         if let Some((ptype, pmodel)) = printer_type_model(&neg.terminal_type) {
             let r = printer_session(&tr, &mut server, link, &ev_rx, &requested, ptype, pmodel, peer);
             let _ = exit(ask, DEVTERM, ExitRequest::DevTerm(desc));
@@ -914,23 +923,23 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
         },
         Err(code) => return Err(format!("{peer}: no device: {code}")),
     };
-    // QRMTSIGN: *VERIFY and *SAMEPRF sign on automatically,
-    // *FRCSIGNON shows the sign-on display, *REJECT refuses a client
-    // that asks.
+    // QRMTSIGN: *VERIFY and *SAMEPRF sign on automatically; *FRCSIGNON,
+    // *REJECT and a pass-through program show the sign-on display (IBM's
+    // Telnet table), unless an exit program decided.
     let rmtsign = link
         .sysval("QRMTSIGN".into())
         .ok()
         .flatten()
         .map(|v| ccsid::from_ebcdic(&v.data).trim().to_ascii_uppercase())
         .unwrap_or_default();
-    let asks = neg.var("USER").is_some_and(|u| !u.trim().is_empty());
-    if asks && rmtsign.starts_with("*REJECT") && !console {
-        return Err(format!("{peer}: automatic sign-on refused (QRMTSIGN *REJECT)"));
-    }
-    let auto = if console || !(rmtsign.starts_with("*VERIFY") || rmtsign.starts_with("*SAMEPRF")) {
+    let auto = if console {
         None
-    } else {
+    } else if exit_decides {
+        exit_user.and_then(|u| exit_signon(link, &u, &device))
+    } else if rmtsign.starts_with("*VERIFY") || rmtsign.starts_with("*SAMEPRF") {
         auto_signon(&neg, seed, link, &device, at.secure)
+    } else {
+        None
     };
     let r = serve_device(
         &tr,
@@ -1129,6 +1138,41 @@ fn seed() -> [u8; 8] {
         *b = (x & 0xFF) as u8;
     }
     s
+}
+
+/// Whether the client sent `USER` with an RFC 4777 substitute that is
+/// the profile's password (checked, nothing changed).
+fn verify_client(neg: &Negotiated, seed: [u8; 8], link: &mut Link) -> bool {
+    let (Some(user), Some(cs), Some(sub)) = (neg.var("USER"), neg.var_bytes("IBMRSEED"), neg.var_bytes("IBMSUBSPW")) else {
+        return false;
+    };
+    let Ok(client_seed) = <[u8; 8]>::try_from(cs) else {
+        return false;
+    };
+    let proof = sec::signon::Substitute {
+        server_seed: seed,
+        client_seed,
+        substitute: sub.to_vec(),
+    };
+    link.telnet_verify(user.to_ascii_uppercase(), proof).unwrap_or(false)
+}
+
+/// An exit program's automatic sign-on: its profile signed on without a
+/// password, its program, menu and library taken as the sign-on
+/// display's fields would be.
+fn exit_signon(
+    link: &mut Link,
+    user: &(String, String, String, String),
+    device: &str,
+) -> Option<sec::signon::SignedOn> {
+    let (prf, curlib, pgm, menu) = user;
+    match link.telnet_exit_signon(prf.trim().to_ascii_uppercase(), device.to_string()) {
+        Ok(Ok(mut s)) => {
+            apply_typed(&mut s, &[String::new(), String::new(), pgm.clone(), menu.clone(), curlib.clone()]);
+            Some(s)
+        }
+        _ => None,
+    }
 }
 
 /// RFC 4777: the user's substitute checked against the password
