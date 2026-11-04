@@ -1,0 +1,24 @@
+                              Work with Job Queue                               
+                                                                                
+ Queue:   QBATCH         Library:   QGPL           Status:   RLS/SBS            
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold   4=End   5=Work with   6=Release                          
+                                                                                
+ Opt     Job            User           Number     Priority     Status           
+                                                                                
+   (No jobs in job queue)                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters for options 2, 3 or command                                         
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F6=Submit job   F12=Cancel   F21=Subsystem               
+ F22=Work with job schedule entries    F24=More keys                            
+                                                                                

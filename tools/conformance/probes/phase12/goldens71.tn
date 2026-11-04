@@ -1,0 +1,143 @@
+# Section 1 goldens on the 7.1 oracle: the panels pub400 refused or
+# never showed. Read-only displays; the data area and module made for
+# DSPDTAARA and DSPMOD live in QSTEST and are deleted at the end.
+# Change System Value and Edit Authorization List are left with F12.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type DSPFD FILE(QSTEST/QSMSGSRC)
+key enter
+settle 4000
+snap dspfd
+key f3
+settle 1500
+type CRTDTAARA DTAARA(QSTEST/QSDTA) TYPE(*CHAR) LEN(30) VALUE('QS/400 probe') TEXT('Section 1 probe')
+key enter
+settle 2000
+type DSPDTAARA DTAARA(QSTEST/QSDTA)
+key enter
+settle 3000
+snap dspdtaara
+key f3
+settle 1500
+type DLTDTAARA DTAARA(QSTEST/QSDTA)
+key enter
+settle 2000
+type DSPUSRPRF USRPRF(GRPA) TYPE(*GRPMBR)
+key enter
+settle 3000
+snap dspusrprf-grpmbr
+key f3
+settle 1500
+type DSPAUTL AUTL(QPWFSERVER)
+key enter
+settle 3000
+snap dspautl
+key f3
+settle 1500
+type EDTAUTL AUTL(QPWFSERVER)
+key enter
+settle 3000
+snap edtautl
+key f12
+settle 1500
+type WRKAUTL AUTL(*ALL)
+key enter
+settle 3000
+snap wrkautl
+key f3
+settle 1500
+type WRKSYSVAL
+key enter
+settle 3000
+snap wrksysval
+key f3
+settle 1500
+type WRKSYSVAL SYSVAL(QDATFMT)
+key enter
+settle 3000
+pick "QDATFMT" 2
+key enter
+settle 3000
+snap chgsysval
+key f12
+settle 1500
+key f3
+settle 1500
+type WRKSYSVAL SYSVAL(QSYSLIBL)
+key enter
+settle 3000
+pick "QSYSLIBL" 2
+key enter
+settle 3000
+snap chgsysval-list
+key f12
+settle 1500
+key f3
+settle 1500
+type WRKUSRPRF USRPRF(*ALL) ASTLVL(*INTERMED)
+key enter
+settle 3000
+snap wrkusrprf
+key f3
+settle 1500
+type WRKCFGSTS CFGTYPE(*DEV) ASTLVL(*INTERMED)
+key enter
+settle 3000
+snap wrkcfgsts +jobnum
+key f3
+settle 1500
+type DSPDEVD DEVD(QPADEV0003)
+key enter
+settle 3000
+snap dspdevd
+key f3
+settle 1500
+type DSPSECAUD
+key enter
+settle 3000
+snap dspsecaud
+key f3
+settle 1500
+type WRKOUTQ
+key enter
+settle 3000
+snap wrkoutq
+key f3
+settle 1500
+type WRKOUTQ OUTQ(QGPL/QDKT)
+key enter
+settle 3000
+snap wrkoutq-files
+key f3
+settle 1500
+type WRKJOBQ
+key enter
+settle 3000
+snap wrkjobq
+key f3
+settle 1500
+type WRKJOBQ JOBQ(QGPL/QBATCH)
+key enter
+settle 3000
+snap wrkjobq-jobs
+key f3
+settle 1500
+type WRKWTR ASTLVL(*INTERMED)
+key enter
+settle 3000
+snap wrkwtr
+key f3
+settle 1500
+type WRKJOBSCDE
+key enter
+settle 3000
+snap wrkjobscde
+key f3
+settle 1500

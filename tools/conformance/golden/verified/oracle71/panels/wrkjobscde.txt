@@ -1,0 +1,24 @@
+                         Work with Job Schedule Entries                S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+                                                                                
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold   4=Remove   5=Display details   6=Release                 
+   8=Work with last submission    10=Submit immediately                         
+                                                                                
+                                                                    Next        
+                          -----Schedule------             Recovery  Submit      
+ Opt  Job         Status  Date       Time      Frequency   Action   Date        
+                                                                                
+   (No job schedule entries to display)                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F4=Prompt          F5=Refresh   F6=Add    F9=Retrieve                
+ F11=Display job queue data   F12=Cancel   F17=Top   F18=Bottom                 
+                                                                                

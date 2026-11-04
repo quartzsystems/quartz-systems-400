@@ -1,0 +1,24 @@
+                            Work with System Values                             
+                                                             System:   SYSNAME  
+ Position to  . . . . . .                Starting characters of system value    
+ Subset by Type . . . . .   *ALL         F4 for list                            
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   5=Display                                                         
+                                                                                
+         System                                                                 
+ Option  Value       Type     Description                                       
+         QABNORMSW   *SYSCTL  Previous end of system indicator                  
+         QACGLVL     *MSG     Accounting level                                  
+         QACTJOB     *ALC     Initial number of active jobs                     
+         QADLACTJ    *ALC     Additional number of active jobs                  
+         QADLSPLA    *ALC     Spooling control block additional storage         
+         QADLTOTJ    *ALC     Additional number of total jobs                   
+         QALWJOBITP  *SYSCTL  Allow jobs to be interrupted                      
+         QALWOBJRST  *SEC     Allow object restore option                       
+                                                                        More... 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display names only        
+ F12=Cancel                                                                     
+                                                                                

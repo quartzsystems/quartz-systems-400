@@ -1,0 +1,24 @@
+                            Edit Authorization List                             
+                                                                                
+ Object . . . . . . . :   QPWFSERVER      Owner  . . . . . . . :   QSYS         
+   Library  . . . . . :     QSYS          Primary group  . . . :   *NONE        
+                                                                                
+ Type changes to current authorities, press Enter.                              
+                                                                                
+              Object    List                                                    
+ User        Authority  Mgt                                                     
+ *PUBLIC     *USE                                                               
+ QSYS        *ALL        X                                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F6=Add new users                                        
+ F11=Display detail object authorities   F12=Cancel   F24=More keys             
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

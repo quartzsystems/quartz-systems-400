@@ -1,0 +1,24 @@
+                           Display Module Information                           
+                                                                 Display 1 of 1 
+ Module . . . . . . . . . . . . :   QSMOD                                       
+   Library  . . . . . . . . . . :     QSTEST                                    
+ Detail . . . . . . . . . . . . :   *BASIC                                      
+ Module attribute . . . . . . . :   CLLE                                        
+                                                                                
+ Module information:                                                            
+   Module creation date/time . . . . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS 
+   Source file . . . . . . . . . . . . . . . . . . . . . :   QSMSGSRC           
+     Library . . . . . . . . . . . . . . . . . . . . . . :     QSTEST           
+   Source member . . . . . . . . . . . . . . . . . . . . :   QSMOD              
+   Source file change date/time  . . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS 
+   Owner . . . . . . . . . . . . . . . . . . . . . . . . :   USERNAM            
+   Coded character set identifier  . . . . . . . . . . . :   37                 
+   Text description  . . . . . . . . . . . . . . . . . . :                      
+                                                                                
+   Creation data . . . . . . . . . . . . . . . . . . . . :   *YES               
+   Intermediate language data  . . . . . . . . . . . . . :   *NO                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

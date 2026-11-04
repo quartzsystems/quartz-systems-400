@@ -1,0 +1,24 @@
+                           Display Device Description                  S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+ Device description . . . . . . . . :   QPADEV0003                              
+ Option . . . . . . . . . . . . . . :   *BASIC                                  
+ Category of device . . . . . . . . :   *DSP                                    
+                                                                                
+ Device class . . . . . . . . . . . :   *VRT                                    
+ Device type  . . . . . . . . . . . :   V100                                    
+ Device model . . . . . . . . . . . :   *ASCII                                  
+ Emulated twinaxial device  . . . . :   3196A2                                  
+ Online at IPL  . . . . . . . . . . :   *NO                                     
+ Attached controller  . . . . . . . :   QPACTL01                                
+ Keyboard language type . . . . . . :   USB                                     
+ Print device . . . . . . . . . . . :   *SYSVAL                                 
+ Output queue . . . . . . . . . . . :   *DEV                                    
+ Printer file . . . . . . . . . . . :   QSYSPRT                                 
+   Library  . . . . . . . . . . . . :     *LIBL                                 
+ Dependent location name  . . . . . :   *NONE                                   
+                                                                        More... 
+ Press Enter to continue                                                        
+                                                                                
+ F3=Exit   F11=Display keywords   F12=Cancel                                    
+                                                                                
+                                                                                

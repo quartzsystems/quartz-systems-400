@@ -1,0 +1,24 @@
+                              Change System Value                               
+                                                                                
+ System value . . . . . :   QDATFMT                                             
+ Description  . . . . . :   Date format                                         
+                                                                                
+                                                                                
+ Type choice, press Enter.                                                      
+                                                                                
+   Date format  . . . . .   MDY        YMD, MDY, DMY, JUL                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel                                              
+                                                                                

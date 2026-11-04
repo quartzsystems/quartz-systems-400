@@ -1,0 +1,168 @@
+[[golden]]
+name = "dspfd"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "dspdtaara"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "dspusrprf-grpmbr"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "dspautl"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "edtautl"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "chgsysval"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "chgsysval-list"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "wrkusrprf"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "wrkcfgsts"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "dspdevd"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "dspsecaud"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "wrkoutq-files"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "wrkjobq"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "wrkjobq-jobs"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "wrkwtr"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "wrkjobscde"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71"
+width = 80
+
+[[golden]]
+name = "dspmod"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-dspmod"
+width = 80
+
+[[golden]]
+name = "dspmod-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-dspmod"
+width = 80
+
+[[golden]]
+name = "wrkautl"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "redo"
+width = 80
+
+[[golden]]
+name = "wrksysval"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "redo"
+width = 80
+
+[[golden]]
+name = "wrkoutq"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "redo"
+width = 80
+

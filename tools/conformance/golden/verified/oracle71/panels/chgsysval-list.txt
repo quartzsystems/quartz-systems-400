@@ -1,0 +1,24 @@
+                              Change System Value                               
+                                                                                
+ System value . . . . . :   QSYSLIBL                                            
+ Description  . . . . . :   System part of the library list                     
+                                                                                
+                                                                                
+ Type new/changed information, press Enter.                                     
+ To add a library, type name and desired sequence number.                       
+ To remove a library, space over library name.                                  
+ To change position of a library, type new sequence number.                     
+                                                                                
+ Sequence                                 Sequence                              
+  Number   Library                         Number   Library                     
+      0                                       80                                
+     10    QSYS                               90                                
+     20    QSYS2                             100                                
+     30    QHLPSYS                           110                                
+     40    QUSRSYS                           120                                
+     50                                      130                                
+     60                                      140                                
+     70                                      150                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F12=Cancel                                              
+                                                                                

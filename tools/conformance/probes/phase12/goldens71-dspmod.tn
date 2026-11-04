@@ -1,0 +1,38 @@
+# DSPMOD on the 7.1 oracle over a module made in QSTEST. Before it, the
+# source goes up by FTP:
+#   tn5250-driver ftp --target oracle put qsmod.clle \
+#       /QSYS.LIB/QSTEST.LIB/QSMSGSRC.FILE/QSMOD.MBR
+# (four lines: PGM, a DCL of &N *DEC 5 0, a CHGVAR, ENDPGM). The module
+# and the member are removed at the end.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type CRTCLMOD MODULE(QSTEST/QSMOD) SRCFILE(QSTEST/QSMSGSRC) SRCMBR(QSMOD)
+key enter
+settle 8000
+show
+type DSPMOD MODULE(QSTEST/QSMOD) DETAIL(*BASIC)
+key enter
+settle 3000
+snap dspmod
+key f3
+settle 1500
+type DSPMOD MODULE(QSTEST/QSMOD) DETAIL(*PROCLIST)
+key enter
+settle 3000
+snap dspmod-2
+key f3
+settle 1500
+type DLTMOD MODULE(QSTEST/QSMOD)
+key enter
+settle 2000
+type RMVM FILE(QSTEST/QSMSGSRC) MBR(QSMOD)
+key enter
+settle 2000
+show

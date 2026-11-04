@@ -1,0 +1,24 @@
+                               Display Data Area                                
+                                                             System:   SYSNAME  
+ Data area . . . . . . . :   QSDTA                                              
+   Library . . . . . . . :     QSTEST                                           
+ Type  . . . . . . . . . :   *CHAR                                              
+ Length  . . . . . . . . :   30                                                 
+ Text  . . . . . . . . . :   Section 1 probe                                    
+                                                                                
+            Value                                                               
+ Offset      *...+....1....+....2....+....3....+....4....+....5                 
+     0      'QS/400 probe                  '                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

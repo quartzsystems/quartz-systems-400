@@ -1,0 +1,24 @@
+                         Work with Configuration Status                S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+ Position to  . . . . .                Starting characters                      
+                                                                                
+ Type options, press Enter.                                                     
+   1=Vary on   2=Vary off   5=Work with job   8=Work with description           
+   9=Display mode status    13=Work with APPN status...                         
+                                                                                
+ Opt  Description       Status                -------------Job--------------    
+      DSP01             VARY ON PENDING                                         
+      ETHLITCP          ACTIVE                QTCPWRK     QSYS        NNNNNN    
+      OPTVRT01          ACTIVE                                                  
+      OPT01             ACTIVE                                                  
+      QCONSOLE          VARIED OFF                                              
+      QESPAP            VARIED OFF                                              
+      QIADSP            VARIED OFF                                              
+      QIAPRT            VARIED OFF                                              
+      QPADEV0001        ACTIVE                QPADEV0001  USERNAM     NNNNNN    
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F12=Cancel   F23=More options   F24=More keys            
+                                                                                
+                                                                                

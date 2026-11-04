@@ -1,0 +1,24 @@
+                          Work with All Output Queues                           
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold     4=Delete   5=Work with   6=Release   8=Description     
+   9=Work with Writers   14=Clear                                               
+                                                                                
+ Opt     Queue          Library           Files      Writer         Status      
+         QDKT           QGPL                  0                      RLS        
+         QPRINT         QGPL                197                      RLS        
+         QPRINTS        QGPL                  0                      RLS        
+         QPRINT2        QGPL                  0                      RLS        
+         QSPRCLOUTQ     QRCL                  0                      RLS        
+         QSCAPAROQ      QSC0728118            0                      RLS        
+         QSCAPAROQ      QSC0728148            0                      RLS        
+         QSCAPAROQ      QSC0728175            0                      RLS        
+         QSRVMON        QSERVICE              0                      RLS        
+         QS9SRVAGT      QSRVAGT               0                      RLS        
+         QEZDEBUG       QUSRSYS               6                      RLS        
+         QEZJOBLOG      QUSRSYS             282                      RLS        
+                                                                        More... 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F24=More keys                  
+                                                                                

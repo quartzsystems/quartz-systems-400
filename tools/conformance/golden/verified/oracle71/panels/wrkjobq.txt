@@ -1,0 +1,24 @@
+                            Work with All Job Queues                            
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold   4=Delete       5=Work with     6=Release                 
+   8=Work with job schedule entries   9=Description   14=Clear                  
+                                                                                
+ Opt     Queue          Library            Jobs     Subsystem      Status       
+         QBASE          QGPL                  0     QBASE           RLS         
+         QBATCH         QGPL                  0     QBASE           RLS         
+         QFNC           QGPL                  0                     RLS         
+         QINTER         QGPL                  0     QBASE           RLS         
+         QPGMR          QGPL                  0                     RLS         
+         QSNADS         QGPL                  0                     RLS         
+         QSPL           QGPL                  0     QSPL            RLS         
+         QS36EVOKE      QGPL                  0     QBASE           RLS         
+         QS36MRT        QGPL                  0     QBASE           RLS         
+         QTXTSRCH       QGPL                  0                     RLS         
+         QZHBHTTP       QHTTPSVR              0     QHTTPSVR        RLS         
+         QCTL           QSYS                  0     QBASE           RLS         
+                                                                        More... 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F24=More keys                  
+                                                                                

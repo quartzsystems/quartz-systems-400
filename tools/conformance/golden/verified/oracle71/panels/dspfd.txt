@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QPDSPFD                          Page/Line   1/1           
+ Control . . . . .                                    Columns     1 - 78        
+ Find  . . . . . .                                                              
+ *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+... 
+    MM/DD/YY                Display File Description                            
+  DSPFD Command Input                                                           
+    File  . . . . . . . . . . . . . . . . . . . : FILE       QSMSGSRC           
+      Library . . . . . . . . . . . . . . . . . :            QSTEST             
+    Type of information . . . . . . . . . . . . : TYPE       *ALL               
+    File attributes . . . . . . . . . . . . . . : FILEATR    *ALL               
+    System  . . . . . . . . . . . . . . . . . . : SYSNAME    *LCL               
+  File Description Header                                                       
+    File  . . . . . . . . . . . . . . . . . . . : FILE       QSMSGSRC           
+    Library . . . . . . . . . . . . . . . . . . :            QSTEST             
+    Type of file  . . . . . . . . . . . . . . . :            Physical           
+    File type . . . . . . . . . . . . . . . . . : FILETYPE   *SRC               
+    Auxiliary storage pool ID . . . . . . . . . :            00001              
+  Data Base File Attributes                                                     
+    Externally described file . . . . . . . . . :            Yes                
+    File level identifier . . . . . . . . . . . :            1261031002732      
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

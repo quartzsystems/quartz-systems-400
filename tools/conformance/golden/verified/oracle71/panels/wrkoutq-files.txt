@@ -1,0 +1,24 @@
+                             Work with Output Queue                             
+                                                                                
+ Queue:   QDKT           Library:   QGPL           Status:   RLS                
+                                                                                
+ Type options, press Enter.                                                     
+   1=Send   2=Change   3=Hold   4=Delete   5=Display   6=Release   7=Messages   
+   8=Attributes        9=Work with printing status                              
+                                                                                
+ Opt  File        User        User Data   Sts   Pages   Copies  Form Type   Pty 
+                                                                                
+   (No spooled output files)                                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters for options 1, 2, 3 or command                                      
+ ===>                                                                           
+ F3=Exit   F11=View 2   F12=Cancel   F20=Writers   F22=Printers                 
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Module Information                           
+                                                                 Display 1 of 1 
+ Module . . . . . . . . . . . . :   QSMOD                                       
+   Library  . . . . . . . . . . :     QSTEST                                    
+ Detail . . . . . . . . . . . . :   *PROCLIST                                   
+ Module attribute . . . . . . . :   CLLE                                        
+                                                                                
+                                Procedure list:                                 
+                                                                                
+ Procedure Name                                  Procedure Type     ARGOPT      
+ _CL_PEP                                         ENTRY POINT        *NO         
+ QSMOD                                           REGULAR            *NO         
+ QCL_Function_Check_Exception_Handler            REGULAR            *NO         
+ Qcl_QCLCLNUP_iexit                              REGULAR            *NO         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

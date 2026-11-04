@@ -1,0 +1,24 @@
+                           Display Authorization List                           
+                                                                                
+ Object . . . . . . . :   QPWFSERVER      Owner  . . . . . . . :   QSYS         
+   Library  . . . . . :     QSYS          Primary group  . . . :   *NONE        
+                                                                                
+              Object    List                                                    
+ User        Authority  Mgt                                                     
+ *PUBLIC     *USE                                                               
+ QSYS        *ALL        X                                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display detail object authorities    F12=Cancel                  
+ F15=Display authorization list objects   F17=Top   F18=Bottom                  
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            
