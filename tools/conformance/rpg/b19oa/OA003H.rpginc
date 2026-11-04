@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no) actgrp(*caller) main(hdl);
+/copy QOAR/QRPGLESRC,QRNOPENACC
+dcl-ds logds qualified based(pl);
+  n int(10);
+  l char(100) dim(40);
+end-ds;
+dcl-proc hdl;
+  dcl-pi *n;
+    info likeds(QrnOpenAccess_T);
+  end-pi;
+  dcl-s buf char(40) based(pb);
+  pl = info.userArea;
+  logds.n += 1;
+  logds.l(logds.n) = %char(info.rpgOperation) + ' ' + info.rpgDevice
+    + ' i' + %char(info.inputBufferLen) + ' o' + %char(info.outputBufferLen)
+    + ' ' + info.externallyDescribed + ' ' + %char(info.formLen) + '/' + %char(info.formOfl)
+    + ' ' + %trimr(info.externalFile.name) + ' ' + %trimr(info.recordName);
+  if info.rpgOperation = QrnOperation_WRITE;
+    pb = info.outputBuffer;
+    logds.n += 1;
+    logds.l(logds.n) = ' [' + buf + ']';
+    info.printerOverflow = logds.n > 4;
+  endif;
+end-proc;

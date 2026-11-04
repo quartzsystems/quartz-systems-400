@@ -1,0 +1,117 @@
+**FREE
+ctl-opt dftactgrp(*no) actgrp(*caller) main(hdl);
+/copy QOAR/QRPGLESRC,QRNOPENACC
+dcl-ds rec_t qualified template;
+  cusno packed(5);
+  name char(20);
+  city char(12);
+  bal packed(9:2);
+end-ds;
+dcl-ds logds qualified based(pl);
+  n int(10);
+  l char(100) dim(40);
+end-ds;
+dcl-ds st qualified based(ps);
+  pos int(10);
+  cnt int(10);
+  recs likeds(rec_t) dim(10);
+end-ds;
+dcl-proc hdl;
+  dcl-pi *n;
+    info likeds(QrnOpenAccess_T);
+  end-pi;
+  dcl-ds inb likeds(rec_t) based(pin);
+  dcl-ds outb likeds(rec_t) based(pout);
+  dcl-s k packed(5) based(pk);
+  dcl-s i int(10);
+  dcl-s at int(10);
+  pl = info.userArea;
+  logds.n += 1;
+  logds.l(logds.n) = %char(info.rpgOperation) + ' ' + %trimr(info.recordName)
+    + ' i' + %char(info.inputBufferLen) + ' o' + %char(info.outputBufferLen)
+    + ' k' + %char(info.keyLen) + '/' + %char(info.numKeys)
+    + ' ' + info.externallyDescribed + info.keyedFile + info.blocked
+    + info.inputWithLock + info.rpgDevice + info.commit + info.useNamesValues
+    + ' ' + %trimr(info.externalFile.name) + ' ' + %trimr(info.compileFile.name)
+    + ' ' + %trimr(info.externalMember) + ' ' + %char(info.length)
+    + ' ' + info.parameterFormat + ' ' + %char(info.rrn)
+    + ' ' + %char(info.alphaCcsids) + ' ' + %char(info.rpgStatus);
+  if info.rpgOperation = QrnOperation_OPEN;
+    ps = %alloc(%size(st));
+    info.stateInfo = ps;
+    st.pos = 0;
+    st.cnt = 3;
+    st.recs(1).cusno = 1;
+    st.recs(1).name = 'Ann';
+    st.recs(1).city = 'Rome';
+    st.recs(1).bal = 10.25;
+    st.recs(2).cusno = 2;
+    st.recs(2).name = 'Ben';
+    st.recs(2).city = 'Lima';
+    st.recs(2).bal = 0;
+    st.recs(3).cusno = 3;
+    st.recs(3).name = 'Cy';
+    st.recs(3).city = 'Kyiv';
+    st.recs(3).bal = -5;
+    return;
+  endif;
+  ps = info.stateInfo;
+  select;
+  when info.rpgOperation = QrnOperation_READ;
+    st.pos += 1;
+    if st.pos > st.cnt;
+      info.eof = *on;
+    else;
+      pin = info.inputBuffer;
+      inb = st.recs(st.pos);
+    endif;
+  when info.rpgOperation = QrnOperation_CHAIN;
+    pk = info.key;
+    if k = 8;
+      info.rpgStatus = 1218;
+      return;
+    endif;
+    at = 0;
+    for i = 1 to st.cnt;
+      if st.recs(i).cusno = k;
+        at = i;
+      endif;
+    endfor;
+    if at = 0;
+      info.found = *off;
+    else;
+      info.found = *on;
+      st.pos = at;
+      pin = info.inputBuffer;
+      inb = st.recs(at);
+    endif;
+  when info.rpgOperation = QrnOperation_SETLL;
+    pk = info.key;
+    st.pos = st.cnt;
+    for i = st.cnt downto 1;
+      if st.recs(i).cusno >= k;
+        st.pos = i - 1;
+      endif;
+    endfor;
+    info.found = st.pos < st.cnt;
+    info.equal = info.found and st.recs(st.pos + 1).cusno = k;
+  when info.rpgOperation = QrnOperation_UPDATE;
+    pout = info.outputBuffer;
+    st.recs(st.pos) = outb;
+  when info.rpgOperation = QrnOperation_WRITE;
+    pout = info.outputBuffer;
+    st.cnt += 1;
+    st.recs(st.cnt) = outb;
+  when info.rpgOperation = QrnOperation_DELETE;
+    pk = info.key;
+    for i = 1 to st.cnt;
+      if st.recs(i).cusno = k;
+        info.found = *on;
+      endif;
+    endfor;
+  when info.rpgOperation = QrnOperation_CLOSE;
+    dealloc(n) ps;
+  other;
+    info.rpgStatus = 1299;
+  endsl;
+end-proc;

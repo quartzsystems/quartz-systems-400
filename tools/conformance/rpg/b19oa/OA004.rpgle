@@ -1,0 +1,40 @@
+**FREE
+ctl-opt dftactgrp(*no);
+/copy QOAR/QRPGLESRC,QRNOPENACC
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s seen int(10);
+dcl-f DATA disk(20) handler(myhdl : seen) usropn;
+dcl-ds rec len(20) end-ds;
+dcl-pr myhdl;
+  info likeds(QrnOpenAccess_T);
+end-pr;
+open DATA;
+read(e) DATA rec;
+line = 'a ' + %char(%status(DATA)) + ' ' + %error + ' ' + rec;
+write QSYSPRT line;
+read(e) DATA rec;
+line = 'b ' + %char(%status(DATA)) + ' ' + %error + ' ' + %eof(DATA);
+write QSYSPRT line;
+close DATA;
+line = 'calls ' + %char(seen);
+write QSYSPRT line;
+*inlr = *on;
+
+dcl-proc myhdl;
+  dcl-pi *n;
+    info likeds(QrnOpenAccess_T);
+  end-pi;
+  dcl-s n int(10) based(pn);
+  dcl-s b char(20) based(pb);
+  pn = info.userArea;
+  n += 1;
+  if info.rpgOperation = QrnOperation_READ;
+    if n = 2;
+      pb = info.inputBuffer;
+      b = 'from handler';
+    else;
+      info.rpgStatus = 1299;
+    endif;
+  endif;
+end-proc;

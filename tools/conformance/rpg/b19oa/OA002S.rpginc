@@ -1,0 +1,64 @@
+**FREE
+ctl-opt nomain;
+/copy QOAR/QRPGLESRC,QRNOPENACC
+dcl-ds logds qualified based(pl);
+  n int(10);
+  l char(100) dim(40);
+end-ds;
+dcl-s cnt int(10);
+dcl-proc nvhdl export;
+  dcl-pi *n;
+    info likeds(QrnOpenAccess_T);
+  end-pi;
+  dcl-ds nv likeds(QrnNamesValues_T) based(pnv);
+  dcl-s val char(100) based(pv);
+  dcl-s i int(10);
+  dcl-s s varchar(100);
+  pl = info.userArea;
+  logds.n += 1;
+  logds.l(logds.n) = 'op ' + %char(info.rpgOperation) + ' ' + %trimr(info.recordName)
+    + ' i' + %char(info.inputBufferLen) + ' o' + %char(info.outputBufferLen)
+    + ' ' + info.useNamesValues + info.externallyDescribed + info.keyedFile + info.blocked;
+  select;
+  when info.rpgOperation = QrnOperation_OPEN;
+    info.useNamesValues = *on;
+    cnt = 0;
+  when info.rpgOperation = QrnOperation_READ;
+    cnt += 1;
+    if cnt > 2;
+      info.eof = *on;
+      return;
+    endif;
+    pnv = info.namesValues;
+    for i = 1 to nv.num;
+      pv = nv.field(i).value;
+      logds.n += 1;
+      logds.l(logds.n) = ' ' + nv.field(i).externalName + ' t' + %char(nv.field(i).dataType)
+        + ' n' + %char(nv.field(i).numericDefinedLen) + ' d' + %char(nv.field(i).decimals)
+        + ' ' + nv.field(i).input + nv.field(i).output + nv.field(i).isNullCapable
+        + nv.field(i).hasNullValue + ' m' + %char(nv.field(i).valueMaxLenBytes)
+        + ' c' + %char(nv.field(i).valueCcsid);
+      select;
+      when nv.field(i).externalName = 'CUSNO';
+        s = %char(cnt * 11);
+      when nv.field(i).externalName = 'NAME';
+        s = 'Name ' + %char(cnt);
+      when nv.field(i).externalName = 'CITY';
+        s = 'Town';
+      other;
+        s = '-3.75';
+      endsl;
+      %subst(val : 1 : %len(s)) = s;
+      nv.field(i).valueLenBytes = %len(s);
+    endfor;
+  when info.rpgOperation = QrnOperation_WRITE;
+    pnv = info.namesValues;
+    for i = 1 to nv.num;
+      pv = nv.field(i).value;
+      logds.n += 1;
+      logds.l(logds.n) = ' w ' + %trimr(nv.field(i).externalName) + '=['
+        + %subst(val : 1 : nv.field(i).valueLenBytes) + '] '
+        + %char(nv.field(i).valueLenBytes);
+    endfor;
+  endsl;
+end-proc;

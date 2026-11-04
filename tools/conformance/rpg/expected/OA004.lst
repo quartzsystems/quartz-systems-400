@@ -1,0 +1,1254 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   OA004
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   OA004
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 ctl-opt dftactgrp(*no);                                                                                   000000     000200
+      3 /copy QOAR/QRPGLESRC,QRNOPENACC                                                                           000000     000300
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+         *--------------------------------------------------------------------------------------------*
+         * RPG member name  . . . . . :  QRNOPENACC                                                   *                     1
+         * External name  . . . . . . :  QOAR/QRPGLESRC(QRNOPENACC)                                   *                     1
+         * Last change  . . . . . . . :  dd-dd-dd  tt:tt:tt                                           *                     1
+         * Text 'description' . . . . :  ILE RPG COPY FILE FOR HANDLER                                *                     1
+         *--------------------------------------------------------------------------------------------*
+      4+/* begin_generated_IBM_copyright_prolog                              */                                   000000    1000001
+      5+/* This is an automatically generated copyright prolog.              */                                   000000    1000002
+      6+/* After initializing,  DO NOT MODIFY OR MOVE                        */                                   000000    1000003
+      7+/* ----------------------------------------------------------------- */                                   000000    1000004
+      8+/*                                                                   */                                   000000    1000005
+      9+/* Product(s):                                                       */                                   000000    1000006
+     10+/*     5770-WDS                                                      */                                   000000    1000007
+     11+/*                                                                   */                                   000000    1000008
+     12+/* (C)Copyright IBM Corp.  2010, 2019                                */                                   000000    1000009
+     13+/*                                                                   */                                   000000    1000010
+     14+/* All rights reserved.                                              */                                   000000    1000011
+     15+/* US Government Users Restricted Rights -                           */                                   000000    1000012
+     16+/* Use, duplication or disclosure restricted                         */                                   000000    1000013
+     17+/* by GSA ADP Schedule Contract with IBM Corp.                       */                                   000000    1000014
+     18+/*                                                                   */                                   000000    1000015
+     19+/* Licensed Materials-Property of IBM                                */                                   000000    1000016
+     20+/*                                                                   */                                   000000    1000017
+     21+/*  ---------------------------------------------------------------  */                                   000000    1000018
+     22+/*                                                                   */                                   000000    1000019
+     23+/* end_generated_IBM_copyright_prolog                                */                                   000000    1000020
+     24+/*** START HEADER FILE SPECIFICATIONS ***********************        */                                   000000    1000021
+     25+/*                                                                   */                                   000000    1000022
+     26+/*Header File Name: QRNOPENACC                                       */                                   000000    1000023
+     27+/*                                                                   */                                   000000    1000024
+     28+/*Descriptive Name: Definitions for Open Access: RPG Edition         */                                   000000    1000025
+     29+/*                                                                   */                                   000000    1000026
+     30+/*Change Activity:                                                   */                                   000000    1000027
+     31+/*                                                                   */                                   000000    1000028
+     32+/*CFD List:                                                          */                                   000000    1000029
+     33+/*                                                                   */                                   000000    1000030
+     34+/*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION        */                                   000000    1000031
+     35+/*---- ------------ ----- ------ --------- ----------------------    */                                   000000    1000032
+     36+/*$A0=                    090830 BLM       New Include               */                                   000000    1000033
+     37+/*$A1=                    100614 BLM       COMMIT and SLN keywords   */                                   000000    1000034
+     38+/*$A2=              7.2   131111 BLM       CCSID changes             */                                   000000    1000035
+     39+/*$A2=              7.3   190708 BLM       DATA-GEN                  */                                   000000    1000036
+     40+/*                                                                   */                                   000000    1000037
+     41+/*End CFD List.                                                      */                                   000000    1000038
+     42+/*                                                                   */                                   000000    1000039
+     43+/*Additional notes about the Change Activity                         */                                   000000    1000040
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     44+/*End Change Activity.                                               */                                   000000    1000041
+     45+/*** END HEADER FILE SPECIFICATIONS ******************************   */                                   000000    1000042
+     46+                                                                                                          000000    1000043
+     47+ /IF DEFINED(QrnOpenAccess_Included)                                                                      000000    1000044
+             LINES EXCLUDED: 1
+     48+ /ENDIF                                                                                                   000000    1000046
+     49+ /DEFINE QrnOpenAccess_Included                                                                           000000    1000047
+     50+                                                                                                          000000    1000048
+     51+ /COPY QOAR/QRPGLESRC,QRNTYPES                                                                      @03A  000000    1000049
+         *--------------------------------------------------------------------------------------------*
+         * RPG member name  . . . . . :  QRNTYPES                                                     *                     2
+         * External name  . . . . . . :  QOAR/QRPGLESRC(QRNTYPES)                                     *                     2
+         * Last change  . . . . . . . :  dd-dd-dd  tt:tt:tt                                           *                     2
+         * Text 'description' . . . . :  COPY FILE WITH GENERAL DEFINITIONS                           *                     2
+         *--------------------------------------------------------------------------------------------*
+     52+/* begin_generated_IBM_copyright_prolog                              */                                   000000    2000001
+     53+/* This is an automatically generated copyright prolog.              */                                   000000    2000002
+     54+/* After initializing,  DO NOT MODIFY OR MOVE                        */                                   000000    2000003
+     55+/* ----------------------------------------------------------------- */                                   000000    2000004
+     56+/*                                                                   */                                   000000    2000005
+     57+/* Product(s):                                                       */                                   000000    2000006
+     58+/*     5770-WDS                                                      */                                   000000    2000007
+     59+/*                                                                   */                                   000000    2000008
+     60+/* (C)Copyright IBM Corp.  2010, 2019                                */                                   000000    2000009
+     61+/*                                                                   */                                   000000    2000010
+     62+/* All rights reserved.                                              */                                   000000    2000011
+     63+/* US Government Users Restricted Rights -                           */                                   000000    2000012
+     64+/* Use, duplication or disclosure restricted                         */                                   000000    2000013
+     65+/* by GSA ADP Schedule Contract with IBM Corp.                       */                                   000000    2000014
+     66+/*                                                                   */                                   000000    2000015
+     67+/* Licensed Materials-Property of IBM                                */                                   000000    2000016
+     68+/*                                                                   */                                   000000    2000017
+     69+/*  ---------------------------------------------------------------  */                                   000000    2000018
+     70+/*                                                                   */                                   000000    2000019
+     71+/* end_generated_IBM_copyright_prolog                                */                                   000000    2000020
+     72+/*** START HEADER FILE SPECIFICATIONS ***********************        */                                   000000    2000021
+     73+/*                                                                   */                                   000000    2000022
+     74+/*Header File Name: QRNTYPES                                         */                                   000000    2000023
+     75+/*                                                                   */                                   000000    2000024
+     76+/*Descriptive Name: Definitions for Open Access: RPG Edition         */                                   000000    2000025
+     77+/*                                                                   */                                   000000    2000026
+     78+/*Change Activity:                                                   */                                   000000    2000027
+     79+/*                                                                   */                                   000000    2000028
+     80+/*CFD List:                                                          */                                   000000    2000029
+     81+/*                                                                   */                                   000000    2000030
+     82+/*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION        */                                   000000    2000031
+     83+/*---- ------------ ----- ------ --------- ----------------------    */                                   000000    2000032
+     84+/*$A0=                    190708 BLM       New Include               */                                   000000    2000033
+     85+/*                                                                   */                                   000000    2000034
+     86+/*End CFD List.                                                      */                                   000000    2000035
+     87+/*                                                                   */                                   000000    2000036
+     88+/*Additional notes about the Change Activity                         */                                   000000    2000037
+     89+/*End Change Activity.                                               */                                   000000    2000038
+     90+/*** END HEADER FILE SPECIFICATIONS ******************************   */                                   000000    2000039
+     91+                                                                                                          000000    2000040
+     92+ /IF DEFINED(QrnTypes_Included)                                                                           000000    2000041
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+             LINES EXCLUDED: 1
+     93+ /ENDIF                                                                                                   000000    2000043
+     94+ /DEFINE QrnTypes_Included                                                                                000000    2000044
+     95+                                                                                                          000000    2000045
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-    96+D QrnUserParmType_notPassed...                                                                            000000    2000046
+     97+D                 C                   '0'                                                                 000000    2000047
+     98+D QrnUserParmType_nullTerminatedString...                                                                 000000    2000048
+     99+D                 C                   '1'                                                                 000000    2000049
+    100+D QrnUserParmType_indicator...                                                                            000000    2000050
+    101+D                 C                   '2'                                                                 000000    2000051
+    102+D QrnUserParmType_char...                                                                                 000000    2000052
+    103+D                 C                   '3'                                                                 000000    2000053
+    104+D QrnUserParmType_varchar_2...                                                                            000000    2000054
+    105+D                 C                   '4'                                                                 000000    2000055
+    106+D QrnUserParmType_varchar_4...                                                                            000000    2000056
+    107+D                 C                   '5'                                                                 000000    2000057
+    108+D QrnUserParmType_graph...                                                                                000000    2000058
+    109+D                 C                   '6'                                                                 000000    2000059
+    110+D QrnUserParmType_vargraph_2...                                                                           000000    2000060
+    111+D                 C                   '7'                                                                 000000    2000061
+    112+D QrnUserParmType_vargraph_4...                                                                           000000    2000062
+    113+D                 C                   '8'                                                                 000000    2000063
+1{heading} page 5
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    114+D QrnUserParmType_ucs2...                                                                                 000000    2000064
+    115+D                 C                   '9'                                                                 000000    2000065
+    116+D QrnUserParmType_varucs2_2...                                                                            000000    2000066
+    117+D                 C                   'a'                                                                 000000    2000067
+    118+D QrnUserParmType_varucs2_4...                                                                            000000    2000068
+    119+D                 C                   'b'                                                                 000000    2000069
+    120+D QrnUserParmType_dataStruct...                                                                           000000    2000070
+    121+D                 C                   'c'                                                                 000000    2000071
+    122+D QrnUserParmType_other...                                                                                000000    2000072
+    123+D                 C                   'd'                                                                 000000    2000073
+    124+                                                                                                          000000    2000074
+    125+D QrnDatatype_Alpha...                                                                                    000000    2000075
+    126+D                 C                   1                                                                   000000    2000076
+    127+D QrnDatatype_AlphaVarying...                                                                             000000    2000077
+    128+D                 C                   2                                                                   000000    2000078
+    129+D QrnDatatype_Ucs2...                                                                                     000000    2000079
+    130+D                 C                   3                                                                   000000    2000080
+    131+D QrnDatatype_Ucs2Varying...                                                                              000000    2000081
+    132+D                 C                   4                                                                   000000    2000082
+    133+ * Note that "Unicode" here does not include UTF-8. It only                                               000000    2000083
+    134+ * includes UCS-2 and UTF-16.                                                                             000000    2000084
+    135+D QrnDatatype_Unicode...                                                                                  000000    2000085
+    136+D                 C                   3                                                                   000000    2000086
+    137+D QrnDatatype_UnicodeVarying...                                                                           000000    2000087
+    138+D                 C                   4                                                                   000000    2000088
+    139+D QrnDatatype_Dbcs...                                                                                     000000    2000089
+    140+D                 C                   5                                                                   000000    2000090
+    141+D QrnDatatype_DbcsVarying...                                                                              000000    2000091
+    142+D                 C                   6                                                                   000000    2000092
+    143+D QrnDatatype_Indicator...                                                                                000000    2000093
+    144+D                 C                   7                                                                   000000    2000094
+    145+D QrnDatatype_Decimal...                                                                                  000000    2000095
+    146+D                 C                   8                                                                   000000    2000096
+    147+D QrnDatatype_Integer...                                                                                  000000    2000097
+    148+D                 C                   9                                                                   000000    2000098
+    149+D QrnDatatype_Unsigned...                                                                                 000000    2000099
+    150+D                 C                   10                                                                  000000    2000100
+    151+D QrnDatatype_Float...                                                                                    000000    2000101
+    152+D                 C                   11                                                                  000000    2000102
+    153+D QrnDatatype_Date...                                                                                     000000    2000103
+    154+D                 C                   12                                                                  000000    2000104
+    155+D QrnDatatype_Time...                                                                                     000000    2000105
+    156+D                 C                   13                                                                  000000    2000106
+    157+D QrnDatatype_Timestamp...                                                                                000000    2000107
+    158+D                 C                   14                                                                  000000    2000108
+    159+                                                                                                          000000    2000109
+    160+D QrnDtzFormat_ISO...                                                                                     000000    2000110
+    161+D                 C                   1                                                                   000000    2000111
+    162+D QrnDtzFormat_USA...                                                                                     000000    2000112
+    163+D                 C                   2                                                                   000000    2000113
+    164+D QrnDtzFormat_EUR...                                                                                     000000    2000114
+    165+D                 C                   3                                                                   000000    2000115
+    166+D QrnDtzFormat_JIS...                                                                                     000000    2000116
+    167+D                 C                   4                                                                   000000    2000117
+    168+D QrnDtzFormat_YMD...                                                                                     000000    2000118
+    169+D                 C                   5                                                                   000000    2000119
+1{heading} page 6
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    170+D QrnDtzFormat_MDY...                                                                                     000000    2000120
+    171+D                 C                   6                                                                   000000    2000121
+    172+D QrnDtzFormat_DMY...                                                                                     000000    2000122
+    173+D                 C                   7                                                                   000000    2000123
+    174+D QrnDtzFormat_JUL...                                                                                     000000    2000124
+    175+D                 C                   8                                                                   000000    2000125
+    176+D QrnDtzFormat_HMS...                                                                                     000000    2000126
+    177+D                 C                   9                                                                   000000    2000127
+    178+                                                                                                          000000    2000128
+    179+                                                                                                          000000    1000050
+    180+/* Format of QrnOpenAccess struct */                                                                      000000    1000051
+    181+D ROIO0100        C                   'ROIO0100'                                                          000000    1000052
+    182+                                                                                                          000000    1000053
+    183+D QrnDevice_Database...                                                                                   000000    1000054
+    184+D                 C                   'D'                                                                 000000    1000055
+    185+D QrnDevice_Printer...                                                                                    000000    1000056
+    186+D                 C                   'P'                                                                 000000    1000057
+    187+D QrnDevice_UserInterface...                                                                              000000    1000058
+    188+D                 C                   'U'                                                                 000000    1000059
+    189+                                                                                                          000000    1000060
+    190+D QrnOperation_OPEN...                                                                                    000000    1000061
+    191+D                 C                   1                                                                   000000    1000062
+    192+D QrnOperation_POSITION_START...                                                                          000000    1000063
+    193+D                 C                   2                                                                   000000    1000064
+    194+D QrnOperation_POSITION_END...                                                                            000000    1000065
+    195+D                 C                   3                                                                   000000    1000066
+    196+D QrnOperation_READ...                                                                                    000000    1000067
+    197+D                 C                   4                                                                   000000    1000068
+    198+D QrnOperation_READC...                                                                                   000000    1000069
+    199+D                 C                   5                                                                   000000    1000070
+    200+D QrnOperation_READE...                                                                                   000000    1000071
+    201+D                 C                   6                                                                   000000    1000072
+    202+D QrnOperation_READP...                                                                                   000000    1000073
+    203+D                 C                   7                                                                   000000    1000074
+    204+D QrnOperation_READPE...                                                                                  000000    1000075
+    205+D                 C                   8                                                                   000000    1000076
+    206+D QrnOperation_CHAIN...                                                                                   000000    1000077
+    207+D                 C                   9                                                                   000000    1000078
+    208+D QrnOperation_EXFMT...                                                                                   000000    1000079
+    209+D                 C                   10                                                                  000000    1000080
+    210+D QrnOperation_SETGT...                                                                                   000000    1000081
+    211+D                 C                   11                                                                  000000    1000082
+    212+D QrnOperation_SETLL...                                                                                   000000    1000083
+    213+D                 C                   12                                                                  000000    1000084
+    214+D QrnOperation_UNLOCK...                                                                                  000000    1000085
+    215+D                 C                   13                                                                  000000    1000086
+    216+D QrnOperation_UPDATE...                                                                                  000000    1000087
+    217+D                 C                   14                                                                  000000    1000088
+    218+D QrnOperation_WRITE...                                                                                   000000    1000089
+    219+D                 C                   15                                                                  000000    1000090
+    220+D QrnOperation_DELETE...                                                                                  000000    1000091
+    221+D                 C                   16                                                                  000000    1000092
+    222+D QrnOperation_FEOD...                                                                                    000000    1000093
+    223+D                 C                   17                                                                  000000    1000094
+    224+D QrnOperation_CLOSE...                                                                                   000000    1000095
+    225+D                 C                   18                                                                  000000    1000096
+1{heading} page 7
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    226+D QrnOperation_DELETE_CURRENT...                                                                          000000    1000097
+    227+D                 C                   19                                                                  000000    1000098
+    228+D QrnOperation_READE_CURRENT...                                                                           000000    1000099
+    229+D                 C                   20                                                                  000000    1000100
+    230+D QrnOperation_READPE_CURRENT...                                                                          000000    1000101
+    231+D                 C                   21                                                                  000000    1000102
+    232+                                                                                                          000000    1000103
+    233+D QrnFunctionKey_None...                                                                                  000000    1000104
+    234+D                 C                   0                                                                   000000    1000105
+    235+D QrnFunctionKey_01...                                                                                    000000    1000106
+    236+D                 C                   1                                                                   000000    1000107
+    237+D QrnFunctionKey_02...                                                                                    000000    1000108
+    238+D                 C                   2                                                                   000000    1000109
+    239+D QrnFunctionKey_03...                                                                                    000000    1000110
+    240+D                 C                   3                                                                   000000    1000111
+    241+D QrnFunctionKey_04...                                                                                    000000    1000112
+    242+D                 C                   4                                                                   000000    1000113
+    243+D QrnFunctionKey_05...                                                                                    000000    1000114
+    244+D                 C                   5                                                                   000000    1000115
+    245+D QrnFunctionKey_06...                                                                                    000000    1000116
+    246+D                 C                   6                                                                   000000    1000117
+    247+D QrnFunctionKey_07...                                                                                    000000    1000118
+    248+D                 C                   7                                                                   000000    1000119
+    249+D QrnFunctionKey_08...                                                                                    000000    1000120
+    250+D                 C                   8                                                                   000000    1000121
+    251+D QrnFunctionKey_09...                                                                                    000000    1000122
+    252+D                 C                   9                                                                   000000    1000123
+    253+D QrnFunctionKey_10...                                                                                    000000    1000124
+    254+D                 C                   10                                                                  000000    1000125
+    255+D QrnFunctionKey_11...                                                                                    000000    1000126
+    256+D                 C                   11                                                                  000000    1000127
+    257+D QrnFunctionKey_12...                                                                                    000000    1000128
+    258+D                 C                   12                                                                  000000    1000129
+    259+D QrnFunctionKey_13...                                                                                    000000    1000130
+    260+D                 C                   13                                                                  000000    1000131
+    261+D QrnFunctionKey_14...                                                                                    000000    1000132
+    262+D                 C                   14                                                                  000000    1000133
+    263+D QrnFunctionKey_15...                                                                                    000000    1000134
+    264+D                 C                   15                                                                  000000    1000135
+    265+D QrnFunctionKey_16...                                                                                    000000    1000136
+    266+D                 C                   16                                                                  000000    1000137
+    267+D QrnFunctionKey_17...                                                                                    000000    1000138
+    268+D                 C                   17                                                                  000000    1000139
+    269+D QrnFunctionKey_18...                                                                                    000000    1000140
+    270+D                 C                   18                                                                  000000    1000141
+    271+D QrnFunctionKey_19...                                                                                    000000    1000142
+    272+D                 C                   19                                                                  000000    1000143
+    273+D QrnFunctionKey_20...                                                                                    000000    1000144
+    274+D                 C                   20                                                                  000000    1000145
+    275+D QrnFunctionKey_21...                                                                                    000000    1000146
+    276+D                 C                   21                                                                  000000    1000147
+    277+D QrnFunctionKey_22...                                                                                    000000    1000148
+    278+D                 C                   22                                                                  000000    1000149
+    279+D QrnFunctionKey_23...                                                                                    000000    1000150
+    280+D                 C                   23                                                                  000000    1000151
+    281+D QrnFunctionKey_24...                                                                                    000000    1000152
+1{heading} page 8
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    282+D                 C                   24                                                                  000000    1000153
+    283+D QrnFunctionKey_PRINT...                                                                                 000000    1000154
+    284+D                 C                   121                                                                 000000    1000155
+    285+D QrnFunctionKey_ROLLUP...                                                                                000000    1000156
+    286+D                 C                   122                                                                 000000    1000157
+    287+D QrnFunctionKey_ROLLDOWN...                                                                              000000    1000158
+    288+D                 C                   123                                                                 000000    1000159
+    289+D QrnFunctionKey_CLEAR...                                                                                 000000    1000160
+    290+D                 C                   124                                                                 000000    1000161
+    291+D QrnFunctionKey_HELP...                                                                                  000000    1000162
+    292+D                 C                   125                                                                 000000    1000163
+    293+D QrnFunctionKey_HOME...                                                                                  000000    1000164
+    294+D                 C                   126                                                                 000000    1000165
+    295+                                                                                                          000000    1000166
+    296+D QrnCcsids_JOB...                                                                                  @A2A  000000    1000167
+    297+D                 C                   0                                                                   000000    1000168
+    298+D QrnCcsids_FILE...                                                                                 @A2A  000000    1000169
+    299+D                 C                   1                                                                   000000    1000170
+    300+D QrnCcsids_N_A...                                                                                  @A2A  000000    1000171
+    301+D                 C                   2                                                                   000000    1000172
+    302+                                                                                                          000000    1000173
+    303+D QrnPrtctl_T...                                                                                          000000    1000174
+    304+D                 DS                  QUALIFIED TEMPLATE                                                  000000    1000175
+    305+D   spaceBefore                  3S 0                                                                     000000    1000176
+    306+D   spaceAfter                   3S 0                                                                     000000    1000177
+    307+D   skipBefore                   3S 0                                                                     000000    1000178
+    308+D   skipAfter                    3S 0                                                                     000000    1000179
+    309+D   currLine                     3S 0                                                                     000000    1000180
+    310+                                                                                                          000000    1000181
+    311+D QrnRecordLevel_T...                                                                                     000000    1000182
+    312+D                 DS                  QUALIFIED TEMPLATE                                                  000000    1000183
+    313+D   record                      10A                                                                       000000    1000184
+    314+D   level                       13A                                                                       000000    1000185
+    315+                                                                                                          000000    1000186
+    316+D QrnRecordLevels_T...                                                                                    000000    1000187
+    317+D                 DS                  QUALIFIED TEMPLATE ALIGN                                            000000    1000188
+    318+D   num                         10I 0                                                                     000000    1000189
+    319+D   levels                            LIKEDS(QrnRecordLevel_T)                                            000000    1000190
+    320+D                                     DIM(32767)                                                          000000    1000191
+    321+                                                                                                          000000    1000192
+    322+D QrnObject_T...                                                                                          000000    1000193
+    323+D                 DS                  QUALIFIED TEMPLATE                                                  000000    1000194
+    324+D   name                        10A                                                                       000000    1000195
+    325+D   library                     10A                                                                       000000    1000196
+    326+                                                                                                          000000    1000197
+    327+D QrnNameValue_T...                                                                                       000000    1000198
+    328+D                 DS                  QUALIFIED TEMPLATE                                                  000000    1000199
+    329+/* I   Name from external file    */                                                                      000000    1000200
+    330+D   externalName...                                                                                       000000    1000201
+    331+D                               10A                                                                       000000    1000202
+    332+/* I   Data type of field         */                                                                      000000    1000203
+    333+/*     See QrnDatatype_*          */                                                                      000000    1000204
+    334+D   dataType...                                                                                           000000    1000205
+    335+D                                3U 0                                                                     000000    1000206
+    336+/* I   Defined length of numeric  */                                                                      000000    1000207
+    337+/*      - Decimal: total digits   */                                                                      000000    1000208
+1{heading} page 9
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    338+/*      - Integer: bytes          */                                                                      000000    1000209
+    339+/*      - Unsigned: bytes         */                                                                      000000    1000210
+    340+/*      - Float: bytes            */                                                                      000000    1000211
+    341+/*     Numeric fields only        */                                                                      000000    1000212
+    342+D   numericDefinedLen...                                                                                  000000    1000213
+    343+D                                3U 0                                                                     000000    1000214
+    344+/* I   Decimal places of field    */                                                                      000000    1000215
+    345+/*     Decimal fields only        */                                                                      000000    1000216
+    346+D   decimals...                                                                                           000000    1000217
+    347+D                                3U 0                                                                     000000    1000218
+    348+/* I   Date/time/timestamp format */                                                                      000000    1000219
+    349+/*     Date, time, timestamp only */                                                                      000000    1000220
+    350+D   dtzFormat...                                                                                          000000    1000221
+    351+D                                3U 0                                                                     000000    1000222
+    352+/* I   Date, time separator       */                                                                      000000    1000223
+    353+/*     Date, time only            */                                                                      000000    1000224
+    354+D   dtSeparator...                                                                                        000000    1000225
+    355+D                                1A                                                                       000000    1000226
+    356+/* I   Input field (field is      */                                                                      000000    1000227
+    357+/*     set by handler)            */                                                                      000000    1000228
+    358+D   input...                                                                                              000000    1000229
+    359+D                                 N                                                                       000000    1000230
+    360+/* I   Output field (field is     */                                                                      000000    1000231
+    361+/*     used by handler)           */                                                                      000000    1000232
+    362+D   output...                                                                                             000000    1000233
+    363+D                                 N                                                                       000000    1000234
+    364+/* I   Is the field null capable  */                                                                      000000    1000235
+    365+D   isNullCapable...                                                                                      000000    1000236
+    366+D                                 N                                                                       000000    1000237
+    367+/* I/O Does it have a null value  */                                                                      000000    1000238
+    368+D   hasNullValue...                                                                                       000000    1000239
+    369+D                                 N                                                                       000000    1000240
+    370+/*     Hex zeros                  */                                                                      000000    1000241
+    371+D   reserved1...                                                                                          000000    1000242
+    372+D                               13A                                                                       000000    1000243
+    373+/* I/O Length of value in bytes   */                                                                      000000    1000244
+    374+D   valueLenBytes...                                                                                      000000    1000245
+    375+D                               10U 0                                                                     000000    1000246
+    376+/* I   Maximum length in bytes    */                                                                      000000    1000247
+    377+D   valueMaxLenBytes...                                                                                   000000    1000248
+    378+D                               10U 0                                                                     000000    1000249
+    379+/* I   CCSID of the value         */                                                                      000000    1000250
+    380+D   valueCcsid...                                                                                         000000    1000251
+    381+D                               10I 0                                                                     000000    1000252
+    382+/*     Zero                       */                                                                      000000    1000253
+    383+D   reserved2...                                                                                          000000    1000254
+    384+D                               10U 0                                                                     000000    1000255
+    385+/* I/O The value of the field, in */                                                                      000000    1000256
+    386+/*     human-readable form        */                                                                      000000    1000257
+    387+D   value...                                                                                              000000    1000258
+    388+D                                 *                                                                       000000    1000259
+    389+/*     NULL                       */                                                                      000000    1000260
+    390+D   reserved3...                                                                                          000000    1000261
+    391+D                                 *                                                                       000000    1000262
+    392+                                                                                                          000000    1000263
+    393+D QrnNamesValues_T...                                                                                     000000    1000264
+1{heading} page 10
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    394+D                 DS                  QUALIFIED TEMPLATE ALIGN                                            000000    1000265
+    395+D   num                         10I 0                                                                     000000    1000266
+    396+D   field                             LIKEDS(QrnNameValue_T)                                              000000    1000267
+    397+D                                     DIM(32767)                                                          000000    1000268
+    398+                                                                                                          000000    1000269
+    399+D QrnOpenAccess_T...                                                                                      000000    1000270
+    400+D                 DS                  TEMPLATE QUALIFIED ALIGN                                            000000    1000271
+    401+/* I   Length of this structure   */                                                                      000000    1000272
+    402+D   length...                                                                                             000000    1000273
+    403+D                               10U 0                                                                     000000    1000274
+    404+/*     Zero                       */                                                                      000000    1000275
+    405+D   reserved1...                                                                                          000000    1000276
+    406+D                               10U 0                                                                     000000    1000277
+    407+/* I   Format of this structure   */                                                                      000000    1000278
+    408+/*     ROACnnnn                   */                                                                      000000    1000279
+    409+D   parameterFormat...                                                                                    000000    1000280
+    410+D                                8A                                                                       000000    1000281
+    411+/* I/O User area owned by the     */                                                                      000000    1000282
+    412+/*     RPG program                */                                                                      000000    1000283
+    413+D   userArea...                                                                                           000000    1000284
+    414+D                                 *                                                                       000000    1000285
+    415+/* I/O State info owned by        */                                                                      000000    1000286
+    416+/*     the handler                */                                                                      000000    1000287
+    417+D   stateInfo...                                                                                          000000    1000288
+    418+D                                 *                                                                       000000    1000289
+    419+/* I   Record format level        */                                                                      000000    1000290
+    420+/*     indicators.                */                                                                      000000    1000291
+    421+/*     - NULL if file is program  */                                                                      000000    1000292
+    422+/*       described                */                                                                      000000    1000293
+    423+D   recordLevels...                                                                                       000000    1000294
+    424+D                                 *                                                                       000000    1000295
+    425+/* O   Input buffer               */                                                                      000000    1000296
+    426+/*     NULL if not used by opcode */                                                                      000000    1000297
+    427+/*     - Length is given by       */                                                                      000000    1000298
+    428+/*       inputBufferLen           */                                                                      000000    1000299
+    429+D   inputBuffer...                                                                                        000000    1000300
+    430+D                                 *                                                                       000000    1000301
+    431+/* O   Input null byte map        */                                                                      000000    1000302
+    432+/*     - Length is given by       */                                                                      000000    1000303
+    433+/*       inputNullMapLen          */                                                                      000000    1000304
+    434+D   inputNullMap...                                                                                       000000    1000305
+    435+D                                 *                                                                       000000    1000306
+    436+/* I   Output buffer              */                                                                      000000    1000307
+    437+/*     NULL if not used by opcode */                                                                      000000    1000308
+    438+/*     - Length is given by       */                                                                      000000    1000309
+    439+/*       outputBufferLen          */                                                                      000000    1000310
+    440+D   outputBuffer...                                                                                       000000    1000311
+    441+D                                 *                                                                       000000    1000312
+    442+/* I   Output null byte map       */                                                                      000000    1000313
+    443+/*     - Length is given by       */                                                                      000000    1000314
+    444+/*       outputNullMapLen         */                                                                      000000    1000315
+    445+D   outputNullMap...                                                                                      000000    1000316
+    446+D                                 *                                                                       000000    1000317
+    447+/* I/O Alternate version of       */                                                                      000000    1000318
+    448+/*     I/O buffer information     */                                                                      000000    1000319
+    449+D   namesValues...                                                                                        000000    1000320
+1{heading} page 11
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    450+D                                 *                                                                       000000    1000321
+    451+/* I   Key                        */                                                                      000000    1000322
+    452+/*     NULL if not used by opcode */                                                                      000000    1000323
+    453+/*     - Length is given by       */                                                                      000000    1000324
+    454+/*       keyLen                   */                                                                      000000    1000325
+    455+D   key...                                                                                                000000    1000326
+    456+D                                 *                                                                       000000    1000327
+    457+/* I   Key null byte map          */                                                                      000000    1000328
+    458+/*     - Length is given by       */                                                                      000000    1000329
+    459+/*       keyNullMapLen            */                                                                      000000    1000330
+    460+D   keyNullMap...                                                                                         000000    1000331
+    461+D                                 *                                                                       000000    1000332
+    462+/* I   Alternate version of       */                                                                      000000    1000333
+    463+/*     key information            */                                                                      000000    1000334
+    464+D   keynamesValues...                                                                                     000000    1000335
+    465+D                                 *                                                                       000000    1000336
+    466+/* I/O Indicator array, dim99     */                                                                      000000    1000337
+    467+/*     NULL if not used by file   */                                                                      000000    1000338
+    468+/*     or if using names-values   */                                                                      000000    1000339
+    469+D   indara...                                                                                             000000    1000340
+    470+D                                 *                                                                       000000    1000341
+    471+/* I   Print control              */                                                                      000000    1000342
+    472+D   prtctl...                                                                                             000000    1000343
+    473+D                                 *                                                                       000000    1000344
+    474+/* O   The handler can set        */                                                                      000000    1000345
+    475+/*     this pointer.              */                                                                      000000    1000346
+    476+/*     - Length is specified in   */                                                                      000000    1000347
+    477+/*       openFeedbackLen          */                                                                      000000    1000348
+    478+D   openFeedback...                                                                                       000000    1000349
+    479+D                                 *                                                                       000000    1000350
+    480+/* O   The handler can set        */                                                                      000000    1000351
+    481+/*     this pointer.              */                                                                      000000    1000352
+    482+/*     - Length is specified in   */                                                                      000000    1000353
+    483+/*       ioFeedbackLen            */                                                                      000000    1000354
+    484+D   ioFeedback...                                                                                         000000    1000355
+    485+D                                 *                                                                       000000    1000356
+    486+/* O   The handler can set        */                                                                      000000    1000357
+    487+/*     this pointer.              */                                                                      000000    1000358
+    488+/*     - Length is specified in   */                                                                      000000    1000359
+    489+/*       deviceFeedbackLen        */                                                                      000000    1000360
+    490+D   deviceFeedback...                                                                                     000000    1000361
+    491+D                                 *                                                                       000000    1000362
+    492+/* I   NULL                       */                                                                      000000    1000363
+    493+D   reserved2...                                                                                          000000    1000364
+    494+D                                 *                                                                       000000    1000365
+    495+/* I   NULL                       */                                                                      000000    1000366
+    496+D   reserved3...                                                                                          000000    1000367
+    497+D                                 *                                                                       000000    1000368
+    498+/* I   NULL                       */                                                                      000000    1000369
+    499+D   reserved4...                                                                                          000000    1000370
+    500+D                                 *                                                                       000000    1000371
+    501+/* I   External file              */                                                                      000000    1000372
+    502+D   externalFile...                                                                                       000000    1000373
+    503+D                                     LIKEDS(QrnObject_T)                                                 000000    1000374
+    504+/* I   External member            */                                                                      000000    1000375
+    505+D   externalMember...                                                                                     000000    1000376
+1{heading} page 12
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    506+D                               10A                                                                       000000    1000377
+    507+/* I   File used at compile time  */                                                                      000000    1000378
+    508+D   compileFile...                                                                                        000000    1000379
+    509+D                                     LIKEDS(QrnObject_T)                                                 000000    1000380
+    510+/* I/O Record name                */                                                                      000000    1000381
+    511+D   recordName...                                                                                         000000    1000382
+    512+D                               10A                                                                       000000    1000383
+    513+/*     Hex zeros                  */                                                                      000000    1000384
+    514+D   reserved5...                                                                                          000000    1000385
+    515+D                               20A                                                                       000000    1000386
+    516+/* I   RPG operation              */                                                                      000000    1000387
+    517+/*     See QrnOperation_*         */                                                                      000000    1000388
+    518+D   rpgOperation...                                                                                       000000    1000389
+    519+D                               10U 0                                                                     000000    1000390
+    520+/* O   RPG status code            */                                                                      000000    1000391
+    521+D   rpgStatus...                                                                                          000000    1000392
+    522+D                               10I 0                                                                     000000    1000393
+    523+/* I   Length of inputBuffer      */                                                                      000000    1000394
+    524+D   inputBufferLen...                                                                                     000000    1000395
+    525+D                               10U 0                                                                     000000    1000396
+    526+/* I   Length of inputNullMap     */                                                                      000000    1000397
+    527+D   inputNullMapLen...                                                                                    000000    1000398
+    528+D                               10U 0                                                                     000000    1000399
+    529+/* I   Length of outputBuffer     */                                                                      000000    1000400
+    530+D   outputBufferLen...                                                                                    000000    1000401
+    531+D                               10U 0                                                                     000000    1000402
+    532+/* I   Length of outputNullMap    */                                                                      000000    1000403
+    533+D   outputNullMapLen...                                                                                   000000    1000404
+    534+D                               10U 0                                                                     000000    1000405
+    535+/* I   Length of key              */                                                                      000000    1000406
+    536+D   keyLen...                                                                                             000000    1000407
+    537+D                               10U 0                                                                     000000    1000408
+    538+/* I   Length of keyNullMap       */                                                                      000000    1000409
+    539+D   keyNullMapLen...                                                                                      000000    1000410
+    540+D                               10U 0                                                                     000000    1000411
+    541+/* O   Length of input data       */                                                                      000000    1000412
+    542+D   inputDataLen...                                                                                       000000    1000413
+    543+D                               10U 0                                                                     000000    1000414
+    544+/* O   Length of openFeedback     */                                                                      000000    1000415
+    545+D   openFeedbackLen...                                                                                    000000    1000416
+    546+D                               10U 0                                                                     000000    1000417
+    547+/* O   Length of ioFeedback       */                                                                      000000    1000418
+    548+D   ioFeedbackLen...                                                                                      000000    1000419
+    549+D                               10U 0                                                                     000000    1000420
+    550+/* O   Length of deviceFeedback   */                                                                      000000    1000421
+    551+D   deviceFeedbackLen...                                                                                  000000    1000422
+    552+D                               10U 0                                                                     000000    1000423
+    553+/* I   Number of key fields       */                                                                      000000    1000424
+    554+/*     N/A for program-desc file  */                                                                      000000    1000425
+    555+D   numKeys...                                                                                            000000    1000426
+    556+D                               10U 0                                                                     000000    1000427
+    557+/* I/O RRN                        */                                                                      000000    1000428
+    558+D   rrn...                                                                                                000000    1000429
+    559+D                               10U 0                                                                     000000    1000430
+    560+/* I   Printer form length        */                                                                      000000    1000431
+    561+/*     Only meaningful for        */                                                                      000000    1000432
+1{heading} page 13
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    562+/*     program described file     */                                                                      000000    1000433
+    563+/*     with device Printer        */                                                                      000000    1000434
+    564+D   formLen...                                                                                            000000    1000435
+    565+D                               10U 0                                                                     000000    1000436
+    566+/* I   Printer form overflow      */                                                                      000000    1000437
+    567+/*     Only meaningful for        */                                                                      000000    1000438
+    568+/*     program described PRINTER  */                                                                      000000    1000439
+    569+D   formOfl...                                                                                            000000    1000440
+    570+D                               10U 0                                                                     000000    1000441
+    571+/* I   Starting line number       */                                                                      000000    1000442
+    572+/*     for SLNO(*VAR)             */                                                                      000000    1000443
+    573+D   sln...                                                                                          @A1A  000000    1000444
+    574+D                               10U 0                                                               @A1A  000000    1000445
+    575+/*     Handling of char CCSID     */                                                                      000000    1000446
+    576+/*     See QrnCcsids_*            */                                                                      000000    1000447
+    577+D   alphaCcsids...                                                                                  @A2A  000000    1000448
+    578+D                               10U 0                                                                     000000    1000449
+    579+/*     Zero                       */                                                                      000000    1000450
+    580+D   reserved8...                                                                                          000000    1000451
+    581+D                               10U 0                                                                     000000    1000452
+    582+/*     Zero                       */                                                                      000000    1000453
+    583+D   reserved9...                                                                                          000000    1000454
+    584+D                               10U 0                                                                     000000    1000455
+    585+/* O   F1-F24, PRINT,ROLLUP etc   */                                                                      000000    1000456
+    586+/*     See QrnFunctionKey_*       */                                                                      000000    1000457
+    587+/*     - Unknown values cause an  */                                                                      000000    1000458
+    588+/*       RPG exception            */                                                                      000000    1000459
+    589+D   functionKey...                                                                                        000000    1000460
+    590+D                                3U 0                                                                     000000    1000461
+    591+/* I   Externally described file  */                                                                      000000    1000462
+    592+D   externallyDescribed...                                                                                000000    1000463
+    593+D                                1N                                                                       000000    1000464
+    594+/* I   RPG keyed access?          */                                                                      000000    1000465
+    595+D   keyedFile...                                                                                          000000    1000466
+    596+D                                1N                                                                       000000    1000467
+    597+/* I   BLOCK(*YES)?               */                                                                      000000    1000468
+    598+D   blocked...                                                                                            000000    1000469
+    599+D                                1N                                                                       000000    1000470
+    600+/* O   EOF                        */                                                                      000000    1000471
+    601+D   eof...                                                                                                000000    1000472
+    602+D                                1N                                                                       000000    1000473
+    603+/* O   Record found               */                                                                      000000    1000474
+    604+D   found...                                                                                              000000    1000475
+    605+D                                1N                                                                       000000    1000476
+    606+/* O   Key is equal               */                                                                      000000    1000477
+    607+D   equal...                                                                                              000000    1000478
+    608+D                                1N                                                                       000000    1000479
+    609+/* O   Page overflow reached      */                                                                      000000    1000480
+    610+D   printerOverflow...                                                                                    000000    1000481
+    611+D                                1N                                                                       000000    1000482
+    612+/* I   Input operation with lock  */                                                                      000000    1000483
+    613+D   inputWithLock...                                                                                      000000    1000484
+    614+D                                1N                                                                       000000    1000485
+    615+/* I/O Whether the I/O operations */                                                                      000000    1000486
+    616+/*     will use the name-value    */                                                                      000000    1000487
+    617+/*     info rather than the       */                                                                      000000    1000488
+1{heading} page 14
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    618+/*     I/O buffers                */                                                                      000000    1000489
+    619+/*     Set by handler during OPEN */                                                                      000000    1000490
+    620+/*     operation, used by handler */                                                                      000000    1000491
+    621+/*     and RPG for I/O operations */                                                                      000000    1000492
+    622+D   useNamesValues...                                                                                     000000    1000493
+    623+D                                1N                                                                       000000    1000494
+    624+/* I   Whether the record is      */                                                                      000000    1000495
+    625+/*     defined as a subfile to RPG*/                                                                      000000    1000496
+    626+D   isSubfile...                                                                                          000000    1000497
+    627+D                                1N                                                                       000000    1000498
+    628+/*     '0'                        */                                                                      000000    1000499
+    629+D   reservedInds...                                                                                       000000    1000500
+    630+D                                1N   DIM(3)                                                        @A2C  000000    1000501
+    631+/* I   Whether the handler        */                                                                      000000    1000502
+    632+/*     can handle char CCSIDs     */                                                                      000000    1000503
+    633+D   canHandleCcsids...                                                                              @A2A  000000    1000504
+    634+D                                1N                                                                 @A2A  000000    1000505
+    635+/* I   Whether the file will      */                                                                      000000    1000506
+    636+/*     use commitment control     */                                                                      000000    1000507
+    637+D   commit...                                                                                       @A1A  000000    1000508
+    638+D                                1N                                                                 @A1A  000000    1000509
+    639+/* I   See QrnDevice_*         */                                                                         000000    1000510
+    640+D   rpgDevice...                                                                                          000000    1000511
+    641+D                                1A                                                                       000000    1000512
+    642+/*     Hex zeros                  */                                                                      000000    1000513
+    643+D   reserved10...                                                                                         000000    1000514
+    644+D                               31A                                                                       000000    1000515
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+-   645 dcl-f QSYSPRT printer(132);                                                                               000000     000400
+-   646 dcl-ds line len(132) end-ds;                                                                              000000     000500
+ ======>       aaaa
+ *RNF3530 00 a      000500  Data structure LINE has no valid subfields.
+    647 dcl-s seen int(10);                                                                                       000000     000600
+-   648 dcl-f DATA disk(20) handler(myhdl : seen) usropn;                                                         000000     000700
+-   649 dcl-ds rec len(20) end-ds;                                                                                000000     000800
+ ======>       aaa
+ *RNF3530 00 a      000800  Data structure REC has no valid subfields.
+    650 dcl-pr myhdl;                                                                                             000000     000900
+    651   info likeds(QrnOpenAccess_T);                                                                           000000     001000
+    652 end-pr;                                                                                                   000000     001100
+ *RNF2318 00    645 000400  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-   653 open DATA;                                                                                                000000     001200
+1{heading} page 15
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    654 read(e) DATA rec;                                                                                         000000     001300
+    655 line = 'a ' + %char(%status(DATA)) + ' ' + %error + ' ' + rec;                                            000000     001400
+    656 write QSYSPRT line;                                                                                       000000     001500
+    657 read(e) DATA rec;                                                                                         000000     001600
+    658 line = 'b ' + %char(%status(DATA)) + ' ' + %error + ' ' + %eof(DATA);                                     000000     001700
+    659 write QSYSPRT line;                                                                                       000000     001800
+    660 close DATA;                                                                                               000000     001900
+    661 line = 'calls ' + %char(seen);                                                                            000000     002000
+    662 write QSYSPRT line;                                                                                       000000     002100
+    663 *inlr = *on;                                                                                              000000     002200
+    664                                                                                                           000000     002300
+-   665 dcl-proc myhdl;                                                                                           000000     002400
+-   666   dcl-pi *n;                                                                                              000000     002500
+    667     info likeds(QrnOpenAccess_T);                                                                         000000     002600
+    668   end-pi;                                                                                                 000000     002700
+    669   dcl-s n int(10) based(pn);                                                                              000000     002800
+    670   dcl-s b char(20) based(pb);                                                                             000000     002900
+-   671   pn = info.userArea;                                                                                     000000     003000
+    672   n += 1;                                                                                                 000000     003100
+    673   if info.rpgOperation = QrnOperation_READ;                                                          B01  000000     003200
+    674     if n = 2;                                                                                        B02  000000     003300
+    675       pb = info.inputBuffer;                                                                          02  000000     003400
+    676       b = 'from handler';                                                                             02  000000     003500
+    677     else;                                                                                            X02  000000     003600
+    678       info.rpgStatus = 1299;                                                                          02  000000     003700
+    679     endif;                                                                                           E02  000000     003800
+    680   endif;                                                                                             E01  000000     003900
+    681 end-proc;                                                                                                 000000     004000
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 16
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7086 00    648 000700  RPG handles blocking for file DATA. INFDS is updated only
+                            when blocks of data are transferred.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                            / C o p y   M e m b e r s
+0Line   Src  RPG name   <-------- External name -------> CCSID  <- Last change ->
+0Number Id              Library    File       Member            Date     Time
+      3    1 QRNOPENACC QOAR       QRPGLESRC  QRNOPENACC    37  dd-dd-dd tt:tt:tt
+     51    2 QRNTYPES   QOAR       QRPGLESRC  QRNTYPES      37  dd-dd-dd tt:tt:tt
+0         * * * * *   E N D   O F   / C O P Y   M E M B E R S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 17
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          DATA              DISK                  648D    653     654     655
+                                                  657     658     658     660
+          QSYSPRT           PRINTER               645D    656     659     662
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                  663M
+          LINE              DS(132)               646D    655M    656     658M
+                                                  659     661M    662
+          MYHDL             PROTOTYPE             648     650D    665
+ *RNF7031 QRNCCSIDS_FILE    CONST                 298D
+ *RNF7031 QRNCCSIDS_JOB     CONST                 296D
+ *RNF7031 QRNCCSIDS_N_A     CONST                 300D
+ *RNF7031 QRNDATATYPE_ALPHA CONST                 125D
+ *RNF7031 QRNDATATYPE_ALPHAVARYING...
+                            CONST                 127D
+ *RNF7031 QRNDATATYPE_DATE  CONST                 153D
+ *RNF7031 QRNDATATYPE_DBCS  CONST                 139D
+ *RNF7031 QRNDATATYPE_DBCSVARYING...
+                            CONST                 141D
+ *RNF7031 QRNDATATYPE_DECIMAL...
+                            CONST                 145D
+ *RNF7031 QRNDATATYPE_FLOAT CONST                 151D
+ *RNF7031 QRNDATATYPE_INDICATOR...
+                            CONST                 143D
+ *RNF7031 QRNDATATYPE_INTEGER...
+                            CONST                 147D
+ *RNF7031 QRNDATATYPE_TIME  CONST                 155D
+ *RNF7031 QRNDATATYPE_TIMESTAMP...
+                            CONST                 157D
+ *RNF7031 QRNDATATYPE_UCS2  CONST                 129D
+ *RNF7031 QRNDATATYPE_UCS2VARYING...
+                            CONST                 131D
+ *RNF7031 QRNDATATYPE_UNICODE...
+                            CONST                 135D
+ *RNF7031 QRNDATATYPE_UNICODEVARYING...
+                            CONST                 137D
+ *RNF7031 QRNDATATYPE_UNSIGNED...
+                            CONST                 149D
+ *RNF7031 QRNDEVICE_DATABASE...
+                            CONST                 183D
+ *RNF7031 QRNDEVICE_PRINTER CONST                 185D
+ *RNF7031 QRNDEVICE_USERINTERFACE...
+                            CONST                 187D
+ *RNF7031 QRNDTZFORMAT_DMY  CONST                 172D
+ *RNF7031 QRNDTZFORMAT_EUR  CONST                 164D
+ *RNF7031 QRNDTZFORMAT_HMS  CONST                 176D
+ *RNF7031 QRNDTZFORMAT_ISO  CONST                 160D
+ *RNF7031 QRNDTZFORMAT_JIS  CONST                 166D
+ *RNF7031 QRNDTZFORMAT_JUL  CONST                 174D
+ *RNF7031 QRNDTZFORMAT_MDY  CONST                 170D
+1{heading} page 18
+0*RNF7031 QRNDTZFORMAT_USA  CONST                 162D
+ *RNF7031 QRNDTZFORMAT_YMD  CONST                 168D
+ *RNF7031 QRNFUNCTIONKEY_CLEAR...
+                            CONST                 289D
+ *RNF7031 QRNFUNCTIONKEY_HELP...
+                            CONST                 291D
+ *RNF7031 QRNFUNCTIONKEY_HOME...
+                            CONST                 293D
+ *RNF7031 QRNFUNCTIONKEY_NONE...
+                            CONST                 233D
+ *RNF7031 QRNFUNCTIONKEY_PRINT...
+                            CONST                 283D
+ *RNF7031 QRNFUNCTIONKEY_ROLLDOWN...
+                            CONST                 287D
+ *RNF7031 QRNFUNCTIONKEY_ROLLUP...
+                            CONST                 285D
+ *RNF7031 QRNFUNCTIONKEY_01 CONST                 235D
+ *RNF7031 QRNFUNCTIONKEY_02 CONST                 237D
+ *RNF7031 QRNFUNCTIONKEY_03 CONST                 239D
+ *RNF7031 QRNFUNCTIONKEY_04 CONST                 241D
+ *RNF7031 QRNFUNCTIONKEY_05 CONST                 243D
+ *RNF7031 QRNFUNCTIONKEY_06 CONST                 245D
+ *RNF7031 QRNFUNCTIONKEY_07 CONST                 247D
+ *RNF7031 QRNFUNCTIONKEY_08 CONST                 249D
+ *RNF7031 QRNFUNCTIONKEY_09 CONST                 251D
+ *RNF7031 QRNFUNCTIONKEY_10 CONST                 253D
+ *RNF7031 QRNFUNCTIONKEY_11 CONST                 255D
+ *RNF7031 QRNFUNCTIONKEY_12 CONST                 257D
+ *RNF7031 QRNFUNCTIONKEY_13 CONST                 259D
+ *RNF7031 QRNFUNCTIONKEY_14 CONST                 261D
+ *RNF7031 QRNFUNCTIONKEY_15 CONST                 263D
+ *RNF7031 QRNFUNCTIONKEY_16 CONST                 265D
+ *RNF7031 QRNFUNCTIONKEY_17 CONST                 267D
+ *RNF7031 QRNFUNCTIONKEY_18 CONST                 269D
+ *RNF7031 QRNFUNCTIONKEY_19 CONST                 271D
+ *RNF7031 QRNFUNCTIONKEY_20 CONST                 273D
+ *RNF7031 QRNFUNCTIONKEY_21 CONST                 275D
+ *RNF7031 QRNFUNCTIONKEY_22 CONST                 277D
+ *RNF7031 QRNFUNCTIONKEY_23 CONST                 279D
+ *RNF7031 QRNFUNCTIONKEY_24 CONST                 281D
+ *RNF7031 QRNNAMESVALUES_T  DS(2621376)           393D
+                            TEMPLATE
+ *RNF7031   FIELD(32767)    DS(80)                396D
+ *RNF7031   NUM             I(10,0)               395D
+          QRNNAMEVALUE_T    DS(80)                327D    396
+                            TEMPLATE
+ *RNF7031   DATATYPE        U(3,0)                334D
+ *RNF7031   DECIMALS        U(3,0)                346D
+ *RNF7031   DTSEPARATOR     A(1)                  354D
+ *RNF7031   DTZFORMAT       U(3,0)                350D
+ *RNF7031   EXTERNALNAME    A(10)                 330D
+ *RNF7031   HASNULLVALUE    N(1)                  368D
+ *RNF7031   INPUT           N(1)                  358D
+ *RNF7031   ISNULLCAPABLE   N(1)                  365D
+ *RNF7031   NUMERICDEFINEDLEN...
+                            U(3,0)                342D
+ *RNF7031   OUTPUT          N(1)                  362D
+ *RNF7031   RESERVED1       A(13)                 371D
+1{heading} page 19
+0*RNF7031   RESERVED2       U(10,0)               383D
+ *RNF7031   RESERVED3       *(16)                 390D
+ *RNF7031   VALUE           *(16)                 387D
+ *RNF7031   VALUECCSID      I(10,0)               380D
+ *RNF7031   VALUELENBYTES   U(10,0)               374D
+ *RNF7031   VALUEMAXLENBYTES...
+                            U(10,0)               377D
+          QRNOBJECT_T       DS(20)                322D    503     509
+                            TEMPLATE
+ *RNF7031   LIBRARY         A(10)                 325D
+ *RNF7031   NAME            A(10)                 324D
+          QRNOPENACCESS_T   DS(528)               399D    651     667
+                            TEMPLATE
+ *RNF7031   ALPHACCSIDS     U(10,0)               577D
+ *RNF7031   BLOCKED         N(1)                  598D
+ *RNF7031   CANHANDLECCSIDS N(1)                  633D
+ *RNF7031   COMMIT          N(1)                  637D
+ *RNF7031   COMPILEFILE     DS(20)                508D
+ *RNF7031   DEVICEFEEDBACK  *(16)                 490D
+ *RNF7031   DEVICEFEEDBACKLEN...
+                            U(10,0)               551D
+ *RNF7031   EOF             N(1)                  601D
+ *RNF7031   EQUAL           N(1)                  607D
+ *RNF7031   EXTERNALFILE    DS(20)                502D
+ *RNF7031   EXTERNALLYDESCRIBED...
+                            N(1)                  592D
+ *RNF7031   EXTERNALMEMBER  A(10)                 505D
+ *RNF7031   FORMLEN         U(10,0)               564D
+ *RNF7031   FORMOFL         U(10,0)               569D
+ *RNF7031   FOUND           N(1)                  604D
+ *RNF7031   FUNCTIONKEY     U(3,0)                589D
+ *RNF7031   INDARA          *(16)                 469D
+ *RNF7031   INPUTBUFFER     *(16)                 429D
+ *RNF7031   INPUTBUFFERLEN  U(10,0)               524D
+ *RNF7031   INPUTDATALEN    U(10,0)               542D
+ *RNF7031   INPUTNULLMAP    *(16)                 434D
+ *RNF7031   INPUTNULLMAPLEN U(10,0)               527D
+ *RNF7031   INPUTWITHLOCK   N(1)                  613D
+ *RNF7031   IOFEEDBACK      *(16)                 484D
+ *RNF7031   IOFEEDBACKLEN   U(10,0)               548D
+ *RNF7031   ISSUBFILE       N(1)                  626D
+ *RNF7031   KEY             *(16)                 455D
+ *RNF7031   KEYEDFILE       N(1)                  595D
+ *RNF7031   KEYLEN          U(10,0)               536D
+ *RNF7031   KEYNAMESVALUES  *(16)                 464D
+ *RNF7031   KEYNULLMAP      *(16)                 460D
+ *RNF7031   KEYNULLMAPLEN   U(10,0)               539D
+ *RNF7031   LENGTH          U(10,0)               402D
+ *RNF7031   NAMESVALUES     *(16)                 449D
+ *RNF7031   NUMKEYS         U(10,0)               555D
+ *RNF7031   OPENFEEDBACK    *(16)                 478D
+ *RNF7031   OPENFEEDBACKLEN U(10,0)               545D
+ *RNF7031   OUTPUTBUFFER    *(16)                 440D
+ *RNF7031   OUTPUTBUFFERLEN U(10,0)               530D
+ *RNF7031   OUTPUTNULLMAP   *(16)                 445D
+ *RNF7031   OUTPUTNULLMAPLEN...
+                            U(10,0)               533D
+ *RNF7031   PARAMETERFORMAT A(8)                  409D
+1{heading} page 20
+0*RNF7031   PRINTEROVERFLOW N(1)                  610D
+ *RNF7031   PRTCTL          *(16)                 472D
+ *RNF7031   RECORDLEVELS    *(16)                 423D
+ *RNF7031   RECORDNAME      A(10)                 511D
+ *RNF7031   RESERVEDINDS(3) N(1)                  629D
+ *RNF7031   RESERVED1       U(10,0)               405D
+ *RNF7031   RESERVED10      A(31)                 643D
+ *RNF7031   RESERVED2       *(16)                 493D
+ *RNF7031   RESERVED3       *(16)                 496D
+ *RNF7031   RESERVED4       *(16)                 499D
+ *RNF7031   RESERVED5       A(20)                 514D
+ *RNF7031   RESERVED8       U(10,0)               580D
+ *RNF7031   RESERVED9       U(10,0)               583D
+ *RNF7031   RPGDEVICE       A(1)                  640D
+ *RNF7031   RPGOPERATION    U(10,0)               518D
+ *RNF7031   RPGSTATUS       I(10,0)               521D
+ *RNF7031   RRN             U(10,0)               558D
+ *RNF7031   SLN             U(10,0)               573D
+ *RNF7031   STATEINFO       *(16)                 417D
+ *RNF7031   USENAMESVALUES  N(1)                  622D
+ *RNF7031   USERAREA        *(16)                 413D
+ *RNF7031 QRNOPERATION_CHAIN...
+                            CONST                 206D
+ *RNF7031 QRNOPERATION_CLOSE...
+                            CONST                 224D
+ *RNF7031 QRNOPERATION_DELETE...
+                            CONST                 220D
+ *RNF7031 QRNOPERATION_DELETE_CURRENT...
+                            CONST                 226D
+ *RNF7031 QRNOPERATION_EXFMT...
+                            CONST                 208D
+ *RNF7031 QRNOPERATION_FEOD CONST                 222D
+ *RNF7031 QRNOPERATION_OPEN CONST                 190D
+ *RNF7031 QRNOPERATION_POSITION_END...
+                            CONST                 194D
+ *RNF7031 QRNOPERATION_POSITION_START...
+                            CONST                 192D
+          QRNOPERATION_READ CONST                 196D    673
+ *RNF7031 QRNOPERATION_READC...
+                            CONST                 198D
+ *RNF7031 QRNOPERATION_READE...
+                            CONST                 200D
+ *RNF7031 QRNOPERATION_READE_CURRENT...
+                            CONST                 228D
+ *RNF7031 QRNOPERATION_READP...
+                            CONST                 202D
+ *RNF7031 QRNOPERATION_READPE...
+                            CONST                 204D
+ *RNF7031 QRNOPERATION_READPE_CURRENT...
+                            CONST                 230D
+ *RNF7031 QRNOPERATION_SETGT...
+                            CONST                 210D
+ *RNF7031 QRNOPERATION_SETLL...
+                            CONST                 212D
+ *RNF7031 QRNOPERATION_UNLOCK...
+                            CONST                 214D
+ *RNF7031 QRNOPERATION_UPDATE...
+                            CONST                 216D
+1{heading} page 21
+0*RNF7031 QRNOPERATION_WRITE...
+                            CONST                 218D
+ *RNF7031 QRNPRTCTL_T       DS(15)                303D
+                            TEMPLATE
+ *RNF7031   CURRLINE        S(3,0)                309D
+ *RNF7031   SKIPAFTER       S(3,0)                308D
+ *RNF7031   SKIPBEFORE      S(3,0)                307D
+ *RNF7031   SPACEAFTER      S(3,0)                306D
+ *RNF7031   SPACEBEFORE     S(3,0)                305D
+          QRNRECORDLEVEL_T  DS(23)                311D    319
+                            TEMPLATE
+ *RNF7031   LEVEL           A(13)                 314D
+ *RNF7031   RECORD          A(10)                 313D
+ *RNF7031 QRNRECORDLEVELS_T DS(753645)            316D
+                            TEMPLATE
+ *RNF7031   LEVELS(32767)   DS(23)                319D
+ *RNF7031   NUM             I(10,0)               318D
+ *RNF7031 QRNUSERPARMTYPE_CHAR...
+                            CONST                 102D
+ *RNF7031 QRNUSERPARMTYPE_DATASTRUCT...
+                            CONST                 120D
+ *RNF7031 QRNUSERPARMTYPE_GRAPH...
+                            CONST                 108D
+ *RNF7031 QRNUSERPARMTYPE_INDICATOR...
+                            CONST                 100D
+ *RNF7031 QRNUSERPARMTYPE_NOTPASSED...
+                            CONST                  96D
+ *RNF7031 QRNUSERPARMTYPE_NULLTERMINATEDSTRING...
+                            CONST                  98D
+ *RNF7031 QRNUSERPARMTYPE_OTHER...
+                            CONST                 122D
+ *RNF7031 QRNUSERPARMTYPE_UCS2...
+                            CONST                 114D
+ *RNF7031 QRNUSERPARMTYPE_VARCHAR_2...
+                            CONST                 104D
+ *RNF7031 QRNUSERPARMTYPE_VARCHAR_4...
+                            CONST                 106D
+ *RNF7031 QRNUSERPARMTYPE_VARGRAPH_2...
+                            CONST                 110D
+ *RNF7031 QRNUSERPARMTYPE_VARGRAPH_4...
+                            CONST                 112D
+ *RNF7031 QRNUSERPARMTYPE_VARUCS2_2...
+                            CONST                 116D
+ *RNF7031 QRNUSERPARMTYPE_VARUCS2_4...
+                            CONST                 118D
+          REC               DS(20)                649D    654M    655     657M
+ *RNF7031 ROIO0100          CONST                 181D
+          SEEN              I(10,0)               647D    648     661
+       Field References for subprocedure MYHDL
+0         Field             Attributes         References (D=Defined M=Modified)
+          B                 A(20)                 670D    676M
+                            BASED(PB)
+          INFO              DS(528)               667D    671     673     675
+                            BASED(_QRNL_PST+)     678M
+            INPUTBUFFER     *(16)                 675
+            RPGOPERATION    U(10,0)               673
+            RPGSTATUS       I(10,0)               678
+1{heading} page 22
+0           USERAREA        *(16)                 671
+          N                 I(10,0)               669D    672M    674
+                            BASED(PN)
+          PB                *(16)                 670     675M
+          PN                *(16)                 669     671M
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                      663M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 23
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 24
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      2 Data structure has no valid subfields.
+ *RNF7031 00    279 The name or indicator is not referenced.
+ *RNF7086 00      1 RPG handles blocking for the file. INFDS is updated only when
+                    blocks of data are transferred.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 25
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :      283
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :      283
+-  Source Totals:
+0    Records . . . . . . . . . . . . :      681
+     Specifications  . . . . . . . . :      419
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :      232
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program OA004 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
