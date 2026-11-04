@@ -1,0 +1,24 @@
+                             Work with Active Jobs                     S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+ CPU %:      .0     Elapsed time:   HH:MM:SS     Active jobs:   184             
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold   4=End   5=Work with   6=Release   7=Display message      
+   8=Work with spooled files   13=Disconnect ...                                
+                                                                                
+ Opt  Subsystem/Job  User        Number  Type  CPU %  Threads                   
+      QBASE          QSYS        008006  SBS      .0        2                   
+        QPADEV0001   USERNAM     009070  INT      .0        1                   
+        QSYSSCD      QPGMR       008035  BCH      .0        1                   
+      QHTTPSVR       QSYS        008104  SBS      .0        2                   
+        ADMIN        QTMHHTTP    008105  BCH      .0        1                   
+        ADMIN        QTMHHTTP    008108  BCI      .0        1                   
+        ADMIN        QTMHHTTP    008114  BCI      .0       12                   
+        ADMIN1       QLWISVR     008472  BCI      .0       29                   
+        ADMIN2       QLWISVR     008489  BCI      .0       37                   
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F5=Refresh   F7=Find   F10=Restart statistics   F11=Display status   
+ F12=Cancel   F17=Top   F18=Bottom   F23=More options      F24=More keys        
+                                                                                

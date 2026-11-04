@@ -1,0 +1,24 @@
+                             Display System Status                     S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+                                                                                
+ Disk space:                                                                    
+   System storage (in 1,000,000 bytes)  . . . . . . . . . . :   1418849         
+   System storage used  . . . . . . . . . . . . . . . . . . :      1.32%        
+                                                                                
+ Users:                                                                         
+   Signed on  . . . . . . . . . . . . . . . . . . . . . . . :         1         
+   Temporarily signed off . . . . . . . . . . . . . . . . . :         0         
+   Suspended by system request or group jobs  . . . . . . . :         0         
+   Signed off with printer output waiting to print  . . . . :        56         
+                                                                                
+ Batch jobs:                                                                    
+   Waiting for messages . . . . . . . . . . . . . . . . . . :         0         
+   Running  . . . . . . . . . . . . . . . . . . . . . . . . :        65         
+   Held while running . . . . . . . . . . . . . . . . . . . :         0         
+   Ending . . . . . . . . . . . . . . . . . . . . . . . . . :         0         
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F1=Help   F3=Exit   F5=Refresh   F9=Command line   F12=Cancel                  
+ F21=Select assistance level                                                    
+ Function key not allowed.                                                      

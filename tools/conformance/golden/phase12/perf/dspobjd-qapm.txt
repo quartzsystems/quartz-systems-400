@@ -1,0 +1,24 @@
+                       Display Object Description - Basic                       
+                                                                 Library 1 of 1 
+ Library . . . . . . . :   QPFRDATA       Library ASP device  . :   *SYSBAS     
+                                          Library ASP group . . :   *SYSBAS     
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display full attributes   8=Display service attributes                     
+                                                                                
+ Opt  Object      Type      Attribute               Size  Text                  
+      QAPMAPPN    *FILE     PF                   1552384  APPN RELATED PERFORMA 
+      QAPMBUS     *FILE     PF                   1093632  BUS PERFORMANCE DATA  
+      QAPMBUSINT  *FILE     PF                    593920                        
+      QAPMCIOP    *FILE     PF                    131072  COMMUNICATIONS PROCES 
+      QAPMCONF    *FILE     PF                    438272  SYSTEM CONFIGURATION  
+      QAPMDIOP    *FILE     PF                    139264  DISK PROCESSOR PERFOR 
+      QAPMDISK    *FILE     PF                   2269184  DISK UNIT PERFORMANCE 
+      QAPMDISKRB  *FILE     PF                   1654784  DISK UNIT RESPONSE BU 
+      QAPMDOMINO  *FILE     PF                    139264  DOMINO FOR ISERIES PE 
+      QAPMDPS     *FILE     PF                    131072  DATA PORT SERVICES PE 
+      QAPMETH     *FILE     PF                    598016  ELAN PERFORMANCE DATA 
+      QAPMHDWC    *FILE     PF                     57344  Output file for DSPHD 
+                                                                        More... 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

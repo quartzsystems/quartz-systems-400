@@ -1,0 +1,24 @@
+                            Work with System Status                    S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+ % CPU used . . . . . . . :         .4    Auxiliary storage:                    
+ Elapsed time . . . . . . :   HH:MM:SS      System ASP . . . . . . :     1418 G 
+ Jobs in system . . . . . :        612      % system ASP used  . . :     1.3196 
+ % perm addresses . . . . :       .007      Total  . . . . . . . . :     1418 G 
+ % temp addresses . . . . :       .010      Current unprotect used :     3537 M 
+                                            Maximum unprotect  . . :     3591 M 
+                                                                                
+ Type changes (if allowed), press Enter.                                        
+                                                                                
+ System    Pool    Reserved    Max                                              
+  Pool   Size (M)  Size (M)  Active  Pool        Subsystem   Library            
+    1      960.02    469.03   +++++  *MACHINE                                   
+    2     8367.96     33.47     191  *BASE                                      
+    3     6287.76       .00     391  *INTERACT                                  
+    4         .25       .00       5  *SPOOL                                     
+                                                                                
+                                                                         Bottom 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F10=Restart   F12=Cancel      
+ F19=Extended system status         F24=More keys                               
+                                                                                

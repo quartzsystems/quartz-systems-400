@@ -1,0 +1,24 @@
+                             Work with Active Jobs                     S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+ CPU %:      .0     Elapsed time:   HH:MM:SS     Active jobs:   184             
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold   4=End   5=Work with   6=Release   7=Display message      
+   8=Work with spooled files   13=Disconnect ...                                
+                                               --------Elapsed---------         
+ Opt  Subsystem/Job  Type  Pool  Pty      CPU  Int    Rsp  AuxIO  CPU %         
+      QBASE          SBS     2    0        .0                  0     .0         
+        QPADEV0001   INT     3   20        .0    0     .0      0     .0         
+        QSYSSCD      BCH     3   20        .0                  0     .0         
+      QHTTPSVR       SBS     2    0        .1                  0     .0         
+        ADMIN        BCH     2   25        .3                  0     .0         
+        ADMIN        BCI     2   25      13.8                  0     .0         
+        ADMIN        BCI     2   25       7.9                  0     .0         
+        ADMIN1       BCI     2   25      27.8                  0     .0         
+        ADMIN2       BCI     2   25      22.3                  0     .0         
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F5=Refresh      F7=Find      F10=Restart statistics                  
+ F11=Display thread data   F12=Cancel   F23=More options   F24=More keys        
+                                                                                

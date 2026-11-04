@@ -1,0 +1,392 @@
+[[golden]]
+name = "prompt-strpfrcol"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-strpfrcol-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-strpfrcol-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-strpfrcol-f10-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-endpfrcol"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-endpfrcol-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-endpfrcol-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-endpfrcol-f10-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-cfgpfrcol"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-cfgpfrcol-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-cfgpfrcol-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-cfgpfrcol-f10-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-chkpfrcol"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-chkpfrcol-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-chkpfrcol-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-chkpfrcol-f10-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-crtpfrdta"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-crtpfrdta-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-crtpfrdta-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-crtpfrdta-f10-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "chkpfrcol-msg"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "chkprdopt-pt1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "dspobjd-mgtcol"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "dspobjd-qapm"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrksyssts"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrksyssts-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrksyssts-f11-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrksyssts-f24"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrkshrpool"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrkshrpool-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrkdsksts"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrkdsksts-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrksysact"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrksysact-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrksysact-f11-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrksysact-f24"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "prompt-wrksysact"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol"
+width = 80
+
+[[golden]]
+name = "wrksyssts-i"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrksyssts-i-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrksyssts-i-f11-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrksyssts-i-f24"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrksysact-v4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrksysact-v5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrksysact-v6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrksysact-v7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrksysact-f24-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrkactjob"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrkactjob-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+
+[[golden]]
+name = "wrkactjob-f11-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "perfcol-2"
+width = 80
+

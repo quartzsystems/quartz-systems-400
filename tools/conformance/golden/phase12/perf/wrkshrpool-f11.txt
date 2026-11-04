@@ -1,0 +1,24 @@
+                             Work with Shared Pools                             
+                                                             System:   SYSNAME  
+ Main storage size (M)  . :       15616.00                                      
+                                                                                
+ Type changes (if allowed), press Enter.                                        
+                                                                                
+                       -----Size %-----  -----Faults/Second------               
+ Pool        Priority  Minimum  Maximum  Minimum  Thread  Maximum               
+ *MACHINE         1      4.27      100    10.00     .00    10.00                
+ *BASE            1      4.99      100    12.00    1.00      200                
+ *INTERACT        1     10.00      100    12.00    1.00      200                
+ *SPOOL           2      1.00      100     5.00    1.00      100                
+ *SHRPOOL1        2      1.00      100    10.00    2.00      100                
+ *SHRPOOL2        2      1.00      100    10.00    2.00      100                
+ *SHRPOOL3        2      1.00      100    10.00    2.00      100                
+ *SHRPOOL4        2      1.00      100    10.00    2.00      100                
+ *SHRPOOL5        2      1.00      100    10.00    2.00      100                
+ *SHRPOOL6        2      1.00      100    10.00    2.00      100                
+                                                                        More... 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display text              
+ F12=Cancel                                                                     
+                                                                                

@@ -1,0 +1,24 @@
+                             Work with Shared Pools                             
+                                                             System:   SYSNAME  
+ Main storage size (M)  . :       15616.00                                      
+                                                                                
+ Type changes (if allowed), press Enter.                                        
+                                                                                
+               Defined    Max   Allocated   Pool  -Paging Option--              
+ Pool         Size (M)  Active  Size (M)     ID   Defined  Current              
+ *MACHINE       914.30   +++++      914.30    1   *FIXED   *FIXED               
+ *BASE         9348.52     191     9348.52    2   *FIXED   *FIXED               
+ *INTERACT     5352.91     391     5352.91    3   *FIXED   *FIXED               
+ *SPOOL            .25       5         .25    4   *FIXED   *FIXED               
+ *SHRPOOL1         .00       0                    *FIXED                        
+ *SHRPOOL2         .00       0                    *FIXED                        
+ *SHRPOOL3         .00       0                    *FIXED                        
+ *SHRPOOL4         .00       0                    *FIXED                        
+ *SHRPOOL5         .00       0                    *FIXED                        
+ *SHRPOOL6         .00       0                    *FIXED                        
+                                                                        More... 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display tuning data       
+ F12=Cancel                                                                     
+                                                                                

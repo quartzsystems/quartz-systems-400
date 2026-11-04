@@ -1,0 +1,24 @@
+                             Work with Active Jobs                     S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+ CPU %:      .0     Elapsed time:   HH:MM:SS     Active jobs:   184             
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold   4=End   5=Work with   6=Release   7=Display message      
+   8=Work with spooled files   13=Disconnect ...                                
+                     Current                                                    
+ Opt  Subsystem/Job  User        Type  CPU %  Function        Status            
+      QBASE          QSYS        SBS      .0                   DEQW             
+        QPADEV0001   USERNAM     INT      .0  CMD-WRKACTJOB    RUN              
+        QSYSSCD      QPGMR       BCH      .0  PGM-QEZSCNEP     EVTW             
+      QHTTPSVR       QSYS        SBS      .0                   DEQW             
+        ADMIN        QTMHHTTP    BCH      .0  PGM-QZHBMAIN     SIGW             
+        ADMIN        QTMHHTTP    BCI      .0  PGM-QZSRLOG      SIGW             
+        ADMIN        QTMHHTTP    BCI      .0  PGM-QZSRHTTP     SIGW             
+        ADMIN1       QLWISVR     BCI      .0  JVM-com.ibm.lw   THDW             
+        ADMIN2       QLWISVR     BCI      .0  JVM-com.ibm.lw   THDW             
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F5=Refresh       F7=Find      F10=Restart statistics                 
+ F11=Display elapsed data   F12=Cancel   F23=More options   F24=More keys       
+                                                                                

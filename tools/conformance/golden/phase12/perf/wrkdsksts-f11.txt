@@ -1,0 +1,24 @@
+                             Work with Disk Status                     S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+ Elapsed time:   HH:MM:SS                                                       
+                                                                                
+            --Protection--                                                      
+ Unit  ASP  Type  Status    Compression                                         
+    1    1  DPY   ACTIVE                                                        
+    2    1  DPY   ACTIVE                                                        
+    3    1  DPY   ACTIVE                                                        
+    4    1  DPY   ACTIVE                                                        
+    5    1  DPY   ACTIVE                                                        
+    6    1  DPY   ACTIVE                                                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F5=Refresh   F12=Cancel   F24=More keys                              
+                                                                                

@@ -1,0 +1,24 @@
+                      Configure Perf Collection (CFGPFRCOL)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Default interval . . . . . . . .   15.00         *SAME, .25, .50, 1.0, 5.0...  
+ Collection library . . . . . . .   QPFRDATA      Name, *SAME                   
+ Default collection profile . . .   *STANDARDP    *SAME, *MINIMUM, *STANDARD... 
+ Cycle time . . . . . . . . . . .   000000        Time, *SAME                   
+ Cycle interval . . . . . . . . .   24            *SAME, 1-24 hours             
+ Collection retention period:                                                   
+   Number of units  . . . . . . .   00120         *SAME, 1-720, *PERM           
+   Unit of time . . . . . . . . .   *HOURS        *HOURS, *DAYS                 
+ Create database files  . . . . .   *YES          *SAME, *YES, *NO              
+ Create performance summary . . .   *NO           *SAME, *YES, *NO              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Already at bottom of area.                                                     

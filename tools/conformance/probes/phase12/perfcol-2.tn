@@ -1,0 +1,74 @@
+# Phase 12 Collection Services on the primary, second pass: WRKSYSSTS
+# and WRKSYSACT at the intermediate assistance level, every view.
+# Read-only.
+wait "Sign On"
+signon
+wait "Main Menu"
+timeout 30000
+continue
+type call qcmd
+key enter
+wait "Command Entry"
+key reset
+key eraseinput
+type WRKSYSSTS ASTLVL(*INTERMED)
+key enter
+settle 3000
+snap wrksyssts-i
+key f11
+settle 1500
+snap wrksyssts-i-f11
+key f11
+settle 1500
+snap wrksyssts-i-f11-2
+key f24
+settle 1000
+snap wrksyssts-i-f24
+key f24
+settle 1000
+key f3
+settle 1500
+key reset
+key eraseinput
+type WRKSYSACT
+key enter
+settle 6000
+key f11
+settle 1500
+key f11
+settle 1500
+key f11
+settle 1500
+snap wrksysact-v4
+key f11
+settle 1500
+snap wrksysact-v5
+key f11
+settle 1500
+snap wrksysact-v6
+key f11
+settle 1500
+snap wrksysact-v7
+key f24
+settle 1000
+key f24
+settle 1000
+snap wrksysact-f24-2
+key f3
+settle 2000
+key reset
+key eraseinput
+type WRKACTJOB
+key enter
+settle 3000
+snap wrkactjob
+key f11
+settle 1500
+snap wrkactjob-f11
+key f11
+settle 1500
+snap wrkactjob-f11-2
+key f3
+settle 1500
+key f3
+settle 1000

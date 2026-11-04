@@ -1,0 +1,24 @@
+                       Display Object Description - Basic                       
+                                                                 Library 1 of 1 
+ Library . . . . . . . :   QPFRDATA       Library ASP device  . :   *SYSBAS     
+                                          Library ASP group . . :   *SYSBAS     
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display full attributes   8=Display service attributes                     
+                                                                                
+ Opt  Object      Type      Attribute               Size  Text                  
+      Q303055930  *MGTCOL   *PFR                28880896                        
+      Q304000002  *MGTCOL   *PFR                33599488                        
+      Q305000002  *MGTCOL   *PFR                34648064                        
+      Q306000002  *MGTCOL   *PFR                33599488                        
+      Q307000002  *MGTCOL   *PFR                32968704                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

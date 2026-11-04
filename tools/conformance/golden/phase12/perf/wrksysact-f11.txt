@@ -1,0 +1,24 @@
+                           Work with System Activity                   S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+ Automatic refresh in seconds  . . . . . . . . . . . . . . . . . . .     5      
+ Job/Task CPU filter . . . . . . . . . . . . . . . . . . . . . . . .    .10     
+ Elapsed time . . . . . . :   HH:MM:SS    Overall CPU util . . . . :     1.0    
+ Overall DB CPU util  . . . :      .0                                           
+ Average CPU rate . . . . . :   104.5                                           
+ Current processing capacity:     1.00                                          
+                                                                                
+ Type options, press Enter.                                                     
+   1=Monitor job   5=Work with job                                              
+                                                 --------Synchronous---------   
+      Job or                                       DB     DB   Non-DB  Non-DB   
+ Opt  Task         User        Number  Thread     Read  Write   Read    Write   
+      QPADEV0001   USERNAM     009069  0000003B      0      0      16       0   
+      QSLPSVR      QSYS        008352  00000006      0      0       0       0   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F10=Update list   F11=View 3   F12=Cancel   F19=Automatic refresh    
+ F24=More keys                                                                  
+                                                                                
