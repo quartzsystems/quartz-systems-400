@@ -283,6 +283,7 @@ impl Guard for SecGuard {
         let Some(qsys) = self.qsys() else {
             return Ok(());
         };
+        let system_made = text_of(&h.owner) == "QSYS";
         if let Some(s) = current() {
             let user = s.borrow().principal.user.clone();
             let mut owner = user.clone();
@@ -335,6 +336,11 @@ impl Guard for SecGuard {
                 }
             }
         };
+        // A data area the system itself keeps in QSYS (QJOBNBR, QSECLVL
+        // ...) is shipped *USE, not the library's creation authority.
+        if library.id == qsys && h.id.type_code == types::DTAARA && system_made {
+            h.public_authority = crate::profile::shipped::public_for(types::DTAARA, "");
+        }
         Ok(())
     }
 

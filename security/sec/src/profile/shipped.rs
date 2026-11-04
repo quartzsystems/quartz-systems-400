@@ -422,7 +422,9 @@ pub fn reown(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<usize> {
                 "QDFTOWN".into()
             };
         h.owner = text(&new_owner)?;
-        if system {
+        // A command already shipped *EXCLUDE stays so.
+        let kept = id.type_code == types::CMD && h.public_authority == Authority::EXCLUDE;
+        if system && !kept {
             h.public_authority = public_for(id.type_code, &name);
         }
         auth::save_authority(txn, page, &mut h)?;
@@ -444,4 +446,24 @@ pub fn public_for(type_code: u16, name: &str) -> Authority {
         types::MSGQ => Authority::CHANGE,
         _ => Authority::USE,
     }
+}
+
+/// The data areas the system keeps in `QSYS` with a `*PUBLIC` wider
+/// than shipped (made before the system's own creations got it),
+/// narrowed to it; how many.
+pub fn narrow_system_data_areas(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<usize> {
+    let lib = store::obj::library::Library::load(txn, qsys)?;
+    let want = public_for(types::DTAARA, "");
+    let mut n = 0;
+    for (_, id) in lib.list(txn, Some(types::DTAARA))? {
+        let (page, mut h) = read_header(txn, id)?;
+        let public = h.public_authority.0;
+        if text_of(&h.owner) != "QSYS" || public & Authority::FROM_AUTL != 0 || public & !want.0 == 0 {
+            continue;
+        }
+        h.public_authority = want;
+        auth::save_authority(txn, page, &mut h)?;
+        n += 1;
+    }
+    Ok(n)
 }

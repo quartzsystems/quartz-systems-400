@@ -54,6 +54,7 @@ pub fn install(system: &mut System) -> Result<sec::profile::shipped::Installed, 
     let mut txn = s.store.begin().map_err(|e| e.to_string())?;
     let d = sec::profile::shipped::install(&mut txn, qsys, qsecurity, pwdlvl, now)
         .map_err(|e| e.to_string())?;
+    sec::profile::shipped::narrow_system_data_areas(&mut txn, qsys).map_err(|e| e.to_string())?;
     txn.commit().map_err(|e| e.to_string())?;
     Ok(d)
 }
