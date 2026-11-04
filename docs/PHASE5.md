@@ -85,11 +85,13 @@ before it is taken.
 
 - User profiles: a job's user is whatever the job description, the
   sign-on or `SBMJOB` says; nothing is validated or authorized
-  (`MIGRATE(phase6)`).
+  (closed in Phase 6).
 - Prestart and communications entries are kept and never start a job;
   `STRRMTWTR`, real printer devices and `RMTSYS` output queues wait for
-  communications and devices (`MIGRATE(phase10)`).
-- Display files and `DSPLY` on a workstation (`MIGRATE(phase8)`); the
+  communications and devices (`RMTSYS` queues and LAN printers closed
+  in Phase 10).
+- Display files and `DSPLY` on a workstation (display files closed in
+  Phase 8, `DSPLY` on Display Program Messages in Phase 12); the
   console's Command Entry is `QCMD`'s own panel.
 - `DEVTYPE` is `*SCS` only; `CHLVAL` channels are not supported (FCFC
   channels map to fixed lines).

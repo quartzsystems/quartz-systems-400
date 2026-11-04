@@ -73,7 +73,8 @@ built from column tables. Other types get the free format with a ruler.
 **Syntax checking** covers added or changed records within the
 session's range. CL goes through the analyzer as a program statement,
 command definitions through the definition compiler, DDS through its
-type's compiler, and RPG has a hook (`TODO(phase9)`). With records in
+type's compiler, and RPG IV through the compiler's front end (RPG/400
+sources are not checked). With records in
 error, Exit offers Return to editing Y.
 
 **Upper case and dates.** Upper case follows the source type (CL, CMD,

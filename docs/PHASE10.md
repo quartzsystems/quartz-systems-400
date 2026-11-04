@@ -143,7 +143,7 @@ DHCP is not built (`*IP4DHCP` interfaces are refused).
 | Item | To |
 |---|---|
 | `SAV`/`RST` media | Phase 11 (they end with `CPF3700` today) |
-| `INFOSTMF` PCML output of the RPG compiler | Phase 11 (`MIGRATE(phase11)`) |
+| `INFOSTMF` PCML output of the RPG compiler | closed in Phase 12 |
 | the full HTTP server and its administration UI, Navigator | after Phase 12 |
 | `TRCCNN`, `TRCTCPAPP`; NETSTAT sort, subset and multicast groups | later |
 | an interactive `FTP` client display (scripted and batch use work) | later |

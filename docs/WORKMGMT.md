@@ -966,7 +966,7 @@ The IPL completes (`C6001090`) when `QSTRUPJD` has ended
 (`C6001050`). The service remembers each job name's last state for the
 IPL so a startup job that ends quickly is still seen to have run.
 
-`QSYS/QSTRUP`, written in QIR (`MIGRATE(phase7)`: CL), starts `QSPL`,
+`QSYS/QSTRUP`, written in CL (`lic/osobjects/shipped/QSTRUP.clle`), starts `QSPL`,
 `QSERVER` and `QUSRWRK`; `QINTER`, `QBATCH` and `QCMN` when `QCTL`
 controls; the capture writer when `QSTRPRTWTR` is `1`; and releases
 `QGPL/QS36EVOKE`. Its commands go through `QCMDEXC` and run when it

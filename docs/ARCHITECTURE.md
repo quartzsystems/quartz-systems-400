@@ -130,8 +130,8 @@ Same V and R means a compatible on-disk format; M never changes formats.
 While on R0, on-disk formats may change without an R bump; the store
 records the creating release in its superblock and refuses to open a
 store from a different V/R (CPF3294, fatal B1001050 at IPL). The `release` crate is the one source of
-truth; every crate that prints a version uses it. Later consumers:
-DSPSFWRSC, GO LICPGM option 10, DSPPTF, API QSZRTVPR (`TODO(phase11)`).
+truth; every crate that prints a version uses it, DSPSFWRSC, GO LICPGM
+option 10, DSPPTF and API QSZRTVPR among them (built in Phase 11).
 
 ## 11. Repository conventions
 

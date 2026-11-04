@@ -113,14 +113,13 @@ faster.
   first IPL at 30 or above takes it back from every class but
   `*SECOFR`.
 - `EDTOBJAUT` and `EDTAUTL` on the serial console show the list; the
-  interactive editors wait for display files (`MIGRATE(phase8)`).
+  interactive editors wait for display files (closed in Phase 8).
 - Object auditing is by object and by user; `*USRPRF` on an object
   follows the user's `OBJAUD`, as IBM's does, but the user's `AUDLVL`
   action auditing covers the actions this phase records.
 - `*IOSYSCFG`, `*SAVSYS` and `*SERVICE` are kept, listed and checked
   where a command of this phase needs them; what they guard mostly
-  waits for save, restore and devices (`MIGRATE(phase9)`,
-  `MIGRATE(phase10)`).
+  waits for save, restore and devices (closed in Phases 10 and 11).
 - Validation lists, function usage (`WRKFCNUSG`), Kerberos, SSL and
   the digital certificate manager are out of scope.
 - `QSECURITY` changes take effect at the next IPL. The first IPL after
