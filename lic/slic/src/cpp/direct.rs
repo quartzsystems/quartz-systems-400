@@ -193,6 +193,14 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             finish(out, name, "CPI9C01", &[(&sv, 10)])
         }
         "WRKSYSVAL" => wrksysval(system, &parms.name("SYSVAL")),
+        // OUTPUT(*PRINT): the text form spooled to QSYSPRT.
+        "DSPLIBL" if parms.name("OUTPUT") == "*PRINT" => {
+            let lines: Vec<String> = old(system, "dsplibl").lines().map(str::to_string).collect();
+            match crate::svc::security::print_as(system, "QSYSPRT", "DSPLIBL", &lines, false) {
+                Ok(t) => plain(t),
+                Err(e) => failed(name, &e),
+            }
+        }
         "GO" => {
             let (menu, _) = parms.qual("MENU");
             escape(
