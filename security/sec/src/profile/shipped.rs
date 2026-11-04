@@ -448,17 +448,30 @@ pub fn public_for(type_code: u16, name: &str) -> Authority {
     }
 }
 
-/// The data areas the system keeps in `QSYS` with a `*PUBLIC` wider
-/// than shipped (made before the system's own creations got it),
-/// narrowed to it; how many.
-pub fn narrow_system_data_areas(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<usize> {
+/// Whether an object the system itself makes in `QSYS` takes its
+/// shipped `*PUBLIC` rather than the library's creation authority: the
+/// data areas it keeps (`QJOBNBR`, `QSECLVL` ...) and the history log
+/// files (`QHST...`).
+#[must_use]
+pub fn system_kept(type_code: u16, name: &str) -> bool {
+    type_code == types::DTAARA || (type_code == types::FILE && name.starts_with("QHST"))
+}
+
+/// The objects of [`system_kept`] in `QSYS`, owned by `QSYS`, with a
+/// `*PUBLIC` wider than shipped (made before the system's own creations
+/// got it), narrowed to it; how many.
+pub fn narrow_system_objects(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<usize> {
     let lib = store::obj::library::Library::load(txn, qsys)?;
-    let want = public_for(types::DTAARA, "");
     let mut n = 0;
-    for (_, id) in lib.list(txn, Some(types::DTAARA))? {
+    for (_, id) in lib.list(txn, None)? {
+        if id.type_code != types::DTAARA && id.type_code != types::FILE {
+            continue;
+        }
         let (page, mut h) = read_header(txn, id)?;
+        let name = h.name.to_string();
+        let want = public_for(id.type_code, &name);
         let public = h.public_authority.0;
-        if text_of(&h.owner) != "QSYS" || public & Authority::FROM_AUTL != 0 || public & !want.0 == 0 {
+        if !system_kept(id.type_code, &name) || text_of(&h.owner) != "QSYS" || public & Authority::FROM_AUTL != 0 || public & !want.0 == 0 {
             continue;
         }
         h.public_authority = want;

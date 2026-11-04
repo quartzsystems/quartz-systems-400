@@ -46,7 +46,7 @@ fn wait_for(s: &mut Session, cmd: &str, word: &str, secs: u64) -> Result<String,
     Err(format!("{cmd}: no {word} after {secs}s:\n{out}"))
 }
 
-#[allow(clippy::unused_self, clippy::many_single_char_names)] // the steps share one signature
+#[allow(clippy::unused_self, clippy::many_single_char_names, clippy::too_many_lines)] // the steps share one signature
 impl Suite {
     /// Step 107: `QSSECCHK` clean, then a default password caught.
     pub(crate) fn security_check(&self, s: &mut Session) -> Result<String, String> {

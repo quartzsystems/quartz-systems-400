@@ -336,10 +336,11 @@ impl Guard for SecGuard {
                 }
             }
         };
-        // A data area the system itself keeps in QSYS (QJOBNBR, QSECLVL
-        // ...) is shipped *USE, not the library's creation authority.
-        if library.id == qsys && h.id.type_code == types::DTAARA && system_made {
-            h.public_authority = crate::profile::shipped::public_for(types::DTAARA, "");
+        // What the system itself keeps in QSYS (data areas, the history
+        // log) is shipped *USE, not the library's creation authority.
+        let name = h.name.to_string();
+        if library.id == qsys && system_made && crate::profile::shipped::system_kept(h.id.type_code, &name) {
+            h.public_authority = crate::profile::shipped::public_for(h.id.type_code, &name);
         }
         Ok(())
     }

@@ -153,6 +153,9 @@ fn warn_if(b: bool) -> Status {
 /// The audit levels the model wants when auditing is on.
 const AUDIT_LEVELS: &[&str] = &["*AUTFAIL", "*SECURITY"];
 
+/// Device, controller and line descriptions.
+const CONFIG_TYPES: &[u16] = &[types::DEVD, 0x001C, 0x001D];
+
 /// Rows past this many in one area are counted, not listed.
 const MAX_ROWS: usize = 40;
 
@@ -250,6 +253,10 @@ fn public(txn: &mut Txn<'_>, env: &Env<'_>, exclude_cmds: &[&str]) -> Result<Vec
         checked += 1;
         let want = if id.type_code == types::CMD && exclude_cmds.contains(&name.as_str()) {
             Authority::EXCLUDE
+        } else if CONFIG_TYPES.contains(&id.type_code) {
+            // Configuration objects (made by automatic configuration, as
+            // IBM's) carry *CHANGE: using a device needs it.
+            Authority::CHANGE
         } else {
             shipped::public_for(id.type_code, &name)
         };

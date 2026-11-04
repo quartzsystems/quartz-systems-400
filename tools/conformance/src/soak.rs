@@ -9,7 +9,9 @@
 //! descriptors (`procstat`) and the ASP's use. It fails on a leak
 //! (growth past a bound that never came back down), on any SRC the run
 //! added to the IPL's log, and on jobs of the load still active after it
-//! stopped.
+//! stopped. It also records `QSSECCHK` on the fresh system and the batch
+//! load's job accounting entries (`QACGLVL(*JOB *PRINT)`, read through
+//! `QAJBACG`).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -73,6 +75,9 @@ pub struct SoakReport {
     pub samples: Vec<Sample>,
     /// What failed the run.
     pub failures: Vec<String>,
+    /// What the side checks found: `QSSECCHK` on the fresh system, the
+    /// job accounting entries of the batch load.
+    pub notes: Vec<String>,
 }
 
 impl SoakReport {
@@ -114,6 +119,9 @@ impl SoakReport {
                     .unwrap_or(0);
                 let _ = writeln!(o, "    {pid:>5} rss {r0:>7} -> {rss:>7} (peak {peak:>7})  fds {f0:>4} -> {fds:>4}  {cmd}");
             }
+        }
+        for n in &self.notes {
+            let _ = writeln!(o, "  {n}");
         }
         if self.failures.is_empty() {
             o.push_str("SOAK: PASS\n");
@@ -223,6 +231,40 @@ fn grew(series: &[u64], bound: u64) -> bool {
     }
 }
 
+/// The batch load's job accounting: its `JB` entries through
+/// `QAJBACG`'s format, counted, with their CPU and the `SP` entries.
+fn accounting(s: &mut Session) -> String {
+    let _ = s.command(
+        "svc.sql CREATE TABLE QGPL.SOAKJB AS (SELECT * FROM QSYS.QAJBACG) WITH NO DATA;",
+        LONG,
+    );
+    let w = s
+        .command(
+            "DSPJRN JRN(QSYS/QACGJRN) JRNCDE(A) ENTTYP(JB) OUTPUT(*OUTFILE) OUTFILE(QGPL/SOAKJB)",
+            LONG,
+        )
+        .unwrap_or_default();
+    let rows = s
+        .command(
+            "svc.sql SELECT COUNT(*), SUM(JACPU), MAX(JACCDE) FROM QGPL.SOAKJB WHERE JAJOB = 'SOAKB' AND JACDE = 'SOAKACG';",
+            LONG,
+        )
+        .unwrap_or_default();
+    let figures = rows
+        .lines()
+        .map(str::trim)
+        .take_while(|l| !l.ends_with("row(s)"))
+        .filter(|l| l.split_whitespace().next().is_some_and(|w| w.parse::<u64>().is_ok()))
+        .last()
+        .unwrap_or("none")
+        .to_string();
+    let _ = s.command("svc.sql DROP TABLE QGPL.SOAKJB;", LONG);
+    format!(
+        "job accounting: {}; SOAKB under SOAKACG (count, CPU ms, highest end code): {figures}",
+        w.lines().find(|l| l.contains("entries")).unwrap_or("no DSPJRN outfile").trim()
+    )
+}
+
 impl Suite {
     /// The soak for `dur`.
     #[allow(clippy::too_many_lines)] // one run, start to end
@@ -273,14 +315,26 @@ impl Suite {
             "CRTJRN JRN(SOAKLIB/SOAKJRN) JRNRCV(SOAKLIB/R0001)",
             "STRJRNPF FILE(SOAKLIB/T) JRN(SOAKLIB/SOAKJRN)",
             "crtsavf FILE(QGPL/SOAKSAVF)",
+            "CRTJRNRCV JRNRCV(QSYS/ACGRCV0001)",
+            "CRTJRN JRN(QSYS/QACGJRN) JRNRCV(QSYS/ACGRCV0001)",
+            "svc.sysval QACGLVL *JOB *PRINT",
         ];
         for c in setup {
             s.command(c, LONG).map_err(fail)?;
         }
+        // The fresh system as QSSECCHK sees it.
+        let sec = s.command("QSSECCHK OUTPUT(*)", LONG).unwrap_or_default();
+        let total = sec.lines().find(|l| l.contains("checks:")).unwrap_or("no QSSECCHK report").trim().to_string();
+        let fails: Vec<&str> = sec.lines().filter(|l| l.contains(" FAIL ")).map(str::trim).collect();
+        let mut notes = vec![format!("QSSECCHK at the start: {total}")];
+        notes.extend(fails.iter().map(|l| format!("QSSECCHK: {l}")));
         let mapper_port = launch.host_ports.iter().find(|(_, g)| *g == 449).map(|(h, _)| *h);
         let base_srcs: BTreeSet<String> = srcs(&mut s).into_iter().collect();
         let base_jobs = active_jobs(&mut s);
-        let mut report = SoakReport::default();
+        let mut report = SoakReport {
+            notes,
+            ..SoakReport::default()
+        };
         let start = Instant::now();
         report.samples.push(sample(&mut s, 0));
 
@@ -332,7 +386,7 @@ impl Suite {
             check(
                 "batch insert",
                 s.command(
-                    &format!("SBMJOB CMD(RUNSQL SQL('INSERT INTO SOAKLIB/T VALUES({i}, ''batch'')') COMMIT(*NONE)) JOB(SOAKB) JOBQ(QGPL/QBATCH)"),
+                    &format!("SBMJOB CMD(RUNSQL SQL('INSERT INTO SOAKLIB/T VALUES({i}, ''batch'')') COMMIT(*NONE)) JOB(SOAKB) JOBQ(QGPL/QBATCH) ACGCDE(SOAKACG)"),
                     CMD,
                 ),
                 "submitted",
@@ -442,6 +496,7 @@ impl Suite {
                 report.failures.push(format!("ASP use grew {} -> {} pages", asp[0], asp[asp.len() - 1]));
             }
         }
+        report.notes.push(accounting(&mut s));
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(30));
         s.discard();

@@ -963,7 +963,7 @@ policy (`lic/slic/src/svc/security.rs`).
 |---|---|---|---|
 | `SYSVAL` | `QSECURITY` and the values of §8, against Quartz's recommendation | `QSECURITY` below 30, `QCRTAUT(*ALL)`, `QMAXSIGN(*NOMAX)`, `QPWDMINLEN` below 6 | `QSECURITY` 30; `QALWUSRDMN` with `*ALL`; `QCRTAUT(*CHANGE)`; `QDSPSGNINF(0)`; `QINACTITV(*NONE)`; `QLMTDEVSSN(0)`; `QLMTSECOFR(0)`; `QMAXSIGN` above 5; `QPWDEXPITV` `*NOMAX` or above 90; `QPWDLVL` 0 or 1; `QPWDMINLEN` 6 or 7; `QPWDRQDDIF(0)`; `QPWDRQDDGT(0)`; `QRETSVRSEC(1)`; `QRMTSIGN(*SAMEPRF)`; `QVFYOBJRST(1)` |
 | `PROFILE` | passwords equal to the profile name (`ANZDFTPWD`'s test) | one that can sign on | one that is expired (the next sign-on must change it) or disabled |
-| `PUBLIC` | `*PUBLIC` of every object in `QSYS` and of the system libraries | more than the system ships it with: `shipped::public_for` (§1), and `*EXCLUDE` for the commands `sys_cpps::inventory::PUBLIC_EXCLUDE` names | |
+| `PUBLIC` | `*PUBLIC` of every object in `QSYS` and of the system libraries | more than the system ships it with: `shipped::public_for` (§1), `*EXCLUDE` for the commands `sys_cpps::inventory::PUBLIC_EXCLUDE` names, `*CHANGE` for device, controller and line descriptions (automatic configuration makes them so, as IBM's: using a device needs it) | |
 | `ADOPT` | programs and service programs created `USRPRF(*OWNER)` | one `*PUBLIC` may change (`*OBJMGT`, `*OBJEXIST`, `*OBJALTER` or `*UPD`) | one owned by an `*ALLOBJ` profile that `*PUBLIC` may use |
 | `EXITPNT` | every program the registration facility has registered | one that does not exist (whoever may add to its library can create it), or one `*PUBLIC` may change | |
 | `AUDIT` | `QAUDCTL`, `QAUDJRN`, `QAUDLVL` | auditing on and no `QSYS/QAUDJRN` | `QAUDCTL(*NONE)`; `QAUDLVL` without `*AUTFAIL` and `*SECURITY`; `QAUDCTL` without `*AUDLVL` |
@@ -971,7 +971,15 @@ policy (`lic/slic/src/svc/security.rs`).
 
 ### On a fresh install
 
-A fresh install has no failure. Its warnings are IBM's shipped values,
+A fresh install has no failure. The first runs found three kinds of failure, now fixed: the
+commands shipped `*PUBLIC *EXCLUDE` were widened to `*USE` by the first
+IPL's re-owning (it now leaves an excluded command alone), and the data
+areas the system keeps in `QSYS` (`QJOBNBR`, `QSECLVL`, `QSIPLA`) and the
+history log files (`QHST...`) took `QCRTAUT`'s `*CHANGE`, so any user
+could change the job counter, the recorded security level or the
+history. The system now makes them `*USE` (`shipped::system_kept`, in the
+guard's creation hook) and narrows existing ones at each IPL.
+ Its warnings are IBM's shipped values,
 kept so that applications and operators find what they expect; each is
 one `CHGSYSVAL` (or `CHGSECAUD`) away from the recommended value:
 
