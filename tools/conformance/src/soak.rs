@@ -140,7 +140,7 @@ fn sample(s: &mut Session, at: u64) -> Sample {
         at,
         ..Sample::default()
     };
-    if let Ok(t) = s.command("svc.procstat", CMD) {
+    if let Ok(t) = s.command("procstat", CMD) {
         for l in t.lines().skip(1) {
             let w: Vec<&str> = l.split_whitespace().collect();
             if let (Some(pid), Some(rss), Some(fds)) = (
@@ -185,7 +185,7 @@ fn active_jobs(s: &mut Session) -> BTreeSet<String> {
 
 /// The SRC log's lines.
 fn srcs(s: &mut Session) -> Vec<String> {
-    s.command("svc.srcs", CMD)
+    s.command("srcs", CMD)
         .unwrap_or_default()
         .lines()
         .map(|l| l.trim().to_string())
@@ -234,10 +234,7 @@ fn grew(series: &[u64], bound: u64) -> bool {
 /// The batch load's job accounting: its `JB` entries through
 /// `QAJBACG`'s format, counted, with their CPU and the `SP` entries.
 fn accounting(s: &mut Session) -> String {
-    let _ = s.command(
-        "svc.sql CREATE TABLE QGPL.SOAKJB AS (SELECT * FROM QSYS.QAJBACG) WITH NO DATA;",
-        LONG,
-    );
+    let _ = s.command("CPYF FROMFILE(QSYS/QAJBACG) TOFILE(QGPL/SOAKJB) CRTFILE(*YES)", LONG);
     let w = s
         .command(
             "DSPJRN JRN(QSYS/QACGJRN) JRNCDE(A) ENTTYP(JB) OUTPUT(*OUTFILE) OUTFILE(QGPL/SOAKJB)",
@@ -327,8 +324,8 @@ impl Suite {
             "CRTJRN JRN(SOAKLIB/SOAKJRN) JRNRCV(SOAKLIB/R0001)",
             "STRJRNPF FILE(SOAKLIB/T) JRN(SOAKLIB/SOAKJRN)",
             "crtsavf FILE(QGPL/SOAKSAVF)",
-            "CRTJRNRCV JRNRCV(QSYS/ACGRCV0001)",
-            "CRTJRN JRN(QSYS/QACGJRN) JRNRCV(QSYS/ACGRCV0001)",
+            "CRTJRNRCV JRNRCV(QSYS/ACGRCV0001) AUT(*EXCLUDE)",
+            "CRTJRN JRN(QSYS/QACGJRN) JRNRCV(QSYS/ACGRCV0001) AUT(*EXCLUDE)",
             "svc.sysval QACGLVL *JOB *PRINT",
         ];
         for c in setup {
