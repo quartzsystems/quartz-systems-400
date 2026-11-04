@@ -146,7 +146,7 @@ impl Sender for ToService {
         let line = self.client.problem(id, &self.contact, report).map_err(|e| format!("{} {e}", e.msgid()))?;
         line.strip_prefix("ok ")
             .map(|t| t.trim().to_string())
-            .ok_or_else(|| format!("the service answered: {line}"))
+            .ok_or_else(|| line.clone())
     }
 }
 

@@ -265,6 +265,11 @@ text = "Main Storage"
 help = "Text of the hardware resource displays and APIs: the kind of a resource, the main storage (memory)."
 
 [[msg]]
+id = "TXT014D"
+text = "Virtual Channel"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a channel to the hypervisor (the guest agent's virtio-serial or vsock port)."
+
+[[msg]]
 id = "TXT0150"
 text = "Operational"
 help = "Text of the hardware resource displays: the resource is present and working."

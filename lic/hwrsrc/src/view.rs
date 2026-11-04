@@ -37,6 +37,7 @@ pub fn kind_id(k: Kind) -> &'static str {
         Kind::TapeLibrary => "TXT014A",
         Kind::Processor => "TXT014B",
         Kind::Memory => "TXT014C",
+        Kind::Channel => "TXT014D",
     }
 }
 

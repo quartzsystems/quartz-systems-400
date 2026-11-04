@@ -1861,6 +1861,7 @@ lic/slic/src/cpp/dspout.rs	None
 lic/slic/src/cpp/dspout.rs	None
 lic/slic/src/cpp/hwcmd.rs	CPD0084 {ty} is not a type of resource.
 lic/slic/src/cpp/hwcmd.rs	CPF9898 hardware resource service: {e}
+lic/slic/src/cpp/hwcmd.rs	Hardware qualification report printed: {}.\n
 lic/slic/src/cpp/ifsgrow.rs	CPF3E21 ASP 1 has room for {} MB more below its threshold
 lic/slic/src/cpp/ifsgrow.rs	CPF3E22 the IFS is in its own partition
 lic/slic/src/cpp/ifsgrow.rs	{GREW} the integrated file system grew by {a} MB to {t} MB\n
@@ -2544,9 +2545,9 @@ lic/slic/src/cpp/updcmd.rs	CPD0084 PTFID names nothing to order
 lic/slic/src/cpp/updcmd.rs	CPD0084 SCDTIME({t}) is not a time
 lic/slic/src/cpp/updcmd.rs	CPD0084 the values do not fit
 lic/slic/src/cpp/updcmd.rs	CPF3598 {id}: release {release}; this system is {rel}
+lic/slic/src/cpp/updcmd.rs	CPF39D3 problem {id} was not sent: {why}
 lic/slic/src/cpp/updcmd.rs	CPF8C24 remote control point {rmt}: orders go to the update service (*IBMSRV)
 lic/slic/src/cpp/updcmd.rs	CPF9814 DLVRYFMT(*IMAGE): image catalogs are not available yet; use *SAVF
-lic/slic/src/cpp/updcmd.rs	CPF9B70 problem reports to the update service arrive in a later release
 lic/slic/src/cpp/updcmd.rs	Cumulative package {c} is available
 lic/slic/src/cpp/updcmd.rs	HIPER PTF {p} is not on this system
 lic/slic/src/cpp/updcmd.rs	Nothing to deliver: this system has what was ordered
@@ -2561,8 +2562,10 @@ lic/slic/src/cpp/updcmd.rs	order PTFs
 lic/slic/src/cpp/updcmd.rs	{CHANGED} update attributes changed: {} schedule {}\n
 lic/slic/src/cpp/updcmd.rs	{CURRENT} this system has the newest fixes the service offers\n
 lic/slic/src/cpp/updcmd.rs	{ORDERED} order {} complete, {n} PTF(s)
+lic/slic/src/cpp/updcmd.rs	{SENT} problem {id} sent: {t}
 lic/slic/src/cpp/updcmd.rs	{SENT} test request answered by {}: {ticket}\n
 lic/slic/src/cpp/updcmd.rs	{m} is not known to the update service
+lic/slic/src/cpp/updcmd.rs	{out}{SENT} {sent} prepared problem reports sent\n
 lic/slic/src/stgsvc/certs.rs	CPF9898 no certificate display {other}
 lic/slic/src/stgsvc/certs.rs	certificate key
 lic/slic/src/stgsvc/certs.rs	certificate store *SYSTEM created

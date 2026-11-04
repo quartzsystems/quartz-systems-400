@@ -254,9 +254,9 @@ fn the_guest_agent_channel_is_a_communications_resource() {
     assert_eq!(names(&t), [("CMN01", "ttyS0"), ("CMN02", "org.qemu.guest_agent.0"), ("CMN03", "vsock")]);
     assert_eq!(t.resources[1].kind, Kind::Channel);
     assert_eq!(t.resources[1].type_model(), ("QV01".to_string(), "001".to_string()));
-    let rows = crate::view::list(&t, crate::view::spec("*CMN").unwrap());
+    let rows = crate::view::list(&t, crate::view::spec("*CMN").unwrap(), &mut crate::view::ids);
     let row = rows.iter().find(|r| r.name == "CMN02").unwrap();
-    assert_eq!((row.type_col.as_str(), row.status.as_str(), row.text.as_str()), ("QV01", "Operational", "Virtual Channel"));
+    assert_eq!((row.type_col.as_str(), row.status.as_str(), row.text.as_str()), ("QV01", "TXT0150", "TXT014D"));
     // A port that goes away is not detected; one that comes keeps the next name.
     fs::remove_file(root.join("class/virtio-ports/vport3p1")).unwrap();
     t.rescan(&root);
