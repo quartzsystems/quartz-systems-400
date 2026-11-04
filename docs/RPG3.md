@@ -122,7 +122,13 @@ compiles it, calls it, and converts it with `CVTRPGSRC` into
 `QRPGLESRC`, keeping `NAME.out`, `NAME.lst`, `NAME.cvt` (the converted
 member) and `NAME.rpt` (the report). `cargo test -p conformance --test
 rpg_kit` (`QS400_RPG_ONLY=R30`) compares the outcomes,
-`--test rpg3_cvt` the conversions and reports.
+`--test rpg3_cvt` the conversions and reports, and `cargo test -p
+sys-cpps --test rpg3_prompts` both commands' prompts against pub400's
+(`tools/conformance/golden/phase12/rpg3/`, captured by
+`tools/conformance/probes/phase12/prompts-rpg3.tn`).
+`rpg-oracle probe CMD...` runs commands on pub400 and prints whether
+each worked (how the compiler's presence was checked: `CRTRPGPGM`,
+`CVTRPGSRC` and library `QRPG` are there, V7R5M0).
 
 ### Results
 

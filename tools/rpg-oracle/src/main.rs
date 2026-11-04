@@ -221,18 +221,12 @@ fn run(files: &[PathBuf], out: Option<&Path>, missing: bool) -> Result<()> {
             Ok((outcome, listing, converted)) => {
                 std::fs::create_dir_all(dir)?;
                 if let Some(cv) = converted {
-                    let mut head = format!("# {} CVTRPGSRC pub400.com
-", c.name);
+                    let mut head = format!("# {} CVTRPGSRC pub400.com\n", c.name);
                     if !cv.ok {
-                        head.push_str(&format!("# failed {}
-", cv.cause));
+                        let _ = writeln!(head, "# failed {}", cv.cause);
                     }
-                    std::fs::write(dir.join(format!("{}.cvt", c.name)), head + &cv.source.join("
-") + "
-")?;
-                    std::fs::write(dir.join(format!("{}.rpt", c.name)), cv.report.join("
-") + "
-")?;
+                    std::fs::write(dir.join(format!("{}.cvt", c.name)), head + &cv.source.join("\n") + "\n")?;
+                    std::fs::write(dir.join(format!("{}.rpt", c.name)), cv.report.join("\n") + "\n")?;
                 }
                 std::fs::write(dir.join(format!("{}.out", c.name)), outcome.render())?;
                 std::fs::write(dir.join(format!("{}.lst", c.name)), listing.join("\n") + "\n")?;

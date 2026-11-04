@@ -275,18 +275,16 @@ fn unused_indicators(main: &Member, diags: &mut Vec<Diag>) {
 /// A program-described output file no output specification names
 /// (`QRG7064`, severity 40).
 fn no_output(main: &Member, diags: &mut Vec<Diag>) {
-    let f = rpgspecs::rpg3_form("F");
-    let o = rpgspecs::rpg3_form("O");
-    let c = rpgspecs::rpg3_form("C");
+    let (fs, os, cs) = (rpgspecs::rpg3_form("F"), rpgspecs::rpg3_form("O"), rpgspecs::rpg3_form("C"));
     let live = |t: &str, letter: char| {
         t.chars().nth(5).is_some_and(|c| c.eq_ignore_ascii_case(&letter)) && t.chars().nth(6) != Some('*')
     };
     for r in main.records.iter().take_while(|r| !r.text.starts_with("**")) {
         let t = r.text.to_ascii_uppercase();
-        if !live(&t, 'F') || f.cut(&t, "type").trim() != "O" || f.cut(&t, "format").trim() != "F" {
+        if !live(&t, 'F') || fs.cut(&t, "type").trim() != "O" || fs.cut(&t, "format").trim() != "F" {
             continue;
         }
-        let name = f.cut(&t, "name").trim().to_string();
+        let name = fs.cut(&t, "name").trim().to_string();
         if name.is_empty() {
             continue;
         }
@@ -297,8 +295,8 @@ fn no_output(main: &Member, diags: &mut Vec<Diag>) {
             .any(|x| {
                 let u = x.text.to_ascii_uppercase();
                 // An output specification, or an operation naming it.
-                (live(&u, 'O') && o.cut(&u, "name").trim() == name)
-                    || (live(&u, 'C') && c.cut(&u, "factor2").trim() == name)
+                (live(&u, 'O') && os.cut(&u, "name").trim() == name)
+                    || (live(&u, 'C') && cs.cut(&u, "factor2").trim() == name)
             });
         if !named {
             diags.push(Diag {
