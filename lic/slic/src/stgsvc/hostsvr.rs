@@ -36,6 +36,11 @@ fn tokens() -> &'static Mutex<HashMap<Vec<u8>, Token>> {
     T.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+/// Tokens held, for `stgstat`.
+pub(crate) fn token_count() -> usize {
+    tokens().lock().map_or(0, |t| t.len())
+}
+
 fn now() -> u64 {
     crate::ipl::system::now_unix()
 }

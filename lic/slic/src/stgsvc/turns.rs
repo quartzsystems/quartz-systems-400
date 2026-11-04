@@ -171,6 +171,7 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
     if grouped {
         served::group(&mut svc.system, false);
     }
+    super::census::refresh(&svc.conns);
     while svc.fibers.len() < MAX_FIBERS
         && let Some((id, req)) = svc.queued.pop_front()
     {

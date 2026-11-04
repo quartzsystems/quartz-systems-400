@@ -22,6 +22,10 @@ pub struct CacheStats {
     pub misses: u64,
     /// Pages evicted.
     pub evictions: u64,
+    /// Pages held now.
+    pub held: u64,
+    /// Pages it may hold.
+    pub capacity: u64,
 }
 
 struct Slot {
@@ -74,7 +78,11 @@ impl PageCache {
     /// Counters.
     #[must_use]
     pub fn stats(&self) -> CacheStats {
-        self.stats
+        CacheStats {
+            held: self.index.len() as u64,
+            capacity: self.capacity as u64,
+            ..self.stats
+        }
     }
 
     /// A copy of the page, if held.

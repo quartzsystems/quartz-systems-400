@@ -14,6 +14,7 @@ mod jobq;
 pub mod neta;
 mod msgq;
 pub(crate) mod objects;
+mod procstat;
 mod sbs;
 pub(crate) mod security;
 mod spool;
@@ -36,6 +37,7 @@ pub const PROMPT: &str = wm::ctl::PROMPT;
 const HELP: &str = "\
 help                 this list
 srcs [table]         SRC log of this IPL, or the whole SRC table
+procstat [fds|maps PID]  processes: memory, descriptors, job; one process closer
 hist                 IPL history from the LIC partition
 hw                   hardware resource table
 qshwqual [usb]       hardware qualification report (QSHWQUAL), and to a FAT USB stick
@@ -154,7 +156,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("release", _) => format!("{}\n", release::full()),
         ("srcs", []) => system.log.dump(),
         ("srcs", ["table"]) => src_table(),
-        ("procstat", _) => procstat(),
+        ("procstat", rest) => procstat::command(system, rest),
         ("hist", _) => hist(system),
         ("hw", _) => {
             let hw = system.hw_refreshed(true);
@@ -478,39 +480,4 @@ fn liclog(rest: &[&str]) -> String {
         .iter()
         .map(|e| crate::stgsvc::liclog::line(e) + "\n")
         .collect()
-}
-
-/// `procstat`: every process of the system with its resident memory
-/// (kB), open descriptors and command line, for the soak's leak checks.
-fn procstat() -> String {
-    let mut out = String::from("  PID   RSS_KB    FDS  COMMAND\n");
-    let Ok(dir) = std::fs::read_dir("/proc") else {
-        return out;
-    };
-    let mut pids: Vec<u32> = dir
-        .filter_map(Result::ok)
-        .filter_map(|e| e.file_name().to_str().and_then(|n| n.parse().ok()))
-        .collect();
-    pids.sort_unstable();
-    for pid in pids {
-        let base = format!("/proc/{pid}");
-        let Ok(cmd) = std::fs::read(format!("{base}/cmdline")) else {
-            continue;
-        };
-        if cmd.is_empty() {
-            continue;
-        }
-        let cmd: String = String::from_utf8_lossy(&cmd).replace('\0', " ").trim().to_string();
-        let rss = std::fs::read_to_string(format!("{base}/status"))
-            .ok()
-            .and_then(|s| {
-                s.lines()
-                    .find(|l| l.starts_with("VmRSS:"))
-                    .and_then(|l| l.split_whitespace().nth(1).and_then(|n| n.parse::<u64>().ok()))
-            })
-            .unwrap_or(0);
-        let fds = std::fs::read_dir(format!("{base}/fd")).map_or(0, Iterator::count);
-        let _ = writeln!(out, "{pid:>5} {rss:>8} {fds:>6}  {cmd}");
-    }
-    out
 }

@@ -42,6 +42,7 @@ pub fn run(system: &mut System, line: &str) -> String {
             };
         }
         "wmstats" => return system.stats.report(),
+        "stgstat" => return super::census::report(system),
         "tcp" => return super::tcp::console(system, line),
         _ => {}
     }

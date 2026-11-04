@@ -93,6 +93,12 @@ pub fn name_job(job: JobHandle, info: JobInfo) {
     NAMES.with(|n| n.borrow_mut().insert(job.0, info));
 }
 
+/// How many handles are named.
+#[must_use]
+pub fn named_jobs() -> usize {
+    NAMES.with(|n| n.borrow().len())
+}
+
 /// The job ended: its handle is no longer named.
 pub fn forget_job(job: JobHandle) {
     NAMES.with(|n| n.borrow_mut().remove(&job.0));

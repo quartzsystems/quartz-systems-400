@@ -54,6 +54,9 @@ pub struct Sample {
     pub asp_used: u64,
     /// Active jobs.
     pub jobs: usize,
+    /// The closer look: the service's tables, its descriptors and
+    /// memory, the descriptors of jobs that hold many.
+    pub detail: String,
 }
 
 /// What the soak did and found.
@@ -164,8 +167,44 @@ fn sample(s: &mut Session, at: u64) -> Sample {
             out.asp_used = total.saturating_sub(free);
         }
     }
-    out.jobs = active_jobs(s).len();
+    let jobs = active_jobs(s);
+    out.jobs = jobs.len();
+    out.detail = detail(s, &out);
+    let _ = writeln!(out.detail, "active jobs: {}", jobs.into_iter().collect::<Vec<_>>().join(" "));
     out
+}
+
+/// Jobs past this many descriptors get their own look.
+const FDS_LOOK: u64 = 12;
+
+/// `stgstat`, `txn stats` and, for the storage service and every
+/// process past [`FDS_LOOK`] descriptors, `procstat fds` (and the
+/// service's `procstat maps`).
+fn detail(s: &mut Session, out: &Sample) -> String {
+    let mut d = format!("== {}s\n", out.at);
+    for c in ["svc.stgstat", "svc.txn stats"] {
+        d.push_str(&s.command(c, CMD).unwrap_or_default());
+    }
+    for (pid, (cmd, _, fds)) in &out.procs {
+        let stg = cmd.starts_with("/init qsstg");
+        if stg || (*fds >= FDS_LOOK && cmd.starts_with("/qsjob")) {
+            let _ = writeln!(d, "-- {pid} {cmd}");
+            d.push_str(&s.command(&format!("procstat fds {pid}"), CMD).unwrap_or_default());
+        }
+        if stg {
+            d.push_str(&s.command(&format!("procstat maps {pid}"), CMD).unwrap_or_default());
+        }
+    }
+    d
+}
+
+/// Every sample's closer look, to `soak-samples.log`; written as the
+/// run goes so a run that dies still leaves it.
+fn write_details(samples: &[Sample]) {
+    let dir = crate::target_dir().join("conformance");
+    let _ = std::fs::create_dir_all(&dir);
+    let text: String = samples.iter().map(|x| x.detail.as_str()).collect();
+    let _ = std::fs::write(dir.join("soak-samples.log"), text);
 }
 
 /// The active jobs as `number/user/name`.
@@ -439,6 +478,7 @@ impl Suite {
                 next_sample += Duration::from_secs(60);
                 let at = start.elapsed().as_secs();
                 report.samples.push(sample(&mut s, at));
+                write_details(&report.samples);
             }
             std::thread::sleep(Duration::from_secs(2));
         }
@@ -467,6 +507,7 @@ impl Suite {
         }
         let at = start.elapsed().as_secs();
         report.samples.push(sample(&mut s, at));
+        write_details(&report.samples);
         if !left.is_empty() {
             report.failures.push(format!("jobs of the load still active: {}", left.join(" ")));
         }
