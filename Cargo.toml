@@ -134,6 +134,7 @@ members = [
     "tools/fuzz",
     "tools/kcbuild",
     "tools/helpaudit",
+    "tools/textaudit",
     # Media: tape, optical, image catalogs.
     "media/tape",
     "media/medio",

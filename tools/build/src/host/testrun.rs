@@ -10,6 +10,22 @@ use tracing::{error, info};
 use crate::ctx::Ctx;
 use crate::host::paths;
 
+/// No new text on display paths (`tools/textaudit`): a string literal
+/// a panel or report would show, not in the baseline, fails the run.
+fn text(ctx: &Ctx) -> Result<()> {
+    let report = textaudit::audit(&ctx.paths.repo)?;
+    if report.fails() {
+        anyhow::bail!(
+            "new text literals on display paths (cargo run -p textaudit):\n{}",
+            report.details(20)
+        );
+    }
+    for line in report.summary().lines() {
+        info!("textaudit: {line}");
+    }
+    Ok(())
+}
+
 /// The format freeze (`tools/fmtcheck`): a frozen format changed without
 /// a version bump fails the run before anything boots.
 fn freeze(ctx: &Ctx) -> Result<()> {
@@ -55,6 +71,7 @@ pub fn test(
 ) -> Result<()> {
     freeze(ctx)?;
     help(ctx)?;
+    text(ctx)?;
     let image = paths::read_pointer(&ctx.paths.disk_pointer())
         .context("no disk image; run `disk` first")?;
     let iso = paths::read_pointer(&ctx.paths.iso_pointer()).ok();

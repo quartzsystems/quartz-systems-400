@@ -1,0 +1,25 @@
+[package]
+name = "textaudit"
+description = "QS/400 text audit: Rust string literals that reach a 5250 panel or a printed report instead of a message file or panel source"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "textaudit"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+syn = { version = "2.0.119", default-features = false, features = ["parsing"] }
+proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
+
+[lints]
+workspace = true

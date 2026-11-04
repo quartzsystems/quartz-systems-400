@@ -259,6 +259,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "textaudit",
  "tracing",
  "tracing-subscriber",
 ]
@@ -3608,6 +3609,18 @@ dependencies = [
  "ipc",
  "netlink",
  "thiserror",
+]
+
+[[package]]
+name = "textaudit"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "proc-macro2",
+ "serde",
+ "syn 2.0.119",
+ "thiserror",
+ "toml",
 ]
 
 [[package]]

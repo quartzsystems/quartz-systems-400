@@ -1,0 +1,51 @@
+# The text audit's display paths (tools/textaudit): the sources whose
+# strings reach a 5250 panel, a display file, the console's screens or
+# a printed report. Paths are from the repository root; a directory
+# means every .rs under it except tests.
+
+[[crate]]
+name = "qsjob"
+paths = [
+    "work/qsjob/src/panels",
+    "work/qsjob/src/display",
+    "work/qsjob/src/devtools",
+    "work/qsjob/src/sysdsp",
+    "work/qsjob/src/command",
+]
+
+[[crate]]
+name = "slic"
+paths = ["lic/slic/src/cpp", "lic/slic/src/stgsvc"]
+
+[[crate]]
+name = "console"
+paths = ["lic/console/src"]
+
+[[crate]]
+name = "hwrsrc"
+paths = ["lic/hwrsrc/src/view.rs"]
+
+[[crate]]
+name = "devtools"
+paths = [
+    "devtools/seu/src",
+    "devtools/pdm/src",
+    "devtools/sda/src",
+    "devtools/dfu/src",
+    "devtools/dbg/src",
+    "devtools/isql/src",
+    "devtools/sst/src",
+    "devtools/edtf/src",
+]
+
+[[crate]]
+name = "db"
+paths = ["database/db/src/dsp"]
+
+[[crate]]
+name = "ifscmd"
+paths = ["ifs/ifscmd/src/display.rs", "ifs/ifscmd/src/text.rs"]
+
+[allow]
+exact = []
+calls = []
