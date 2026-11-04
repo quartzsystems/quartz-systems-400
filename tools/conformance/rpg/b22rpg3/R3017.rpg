@@ -4,13 +4,13 @@
      H
      FTRANF   IP  F      20            DISK
      FQSYSPRT O   F     132     OF     PRINTER
-     ITRANF   011 10   1 CH
+     ITRANF   AA  10   1 CH
      I                                        2   40CUST
      I                                        5  20 CNAME
-     ITRANF   02N 20   1 CD
+     ITRANF   AB  20   1 CD
      I                                        2   82AMT
      I                                        9  20 ITEM
-     ITRANF   NS  30
+     ITRANF   AC  30
      C   20                ADD  AMT       TOT     92
      C   30                ADD  1         OTH     30
      OQSYSPRT D  1     10

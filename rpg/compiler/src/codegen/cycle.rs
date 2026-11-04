@@ -183,7 +183,7 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.dtaara_auto(false);
     g.init_tail(m);
     g.b.ins("store $init_done, *ON");
-    g.psds_init(&g.opts.name.clone());
+    g.psds_init(&g.opts.name.clone(), false);
     g.b.ins("store $cy_first, *ON");
     g.b.ins("store $cy_sel, -1");
     for f in &files {

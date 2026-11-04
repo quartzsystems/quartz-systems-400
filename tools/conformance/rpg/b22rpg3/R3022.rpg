@@ -5,7 +5,7 @@
      FORDF    IP  E                    DISK
      FQSYSPRT O   F     132     OF     PRINTER
      IORDR        01
-     I              ORDCUS                                L1
+     I                                              ORDCUSL1
      C   01      QTY       MULT PRICE     EXT     92
      C   01                ADD  EXT       CUSTOT  92
      CL1                   ADD  CUSTOT    GRAND  112

@@ -146,8 +146,9 @@ pub fn cvtrpgsrc(system: &mut System, parms: &Parms) -> CmdReply {
     let (ff, ffl) = parms.qual("FROMFILE");
     let (tf, tfl) = parms.qual("TOFILE");
     let from = (lib_or(&ffl.to_ascii_uppercase()), ff.to_ascii_uppercase());
+    let tfl = tfl.to_ascii_uppercase();
     let to = (
-        lib_or(&tfl.to_ascii_uppercase()),
+        if tfl.is_empty() || tfl == "*FROMLIB" { from.0.clone() } else { lib_or(&tfl) },
         if tf.is_empty() { "QRPGLESRC".to_string() } else { tf.to_ascii_uppercase() },
     );
     let from_mbr = parms.name("FROMMBR");

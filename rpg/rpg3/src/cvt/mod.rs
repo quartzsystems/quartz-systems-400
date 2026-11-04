@@ -108,7 +108,7 @@ struct Out {
 }
 
 impl Out {
-    fn push(&mut self, sect: Sect, text: String, from: usize) {
+    fn push(&mut self, sect: Sect, text: &str, from: usize) {
         for c in std::mem::take(&mut self.pending) {
             self.lines.push((sect, c));
         }
@@ -142,8 +142,8 @@ pub fn convert(records: &[String]) -> Conversion {
         records: records.len(),
         ..Counts::default()
     };
-    let mut f = file::Files::default();
-    let mut d = defs::Defs::default();
+    let mut files = file::Files::default();
+    let mut defs = defs::Defs::default();
     let mut inp = input::Input::default();
     let mut data_from = records.len();
     // Line counter specifications first: their keywords go on the F specs.
@@ -152,7 +152,7 @@ pub fn convert(records: &[String]) -> Conversion {
             break;
         }
         if letter(r) == 'L' && !is_comment(r) {
-            f.line_counter(r);
+            files.line_counter(r);
         }
     }
     let mut i = 0;
@@ -170,7 +170,7 @@ pub fn convert(records: &[String]) -> Conversion {
         }
         counts.specs += 1;
         match letter(r) {
-            'H' => out.push(Sect::H, file::control(r), i),
+            'H' => out.push(Sect::H, &file::control(r), i),
             'F' => {
                 // The continuation lines after it are its keywords.
                 let mut k = i + 1;
@@ -178,16 +178,16 @@ pub fn convert(records: &[String]) -> Conversion {
                     k += 1;
                 }
                 counts.specs += k - i - 1;
-                let lines = f.convert(&records[i..k], i, &mut out);
+                let lines = files.convert(&records[i..k], i, &mut out);
                 for (text, from) in lines {
-                    out.push(Sect::F, text, from);
+                    out.push(Sect::F, &text, from);
                 }
                 i = k;
                 continue;
             }
             'E' => {
-                for t in d.extension(r, i, &mut out) {
-                    out.push(Sect::D, t, i);
+                for t in defs.extension(r, i, &mut out) {
+                    out.push(Sect::D, &t, i);
                 }
             }
             'L' => {
@@ -196,12 +196,12 @@ pub fn convert(records: &[String]) -> Conversion {
                     out.lines.push((Sect::F, c));
                 }
             }
-            'I' => inp.convert(r, i, &mut out, &mut d),
+            'I' => inp.convert(r, i, &mut out, &mut defs),
             'C' => calc::convert(r, i, &mut out),
             'O' => output::convert(r, i, &mut out),
             _ => {
                 out.msg("RNM0511", 30, i);
-                out.push(Sect::C, r.clone(), i);
+                out.push(Sect::C, &r.clone(), i);
             }
         }
         i += 1;
@@ -212,8 +212,7 @@ pub fn convert(records: &[String]) -> Conversion {
     }
     for (k, r) in records.iter().enumerate().skip(data_from) {
         counts.data += 1;
-        let text = d.data_header(r).unwrap_or_else(|| r.trim_end().to_string());
-        out.lines.push((Sect::Data, Line { text, from: k }));
+        out.lines.push((Sect::Data, Line { text: r.trim_end().to_string(), from: k }));
     }
     // A stable sort keeps each section's order.
     let mut lines = out.lines;

@@ -695,7 +695,7 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.dtaara_auto(false);
     g.init_tail(m);
     g.b.ins("store $init_done, *ON");
-    g.psds_init(&g.opts.name.clone());
+    g.psds_init(&g.opts.name.clone(), false);
     g.b.place(&start);
     g.b.ins("store $in1p, *ON");
     let outputs = g.outputs.clone();
@@ -780,7 +780,7 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
     g.dtaara_auto(false);
     g.b.ins("callb _qrni_snap()");
     g.b.ins("store $init_done, *ON");
-    g.psds_init(&g.opts.name.clone());
+    g.psds_init(&g.opts.name.clone(), true);
     g.b.place(&start);
     let up = main.to_ascii_uppercase();
     // A MAIN procedure that is not defined was reported (`compile`).

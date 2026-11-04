@@ -207,20 +207,23 @@ impl Printer {
         }
     }
 
-    /// Print one line under `ctl`; whether the carriage is now at or
-    /// past the overflow line.
+    /// Print one line under `ctl`; whether overflow occurred: the line
+    /// printed on or below the overflow line, or the carriage moved past
+    /// it. Spacing onto the overflow line without printing there is not
+    /// overflow (RPG's overflow indicator, pub400).
     pub fn write(&mut self, text: &[u8], ctl: Control) -> bool {
         if ctl.skip_before > 0 {
             self.skip(ctl.skip_before);
         }
         self.space(ctl.space_before);
         self.print(text);
+        let printed = self.line;
         self.records += 1;
         self.space(ctl.space_after);
         if ctl.skip_after > 0 {
             self.skip(ctl.skip_after);
         }
-        self.line >= self.fmt.ovrflw
+        printed >= self.fmt.ovrflw || self.line > self.fmt.ovrflw
     }
 
     /// A record of a `CTLCHAR(*FCFC)` file: its first character is the

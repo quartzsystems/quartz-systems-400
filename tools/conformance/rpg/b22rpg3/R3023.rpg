@@ -4,7 +4,7 @@
      H
      FQSYSPRT O   F     132     OF     PRINTER
      C                     Z-ADD12.5      BASE    51
-     C           *LIKE     DEFN BASE      COPY   +2
+     C           *LIKE     DEFN BASE      COPY  + 2
      C                     Z-ADD1234.5    COPY
      C           *NAMVAR   DEFN R3DTA     DTA    10
      C           *LOCK     IN   DTA

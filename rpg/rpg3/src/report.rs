@@ -12,6 +12,7 @@ use crate::cvt::Conversion;
 
 /// The command's parameters as the report shows them.
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_excessive_bools)] // the command's four *YES/*NO parameters
 pub struct Params {
     /// The user who issued the command.
     pub user: String,

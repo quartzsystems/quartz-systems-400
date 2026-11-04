@@ -100,12 +100,14 @@ impl Files {
                 kws.push(format!("PLIST({entry})"));
             }
         }
+        // The line counter's keywords go on lines of their own.
+        let mut own: Vec<String> = Vec::new();
         if let Some((_, len, of)) = self.forms.iter().find(|(n, _, _)| *n == name) {
             if !len.is_empty() {
-                kws.push(format!("FORMLEN({len})"));
+                own.push(format!("FORMLEN({len})"));
             }
             if !of.is_empty() {
-                kws.push(format!("FORMOFL({of})"));
+                own.push(format!("FORMOFL({of})"));
             }
         }
         let cond = cut3("F", r, "condition");
@@ -127,7 +129,7 @@ impl Files {
                 "COMIT" => "COMMIT".to_string(),
                 "PLIST" => format!("PLIST({entry})"),
                 "ID" => format!("DEVID({entry})"),
-                "NUM" => format!("MAXDEV(*FILE)"),
+                "NUM" => "MAXDEV(*FILE)".to_string(),
                 "SLN" => format!("SLN({entry})"),
                 "PRTCTL" => format!("PRTCTL({entry})"),
                 "FMTS" => format!("FMTS('{entry}')"),
@@ -147,6 +149,11 @@ impl Files {
         let main = kws.join(" ");
         f.put("keywords", &main);
         result.push((f.text(), at));
+        for kw in own {
+            let mut c = Rec::new("F", r);
+            c.put("keywords", &kw);
+            result.push((c.text(), at));
+        }
         for (kw, k) in lines {
             let mut c = Rec::new("F", &recs[k - at]);
             c.put("keywords", &kw);

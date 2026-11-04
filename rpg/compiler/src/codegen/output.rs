@@ -187,6 +187,14 @@ impl Gen<'_> {
             self.b.place(&run);
             Some(skip)
         };
+        // A whole array: every element, edited ones two blanks apart.
+        if let Some(n) = self.whole_array(&fld.field) {
+            let end = self.output_array(fld, line, len, prev_end, n);
+            if let Some(s) = skip {
+                self.b.place(&s);
+            }
+            return end;
+        }
         // The text and its width; a field blanked after output.
         let mut blank = None;
         let (text, width): (String, u32) = if fld.field.is_empty() {
@@ -254,6 +262,61 @@ impl Gen<'_> {
         }
         if let Some(s) = skip {
             self.b.place(&s);
+        }
+        Some(end)
+    }
+
+    /// The elements of an array (not a table) named alone.
+    fn whole_array(&self, name: &str) -> Option<u32> {
+        if name.is_empty() || name.starts_with('*') {
+            return None;
+        }
+        let id = self.t.find(self.scope, name)?;
+        let s = &self.t.syms[id];
+        (s.dim > 0 && !s.table).then_some(s.dim)
+    }
+
+    /// An array's elements into the line, ending at the end position:
+    /// edited elements with two blanks before each but the first.
+    fn output_array(&mut self, fld: &OutputField, line: &str, len: u32, prev_end: u32, n: u32) -> Option<u32> {
+        let edited_codes = !fld.edit.is_empty() || matches!(fld.constant, Some(Expr::Lit(Lit::Char(_), _)));
+        let gap = if edited_codes { 2 } else { 0 };
+        let mut pieces = Vec::new();
+        for i in 1..=n {
+            let e = Expr::Ref {
+                name: fld.field.clone(),
+                steps: vec![rpgfront::ast::Step::Args(vec![Expr::Lit(Lit::Num(i.to_string()), fld.at)])],
+                at: fld.at,
+            };
+            let v = self.expr(&e, Want::default())?;
+            let v = self.as_chars(&v);
+            pieces.push(self.edited(&v, fld)?);
+        }
+        let width: u32 = pieces.iter().map(|(_, w)| *w).sum::<u32>() + gap * (n - 1);
+        let end = match fld.end.trim() {
+            "" => prev_end + width,
+            e if e.starts_with('+') => prev_end + e[1..].trim().parse::<u32>().unwrap_or(0) + width,
+            e => e.parse::<u32>().unwrap_or(prev_end + width),
+        };
+        if end > len || width > end {
+            self.err(ids::INDEX_RANGE, 30, fld.end.clone());
+            return None;
+        }
+        let mut at = end - width;
+        for (k, (text, w)) in pieces.into_iter().enumerate() {
+            // The blanks between elements are printed too.
+            if k > 0 && gap > 0 {
+                let p = self.b.reg();
+                self.b.ins(format!("{p} = addr {line}"));
+                self.b.ins(format!("mov [{p} +{at}]:char({gap}), {}", quote("  ")));
+                at += gap;
+            }
+            if w > 0 {
+                let p = self.b.reg();
+                self.b.ins(format!("{p} = addr {line}"));
+                self.b.ins(format!("mov [{p} +{at}]:char({w}), {text}"));
+            }
+            at += w;
         }
         Some(end)
     }

@@ -114,13 +114,22 @@ fn stmt_of(seq: &str) -> u32 {
 
 /// The names the ILE compiler's cross-reference marks unreferenced,
 /// on the RPG III statement that defines them (`QRG7031`).
-fn unreferenced(inner: &rpgc::Compiled, diags: &mut Vec<Diag>) {
+fn unreferenced(main: &Member, inner: &rpgc::Compiled, diags: &mut Vec<Diag>) {
+    // Files are not names RPG/400 reports so (an unused file is QRG7064).
+    let f = rpgspecs::rpg3_form("F");
+    let files: Vec<String> = main
+        .records
+        .iter()
+        .filter(|r| r.text.chars().nth(5).is_some_and(|c| c.eq_ignore_ascii_case(&'F')) && r.text.chars().nth(6) != Some('*'))
+        .map(|r| f.cut(&r.text, "name").trim().to_ascii_uppercase())
+        .filter(|n| !n.is_empty())
+        .collect();
     for l in &inner.listing {
         let t = l.get(1..).unwrap_or("").trim_start();
         let Some(rest) = t.strip_prefix("*RNF7031") else { continue };
         let w: Vec<&str> = rest.split_whitespace().collect();
         let Some(name) = w.first() else { continue };
-        if name.chars().all(|c| c.is_ascii_digit()) {
+        if name.chars().all(|c| c.is_ascii_digit()) || files.iter().any(|f| f == name) {
             continue;
         }
         let Some(defined) = w.iter().find_map(|x| x.strip_suffix('D').and_then(|n| n.parse::<u32>().ok())) else {
@@ -272,7 +281,7 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
         let stmt = stmt_of(&inner.stmt_seq(d.at.line));
         let diag = Diag {
             stmt,
-            msgid: id.to_string(),
+            msgid: id.clone(),
             severity: sev,
             place,
             args: d.args.clone(),
@@ -281,7 +290,7 @@ pub fn compile(main: &Member, includes: &mut dyn Includes, ext: &mut dyn rpgc::E
             diags.push(diag);
         }
     }
-    unreferenced(&inner, &mut diags);
+    unreferenced(main, &inner, &mut diags);
     unused_overflow(main, &mut diags);
     no_output(main, &mut diags);
     diags.sort();

@@ -36,7 +36,7 @@ impl Input {
         if cut3("IDS", r, "ds") == "DS" {
             self.in_ds = true;
             self.ext_ds = cut3("IDS", r, "ext") == "E";
-            out.push(Sect::D, ds_line(r), at);
+            out.push(Sect::D, &ds_line(r), at);
             return;
         }
         let rec_name = cut3("I", r, "name");
@@ -46,25 +46,25 @@ impl Input {
             self.in_ds = false;
             // An externally described record has no sequence.
             self.ext_rec = cut3("I", r, "sequence").is_empty() && rel.is_empty();
-            out.push(Sect::I, record(r, self.ext_rec), at);
+            out.push(Sect::I, &record(r, self.ext_rec), at);
             return;
         }
         if self.in_ds {
             if cut3("IX", r, "format") == "C" {
-                out.push(Sect::D, constant(r), at);
+                out.push(Sect::D, &constant(r), at);
             } else {
-                out.push(Sect::D, subfield(r, self.ext_ds), at);
+                out.push(Sect::D, &subfield(r, self.ext_ds), at);
             }
             return;
         }
         if cut3("IX", r, "format") == "C" {
-            out.push(Sect::D, constant(r), at);
+            out.push(Sect::D, &constant(r), at);
             return;
         }
         if self.ext_rec {
-            out.push(Sect::I, ext_field(r), at);
+            out.push(Sect::I, &ext_field(r), at);
         } else {
-            out.push(Sect::I, field(r), at);
+            out.push(Sect::I, &field(r), at);
         }
     }
 }
@@ -89,7 +89,7 @@ fn record(r: &str, ext: bool) -> String {
         i.right(&format!("pos{k}"), &cut3("I", r, &format!("pos{k}")))
             .put(&format!("not{k}"), &cut3("I", r, &format!("not{k}")))
             .put(&format!("part{k}"), &cut3("I", r, &format!("part{k}")))
-            .put(&format!("char{k}"), &raw3("I", r, &format!("char{k}")).trim_end().to_string());
+            .put(&format!("char{k}"), raw3("I", r, &format!("char{k}")).trim_end());
     }
     i.text()
 }

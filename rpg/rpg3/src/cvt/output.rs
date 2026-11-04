@@ -48,5 +48,5 @@ pub(super) fn convert(r: &str, at: usize, out: &mut Out) {
             .put("format", &cut3("OF", r, "format"))
             .put("constant", &cut3("OF", r, "constant"));
     }
-    out.push(Sect::O, o.text(), at);
+    out.push(Sect::O, &o.text(), at);
 }

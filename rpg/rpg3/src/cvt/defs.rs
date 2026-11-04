@@ -100,9 +100,4 @@ impl Defs {
         }
         lines
     }
-
-    /// A compile-time data header as ILE RPG keeps it (as it is).
-    pub(super) fn data_header(&self, _r: &str) -> Option<String> {
-        None
-    }
 }

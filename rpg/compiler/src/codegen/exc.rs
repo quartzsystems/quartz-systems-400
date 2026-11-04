@@ -184,8 +184,11 @@ impl Gen<'_> {
     }
 
     /// Fill the PSDS's fixed fields at program start: the procedure
-    /// (program) name and the parameter count.
-    pub fn psds_init(&mut self, name: &str) {
+    /// (program) name and the parameter count. The cycle's main
+    /// procedure is called by the program entry, which kept the
+    /// program's count in `$entry_n`; a linear main procedure is the
+    /// entry (`own`).
+    pub fn psds_init(&mut self, name: &str, own: bool) {
         let (p, len) = self.psds();
         if len == 0 {
             return;
@@ -195,7 +198,11 @@ impl Gen<'_> {
             "($ds: bytes(1) *VARSIZE, byval $len: i32, const $name: char(10), byval $parms: i32)",
         );
         let r = self.b.reg();
-        self.b.ins(format!("{r} = parms"));
+        if own {
+            self.b.ins(format!("{r} = parms"));
+        } else {
+            self.b.ins(format!("{r} = load $entry_n"));
+        }
         self.b.ins(format!("callb _QRNX_PSDSINIT({p}, {len}, {}, {r})", quote(&format!("{name:<10}"))));
     }
 

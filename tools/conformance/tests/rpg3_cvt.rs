@@ -40,22 +40,22 @@ fn conversions_match_the_oracle() {
     // The reports, blank lines aside, with the oracle's masks.
     let mut reports = 0;
     for (_, case) in kit.cases().unwrap().iter().filter(|(_, c)| c.rpg3) {
-        let Ok(e) = fs::read_to_string(kit.expected_dir().join(format!("{}.rpt", case.name))) else { continue };
-        if !e.contains("CVTRPGSRC") {
+        let Ok(ibm) = fs::read_to_string(kit.expected_dir().join(format!("{}.rpt", case.name))) else { continue };
+        if !ibm.contains("CVTRPGSRC") {
             continue;
         }
         reports += 1;
         let conv = rpg3::convert(&case.lines);
-        let p = rpg3::report::Params {
+        let params = rpg3::report::Params {
             user: "{user}".into(),
             from: ("{lib}".into(), "QRPGSRC".into(), case.name.clone()),
             to: ("{lib}".into(), "QRPGLESRC".into(), "*FROMMBR".into()),
             ..rpg3::report::Params::default()
         };
-        let ours = rpg_oracle::listing::mask(&rpg3::report::report(&conv, &p), &rpg_oracle::listing::Mask::default());
+        let ours = rpg_oracle::listing::mask(&rpg3::report::report(&conv, &params), &rpg_oracle::listing::Mask::default());
         fs::write(Kit::ours_dir().join(format!("{}.rpt", case.name)), ours.join("\n") + "\n").unwrap();
         let keep = |l: &&str| l.len() > 1;
-        let a: Vec<&str> = e.lines().filter(keep).collect();
+        let a: Vec<&str> = ibm.lines().filter(keep).collect();
         let b: Vec<&str> = ours.iter().map(String::as_str).filter(keep).collect();
         if a != b {
             let i = (0..a.len().max(b.len())).find(|&i| a.get(i) != b.get(i)).unwrap_or(0);

@@ -33,7 +33,7 @@ pub(super) fn convert(r: &str, at: usize, out: &mut Out) {
         let mut line = Rec::new("C", r);
         let lv = if k == 0 { level.clone() } else { "AN".to_string() };
         line.put("level", &lv).put("cond", c);
-        out.push(Sect::C, line.text(), at);
+        out.push(Sect::C, &line.text(), at);
     }
     let mut c = Rec::new("C", r);
     let lv = if before.is_empty() { level.clone() } else { "AN".to_string() };
@@ -58,5 +58,5 @@ pub(super) fn convert(r: &str, at: usize, out: &mut Out) {
     if !comment.is_empty() {
         c.at(81, &comment);
     }
-    out.push(Sect::C, c.text(), at);
+    out.push(Sect::C, &c.text(), at);
 }
