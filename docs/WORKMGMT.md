@@ -1011,6 +1011,14 @@ The storage service samples Linux and compares two samples:
 | a pool's transitions | the activity-level gate's counters |
 | a unit's requests and busy % | `/sys/class/block/<unit>/stat` |
 
+Every display and Collection Services (`docs/PERF.md`) look through
+one sampling function: a look less than half a second old is shared,
+so figures shown at once agree. Besides Linux, the service counts what
+jobs ask of it: database reads and writes and full opens by request
+kind, and interactive transactions and their response time from the
+jobs' status reports (input at a display to the next wait there).
+`WRKSYSACT` is Performance Tools' (`QS00PT1`).
+
 `WRKACTJOB` and `WRKSYSACT` measure from their previous use;
 `WRKSYSSTS`, `WRKDSKSTS` and `QWCRSSTS` from their first use or the last
 `RESET(*YES)`. `WRKACTJOB` has three views: `VIEW(1)` status (the

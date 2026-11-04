@@ -344,6 +344,11 @@ work/         work management: jobs, spooling, process messages
   spool/        spooling without the store: src/scs/ SCS encode and decode, printer.rs the line
                 printer (spacing, skipping, overflow, FCFC), ddsprt.rs DDS printer formats,
                 view.rs text, FCFC, *PRTCTL and hex views, pdf.rs the PDF writer
+  perf/         Collection Services (docs/PERF.md): profile.rs categories and profiles,
+                config.rs CFGPFRCOL, sample.rs an interval, mgtcol.rs the *MGTCOL payload,
+                qapm.rs the QAPM* model files (dds/, IBM's V7R1M0 layout) and their records,
+                adjust.rs QPFRADJ; the collector is lic/slic/src/stgsvc/perfcol.rs, the
+                commands lic/slic/src/cpp/pfrcmd.rs
   print/        network printing: src/transform/ the host print transform (ascii, pcl and
                 page for the LaserJet models, custom for *WSCST), wscst.rs the customizing
                 object, pjl.rs, src/sink/ (raw 9100, ipp, lpr with control.rs, the IBM-to-IBM
@@ -562,6 +567,7 @@ cargo test -p ifs                         # the IFS over MemBackend
 cargo test -p nettools                    # PING, TRACEROUTE, NETSTAT rows, the communications trace
 cargo test -p ifscmd                      # the IFS commands and CPYTOSTMF/CPYFRMSTMF over MemBackend
 cargo test -p qsyslib -p stg              # /QSYS.LIB over a store; the IFS over the link
+cargo test -p perf                        # Collection Services; tests/ffd.rs diffs the QAPM* files with the primary's DSPFFD
 cargo test -p print                       # the host print transform, PCL goldens, fake printer servers
 cargo test -p ftp                         # FTP sessions in memory, the client against the server over loopback
 cargo test -p tape -p optical -p imgclg -p medio   # tape, optical, image catalogs, saves on media
