@@ -36,7 +36,7 @@
 <form method="get"><table class="filter" cellspacing="0"><tr><td>Entry type:</td><td><select name="t"><option>*ALL</option><option>AF - Authority failure</option><option>PW - Password</option><option>CP - User profile change</option><option>SV - System value</option><option>CO - Create object</option><option>DO - Delete object</option><option>ZC - Object change</option><option>JS - Job start</option></select></td><td>User:</td><td><input type="text" name="u" value="*ALL" size="10"></td><td>From:</td><td><input type="text" name="f" value="10/29/26" size="8"></td><td>To:</td><td><input type="text" name="to" value="10/29/26" size="8"></td><td><input type="submit" value="Go"> </td></tr></table></form><pre class="out">TIME      TYPE  USER       JOB                              OBJECT / DETAIL
 14:02:17  AF    WEBUSER    123457/QTMHHTTP/ADMIN            ADMIN       QSYS       *JOB     Violation A  (not authorized to object)
 13:50:01  PW    QSECOFR    123200/QSYS/QINTER               Sign-on     QPADEV0001 Status P  (password valid)
-13:05:00  CO    CWELLMAN   123488/CWELLMAN/QPADEV0003       INVLOAD     HLINV      *PGM     Create  (replace)
+13:05:00  CO    TESTUSER   123488/TESTUSER/QPADEV0003       INVLOAD     HLINV      *PGM     Create  (replace)
 12:10:33  AF    QTMHHTTP   123457/QTMHHTTP/ADMIN            WEBUSER     QSYS       *USRPRF  Violation A
 11:42:17  AF    WEBUSER    123456/QTMHHTTP/ADMIN            /qs400/httpadmin/instance/WEBSTORE   Violation A
 11:00:00  CP    QSYS       123200/QSYS/QINTER               GUEST       QSYS       *USRPRF  Change  STATUS(*DISABLED)

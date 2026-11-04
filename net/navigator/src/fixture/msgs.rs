@@ -76,13 +76,13 @@ fn qsysopr_newest() -> Vec<QueuedMessage> {
                 today(13, 58, 2),
                 "CPA5305",
                 99,
-                "Record 4120 in use by job 123503/CWELLMAN/INVBATCH, member ASSETS file ASSETS in HLINV. (C R)",
-                "123503/CWELLMAN/INVBATCH",
+                "Record 4120 in use by job 123503/TESTUSER/INVBATCH, member ASSETS file ASSETS in HLINV. (C R)",
+                "123503/TESTUSER/INVBATCH",
                 "QDBSIGEX",
             ),
             "C R",
             "C",
-            "Record 4120 of member ASSETS in file ASSETS in library HLINV is locked by another job and the wait time of 60 seconds expired. Job 123488/CWELLMAN/QPADEV0003 holds the lock (program HLINV/INVMAIN, update pending).",
+            "Record 4120 of member ASSETS in file ASSETS in library HLINV is locked by another job and the wait time of 60 seconds expired. Job 123488/TESTUSER/QPADEV0003 holds the lock (program HLINV/INVMAIN, update pending).",
             "Reply C to cancel the request, or R to try the operation again after the record has been released. To find the job holding the lock, use the Locks page of this job or the command DSPRCDLCK FILE(HLINV/ASSETS) MBR(ASSETS) RCDNBR(4120).",
         ),
         info(
@@ -145,7 +145,7 @@ fn qsysopr_newest() -> Vec<QueuedMessage> {
                 "CPA0702",
                 99,
                 "CPF0001 received by procedure INVLOAD. (C D I R)",
-                "123503/CWELLMAN/INVBATCH",
+                "123503/TESTUSER/INVBATCH",
                 "INVLOAD",
             ),
             "C D I R",
@@ -194,10 +194,10 @@ fn qsysopr_night() -> Vec<QueuedMessage> {
 const QHST_NEWEST: &[(u32, u32, u32, &str, u8, &str, &str)] = &[
     (14, 1, 55, "CPF1164", 0, "123499/QPGMR/RGZPFM00", "Job 123499/QPGMR/RGZPFM00 ended on 10/29/26 at 14:01:55; 1 seconds used; end code 0."),
     (14, 1, 54, "CPF1124", 0, "123499/QPGMR/RGZPFM00", "Job 123499/QPGMR/RGZPFM00 started on 10/29/26 at 14:01:54 in subsystem QBATCH in QSYS."),
-    (13, 58, 2, "CPA5305", 99, "123503/CWELLMAN/INVBATCH", "Record 4120 in use by job 123503/CWELLMAN/INVBATCH, member ASSETS file ASSETS in HLINV. (C R)"),
+    (13, 58, 2, "CPA5305", 99, "123503/TESTUSER/INVBATCH", "Record 4120 in use by job 123503/TESTUSER/INVBATCH, member ASSETS file ASSETS in HLINV. (C R)"),
     (13, 40, 11, "CPF0907", 40, "123105/QSYS/QSPLMAINT", "Serious storage condition may exist. Press HELP."),
     (13, 22, 7, "CPA4002", 99, "123150/QSPLJOB/PRT01", "Verify alignment on printer PRT01. (I G N R C)"),
-    (13, 5, 10, "CPF1241", 0, "123488/CWELLMAN/QPADEV0003", "Job 123488/CWELLMAN/QPADEV0003 submitted to job queue QBATCH in QGPL."),
+    (13, 5, 10, "CPF1241", 0, "123488/TESTUSER/QPADEV0003", "Job 123488/TESTUSER/QPADEV0003 submitted to job queue QBATCH in QGPL."),
     (12, 50, 0, "CPC1129", 0, "123200/QSYS/QINTER", "Job 123490/OPERATOR/QPADEV0004 started."),
     (12, 49, 58, "CPF1164", 0, "123489/OPERATOR/QPADEV0004", "Job 123489/OPERATOR/QPADEV0004 ended on 10/29/26 at 12:49:58; 3 seconds used; end code 0."),
     (12, 10, 33, "CPF2204", 30, "123457/QTMHHTTP/ADMIN", "User profile WEBUSER not found."),
@@ -205,7 +205,7 @@ const QHST_NEWEST: &[(u32, u32, u32, &str, u8, &str, &str)] = &[
     (11, 0, 0, "CPI2209", 0, "123200/QSYS/QINTER", "User profile GUEST disabled because maximum number of sign-on attempts reached."),
     (10, 59, 58, "CPF1107", 30, "123200/QSYS/QINTER", "Password not correct for user profile GUEST."),
     (10, 59, 51, "CPF1107", 30, "123200/QSYS/QINTER", "Password not correct for user profile GUEST."),
-    (10, 31, 49, "CPA0702", 99, "123503/CWELLMAN/INVBATCH", "CPF0001 received by procedure INVLOAD. (C D I R)"),
+    (10, 31, 49, "CPA0702", 99, "123503/TESTUSER/INVBATCH", "CPF0001 received by procedure INVLOAD. (C D I R)"),
     (9, 15, 12, "TCP1A03", 10, "123380/QTCP/QTCPIP", "Interface 10.0.10.21 on line ETHLIN02 started."),
     (9, 0, 2, "CPC3703", 0, "123350/QSECOFR/SAVDAILY", "2 objects saved from library QGPL."),
     (6, 0, 4, "HTP8001", 0, "123471/QTMHHTTP/API", "HTTP server instance API started, listening on *:9443."),
@@ -264,8 +264,8 @@ fn queues() -> (BTreeMap<String, Vec<QueuedMessage>>, u32) {
             severity: 80,
             sent: secs(2026, 10, 28, 17, 40, 0),
             text: "can you release job queue QPGMR when the RGZPFM finishes? Thanks.".into(),
-            job: "123311/CWELLMAN/QPADEV0003".into(),
-            user: "CWELLMAN".into(),
+            job: "123311/TESTUSER/QPADEV0003".into(),
+            user: "TESTUSER".into(),
             program: "QWCSNDMS".into(),
             ..QueuedMessage::default()
         },
@@ -281,8 +281,8 @@ fn queues() -> (BTreeMap<String, Vec<QueuedMessage>>, u32) {
             today(13, 5, 10),
             "CPF1241",
             0,
-            "Job 123488/CWELLMAN/QPADEV0003 submitted to job queue QBATCH in QGPL.",
-            "123488/CWELLMAN/QPADEV0003",
+            "Job 123488/TESTUSER/QPADEV0003 submitted to job queue QBATCH in QGPL.",
+            "123488/TESTUSER/QPADEV0003",
             "QWTSCSBJ",
         ),
     ];
@@ -294,12 +294,12 @@ fn queues() -> (BTreeMap<String, Vec<QueuedMessage>>, u32) {
         "123105/QSYS/QSPLMAINT",
         "QSPLMAINT",
     )];
-    let cwellman = vec![info(
+    let testuser = vec![info(
         today(10, 31, 50),
         "CPF1241",
         0,
-        "Job 123503/CWELLMAN/INVBATCH submitted to job queue QBATCH in QGPL.",
-        "123488/CWELLMAN/QPADEV0003",
+        "Job 123503/TESTUSER/INVBATCH submitted to job queue QBATCH in QGPL.",
+        "123488/TESTUSER/QPADEV0003",
         "QWTSCSBJ",
     )];
     let qtcp = vec![info(
@@ -314,7 +314,7 @@ fn queues() -> (BTreeMap<String, Vec<QueuedMessage>>, u32) {
         ("QSYS/QSYSOPR".to_string(), opr),
         ("QSYS/QSYSMSG".to_string(), sysmsg),
         ("QUSRSYS/QSECOFR".to_string(), own),
-        ("QUSRSYS/CWELLMAN".to_string(), cwellman),
+        ("QUSRSYS/TESTUSER".to_string(), testuser),
         ("QUSRSYS/QTCP".to_string(), qtcp),
         ("QUSRSYS/QPGMR".to_string(), Vec::new()),
         ("QUSRSYS/WEBUSER".to_string(), Vec::new()),
@@ -460,7 +460,7 @@ impl FixtureMsgs {
 
 impl Msgs for FixtureMsgs {
     fn queues(&self, _user: &str) -> Vec<(String, String)> {
-        ["QSYS/QSYSOPR", "QSYS/QSYSMSG", "QUSRSYS/QSECOFR", "QUSRSYS/CWELLMAN", "QUSRSYS/QTCP"]
+        ["QSYS/QSYSOPR", "QSYS/QSYSMSG", "QUSRSYS/QSECOFR", "QUSRSYS/TESTUSER", "QUSRSYS/QTCP"]
             .iter()
             .map(|q| {
                 let (l, n) = split(q, "QUSRSYS");

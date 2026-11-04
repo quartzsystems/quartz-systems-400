@@ -40,13 +40,13 @@
 <th>Function</th>
 </tr>
 <tr>
-<td><span class="mono">123503/CWELLMAN/INVBATCH</span></td>
-<td>CWELLMAN</td>
+<td><span class="mono">123503/TESTUSER/INVBATCH</span></td>
+<td>TESTUSER</td>
 <td><span class="err">MSGW</span></td>
 <td>QBATCH</td>
 <td><span class="mono">PGM-HLINV/INVLOAD</span></td>
 </tr>
-</table><form method="post"><table class="props"><tr><th>How to end <a class="help" href="../shared/help.html" target="_blank">?</a></th><td><input type="radio" name="opt" value="*CNTRLD" checked> Controlled (*CNTRLD) - let the job clean up<br><input type="radio" name="opt" value="*IMMED"> Immediate (*IMMED)</td></tr><tr><th>Delay time</th><td><input type="text" name="delay" value="30" size="4"> seconds, then end immediately</td></tr><tr><th>Delete spooled files</th><td><input type="radio" name="spl" value="*NO" checked> No (*NO) <input type="radio" name="spl" value="*YES"> Yes (*YES)</td></tr><tr><th>Maximum log entries</th><td><input type="text" name="log" value="*SAME" size="8"></td></tr><tr><th>Additional interactive jobs</th><td><select name="adl"><option>*NONE</option><option>*GRPJOB</option><option>*ALL</option></select></td></tr></table><p class="small grey">Equivalent command: <span class="mono">ENDJOB JOB(123503/CWELLMAN/INVBATCH) OPTION(*CNTRLD) DELAY(30) SPLFILE(*NO)</span></p><div class="buttons"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
+</table><form method="post"><table class="props"><tr><th>How to end <a class="help" href="../shared/help.html" target="_blank">?</a></th><td><input type="radio" name="opt" value="*CNTRLD" checked> Controlled (*CNTRLD) - let the job clean up<br><input type="radio" name="opt" value="*IMMED"> Immediate (*IMMED)</td></tr><tr><th>Delay time</th><td><input type="text" name="delay" value="30" size="4"> seconds, then end immediately</td></tr><tr><th>Delete spooled files</th><td><input type="radio" name="spl" value="*NO" checked> No (*NO) <input type="radio" name="spl" value="*YES"> Yes (*YES)</td></tr><tr><th>Maximum log entries</th><td><input type="text" name="log" value="*SAME" size="8"></td></tr><tr><th>Additional interactive jobs</th><td><select name="adl"><option>*NONE</option><option>*GRPJOB</option><option>*ALL</option></select></td></tr></table><p class="small grey">Equivalent command: <span class="mono">ENDJOB JOB(123503/TESTUSER/INVBATCH) OPTION(*CNTRLD) DELAY(30) SPLFILE(*NO)</span></p><div class="buttons"><input type="submit" name="ok" value="OK"><input type="submit" name="cancel" value="Cancel"></div></form>
 </td>
 </tr>
 <tr><td class="footer" colspan="2">QS/400 V1R1M0 &middot; Quartz Systems</td></tr>

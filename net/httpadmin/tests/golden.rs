@@ -519,7 +519,7 @@ fn cert_import() {
     let id = b.cookie.clone().unwrap();
     // The path typed last time.
     b.admin.sessions.update(&id, |s| {
-        s.data.insert("certimp.path".into(), "/home/CWELLMAN/certs/webstore.p12".into());
+        s.data.insert("certimp.path".into(), "/home/TESTUSER/certs/webstore.p12".into());
     });
     let r = b.get("/certs/import");
     assert_eq!(r.status, 200);

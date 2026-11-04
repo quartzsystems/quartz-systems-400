@@ -30,7 +30,7 @@ impl Default for FixtureSecurity {
 const NEWEST: &[(u32, u32, u32, &str, &str, &str, &str)] = &[
     (14, 2, 17, "AF", "WEBUSER", "123457/QTMHHTTP/ADMIN", "ADMIN       QSYS       *JOB     Violation A  (not authorized to object)"),
     (13, 50, 1, "PW", "QSECOFR", "123200/QSYS/QINTER", "Sign-on     QPADEV0001 Status P  (password valid)"),
-    (13, 5, 0, "CO", "CWELLMAN", "123488/CWELLMAN/QPADEV0003", "INVLOAD     HLINV      *PGM     Create  (replace)"),
+    (13, 5, 0, "CO", "TESTUSER", "123488/TESTUSER/QPADEV0003", "INVLOAD     HLINV      *PGM     Create  (replace)"),
     (12, 10, 33, "AF", "QTMHHTTP", "123457/QTMHHTTP/ADMIN", "WEBUSER     QSYS       *USRPRF  Violation A"),
     (11, 42, 17, "AF", "WEBUSER", "123456/QTMHHTTP/ADMIN", "/qs400/httpadmin/instance/WEBSTORE   Violation A"),
     (11, 0, 0, "CP", "QSYS", "123200/QSYS/QINTER", "GUEST       QSYS       *USRPRF  Change  STATUS(*DISABLED)"),

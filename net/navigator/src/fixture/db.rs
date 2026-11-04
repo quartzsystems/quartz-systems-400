@@ -206,7 +206,7 @@ fn schemas() -> Vec<Schema> {
         created: secs(2026, m, d, 9, 0, 0),
     };
     vec![
-        s("HLINV", "Homelab inventory", "CWELLMAN", "HLINV/QSQJRN", 881, 9, 14),
+        s("HLINV", "Homelab inventory", "TESTUSER", "HLINV/QSQJRN", 881, 9, 14),
         s("PAYROLL", "Payroll", "QSECOFR", "PAYROLL/QSQJRN", 412, 3, 2),
         s("QGPL", "General purpose library", "QSYS", "", 1_204, 1, 1),
         s("QSYS2", "System catalog", "QSYS", "", 3_310, 1, 1),
@@ -333,7 +333,7 @@ impl Db for FixtureDb {
         Some(TableDesc {
             schema: schema.into(),
             system_name: t.obj.name.chars().take(10).collect(),
-            owner: "CWELLMAN".into(),
+            owner: "TESTUSER".into(),
             created: secs(2026, 9, 14, 9, 30, 0),
             format: t.obj.name.chars().take(9).collect::<String>() + "R",
             deleted: if assets { 3 } else { 0 },

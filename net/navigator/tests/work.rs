@@ -83,12 +83,12 @@ fn filters_sort_and_pages() {
 #[test]
 fn end_job_confirm() {
     let mut b = Browser::signed_on();
-    let t = ok(&mut b, "/job/123503/CWELLMAN/INVBATCH/end");
+    let t = ok(&mut b, "/job/123503/TESTUSER/INVBATCH/end");
     assert_golden(&t, "nav/end-job-confirm.html", &[]);
     // A GET changes nothing; the POST runs the command its fields make.
     assert!(ran(&b).is_empty());
     let r = b.post(
-        "/job/123503/CWELLMAN/INVBATCH/end",
+        "/job/123503/TESTUSER/INVBATCH/end",
         &[
             ("opt", "*IMMED"),
             ("delay", "30"),
@@ -101,7 +101,7 @@ fn end_job_confirm() {
     assert_eq!(r.header("Location"), Some("/qs400/navigator/jobs"));
     assert_eq!(
         ran(&b),
-        ["ENDJOB JOB(123503/CWELLMAN/INVBATCH) OPTION(*IMMED) SPLFILE(*YES)"]
+        ["ENDJOB JOB(123503/TESTUSER/INVBATCH) OPTION(*IMMED) SPLFILE(*YES)"]
     );
     let t = ok(&mut b, "/jobs");
     assert!(t.contains("CPC1125") && t.contains("317"), "{t}");
@@ -396,7 +396,7 @@ fn output_queues_and_spooled_files() {
         "only held files"
     );
     // Delete through the confirmation.
-    let f = "/splf/123401/CWELLMAN/INVBATCH/QSYSPRT/401";
+    let f = "/splf/123401/TESTUSER/INVBATCH/QSYSPRT/401";
     assert!(ok(&mut b, &format!("{f}/confirm")).contains("Confirm Delete Spooled File"));
     b.post(&format!("{f}/confirm"), &[("ok", "OK")]);
     b.post(
@@ -407,7 +407,7 @@ fn output_queues_and_spooled_files() {
     assert_eq!(
         ran(&b),
         [
-            "DLTSPLF FILE(QSYSPRT) JOB(123401/CWELLMAN/INVBATCH) SPLNBR(401)",
+            "DLTSPLF FILE(QSYSPRT) JOB(123401/TESTUSER/INVBATCH) SPLNBR(401)",
             "CHGSPLFA FILE(QPJOBLOG) JOB(123400/QPGMR/NIGHTLY) SPLNBR(400) OUTQ(QGPL/PRT02)",
             "RLSOUTQ OUTQ(QGPL/PRT02)",
         ]
@@ -419,7 +419,7 @@ fn output_queues_and_spooled_files() {
 #[test]
 fn spooled_view() {
     let mut b = Browser::signed_on();
-    let v = "/splf/123402/CWELLMAN/INVBATCH/INVRPT/402";
+    let v = "/splf/123402/TESTUSER/INVBATCH/INVRPT/402";
     assert_golden(
         &ok(&mut b, v),
         "nav/spooled-view.html",
@@ -466,7 +466,7 @@ fn spooled_view() {
     let page1 = navigator::fixture::fixture()
         .env
         .work
-        .spooled_text("QSECOFR", "123402/CWELLMAN/INVBATCH", "INVRPT", 402)
+        .spooled_text("QSECOFR", "123402/TESTUSER/INVBATCH", "INVRPT", 402)
         .unwrap()
         .1;
     assert!(ok(&mut b, v).contains(&qsweb::html::esc(&page1[0])));
@@ -566,8 +566,8 @@ fn scheduled_jobs() {
 fn gets_change_nothing() {
     let mut b = Browser::signed_on();
     for route in [
-        "/job/123503/CWELLMAN/INVBATCH/end",
-        "/job/123503/CWELLMAN/INVBATCH/hold",
+        "/job/123503/TESTUSER/INVBATCH/end",
+        "/job/123503/TESTUSER/INVBATCH/hold",
         "/jobq/QGPL/QBATCH/confirm",
         "/sbs/QBATCH/end",
         "/outq/QGPL/QPRINT/confirm",

@@ -15,7 +15,7 @@ const JOBS: &[(&str, &str, &str, &str, u32, u64, u64)] = &[
     ("123501", "QPGMR", "NIGHTLY", "BCH", 148, 812, 0),
     ("123502", "QPGMR", "RGZPFM01", "BCH", 61, 1_420, 0),
     ("123411", "QUSER", "QZDASOINIT", "PJ", 22, 88, 14),
-    ("123488", "CWELLMAN", "QPADEV0003", "INT", 12, 31, 3),
+    ("123488", "TESTUSER", "QPADEV0003", "INT", 12, 31, 3),
     ("123303", "QSYS", "QDBSRV03", "SYS", 6, 212, 0),
     ("123456", "QTMHHTTP", "ADMIN", "BCH", 3, 17, 0),
     ("123462", "QTMHHTTP", "NAVIGATOR", "BCH", 3, 9, 0),

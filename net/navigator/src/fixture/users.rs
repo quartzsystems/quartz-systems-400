@@ -52,7 +52,7 @@ const USERS: &[Row] = &[
     ("QTMHHTTP", "HTTP server user", true, "*USER", (10, 29, 6, 0, 1), "", "SERVICES WEBUSERS", 12),
     ("QTCP", "TCP/IP", true, "*USER", (10, 27, 6, 0, 0), "", "", 31),
     ("QSSHD", "SSH daemon", true, "*USER", (10, 27, 6, 0, 2), "", "SERVICES WEBUSERS", 3),
-    ("CWELLMAN", "Cody Wellman", true, "*SECOFR", (10, 29, 13, 5, 0), "ADMINS", "OPS WEBUSERS WAREHOUSE ACCTG", 37),
+    ("TESTUSER", "Cody Wellman", true, "*SECOFR", (10, 29, 13, 5, 0), "ADMINS", "OPS WEBUSERS WAREHOUSE ACCTG", 37),
     ("OPERATOR", "System operator", true, "*SYSOPR", (10, 29, 12, 50, 0), "OPS", "WEBUSERS WAREHOUSE", 6),
     ("WEBUSER", "Access for Web default user", true, "*USER", (10, 29, 11, 41, 50), "WEBUSERS", "", 0),
     ("GUEST", "Guest profile", false, "*USER", (10, 12, 9, 20, 17), "WEBUSERS", "", 0),
@@ -152,10 +152,10 @@ fn lists() -> Vec<AuthList> {
         l(
             "INVDATA",
             "Inventory database files",
-            "CWELLMAN",
+            "TESTUSER",
             14,
             vec![
-                e("CWELLMAN", "*ALL", true),
+                e("TESTUSER", "*ALL", true),
                 e("*PUBLIC", "*EXCLUDE", false),
                 e("WAREHOUSE", "*CHANGE", false),
                 e("INVSVC", "*CHANGE", false),
@@ -196,7 +196,7 @@ fn lists() -> Vec<AuthList> {
             vec![
                 e("QPGMR", "*ALL", true),
                 e("*PUBLIC", "*USE", false),
-                e("CWELLMAN", "*ALL", false),
+                e("TESTUSER", "*ALL", false),
                 e("OPERATOR", "*USE", false),
                 e("BACKUP", "*USE", false),
                 e("JDOE", "*EXCLUDE", false),

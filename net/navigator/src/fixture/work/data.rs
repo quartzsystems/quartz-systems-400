@@ -74,14 +74,14 @@ const FIRST: &[Row] = &[
     ),
     (
         "123488",
-        "CWELLMAN",
+        "TESTUSER",
         "QPADEV0003",
         "INT",
         "QINTER",
         "RUN",
         12,
         "PGM-HLINV/INVMAIN",
-        "CWELLMAN",
+        "TESTUSER",
     ),
     (
         "123490",
@@ -118,14 +118,14 @@ const FIRST: &[Row] = &[
     ),
     (
         "123503",
-        "CWELLMAN",
+        "TESTUSER",
         "INVBATCH",
         "BCH",
         "QBATCH",
         "MSGW",
         0,
         "PGM-HLINV/INVLOAD",
-        "CWELLMAN",
+        "TESTUSER",
     ),
     (
         "123411",
@@ -294,7 +294,7 @@ pub fn jobs() -> Vec<Job> {
         n
     };
     out.push(job(next(), "QSYS", "QCTL", "SBS", "QCTL", "DEQW", ""));
-    let users = ["CWELLMAN", "OPERATOR", "QPGMR", "WEBUSER"];
+    let users = ["TESTUSER", "OPERATOR", "QPGMR", "WEBUSER"];
     for i in 0..11 {
         let u = users[i % users.len()];
         out.push(job(
@@ -791,7 +791,7 @@ fn qprint(i: u32) -> Splf {
     const PAGES: [u32; 10] = [1, 3, 12, 1, 44, 2, 7, 1, 2, 118];
     const USERS: [(&str, &str); 5] = [
         ("QPGMR", "NIGHTLY"),
-        ("CWELLMAN", "INVBATCH"),
+        ("TESTUSER", "INVBATCH"),
         ("QSECOFR", "QPADEV0001"),
         ("OPERATOR", "QPADEV0004"),
         ("QTMHHTTP", "ADMIN"),
@@ -836,14 +836,14 @@ pub fn spooled_files() -> Vec<Splf> {
     // The inventory report the viewer opens.
     out.push(Splf {
         file: "INVRPT".into(),
-        user: "CWELLMAN".into(),
+        user: "TESTUSER".into(),
         user_data: "INVBATCH".into(),
         status: "RDY".into(),
         pages: 12,
         copies: 1,
         form_type: "*STD".into(),
         created: secs(2026, 10, 29, 6, 14, 2),
-        job: "123402/CWELLMAN/INVBATCH".into(),
+        job: "123402/TESTUSER/INVBATCH".into(),
         number: 402,
         outq: "QGPL/QPRINT".into(),
     });
@@ -978,7 +978,7 @@ pub fn schedule() -> Vec<ScheduleEntry> {
         &["*ALL"],
         "06:00",
         at(10, 30, 6, 0),
-        "CWELLMAN",
+        "TESTUSER",
     );
     inv.jobq = "HLINV/INVLOAD".into();
     let mut cln = e(
@@ -1042,7 +1042,7 @@ pub fn schedule() -> Vec<ScheduleEntry> {
 /// Page 1 of the inventory report (`INVRPT` number 402).
 pub const INVRPT_PAGE1: &[&str] = &[
     "QPRINT    INVRPT      INVENTORY REPORT BY LOCATION                       QSHQ400   10/29/26  06:14:02   PAGE    1",
-    "                                                                            HLINV/INVRPT      USER CWELLMAN",
+    "                                                                            HLINV/INVRPT      USER TESTUSER",
     "",
     "LOCATION  ASSET TAG   MANUFACTURER      MODEL                 SERIAL              TYPE        STATUS   ACQUIRED    NOTES",
     "--------  ----------  ----------------  --------------------  ------------------  ----------  -------  ----------  ------------------------",

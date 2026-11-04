@@ -82,8 +82,8 @@ fn user_props() {
     assert_eq!(ran(&b).last().unwrap(), "CHGUSRPRF USRPRF(WEBUSER) PASSWORD('Secret1') PWDEXP(*YES)");
     // Other tabs.
     assert!(ok(&mut b, "/user/WEBUSER/groups").contains(">WEBUSERS</a>"));
-    assert!(ok(&mut b, "/user/ADMINS/groups").contains(">CWELLMAN</a>"));
-    assert!(ok(&mut b, "/user/CWELLMAN/authorities").contains("INVDATA"));
+    assert!(ok(&mut b, "/user/ADMINS/groups").contains(">TESTUSER</a>"));
+    assert!(ok(&mut b, "/user/TESTUSER/authorities").contains("INVDATA"));
     assert!(ok(&mut b, "/user/WEBUSER/personal").contains("name=\"lang\""));
     // Without *SECADM: Not authorized.
     let mut w = Browser::as_user("QPGMR");

@@ -87,15 +87,15 @@ fn my_messages() {
     let t = ok(&mut b, "/mymsgs");
     assert_golden(&t, "nav/my-messages.html", &[]);
     // Send: SNDMSG to the user, an inquiry's reply to my queue.
-    let r = b.post("/mymsgs", &[("to", "CWELLMAN"), ("toq", ""), ("m", "Lunch at 12?"), ("t", "*INQ"), ("send", "Send")]);
+    let r = b.post("/mymsgs", &[("to", "TESTUSER"), ("toq", ""), ("m", "Lunch at 12?"), ("t", "*INQ"), ("send", "Send")]);
     assert_eq!(r.header("Location"), Some("/qs400/navigator/mymsgs"));
     assert_eq!(
         ran(&b).last().unwrap(),
-        "SNDMSG MSG('Lunch at 12?') TOUSR(CWELLMAN) MSGTYPE(*INQ) RPYMSGQ(QUSRSYS/QSECOFR)"
+        "SNDMSG MSG('Lunch at 12?') TOUSR(TESTUSER) MSGTYPE(*INQ) RPYMSGQ(QUSRSYS/QSECOFR)"
     );
     assert!(ok(&mut b, "/mymsgs").contains("CPC2402"));
     let qs = b.fx.msgs.queues.lock().unwrap();
-    assert!(qs["QUSRSYS/CWELLMAN"].iter().any(|m| m.inquiry && m.text == "Lunch at 12?"));
+    assert!(qs["QUSRSYS/TESTUSER"].iter().any(|m| m.inquiry && m.text == "Lunch at 12?"));
 }
 
 #[test]
