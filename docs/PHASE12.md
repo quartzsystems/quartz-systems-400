@@ -57,7 +57,12 @@ started before Phase 12, against formats that were not yet frozen.
 They are post-Phase-12 licensed programs: this phase touches them only
 where Section 2 (the format freeze) and Section 7 (the management API
 over QAP) require, and each must be re-verified in its own handoff once
-Section 2 has landed.
+Section 2 has landed. They ship on the V1R1M0 media all the same
+(QS00DG1 HTTP Server, QS00NAV Navigator; QS00AFW stays reserved), so
+after the freeze their tests ran on the frozen tree (the release
+relabelled their footers, and a fixture account was renamed for the
+hygiene rule) and their QEMU steps 64, 70 and 86 to 88 ran with the
+release verification.
 
 ## Carried items
 

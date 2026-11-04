@@ -64,6 +64,11 @@ protocol (Proxmox and libvirt see it), shown in `WRKHDWRSC *CMN`;
 with it; problem reports sent to the update service
 (`SNDSRVRQS ACTION(*REPORT)`).
 
+**Web.** The HTTP Server (QS00DG1) with HTTP Server Administration on
+port 2001, and Navigator for QS/400 (QS00NAV) on 2002 and 2005, ship as
+licensed programs on the media (`HTTPADMIN.md`, `NAVIGATOR.md`); both were
+checked again on the frozen V1R1M0 tree (QEMU steps 64, 70, 86 to 88).
+
 **Tools.** `tools/fmtcheck` (the format freeze), `tools/fuzz` (a
 coverage-guided fuzzer in Rust over 18 parsers), `tools/helpaudit`,
 `tools/textaudit`, `tools/kcbuild` (the Knowledge Center, on the install
@@ -78,8 +83,9 @@ media), `build soak`, `build release`.
   (`CONSOLE.md`).
 - A diskless network install: the response file comes over the network,
   the payload from a CD, a USB stick or BMC virtual media.
-- The web licensed programs (HTTP Server Administration, Navigator,
-  Access for Web, the Knowledge Center served over HTTP): after V1R1M0.
+- Access for Web (QS00AFW, reserved) and the Knowledge Center served over
+  HTTP from `/QQS/ProdData/KnowledgeCenter`: after V1R1M0. The
+  Knowledge Center is on the install media (`QS400/KC/`).
 - BRMS, save while active, parallel saves, optical media libraries,
   remote journaling, IASPs (`PHASE11.md` Deferred).
 
