@@ -543,7 +543,9 @@ cargo test -p hwrsrc              # the hardware resource table, trees, hotplug 
 cargo test -p hwqual -p guestagent   # QSHWQUAL's checks and report; the guest agent's protocol
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
-cargo run -p build -- iso         # UEFI-bootable installation media
+cargo run -p build -- iso         # UEFI-bootable installation media (carries images/kc and images/ptf-baseline when built)
+cargo run -p build -- kc          # the Knowledge Center (tools/kcbuild) into images/kc
+cargo run -p build -- release     # release build, KC and PTF baseline on the media, target/release/VRM/ with SHA256SUMS(.sig)
 cargo run -p build -- test        # the QEMU suite: Phases 1 to 11, 78 steps (83 hardware resources in a guest of its own)
 cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
