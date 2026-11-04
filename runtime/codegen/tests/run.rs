@@ -45,6 +45,7 @@ REC:
 ",
         &[],
     );
+    // SAFETY: the type is the signature the IR above gives FACT.
     let fact: Fn1 = unsafe { f(r.addr("FACT")) };
     assert_eq!(fact(r.env(), 1, 0, 5), 120);
     assert_eq!(fact(r.env(), 1, 0, 12), 479_001_600);
@@ -80,6 +81,7 @@ L0:
 ",
         &[],
     );
+    // SAFETY: the type is the signature the IR above gives BUMP.
     let bump: Fn0 = unsafe { f(r.addr("BUMP")) };
     assert_eq!(bump(r.env(), 0, 0), 41);
     assert_eq!(bump(r.env(), 0, 0), 42);
@@ -115,6 +117,7 @@ L0:
 ",
         &[],
     );
+    // SAFETY: the type is the signature the IR above gives MAIN.
     let main: Fn0 = unsafe { f(r.addr("MAIN")) };
     assert_eq!(main(r.env(), 0, 0), 142);
 }
@@ -147,6 +150,7 @@ L0:
 "#,
         &[],
     );
+    // SAFETY: the type is the signature the IR above gives DIV.
     let div: extern "sysv64" fn(*mut Env, i64, i64, i32, i32) -> i32 = unsafe { f(r.addr("DIV")) };
     assert_eq!(div(r.env(), 2, 0, 17, 5), 3);
     assert_eq!(div(r.env(), 2, 0, -17, 5), -3);
@@ -157,6 +161,7 @@ L0:
     assert_eq!(r.pending(), 1210);
     r.clear_pending();
 
+    // SAFETY: the type is the signature the IR above gives IDX.
     let idx: Fn1 = unsafe { f(r.addr("IDX")) };
     assert_eq!(idx(r.env(), 1, 0, 0), 1);
     assert_eq!(idx(r.env(), 1, 0, 2), 3);
@@ -167,6 +172,7 @@ L0:
     assert_eq!(r.pending(), 603);
     r.clear_pending();
 
+    // SAFETY: the type is the signature the IR above gives NARROW.
     let narrow: extern "sysv64" fn(*mut Env, i64, i64, i64) -> i8 = unsafe { f(r.addr("NARROW")) };
     assert_eq!(narrow(r.env(), 1, 0, -100), -100);
     assert_eq!(narrow(r.env(), 1, 0, 200), 0);
@@ -213,6 +219,7 @@ END:
 ",
         &[],
     );
+    // SAFETY: the type is the signature the IR above gives CLASSIFY.
     let classify: Fn1 = unsafe { f(r.addr("CLASSIFY")) };
     assert_eq!(classify(r.env(), 1, 0, 0), 100);
     assert_eq!(classify(r.env(), 1, 0, 1), 101);
@@ -271,6 +278,7 @@ THREE:
 ",
         &[],
     );
+    // SAFETY: the type is the signature the IR above gives CALLS.
     let calls: Fn1 = unsafe { f(r.addr("CALLS")) };
     assert_eq!(calls(r.env(), 1, 0, 1), 10);
     assert_eq!(calls(r.env(), 1, 0, 2), 120);
@@ -321,6 +329,7 @@ L0:
 ",
         &[("DESCRIBED", described as *const () as usize)],
     );
+    // SAFETY: the type is the signature the IR above gives MAIN.
     let main: Fn1 = unsafe { f(r.addr("MAIN")) };
     // Two arguments; element, char, the literal's 2 bytes then the static's 10.
     assert_eq!(main(r.env(), 1, 0, 1), (22202) + (22210));
@@ -350,6 +359,7 @@ L0:
             .iter()
             .any(|x| x.target == codegen::RelocTarget::ImportProc("TWICE".into()))
     );
+    // SAFETY: the type is the signature the IR above gives MAIN.
     let main: Fn1 = unsafe { f(r.addr("MAIN")) };
     assert_eq!(main(r.env(), 1, 0, 7), 28);
 }
@@ -372,6 +382,7 @@ L0:
 "#,
         &[],
     );
+    // SAFETY: the type is the signature the IR above gives MAIN.
     let main: FnV = unsafe { f(r.addr("MAIN")) };
     main(r.env(), 0, 0);
     assert_eq!(
@@ -402,6 +413,7 @@ L0:
 ",
         &[],
     );
+    // SAFETY: the type is the signature the IR above gives MAIN.
     let main: Fn1 = unsafe { f(r.addr("MAIN")) };
     assert_eq!(main(r.env(), 1, 0, 4), 10 + 5);
     assert_eq!(main(r.env(), 1, 0, 3), 7 + 3);
@@ -424,6 +436,7 @@ L0:
 ",
         &[],
     );
+    // SAFETY: the type is the signature the IR above gives MAIN.
     let main: Fn1 = unsafe { f(r.addr("MAIN")) };
     assert_eq!(main(r.env(), 1, 0, 7), 30);
     assert_eq!(main(r.env(), 1, 0, -7), -30);
@@ -451,6 +464,7 @@ L0:
             .iter()
             .any(|x| x.target == codegen::RelocTarget::ImportProc("TWICE".into()))
     );
+    // SAFETY: the type is the signature the IR above gives MAIN.
     let main: Fn1 = unsafe { f(r.addr("MAIN")) };
     assert_eq!(main(r.env(), 1, 0, 21), 42);
 }

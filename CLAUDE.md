@@ -652,8 +652,11 @@ otherwise logs go to `target/logs/`.
   `net/nettools/src/sys/raw.rs` (`setsockopt`, `recvmsg` with control data,
   `AF_PACKET`), `media/tape/src/st/raw.rs` (the `st` and `sg` ioctls),
   `work/qsjob/src/platform/clock.rs` (`adjtimex`, which musl's libc binding lacks) and
-  `lic/slic/src/stgsvc/fiber.rs` (the running statement's yielder, on its own stack) and
-  `tools/fuzz/src/cov.rs` (the fuzzer reading LLVM's coverage counters; host tool only).
+  `lic/slic/src/stgsvc/fiber.rs` (the running statement's yielder, on its own stack),
+  `qsh/pase/src/platform.rs` (fork, unshare, the ID maps, pivot_root and exec of a PASE
+  program) and `tools/fuzz/src/cov.rs` (the fuzzer reading LLVM's coverage counters; host
+  tool only). Tests that call generated code (`runtime/codegen/tests/`,
+  `runtime/mi/tests/heap.rs`) use it too, each block with its `SAFETY` line.
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in
