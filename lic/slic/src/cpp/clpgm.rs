@@ -307,7 +307,11 @@ fn options_of(
     };
     let opts = cl::Options {
         name: name.to_string(),
-        actgrp: named("ACTGRP", "*CALLER"),
+        // *STGMDL with single-level storage is QILE, as on IBM i.
+        actgrp: match named("ACTGRP", "*CALLER").as_str() {
+            "*STGMDL" => "QILE".to_string(),
+            a => a.to_string(),
+        },
         dftactgrp: cmdname == "CRTCLPGM" || parms.yes("DFTACTGRP"),
         dbgview: named("DBGVIEW", "*STMT"),
         log: named("LOG", "*JOB"),
