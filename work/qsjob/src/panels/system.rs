@@ -5,8 +5,8 @@
 //! System and security displays: `DSPSYSVAL`/`WRKSYSVAL`,
 //! `DSPSFWRSC`, `DSPNETA`, `DSPAUTUSR`, `DSPUSRPRF`/`WRKUSRPRF`,
 //! `WRKCFGSTS`, `DSPDEVD`, `DSPAUTL`/`WRKAUTL`, `DSPSECAUD`,
-//! `WRKREGINF`.
-//! `TODO(phase8)`: `DSPSGNINF` (no shipped definition yet). A failed
+//! `WRKREGINF`. (IBM i has no `DSPSGNINF` command: Sign-on Information
+//! shows at sign-on when `QDSPSGNINF` or the profile asks.) A failed
 //! read ends the command with the service's message (no such value or
 //! profile) or the function check.
 

@@ -195,7 +195,8 @@ column name takes up to 128 (`CREATE TABLE` refuses a longer one with
 `SQL0107`, SQLSTATE `42622`).
 
 Validity keywords (`CHECK`, `VALUES`, `RANGE`, `COMP`) and `EDTWRD` are
-not kept in the file. `TODO(phase3)`: DSPFFD shows them when kept.
+not kept in the file, so `DSPFFD` does not show them (a deviation; the
+layout is frozen for V1R1M0).
 
 ### `KeyEntry` (16 bytes)
 

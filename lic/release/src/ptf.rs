@@ -2,8 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! PTF and cumulative package identifiers. Defined now; nothing consumes
-//! them until later phases (DSPPTF, GO LICPGM, QSZRTVPR: `TODO(phase11)`).
+//! PTF and cumulative package identifiers, as the PTF database
+//! (`DSPPTF`, `LODPTF`, `APYPTF`), the PTF manifests and the update
+//! catalog parse them.
 
 use std::fmt;
 use std::str::FromStr;

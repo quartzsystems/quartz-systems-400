@@ -189,9 +189,9 @@ pub enum FileDev {
     /// `*DB`: a database file.
     #[default]
     Db,
-    /// `*DSP`: a display file; `TODO(phase8)`.
+    /// `*DSP`: a display file, through the job's display.
     Display,
-    /// `*PRT`: a printer file; `TODO(phase8)`.
+    /// `*PRT`: a printer file, spooled.
     Printer,
 }
 
