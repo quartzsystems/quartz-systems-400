@@ -10,6 +10,7 @@
 pub mod audit;
 pub mod dltusrprf;
 pub mod object;
+pub mod seccheck;
 pub mod usrprf;
 
 use store::obj::ObjectId;

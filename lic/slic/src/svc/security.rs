@@ -29,6 +29,7 @@ dspaudjrne [ENTTYP(..)] [USRPRF(..)] [FROMTIME(date)] [TOTIME(date)] [OUTPUT(*|*
 cpyaudjrne ENTTYP(..) [OUTFILE(LIB/PREFIX)] [USRPRF(..)] [FROMTIME(..)] [TOTIME(..)]
 prtadpobj USRPRF(..) | prtusrobj USRPRF(..) | prtpvtaut OBJTYPE(..) | prtpubaut OBJTYPE(..)
 prtsysseca | prtjobdaut | prtsbsdaut | prtqaut
+qssecchk [OUTPUT(*|*PRINT)]   the system against the security model: pass, warn or fail per check
 ";
 
 /// The principal of the job running the command; the system's when
@@ -271,6 +272,16 @@ pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<Strin
             });
             lines.and_then(|l| show(system, &p, "QPSYSSEC", &l, true))
         }
+        "qssecchk" => {
+            let system_name = system.system_name();
+            let product = format!("{} {}", release::PRODUCT_ID, release::RELEASE);
+            let lines = in_store(system, |txn, env| {
+                let inputs = seccheck_inputs(txn, env);
+                let found = sec::cmd::seccheck::run(txn, env, &inputs)?;
+                Ok(sec::cmd::seccheck::report(&found, &system_name, &product, env.now))
+            });
+            lines.and_then(|l| show(system, &p, "QPSECCHK", &l, true))
+        }
         "prtjobdaut" | "prtsbsdaut" | "prtqaut" => {
             let lines = wm_report(system, cmd);
             let file = match cmd {
@@ -283,6 +294,46 @@ pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<Strin
         _ => return None,
     };
     Some(r.unwrap_or_else(|e| format!("{e}\n")))
+}
+
+/// What `QSSECCHK` needs from outside `sec`: the registered exit
+/// programs, the TLS policy the system values make, and the commands
+/// shipped `*PUBLIC *EXCLUDE`.
+fn seccheck_inputs(txn: &mut store::Txn<'_>, env: &Env<'_>) -> sec::cmd::seccheck::Inputs<'static> {
+    use sec::cmd::seccheck::{ExitReg, Inputs, TlsFacts};
+    let reg = regfac::store::load(txn, env.qsys).unwrap_or_default();
+    let exits: Vec<ExitReg> = reg
+        .points
+        .iter()
+        .flat_map(|pt| {
+            pt.programs.iter().map(|p| ExitReg {
+                point: pt.name.clone(),
+                format: pt.format.clone(),
+                lib: p.lib.clone(),
+                pgm: p.pgm.clone(),
+            })
+        })
+        .collect();
+    let list = |n: &str| -> Vec<String> {
+        (env.sysval)(n).split_whitespace().map(str::to_string).collect()
+    };
+    let (pcl, csl) = (list("QSSLPCL"), list("QSSLCSL"));
+    let policy = tls::policy::TlsPolicy::from_sysvals(
+        &pcl.iter().map(String::as_str).collect::<Vec<_>>(),
+        &csl.iter().map(String::as_str).collect::<Vec<_>>(),
+        &(env.sysval)("QSSLCSLCTL"),
+    );
+    let tls = TlsFacts {
+        enabled: policy.protocols.iter().map(|v| v.name().to_string()).collect(),
+        refused: policy.unsupported_protocols.iter().map(|v| v.name().to_string()).collect(),
+        suites: policy.usable_suites().iter().map(|s| s.name.to_string()).collect(),
+        unmapped: policy.unmapped_suites.clone(),
+    };
+    Inputs {
+        exits,
+        tls,
+        exclude_cmds: sys_cpps::inventory::PUBLIC_EXCLUDE,
+    }
 }
 
 /// `CHGSECAUD`: the journal, then the values through `sysval`, which

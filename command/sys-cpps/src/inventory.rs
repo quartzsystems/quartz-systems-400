@@ -959,6 +959,7 @@ pub const BRIDGE_WORDS: &[&str] = &[
     "prtusrobj",
     "prtusrprf",
     "qir",
+    "qssecchk",
     "rclstg",
     "rcvmsg",
     "rgzpfm",

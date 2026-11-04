@@ -950,6 +950,39 @@ the harness; a `--release` image never has that flag. DST sign-ons
 (`ST` `DS`) and password resets (`DS`) are kept by `slic` until the
 storage service runs, then audited (`audit_lic`, request 128).
 
+## 10. Checking the system: `QSSECCHK`
+
+`QSSECCHK [OUTPUT(*PRINT|*)]` checks the running system against this
+model and prints `QPSECCHK` (through `QSYSPRT`): one line per check,
+`PASS`, `WARN` (weaker than Quartz recommends) or `FAIL` (an
+exposure), and the totals. It needs `*ALLOBJ` and `*AUDIT`. The checks
+are `sec::cmd::seccheck`; the service adds the exit points and the TLS
+policy (`lic/slic/src/svc/security.rs`).
+
+| Area | Checked | Fails | Warns |
+|---|---|---|---|
+| `SYSVAL` | `QSECURITY` and the values of §8, against Quartz's recommendation | `QSECURITY` below 30, `QCRTAUT(*ALL)`, `QMAXSIGN(*NOMAX)`, `QPWDMINLEN` below 6 | `QSECURITY` 30; `QALWUSRDMN` with `*ALL`; `QCRTAUT(*CHANGE)`; `QDSPSGNINF(0)`; `QINACTITV(*NONE)`; `QLMTDEVSSN(0)`; `QLMTSECOFR(0)`; `QMAXSIGN` above 5; `QPWDEXPITV` `*NOMAX` or above 90; `QPWDLVL` 0 or 1; `QPWDMINLEN` 6 or 7; `QPWDRQDDIF(0)`; `QPWDRQDDGT(0)`; `QRETSVRSEC(1)`; `QRMTSIGN(*SAMEPRF)`; `QVFYOBJRST(1)` |
+| `PROFILE` | passwords equal to the profile name (`ANZDFTPWD`'s test) | one that can sign on | one that is expired (the next sign-on must change it) or disabled |
+| `PUBLIC` | `*PUBLIC` of every object in `QSYS` and of the system libraries | more than the system ships it with: `shipped::public_for` (§1), and `*EXCLUDE` for the commands `sys_cpps::inventory::PUBLIC_EXCLUDE` names | |
+| `ADOPT` | programs and service programs created `USRPRF(*OWNER)` | one `*PUBLIC` may change (`*OBJMGT`, `*OBJEXIST`, `*OBJALTER` or `*UPD`) | one owned by an `*ALLOBJ` profile that `*PUBLIC` may use |
+| `EXITPNT` | every program the registration facility has registered | one that does not exist (whoever may add to its library can create it), or one `*PUBLIC` may change | |
+| `AUDIT` | `QAUDCTL`, `QAUDJRN`, `QAUDLVL` | auditing on and no `QSYS/QAUDJRN` | `QAUDCTL(*NONE)`; `QAUDLVL` without `*AUTFAIL` and `*SECURITY`; `QAUDCTL` without `*AUDLVL` |
+| `TLS` | `QSSLPCL`, `QSSLCSL`, `QSSLCSLCTL` through the TLS policy | an enabled protocol below TLS 1.2; a usable suite with RC4, DES, NULL, export, MD5 or CBC with SHA-1 | no protocol enabled; protocols listed that are never enabled; suites listed that are not implemented |
+
+### On a fresh install
+
+A fresh install has no failure. Its warnings are IBM's shipped values,
+kept so that applications and operators find what they expect; each is
+one `CHGSYSVAL` (or `CHGSECAUD`) away from the recommended value:
+
+| Warning | Why the shipped value stays |
+|---|---|
+| `QALWUSRDMN(*ALL)` | IBM's default; restricting user-domain spaces breaks applications that make user spaces and indexes in their own libraries |
+| `QCRTAUT(*CHANGE)` | IBM's default; `*EXCLUDE` changes what every new object in a library with `CRTAUT(*SYSVAL)` allows |
+| `QDSPSGNINF(0)`, `QINACTITV(*NONE)`, `QLMTDEVSSN(0)` | IBM's defaults; they change how every sign-on behaves |
+| `QAUDCTL(*NONE)` | IBM ships auditing off, and `QSYS/QAUDJRN` is not shipped (§7) |
+| `PROFILE QSECOFR` | the shipped `QSECOFR` password is `QSECOFR`, expired, as IBM's (§1): the first sign-on must set another; an install with a response file sets it |
+
 ## Frozen at V1R1M0
 
 Frozen: the `*USRPRF` payload (`profile/payload.rs`), the stored authority structures (private authorities in the object store, authority bits, authorization lists; `auth::FORMAT_VERSION`) and the `QAUDJRN` entry-specific layouts of section 7 (`audit::layout::FORMAT_VERSION`).
