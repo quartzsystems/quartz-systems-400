@@ -30,6 +30,8 @@ pub enum NameType {
     Select,
     /// `O`.
     Omit,
+    /// `H`: a help specification (display files).
+    Help,
 }
 
 impl NameType {
@@ -40,6 +42,7 @@ impl NameType {
             'J' => Self::Join,
             'S' => Self::Select,
             'O' => Self::Omit,
+            'H' => Self::Help,
             _ => return None,
         })
     }
@@ -53,6 +56,7 @@ impl NameType {
             Self::Join => 'J',
             Self::Select => 'S',
             Self::Omit => 'O',
+            Self::Help => 'H',
         }
     }
 
@@ -65,6 +69,7 @@ impl NameType {
             Self::Join => "join",
             Self::Select => "select",
             Self::Omit => "omit",
+            Self::Help => "help",
         }
     }
 }

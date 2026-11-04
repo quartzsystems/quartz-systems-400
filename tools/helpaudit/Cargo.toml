@@ -1,0 +1,27 @@
+[package]
+name = "helpaudit"
+description = "QS/400 help audit: every shipped panel, display file, command, parameter and message checked for help, and the command help generator"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "helpaudit"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
+cmd = { path = "../../command/cmd", version = "0.1.0" }
+dspf = { path = "../../ui/dspf", version = "0.1.0" }
+msgf = { path = "../../runtime/msgf", version = "0.1.0" }
+uim = { path = "../../ui/uim", version = "0.1.0" }
+
+[lints]
+workspace = true

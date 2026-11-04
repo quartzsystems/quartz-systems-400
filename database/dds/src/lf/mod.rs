@@ -100,6 +100,7 @@ fn build(
             continue;
         };
         match spec.name_type {
+            Some(NameType::Help) => diags.push(ids::spec_not_in_pf(spec.line, "help")),
             Some(NameType::Join) => join::add(spec, cur, diags),
             Some(NameType::Key) => key(spec, cur, &w.fk, diags),
             Some(NameType::Select | NameType::Omit) => {

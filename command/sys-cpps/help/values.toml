@@ -1,0 +1,4 @@
+# Help texts shared by every command: what a special value means.
+
+[values]
+"*LIBL" = "The library list of the job is searched."

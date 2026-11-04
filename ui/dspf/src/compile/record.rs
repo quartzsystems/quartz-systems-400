@@ -53,6 +53,26 @@ const NOT_IN_SUBFILE: &[&str] = &[
     "MNUCNL",
 ];
 
+/// The keywords a help specification (`H`) takes.
+const HELP_KEYWORDS: &[&str] = &["HLPARA", "HLPPNLGRP", "HLPRCD"];
+
+/// A help specification under the current record: its keywords join
+/// the record's, `HLPARA` first, so each `HLPPNLGRP` or `HLPRCD` belongs
+/// to the `HLPARA` before it (`dspf::help_at`).
+pub(crate) fn help(cx: &Cx<'_>, r: &mut Record, spec: &Spec, entry: Entry, diags: &mut Diagnostics) {
+    for k in &spec.keywords {
+        if !HELP_KEYWORDS.contains(&k.name.as_str()) {
+            diags.push(ids::rejected(k.line, &k.name, "a help specification takes HLPARA, HLPPNLGRP and HLPRCD"));
+            continue;
+        }
+        let Some(info) = classify(k, Level::Record, diags) else {
+            continue;
+        };
+        let used = accept(cx, k, info, entry, diags);
+        r.keywords.push(used);
+    }
+}
+
 /// Start a record from its `R` specification.
 #[allow(clippy::too_many_lines)] // one arm per record keyword
 pub(crate) fn start(

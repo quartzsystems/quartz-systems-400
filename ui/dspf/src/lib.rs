@@ -19,6 +19,7 @@
 pub mod compile;
 pub mod cond;
 pub mod diag;
+pub mod help;
 pub mod kw;
 pub mod layout;
 pub mod listing;
