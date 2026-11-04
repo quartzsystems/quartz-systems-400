@@ -122,6 +122,13 @@ fn create_package_support_delete() {
     let mut pre = e("APPPRE", 10);
     pre.extend(e("APPLIB", 10));
     let info = pl_info("0000", "*CODE", "*CODEDFT");
+    // Two DIRI0100 entries: a home directory of 4, and one by its last name.
+    let mut dirs = Vec::new();
+    for (path, home) in [("/QIBM/ProdData/APPX", 4i32), ("/home/appdta", 0)] {
+        dirs.extend(i32::try_from(path.len()).unwrap().to_be_bytes());
+        dirs.extend(home.to_be_bytes());
+        dirs.extend(e(path, path.len()));
+    }
     let p = CrtPl {
         name: &e("APPCODE", 10),
         info: &info,
@@ -135,14 +142,26 @@ fn create_package_support_delete() {
         n_folders: 0,
         text: &e("Application code", 50),
         public_aut: &e("*USE", 10),
-        n_directories: None,
+        n_directories: Some(2),
+        directories: &dirs,
+        dir_format: &e("DIRI0100", 8),
     };
     s.libs.insert("APPDTA".into());
+    // A list shorter than its count, or another format, is refused.
+    let short = CrtPl { directories: &dirs[..20], ..p.clone() };
+    assert_eq!(qszcrtpl(&mut s, &short).unwrap_err().id, "CPF3C1D");
+    let other = e("SDIR0100", 8);
+    let fmt = CrtPl { dir_format: &other, ..p.clone() };
+    assert_eq!(qszcrtpl(&mut s, &fmt).unwrap_err().id, "CPF3C21");
     qszcrtpl(&mut s, &p).unwrap();
     let (lq, l) = s.loads().pop().unwrap();
     assert_eq!(lq, QualName::new("APPCODE", "APPLIB"));
     assert_eq!(l.state, LoadState::Created);
     assert_eq!(l.libraries.len(), 2);
+    assert_eq!(l.directories.len(), 2);
+    assert_eq!(l.directories[0].primary, "/QIBM/ProdData/APPX");
+    assert_eq!(l.directories[0].home, "APPX");
+    assert_eq!(l.directories[1].home, "appdta");
     assert_eq!(l.pre_exits[0], QualName::new("APPPRE", "APPLIB"));
     // A load ID that is not the option's feature.
     let bad = pl_info("0000", "*CODE", "5101");

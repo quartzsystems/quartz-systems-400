@@ -87,6 +87,8 @@ pub fn call(
                 text: p(parms, 10),
                 public_aut: p(parms, 11),
                 n_directories: parms.get(12).map(|b| api::bin4_at(b, 0)),
+                directories: p(parms, 13),
+                dir_format: p(parms, 14),
             };
             none(api::crtpl::qszcrtpl(store, &pl))
         }

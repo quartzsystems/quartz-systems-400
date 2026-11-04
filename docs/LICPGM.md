@@ -487,10 +487,14 @@ IBM's list for QSZRTVPR without their texts to confirm them.
 - **QSZCRTPL** creates the load in its principal development library
   (`*PRDDFN`: the definition's library); the load ID must be the
   option's feature (`*CODEDFT` is 5001) or one of its languages
-  (`CPF0C84`). The directory list (optional group 1) is not read: its
-  format `SDIR0100` is not documented to us; a count other than 0 is
-  `CPF3C21` until it is (`MIGRATE(phase11)`), and `create_load` takes
-  directories typed. The software agreement list (group 2) likewise.
+  (`CPF0C84`). The directory list (optional group 1: the list, its
+  count, its format) is `DIRI0100` as `QSYSINC/H(QSZCRTPL)` lays it
+  out: per entry the full path's length and the length of the product
+  home directory (the path's last characters; 0 takes its last name),
+  `Binary(4)` each, then the path, entries one after another. Another
+  format is `CPF3C21`, a list shorter than its count `CPF3C1D`; the
+  directories get `*RX` as their public data authority. The software
+  agreement list (group 2) is not read.
 - **QSZPKGPO** packages the loads (state 30) after checking every
   listed object is present and undamaged (`CPF9801`, `CPF0C19`). A
   code load with no object list takes every object of its development

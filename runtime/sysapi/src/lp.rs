@@ -144,6 +144,18 @@ fn qszcrtpl(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     ];
     if a.present(14) {
         parms.push(bin(&a, 14));
+        // The DIRI0100 entries, each its two lengths and its path.
+        let n = count(&a, 14);
+        let mut len = 0;
+        if a.present(13) {
+            for _ in 0..n {
+                let head = bytes(&a, 13, len + 8);
+                let full = i32::from_be_bytes(head[len..len + 4].try_into().unwrap_or([0; 4]));
+                len += 8 + usize::try_from(full).unwrap_or(0).min(10_000);
+            }
+        }
+        parms.push(if len > 0 { bytes(&a, 13, len) } else { Vec::new() });
+        parms.push(if a.present(15) { bytes(&a, 15, 8) } else { Vec::new() });
     }
     run(j, p, &a, 12, "QSZCRTPL", parms);
 }

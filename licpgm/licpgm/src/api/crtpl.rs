@@ -5,11 +5,11 @@
 //! QSZCRTPL (Create Product Load) and QSZDLTPL (Delete Product Load).
 
 use crate::api::crtpd::{qual20, store_error};
-use crate::api::{ApiError, blank_at, char_at};
+use crate::api::{self, ApiError, blank_at, char_at};
 use crate::id::{self, LoadId, LoadType, OptionNo, ProductId};
 use crate::model::QualName;
 use crate::model::definition::{RegType, Registration};
-use crate::model::load::{FolderEntry, LibEntry, LoadKey, ProductLoad};
+use crate::model::load::{DirEntry, FolderEntry, LibEntry, LoadKey, ProductLoad};
 use crate::model::state::LoadState;
 use crate::store::{ProductStore, find_definition};
 
@@ -40,9 +40,46 @@ pub struct CrtPl<'a> {
     pub text: &'a [u8],
     /// Public authority, `Char(10)`.
     pub public_aut: &'a [u8],
-    /// Optional group 1: number of directories (their list's format is
-    /// not read here; give 0 or leave it out).
+    /// Optional group 1: number of directories.
     pub n_directories: Option<i32>,
+    /// The directory list, `DIRI0100` entries one after another.
+    pub directories: &'a [u8],
+    /// Its format name, `Char(8)`; blank when not passed.
+    pub dir_format: &'a [u8],
+}
+
+/// The `DIRI0100` entries (`QSYSINC/H(QSZCRTPL)`): the full path's
+/// length, the length of its product home directory (the path's last
+/// characters), then the path. `None` when the list is shorter than
+/// its entries say or an entry is not an absolute path.
+fn diri0100(list: &[u8], n: usize) -> Option<Vec<DirEntry>> {
+    let mut out = Vec::with_capacity(n);
+    let mut at = 0;
+    for _ in 0..n {
+        let full = usize::try_from(api::bin4_at(list.get(at..at + 4)?, 0)).ok()?;
+        let home = usize::try_from(api::bin4_at(list.get(at + 4..at + 8)?, 0)).ok()?;
+        let path = ccsid::decode_trimmed(list.get(at + 8..at + 8 + full)?);
+        if !path.starts_with('/') || path.contains("//") || home > path.chars().count() {
+            return None;
+        }
+        // No length: the last name of the path.
+        let home_name = if home == 0 {
+            path.rsplit('/').next().unwrap_or("").to_string()
+        } else {
+            let skip = path.chars().count() - home;
+            path.chars().skip(skip).collect::<String>().trim_start_matches('/').to_string()
+        };
+        out.push(DirEntry {
+            primary: path.clone(),
+            home: home_name.clone(),
+            installed: path,
+            installed_home: home_name,
+            data_aut: "*RX".into(),
+            obj_auts: Vec::new(),
+        });
+        at += 8 + full;
+    }
+    Some(out)
 }
 
 /// Check a load against its definition and create it in the library
@@ -187,11 +224,16 @@ pub fn qszcrtpl(store: &mut dyn ProductStore, p: &CrtPl<'_>) -> Result<(), ApiEr
     if n > 0 && p.n_directories.unwrap_or(0) > 0 {
         return Err(ApiError::new("CPF24B4"));
     }
-    if p.n_directories.unwrap_or(0) != 0 {
-        // MIGRATE(phase11): read the directory list (SDIR0100) once its
-        // layout is confirmed; create_load takes directories typed.
-        return Err(ApiError::new("CPF3C21").text("SDIR0100", 8));
+    let nd = p.n_directories.unwrap_or(0);
+    if !(0..=300).contains(&nd) {
+        return Err(ApiError::new("CPF24B4"));
     }
+    let fmt = char_at(p.dir_format, 0, 8);
+    if nd > 0 && !fmt.is_empty() && fmt != "DIRI0100" {
+        return Err(ApiError::new("CPF3C21").text(&fmt, 8));
+    }
+    let directories = diri0100(p.directories, usize::try_from(nd).unwrap_or(0))
+        .ok_or_else(|| ApiError::new("CPF3C1D"))?;
     let folders = (0..n)
         .map(|j| {
             let e = &p.folders[j * 126..(j + 1) * 126];
@@ -225,6 +267,7 @@ pub fn qszcrtpl(store: &mut dyn ProductStore, p: &CrtPl<'_>) -> Result<(), ApiEr
     l.libraries = libraries;
     l.pre_exits = pre_exits;
     l.folders = folders;
+    l.directories = directories;
     l.public_aut = char_at(p.public_aut, 0, 10);
     l.state = LoadState::Created;
     create_load(store, &QualName::new(&name, &principal_lib), &l)
