@@ -830,6 +830,93 @@ sets no limit.
 :EPARML.
 :P.Also accepted&colon. *SIGNON.
 :EHELP.
+:HELP NAME=CFGPFRCOL.Configure Perf Collection (CFGPFRCOL)
+:P.Use the Configure Perf Collection (CFGPFRCOL) command to configure
+Collection Services.
+:EHELP.
+:HELP NAME='CFGPFRCOL/INTERVAL'.Default interval (INTERVAL)
+:P.The default interval for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 5 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CFGPFRCOL/LIB'.Collection library (LIB)
+:P.The collection library for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CFGPFRCOL/DFTCOLPRF'.Default collection profile (DFTCOLPRF)
+:P.The default collection profile for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:EPARML.
+:P.Also accepted&colon. *MINIMUM, *STANDARD, *STANDARDP, *ENHCPCPLN,
+*CUSTOM.
+:EHELP.
+:HELP NAME='CFGPFRCOL/CYCTIME'.Cycle time (CYCTIME)
+:P.The cycle time for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 6 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CFGPFRCOL/CYCITV'.Cycle interval (CYCITV)
+:P.The cycle interval for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 5 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CFGPFRCOL/RETPERIOD'.Collection retention period (RETPERIOD)
+:P.The collection retention period for this command.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Number of units
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PK.*PERM:EPK.
+:PD.Permanent&colon. it never expires.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 5 characters.
+:EPARML.
+:H4.Part 2&colon. Unit of time
+:P.Also accepted&colon. *HOURS, *DAYS.
+:EHELP.
+:HELP NAME='CFGPFRCOL/CRTDBF'.Create database files (CRTDBF)
+:P.The create database files for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:EPARML.
+:EHELP.
+:HELP NAME='CFGPFRCOL/CRTPFRSUM'.Create performance summary (CRTPFRSUM)
+:P.The create performance summary for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:EPARML.
+:EHELP.
 :HELP NAME=CHGBCKUP.Change Backup Options (CHGBCKUP)
 :P.Use the Change Backup Options (CHGBCKUP) command to change what a
 backup saves and where.
@@ -3436,6 +3523,11 @@ the job.
 :EPARML.
 :P.Also accepted&colon. *REMOVE.
 :EHELP.
+:HELP NAME=CHKPFRCOL.Check Performance Collection (CHKPFRCOL)
+:P.Use the Check Performance Collection (CHKPFRCOL) command to whether
+Collection Services is active.
+:P.The command has no parameters.
+:EHELP.
 :HELP NAME=CLRJOBQ.Clear Job Queue (CLRJOBQ)
 :P.Use the Clear Job Queue (CLRJOBQ) command to remove every job waiting
 on a job queue.
@@ -4032,6 +4124,105 @@ queue.
 :PD.Yes.
 :PT.:PK.*NO:EPK.
 :PD.No.
+:EPARML.
+:EHELP.
+:HELP NAME=CRTPFRDTA.Create Performance Data (CRTPFRDTA)
+:P.The Create Performance Data (CRTPFRDTA) command works with the
+database files of a management collection.
+:EHELP.
+:HELP NAME='CRTPFRDTA/FROMMGTCOL'.From collection (FROMMGTCOL)
+:P.The from collection for this command.
+:P.A value is required.
+:PARML.
+:PT.:PK.*ACTIVE:EPK.
+:PD.Active.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *SELECT.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.When no value is given, QPFRDATA is used.
+:EHELP.
+:HELP NAME='CRTPFRDTA/TOMBR'.To member (TOMBR)
+:P.The member of the to-file that receives the data.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *FROMMGTCOL.
+:EHELP.
+:HELP NAME='CRTPFRDTA/TOLIB'.To library (TOLIB)
+:P.The to library for this command.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *FROMMGTCOL.
+:EHELP.
+:HELP NAME='CRTPFRDTA/TEXT'.Text 'description' (TEXT)
+:P.A short description of the object, up to 50 characters, shown by the
+work-with and display commands next to its name.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The text does not change.
+:PT.:PK.*BLANK:EPK.
+:PD.No text.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 50 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CRTPFRDTA/CGY'.Categories to process (CGY)
+:P.The category of the volume in the media library.
+:P.Up to 50 values can be given.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *FROMMGTCOL, *APPN, *CMNBASE, *DISK, *JOBMI,
+*JOBOS, *POOL, *SYSBUS, *SYSLVL.
+:EHELP.
+:HELP NAME='CRTPFRDTA/INTERVAL'.Time interval (in minutes) (INTERVAL)
+:P.The time interval (in minutes) for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 11 characters.
+:EPARML.
+:P.Also accepted&colon. *FROMMGTCOL.
+:EHELP.
+:HELP NAME='CRTPFRDTA/STRTIME'.Starting date and time (STRTIME)
+:P.The starting date and time for this command.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Starting date
+:PARML.
+:PT.:PV.date:EPV.
+:PD.Type a date in the date format of the job.
+:EPARML.
+:P.Also accepted&colon. *FROMMGTCOL.
+:H4.Part 2&colon. Starting time
+:PARML.
+:PT.:PV.time:EPV.
+:PD.Type a time of day&colon. hours, minutes and seconds.
+:EPARML.
+:EHELP.
+:HELP NAME='CRTPFRDTA/ENDTIME'.Ending date and time (ENDTIME)
+:P.The ending date and time for this command.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Ending date
+:PARML.
+:PT.:PK.*ACTIVE:EPK.
+:PD.Active.
+:PT.:PV.date:EPV.
+:PD.Type a date in the date format of the job.
+:EPARML.
+:P.Also accepted&colon. *FROMMGTCOL.
+:H4.Part 2&colon. Ending time
+:PARML.
+:PT.:PV.time:EPV.
+:PD.Type a time of day&colon. hours, minutes and seconds.
 :EPARML.
 :EHELP.
 :HELP NAME=CRTSBSD.Create Subsystem Description (CRTSBSD)
@@ -4692,6 +4883,19 @@ show a list to choose from, or send a message.
 :PD.A message is sent.
 :EPARML.
 :P.Also accepted&colon. *SELECT.
+:EHELP.
+:HELP NAME=ENDPFRCOL.End Performance Collection (ENDPFRCOL)
+:P.Use the End Performance Collection (ENDPFRCOL) command to end
+Collection Services.
+:EHELP.
+:HELP NAME='ENDPFRCOL/FRCCOLEND'.Force end (FRCCOLEND)
+:P.Whether to force end.
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.No.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:EPARML.
 :EHELP.
 :HELP NAME=ENDSBS.End Subsystem (ENDSBS)
 :P.Use the End Subsystem (ENDSBS) command to end one subsystem or all of
@@ -5942,6 +6146,24 @@ cleanup, or run it now.
 :EPARML.
 :P.Also accepted&colon. *SCHED.
 :EHELP.
+:HELP NAME=STRPFRCOL.Start Performance Collection (STRPFRCOL)
+:P.Use the Start Performance Collection (STRPFRCOL) command to start
+Collection Services with a profile.
+:EHELP.
+:HELP NAME='STRPFRCOL/COLPRF'.Collection profile (COLPRF)
+:P.The collection profile for this command.
+:P.Also accepted&colon. *CFG, *MINIMUM, *STANDARD, *STANDARDP,
+*ENHCPCPLN, *CUSTOM.
+:EHELP.
+:HELP NAME='STRPFRCOL/CYCCOL'.Cycle collection (CYCCOL)
+:P.Whether to cycle collection.
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.No.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:EPARML.
+:EHELP.
 :HELP NAME=STRSBS.Start Subsystem (STRSBS)
 :P.Use the Start Subsystem (STRSBS) command to start a subsystem from
 its description.
@@ -6476,7 +6698,8 @@ printed for a batch job.
 :EHELP.
 :HELP NAME=WRKSYSACT.Work with System Activity (WRKSYSACT)
 :P.Use the Work with System Activity (WRKSYSACT) command to work with
-the system activity, jobs and tasks by processor use.
+the system activity, jobs and tasks by processor use (QS00PT1,
+Performance Tools).
 :EHELP.
 :HELP NAME='WRKSYSACT/OUTPUT'.Output (OUTPUT)
 :P.Where the command sends what it produces&colon. to the display of an
@@ -6492,25 +6715,33 @@ printed for a batch job.
 :PD.Both.
 :EPARML.
 :EHELP.
-:HELP NAME='WRKSYSACT/INTERVAL'.Interval, seconds (INTERVAL)
-:P.The interval, seconds for this command.
+:HELP NAME='WRKSYSACT/INTERVAL'.Interval length (INTERVAL)
+:P.The interval length for this command.
 :PARML.
 :PT.:PV.number:EPV.
-:PD.Type a whole number. The value must be from 1 to 999.
+:PD.Type a whole number. The value must be from 1 to 900.
 :EPARML.
 :P.When no value is given, 5 is used.
 :EHELP.
-:HELP NAME='WRKSYSACT/INFTYPE'.Information type (INFTYPE)
-:P.The information type for this command.
-:PARML.
-:PT.:PK.*JOB:EPK.
-:PD.The value of the job.
-:EPARML.
-:P.Also accepted&colon. *JOBTASK, *TASK.
-:EHELP.
 :HELP NAME='WRKSYSACT/SEQ'.Sequence (SEQ)
 :P.The sequence for this command.
-:P.Also accepted&colon. *CPU, *IO.
+:P.Also accepted&colon. *CPU, *DBCPU, *IO, *STGALC, *STGDLC.
+:EHELP.
+:HELP NAME='WRKSYSACT/INFTYPE'.Type of information (INFTYPE)
+:P.The type of information for this command.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:EPARML.
+:P.Also accepted&colon. *JOBS, *TASKS.
+:EHELP.
+:HELP NAME='WRKSYSACT/NBROFITV'.Number of intervals (NBROFITV)
+:P.The number of intervals for this command.
+:PARML.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 1024.
+:EPARML.
+:P.When no value is given, 1 is used.
 :EHELP.
 :HELP NAME='WRKSYSACT/LIB'.Library (LIB)
 :P.The library for this command.

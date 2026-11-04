@@ -21,6 +21,8 @@
      A                                      ROLLDOWN(26)
      A                                      HELP
      A          R WSA
+     A          H                           HLPARA(*RCD)
+     A                                      HLPPNLGRP(WRKSYSACT QHWMCMD)
      A                                  1 28'Work with System Activity'
      A                                      DSPATR(HI)
      A            SYSNAME        8A  O  1 72

@@ -1971,9 +1971,3 @@ help = "The output name is declared but no EXCEPT writes it."
 vars = ["*CHAR 50"]
 
 
-[[msg]]
-id = "RNF0236"
-sev = 30
-text = "The %DATA options are not valid here: &1."
-help = "The option string of %DATA holds an option or value DATA-INTO does not take."
-vars = ["*CHAR 50"]

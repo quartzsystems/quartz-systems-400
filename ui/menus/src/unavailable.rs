@@ -77,7 +77,6 @@ pub const COMMANDS: &[&str] = &[
     "STRPASTHR",
     "STRPGMMNU",
     "STRRMTSPT",
-    "STRSCHIDX",
     "STRTCPTELN",
     "VFYAPPCCNN",
     "VFYCMN",

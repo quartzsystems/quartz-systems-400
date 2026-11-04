@@ -6,6 +6,76 @@
 .* definitions and command/sys-cpps/help/; do not edit.
 :PNLGRP.
 :COPYR.(C) Copyright Quartz Systems 2026.
+:HELP NAME=ADDSMTPLE.Add SMTP List Entry (ADDSMTPLE)
+:P.Use the Add SMTP List Entry (ADDSMTPLE) command to add an SMTP list
+entry.
+:EHELP.
+:HELP NAME='ADDSMTPLE/TYPE'.Type (TYPE)
+:P.The type for this command.
+:P.A value is required.
+:P.Also accepted&colon. *ACCEPT, *REJECT, *NEAR, *DOMAIN, *SVRBIND,
+*CLTBIND, *ETRNSVR, *FTRSUBJECT, *FTRORIGIN, *FTRFILNAME, *FTRTYPE,
+*HOSTAUTH, *ACCEPTIP6, *REJECTIP6, *DOMAINIP6, *SVRBNDIP6, *CLTBNDIP6.
+:EHELP.
+:HELP NAME='ADDSMTPLE/INTNETADR'.Internet address (INTNETADR)
+:P.An internet address in dotted decimal form (IPv4) or in colon form
+(IPv6).
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 15 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='ADDSMTPLE/SUBNETMASK'.Subnet mask (SUBNETMASK)
+:P.The subnet mask that tells the network part of the address from the
+host part.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 15 characters.
+:EPARML.
+:P.When no value is given, '255.255.255.255' is used.
+:EHELP.
+:HELP NAME='ADDSMTPLE/HOSTNAME'.Host name (HOSTNAME)
+:P.The host name for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 255 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='ADDSMTPLE/FTRDATA'.Filter data (FTRDATA)
+:P.The filter data for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 512 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='ADDSMTPLE/USERNAME'.User name (USERNAME)
+:P.The user name for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 82 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='ADDSMTPLE/PASSWORD'.Password (PASSWORD)
+:P.The password.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 130 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='ADDSMTPLE/IP6PFX'.IPv6 prefix (IP6PFX)
+:P.The IPv6 prefix for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 44 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='ADDSMTPLE/IP6NETADR'.IPv6 internet address (IP6NETADR)
+:P.The IPv6 internet address for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 40 characters.
+:EPARML.
+:EHELP.
 :HELP NAME=CFGTCPSMTP.Configure TCP/IP SMTP (CFGTCPSMTP)
 :P.The Configure TCP/IP SMTP (CFGTCPSMTP) command works with the SMTP
 menu.
@@ -1224,6 +1294,62 @@ host print transform.
 :PD.No.
 :PT.:PK DEF.*YES:EPK.
 :PD.Yes.
+:EPARML.
+:EHELP.
+:HELP NAME=RMVSMTPLE.Remove SMTP List Entry (RMVSMTPLE)
+:P.Use the Remove SMTP List Entry (RMVSMTPLE) command to remove an SMTP
+list entry.
+:EHELP.
+:HELP NAME='RMVSMTPLE/TYPE'.Type (TYPE)
+:P.The type for this command.
+:P.A value is required.
+:P.Also accepted&colon. *ACCEPT, *REJECT, *NEAR, *DOMAIN, *SVRBIND,
+*CLTBIND, *ETRNSVR, *FTRSUBJECT, *FTRORIGIN, *FTRFILNAME, *FTRTYPE,
+*HOSTAUTH, *ACCEPTIP6, *REJECTIP6, *DOMAINIP6, *SVRBNDIP6, *CLTBNDIP6.
+:EHELP.
+:HELP NAME='RMVSMTPLE/INTNETADR'.Internet address (INTNETADR)
+:P.An internet address in dotted decimal form (IPv4) or in colon form
+(IPv6).
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 15 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RMVSMTPLE/SUBNETMASK'.Subnet mask (SUBNETMASK)
+:P.The subnet mask that tells the network part of the address from the
+host part.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 15 characters.
+:EPARML.
+:P.When no value is given, '255.255.255.255' is used.
+:EHELP.
+:HELP NAME='RMVSMTPLE/HOSTNAME'.Host name (HOSTNAME)
+:P.The host name for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 255 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RMVSMTPLE/FTRDATA'.Filter data (FTRDATA)
+:P.The filter data for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 512 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RMVSMTPLE/IP6PFX'.IPv6 prefix (IP6PFX)
+:P.The IPv6 prefix for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 44 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RMVSMTPLE/IP6NETADR'.IPv6 internet address (IP6NETADR)
+:P.The IPv6 internet address for this command.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 40 characters.
 :EPARML.
 :EHELP.
 :HELP NAME=SNDSMTPEMM.Send SMTP E-mail Message (SNDSMTPEMM)
