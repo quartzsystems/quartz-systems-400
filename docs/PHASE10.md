@@ -121,11 +121,11 @@ our own traces of the oracle (`tools/conformance/hostsvr/`).
 
 ## Blocked
 
-Each item is marked `BLOCKED(phase10)` where it lives.
+Each item carried a Phase 10 marker where it lived; every row below is closed (`PHASE12.md`).
 
 | Item | Where | Waits for |
 |---|---|---|
-| RCLSTG migration of an IFS into a disk with no tail space | `lic/slic/src/ipl/ifs.rs` | shrinking ASP 1 |
+| RCLSTG migration of an IFS into a disk with no tail space | `lic/slic/src/ipl/ifs.rs` | closed: the IFS lives in ASP 1 since Phase 11 (`IFS.md`); a system that keeps its `QS400-IFS` partition mounts it, nothing to migrate |
 | DDM files open the remote file | `work/qsjob/src/command/ddm.rs` | closed in Phase 12: `*FILE` objects of attribute `DDMF`, the requester in the job (`DDM.md`) |
 | `*DDM` server on 446 | `net/servers` registry | closed in Phase 12: `QRWTLSTN` and `QRWTSRVR` with the backends over the storage service (`DDM.md`) |
 | Host servers read a spooled file's data | `work/qsjob/src/work/hostsvr/job.rs` | closed in Phase 12: `splf_fetch`, the `splfdata` trace (`HOSTSVR.md`) |
@@ -257,7 +257,7 @@ Checked 2026-10-30 on the final tree.
 | 1 | JTOpen suite, FTP/SSH/host-server replays, QSH corpus | Pass: the JTOpen suite in QEMU (host-servers commit; step 68 runs it when a JDK and `QS_JT400_JAR` are set), `ftp_replay` (192 sessions), the six host-server replays, `sshd` end to end and against OpenSSH (ignored, run by hand), the `qsh` and `qsh-utils` corpora |
 | 1 | ACS checklist signed off | Needs Cody: the seven checks above |
 | 2 | HLINV and every Phase 9 corpus program still pass | Pass: `hlinv`, `rpg_kit`, `rpg_fuzz`, `oss_corpus` |
-| 2 | Phase 9 open-source projects needing sockets, the IFS or TLS | Partly: HTTPAPI builds and `EXAMPLE1` and `EXAMPLE15` pass (`oss_net`, Linux); `EXAMPLE16`, HTTPAPI over TLS and two si-ibmi-apis modules are `BLOCKED(phase10)` in `PHASE9.md` |
+| 2 | Phase 9 open-source projects needing sockets, the IFS or TLS | Partly: HTTPAPI builds and `EXAMPLE1` and `EXAMPLE15` pass (`oss_net`, Linux); `EXAMPLE16`, HTTPAPI over TLS and two si-ibmi-apis modules are `BLOCKED(phase12)` in `PHASE9.md` |
 | 3 | `IFS.md`, `TCPIP.md`, `SERVERS.md`, `HOSTSVR.md`, `PRINT.md`, `CERTS.md`, `QSH.md`, this document with the bench | Pass, with the oracle fetch rate above |
 | 3 | Spec-versus-code tests: IFS `stat`, sockets structures, host-server code points, exit-point formats | Pass: `sysapi` `ifs`, `sockets` `spec`, `hostserver` `spec`, `regfac` `spec` |
 | 4 | `missing_docs = deny` on the new crates; clippy and `cargo deny` clean | Pass: all 25 new crates; clippy (host and musl) and `cargo deny` (295 crates, no C) clean |

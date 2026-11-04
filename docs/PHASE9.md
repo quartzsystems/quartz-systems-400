@@ -214,10 +214,10 @@ and its documented `CONFIG_H` choices.
 
 | Project (licence) | What | Compiles | Runs |
 |---|---|---|---|
-| HTTPAPI 1.53 (BSD-2-Clause), `ScottKlement/httpapi` | HTTP client in RPG: the `HTTPAPIR4` service program and 33 examples | the 9 modules of the service program, `CRTSRVPGM`, the 3 examples run | `EXAMPLE1` (GET to a stream file) and `EXAMPLE15` (form POST, 302, GET) pass: the server gets the requests and the files hold the bytes served. `EXAMPLE16` (SOAP POST, `XML-INTO`) ends before it sends: BLOCKED(phase10), see below |
-| HTTPAPI over TLS | `COMMSSLR4` over GSKit | compiles | BLOCKED(phase10): no ILE binding of `QSOSSLSR` (`gsk_*`) exists; `net/tls` has the semantics only (`docs/CERTS.md`), so `CONFIG_H` is built without `HAVE_SSLAPI` |
+| HTTPAPI 1.53 (BSD-2-Clause), `ScottKlement/httpapi` | HTTP client in RPG: the `HTTPAPIR4` service program and 33 examples | the 9 modules of the service program, `CRTSRVPGM`, the 3 examples run | `EXAMPLE1` (GET to a stream file) and `EXAMPLE15` (form POST, 302, GET) pass: the server gets the requests and the files hold the bytes served. `EXAMPLE16` (SOAP POST, `XML-INTO`) ends before it sends: BLOCKED(phase12), the ABI items below |
+| HTTPAPI over TLS | `COMMSSLR4` over GSKit | compiles | BLOCKED(phase12): no ILE binding of `QSOSSLSR` (`gsk_*`) exists; `net/tls` has the semantics only (`docs/CERTS.md`), so `CONFIG_H` is built without `HAVE_SSLAPI` |
 | HTTPAPI NTLM | `NTLMR4`, `MD4R4`, `ENCRYPTR4` | no (`RNF7535` on prototypes with continued names, `RNF7503` on `MD4_CTX_t`'s positional `DIM` subfields; not chased) | built without `NTLM_SUPPORT` |
-| si-ibmi-apis (MIT), `jsranko/si-ibmi-apis` | IFS utility service programs (`SIISF`, `SIDIR`, `SIPATH`, `SIIOF`, `SIIMF`) and IBM's pure-RPG JSON parser `JSONPARSE` | counted by `oss_corpus` | BLOCKED(phase10): `SIIOF` and `SIIMF` copy `QSYSINC/QRPGLESRC,FCNTL` and `SYSSTAT`, IBM's headers, which QS/400 does not ship; `JSONPARSE` is a `DATA-INTO` parser (see "Blocked" above) |
+| si-ibmi-apis (MIT), `jsranko/si-ibmi-apis` | IFS utility service programs (`SIISF`, `SIDIR`, `SIPATH`, `SIIOF`, `SIIMF`) and IBM's pure-RPG JSON parser `JSONPARSE` | counted by `oss_corpus` | BLOCKED(phase12): `SIIOF` and `SIIMF` copy `QSYSINC/QRPGLESRC,FCNTL` and `SYSSTAT`, IBM's headers, which QS/400 does not ship; `JSONPARSE` is a `DATA-INTO` parser (see "Blocked" above) |
 
 `tests/oss_net.rs` builds the service program as `INSTALL` does (one
 `CRTRPGMOD` per module, a binding directory, `CRTSRVPGM`), compiles the
@@ -257,7 +257,7 @@ What running HTTPAPI found and fixed:
   `strtok`, `atoi`, `atoll`, `sscanf`, `cvthc`, `cvtch`, `QtqIconvOpen`,
   `iconv_open`, `iconv`, `iconv_close`, `_C_IFS_tmpnam`, `_CIPHER` MD5);
   the pad an `i64` needs after a second pointer (`ABI.md` §1).
-- BLOCKED(phase10): a pointer taken to a by-reference parameter
+- BLOCKED(phase12) (a change of the call ABI, `ABI.md` §3, which the V1R1M0 freeze of the module format holds to a version bump): a pointer taken to a by-reference parameter
   (`%ADDR` of it) addresses a space the taking entry owns, so it dies
   when that entry returns, though the storage is the caller's.
   HTTPAPI's `getBufferInfo` hands `http_req` such a pointer to the
@@ -265,7 +265,7 @@ What running HTTPAPI found and fixed:
   "CCSID conversion failed"). Letting such spaces outlive the entry was
   tried and let a stale wider space cover later heap blocks; it needs
   the runtime to know which entry owns the storage behind a parameter.
-- BLOCKED(phase10): a parameter passed by reference and a pointer
+- BLOCKED(phase12) (the same ABI change): a parameter passed by reference and a pointer
   passed by value are not interchangeable in a call through a
   procedure pointer, as they are on IBM i. QS/400 passes a by-reference
   argument as a native address and a pointer as a 16-byte fat pointer
