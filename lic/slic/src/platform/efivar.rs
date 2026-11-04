@@ -45,6 +45,20 @@ fn var(dir: &Path, name: &str) -> PathBuf {
     dir.join(efi::var_name(name))
 }
 
+/// Mount efivarfs at its place unless the variables are there already.
+///
+/// # Errors
+/// The mount failed.
+pub fn mount_vars() -> Result<(), String> {
+    if !fs::read_dir(EFIVARS).is_ok_and(|mut d| d.next().is_some()) {
+        match mount("efivarfs", EFIVARS, "efivarfs", MountFlags::NOSUID | MountFlags::NOEXEC | MountFlags::NODEV, None) {
+            Ok(()) | Err(rustix::io::Errno::BUSY) => {}
+            Err(e) => return Err(format!("efivarfs: {e}")),
+        }
+    }
+    Ok(())
+}
+
 impl EfiFirmware {
     /// The firmware, with efivarfs mounted, for the ESP beside the LIC
     /// partition.
@@ -58,12 +72,7 @@ impl EfiFirmware {
         if !Path::new("/sys/firmware/efi").is_dir() {
             return Err("not booted through UEFI".into());
         }
-        if !fs::read_dir(EFIVARS).is_ok_and(|mut d| d.next().is_some()) {
-            match mount("efivarfs", EFIVARS, "efivarfs", MountFlags::NOSUID | MountFlags::NOEXEC | MountFlags::NODEV, None) {
-                Ok(()) | Err(rustix::io::Errno::BUSY) => {}
-                Err(e) => return Err(format!("efivarfs: {e}")),
-            }
-        }
+        mount_vars()?;
         let (_, esp) = diskimg::locate::esp(lic).map_err(|e| e.to_string())?;
         Ok(Self {
             dir: PathBuf::from(EFIVARS),

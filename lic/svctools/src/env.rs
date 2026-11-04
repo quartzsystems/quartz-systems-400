@@ -232,6 +232,8 @@ impl UserChange {
 
 /// What a function that needs the running system says in DST.
 pub const NOT_HERE: &str = "Not available until the system is running; use STRSST";
+/// What an environment without the hardware qualification run answers.
+pub const NOT_AVAILABLE_HERE: &str = "The hardware qualification run is not available here";
 
 /// The system behind the service tools.
 pub trait DstEnv {
@@ -378,6 +380,14 @@ pub trait DstEnv {
     /// mounted file system. Device nodes, whole disks or partitions.
     fn reserved_disks(&mut self) -> Vec<String> {
         Vec::new()
+    }
+    /// The hardware qualification report (`QSHWQUAL`), one line each.
+    fn hardware_report(&mut self) -> Result<Vec<String>, String> {
+        Err(NOT_AVAILABLE_HERE.into())
+    }
+    /// Write the report to a USB device; the line saying where.
+    fn write_report_usb(&mut self) -> Result<String, String> {
+        Err(NOT_AVAILABLE_HERE.into())
     }
     /// `Delete disk unit data`: make the whole disk `device` blank,
     /// calling `report` with the percent done.
@@ -731,6 +741,10 @@ pub struct MemEnv {
     pub controllers: Vec<String>,
     /// Parity set members to report.
     pub parity: Vec<ParityUnit>,
+    /// The hardware qualification report to show.
+    pub qual: Vec<String>,
+    /// Where a USB write of the report goes; `None` when no stick is in.
+    pub usb: Option<String>,
     seed: u64,
 }
 
@@ -867,6 +881,13 @@ impl DstEnv for MemEnv {
     }
     fn reserved_disks(&mut self) -> Vec<String> {
         self.reserved.clone()
+    }
+    fn hardware_report(&mut self) -> Result<Vec<String>, String> {
+        if self.qual.is_empty() { Err(NOT_AVAILABLE_HERE.into()) } else { Ok(self.qual.clone()) }
+    }
+    fn write_report_usb(&mut self) -> Result<String, String> {
+        self.actions.push("write report to USB".into());
+        self.usb.clone().ok_or_else(|| "No USB device with a FAT file system was found. Insert one and try again.".into())
     }
     fn delete_unit_data(
         &mut self,

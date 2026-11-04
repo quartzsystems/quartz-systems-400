@@ -460,6 +460,8 @@ pub const DIRECT: &[&str] = &[
     "ADDTAPCTG",
     "RMVTAPCTG",
     "CHGTAPCTG",
+    // --- hardware qualification (lic/slic/src/cpp/hwcmd.rs)
+    "QSHWQUAL",
     // --- tape files and copies (lic/slic/src/cpp/tapcpy.rs)
     "CPYTOTAP",
     "CPYFRMTAP",

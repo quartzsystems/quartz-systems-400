@@ -6,7 +6,7 @@
       1. Install Licensed Internal Code                                         
       2. Work with Dedicated Service Tools (DST)                                
       3. Define alternate installation device                                   
-                                                                                
+      4. Run hardware qualification (QSHWQUAL)                                  
                                                                                 
                                                                                 
                                                                                 

@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `WRKHDWRSC` and `DSPHDWRSC` where no panel shows them (batch, the
+//! `QSHWQUAL`; `WRKHDWRSC` and `DSPHDWRSC` where no panel shows them (batch, the
 //! service console, `OUTPUT(*PRINT)`, `OUTPUT(*OUTFILE)`): the list of
 //! a type from the hardware resource service, as text, a spooled file
 //! or records of IBM's model format `QRZALL` (file `QARZALLF`), field
@@ -50,6 +50,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
     let r = match name {
         "WRKHDWRSC" => listing(system, parms, false),
         "DSPHDWRSC" => listing(system, parms, true),
+        "QSHWQUAL" => qualify(system, parms),
         _ => return None,
     };
     Some(match r {
@@ -74,6 +75,26 @@ fn listing(system: &mut System, parms: &Parms, dsp: bool) -> Result<String, Stri
         }
         _ => Ok(view::print_lines(&t, spec).join("\n") + "\n"),
     }
+}
+
+/// `QSHWQUAL`: the hardware qualification report (`lic/hwqual`), shown
+/// or printed as `QSYSPRT` file `QSHWQUAL`, and with `TODEV(*USB)` also
+/// written to a FAT USB stick.
+fn qualify(system: &mut System, parms: &Parms) -> Result<String, String> {
+    let r = crate::ipl::hwqual::report(system);
+    let lines = r.lines();
+    let mut out = if parms.name("OUTPUT") == "*PRINT" {
+        crate::svc::security::print_as(system, "QSYSPRT", "QSHWQUAL", &lines, false)?;
+        format!("Hardware qualification report printed: {}.\n", r.summary())
+    } else {
+        lines.join("\n") + "\n"
+    };
+    if parms.name("TODEV") == "*USB" {
+        let done = crate::ipl::hwqual::to_usb(&r.text()).map_err(|e| format!("CPF9898 {e}"))?;
+        out.push_str(&done);
+        out.push('\n');
+    }
+    Ok(out)
 }
 
 /// One `QRZALL` record per resource the list shows.

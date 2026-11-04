@@ -485,6 +485,7 @@ dependencies = [
  "dspf",
  "ed25519-dalek",
  "ftp",
+ "hwqual",
  "ifs",
  "ile",
  "instmedia",
@@ -1317,6 +1318,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "guestagent"
+version = "0.1.0"
+dependencies = [
+ "netlink",
+ "nettools",
+ "release",
+ "rustix",
+ "serde_json",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1456,6 +1468,16 @@ dependencies = [
  "serde_json",
  "thiserror",
  "tls",
+]
+
+[[package]]
+name = "hwqual"
+version = "0.1.0"
+dependencies = [
+ "diskimg",
+ "fatfs",
+ "hwrsrc",
+ "release",
 ]
 
 [[package]]
@@ -3236,8 +3258,10 @@ dependencies = [
  "dhcp",
  "diskimg",
  "dspf",
+ "guestagent",
  "hostsvr",
  "httpadmin",
+ "hwqual",
  "hwrsrc",
  "ifs",
  "ifscmd",
@@ -3457,6 +3481,7 @@ version = "0.1.0"
 dependencies = [
  "argon2",
  "console",
+ "hwqual",
  "ipc",
  "licpart",
  "release",

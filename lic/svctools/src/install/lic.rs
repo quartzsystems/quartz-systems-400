@@ -36,6 +36,11 @@ pub fn install_lic_menu() -> Submenu {
                 Some(Box::new(|_env| Flow::Exit(Outcome::Dst))),
             ),
             (3, "Define alternate installation device", None),
+            (
+                4,
+                "Run hardware qualification (QSHWQUAL)",
+                Some(Box::new(|_env| Flow::Push(Box::new(crate::install::hwqual::menu())))),
+            ),
         ],
     )
 }

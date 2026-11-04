@@ -9,6 +9,7 @@ pub mod clock;
 pub mod cmdline;
 pub mod display;
 pub mod dst;
+pub mod hwqual;
 pub mod ifs;
 pub mod install;
 pub mod instdev;

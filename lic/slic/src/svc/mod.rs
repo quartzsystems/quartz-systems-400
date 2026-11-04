@@ -38,6 +38,7 @@ help                 this list
 srcs [table]         SRC log of this IPL, or the whole SRC table
 hist                 IPL history from the LIC partition
 hw                   hardware resource table
+qshwqual [usb]       hardware qualification report (QSHWQUAL), and to a FAT USB stick
 lic                  LIC record header
 sysval NAME [VALUE]  show or set a system value
 mode manual|normal   keylock for the next IPL
@@ -164,6 +165,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
             )
         }
         ("lic", _) => lic_dump(system),
+        ("qshwqual", rest) => crate::ipl::hwqual::command(system, rest),
         ("sysval", rest) => sysval(system, rest),
         ("mode", [m]) => mode(system, m),
         ("screen", _) => crate::ipl::display::dump(system),

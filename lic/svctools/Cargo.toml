@@ -18,5 +18,8 @@ ipc = { path = "../../work/ipc", version = "0.1.0", optional = true }
 # The process-message encoding SST's storage requests carry.
 wire = ["dep:ipc"]
 
+[dev-dependencies]
+hwqual = { path = "../hwqual", version = "0.1.0" }
+
 [lints]
 workspace = true

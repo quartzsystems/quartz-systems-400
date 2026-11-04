@@ -219,3 +219,84 @@ fn define_or_change_the_system_at_ipl() {
     check("rclstg-running", &reclaim_screen("QS400", None).dump());
     check("rclstg-done", &reclaim_screen("QS400", Some("12 objects checked, 0 lost")).dump());
 }
+
+/// A report as the QEMU guest of the conformance suite gives it.
+fn qual_report() -> Vec<String> {
+    use hwqual::report::{Check, Grade, Report};
+    let pass = |r: &str, t: &str, s: &str| Check::new(Grade::Pass, r, t, s);
+    let warn = |r: &str, t: &str, s: &str| Check::new(Grade::Warn, r, t, s);
+    Report {
+        machine: "QEMU Standard PC (Q35 + ICH9, 2009)".into(),
+        hypervisor: "KVM/QEMU".into(),
+        when: "2026-11-04 09:30:00".into(),
+        checks: vec![
+            (
+                "Firmware and security".into(),
+                vec![
+                    pass("UEFI", "", "UEFI firmware: QS/400 boots its UKI from the EFI system partition."),
+                    warn("SECBOOT", "", "Secure Boot is disabled: the firmware starts any loader."),
+                    warn("TPM", "", "No TPM was found: QS/400 runs without one, but cannot seal keys to this machine."),
+                ],
+            ),
+            (
+                "Processors and main storage".into(),
+                vec![
+                    pass("PN01", "QP01-001", "processor 0: QEMU Virtual CPU version 2.5+"),
+                    pass("PN02", "QP01-001", "processor 1: QEMU Virtual CPU version 2.5+"),
+                    warn("MS01", "QM01-001", "Main storage 987 MiB: enough to IPL; 2048 MiB or more for work."),
+                ],
+            ),
+            (
+                "Storage controllers and disk units".into(),
+                vec![
+                    pass("DC01", "QD03-001", "ICH9 AHCI, driver ahci, 1 disk units"),
+                    pass("DC02", "QD01-001", "virtio block, driver virtio-pci, 1 disk units"),
+                    pass("DD001", "VIRT", "sda 4096 MiB at 0:0:0:0 on DC01"),
+                    pass("DD002", "VIRT", "vda 4096 MiB on DC02"),
+                ],
+            ),
+            (
+                "Communications".into(),
+                vec![
+                    pass("CMN01", "QN01-001", "Virtio Ethernet port eth0 52:54:00:12:34:56 virtio_net, link up"),
+                    pass("CMN03", "QV01-001", "virtual channel org.qemu.guest_agent.0 (vport1p1): the agent's."),
+                ],
+            ),
+            (
+                "Console".into(),
+                vec![
+                    pass("CMN02", "QS01-001", "serial port ttyS0: the service console runs here."),
+                    pass("FB0", "", "Framebuffer simpledrmdrmfb 1280x800 at 32 bits."),
+                ],
+            ),
+        ],
+    }
+    .lines()
+}
+
+#[test]
+fn hardware_qualification_from_the_media() {
+    let mut e = env();
+    e.qual = qual_report();
+    let mut r = svctools::install::lic::start();
+    r.enter(&f(&["4"]), &mut e);
+    check("hwqual", &r.screen(&mut e).dump());
+    r.enter(&f(&["1"]), &mut e);
+    check("hwqual-report", &r.screen(&mut e).dump());
+    r.function(8, &mut e);
+    check("hwqual-report-2", &r.screen(&mut e).dump());
+    r.function(12, &mut e);
+    // No stick: the error says so; with one, where it went.
+    r.enter(&f(&["2"]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("No USB device"));
+    e.usb = Some("The report was written to QSHWQUAL.TXT on sdb1 (Cruzer Blade).".into());
+    r.enter(&f(&["2"]), &mut e);
+    check("hwqual-usb", &r.screen(&mut e).dump());
+    assert_eq!(e.actions.iter().filter(|a| *a == "write report to USB").count(), 2);
+    // An environment without the run says so.
+    let mut none = MemEnv::new("QS400");
+    let mut r = svctools::install::lic::start();
+    r.enter(&f(&["4"]), &mut none);
+    r.enter(&f(&["1"]), &mut none);
+    assert!(r.screen(&mut none).dump().contains("not available here"));
+}

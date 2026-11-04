@@ -606,6 +606,15 @@ impl DstEnv for Env<'_> {
         reserved(self.system)
     }
 
+    fn hardware_report(&mut self) -> Result<Vec<String>, String> {
+        Ok(crate::ipl::hwqual::report(self.system).lines())
+    }
+
+    fn write_report_usb(&mut self) -> Result<String, String> {
+        let text = crate::ipl::hwqual::report(self.system).text();
+        crate::ipl::hwqual::to_usb(&text)
+    }
+
     fn delete_unit_data(
         &mut self,
         device: &str,

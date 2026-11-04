@@ -1,0 +1,24 @@
+                             Hardware Qualification                             
+                                                                 System:  QS400 
+                                                                                
+ QSHWQUAL checks the processors, main storage, controllers and                  
+ disks, network ports, console, TPM and firmware of this machine.               
+                                                                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display hardware qualification report                                  
+      2. Write report to USB device                                             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

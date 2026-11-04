@@ -175,6 +175,13 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   hwrsrc/       hardware resources: src/scan/ (pci, nic, storage), src/table/ names, rescans,
                 packaging and logical trees, uevent.rs, proto.rs and client.rs the service's
                 socket (/run/qs400/hwrsrc.sock), view.rs what WRKHDWRSC/DSPHDWRSC and QGYRHR* show
+  hwqual/       QSHWQUAL (docs/QUALIFIED_HARDWARE.md): checks.rs the checks over the resource table
+                and a few sysfs/procfs files, report.rs the graded report, usb.rs the FAT stick;
+                the machine side lic/slic/src/ipl/hwqual.rs, the media menu
+                lic/svctools/src/install/hwqual.rs, the command lic/slic/src/cpp/hwcmd.rs
+  guestagent/   the guest agent (/init qsga): the QEMU guest agent protocol (framer.rs, agent.rs)
+                over virtio-serial and vsock, facts.rs, status.rs (/run/qs400/status, which slic
+                writes at each SRC), port.rs, linux.rs; slic's side lic/slic/src/procs/guest.rs
   blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
   osobjects/    the OS objects of QS00SS1 *BASE (message files, work management objects,
                 display files, panel groups and menus, regfac, commands, QSTRUP from
@@ -507,7 +514,8 @@ docs/         ABI.md, ARCHITECTURE.md, BACKUP.md, CERTS.md, CL.md, CMD.md,
               MSGF.md, NAVIGATOR.md, NAVIGATOR_HANDOFF.md, NET_OPEN_QUESTIONS.md, PHASE0.md,
               PHASE1.md, PHASE10.md, PHASE11.md, PHASE12.md, PHASE2.md, PHASE3.md,
               PHASE4.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8.md, PHASE9.md, PRINT.md,
-              PTF.md, QAP.md, QIR.md, QSH.md, RECOVERY.md, RPG.md, RPG_OPEN_QUESTIONS.md,
+              PTF.md, QAP.md, QIR.md, QSH.md, QUALIFIED_HARDWARE.md, RECOVERY.md, RPG.md,
+              RPG_OPEN_QUESTIONS.md,
               SAVE_FORMAT.md, SEC_OPEN_QUESTIONS.md, SECURITY.md, SERVERS.md, SERVICE.md,
               SSHD.md, STORAGE_SERVICE.md, STORE_FORMAT.md, SVC_OPEN_QUESTIONS.md,
               SYSAPI.md, TCPIP.md, TN5250.md, TOOLS.md, UI_OPEN_QUESTIONS.md, UIM.md,
@@ -532,6 +540,7 @@ cargo test -p savfmt -p saverst   # the save stream and the save/restore engine
 cargo test -p tape -p optical -p imgclg   # tape, optical, image catalogs
 cargo test -p ptf -p prb          # PTFs, the problem log
 cargo test -p hwrsrc              # the hardware resource table, trees, hotplug merge, protocol
+cargo test -p hwqual -p guestagent   # QSHWQUAL's checks and report; the guest agent's protocol
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
@@ -595,7 +604,7 @@ analyzer (`crtlib LIB(X) TEXT('made')`, `?crtpf`); the dev words below are
 reached with the `svc.` prefix only (`svc.obj ls QGPL`, `svc.xfer put`).
 Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 `lic`, `sysval NAME [VALUE]`, `mode manual|normal`, `screen`, `pwrdwn
-[restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench|fill|verify`,
+[restart]`, `release`, `qshwqual [usb]` (QSHWQUAL); store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench|fill|verify`,
 `dtaara get|set`, `dtaq snd|rcv`, `usrspc rd|wr`, `rclstg [*CHECK]`, `chkstg`,
 `txn stats`, `ifs` (the IFS mount at /run/qs400/ifs, capacity, free space),
 `sysdump [take|list|show N|delete N|copy N TO]` (system dumps), `liclog [MAJOR]` (the LIC log),
@@ -658,7 +667,7 @@ otherwise logs go to `target/logs/`.
   `lic/ublk/src/sys.rs` (the `io_uring` rings and the ublk descriptors mapped
   from the kernel, xfs's grow ioctl),
   `net/nettools/src/sys/raw.rs` (`setsockopt`, `recvmsg` with control data,
-  `AF_PACKET`), `media/tape/src/st/raw.rs` (the `st` and `sg` ioctls),
+  `AF_PACKET`, the guest agent's `AF_VSOCK` listener), `media/tape/src/st/raw.rs` (the `st` and `sg` ioctls),
   `work/qsjob/src/platform/clock.rs` (`adjtimex`, which musl's libc binding lacks) and
   `lic/slic/src/stgsvc/fiber.rs` (the running statement's yielder, on its own stack),
   `qsh/pase/src/platform.rs` (fork, unshare, the ID maps, pivot_root and exec of a PASE
