@@ -55,6 +55,7 @@ impl Suite {
     /// Step 104: long commands typed across the rows of MAIN's command
     /// line (153 cells over two rows) and Command Entry's (313 over
     /// four), over telnet and at the console, run as typed.
+    #[allow(clippy::many_single_char_names)] // s, d, c, m, e as the other steps name them
     pub(crate) fn wrapped_command_lines(&self, s: &mut Session) -> Result<String, String> {
         let _ = s.command("DLTDTAARA DTAARA(QGPL/WRAPM)", CMD);
         let _ = s.command("DLTDTAARA DTAARA(QGPL/WRAPE)", CMD);
