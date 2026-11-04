@@ -1,0 +1,22 @@
+      *; call: CALL PGM({lib}/{name}) PARM('ABC' 41.5)
+      * The program status data structure and *ENTRY parameters.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     IPSDS       SDS
+     I                                     *PROGRAM PGMNAM
+     I                                     *STATUS  STS
+     I                                     *PARMS   PRMS
+     I                                     *ROUTINE RTN
+     C           *ENTRY    PLIST
+     C                     PARM           P1      3
+     C                     PARM           P2     155
+     C                     ADD  1         P2
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         PGMNAM    10
+     O                         STS       20
+     O                         PRMS  Z   25
+     O                         RTN       35
+     O                         P1        40
+     O                         P2    J   65

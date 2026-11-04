@@ -1,0 +1,25 @@
+      *; dds: CUSTF
+      *; sqlfile: CUSTF
+      * Continuation lines: RENAME and INFDS; the INFDS's file and status.
+     H
+     FCUSTF   IF  E           K        DISK
+     F            CUSTR                             KRENAMECREC
+     F                                              KINFDS FEED
+     FQSYSPRT O   F     132     OF     PRINTER
+     IFEED        DS
+     I                                     *FILE    FFILE
+     I                                     *STATUS  FSTS
+     I                                     *OPCODE  FOPC
+     I                                     *RECORD  FREC
+     C           107       CHAINCREC                 91
+     C                     EXCPTLINE
+     C           999       CHAINCUSTF                91
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         FFILE     10
+     O                         FSTS      20
+     O                         FOPC      30
+     O                         FREC      40
+     O                         NAME      60
+     O                 91                63 '91'

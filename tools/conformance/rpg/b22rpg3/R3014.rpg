@@ -1,0 +1,31 @@
+      *; dds: CUSTF
+      *; sqlfile: CUSTF
+      * Update, write and delete through an externally described file.
+     H
+     FCUSTF   UF  E           K        DISK                      A
+     FQSYSPRT O   F     132     OF     PRINTER
+     C           102       CHAINCUSTF                91
+     C  N91                ADD  100       BAL
+     C  N91                UPDATCUSTR
+     C                     Z-ADD109       CUSNO
+     C                     MOVEL'Ida Ives'NAME      P
+     C                     MOVEL'Erie'    CITY      P
+     C                     Z-ADD7.77      BAL
+     C                     WRITECUSTR                  93
+     C                     WRITECUSTR                  94
+     C           103       CHAINCUSTF                91
+     C  N91                DELETCUSTR
+     C           105       CHAINCUSTF                91
+     C           *LOVAL    SETLLCUSTF
+     C                     READ CUSTR                    90
+     C           *IN90     DOWEQ'0'
+     C                     EXCPTLINE
+     C                     READ CUSTR                    90
+     C                     END
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         CUSNO Z    6
+     O                         NAME      28
+     O                         BAL   J   55
+     O                 93                58 '93'
+     O                 94                61 '94'

@@ -1,0 +1,20 @@
+      *; setup: CRTDTAARA DTAARA({lib}/R3DTA) TYPE(*CHAR) LEN(10) VALUE('START')
+      *; cleanup: DLTDTAARA DTAARA({lib}/R3DTA)
+      * DEFN: *LIKE and *NAMVAR; IN and OUT of a data area.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     C                     Z-ADD12.5      BASE    51
+     C           *LIKE     DEFN BASE      COPY   +2
+     C                     Z-ADD1234.5    COPY
+     C           *NAMVAR   DEFN R3DTA     DTA    10
+     C           *LOCK     IN   DTA
+     C                     MOVE DTA       BEFORE 10
+     C                     MOVEL'CHANGED' DTA
+     C                     OUT  DTA
+     C                     IN   DTA
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         COPY  J   10
+     O                         BEFORE    25
+     O                         DTA       40

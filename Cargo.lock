@@ -505,6 +505,7 @@ dependencies = [
  "qsname",
  "release",
  "rpg-oracle",
+ "rpg3",
  "rpgc",
  "rpgfront",
  "sec",
@@ -2751,6 +2752,16 @@ dependencies = [
  "clap",
  "tn5250",
  "tn5250-driver",
+]
+
+[[package]]
+name = "rpg3"
+version = "0.1.0"
+dependencies = [
+ "release",
+ "rpgc",
+ "rpgfront",
+ "rpgspecs",
 ]
 
 [[package]]

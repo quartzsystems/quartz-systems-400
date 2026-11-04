@@ -1,0 +1,36 @@
+      *; dds: CUSTF
+      *; sqlfile: CUSTF
+      * An externally described keyed file: READ, CHAIN, SETLL, READE.
+     H
+     FCUSTF   IF  E           K        DISK
+     FQSYSPRT O   F     132     OF     PRINTER
+     C                     READ CUSTF                    90
+     C           *IN90     DOWEQ'0'
+     C                     EXCPTLINE
+     C                     READ CUSTF                    90
+     C                     END
+     C                     Z-ADD104       KEY     50
+     C           KEY       CHAINCUSTF                91
+     C  N91                EXCPTLINE
+     C           999       CHAINCUSTF                92
+     C   92                EXCPTNF
+     C           106       SETLLCUSTF                    93
+     C                     READ CUSTF                    94
+     C  N94                EXCPTLINE
+     C                     READPCUSTF                    95
+     C                     READPCUSTF                    95
+     C  N95                EXCPTLINE
+     C           102       SETLLCUSTF                    96
+     C           102       READECUSTF                    97
+     C  N97                EXCPTLINE
+     C           102       READECUSTF                    97
+     C   97                EXCPTNF
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         CUSNO Z    6
+     O                         NAME      28
+     O                         CITY      41
+     O                         BAL   J   55
+     OQSYSPRT E  1             NF
+     O                                   10 'NOT FOUND'
+     O                 93                13 '93'

@@ -1,0 +1,21 @@
+      * Edit words: separators, fill, floating currency, CR and minus.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     C                     Z-ADD-123456.78AMT     92
+     C                     Z-ADD4567.8    POS     92
+     C                     Z-ADD110426    DAT     60
+     C                     Z-ADD5551234   PHN     70
+     C                     Z-ADD0         ZRO     92
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         AMT       20 ' ,   ,  0.  -'
+     O                         AMT       40 ' ,   ,  0.  CR'
+     O                         POS       60 ' ,   ,  0.  CR'
+     O                         POS       80 '*,   ,  0.  '
+     OQSYSPRT E  1             LINE
+     O                         AMT       20 '$ ,   ,  0.  '
+     O                         DAT       40 '  /  /  '
+     O                         PHN       60 '   -    '
+     O                         ZRO       80 ' ,   ,  0.  '
+     O                         ZRO      100 ' ,   ,   .  '

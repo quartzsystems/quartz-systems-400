@@ -1,0 +1,50 @@
+      * Data structures from I specifications.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     IDS1         DS
+     I                                        1   6 PART1
+     I                                        7  10 PART2
+     I                                        1  10 WHOLE
+     I                                       11  152NUM
+     I                                    P  16  180PNUM
+     I                                    B  19  220BNUM
+     IDS2        IDS
+     I I            'ABC'                     1   3 SUBA
+     I I            123                       4   80SUBN
+     I                                        9  12 SUBC
+     IMO          DS                          3   8
+     I                                        1   4 MOA
+     I                                        5   80MOB
+     I              'A CONSTANT'          C         CON1
+     I              1234.5                C         CON2
+     C                     MOVEL'FIRSTSECOWHOLE
+     C                     Z-ADD-12.34    NUM
+     C                     Z-ADD789       PNUM
+     C                     Z-ADD-5        BNUM
+     C                     Z-ADDCON2      CN      72
+     C                     Z-ADD1         O       30
+     C                     DO   3         O
+     C           O         OCUR MO
+     C                     MOVEL'OC'      MOA
+     C                     MOVE O         MOA
+     C                     Z-ADDO         MOB
+     C                     MULT 11        MOB
+     C                     END
+     C           2         OCUR MO
+     C                     MOVELMO        MO2     8
+     C                     OCUR MO        CUR     30
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         PART1     10
+     O                         PART2     16
+     O                         NUM   J   30
+     O                         PNUM  J   40
+     O                         BNUM  J   50
+     OQSYSPRT E  1             LINE
+     O                         DS2       12
+     O                         CON1      25
+     O                         CN    J   35
+     O                         MO2       45
+     O                         CUR   Z   50
+     O                         SUBN  J   60

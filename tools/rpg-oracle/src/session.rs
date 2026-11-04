@@ -37,11 +37,24 @@ pub struct Session {
     lib: String,
     user: String,
     rcdlen: Option<usize>,
+    rpgsrc: bool,
     ddssrc: bool,
     in_sql_listing: bool,
     release: String,
     display: Option<crate::display::Display>,
     _lock: Lock,
+}
+
+/// What `CVTRPGSRC` made of an RPG III member.
+pub struct Converted {
+    /// The command ended normally.
+    pub ok: bool,
+    /// Its failure message.
+    pub cause: String,
+    /// The converted member's lines.
+    pub source: Vec<String>,
+    /// The conversion report, masked.
+    pub report: Vec<String>,
 }
 
 /// One row of the spool query.
@@ -67,6 +80,7 @@ impl Session {
             lib: format!("{user}B"),
             user,
             rcdlen: None,
+            rpgsrc: false,
             ddssrc: false,
             in_sql_listing: false,
             release: String::new(),
@@ -101,6 +115,14 @@ impl Session {
         Ok((code == 250, cause, text))
     }
 
+    /// Run one command (`{lib}` the work library): whether it worked
+    /// and the server's reply, the account's name masked.
+    pub fn probe(&mut self, cl: &str) -> Result<(bool, String)> {
+        let cl = cl.replace("{lib}", &self.lib);
+        let (ok, _, text) = self.rcmd_text(&cl)?;
+        Ok((ok, text.replace(&self.user, "{user}")))
+    }
+
     /// Quietly try a command.
     fn try_rcmd(&mut self, cl: &str) {
         let _ = self.rcmd(cl);
@@ -130,6 +152,59 @@ impl Session {
         }
         self.rcdlen = Some(rcdlen);
         Ok(())
+    }
+
+    /// Make sure the RPG III source file `QRPGSRC` (92 bytes) is there.
+    fn rpg3_file(&mut self) -> Result<()> {
+        if self.rpgsrc {
+            return Ok(());
+        }
+        let lib = self.lib.clone();
+        self.try_rcmd(&format!("DLTF FILE({lib}/QRPGSRC)"));
+        let (ok, cause) = self.rcmd(&format!("CRTSRCPF FILE({lib}/QRPGSRC) RCDLEN(92) CCSID(37)"))?;
+        if !ok {
+            bail!("CRTSRCPF QRPGSRC failed {cause}");
+        }
+        self.rpgsrc = true;
+        Ok(())
+    }
+
+    /// `CVTRPGSRC` of an RPG III member into `QRPGLESRC`: the converted
+    /// member's lines and the conversion report.
+    fn convert(&mut self, c: &Case) -> Result<Converted> {
+        let lib = self.lib.clone();
+        self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({})", c.name));
+        // The report is the command's only spooled file.
+        for e in self.spools()? {
+            let _ = self.take_spool(&e);
+        }
+        let (ok, cause) = self.rcmd(&format!(
+            "CVTRPGSRC FROMFILE({lib}/QRPGSRC) FROMMBR({}) TOFILE({lib}/QRPGLESRC) TOMBR(*FROMMBR) LOGFILE(*NONE)",
+            c.name
+        ))?;
+        let mut report = Vec::new();
+        for e in self.spools()? {
+            let lines = self.take_spool(&e)?;
+            if report.is_empty() && e.name != "QSQ" {
+                report = lines;
+            }
+        }
+        let mut source = Vec::new();
+        if let Ok(data) = self.ftp.get(&self.member_path("QRPGLESRC", &c.name), true) {
+            source = data.chunks(100).map(|r| ccsid::from_ebcdic(r).trim_end().to_string()).collect();
+        }
+        self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({})", c.name));
+        let m = Mask {
+            libs: vec![lib],
+            users: vec![self.user.clone()],
+            systems: vec!["PUB400".into()],
+        };
+        Ok(Converted {
+            ok,
+            cause: if ok { String::new() } else { cause },
+            source,
+            report: listing::mask(&report, &m),
+        })
     }
 
     /// Upload lines as a member: binary data records, which the server
@@ -420,11 +495,19 @@ impl Session {
 
     /// Compile and run one member: its outcome and masked listing.
     #[allow(clippy::too_many_lines)] // one member's whole round, in order
-    pub fn case(&mut self, c: &Case) -> Result<(Outcome, Vec<String>)> {
-        self.source_file(c.rcdlen)?;
+    pub fn case(&mut self, c: &Case) -> Result<(Outcome, Vec<String>, Option<Converted>)> {
         let lib = self.lib.clone();
-        self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({})", c.name));
-        self.put_member(&c.name, &c.lines, c.width())?;
+        if c.rpg3 {
+            self.source_file(112)?;
+            self.rpg3_file()?;
+            self.try_rcmd(&format!("RMVM FILE({lib}/QRPGSRC) MBR({})", c.name));
+            self.put_source("QRPGSRC", &c.name, &c.lines, c.width())?;
+            self.try_rcmd(&format!("CHGPFM FILE({lib}/QRPGSRC) MBR({}) SRCTYPE(RPG)", c.name));
+        } else {
+            self.source_file(c.rcdlen)?;
+            self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({})", c.name));
+            self.put_member(&c.name, &c.lines, c.width())?;
+        }
         for (w, lines) in &c.with {
             self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({w})"));
             self.put_member(w, lines, c.width())?;
@@ -528,7 +611,8 @@ impl Session {
                 .unwrap_or("")
                 .to_string();
         }
-        o.diags = listing::diags(&listing);
+        o.diags = if c.rpg3 { listing::diags_rpg3(&listing) } else { listing::diags(&listing) };
+        let converted = if c.rpg3 { Some(self.convert(c)?) } else { None };
         for cmd in ["DLTPGM PGM", "DLTMOD MODULE", "DLTSRVPGM SRVPGM"] {
             self.try_rcmd(&format!("{cmd}({lib}/{})", c.name));
         }
@@ -539,7 +623,7 @@ impl Session {
         for (w, _) in &c.with {
             self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({w})"));
         }
-        self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({})", c.name));
+        self.try_rcmd(&format!("RMVM FILE({lib}/{}) MBR({})", c.srcfile(), c.name));
         self.db_cleanup(&made);
         o.provenance = vec![
             format!("{} {} pub400.com", c.name, self.release),
@@ -550,7 +634,7 @@ impl Session {
             users: vec![self.user.clone()],
             systems: vec!["PUB400".into()],
         };
-        Ok((o, listing::mask(&listing, &m)))
+        Ok((o, listing::mask(&listing, &m), converted))
     }
 
     /// The spooled files a call wrote, as page/line rows.
@@ -598,7 +682,7 @@ impl Session {
             }
         }
         let lib = self.lib.clone();
-        for f in ["QRPGLESRC", "QDDSSRC", "RPGSPL", "RPGSPLS", "RPGJLOG"] {
+        for f in ["QRPGLESRC", "QRPGSRC", "QDDSSRC", "RPGSPL", "RPGSPLS", "RPGJLOG"] {
             self.try_rcmd(&format!("DLTF FILE({lib}/{f})"));
         }
     }
@@ -609,7 +693,7 @@ impl Session {
             d.close();
         }
         let lib = self.lib.clone();
-        for f in ["QRPGLESRC", "QDDSSRC", "RPGSPL"] {
+        for f in ["QRPGLESRC", "QRPGSRC", "QDDSSRC", "RPGSPL"] {
             self.try_rcmd(&format!("DLTF FILE({lib}/{f})"));
         }
         self.ftp.quit();

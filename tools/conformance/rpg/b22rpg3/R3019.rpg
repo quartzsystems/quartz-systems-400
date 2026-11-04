@@ -1,0 +1,20 @@
+      *; dds: CUSTF
+      *; sqlfile: CUSTF
+      * An externally described data structure; a renamed input field.
+     H
+     FCUSTF   IF  E           K        DISK
+     FQSYSPRT O   F     132     OF     PRINTER
+     ICUSTR
+     I              NAME                            CNAME
+     ICUSTDS    E DSCUSTF
+     I              CITY                            DSCITY
+     C           101       CHAINCUSTF                91
+     C                     MOVELCNAME     SAVNAM 20
+     C                     MOVEL'Lima'    DSCITY    P
+     C                     Z-ADD5         CUSNO
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         SAVNAM    20
+     O                         CITY      30
+     O                         CUSTDS    70

@@ -1,0 +1,32 @@
+      *; dds: ORDF
+      *; sqlfile: ORDF
+      * KLIST and KFLD: CHAIN, READE by a partial key, SETGT, READP.
+     H
+     FORDF    IF  E           K        DISK
+     FQSYSPRT O   F     132     OF     PRINTER
+     C           FULL      KLIST
+     C                     KFLD           KCUS
+     C                     KFLD           KORD
+     C           PART      KLIST
+     C                     KFLD           KCUS
+     C                     Z-ADD101       KCUS    50
+     C                     Z-ADD2         KORD    50
+     C           FULL      CHAINORDF                 91
+     C  N91                EXCPTLINE
+     C           PART      SETLLORDF
+     C           PART      READEORDF                     92
+     C           *IN92     DOWEQ'0'
+     C                     EXCPTLINE
+     C           PART      READEORDF                     92
+     C                     END
+     C                     Z-ADD104       KCUS
+     C           PART      SETGTORDF
+     C                     READPORDF                     93
+     C  N93                EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         ORDCUSZ    6
+     O                         ORDNO Z   12
+     O                         ITEM      24
+     O                         QTY   Z   30
+     O                         PRICE J   40

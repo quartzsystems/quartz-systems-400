@@ -1,0 +1,74 @@
+      * Comparison and structured operations.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     C                     Z-ADD5         X       30
+     C           X         COMP 3                    101112
+     C                     EXCPTCMP
+     C           X         COMP 5                    101112
+     C                     EXCPTCMP
+     C           X         IFGT 4
+     C                     MOVE 'GT4'     MSG    10
+     C                     ELSE
+     C                     MOVE 'LE4'     MSG
+     C                     END
+     C                     EXCPTMSGL
+     C                     Z-ADD0         I       30
+     C           I         DOWLT3
+     C                     ADD  1         I
+     C                     EXCPTLOOP
+     C                     END
+     C           I         DOUGE5
+     C                     ADD  1         I
+     C                     EXCPTLOOP
+     C                     ENDDO
+     C           I         CABEQ5         SKIP
+     C                     MOVEL'NOT SKIP'MSG
+     C                     EXCPTMSGL
+     C           SKIP      TAG
+     C                     Z-ADD2         X
+     C           X         CASEQ1         SR1
+     C           X         CASEQ2         SR2
+     C                     CAS            SR3
+     C                     END
+     C                     SELEC
+     C           X         WHEQ 1
+     C                     MOVEL'WHEN 1'  MSG
+     C           X         WHGT 1
+     C           X         ANDLT9
+     C                     MOVEL'WHEN GT1'MSG
+     C                     OTHER
+     C                     MOVEL'OTHER'   MSG
+     C                     ENDSL
+     C                     EXCPTMSGL
+     C           X         IFEQ 7
+     C           X         OREQ 2
+     C                     MOVEL'OR TRUE' MSG
+     C                     EXCPTMSGL
+     C                     ENDIF
+     C                     GOTO DONE
+     C                     MOVEL'NOT HERE'MSG
+     C                     EXCPTMSGL
+     C           DONE      TAG
+     C                     SETON                     LR
+     C           SR1       BEGSR
+     C                     MOVEL'SR1'     MSG
+     C                     EXCPTMSGL
+     C                     ENDSR
+     C           SR2       BEGSR
+     C                     MOVEL'SR2 RAN' MSG
+     C                     EXCPTMSGL
+     C                     ENDSR
+     C           SR3       BEGSR
+     C                     MOVEL'SR3'     MSG
+     C                     EXCPTMSGL
+     C                     ENDSR
+     OQSYSPRT E  1             CMP
+     O                         X     Z    5
+     O                 10                10 'HI'
+     O                 11                15 'LO'
+     O                 12                20 'EQ'
+     OQSYSPRT E  1             MSGL
+     O                         MSG       12
+     OQSYSPRT E  1             LOOP
+     O                                    6 'LOOP'
+     O                         I     Z   10

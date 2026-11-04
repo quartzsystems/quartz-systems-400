@@ -282,7 +282,15 @@ impl Gen<'_> {
             self.err(ids::TYPE_MISMATCH, 30, fld.field.clone());
             return None;
         }
-        if let Some(Expr::Lit(Lit::Char(word), _)) = &fld.constant {
+        // An edit code with `*` or the currency symbol in the constant
+        // columns: asterisk fill or a floating currency symbol.
+        let fill = match (&fld.constant, fld.edit.is_empty()) {
+            (Some(Expr::Lit(Lit::Char(w), _)), false) if w.chars().count() == 1 => w.chars().next(),
+            _ => None,
+        };
+        if let Some(Expr::Lit(Lit::Char(word), _)) = &fld.constant
+            && fill.is_none()
+        {
             let src = self.num_place(v);
             let n = u32::try_from(word.chars().count()).unwrap_or(1).max(1);
             let t = self.b.temp(&format!("char({n})"));
@@ -301,7 +309,15 @@ impl Gen<'_> {
             let src = self.num_place(v);
             let (d, s) = src.ty.shape().unwrap_or((30, 0));
             let shape = qdecimal::Shape::new(d.max(1), s).ok()?;
-            let width = qdecimal::code_width(shape, code, &qdecimal::EditOpts::default()).ok()?;
+            let opts = qdecimal::EditOpts {
+                fill: match fill {
+                    Some('*') => qdecimal::Fill::Asterisk,
+                    Some(c) => qdecimal::Fill::Currency(c),
+                    None => qdecimal::Fill::Blank,
+                },
+                ..qdecimal::EditOpts::default()
+            };
+            let width = qdecimal::code_width(shape, code, &opts).ok()?;
             let width = u32::try_from(width).unwrap_or(0);
             let t = self.b.temp(&format!("varchar({})", width.max(1)));
             let desc = self.desc_of(&src);
@@ -313,8 +329,12 @@ impl Gen<'_> {
                 "callb _QRNX_EDITC({t}, {}, {desc}, {}, {}, {})",
                 src.op,
                 u32::from(code),
-                self.ctl.edit_flags(),
-                quote(" ")
+                self.ctl.edit_flags() | match fill {
+                    Some('*') => 1,
+                    Some(_) => 2,
+                    None => 0,
+                },
+                quote(&fill.filter(|c| *c != '*').unwrap_or(' ').to_string())
             ));
             let c = self.b.temp(&format!("char({})", width.max(1)));
             self.b.ins(format!("mov {c}, {t}"));

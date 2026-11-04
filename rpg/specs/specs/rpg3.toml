@@ -1,0 +1,236 @@
+# The column layouts of the RPG III (RPG/400) specifications, as
+# CRTRPGPGM and CVTRPGSRC read them. Columns are 1-based and inclusive;
+# `ruler` is what SEU's format line shows over the field.
+
+[[form]]
+id = "H"
+letter = "H"
+title = "Control"
+fields = [
+  { name = "debug", from = 15, to = 15, ruler = "D" },
+  { name = "currency", from = 18, to = 18, ruler = "C" },
+  { name = "datfmt", from = 19, to = 19, ruler = "D" },
+  { name = "datedit", from = 20, to = 20, ruler = "E" },
+  { name = "decedit", from = 21, to = 21, ruler = "I" },
+  { name = "altseq", from = 26, to = 26, ruler = "S" },
+  { name = "forms", from = 41, to = 41, ruler = "F" },
+  { name = "ftrans", from = 43, to = 43, ruler = "T" },
+  { name = "transparency", from = 57, to = 57, ruler = "L" },
+  { name = "pgmname", from = 75, to = 80, ruler = "Pgmid" },
+]
+
+[[form]]
+id = "F"
+letter = "F"
+title = "File description"
+fields = [
+  { name = "name", from = 7, to = 14, ruler = "Filename" },
+  { name = "type", from = 15, to = 15, ruler = "I" },
+  { name = "designation", from = 16, to = 16, ruler = "P" },
+  { name = "eof", from = 17, to = 17, ruler = "E" },
+  { name = "sequence", from = 18, to = 18, ruler = "A" },
+  { name = "format", from = 19, to = 19, ruler = "F" },
+  { name = "reclen", from = 24, to = 27, ruler = "Rlen" },
+  { name = "limits", from = 28, to = 28, ruler = "L" },
+  { name = "keylen", from = 29, to = 30, ruler = "Kl" },
+  { name = "rectype", from = 31, to = 31, ruler = "A" },
+  { name = "org", from = 32, to = 32, ruler = "I" },
+  { name = "overflow", from = 33, to = 34, ruler = "Ov" },
+  { name = "keystart", from = 35, to = 38, ruler = "Kloc" },
+  { name = "ext", from = 39, to = 39, ruler = "E" },
+  { name = "device", from = 40, to = 46, ruler = "Device" },
+  { name = "cont", from = 53, to = 53, ruler = "K" },
+  { name = "routine", from = 54, to = 59, ruler = "Exit" },
+  { name = "entry", from = 60, to = 65, ruler = "Entry" },
+  { name = "addition", from = 66, to = 66, ruler = "A" },
+  { name = "condition", from = 71, to = 72, ruler = "U1" },
+]
+
+# File continuation line (K in column 53).
+[[form]]
+id = "FK"
+letter = "F"
+title = "File continuation"
+fields = [
+  { name = "extname", from = 19, to = 28, ruler = "Ext-record" },
+  { name = "rrn", from = 47, to = 52, ruler = "Rrn" },
+  { name = "cont", from = 53, to = 53, ruler = "K" },
+  { name = "option", from = 54, to = 59, ruler = "Option" },
+  { name = "entry", from = 60, to = 67, ruler = "Entry" },
+]
+
+[[form]]
+id = "E"
+letter = "E"
+title = "Extension"
+fields = [
+  { name = "from", from = 11, to = 18, ruler = "Fromfile" },
+  { name = "to", from = 19, to = 26, ruler = "Tofile" },
+  { name = "name", from = 27, to = 32, ruler = "Name" },
+  { name = "perrcd", from = 33, to = 35, ruler = "Rcd" },
+  { name = "entries", from = 36, to = 39, ruler = "Nbr" },
+  { name = "len", from = 40, to = 42, ruler = "Len" },
+  { name = "format", from = 43, to = 43, ruler = "P" },
+  { name = "decimals", from = 44, to = 44, ruler = "D" },
+  { name = "seq", from = 45, to = 45, ruler = "A" },
+  { name = "alt", from = 46, to = 51, ruler = "Altnam" },
+  { name = "altlen", from = 52, to = 54, ruler = "Len" },
+  { name = "altformat", from = 55, to = 55, ruler = "P" },
+  { name = "altdecimals", from = 56, to = 56, ruler = "D" },
+  { name = "altseq", from = 57, to = 57, ruler = "A" },
+  { name = "comments", from = 58, to = 80, ruler = "Comments" },
+]
+
+[[form]]
+id = "L"
+letter = "L"
+title = "Line counter"
+fields = [
+  { name = "name", from = 7, to = 14, ruler = "Filename" },
+  { name = "formlen", from = 15, to = 17, ruler = "Len" },
+  { name = "fl", from = 18, to = 19, ruler = "FL" },
+  { name = "overflow", from = 20, to = 22, ruler = "Ofl" },
+  { name = "ol", from = 23, to = 24, ruler = "OL" },
+]
+
+# Program-described record identification line.
+[[form]]
+id = "I"
+letter = "I"
+title = "Input record"
+fields = [
+  { name = "name", from = 7, to = 14, ruler = "Filename" },
+  { name = "relation", from = 14, to = 16, ruler = "" },
+  { name = "sequence", from = 15, to = 16, ruler = "Sq" },
+  { name = "number", from = 17, to = 17, ruler = "N" },
+  { name = "option", from = 18, to = 18, ruler = "O" },
+  { name = "rid", from = 19, to = 20, ruler = "Id" },
+  { name = "pos1", from = 21, to = 24, ruler = "Pos1" },
+  { name = "not1", from = 25, to = 25, ruler = "N" },
+  { name = "part1", from = 26, to = 26, ruler = "C" },
+  { name = "char1", from = 27, to = 27, ruler = "C" },
+  { name = "pos2", from = 28, to = 31, ruler = "Pos2" },
+  { name = "not2", from = 32, to = 32, ruler = "N" },
+  { name = "part2", from = 33, to = 33, ruler = "C" },
+  { name = "char2", from = 34, to = 34, ruler = "C" },
+  { name = "pos3", from = 35, to = 38, ruler = "Pos3" },
+  { name = "not3", from = 39, to = 39, ruler = "N" },
+  { name = "part3", from = 40, to = 40, ruler = "C" },
+  { name = "char3", from = 41, to = 41, ruler = "C" },
+]
+
+# Program-described field line, and a data structure subfield.
+[[form]]
+id = "IX"
+letter = "I"
+title = "Input field"
+fields = [
+  { name = "init", from = 8, to = 8, ruler = "I" },
+  { name = "value", from = 21, to = 42, ruler = "Initial-value" },
+  { name = "format", from = 43, to = 43, ruler = "P" },
+  { name = "from", from = 44, to = 47, ruler = "From" },
+  { name = "to", from = 48, to = 51, ruler = "To" },
+  { name = "keyword", from = 44, to = 51, ruler = "" },
+  { name = "decimals", from = 52, to = 52, ruler = "D" },
+  { name = "field", from = 53, to = 58, ruler = "Field" },
+  { name = "level", from = 59, to = 60, ruler = "L1" },
+  { name = "match", from = 61, to = 62, ruler = "M1" },
+  { name = "relation", from = 63, to = 64, ruler = "FR" },
+  { name = "plus", from = 65, to = 66, ruler = "P" },
+  { name = "minus", from = 67, to = 68, ruler = "M" },
+  { name = "zero", from = 69, to = 70, ruler = "B" },
+]
+
+# Data structure line (DS in 19-20).
+[[form]]
+id = "IDS"
+letter = "I"
+title = "Data structure"
+fields = [
+  { name = "name", from = 7, to = 12, ruler = "Dsname" },
+  { name = "ext", from = 17, to = 17, ruler = "E" },
+  { name = "option", from = 18, to = 18, ruler = "O" },
+  { name = "ds", from = 19, to = 20, ruler = "DS" },
+  { name = "extfile", from = 21, to = 30, ruler = "Ext-file" },
+  { name = "occurs", from = 44, to = 47, ruler = "Occ" },
+  { name = "len", from = 48, to = 51, ruler = "Len" },
+]
+
+# Externally described record line.
+[[form]]
+id = "IR"
+letter = "I"
+title = "Input record (external)"
+fields = [
+  { name = "name", from = 7, to = 14, ruler = "Rcdname" },
+  { name = "rid", from = 19, to = 20, ruler = "Ri" },
+]
+
+# Externally described field line.
+[[form]]
+id = "IF"
+letter = "I"
+title = "Input field (external)"
+fields = [
+  { name = "extname", from = 21, to = 30, ruler = "Ext-field" },
+  { name = "field", from = 53, to = 58, ruler = "Field" },
+  { name = "level", from = 59, to = 60, ruler = "L1" },
+  { name = "match", from = 61, to = 62, ruler = "M1" },
+  { name = "plus", from = 65, to = 66, ruler = "P" },
+  { name = "minus", from = 67, to = 68, ruler = "M" },
+  { name = "zero", from = 69, to = 70, ruler = "B" },
+]
+
+[[form]]
+id = "C"
+letter = "C"
+title = "Calculation"
+fields = [
+  { name = "level", from = 7, to = 8, ruler = "L0" },
+  { name = "cond", from = 9, to = 17, ruler = "N01N02N03" },
+  { name = "factor1", from = 18, to = 27, ruler = "Factor1" },
+  { name = "opcode", from = 28, to = 32, ruler = "Opcd" },
+  { name = "factor2", from = 33, to = 42, ruler = "Factor2" },
+  { name = "result", from = 43, to = 48, ruler = "Result" },
+  { name = "len", from = 49, to = 51, ruler = "Len" },
+  { name = "decimals", from = 52, to = 52, ruler = "D" },
+  { name = "halfadj", from = 53, to = 53, ruler = "H" },
+  { name = "hi", from = 54, to = 55, ruler = "Hi" },
+  { name = "lo", from = 56, to = 57, ruler = "Lo" },
+  { name = "eq", from = 58, to = 59, ruler = "Eq" },
+  { name = "comments", from = 60, to = 74, ruler = "Comments" },
+]
+
+# Output record line.
+[[form]]
+id = "O"
+letter = "O"
+title = "Output record"
+fields = [
+  { name = "name", from = 7, to = 14, ruler = "Filename" },
+  { name = "relation", from = 14, to = 16, ruler = "" },
+  { name = "type", from = 15, to = 15, ruler = "D" },
+  { name = "fetch", from = 16, to = 16, ruler = "F" },
+  { name = "add", from = 16, to = 18, ruler = "" },
+  { name = "spaceb", from = 17, to = 17, ruler = "B" },
+  { name = "spacea", from = 18, to = 18, ruler = "A" },
+  { name = "skipb", from = 19, to = 20, ruler = "Sb" },
+  { name = "skipa", from = 21, to = 22, ruler = "Sa" },
+  { name = "cond", from = 23, to = 31, ruler = "N01N02N03" },
+  { name = "except", from = 32, to = 37, ruler = "Excnam" },
+]
+
+# Output field line.
+[[form]]
+id = "OF"
+letter = "O"
+title = "Output field"
+fields = [
+  { name = "cond", from = 23, to = 31, ruler = "N01N02N03" },
+  { name = "field", from = 32, to = 37, ruler = "Field" },
+  { name = "editcode", from = 38, to = 38, ruler = "Z" },
+  { name = "blank", from = 39, to = 39, ruler = "B" },
+  { name = "end", from = 40, to = 43, ruler = "End" },
+  { name = "format", from = 44, to = 44, ruler = "P" },
+  { name = "constant", from = 45, to = 70, ruler = "Constant/editword" },
+]

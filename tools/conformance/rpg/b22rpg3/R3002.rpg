@@ -1,0 +1,46 @@
+      * Arithmetic: ADD SUB MULT DIV MVR Z-ADD Z-SUB SQRT, half adjust.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     C                     Z-ADD100       A       50
+     C                     Z-ADD7         B       30
+     C           A         DIV  B         Q       72H
+     C           A         DIV  B         Q0      50
+     C                     MVR            R       30
+     C           A         MULT 1.5       M       92
+     C           B         SUB  A         S       50 101112
+     C           A         ADD  B         T       50
+     C                     ADD  5         T
+     C                     SQRT A         SQ      74H
+     C                     SQRT B         SQ2     74
+     C                     Z-SUBA         N       50
+     C                     Z-ADD99999     BIG     50
+     C           BIG       ADD  1         OV      50     13
+     C           BIG       MULT BIG       OV2     50
+     C                     Z-ADD2.555     HA      53
+     C                     Z-ADDHA        HB      32H
+     C                     Z-ADDHA        HC      32
+     C                     MULT 2         HA
+     C                     SUB  5.11      HA           14
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         Q     J   10
+     O                         Q0    J   20
+     O                         R     J   30
+     O                         M     J   45
+     O                         S     J   55
+     O                         T     J   65
+     O                         SQ    J   80
+     O                         SQ2   J   95
+     O                         N     J  105
+     OQSYSPRT E  1             LINE
+     O                         OV    J   10
+     O                         OV2   J   20
+     O                         HB    J   30
+     O                         HC    J   40
+     O                         HA    J   50
+     O                 10                53 '10'
+     O                 11                56 '11'
+     O                 12                59 '12'
+     O                 13                62 '13'
+     O                 14                65 '14'

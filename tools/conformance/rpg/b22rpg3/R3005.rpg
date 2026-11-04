@@ -1,0 +1,42 @@
+      * MOVE, MOVEL with and without padding, numeric and character.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     C                     MOVE 'ABCDEFGH'C8      8
+     C                     MOVE 'XY'      C8
+     C                     MOVEL'XY'      C8B     8
+     C                     MOVE 'ABCDEFGH'C8B
+     C                     MOVEL'XY'      C8B
+     C                     MOVE 'ABCDEFGH'C8C     8
+     C                     MOVE 'XY'      C8C       P
+     C                     MOVE 'ABCDEFGH'C8D     8
+     C                     MOVEL'XY'      C8D       P
+     C                     Z-ADD-12345    N5      50
+     C                     MOVE N5        C3      3
+     C                     MOVELN5        C4      4
+     C                     MOVE '987'     N5
+     C                     Z-ADDN5        N5B     50
+     C                     MOVEL'42'      N5B
+     C                     MOVE '1234567' N3      30
+     C                     MOVE C8        C12    12
+     C                     MOVELC8        C12B   12
+     C                     Z-ADD123.45    P52     52
+     C                     MOVE P52       C6      6
+     C                     MOVE 'J'       C1      1
+     C                     MOVE C1        N1      10
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         C8        10
+     O                         C8B       20
+     O                         C8C       30
+     O                         C8D       40
+     O                         C3        50
+     O                         C4        55
+     O                         N5    J   65
+     O                         N5B   J   75
+     O                         N3    J   85
+     OQSYSPRT E  1             LINE
+     O                         C12       14
+     O                         C12B      28
+     O                         C6        36
+     O                         N1        40

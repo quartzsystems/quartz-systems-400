@@ -1,0 +1,16 @@
+[package]
+name = "rpg3"
+description = "QS/400 RPG III (RPG/400): CVTRPGSRC's conversion to ILE RPG and CRTRPGPGM over the ILE RPG compiler"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+rpgspecs = { path = "../specs", version = "0.1.0" }
+rpgfront = { path = "../front", version = "0.1.0" }
+rpgc = { path = "../compiler", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+
+[lints]
+workspace = true

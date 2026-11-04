@@ -64,11 +64,56 @@ pub fn form(id: &str) -> Option<&'static Form> {
     forms().iter().find(|f| f.id == id)
 }
 
+/// Every RPG III (RPG/400) form (`specs/rpg3.toml`): `H`, `F`, `FK`,
+/// `E`, `L`, `I`, `IX`, `IDS`, `IR`, `IF`, `C`, `O`, `OF`.
+///
+/// # Panics
+///
+/// When the embedded table does not parse, which a test rules out.
+pub fn rpg3_forms() -> &'static [Form] {
+    static FORMS: OnceLock<Vec<Form>> = OnceLock::new();
+    FORMS.get_or_init(|| {
+        let t: Table = toml::from_str(include_str!("../specs/rpg3.toml")).expect("the RPG III table");
+        t.form
+    })
+}
+
+/// An RPG III form by identifier.
+///
+/// # Panics
+///
+/// When the table has no such form: identifiers are fixed.
+#[must_use]
+pub fn rpg3_form(id: &str) -> &'static Form {
+    rpg3_forms().iter().find(|f| f.id == id).unwrap_or_else(|| panic!("no RPG III form {id}"))
+}
+
 impl Form {
     /// A field by name.
     #[must_use]
     pub fn field(&self, name: &str) -> Option<&Field> {
         self.fields.iter().find(|f| f.name == name)
+    }
+
+    /// Put text into a field of a record (a column vector grown as
+    /// needed): left-adjusted, or right-adjusted for a numeric entry.
+    /// Text longer than the field runs on past it.
+    ///
+    /// # Panics
+    ///
+    /// When the form has no such field: names are fixed.
+    pub fn put(&self, record: &mut Vec<char>, name: &str, text: &str, right: bool) {
+        let f = self.field(name).unwrap_or_else(|| panic!("form {} has no field {name}", self.id));
+        let width = f.to + 1 - f.from;
+        let n = text.chars().count();
+        let start = if right && n < width { f.from + width - n } else { f.from };
+        for (i, ch) in text.chars().enumerate() {
+            let at = start - 1 + i;
+            if record.len() <= at {
+                record.resize(at + 1, ' ');
+            }
+            record[at] = ch;
+        }
     }
 
     /// The text of a field in a record, blank padded to its width.
@@ -93,6 +138,23 @@ pub fn cut(record: &str, from: usize, to: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_rpg3_table_parses_and_places() {
+        for f in rpg3_forms() {
+            for x in &f.fields {
+                assert!(x.from >= 6 && x.from <= x.to && x.to <= 80, "{} {}", f.id, x.name);
+            }
+        }
+        let c = rpg3_form("C");
+        let mut r = vec![' '; 6];
+        r[5] = 'C';
+        c.put(&mut r, "opcode", "Z-ADD", false);
+        c.put(&mut r, "len", "7", true);
+        let rec: String = r.into_iter().collect();
+        assert_eq!(c.cut(&rec, "opcode"), "Z-ADD");
+        assert_eq!(c.cut(&rec, "len"), "  7");
+    }
 
     #[test]
     fn the_table_parses_and_fields_fit() {

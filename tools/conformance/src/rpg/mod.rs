@@ -134,7 +134,7 @@ impl Kit {
             }
             for f in fs::read_dir(&dir)? {
                 let p = f?.path();
-                if p.extension().is_some_and(|e| e.eq_ignore_ascii_case("rpgle")) {
+                if p.extension().is_some_and(|e| e.eq_ignore_ascii_case("rpgle") || e.eq_ignore_ascii_case("rpg")) {
                     out.push((batch.clone(), Case::load(&p)?));
                 }
             }
@@ -272,6 +272,59 @@ pub fn options(case: &Case) -> rpgc::Options {
         o.indent = v;
     }
     o
+}
+
+/// `CRTRPGPGM`'s parameters from an RPG III case's command.
+#[must_use]
+pub fn options3(case: &Case) -> rpg3::Options {
+    let cmd = case.fill(&case.cmd, "QGPL").to_ascii_uppercase();
+    let mut o = rpg3::Options {
+        pgm: (case.name.clone(), "QGPL".into()),
+        src: ("QGPL".into(), "QRPGSRC".into(), case.name.clone()),
+        ..rpg3::Options::default()
+    };
+    let opt = build::kwd(&cmd, "OPTION");
+    if !opt.is_empty() {
+        o.option = opt.split_whitespace().map(str::to_string).collect();
+    }
+    if let Ok(g) = build::kwd(&cmd, "GENLVL").parse() {
+        o.genlvl = g;
+    }
+    o
+}
+
+/// The member of an RPG III case.
+#[must_use]
+pub fn member3(case: &Case) -> Member {
+    Member::from_text("QGPL", "QRPGSRC", &case.name, &case.lines.join("
+"))
+}
+
+/// Compile an RPG III case with `CRTRPGPGM`.
+#[must_use]
+pub fn compile3(case: &Case, db: Option<&files::KitDb>) -> rpg3::Compiled {
+    let o = options3(case);
+    match db {
+        Some(d) => rpg3::compile(&member3(case), &mut includes(case), &mut d.ext(), &o),
+        None => rpg3::compile(&member3(case), &mut includes(case), &mut rpgc::NoExtFiles, &o),
+    }
+}
+
+/// An RPG III case's diagnostics as the oracle reads the listing.
+#[must_use]
+pub fn diags3(c: &rpg3::Compiled) -> Vec<ODiag> {
+    let mut out: Vec<ODiag> = c
+        .diags
+        .iter()
+        .map(|d| ODiag {
+            line: d.stmt,
+            msgid: d.msgid.clone(),
+            severity: d.severity,
+            seq: String::new(),
+        })
+        .collect();
+    out.sort();
+    out
 }
 
 /// Whether a case is precompiled.
@@ -522,6 +575,24 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
                 Ok((o, Vec::new(), e))
             }
         };
+    }
+    if case.rpg3 {
+        let c = compile3(case, db.as_ref());
+        let mut notes = notes(&c.inner);
+        notes.insert_str(0, &(c.conversion.text().join("
+") + "
+"));
+        let mut o = Outcome {
+            created: c.created,
+            cause: if c.created { String::new() } else { "QRG9001".into() },
+            diags: diags3(&c),
+            ..Outcome::default()
+        };
+        if c.created && !case.call.is_empty() {
+            let p = program(&c.inner, &case.name, &objs, &main_cmd)?;
+            call_into(case, &mut o, p, &objs, db.as_ref())?;
+        }
+        return Ok((o, c.listing, notes));
     }
     let c = compile(case, db.as_ref());
     let notes = notes(&c);

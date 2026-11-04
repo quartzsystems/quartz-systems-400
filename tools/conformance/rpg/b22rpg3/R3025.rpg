@@ -1,0 +1,20 @@
+      * Signs and zones: MOVE of negative numbers, zoned results.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     C                     Z-ADD-7        N2      20
+     C                     MOVE N2        C2      2
+     C                     MOVE '1P'      N2B     20
+     C                     Z-ADDN2B       P3      30
+     C                     MOVE -12.5     C5      5
+     C                     Z-ADD0         Z5      52
+     C                     SUB  0.01      Z5
+     C                     MULT -1        Z5
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         C2         5
+     O                         N2B   J   15
+     O                         P3    J   25
+     O                         C5        35
+     O                         Z5    J   45
+     O                         Z5        55

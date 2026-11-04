@@ -1,0 +1,32 @@
+      * CAT, CHECK, CHEKR, SCAN, SUBST, XLATE.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     I              ' 0123456789'         C         DIG
+     C                     MOVEL'HELLO'   A      10
+     C                     MOVEL'WORLD'   B      10
+     C           A         CAT  B:1       R      20
+     C           A         CAT  B         R2     20
+     C           'AB'      CAT  'CD':2    R3     10 P
+     C                     MOVEL'  12X4 ' S       7
+     C           DIG       CHECKS         P1      30
+     C           ' '       CHEKRS         P2      30
+     C           'L'       SCAN A         P3      30     30
+     C           'Q'       SCAN A         P4      30     31
+     C           'L'       SCAN A:4       P5      30
+     C           3         SUBSTA:2       SB      5 P
+     C           'LO':'01' XLATEA         X      10
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         R         20
+     O                         R2        41
+     O                         R3        52
+     O                         P1    Z   56
+     O                         P2    Z   60
+     O                         P3    Z   64
+     O                         P4    Z   68
+     O                         P5    Z   72
+     O                 30                75 '30'
+     O                 31                78 '31'
+     O                         SB        84
+     O                         X         95

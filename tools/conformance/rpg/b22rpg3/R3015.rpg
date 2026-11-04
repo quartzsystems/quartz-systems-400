@@ -1,0 +1,32 @@
+      * Subroutines, *INZSR, DO with a step, ITER and LEAVE.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     C           1         DO   10        I       30
+     C           I         DIV  2         H       30
+     C                     MVR            RM      10
+     C           RM        IFEQ 0
+     C                     ITER
+     C                     END
+     C           I         IFGT 7
+     C                     LEAVE
+     C                     END
+     C                     EXSR SHOW
+     C                     END
+     C           2         DO   LIM       J       30
+     C                     EXCPTJL
+     C                     ENDDO3
+     C                     SETON                     LR
+     C           *INZSR    BEGSR
+     C                     Z-ADD11        LIM     30
+     C                     Z-ADD0         CNT     30
+     C                     ENDSR
+     C           SHOW      BEGSR
+     C                     ADD  1         CNT
+     C                     EXCPTIL
+     C                     ENDSR
+     OQSYSPRT E  1             IL
+     O                         I     Z    5
+     O                         CNT   Z   10
+     OQSYSPRT E  1             JL
+     O                                    8 'J'
+     O                         J     Z   12

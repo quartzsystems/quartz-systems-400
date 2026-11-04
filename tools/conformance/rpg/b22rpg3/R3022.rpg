@@ -1,0 +1,26 @@
+      *; dds: ORDF
+      *; sqlfile: ORDF
+      * Externally described primary file with an L1 break and LR totals.
+     H
+     FORDF    IP  E                    DISK
+     FQSYSPRT O   F     132     OF     PRINTER
+     IORDR        01
+     I              ORDCUS                                L1
+     C   01      QTY       MULT PRICE     EXT     92
+     C   01                ADD  EXT       CUSTOT  92
+     CL1                   ADD  CUSTOT    GRAND  112
+     CL1                   ADD  1         NCUS    30
+     OQSYSPRT H  1     1P
+     O                                   30 'ORDERS BY CUSTOMER'
+     OQSYSPRT D  1     01
+     O                 L1      ORDCUSZ    6
+     O                         ORDNO Z   12
+     O                         ITEM      24
+     O                         EXT   J   40
+     OQSYSPRT T  1     L1
+     O                                   24 'CUSTOMER TOTAL'
+     O                         CUSTOTJB  50
+     OQSYSPRT T  1     LR
+     O                                   24 'ALL CUSTOMERS'
+     O                         NCUS  Z   30
+     O                         GRAND J   60

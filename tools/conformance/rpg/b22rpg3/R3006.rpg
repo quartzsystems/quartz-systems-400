@@ -1,0 +1,51 @@
+      * Arrays and tables from E specifications, with compile-time data.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     E                    ARR     4   8  3 0
+     E                    TABA    1   4  3  ATABB   10
+     E                    RUN         5  5 2
+     E                    NAM     3   3  6
+     C                     XFOOTARR       SUM     70
+     C                     Z-ADD1         I       30
+     C                     Z-ADD40        S1      30
+     C                     Z-ADD99        S2      30
+     C           S1        LOKUPARR,I                    20
+     C                     Z-ADD1         J       30
+     C           S2        LOKUPARR,J                    21
+     C           'B02'     LOKUPTABA      TABB           22
+     C           'B05'     LOKUPTABA      TABB       23
+     C                     Z-ADD1         K       30
+     C                     DO   5         K
+     C                     Z-ADDK         RUN,K
+     C                     MULT 1.5       RUN,K
+     C                     END
+     C           RUN,2     ADD  RUN,5     TOT     72
+     C                     SORTAARR
+     C                     MOVEANAM       ALL    18
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                         SUM   Z   10
+     O                         I     Z   15
+     O                         J     Z   20
+     O                 20                23 '20'
+     O                 21                26 '21'
+     O                 22                29 '22'
+     O                 23                32 '23'
+     O                         TABB      45
+     O                         TABA      50
+     O                         TOT   J   62
+     OQSYSPRT E  1             LINE
+     O                         ARR   Z   40
+     O                         RUN   J   70
+     O                         ALL       90
+**
+050020040010
+070080030060
+**
+B01Alpha
+B02Beta
+B03Gamma
+B04Delta
+**
+ONE   TWO   THREE 

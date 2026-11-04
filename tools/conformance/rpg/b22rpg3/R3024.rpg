@@ -1,0 +1,7 @@
+      *; run: no
+      * Errors: a field never defined, an operation that does not exist.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     C           NOPE      ADD  1         X       30
+     C                     FOO  X
+     C                     SETON                     LR

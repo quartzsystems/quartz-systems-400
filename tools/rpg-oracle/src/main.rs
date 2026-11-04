@@ -10,6 +10,7 @@
 //! rpg-oracle refresh DIR [--out DIR] [--missing]
 //! rpg-oracle fuzz [--count N] [--per K] [--dir DIR]
 //! rpg-oracle clean
+//! rpg-oracle probe CMD...
 //! ```
 //!
 //! Only pub400 has an RPG compiler (`docs/PHASE9.md`), so it is the
@@ -73,11 +74,19 @@ enum Cmd {
     },
     /// Delete what an interrupted run left.
     Clean,
+    /// Run commands on the oracle and print whether each worked.
+    Probe {
+        /// CL commands, `{lib}` the work library.
+        cmds: Vec<String>,
+    },
     /// Read the diagnostics of every outcome in a folder again from the
     /// listing beside it.
     Rediag {
         /// The folder of outcomes.
         dir: PathBuf,
+        /// Only RPG/400 (`CRTRPGPGM`) listings.
+        #[arg(long)]
+        rpg3: bool,
     },
 }
 
@@ -91,7 +100,9 @@ fn main() -> Result<()> {
                 .filter_map(|e| e.ok().map(|e| e.path()))
                 .filter(|p| {
                     p.extension()
-                        .is_some_and(|e| e.eq_ignore_ascii_case("rpgle") || e.eq_ignore_ascii_case("sqlrpgle"))
+                        .is_some_and(|e| {
+                            e.eq_ignore_ascii_case("rpgle") || e.eq_ignore_ascii_case("sqlrpgle") || e.eq_ignore_ascii_case("rpg")
+                        })
                 })
                 .collect();
             files.sort();
@@ -114,13 +125,23 @@ fn main() -> Result<()> {
             s.close();
             Ok(())
         }
-        Cmd::Rediag { dir } => rediag(&dir),
+        Cmd::Rediag { dir, rpg3 } => rediag(&dir, rpg3),
+        Cmd::Probe { cmds } => {
+            let mut s = session::Session::open()?;
+            for c in &cmds {
+                let (ok, reply) = s.probe(c)?;
+                println!("{}: {c}
+  {}", if ok { "ok" } else { "failed" }, reply.trim());
+            }
+            s.close();
+            Ok(())
+        }
     }
 }
 
 /// Replace the `diag:` lines of each outcome with those its listing
 /// gives now.
-fn rediag(dir: &Path) -> Result<()> {
+fn rediag(dir: &Path, rpg3_only: bool) -> Result<()> {
     let mut n = 0;
     for e in std::fs::read_dir(dir)? {
         let p = e?.path();
@@ -130,7 +151,13 @@ fn rediag(dir: &Path) -> Result<()> {
         let lst = p.with_extension("lst");
         let Ok(listing) = std::fs::read_to_string(&lst) else { continue };
         let lines: Vec<String> = listing.lines().map(str::to_string).collect();
-        let diags = rpg_oracle::listing::diags(&lines);
+        let diags = if listing.contains("IBM RPG/400") {
+            rpg_oracle::listing::diags_rpg3(&lines)
+        } else if rpg3_only {
+            continue;
+        } else {
+            rpg_oracle::listing::diags(&lines)
+        };
         let text = std::fs::read_to_string(&p)?;
         let mut out = String::new();
         let mut placed = false;
@@ -191,8 +218,22 @@ fn run(files: &[PathBuf], out: Option<&Path>, missing: bool) -> Result<()> {
     let mut failed = 0;
     for (c, dir) in &cases {
         match s.case(c) {
-            Ok((outcome, listing)) => {
+            Ok((outcome, listing, converted)) => {
                 std::fs::create_dir_all(dir)?;
+                if let Some(cv) = converted {
+                    let mut head = format!("# {} CVTRPGSRC pub400.com
+", c.name);
+                    if !cv.ok {
+                        head.push_str(&format!("# failed {}
+", cv.cause));
+                    }
+                    std::fs::write(dir.join(format!("{}.cvt", c.name)), head + &cv.source.join("
+") + "
+")?;
+                    std::fs::write(dir.join(format!("{}.rpt", c.name)), cv.report.join("
+") + "
+")?;
+                }
                 std::fs::write(dir.join(format!("{}.out", c.name)), outcome.render())?;
                 std::fs::write(dir.join(format!("{}.lst", c.name)), listing.join("\n") + "\n")?;
                 println!(

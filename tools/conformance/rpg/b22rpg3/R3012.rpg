@@ -1,0 +1,36 @@
+      *; dds: MSTF
+      *; sqlfile: MSTF
+      *; dds: ACTF
+      *; sqlfile: ACTF
+      * Matching records: masters primary, activity secondary, M1 and MR.
+     H
+     FMSTF    IP  F      13            DISK
+     FACTF    IS  F       8            DISK
+     FQSYSPRT O   F     132     OF     PRINTER
+     IMSTF    AA  01
+     I                                        1   3 MCUS    M1
+     I                                        4  13 MNAME
+     IACTF    BB  02
+     I                                        1   3 ACUS    M1
+     I                                        4   80AAMT
+     C   02 MR             ADD  AAMT      TOT     70
+     C   02NMR             ADD  1         UNM     30
+     OQSYSPRT D  1     01 MR
+     O                         MCUS       3
+     O                         MNAME     15
+     O                                   37 'master with activity'
+     OQSYSPRT D  1     01NMR
+     O                         MCUS       3
+     O                         MNAME     15
+     O                                   29 'master alone'
+     OQSYSPRT D  1     02 MR
+     O                         ACUS       7
+     O                         AAMT  Z   15
+     O                                   24 'matched'
+     OQSYSPRT D  1     02NMR
+     O                         ACUS       7
+     O                         AAMT  Z   15
+     O                                   26 'unmatched'
+     OQSYSPRT T 1      LR
+     O                         TOT   Z   10
+     O                         UNM   Z   15

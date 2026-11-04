@@ -74,6 +74,106 @@ pub fn diags(lines: &[String]) -> Vec<Diag> {
     out
 }
 
+/// The diagnostics of an RPG/400 (`CRTRPGPGM`) listing: each `* nnnn`
+/// mark with its statement (the source line above it, the number an
+/// additional diagnostic names, a cross-reference entry's first
+/// reference), its severity from the message summary.
+#[must_use]
+pub fn diags_rpg3(lines: &[String]) -> Vec<Diag> {
+    let mut marks: Vec<(u32, String)> = Vec::new();
+    let mut sev: Vec<(String, u8)> = Vec::new();
+    let mut section = "";
+    let mut current = 0;
+    for raw in lines {
+        let body = raw.get(1..).unwrap_or("");
+        let t = body.trim_start();
+        if t.starts_with("S o u r c e   L i s t i n g") {
+            section = "source";
+            continue;
+        }
+        if t.starts_with("A d d i t i o n a l   D i a g n o s t i c") {
+            section = "additional";
+            continue;
+        }
+        if t.starts_with("C r o s s   R e f e r e n c e") {
+            section = "xref";
+            continue;
+        }
+        if t.starts_with("M e s s a g e   S u m m a r y") {
+            section = "summary";
+            continue;
+        }
+        if t.starts_with("F i n a l   S u m m a r y") || t.starts_with("* * * * *   E N D   O F   C R O S S") {
+            section = "";
+            continue;
+        }
+        match section {
+            "source" => {
+                if let Some(n) = rpg3_source_number(body) {
+                    current = n;
+                } else if let Some(r) = t.strip_prefix('*') {
+                    // `* 5014   5014-*****`: one or more numbers.
+                    for w in r.split_whitespace().take_while(|w| w.len() == 4 && w.chars().all(|c| c.is_ascii_digit())) {
+                        marks.push((current, w.to_string()));
+                    }
+                }
+            }
+            "additional" => {
+                if let Some(r) = t.strip_prefix('*') {
+                    let w: Vec<&str> = r.split_whitespace().collect();
+                    if w.len() >= 2 && w[0].len() == 4 && w[0].chars().all(|c| c.is_ascii_digit()) {
+                        marks.push((w[1].parse().unwrap_or(0), w[0].to_string()));
+                    }
+                }
+            }
+            "xref" => {
+                if let Some(r) = t.strip_prefix('*') {
+                    let w: Vec<&str> = r.split_whitespace().collect();
+                    if w.first().is_some_and(|x| x.len() == 4 && x.chars().all(|c| c.is_ascii_digit())) {
+                        let at = w[1..]
+                            .iter()
+                            .find_map(|x| x.trim_end_matches(['D', 'M']).parse::<u32>().ok().filter(|_| x.chars().next().is_some_and(|c| c.is_ascii_digit())))
+                            .unwrap_or(0);
+                        marks.push((at, w[0].to_string()));
+                    }
+                }
+            }
+            "summary" => {
+                // `* QRGnnnn Severity:  ss   Number:    n`
+                if let Some(rest) = t.strip_prefix("* ") {
+                    let w: Vec<&str> = rest.split_whitespace().collect();
+                    if w.len() >= 3 && w[1] == "Severity:" {
+                        sev.push((w[0].to_string(), w[2].parse().unwrap_or(0)));
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut out: Vec<Diag> = marks
+        .into_iter()
+        .map(|(line, n)| {
+            let msgid = format!("QRG{n}");
+            let severity = sev.iter().find(|(m, _)| *m == msgid).map_or(0, |(_, s)| *s);
+            Diag { line, msgid, severity, seq: String::new() }
+        })
+        .collect();
+    out.sort();
+    out
+}
+
+/// The statement number of an RPG/400 source line: right-aligned in
+/// the first nine columns, then two blanks and the record from its
+/// column 6.
+fn rpg3_source_number(body: &str) -> Option<u32> {
+    let head: String = body.chars().take(9).collect();
+    let gap: String = body.chars().skip(9).take(2).collect();
+    if head.trim().is_empty() || !head.trim().chars().all(|c| c.is_ascii_digit()) || gap != "  " {
+        return None;
+    }
+    head.trim().parse().ok()
+}
+
 /// The statement number of a source line: a number right-aligned in
 /// the first six columns, then a blank.
 fn source_line_number(body: &str) -> Option<u32> {

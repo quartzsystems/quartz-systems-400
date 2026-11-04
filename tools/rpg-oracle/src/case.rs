@@ -73,6 +73,9 @@ pub struct Case {
     pub db: Vec<DbStep>,
     /// The operator's answers, one per screen read.
     pub keys: Vec<String>,
+    /// An RPG III member (`NAME.rpg`): source type `RPG` in `QRPGSRC`,
+    /// compiled with `CRTRPGPGM` and converted with `CVTRPGSRC`.
+    pub rpg3: bool,
 }
 
 /// What a DDS source describes.
@@ -191,6 +194,9 @@ impl DbStep {
 pub const DEFAULT_CMD: &str =
     "CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE) OUTPUT(*PRINT)";
 
+/// The default compile command of an RPG III member.
+pub const DEFAULT_CMD_RPG3: &str = "CRTRPGPGM PGM({lib}/{name}) SRCFILE({lib}/QRPGSRC) SRCMBR({name})";
+
 /// The default call command.
 pub const DEFAULT_CALL: &str = "CALL PGM({lib}/{name})";
 
@@ -198,12 +204,22 @@ impl Case {
     /// Read a member from its text.
     #[must_use]
     pub fn parse(name: &str, text: &str) -> Self {
+        Self::parse_as(name, text, false)
+    }
+
+    /// Read an RPG III member from its text.
+    #[must_use]
+    pub fn parse_rpg3(name: &str, text: &str) -> Self {
+        Self::parse_as(name, text, true)
+    }
+
+    fn parse_as(name: &str, text: &str, rpg3: bool) -> Self {
         let mut c = Self {
             name: name.to_ascii_uppercase(),
             lines: text.replace("\r\n", "\n").lines().map(str::to_string).collect(),
-            cmd: DEFAULT_CMD.into(),
+            cmd: if rpg3 { DEFAULT_CMD_RPG3 } else { DEFAULT_CMD }.into(),
             call: DEFAULT_CALL.into(),
-            rcdlen: 112,
+            rcdlen: if rpg3 { 92 } else { 112 },
             setup: Vec::new(),
             post: Vec::new(),
             cleanup: Vec::new(),
@@ -211,6 +227,7 @@ impl Case {
             with_names: Vec::new(),
             db: Vec::new(),
             keys: Vec::new(),
+            rpg3,
         };
         for l in c.lines.clone() {
             let Some((key, value)) = directive(&l) else {
@@ -225,7 +242,7 @@ impl Case {
                 }
                 "call" => c.call = value,
                 "run" if value.eq_ignore_ascii_case("no") => c.call.clear(),
-                "rcdlen" => c.rcdlen = value.parse().unwrap_or(112),
+                "rcdlen" => c.rcdlen = value.parse().unwrap_or(c.rcdlen),
                 "setup" => c.setup.push(value),
                 "post" => c.post.push(value),
                 "cleanup" => c.cleanup.push(value),
@@ -246,16 +263,23 @@ impl Case {
         c
     }
 
-    /// Read a member from a file named `NAME.rpgle` (or `.sqlrpgle`),
-    /// with the `.rpginc` members its `with:` names and the DDS its
-    /// `dds:` steps name from `../dds/`.
+    /// The source file the member is uploaded to.
+    #[must_use]
+    pub fn srcfile(&self) -> &'static str {
+        if self.rpg3 { "QRPGSRC" } else { "QRPGLESRC" }
+    }
+
+    /// Read a member from a file named `NAME.rpgle` (or `.sqlrpgle`,
+    /// or `.rpg` for RPG III), with the `.rpginc` members its `with:`
+    /// names and the DDS its `dds:` steps name from `../dds/`.
     pub fn load(path: &Path) -> std::io::Result<Self> {
         let text = std::fs::read_to_string(path)?;
         let name = path
             .file_stem()
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_default();
-        let mut c = Self::parse(&name, &text);
+        let rpg3 = path.extension().is_some_and(|e| e.eq_ignore_ascii_case("rpg"));
+        let mut c = Self::parse_as(&name, &text, rpg3);
         let dir = path.parent().unwrap_or_else(|| Path::new("."));
         for w in c.with_names.clone() {
             let p = dir.join(format!("{w}.rpginc"));

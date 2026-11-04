@@ -1,0 +1,35 @@
+      * Indicators: SETON, SETOF, *IN, *INxx, AND and OR conditioning.
+     H
+     FQSYSPRT O   F     132     OF     PRINTER
+     C                     SETON                     010203
+     C                     SETOF                     02
+     C                     MOVE *IN03     SAVE    1
+     C                     MOVE '1'       *IN04
+     C                     MOVEA'0110'    *IN,10
+     C                     Z-ADD20        X       30
+     C                     MOVE '1'       *IN,X
+     C   01N02             SETON                     50
+     C   02                SETON                     51
+     C   01                SETON                     52
+     C                     MOVEA*IN,10    FOUR    4
+     C                     MOVEA*IN       ALL    25
+     C                     EXCPTLINE
+     C                     SETOF                     010304
+     C                     EXCPTLINE
+     C                     SETON                     LR
+     OQSYSPRT E  1             LINE
+     O                 01                 3 '01'
+     O                 02                 6 '02'
+     O                 03                 9 '03'
+     O                 04                12 '04'
+     O                 50                15 '50'
+     O                 51                18 '51'
+     O                 52                21 '52'
+     O                N01N03             24 'NR'
+     O                 01 03             27 'OR'
+     O                         SAVE      30
+     O                         FOUR      36
+     O                         ALL       62
+     OQSYSPRT E  1    N01      LINE
+     O       AND      N03
+     O                                   20 'BOTH OFF'

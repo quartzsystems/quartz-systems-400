@@ -1,0 +1,41 @@
+      *; dds: SALESF
+      *; sqlfile: SALESF
+      * Sales report: L2 region, L1 representative, totals at each level.
+     H
+     FSALESF  IP  F      22            DISK
+     FQSYSPRT O   F     132     OF     PRINTER
+     ISALESF  NS  01
+     I                                        1   2 REGIONL2
+     I                                        3   6 REP   L1
+     I                                        7  16 ITEM
+     I                                    P  17  202AMT
+     I                                    P  21  220QTY
+     C   01      AMT       MULT QTY       EXT     92
+     C   01                ADD  EXT       REPTOT 112
+     C   01                ADD  1         CNT     50
+     CL1                   ADD  REPTOT    REGTOT 112
+     CL2                   ADD  REGTOT    GRAND  112
+     OQSYSPRT H  2 1   1P
+     O       OR        OF
+     O                                   20 'SALES BY REGION'
+     O                                   40 'PAGE'
+     O                         PAGE  Z   45
+     OQSYSPRT D  1     01
+     O                 L2      REGION     4
+     O                 L1      REP       10
+     O                         ITEM      22
+     O                         AMT   J   34
+     O                         QTY   Z   40
+     O                         EXT   J   55
+     OQSYSPRT T  1     L1
+     O                                   22 'REP TOTAL'
+     O                         REP       10
+     O                         REPTOTJB  70
+     OQSYSPRT T  2     L2
+     O                                   22 'REGION TOTAL'
+     O                         REGION     4
+     O                         REGTOTJB  85
+     OQSYSPRT T 1      LR
+     O                                   22 'GRAND TOTAL'
+     O                         CNT   Z   30
+     O                         GRAND J  100

@@ -1,0 +1,19 @@
+      * Form length 20, overflow line 15, headings again on overflow.
+     H
+     FQSYSPRT O   F      80     OF    LPRINTER
+     LQSYSPRT  20FL 15OL
+     C                     EXCPTHEAD
+     C           1         DO   25        I       30
+     C                     EXCPTDET
+     C   OF                EXCPTHEAD
+     C   OF                SETOF                     OF
+     C                     END
+     C                     SETON                     LR
+     OQSYSPRT E  2 2           HEAD
+     O                                   20 'HEADING'
+     O                         PAGE  Z   30
+     OQSYSPRT E  1             DET
+     O                                    8 'LINE'
+     O                         I     Z   12
+     OQSYSPRT T 2      LR
+     O                                   12 'END'
