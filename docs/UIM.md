@@ -467,6 +467,30 @@ dialog and `show(&mut impl Terminal, panel)` runs it; the job's
   complete (`QUISETLA ... MORE`) returns `Event::More(list)` to the
   caller (the APIs' -6) instead of stopping.
 
+## Help everywhere
+
+Every shipped panel, display file record, command, parameter and
+message has help (`tools/helpaudit`, run by `build test` before the
+suite and by `cargo test -p helpaudit`):
+
+- panels: the panel's module, the key list's, and one for every place
+  F1 lands on (data items, list columns, options with a legend, menu
+  items with text), from the item, its group or its area. The item,
+  key and option modules of the hand-made groups were written once by
+  `helpaudit gen-panels` and are edited by hand; the generated menus
+  take theirs from `genmenus` (a command item imports its command's
+  help module);
+- display files: a help specification per record (`docs/DSPF.md`);
+- commands: generated groups `QH*CMD` under `ui/uim/pnlgrp/` with
+  module `HLPID` and `HLPID/KWD` for every parameter: the structure
+  from the definition, the words from `command/sys-cpps/help/`
+  (`commands.toml`, `keywords.toml`, `values.toml`), the prompt text
+  where nothing is written;
+- messages: second-level text for every message except those whose
+  whole text is the sender's (`&1`).
+
+No help file may use one of IBM's phrasings (`denylist.txt`).
+
 ## 10. The APIs
 
 `runtime/sysapi/src/uiapi` holds the APIs as natives of `QSYS`, installed

@@ -205,8 +205,17 @@ field is as wide as its longest special, single or listed value
 single value shows its other qualifiers blank. The comparison with
 pub400's prompts is `tools/conformance/golden/phase11/COVERAGE.md`. F3 and F12 cancel, F4 on
 a field prompts its choices, F5 refreshes, F9 shows every parameter,
-F11 shows the keywords, F13 the help, F14 the command string, F15
-the error, F16 and F24 the other keys. Enter binds the fields; an
+F11 shows the keywords, F13 how to use the display, F14 the command
+string, F15 the error, F16 and F24 the other keys. F1 (or Help) shows
+the help of the parameter under the cursor in a help window (module
+`HLPID/KWD` of the command's `HLPPNLGRP`), the command's own module on
+the title row; F2 there is extended help, the command's module and
+every parameter's (`Prompter::help`, the job's `sysdsp::help_window`).
+The help groups are generated from the definitions and
+`command/sys-cpps/help/` (`cargo run -p helpaudit -- gen`). Choices
+too long for the row are cut after a whole choice with `...`, and a
+qualified name's row lists the parameter's single values (`Name,
+*USRPRF`), as IBM's prompter shows them. Enter binds the fields; an
 error puts its message on row 24, the cursor on the field and the
 field in reverse image. Selective prompting (`?KWD`, `??KWD`, `?*`,
 `?<`, `?-`) hides, protects or omits parameters as IBM's does.
