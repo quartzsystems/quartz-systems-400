@@ -39,7 +39,8 @@ pub fn crtjrnrcv(system: &mut System, p: &Params) -> Result<String, String> {
     with_txn(store, |txn| {
         let lib = ctx.library_for(txn, &name).map_err(|e| e.to_string())?;
         let n = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
-        jrn::rcv::crtjrnrcv(txn, lib, n, &opts).map_err(|e| jrn_err(&e))?;
+        let id = jrn::rcv::crtjrnrcv(txn, lib, n, &opts).map_err(|e| jrn_err(&e))?;
+        public(txn, id, p)?;
         Ok(format!("Journal receiver {qual} created."))
     })
 }
@@ -61,7 +62,8 @@ pub fn crtjrn(system: &mut System, p: &Params) -> Result<String, String> {
         let lib = ctx.library_for(txn, &name).map_err(|e| e.to_string())?;
         let n = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
         let rcv_id = typed_id(txn, ctx, &rcv, jrn::JRNRCV)?;
-        jrn::journal::crtjrn(txn, lib, n, rcv_id, &opts).map_err(|e| jrn_err(&e))?;
+        let id = jrn::journal::crtjrn(txn, lib, n, rcv_id, &opts).map_err(|e| jrn_err(&e))?;
+        public(txn, id, p)?;
         Ok(format!(
             "Journal {qual} created with receiver {rcv} attached."
         ))
@@ -514,4 +516,15 @@ pub fn agend(system: &mut System, p: &Params) -> Result<String, String> {
         ctx.session.reclaim_in(txn, &name);
         Ok(String::new())
     })
+}
+
+/// `AUT()` of `CRTJRN` and `CRTJRNRCV`: `*LIBCRTAUT` (the default) keeps
+/// what the library gave; `*EXCLUDE`, `*USE`, `*CHANGE` or `*ALL` set
+/// `*PUBLIC`.
+fn public(txn: &mut store::Txn<'_>, id: store::obj::ObjectId, p: &Params) -> Result<(), String> {
+    let Some(aut) = p.upper("AUT").filter(|a| a != "*LIBCRTAUT") else {
+        return Ok(());
+    };
+    let a = sec::auth::bits::Auth::parse(&[aut.as_str()], false).map_err(|e| format!("CPD0084 AUT({aut}): {e}"))?;
+    sec::auth::grant::set_public(txn, id, Some(a)).map_err(|e| e.to_string())
 }

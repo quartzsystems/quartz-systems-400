@@ -1002,8 +1002,10 @@ it is not active; `STRSBS` of it starts the system again.
 `QACGLVL` says what is collected: `*JOB` (job resources), `*PRINT`
 (printed files), both, or `*NONE` (the shipped value). The entries go
 to `QSYS/QACGJRN` as journal code `A`; the journal is not shipped:
-`CRTJRNRCV JRNRCV(QSYS/ACGRCV0001)` and `CRTJRN JRN(QSYS/QACGJRN)
-JRNRCV(QSYS/ACGRCV0001)` make it. With no journal nothing is written.
+`CRTJRNRCV JRNRCV(QSYS/ACGRCV0001) AUT(*EXCLUDE)` and `CRTJRN
+JRN(QSYS/QACGJRN) JRNRCV(QSYS/ACGRCV0001) AUT(*EXCLUDE)` make it (without
+`AUT`, `QSYS`'s creation authority `QCRTAUT` applies, and `QSSECCHK`
+reports a journal any user may change). With no journal nothing is written.
 The service keeps the state (`lic/slic/src/stgsvc/acg.rs`); the
 layouts are `work/acg`.
 

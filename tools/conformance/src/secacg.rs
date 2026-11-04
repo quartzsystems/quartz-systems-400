@@ -89,8 +89,8 @@ impl Suite {
 
     /// Step 108: job accounting end to end.
     pub(crate) fn job_accounting(&self, s: &mut Session) -> Result<String, String> {
-        let _ = s.command("CRTJRNRCV JRNRCV(QSYS/ACGRCV0001)", CMD);
-        let j = s.command("CRTJRN JRN(QSYS/QACGJRN) JRNRCV(QSYS/ACGRCV0001)", CMD)?;
+        let _ = s.command("CRTJRNRCV JRNRCV(QSYS/ACGRCV0001) AUT(*EXCLUDE)", CMD);
+        let j = s.command("CRTJRN JRN(QSYS/QACGJRN) JRNRCV(QSYS/ACGRCV0001) AUT(*EXCLUDE)", CMD)?;
         want(&j, "CRTJRN QACGJRN", &["QACGJRN"])?;
         let v = s.command("CHGSYSVAL SYSVAL(QACGLVL) VALUE('*JOB *PRINT')", CMD)?;
         let mut shown = s.command("svc.sysval QACGLVL", CMD)?;
