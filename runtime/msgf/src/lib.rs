@@ -16,6 +16,7 @@
 mod error;
 
 pub mod desc;
+pub mod nls;
 pub mod payload;
 pub mod source;
 pub mod spec;

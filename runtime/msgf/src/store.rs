@@ -235,3 +235,57 @@ pub fn set_ccsid(txn: &mut Txn<'_>, id: ObjectId, ccsid: u16) -> Result<()> {
     f.ccsid = ccsid;
     write_payload(txn, id, &f)
 }
+
+/// The library `name` in `QSYS`, made with `text` when absent; whether
+/// it was made.
+pub fn ensure_library(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId, name: &str, text: &str) -> Result<(ObjectId, bool)> {
+    let lname = Name::parse(name)?;
+    if let Some(id) = Library::load(txn, qsys)?.lookup(txn, types::LIB, lname)? {
+        return Ok((id, false));
+    }
+    let id = ops::create(
+        txn,
+        &CreateParams {
+            library: qsys,
+            name: lname,
+            type_code: types::LIB,
+            attribute: String::new(),
+            text: text.into(),
+            owner: "QSYS".into(),
+            system: ctx.system.clone(),
+            now: ctx.now,
+            by_system: true,
+        },
+    )?;
+    Ok((id, true))
+}
+
+/// A secondary language's library and message files (`INSLNG`): the
+/// library made when absent, each file made, or replaced when
+/// `replace`; returns the library and the objects created.
+pub fn install_language(
+    txn: &mut Txn<'_>,
+    ctx: &Ctx,
+    qsys: ObjectId,
+    lang: &crate::nls::Language,
+    replace: bool,
+) -> Result<(ObjectId, Vec<ObjectId>)> {
+    let (lib, made_lib) = ensure_library(txn, ctx, qsys, &lang.library(), &lang.library_text)?;
+    let mut made = Vec::new();
+    if made_lib {
+        made.push(lib);
+    }
+    for f in lang.message_files() {
+        let name = Name::parse(&f.name)?;
+        match Library::load(txn, lib)?.lookup(txn, types::MSGF, name)? {
+            Some(id) if replace => write_payload(txn, id, &f)?,
+            Some(_) => {}
+            None => {
+                let id = crtmsgf(txn, ctx, lib, name, &f.text, true)?;
+                write_payload(txn, id, &f)?;
+                made.push(id);
+            }
+        }
+    }
+    Ok((lib, made))
+}

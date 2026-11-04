@@ -1322,6 +1322,21 @@ fn password_level(link: &mut Link) -> Option<u8> {
     level_of(v.kind, &v.data)
 }
 
+/// The libraries the sign-on display file is looked for in: the system
+/// library list (`QSYSLIBL`), with `QSYS` last when it is not on it.
+fn sign_on_libraries(link: &mut Link) -> Vec<String> {
+    let mut v: Vec<String> = link
+        .sysval("QSYSLIBL".into())
+        .ok()
+        .flatten()
+        .map(|v| ccsid::from_ebcdic(&v.data).split_whitespace().map(str::to_string).collect())
+        .unwrap_or_default();
+    if !v.iter().any(|l| l == "QSYS") {
+        v.push("QSYS".into());
+    }
+    v
+}
+
 pub(crate) fn level_of(kind: sysapi::SysValKind, data: &[u8]) -> Option<u8> {
     let n = match kind {
         sysapi::SysValKind::Bin => i32::from_be_bytes(data.get(..4)?.try_into().ok()?),
@@ -1352,12 +1367,13 @@ fn sign_on_display(
     let mut m = ScreenModel::new(model.wide());
     let mut message = message.to_string();
     // The sign-on is the shipped display file, QDSIGNON2 from password
-    // level 2; the interim panel stands in when the file is missing.
+    // level 2, the first found on the system library list (a secondary
+    // language library ahead of QSYS gives its sign-on); the interim
+    // panel stands in when the file is missing.
     let file = if long { "QDSIGNON2" } else { "QDSIGNON" };
-    let mut rt = link
-        .dsp_open(file.into(), "QSYS".into(), "*JOB".into())
-        .ok()
-        .and_then(Result::ok)
+    let mut rt = sign_on_libraries(link)
+        .into_iter()
+        .find_map(|lib| link.dsp_open(file.into(), lib, "*JOB".into()).ok().and_then(Result::ok))
         .and_then(|(b, _)| dspf::decode(&b).ok())
         .map(|df| dspf::rt::Runtime::new(df, model.wide()));
     let env = sign_on_env(link, host);

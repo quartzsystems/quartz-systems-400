@@ -41,6 +41,7 @@ use crate::stgsvc::security::{actor, require};
 /// Run `name`, or `None` when it is not one of these.
 pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
     let r = match name {
+        "INSLNG" => inslng(system, &parms.text("LNG"), parms.name("REPLACE") == "*YES"),
         "RSTLICPGM" => rstlicpgm(system, parms),
         "DLTLICPGM" => dltlicpgm(system, parms),
         "SAVLICPGM" => savlicpgm(system, parms),
@@ -258,6 +259,14 @@ fn find_savf(system: &mut System, (name, lib): &(String, String)) -> Result<Obje
 
 fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require(SpecialAuth::ALLOBJ, "install licensed programs")?;
+    // The operating system's language objects: the language library
+    // from the text the system carries, whatever the device.
+    if matches!(objects_of(&parms.text("RSTOBJ")), Objects::Lng)
+        && parms.text("LICPGM").trim().eq_ignore_ascii_case("QS00SS1")
+        && parms.text("LNG").trim().parse().ok().and_then(msgf::nls::language).is_some()
+    {
+        return inslng(system, &parms.text("LNG"), true);
+    }
     let pid = product(&parms.text("LICPGM"))?;
     let option = option_of(&parms.text("OPTION"))?.unwrap_or(OptionNo::BASE);
     let req = RstLicPgm {
@@ -390,6 +399,43 @@ impl Remover for StoreRemover<'_, '_> {
         self.paths.push(path.to_string());
         Ok(())
     }
+}
+
+/// `INSLNG` (and `RSTLICPGM RSTOBJ(*LNG)` of the operating system): a
+/// secondary language library from the text the system carries.
+fn inslng(system: &mut System, lng: &str, replace: bool) -> Result<CmdReply, String> {
+    require(SpecialAuth::ALLOBJ, "INSLNG")?;
+    let feature: u16 = lng
+        .trim()
+        .parse()
+        .ok()
+        .filter(|f| (2900..3000).contains(f))
+        .ok_or_else(|| "CPD0084 LNG".to_string())?;
+    let unknown = |system: &mut System, f: &str| {
+        let text = crate::stgsvc::msgs::text(system, "TXT0203", &[f]);
+        CmdReply {
+            text: format!("{text}\n"),
+            escape: Some(stg::proto::CmdMsg {
+                msgid: "TXT0203".into(),
+                kind: 7,
+                data: cmd::error::data(&[(f, 4)]),
+            }),
+            ..CmdReply::default()
+        }
+    };
+    if feature == ccsid::nls::PRIMARY || msgf::nls::language(feature).is_none() {
+        return Ok(unknown(system, &feature.to_string()));
+    }
+    let stamp = wm::obj::Stamp {
+        owner: "QSYS".into(),
+        system: system.system_name(),
+        now: now_unix(),
+    };
+    let (lib, n) = in_store(system, |txn, qsys, _| osobjects::nls::install_language(txn, qsys, &stamp, feature, replace))?;
+    let f = feature.to_string();
+    let count = n.to_string();
+    let text = crate::stgsvc::msgs::text(system, "TXT0202", &[&f, &lib, &count]);
+    Ok(done(format!("{text}\n"), "TXT0202", &[(&f, 4), (&lib, 10), (&count, 6)]))
 }
 
 fn dltlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {

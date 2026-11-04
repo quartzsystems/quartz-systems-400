@@ -186,3 +186,23 @@ fn user_files_are_edited_and_merged() {
     assert_eq!(load(&mut t, a).unwrap().msgs.len(), 1);
     t.commit().unwrap();
 }
+
+#[test]
+fn a_secondary_language_library_comes_first_on_the_list() {
+    let (mut store, qsys, lib) = open_new();
+    let mut t = store.begin().unwrap();
+    install_builtin(&mut t, &ctx(), qsys).unwrap();
+    let es = msgf::nls::language(2931).unwrap();
+    let (l2931, made) = msgf::store::install_language(&mut t, &ctx(), qsys, &es, false).unwrap();
+    assert_eq!(made.len(), 3);
+    assert!(msgf::store::install_language(&mut t, &ctx(), qsys, &es, false).unwrap().1.is_empty());
+    let look = |t: &mut store::Txn<'_>, libl: Vec<ObjectId>| {
+        let names = NameContext { curlib: Some(lib), libl };
+        rtvmsg(t, qsys, &names, "CPF9810", name("QCPFMSG"), LibSpec::Libl).unwrap().unwrap()
+    };
+    assert_eq!(look(&mut t, vec![l2931, qsys, lib]).text, "No se ha encontrado la biblioteca &1.");
+    assert_eq!(look(&mut t, vec![qsys, lib]).text, "Library &1 was not found.");
+    let f = load(&mut t, made[1]).unwrap();
+    assert_eq!(f.ccsid, 284);
+    t.commit().unwrap();
+}

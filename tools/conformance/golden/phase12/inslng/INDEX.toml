@@ -1,0 +1,11 @@
+# INSLNG on the primary (V7R1M0): the command does not exist there
+# (CPD0030 on F4 from the Main Menu). IBM installs a secondary language
+# with RSTLICPGM RSTOBJ(*LNG) LNG(29xx) or GO LICPGM option 21; QS/400's
+# INSLNG is its own front end to the same install (docs/MSGF.md).
+[[golden]]
+name = "inslng71-notfound"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "inslng71"
+width = 80

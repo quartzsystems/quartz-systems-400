@@ -89,6 +89,37 @@ for example.
 :PD.Type up to 8 characters.
 :EPARML.
 :EHELP.
+:HELP NAME=INSLNG.Install Language (INSLNG)
+:P.Use the Install Language (INSLNG) command to install a secondary
+language&colon. the language library QSYS followed by the feature code,
+holding the language's message files and its sign-on display files. Put
+the library ahead of QSYS in the system part of the library list to see
+its text; a job whose language identifier is the library's language gets
+it there at its start and on CHGJOB LANGID. In this release the only
+secondary language shipped is Spanish (2931), a scaffold whose message
+files carry machine-translated first-level text only.
+:EHELP.
+:HELP NAME='INSLNG/LNG'.Language feature (LNG)
+:P.The feature code of the language to install, such as 2931 for
+Spanish. The library made is QSYS followed by the code.
+:P.A value is required.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 4 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='INSLNG/REPLACE'.Replace objects (REPLACE)
+:P.Whether the language's objects that are already in its library are
+replaced with the ones the system carries. Objects missing from the
+library are always created.
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.The command ends with a message when an object of the same name
+exists.
+:PT.:PK.*YES:EPK.
+:PD.An existing object of the same name is replaced.
+:EPARML.
+:EHELP.
 :HELP NAME=QSLICPGM.Licensed Program Panel (QSLICPGM)
 :P.Use the Licensed Program Panel (QSLICPGM) command to one GO LICPGM
 panel (Quartz's; the menu's options).

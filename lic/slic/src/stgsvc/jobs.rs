@@ -260,6 +260,11 @@ pub fn chgjob(
         .iter()
         .map(|(kw, v)| (kw.clone(), national(system, &user, kw, v)))
         .collect();
+    // A new language identifier brings its language library.
+    let lang_lib = resolved
+        .iter()
+        .find(|(k, _)| k == "LANGID")
+        .map(|(_, v)| language_library(system, v));
     let attrs = system
         .attrs
         .get_mut(&number)
@@ -270,6 +275,9 @@ pub fn chgjob(
         super::security::check_priority(kw, v)?;
         a.change(kw, v)
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPD9D07")))?;
+    }
+    if let Some(l) = lang_lib {
+        a.libl.set_language(l.as_deref());
     }
     *attrs = a;
     if let Some(j) = system.jobs.get(number) {
@@ -323,3 +331,19 @@ fn national(system: &mut System, user: &str, kw: &str, v: &str) -> String {
         _ => v.to_string(),
     }
 }
+
+/// The installed secondary language library of `langid`: `QSYS29xx`
+/// when the store has it, `None` for the primary language.
+pub fn language_library(system: &mut System, langid: &str) -> Option<String> {
+    let lang = ccsid::nls::by_langid(langid)?;
+    if lang.feature == ccsid::nls::PRIMARY {
+        return None;
+    }
+    let lib = lang.library();
+    let name = qsname::Name::parse(&lib).ok()?;
+    super::spool::with_store(system, |txn, qsys| Ok(store::obj::ops::find_library(txn, qsys, name).is_ok()))
+        .ok()
+        .filter(|found| *found)
+        .map(|_| lib)
+}
+

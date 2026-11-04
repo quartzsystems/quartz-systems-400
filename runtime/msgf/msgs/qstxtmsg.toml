@@ -274,3 +274,22 @@ id = "TXT0151"
 text = "Not detected"
 help = "Text of the hardware resource displays: the resource was present before and is not found now."
 
+[[msg]]
+id = "TXT0201"
+text = "Primary language: English (2924)"
+help = "The text description of library QSYS2924, the primary language library. The system's English objects are in QSYS; this library marks the primary national language version."
+
+[[msg]]
+id = "TXT0202"
+sev = 0
+text = "Language &1 installed in library &2; &3 objects created."
+help = "INSLNG installed the secondary language. Put the library ahead of QSYS in the system part of the library list (CHGSYSLIBL, or the QSYSLIBL system value for new jobs and the sign-on display), or change a job's language identifier (CHGJOB LANGID), to see its text."
+vars = ["*CHAR 4", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "TXT0203"
+sev = 40
+text = "No text for language feature &1 is shipped with this release."
+help = "INSLNG installs the languages whose text the system carries. Display the feature codes it knows in the INSLNG command help."
+vars = ["*CHAR 4"]
+

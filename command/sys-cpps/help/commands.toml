@@ -45,3 +45,8 @@ about = "Use the Work with Reply List Entries (WRKRPYLE) command to show the ent
 
 [STRTCPFTP]
 about = "Use the Start TCP/IP File Transfer (STRTCPFTP) command, or its short form FTP, to start the FTP client and transfer files with a remote system."
+
+[INSLNG]
+about = "Use the Install Language (INSLNG) command to install a secondary language: the language library QSYS followed by the feature code, holding the language's message files and its sign-on display files. Put the library ahead of QSYS in the system part of the library list to see its text; a job whose language identifier is the library's language gets it there at its start and on CHGJOB LANGID. In this release the only secondary language shipped is Spanish (2931), a scaffold whose message files carry machine-translated first-level text only."
+LNG = "The feature code of the language to install, such as 2931 for Spanish. The library made is QSYS followed by the code."
+REPLACE = "Whether the language's objects that are already in its library are replaced with the ones the system carries. Objects missing from the library are always created."

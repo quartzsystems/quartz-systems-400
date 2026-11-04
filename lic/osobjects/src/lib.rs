@@ -13,6 +13,7 @@
 #![deny(missing_docs)]
 
 pub mod display;
+pub mod nls;
 pub mod products;
 pub mod qstrup;
 pub mod ui;
@@ -53,7 +54,8 @@ pub struct Report {
 }
 
 /// Every operating system object missing from the store: message
-/// files, the work management objects, display files, panel groups
+/// files, the work management objects, display files, the primary
+/// language library (`QSYS2924`), panel groups
 /// and menus, the Collection Services model files, the registration
 /// facility, the commands and `QSTRUP`.
 /// Objects that exist are left alone (a changed command definition is
@@ -75,6 +77,7 @@ pub fn create(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Resu
         wm::obj::shipped::install(txn, qsys, stamp),
     )?;
     r.made += piece("display files", display::install_shipped(txn, qsys, stamp))?;
+    r.made += piece("primary language library", nls::install_primary(txn, qsys, stamp))?;
     r.made += piece("workstation customizing objects", wscst::install_shipped(txn, qsys, stamp))?;
     r.made += piece(
         "panel groups and menus",

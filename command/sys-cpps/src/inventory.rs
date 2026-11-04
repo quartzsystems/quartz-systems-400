@@ -157,7 +157,7 @@ pub fn orphans() -> Vec<String> {
 /// (`tools/conformance/golden/phase11/prompts/*-refused.txt`).
 pub const PUBLIC_EXCLUDE: &[&str] = &[
     "ADDLICKEY", "ANZPRB", "APYPTF", "CHGIPLA", "CHGLICINF", "CHGPRB", "CPYPTF", "DLTLICPGM",
-    "DLTPRB", "DMPJOB", "DMPOBJ", "DMPSYSOBJ", "DSPPTF", "DSPPTFCVR", "ENDTRC", "INSPTF",
+    "DLTPRB", "DMPJOB", "DMPOBJ", "DMPSYSOBJ", "DSPPTF", "DSPPTFCVR", "ENDTRC", "INSLNG", "INSPTF",
     "LODPTF", "PRTSYSINF", "PRTTRC", "RCLDBXREF", "RMVPTF", "RST", "RSTAUT", "RSTCFG", "RSTLIB",
     "RSTLICPGM", "RSTOBJ", "RSTUSRPRF", "SAVLICPGM", "SNDPTFORD", "SNDSRVRQS", "STRTRC", "TRCJOB",
     "WRKCNTINF", "WRKLICINF", "WRKPRB", "WRKPTFGRP",
@@ -475,6 +475,7 @@ pub const DIRECT: &[&str] = &[
     "RSTLICPGM",
     "DLTLICPGM",
     "SAVLICPGM",
+    "INSLNG",
     "CHKPRDOPT",
     "WRKLICINF",
     "ADDLICKEY",

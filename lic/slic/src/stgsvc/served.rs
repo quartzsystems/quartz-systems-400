@@ -272,6 +272,11 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
         }
         None => super::jobs::resolve_attrs(system, &job.jobd, &job.class, &job.user.clone()),
     };
+    let mut attrs = attrs;
+    // A job in a secondary language finds its text first.
+    if let Some(lib) = super::jobs::language_library(system, &attrs.langid) {
+        attrs.libl.set_language(Some(&lib));
+    }
     system.attrs.insert(job.number, attrs);
     system.job_seen.insert(job.name.clone(), 1);
     jrn::entry::name_job(

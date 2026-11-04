@@ -87,6 +87,20 @@ fn every_piece_is_made_once() {
         let (_, h) = ops::read_header(&mut t, id).unwrap();
         assert_eq!(h.public_authority == store::obj::Authority::EXCLUDE, excluded, "{name}");
     }
+    // The primary language library, and Spanish installed beside it.
+    assert!(l.lookup(&mut t, types::LIB, Name::parse("QSYS2924").unwrap()).unwrap().is_some());
+    let (lib, n) = osobjects::nls::install_language(&mut t, qsys, &stamp, 2931, false).unwrap();
+    assert_eq!((lib.as_str(), n), ("QSYS2931", 5));
+    assert_eq!(osobjects::nls::install_language(&mut t, qsys, &stamp, 2931, false).unwrap().1, 0);
+    assert!(osobjects::nls::install_language(&mut t, qsys, &stamp, 2999, false).unwrap_err().starts_with("TXT0203"));
+    let l = Library::load(&mut t, qsys).unwrap();
+    let es = l.lookup(&mut t, types::LIB, Name::parse("QSYS2931").unwrap()).unwrap().unwrap();
+    let esl = Library::load(&mut t, es).unwrap();
+    let f = esl.lookup(&mut t, types::FILE, Name::parse("QDSIGNON").unwrap()).unwrap().unwrap();
+    let df = dspf::decode(&wm::obj::read(&mut t, f).unwrap()).unwrap();
+    assert_eq!(df.file.ccsid.unwrap_or(37), 37);
+    let shown = format!("{df:?}");
+    assert!(shown.contains("Inicio de sesi"), "the Spanish constants");
     let again = osobjects::create(&mut t, qsys, &stamp).unwrap();
     t.commit().unwrap();
     assert_eq!((again.made, again.commands_replaced), (0, 0));

@@ -1,0 +1,12 @@
+# INSLNG on the primary: F4 from the Main Menu. Nothing is installed;
+# V7R1M0 has no such command, and the refusal is the snapshot.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+continue
+timeout 20000
+type inslng
+key f4
+wait "INSLNG"
+snap inslng71-notfound
