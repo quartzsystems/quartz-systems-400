@@ -45,6 +45,11 @@ fn find(
 
 fn crtmsgf(system: &mut System, parms: &Parms) -> Result<String, String> {
     let (n, l) = parms.qual("MSGF");
+    // `*HEX` is 65535; a job CCSID otherwise.
+    let ccsid = parms.int("CCSID").and_then(|c| u16::try_from(c).ok()).unwrap_or(65535);
+    if ccsid != 65535 && !ccsid::nls::job_ccsid_ok(u32::from(ccsid)) {
+        return Err("CPD0084 CCSID".into());
+    }
     let text = parms.text("TEXT");
     let owner = system.svc_user.clone().unwrap_or_else(|| "QSYS".into());
     let ctx = msgf::store::Ctx {
@@ -55,8 +60,9 @@ fn crtmsgf(system: &mut System, parms: &Parms) -> Result<String, String> {
     in_store(system, |txn, qsys, names| {
         let lib = library(txn, qsys, names, &l)?;
         let name = Name::parse(&n).map_err(|e| format!("CPD0078 MSGF({n}): {e}"))?;
-        msgf::store::crtmsgf(txn, &ctx, lib, name, &text, false)
-            .map(|_| format!("Message file {n} created in library {}.\n", lib_or(&l)))
+        let id = msgf::store::crtmsgf(txn, &ctx, lib, name, &text, false).map_err(|e| format!("CPF2112 {e}"))?;
+        msgf::store::set_ccsid(txn, id, ccsid)
+            .map(|()| format!("Message file {n} created in library {}.\n", lib_or(&l)))
             .map_err(|e| format!("CPF2112 {e}"))
     })
 }

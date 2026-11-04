@@ -305,7 +305,8 @@ created from theirs by `osobjects` and `build lp`).
 | 44 | 2 | KeylCount | |
 | 46 | 2 | ImportCount | |
 | 48 | 4 | SourceLines | lines in record 1 |
-| 52 | 12 | Reserved | zero |
+| 52 | 2 | Ccsid | the CCSID of the text (0 read as 37) |
+| 54 | 10 | Reserved | zero |
 
 ### `PnlgrpTail` (8 bytes)
 

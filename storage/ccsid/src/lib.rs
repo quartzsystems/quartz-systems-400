@@ -11,6 +11,7 @@
 #![deny(missing_docs)]
 
 pub mod conv;
+pub mod nls;
 mod cp037;
 mod tables;
 

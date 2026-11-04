@@ -49,6 +49,8 @@ pub struct MsgFile {
     pub name: String,
     /// Text description.
     pub text: String,
+    /// The CCSID of its text (`CRTMSGF CCSID`; 65535 for `*HEX`).
+    pub ccsid: u16,
     /// Descriptions, in identifier order.
     pub msgs: Vec<MsgDesc>,
 }
@@ -118,9 +120,16 @@ impl MsgFile {
     }
 }
 
+/// A source names no CCSID: the system files' (US English).
+fn dft_ccsid() -> u16 {
+    37
+}
+
 #[derive(Deserialize)]
 struct FileToml {
     name: String,
+    #[serde(default = "dft_ccsid")]
+    ccsid: u16,
     #[serde(default)]
     text: String,
     #[serde(default)]
@@ -153,6 +162,7 @@ struct MsgToml {
 pub fn parse(text: &str) -> Result<MsgFile> {
     let f: FileToml = toml::from_str(text).map_err(|e| MsgfError::Source(e.to_string()))?;
     let mut file = MsgFile {
+        ccsid: f.ccsid,
         name: f.name,
         text: f.text,
         msgs: Vec::new(),

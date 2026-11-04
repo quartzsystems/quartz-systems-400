@@ -113,7 +113,7 @@ pub fn encode(f: &MsgFile) -> Vec<u8> {
             .expect("few messages")
             .to_le_bytes(),
     );
-    out.extend_from_slice(&37u16.to_le_bytes());
+    out.extend_from_slice(&f.ccsid.to_le_bytes());
     out.resize(MSGF_HDR_LEN, 0);
     for m in &f.msgs {
         let mut id = [ccsid::SPACE; 7];
@@ -187,7 +187,7 @@ pub fn decode(bytes: &[u8], name: &str, text: &str) -> Result<MsgFile> {
         return Err(MsgfError::Payload(format!("payload version {version}")));
     }
     let count = r.u32()?;
-    let _ccsid = r.u16()?;
+    let file_ccsid = r.u16()?;
     r.take(14)?;
     let mut msgs = Vec::with_capacity(count as usize);
     for _ in 0..count {
@@ -231,6 +231,8 @@ pub fn decode(bytes: &[u8], name: &str, text: &str) -> Result<MsgFile> {
         });
     }
     Ok(MsgFile {
+        // Before the field was kept every file was CCSID 37.
+        ccsid: if file_ccsid == 0 { 37 } else { file_ccsid },
         name: name.into(),
         text: text.into(),
         msgs,
@@ -248,5 +250,15 @@ mod tests {
             let again = decode(&bytes, &f.name, &f.text).unwrap();
             assert_eq!(again, f);
         }
+    }
+
+    #[test]
+    fn the_ccsid_is_kept() {
+        let mut f = crate::source::builtin().remove(0);
+        assert_eq!(f.ccsid, 37);
+        f.ccsid = 284;
+        let again = decode(&encode(&f), &f.name, &f.text).unwrap();
+        assert_eq!(again.ccsid, 284);
+        assert_eq!(u16::from_le_bytes([encode(&f)[16], encode(&f)[17]]), 284);
     }
 }

@@ -545,7 +545,7 @@ blank padded; integers are little-endian.
 | 15 | 1 | Rows2 | 0 without a secondary size |
 | 16 | 1 | Cols2 | |
 | 17 | 1 | MsgLoc | `MSGLOC`; 0 for none |
-| 18 | 2 | Ccsid | file-level `CCSID`; 0 for none |
+| 18 | 2 | Ccsid | file-level `CCSID`; 37, the shipped sources', when the source names none (0 in files stored before V1R1M0) |
 | 20 | 2 | Records | record formats |
 | 22 | 4 | SourceLines | source records after the model |
 | 26 | 4 | ModelLen | bytes of the model section |

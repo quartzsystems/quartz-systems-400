@@ -207,6 +207,20 @@ impl Entry {
                         got: *n,
                     });
                 }
+                // A job CCSID: 65535 or a single-byte EBCDIC one.
+                if self.name == "QCCSID" && !u32::try_from(*n).is_ok_and(ccsid::nls::job_ccsid_ok) {
+                    let mut ok: Vec<String> = ccsid::conv::supported()
+                        .into_iter()
+                        .filter(|c| ccsid::nls::job_ccsid_ok(u32::from(*c)))
+                        .map(|c| c.to_string())
+                        .collect();
+                    ok.dedup();
+                    return Err(SysValError::NotAllowed {
+                        name: self.name.clone(),
+                        got: n.to_string(),
+                        allowed: ok.join(", "),
+                    });
+                }
                 Ok(())
             }
             (Kind::List, Value::List(items)) => {
@@ -381,6 +395,13 @@ mod tests {
             lvl.parse_value("x"),
             Err(SysValError::NotANumber { .. })
         ));
+        let ccsid = c.get("QCCSID").unwrap();
+        for n in [37, 273, 284, 1141, 65535] {
+            assert!(ccsid.validate(&Value::Dec(n)).is_ok(), "{n}");
+        }
+        for n in [1208, 930, 1234] {
+            assert!(matches!(ccsid.validate(&Value::Dec(n)), Err(SysValError::NotAllowed { .. })), "{n}");
+        }
         let libl = c.get("QSYSLIBL").unwrap();
         let too_many = Value::List((0..16).map(|i| format!("L{i}")).collect());
         assert!(matches!(

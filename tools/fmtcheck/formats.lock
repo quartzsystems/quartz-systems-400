@@ -92,7 +92,7 @@ hash = "9c9dc6e9647be9767e5479486a45dcefb31ac8e860f40c095e6438c471b29c0c"
 [format.ui-objects]
 frozen_at = "V1R1M0"
 version = "1/1/1/1/1"
-hash = "88926e2df752ecb0ecf9fb4c898dfa4dc59a99b647fbe468780f1017290df944"
+hash = "d9901f2a1469e8729744cd9eb42894447e67c7b638b606e11c5425f475776853"
 
 [format.update-protocol]
 frozen_at = "V1R1M0"

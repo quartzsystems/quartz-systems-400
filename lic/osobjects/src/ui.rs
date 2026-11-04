@@ -42,6 +42,7 @@ pub fn compile(text: &str, name: &str, lib: &str) -> Result<(Vec<u8>, String), S
                 library: lib.to_string(),
                 group,
                 source: c.source.lines().to_vec(),
+                ccsid: 37,
             };
             Ok((uim::payload::encode(&p), c.listing))
         }

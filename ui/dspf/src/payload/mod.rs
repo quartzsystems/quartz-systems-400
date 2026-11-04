@@ -167,7 +167,7 @@ pub fn encode(df: &DisplayFile) -> Vec<u8> {
         put_uint(&mut buf, "Cols2", u64::from(s.cols));
     }
     put_uint(&mut buf, "MsgLoc", u64::from(f.msgloc.unwrap_or(0)));
-    put_uint(&mut buf, "Ccsid", u64::from(f.ccsid.unwrap_or(0)));
+    put_uint(&mut buf, "Ccsid", u64::from(f.ccsid.unwrap_or(37)));
     put_uint(&mut buf, "Records", df.records.len() as u64);
     put_uint(&mut buf, "SourceLines", df.source.len() as u64);
     put_uint(&mut buf, "ModelLen", model.len() as u64);

@@ -73,6 +73,7 @@ pub fn crtmsgf(
         txn,
         id,
         &MsgFile {
+            ccsid: 37,
             name: name.to_string(),
             text: text.into(),
             msgs: Vec::new(),
@@ -226,4 +227,11 @@ impl TextString for store::obj::ObjectHeader {
     fn text_string(&self) -> String {
         store::obj::header::text_of(&self.text)
     }
+}
+
+/// `CRTMSGF CCSID`, `CHGMSGF CCSID`: the CCSID the file's text is in.
+pub fn set_ccsid(txn: &mut Txn<'_>, id: ObjectId, ccsid: u16) -> Result<()> {
+    let mut f = load(txn, id)?;
+    f.ccsid = ccsid;
+    write_payload(txn, id, &f)
 }

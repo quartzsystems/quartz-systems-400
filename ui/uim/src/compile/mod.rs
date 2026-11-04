@@ -106,6 +106,7 @@ impl Compilation {
             library: self.opts.library.clone().unwrap_or_default(),
             group: self.group.clone()?,
             source: self.source.lines().to_vec(),
+            ccsid: 37,
         };
         Some(payload::encode(&p))
     }

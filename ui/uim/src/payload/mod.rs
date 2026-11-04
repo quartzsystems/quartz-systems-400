@@ -35,7 +35,8 @@ pub const HEADER_LAYOUT: Layout = Layout {
         field("KeylCount", 44, 2),
         field("ImportCount", 46, 2),
         field("SourceLines", 48, 4),
-        field("Reserved", 52, 12),
+        field("Ccsid", 52, 2),
+        field("Reserved", 54, 10),
     ],
 };
 
@@ -66,6 +67,9 @@ pub struct Payload {
     pub group: PanelGroup,
     /// The source as compiled, imbeds expanded.
     pub source: Vec<SourceLine>,
+    /// The CCSID of its text: 37 for the shipped groups, the source
+    /// file's for `CRTPNLGRP`.
+    pub ccsid: u16,
 }
 
 /// Why a payload could not be read.
@@ -121,6 +125,7 @@ pub fn encode(p: &Payload) -> Vec<u8> {
     put_u16(&mut out, 46, count(g.imports.len()));
     let lines = u32::try_from(p.source.len()).unwrap_or(u32::MAX);
     out[48..52].copy_from_slice(&lines.to_le_bytes());
+    put_u16(&mut out, 52, p.ccsid);
     record(&mut out, TAG_SOURCE, &ipc::encode(&p.source));
     record(&mut out, TAG_MODEL, &ipc::encode(&p.group));
     out
@@ -140,6 +145,11 @@ pub fn decode(bytes: &[u8]) -> Result<Payload, PayloadError> {
     }
     let name = text_of(&bytes[12..22]);
     let library = text_of(&bytes[22..32]);
+    // A group stored before the field was kept is CCSID 37.
+    let text_ccsid = match u16::from_le_bytes([bytes[52], bytes[53]]) {
+        0 => 37,
+        c => c,
+    };
     let mut at = 64;
     let mut source = Vec::new();
     let mut group = None;
@@ -166,9 +176,18 @@ pub fn decode(bytes: &[u8]) -> Result<Payload, PayloadError> {
     Ok(Payload {
         name,
         library,
+        ccsid: text_ccsid,
         group: group.ok_or(PayloadError::NoModel)?,
         source,
     })
+}
+
+/// Set the CCSID of an encoded payload (`CRTPNLGRP` from a source file of
+/// another CCSID).
+pub fn set_ccsid(bytes: &mut [u8], ccsid: u16) {
+    if bytes.len() >= 64 {
+        put_u16(bytes, 52, ccsid);
+    }
 }
 
 fn count(n: usize) -> u16 {
@@ -219,6 +238,7 @@ mod tests {
                 text: ":PNLGRP.".into(),
                 imbed: None,
             }],
+            ccsid: 37,
         };
         let bytes = encode(&p);
         assert_eq!(&bytes[..8], MAGIC);
@@ -237,5 +257,11 @@ mod tests {
             Err(PayloadError::Truncated { tag: 2, .. })
         ));
         assert!(matches!(decode(&bytes[..64]), Err(PayloadError::NoModel)));
+        let mut c = bytes.clone();
+        set_ccsid(&mut c, 284);
+        assert_eq!(decode(&c).unwrap().ccsid, 284);
+        c[52] = 0;
+        c[53] = 0;
+        assert_eq!(decode(&c).unwrap().ccsid, 37);
     }
 }

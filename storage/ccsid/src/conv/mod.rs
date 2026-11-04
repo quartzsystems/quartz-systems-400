@@ -80,7 +80,7 @@ pub struct Codec {
 }
 
 /// The single-byte EBCDIC CCSIDs with tables.
-const EBCDIC: [u16; 11] = [37, 273, 277, 278, 280, 284, 285, 297, 500, 871, 1140];
+const EBCDIC: [u16; 12] = [37, 273, 277, 278, 280, 284, 285, 297, 500, 871, 1140, 1141];
 
 /// The Japanese CCSIDs: mixed 930, 939, 5026, 5035 and double-byte 300.
 const JAPANESE: [u16; 5] = [300, 930, 939, 5026, 5035];

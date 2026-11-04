@@ -100,6 +100,18 @@ impl LibList {
         Ok(())
     }
 
+    /// The secondary language library of the system part: `lib` (a
+    /// `QSYS29xx`) just ahead of `QSYS`, any other language library
+    /// out; `None` takes it out.
+    pub fn set_language(&mut self, lib: Option<&str>) {
+        self.sys.retain(|l| ccsid::nls::feature_of_library(l).is_none());
+        if let Some(lib) = lib {
+            let at = self.sys.iter().position(|l| l == "QSYS").unwrap_or(0);
+            self.sys.insert(at, lib.to_string());
+            self.sys.truncate(MAX_SYS);
+        }
+    }
+
     /// `CHGSYSLIBL`: the system part replaced.
     pub fn change_sys(&mut self, libs: Vec<String>) -> Result<()> {
         if libs.len() > MAX_SYS {
@@ -292,6 +304,12 @@ pub struct UserDft {
     pub outq: String,
     /// `PRTDEV`: a device, or `*WRKSTN` or `*SYSVAL`.
     pub prtdev: String,
+    /// `LANGID`: an identifier, or `*SYSVAL` (blank too).
+    pub langid: String,
+    /// `CNTRYID`: an identifier, or `*SYSVAL` (blank too).
+    pub cntryid: String,
+    /// `CCSID`, 0 for `*SYSVAL`.
+    pub ccsid: u32,
 }
 
 impl JobAttrs {
@@ -333,7 +351,11 @@ impl JobAttrs {
         };
         let usr = d.inllibl.clone().unwrap_or_else(|| words(&sv("QUSRLIBL")));
         let limit = |v: Option<u32>| v.unwrap_or(u32::MAX);
-        Self {
+        let specific = |v: &str| {
+            let t = v.trim();
+            (!t.is_empty() && !t.starts_with('*')).then(|| t.to_string())
+        };
+        let mut a = Self {
             jobd: jobd_name.to_string(),
             jobq: format!("{}/{}", d.jobq.0, d.jobq.1),
             jobpty: d.jobpty,
@@ -378,10 +400,10 @@ impl JobAttrs {
             cputime: limit(c.cputime),
             maxtmpstg: limit(c.maxtmpstg),
             maxthd: limit(c.maxthd),
-            ccsid: num("QCCSID", 65535),
-            dftccsid: 37,
-            langid: sv("QLANGID"),
-            cntryid: sv("QCNTRYID"),
+            ccsid: if prf.ccsid == 0 { num("QCCSID", 65535) } else { prf.ccsid },
+            dftccsid: 0,
+            langid: specific(&prf.langid).unwrap_or_else(|| sv("QLANGID")),
+            cntryid: specific(&prf.cntryid).unwrap_or_else(|| sv("QCNTRYID")),
             datfmt: sv("QDATFMT"),
             datsep: sv("QDATSEP"),
             timsep: sv("QTIMSEP"),
@@ -395,7 +417,9 @@ impl JobAttrs {
             sws: "00000000".into(),
             prtkeyfmt: "*SYSVAL".into(),
             dupjobopt: "*SELECT".into(),
-        }
+        };
+        a.dftccsid = ccsid::nls::default_ccsid(a.ccsid, &a.langid);
+        a
     }
 
     /// `CHGJOB KEYWORD(value)` for one keyword. Keywords this does not
@@ -487,9 +511,27 @@ impl JobAttrs {
                 }
                 self.date = v;
             }
-            "CCSID" => self.ccsid = value.parse().map_err(|_| bad())?,
-            "LANGID" => self.langid = v,
-            "CNTRYID" => self.cntryid = v,
+            "CCSID" => {
+                let n: u32 = value.trim().parse().map_err(|_| bad())?;
+                if !ccsid::nls::job_ccsid_ok(n) {
+                    return Err(bad());
+                }
+                self.ccsid = n;
+                self.dftccsid = ccsid::nls::default_ccsid(n, &self.langid);
+            }
+            "LANGID" => {
+                if v.len() != 3 || !v.chars().all(|c| c.is_ascii_alphabetic()) {
+                    return Err(bad());
+                }
+                self.langid = v;
+                self.dftccsid = ccsid::nls::default_ccsid(self.ccsid, &self.langid);
+            }
+            "CNTRYID" => {
+                if v.len() != 2 || !v.chars().all(|c| c.is_ascii_alphabetic()) {
+                    return Err(bad());
+                }
+                self.cntryid = v;
+            }
             "SRTSEQ" => self.srtseq = v,
             "TIMESLICE" => self.timeslice = value.parse().map_err(|_| bad())?,
             "PURGE" if matches!(v.as_str(), "*YES" | "*NO") => self.purge = v == "*YES",
@@ -582,6 +624,50 @@ mod tests {
         assert_eq!(a.sws, "10000000");
         assert!(a.change("NOSUCH", "1").is_err());
         assert!(a.change("INQMSGRPY", "*MAYBE").is_err());
+    }
+
+    #[test]
+    fn national_attributes() {
+        let mut a = JobAttrs::resolve("X", &JobD::default(), &Cls::default(), &sv);
+        assert_eq!((a.ccsid, a.dftccsid), (65535, 37));
+        a.change("LANGID", "ESP").unwrap();
+        assert_eq!(a.dftccsid, 284);
+        a.change("CCSID", "273").unwrap();
+        assert_eq!((a.ccsid, a.dftccsid), (273, 273));
+        assert!(a.change("CCSID", "1208").is_err());
+        assert!(a.change("CCSID", "4711").is_err());
+        assert!(a.change("LANGID", "ESPA").is_err());
+        a.change("CNTRYID", "ES").unwrap();
+        // Text in the job's CCSID and back.
+        for c in [37u32, 500, 273, 1141] {
+            a.change("CCSID", &c.to_string()).unwrap();
+            let job = u16::try_from(a.ccsid).unwrap();
+            let s = "Größe [ä] @ {x} ~";
+            let b = ccsid::conv::from_str(job, s).unwrap();
+            assert_eq!(ccsid::conv::to_string(job, &b).unwrap(), s, "{c}");
+        }
+        let prf = UserDft {
+            langid: "ESP".into(),
+            cntryid: "ES".into(),
+            ccsid: 284,
+            ..UserDft::default()
+        };
+        let b = JobAttrs::resolve_for("X", &JobD::default(), &Cls::default(), &sv, &prf);
+        assert_eq!((b.langid.as_str(), b.cntryid.as_str(), b.ccsid, b.dftccsid), ("ESP", "ES", 284, 284));
+    }
+
+    #[test]
+    fn language_library() {
+        let mut l = LibList {
+            sys: vec!["QSYS".into(), "QSYS2".into()],
+            ..LibList::default()
+        };
+        l.set_language(Some("QSYS2931"));
+        assert_eq!(l.sys, ["QSYS2931", "QSYS", "QSYS2"]);
+        l.set_language(Some("QSYS2929"));
+        assert_eq!(l.sys, ["QSYS2929", "QSYS", "QSYS2"]);
+        l.set_language(None);
+        assert_eq!(l.sys, ["QSYS", "QSYS2"]);
     }
 
     #[test]

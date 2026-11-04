@@ -3578,6 +3578,7 @@ dependencies = [
 name = "sysval"
 version = "0.1.0"
 dependencies = [
+ "ccsid",
  "licpart",
  "serde",
  "thiserror",

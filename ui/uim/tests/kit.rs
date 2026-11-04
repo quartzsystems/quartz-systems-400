@@ -146,6 +146,7 @@ fn payload_round_trips() {
             library: "QGPL".into(),
             group: c.group.clone().unwrap(),
             source: c.source.lines().to_vec(),
+            ccsid: 37,
         };
         let bytes = payload::encode(&p);
         let back = payload::decode(&bytes).unwrap();

@@ -185,6 +185,9 @@ pub fn user_dft(system: &mut System, user: &str) -> wm::job::UserDft {
         sec::profile::objects::read(txn, qsys, user).map_err(|e| e.to_string())
     })
     .map(|(_, p)| wm::job::UserDft {
+        langid: p.langid.clone(),
+        cntryid: p.cntryid.clone(),
+        ccsid: p.ccsid,
         outq: if p.outq.0.starts_with('*') {
             p.outq.0
         } else {
@@ -252,13 +255,18 @@ pub fn chgjob(
         super::security::may_control(&found.user, &found.qualified())?;
         found.number
     };
+    let user = system.jobs.get(number).map(|j| j.user.clone()).unwrap_or_default();
+    let resolved: Vec<(String, String)> = changes
+        .iter()
+        .map(|(kw, v)| (kw.clone(), national(system, &user, kw, v)))
+        .collect();
     let attrs = system
         .attrs
         .get_mut(&number)
         .ok_or_else(|| format!("CPF1070 job {number:06} not found"))?;
     // All or nothing: change a copy, then keep it.
     let mut a = attrs.clone();
-    for (kw, v) in changes {
+    for (kw, v) in &resolved {
         super::security::check_priority(kw, v)?;
         a.change(kw, v)
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPD9D07")))?;
@@ -286,4 +294,32 @@ pub fn apply_class(system: &mut System, attrs: &mut wm::job::JobAttrs, class: &s
     attrs.cputime = c.cputime.unwrap_or(u32::MAX);
     attrs.maxtmpstg = c.maxtmpstg.unwrap_or(u32::MAX);
     attrs.maxthd = c.maxthd.unwrap_or(u32::MAX);
+}
+
+/// `CHGJOB`'s special values of the national attributes as values:
+/// `*SYSVAL` the system value's, `*USRPRF` the job user's profile's
+/// (`CCSID` -2 and -1).
+fn national(system: &mut System, user: &str, kw: &str, v: &str) -> String {
+    let t = v.trim().to_ascii_uppercase();
+    let sysval = |system: &System, name: &str| super::security::sysval_text(system, name).trim().to_string();
+    match (kw, t.as_str()) {
+        ("CCSID", "-2" | "*SYSVAL") => sysval(system, "QCCSID"),
+        ("CCSID", "-1" | "*USRPRF") => match user_dft(system, user).ccsid {
+            0 => sysval(system, "QCCSID"),
+            n => n.to_string(),
+        },
+        ("CCSID", "*HEX") => "65535".into(),
+        ("LANGID", "*SYSVAL") => sysval(system, "QLANGID"),
+        ("CNTRYID", "*SYSVAL") => sysval(system, "QCNTRYID"),
+        ("LANGID" | "CNTRYID", "*USRPRF") => {
+            let p = user_dft(system, user);
+            let mine = if kw == "LANGID" { p.langid } else { p.cntryid };
+            if mine.trim().is_empty() || mine.starts_with('*') {
+                sysval(system, if kw == "LANGID" { "QLANGID" } else { "QCNTRYID" })
+            } else {
+                mine.trim().to_string()
+            }
+        }
+        _ => v.to_string(),
+    }
 }
