@@ -980,6 +980,21 @@ powers down (`D1001090`). With `RESTART(*YES)` the next IPL's
 `QIPLSTS` is 2, kept in `QSYS/QWCIPLSTS` until then. `ENDSYS` is
 `ENDSBS *ALL`: the restricted state, the console still up.
 
+**Ending a subsystem ends every job in it.** A monitor ends the jobs
+it started (batch, autostart, prestart); the jobs no monitor started
+learn it from the service: a server job (`QTVTELNET`, `QTFTP00001`,
+the host servers) through `sbs_state`, whose `ending` is set while its
+subsystem ends and after it has ended; an interactive job through the
+display session that holds it (`ws_end_requests`, asked each second,
+which carries `ENDJOB`'s requests too: a monitor never takes an
+interactive job's). Two jobs stay: the console's interactive job
+(`QSCONSOLE`), and an interactive job of the controlling subsystem that
+ran `ENDSBS *ALL` (or `ENDSBS` of the controlling subsystem) itself,
+as on IBM i. The system's own jobs (`QSVCJOB`, `QCONSOLE`, the `SYS`
+jobs) are in no monitor's care and stay. In the restricted state the
+console signs on to the controlling subsystem's description although
+it is not active; `STRSBS` of it starts the system again.
+
 ## 5. Statistics
 
 The storage service samples Linux and compares two samples:

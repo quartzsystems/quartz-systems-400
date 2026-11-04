@@ -244,6 +244,10 @@ fn savsys(system: &mut System, parms: &Parms) -> CmdReply {
     if let Err(e) = crate::stgsvc::security::require(SpecialAuth::SAVSYS, "save the system") {
         return failed(NAME, &format!("CPF2189 {e}"));
     }
+    // The restricted state, as on IBM i: `ENDSBS SBS(*ALL)` first.
+    if let Some(sbs) = system.sbs.keys().next() {
+        return failed(NAME, &format!("CPF3785 not all subsystems ended: {sbs} is active; end them with ENDSBS SBS(*ALL)"));
+    }
     let dev = values(parms, "DEV").first().cloned().unwrap_or_default();
     if !stream::is_device(&dev) {
         return failed(NAME, &format!("{NO_DEVICE} device {dev} not found"));

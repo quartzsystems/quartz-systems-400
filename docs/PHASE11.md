@@ -162,7 +162,7 @@ storage service (the IPL now finishes it first).
 
 | Item | Where | Waits for |
 |---|---|---|
-| The job that runs `ENDSBS *ALL` surviving it | `work/qsjob/src/panels/backup.rs` (`CPF1E36`) | an exemption in the subsystem monitor; the options run from `QSVCJOB` |
+| The job that runs `ENDSBS *ALL` surviving it | `work/qsjob/src/panels/backup.rs` (`CPF1E36`) | closed in Phase 12: the console's job survives, the options run there and from `QSVCJOB` |
 | `qs400.rsp=` naming a URL | `lic/slic/src/ipl/media.rs` | the network boot (PXE) |
 
 ## Bench

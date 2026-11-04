@@ -177,10 +177,11 @@ The V7R1M0 oracle settled 27 restore rules
 27. **`SAVSYS`'s completion message.** `CPC3703` here, with the device
    in its data; IBM's message for a completed system save was not
    captured (the oracles may not run `SAVSYS`).
-28. **`SAVSYS` while active.** IBM i ends `SAVSYS` unless the system is
-   in restricted state; QS/400 saves while active (product loads and
-   security data are consistent units in the store). Whether to refuse
-   as IBM does is open until `ENDSBS *ALL` leaves a usable console.
+28. **`SAVSYS` while active.** Resolved in Phase 12: `ENDSBS *ALL` now
+   ends every job but the console's and leaves the console usable, so
+   `SAVSYS` refuses as IBM i does unless the system is in the restricted
+   state (`CPF3785`, no subsystem active); run it from the console or
+   the service console after `ENDSBS SBS(*ALL)`.
 29. **A blank virtual tape.** Resolved: `SAVSYS` requires a labeled
    volume as IBM does and refuses a blank or unlabeled one with
    `CPF6772` before it builds anything; `INZTAP` labels it. A catalog's

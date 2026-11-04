@@ -231,6 +231,8 @@ impl Suite {
                 ("ADDIMGCLGE IMGCLG(SAVSYS) FROMFILE(*NEW) TOFILE(SYS001) VOLNAM(SYS001) IMGSIZ(900)", "CPCBC03"),
                 ("LODIMGCLG IMGCLG(SAVSYS) DEV(TAPVRT01)", "CPCBC06"),
                 ("VRYCFG CFGOBJ(TAPVRT01) CFGTYPE(*DEV) STATUS(*ON)", "CPC2605"),
+                // SAVSYS needs the restricted state.
+                ("ENDSBS SBS(*ALL) OPTION(*IMMED)", "ending"),
                 ("SAVSYS DEV(TAPVRT01)", "CPC3703"),
                 ("CHKTAP DEV(TAPVRT01)", "system save (SAVSYS)"),
                 ("SAVLIB LIB(*NONSYS) DEV(TAPVRT01)", "CPC3722"),
@@ -240,6 +242,15 @@ impl Suite {
                 let out = s.command(line, long)?;
                 if !out.contains(want) {
                     return Err(format!("{line}: no {want}:\n{out}"));
+                }
+                if line.starts_with("ENDSBS") {
+                    for _ in 0..120 {
+                        let w = s.command("wrksbs", CMD)?;
+                        if !w.contains("ACTIVE") && !w.contains("ENDING") {
+                            break;
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(500));
+                    }
                 }
             }
             let labels = s.command("DSPTAP DEV(TAPVRT01) DATA(*LABELS)", CMD)?;
