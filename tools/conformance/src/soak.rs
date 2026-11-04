@@ -280,9 +280,21 @@ impl Suite {
             reason: e,
             log: String::new(),
         };
-        s.expect("Service console ready", Duration::from_secs(180)).map_err(fail)?;
+        s.expect(crate::steps::SRC_IPL_COMPLETE, Duration::from_secs(300)).map_err(fail)?;
+        // The console's banner may come before the last SRC or after it.
+        let _ = s.expect("Service console ready", Duration::from_secs(60));
         s.discard();
-        crate::tcp::guest_address(&mut s).map_err(fail)?;
+        // A loaded host makes the first commands slow: a few tries.
+        let mut tcp = Err(String::new());
+        for _ in 0..3 {
+            tcp = crate::tcp::guest_address(&mut s);
+            if tcp.is_ok() {
+                break;
+            }
+            std::thread::sleep(Duration::from_secs(10));
+            s.discard();
+        }
+        tcp.map_err(fail)?;
         let port = launch.telnet_port.ok_or_else(|| fail("no telnet port".into()))?;
         {
             let c = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
