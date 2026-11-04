@@ -233,7 +233,12 @@ caller's block by reference: the call stores `fileref FILE` in it and
 passes it, and the procedure starts with `filebind` of its own file
 (the parent's description, qualified, with copies of its formats) to
 that handle, so its operations act on the caller's open file and the
-caller sees the flags they leave. Under `ALWNULL(*USRCTL)` a format with
+caller sees the flags they leave. The parameter's formats are the
+parent's, qualified by the parameter's name (`LIKEREC(f.FMT:*ALL)`,
+`UPDATE f.FMT`); a `TEMPLATE` parent gives its description's formats;
+an `OPEN` of a parameter counts as an `OPEN` of a `USROPN` file of the
+same parent (no `RNF7062`); a parameter passes on to another procedure,
+and through a prototype to a procedure of another module. Under `ALWNULL(*USRCTL)` a format with
 null-capable fields travels with a null map (`$nm_FILE`, an indicator
 per field, `dbio ... nulls()`): a read sets each field's `%NULLIND`, a
 write or update stores them (`%FIELDS` only the named ones); the
@@ -411,7 +416,11 @@ digits from bit 8, decimals in the low byte.
 | `_QRNX_DTALCK` | `OUT` of a data area this job has not locked (412) |
 | `_QRNX_EDITFLT` | `%EDITFLT` |
 | `_QRNX_FIXZONED`, `_QRNX_ALTSEQ` | `FIXNBR(*ZONED)` repairs; `ALTSEQ(*SRC)` compares |
-| `_QRNX_SIGNAL`, `_QRNX_DATAPGM`, `_QRNX_NOHANDLER`, `_QRNX_DUMP` | a status found by compiled code; `DATA-INTO`/`DATA-GEN` and `HANDLER` files (blocked, `PHASE9.md`); `DUMP` |
+| `_QRNX_SIGNAL` | a status found by compiled code |
+| `_QRNX_DATAPGM`, `_QRNX_NOHANDLER` | what modules compiled before Phase 12 call for `DATA-INTO`/`DATA-GEN` (status 355) and `HANDLER` files (`CEE9901`) |
+| `_QRNX_DATAINTO`, `_QRNX_DATAGEN` | `DATA-INTO` and `DATA-GEN` (`qrpgrt::datainto`, `qrpgrt::datagen`), below |
+| `_QRNX_OAOPEN` | before the open of a `HANDLER` file: its handler takes the open and every operation (`qrpgrt::oa`), below |
+| `_QRNX_DUMP` | `DUMP(A)`, and `DUMP` under `DEBUG(*YES)`: the formatted dump (`qrpgrt::dump`), below |
 
 **Moves** (`qrpgrt::mov`). Every operand takes part as its image:
 character data as its bytes (a varying field as its current value, its
@@ -445,6 +454,112 @@ groups of its array's size; an `XML-SAX` handler gets each event with
 the string as a pointer (length -1 when the event has none). An error
 in a handler is the operation's error. The special words
 `*XML_START_DOCUMENT`... are integer constants (`codegen::xml::WORDS`).
+
+**`DATA-INTO`** (`qrpgrt::datainto`). The parser `%PARSER` names (a
+program `LIB/PGM`, a procedure `LIB/SRVPGM(PROC)`, or a procedure
+pointer) is called with IBM's `QrnDiParm_T`; `QOAR/QRPGLESRC` holds
+QS/400's own copy members `QRNDTAINTO`, `QRNDTAGEN`, `QRNOPENACC` and
+`QRNTYPES` (`rpg/compiler/qoar/`, found by any `/COPY` the source's own
+members do not answer): Quartz-written source with IBM's names, layouts
+(`OA005` checks every size and offset against pub400) and line counts,
+so listings number alike. The document goes to the parser in UTF-16
+(CCSID 13488), or the job's CCSID under `ccsid=job`; the second operand
+of `%PARSER` is a null-terminated string when it is an expression, the
+variable's address when it is a variable. The procedures of `QrnDiEnv`
+are the runtime's own; what they report builds a tree: a name and a
+value, a structure, an array, an attribute (an item of the structure
+being reported). The first item may be unnamed; several named items
+outside any structure are the items of an unnamed root (IBM's sample
+`JSONPARSE` reports a document so). The root fills the target as
+`XML-INTO`'s does: an unnamed root matches any variable, a named one the
+variable's name under `case=`; `path=` starts at a named root and goes
+down by names; an array subfield takes an array's items or items
+repeated under its name, `countprefix=` the count; elements past the end
+of a target array are not taken. A misuse of the procedures (a value
+without a name inside a structure, an unbalanced end, a second
+`QrnDiStart`...) is status 358 with IBM's reason codes, a document that
+does not fit 356, `QrnDiReportError` 357; the escape goes to the
+program that ran `DATA-INTO`, so the parser does not get control back.
+A target of a type the PSDS counts gets the elements set at 372-379 (an
+array's count, 0 for a structure). `%HANDLER` gets the items in groups
+of its array's size.
+
+Options of `%DATA` for `DATA-INTO`: `doc=string`, `ccsid=job|ucs2`,
+`path`, `case=lower|upper|any|convert`, `trim=all|none`,
+`allowmissing`, `allowextra`, `countprefix`. Not supported, and status
+352 as IBM gives for an option not valid in the context: `doc=file` (no
+stream file is read) and `datasubf`.
+
+QS/400 ships parsers and generators IBM does not (`qrpgrt::shipped`),
+natives of `QSYS` called as programs: `QRNPJSON` parses JSON as IBM's
+sample `JSONPARSE` does (the outermost object's items at the top,
+`true` and `false` as words or, with the parser option `boolean=ind`,
+`1` and `0`, `null` an empty value; unit tests hold it: tried as an
+oracle on pub400, the sample stops on nested objects with its own
+errors 2 and 9, so it settles nothing),
+`QRNPXML` parses XML (the root by name, elements with
+children or attributes as structures, repeated elements one after
+another). Other parser options are ignored, as `JSONPARSE` ignores
+them. `QRNGJSON` and `QRNGXML` generate JSON and XML; IBM ships no
+generator to compare them with (its sample `XMLGEN` has options of its
+own), so unit tests hold them.
+
+**`DATA-GEN`** (`qrpgrt::datagen`). The generator `%GEN` names is
+called with IBM's `QrnDgParm_T` once per event: start, each structure
+(5, 6), array of scalars (7, 8) or of structures (9, 10) and scalar (11)
+in order, end, and terminate (12) when the generator set
+`doTerminateEvent` (its text is not kept). Names are spelled as the
+source spells them (`name=` renames the variable); values go in UTF-16:
+numbers with every decimal and a leading zero (`0.50`, `-0.250`),
+floats as `%EDITFLT`, dates and times in their formats, characters
+without trailing blanks, indicators `1` or `0`; the separator is the
+decimal point for numbers, the date or time separator, `x'00'`
+otherwise. `countprefix=` gives the elements of an array subfield
+(361 outside 0 to the array's size). The text the generator adds
+(`QrnDgAddText`, `...Ccsid`, `...String`, `...NewLine` as CR LF) replaces
+the output variable. `QrnDgReportError` is status 363, a misuse of the
+procedures 362. Not supported (status 352): `doc=file`, `fileccsid`,
+`output=continue` and the `*START`/`*END` sequences that belong to
+files; `renameprefix` is accepted and has no effect.
+
+**Open Access** (`qrpgrt::oa`, `mi::io::oa`). Before a `HANDLER` file
+opens, `_QRNX_OAOPEN` gives the runtime the handler (a program, a
+`SRVPGM(PROC)`, a prototype of the module or a procedure pointer), the
+user area and the file's description (formats, fields, keys); the open
+(`mi::rtlib::io::db_open` takes `Job::oa_next`) and every operation of
+the file (`db_io`, `dev_io`, `prt_ctl`, `dsp_io`, close) then go to the
+handler with IBM's `QrnOpenAccess_T` (528 bytes, format `ROAC0100`),
+which stays the same storage from the open to the close (`stateInfo`
+lives in it). The record is in the input or output buffer (the input
+buffer's length for input operations, the output's for output ones),
+the key in its buffer with the number of key fields it holds, the
+operation in `rpgOperation`, the record format in `recordName` (the
+file's name for a program-described file, blank at the open and the
+close); an update file's input operations have `inputWithLock` on. A
+handler that sets `useNamesValues` at the open gets every field as a
+name and a value in text instead (`QrnNamesValues_T`: numbers with their
+decimals, characters at their length, `valueMaxLenBytes` the widest
+text); what it puts there for an input operation goes back into the
+record. The handler's `rpgStatus` is the operation's status, `eof`,
+`found`, `equal` and `printerOverflow` its results. A handler that
+cannot be called ends the program at the open (`CEE9901`), as on IBM i.
+The indicator area, the feedback areas and `recordLevels` beyond the
+formats' names and level identifiers are not passed (null pointers).
+
+**`DUMP`** (`codegen::dump`, `qrpgrt::dump`). `DUMP(A)` (and `DUMP`
+under `DEBUG(*YES)`) prints the spooled file `QPPGMDMP` in IBM's
+layout: the program status area, the module, the indicators and, when
+the module has a debug view, every variable by name (sorted, structures
+with their subfields, arrays by element with runs of equal elements as
+one line) with its attributes, value and bytes in hexadecimal (on the
+value's line when the type is narrow, else `VALUE IN HEX` lines of 40
+bytes); without a debug view the dump says the variable data is not
+available, as IBM's does. Each subprocedure's own variables follow
+under its name; a subprocedure that is not active has no storage to
+show here (its values are zeros), where IBM shows whatever its storage
+last held. The open data path and feedback sections IBM prints for
+files are not printed. The kit and `rpg-oracle` mask the job, user,
+library, date and time values (`rpg_oracle::outcome::mask_dump`).
 
 ## Status data structures
 
@@ -498,6 +613,48 @@ Positions not listed are left as the program initialized them.
 | 334 | 10 | pgm | | program holding the procedure |
 | 344 | 10 | module | | module holding the procedure |
 | 374 | 10 | cur_user | | current user profile |
+
+### `QrnOpenAccess_T`
+
+The subfields of the Open Access handler's parameter the runtime sets
+or reads (`qrpgrt::oa::FIELDS`); `OA005` compares every size and offset
+of the shipped copy members with pub400's.
+
+| Position | Length | Name | Word | Contents |
+|---|---|---|---|---|
+| 1 | 4 | length | | |
+| 9 | 8 | parameterFormat | | |
+| 17 | 16 | userArea | | |
+| 49 | 16 | recordLevels | | |
+| 65 | 16 | inputBuffer | | |
+| 97 | 16 | outputBuffer | | |
+| 129 | 16 | namesValues | | |
+| 145 | 16 | key | | |
+| 321 | 20 | externalFile | | |
+| 341 | 10 | externalMember | | |
+| 351 | 20 | compileFile | | |
+| 371 | 10 | recordName | | |
+| 401 | 4 | rpgOperation | | |
+| 405 | 4 | rpgStatus | | |
+| 409 | 4 | inputBufferLen | | |
+| 417 | 4 | outputBufferLen | | |
+| 425 | 4 | keyLen | | |
+| 449 | 4 | numKeys | | |
+| 453 | 4 | rrn | | |
+| 457 | 4 | formLen | | |
+| 461 | 4 | formOfl | | |
+| 481 | 1 | functionKey | | |
+| 482 | 1 | externallyDescribed | | |
+| 483 | 1 | keyedFile | | |
+| 484 | 1 | blocked | | |
+| 485 | 1 | eof | | |
+| 486 | 1 | found | | |
+| 487 | 1 | equal | | |
+| 488 | 1 | printerOverflow | | |
+| 489 | 1 | inputWithLock | | |
+| 490 | 1 | useNamesValues | | |
+| 496 | 1 | commit | | |
+| 497 | 1 | rpgDevice | | |
 
 ## Embedded SQL (`CRTSQLRPGI`)
 

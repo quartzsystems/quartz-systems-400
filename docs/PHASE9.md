@@ -124,8 +124,7 @@ system).
 - RPG III and RPG/400 (`CRTRPGPGM`, `RPG` and `RPG36` source types) and
   `CVTRPGSRC`.
 - `DATA-INTO`/`DATA-GEN` parsers and generators, Open Access handlers
-  and the `DUMP(A)` layout (under "Blocked": they need QS/400's own
-  `QOAR` copy members and a dump writer).
+  and the `DUMP(A)` layout: done in Phase 12 (see "Blocked").
 - Job date and time formats behind `*JOBRUN` (work management).
 - The listings named in `known_lst.txt` (layout only; their outcomes
   match) and the remaining items of "Not done" below.
@@ -192,16 +191,17 @@ system).
 - **The primary oracle has no RPG compiler.** Every compile-and-run
   result is captured on pub400 (V7R5M0) instead; nothing in the corpus
   is verified on V7R1M0.
-- **`DATA-INTO` and `DATA-GEN`** call no parser or generator: a parser
-  is written to IBM's `QRNDTAINTO` interface and a generator to
-  `QRNDTAGEN`, copy members in `QOAR/QRPGLESRC` that QS/400 does not
-  have. Every one is status 355, as when the program cannot be called
-  (`// BLOCKED(phase9):` in `codegen/xml.rs`).
-- **Open Access** (`HANDLER`) handlers are not called; opening such a
-  file ends the program as pub400 does when the handler is missing
-  (`codegen/dbio.rs`).
-- **`DUMP(A)`** writes no formatted dump (`_QRNX_DUMP`); pub400's holds
-  the job and the dates, so the corpus does not print one.
+- **`DATA-INTO` and `DATA-GEN`**: closed in Phase 12 (`310022e3`).
+  Parsers and generators are called through QS/400's own
+  `QOAR/QRPGLESRC` copy members (`RPG.md`, `DATA-INTO`); batch
+  `b18data`.
+- **Open Access** (`HANDLER`): closed in Phase 12 (`310022e3`); the
+  handler takes the open and every operation; batch `b19oa`.
+- **`DUMP(A)`**: closed in Phase 12 (`310022e3`); `QPPGMDMP` in IBM's
+  layout, compared with the job, user, library, dates and times masked;
+  batch `b20dump`.
+- **`LIKEFILE` parameters**: closed in Phase 12 (`310022e3`); batch
+  `b17like`.
 
 ## Open-source projects that need sockets, the IFS or TLS
 
@@ -915,7 +915,8 @@ Recorded from batch 15 (`b15cov/`, `gen/b15.py`), pub400 V7R5M0.
   CCSID 273 turns the CP037 `!` and `[` into other characters, so the
   corpus has no comment or CDATA in a document.
 - `DATA-INTO` and `DATA-GEN` with a parser or generator that cannot be
-  called are 00355.
+  called are 00355 (Phase 12: the rest of their statuses are in
+  `RPG.md`).
 - `SERIALIZE` needs `THREAD(*CONCURRENT)` (`RNF1519`, 20); a procedure's
   `PGMINFO` in a program is `RNF1524` (00). `SLN` needs a display
   record with `SLNO(*VAR)` (`RNF2029`). `PACKEVEN` on a subfield that is
