@@ -109,8 +109,8 @@ fn chgpwd(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
 }
 
 /// `WRKJOB [JOB(n/u/name)] [OPTION(...)]`: the job's displays, by
-/// option. Another job's call stack is its own business
-/// (`MIGRATE(phase8)`: shown through the service).
+/// option. Another job's library list comes from the service, which
+/// keeps every job's; its call stack lives only in its own process.
 fn wrkjob(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
     let which = p.upper("JOB");
     let own = which.is_none() || which.as_deref() == Some("*");
@@ -135,9 +135,24 @@ fn wrkjob(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
         "*JOBLOG" => super::log::dspjoblog(job, host, which.as_deref()),
         "*PGMSTK" if own => Ok(job.call_stack_text()),
         "*LIBL" if own => Ok(crate::command::run(job, host, "DSPLIBL").text),
-        "*PGMSTK" | "*LIBL" => {
-            Err(format!("CPF1343 {option} of another job is not shown yet"))
+        "*LIBL" => {
+            let spec = which.clone().unwrap_or_default();
+            let reply = host.exec(&format!("dspjob JOB({spec})"));
+            let line = reply
+                .text
+                .lines()
+                .find_map(|l| l.trim_start().strip_prefix("Library list"))
+                .map(str::trim)
+                .ok_or_else(|| reply.text.trim().to_string())?;
+            let mut out = format!("Library list of job {spec}:\n");
+            for lib in line.split_whitespace() {
+                let _ = writeln!(out, "  {lib}");
+            }
+            Ok(out)
         }
+        // BLOCKED(phase12): another job's call stack needs a request the
+        // job answers while it waits; none reaches it there yet.
+        "*PGMSTK" => Err(format!("CPF1343 {option} of another job is not shown yet")),
         "*SELECT" => Ok(format!(
             "Work with Job: {:06}/{}/{}\n\n  1. Display job status attributes        (OPTION(*STSA))\n  2. Display job definition attributes    (OPTION(*DFNA))\n  3. Display job run attributes           (OPTION(*RUNA))\n  4. Work with spooled files              (OPTION(*SPLF))\n 10. Display job log                      (OPTION(*JOBLOG))\n 11. Display call stack                   (OPTION(*PGMSTK))\n 13. Display library list                 (OPTION(*LIBL))\n",
             s.number, s.user, s.name

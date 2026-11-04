@@ -4,8 +4,9 @@
 
 //! The panels an interactive job shows before and around its work:
 //! Change Password (`QDCHGPWD`'s geometry), Sign-on Information, and
-//! the interim MAIN menu that stands in until `*MENU` objects exist
-//! (`MIGRATE(phase8)`). Golden files under `tools/conformance/golden/`
+//! the interim MAIN menu that stands in when the `MAIN` menu object is
+//! missing (the object itself shows through UIM). Golden files under
+//! `tools/conformance/golden/`
 //! hold them (`tests/golden.rs`).
 
 use crate::ctl::Panel;

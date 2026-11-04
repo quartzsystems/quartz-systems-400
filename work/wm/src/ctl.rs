@@ -240,8 +240,10 @@ pub const JOB_COMMANDS: &[&str] = &[
 ];
 
 /// A display panel: text and input fields placed by row and column
-/// (1-based), and the message line. `MIGRATE(phase8)`: display files
-/// build these.
+/// (1-based), and the message line. The screens built in code use it
+/// (the sign-on's fallbacks, Change Password, Sign-on Information) and
+/// a job without a device shows its displays through it; display files
+/// and UIM panels draw on the job's 5250 model.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Panel {
     /// Text: row, column, attribute (0 green, 1 white, 2 blue, 3 red),

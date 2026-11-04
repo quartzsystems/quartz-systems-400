@@ -4,9 +4,10 @@
 
 //! An interactive job at a display. Signing on may first need a new
 //! password (Change Password) and may show Sign-on Information; then
-//! the initial program runs, and the initial menu shows: the interim
-//! MAIN menu for `MAIN`, sign-off for `*SIGNOFF`, otherwise Command
-//! Entry (`MIGRATE(phase8)`: `*MENU` objects). Command Entry is `QCMD`:
+//! the initial program runs, and the initial menu shows: the `MAIN`
+//! menu object through UIM (the interim MAIN panel when the object is
+//! missing), sign-off for `*SIGNOFF`, otherwise Command Entry, from
+//! which `GO` shows any `*MENU`. Command Entry is `QCMD`:
 //! a line of up to 512 characters runs through the command analyzer,
 //! `F4` prompts it, `F9` brings back the previous commands, `F10` adds
 //! the second-level text of the messages, `F11` the full width of long

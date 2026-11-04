@@ -10,10 +10,11 @@
 //! itself is the service's); `QSYSCOMM1` has the service check the
 //! certificate stores for expiry ten minutes after the IPL and then daily
 //! (warnings go to `QSYSOPR`) and hourly whether an update check is due
-//! (`QSCHGUPDA`); the others hold their place until their
-//! work exists (`MIGRATE(phase6)` device arbitration, `MIGRATE(phase10)`
-//! communications and alerts; the storage service rebuilds access
-//! paths itself at IPL).
+//! (`QSCHGUPDA`); the others hold their place: the storage service
+//! keeps the devices' states itself (varied on, signed on, the job
+//! at each), rebuilds access paths at IPL, and
+//! communications are `QTCPWRK`'s and the servers'. No alerts are
+//! sent: QS/400 has no SNA focal point to send them to.
 
 use std::time::{Duration, Instant};
 

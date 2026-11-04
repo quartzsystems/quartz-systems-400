@@ -5,7 +5,8 @@
 //! Commands, security, commitment control and the stubs: `QCMDEXC`,
 //! `QCAPCMD`, `QCMDCHK`, `QTNRCMTI`,
 //! `QUSLSPL`, `QWDRSBSD`, `QWCRJBST`. The command APIs hand the text
-//! to the provider (`MIGRATE(phase7)`: the command analyzer).
+//! to the job's command hook, the command analyzer, or to the provider
+//! in a job without one.
 
 use mi::Job;
 

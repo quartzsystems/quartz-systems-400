@@ -3,10 +3,10 @@
 // root directory of this project.
 
 //! The screen a job's displays draw on: its 5250 device when it has
-//! one, else a model of its own shown to `slic` as a panel (the
-//! console job; `MIGRATE(phase8)`: the console becomes a TN5250 client
-//! and the panel path goes). Display files and UIM panels both write
-//! through it and wait for the operator through it.
+//! one (the console's `QSCONSOLE` too, a TN5250 client of its own),
+//! else a model of its own shown to `slic` as a panel (the service
+//! console's `QSVCJOB`, which has no device). Display files and UIM
+//! panels both write through it and wait for the operator through it.
 
 use std::sync::mpsc::RecvTimeoutError;
 use std::time::Duration;
