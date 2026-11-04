@@ -53,6 +53,7 @@ mod qap;
 mod qemu;
 pub mod qir;
 mod qsh;
+mod restricted;
 mod savrst;
 mod medlib;
 mod tapeopt;

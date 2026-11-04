@@ -7,3 +7,6 @@ TLS, spawn, PASE, registration facility and exit point work of Phase 10
 reads. They are IBM's text and stay under `tools/conformance/`: the
 code takes structure layouts, constants and errno values from them,
 never prose.
+
+`H/QSZCRTPL.txt` came from the primary oracle (IBM i 7.1) over FTP on
+2026-11-03: the `DIRI0100` directory list of `QSZCRTPL`.

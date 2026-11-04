@@ -641,6 +641,9 @@ impl Suite {
         reports.push(self.step(&mut s, "101 WSCST", Self::wscst)?);
         reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);
         reports.push(self.step(&mut s, "84 console display", Self::console_display)?);
+        reports.push(self.step(&mut s, "104 wrapped command lines", Self::wrapped_command_lines)?);
+        // Last: it ends every subsystem.
+        reports.push(self.step(&mut s, "103 restricted state", Self::restricted_state)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);
