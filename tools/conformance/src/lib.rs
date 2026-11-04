@@ -40,6 +40,8 @@ mod load;
 mod leftovers;
 mod lpstep;
 pub mod media;
+mod netauto;
+mod netinst;
 mod nettools;
 mod phase2;
 mod phase5;

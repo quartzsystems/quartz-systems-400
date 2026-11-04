@@ -12,6 +12,7 @@
 //! | 10 | V1R0M0 media (`QS400_OLD_ISO`) installed, user data made (a journaled table, spooled files, a SAVLIB in a save file), upgraded with option 1 to the suite's V1R1M0 media: the data kept, the release recorded, RSTLIB of the V1R0M0 save, the downgrade refused |
 //! | 11 | a power pull in the middle of a LIC install, then a clean reinstall |
 //! | 14 | option 1, Restore Licensed Internal Code, over step 1's disk with user data: the data kept, the new slot booted |
+//! | 15 | a network boot (PXE over QEMU's TFTP): the response file beside the boot file, the payload from the CD, the address from DHCP |
 
 use std::fs;
 use std::path::PathBuf;
@@ -52,16 +53,16 @@ fn rsp_stick(iso: &[u8], rsp: &str) -> Result<Vec<u8>, String> {
     crate::media::fat_stick_of(&files)
 }
 
-fn blank(path: &PathBuf, bytes: u64) -> Result<(), HarnessError> {
+pub(crate) fn blank(path: &PathBuf, bytes: u64) -> Result<(), HarnessError> {
     let f = fs::File::create(path)?;
     f.set_len(bytes)?;
     Ok(())
 }
 
-const GIB: u64 = 1024 * 1024 * 1024;
+pub(crate) const GIB: u64 = 1024 * 1024 * 1024;
 
 /// One multi-boot step: run `f`, report as `step` does.
-fn report(
+pub(crate) fn report(
     name: &'static str,
     start: Instant,
     r: Result<String, (String, String)>,
@@ -104,7 +105,7 @@ pub(crate) fn signatures_clean(s: &mut Session) -> Result<String, String> {
 }
 
 impl Suite {
-    fn skipped(&self, name: &str) -> bool {
+    pub(crate) fn skipped(&self, name: &str) -> bool {
         self.only
             .as_ref()
             .is_some_and(|p| !p.iter().any(|p| name.starts_with(p.as_str())))

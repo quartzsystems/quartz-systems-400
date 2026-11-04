@@ -180,6 +180,7 @@ impl Suite {
                 cpus: 2,
                 display: None,
                 scsi: false,
+                tftp: None,
             },
             media,
             install: false,
@@ -283,6 +284,7 @@ impl Suite {
         reports.extend(self.install_matrix(&installed)?);
         reports.extend(self.four_disks(&installed)?);
         reports.push(self.restore_in_place(&installed)?);
+        reports.push(self.network_install()?);
         Ok(reports)
     }
 
@@ -637,6 +639,9 @@ impl Suite {
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);
         reports.push(self.step(&mut s, "92 QAP IFS", Self::qap_ifs)?);
         reports.push(self.step(&mut s, "93 QAP messages", Self::qap_messages)?);
+        reports.push(self.step(&mut s, "96 DHCP client", Self::dhcp_client)?);
+        reports.push(self.step(&mut s, "97 telnet automatic sign-on", Self::telnet_auto_signon)?);
+        reports.push(self.step(&mut s, "98 SMTP relay credentials", Self::smtp_relay_auth)?);
         reports.push(self.step(&mut s, "100 DDM", Self::ddm)?);
         reports.push(self.step(&mut s, "101 WSCST", Self::wscst)?);
         reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);

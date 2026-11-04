@@ -62,6 +62,9 @@ pub struct Launch {
     /// A virtio SCSI controller (`scsi0`) with no disk on it, for a disk
     /// hot-added through QMP (step 83).
     pub scsi: bool,
+    /// A network boot first: QEMU's TFTP server over this directory, the
+    /// DHCP server naming this boot file (install step 15).
+    pub tftp: Option<(PathBuf, String)>,
 }
 
 /// Find the system emulator: the override variable, else `PATH`.
@@ -107,6 +110,8 @@ pub fn args(l: &Launch) -> Vec<OsString> {
     a.extend(["-smp".into(), l.cpus.to_string().into(), OsString::from("-drive")]);
     a.push(join("if=pflash,format=raw,readonly=on,file=", &l.firmware));
     let (disk_index, cd_index) = if l.cdrom_first { (1, 0) } else { (0, 1) };
+    // A network boot goes before both.
+    let (disk_index, cd_index) = if l.tftp.is_some() { (disk_index + 1, cd_index + 1) } else { (disk_index, cd_index) };
     if let Some(image) = &l.image {
         a.push(OsString::from("-drive"));
         a.push(join("if=none,id=hd,format=raw,file=", image));
@@ -170,15 +175,20 @@ pub fn args(l: &Launch) -> Vec<OsString> {
     if let Some(port) = l.telnet_port {
         a.push(OsString::from("-netdev"));
         a.push(OsString::from(format!(
-            "user,id=n0,net=10.0.2.0/24,hostfwd=tcp:127.0.0.1:{port}-:23{}",
+            "user,id=n0,net=10.0.2.0/24,dhcpstart={},hostfwd=tcp:127.0.0.1:{port}-10.0.2.15:23{}",
+            crate::netauto::DHCP_FIRST,
             l.host_ports.iter().fold(String::new(), |mut s, (h, g)| {
                 use std::fmt::Write as _;
-                let _ = write!(s, ",hostfwd=tcp:127.0.0.1:{h}-:{g}");
+                let _ = write!(s, ",hostfwd=tcp:127.0.0.1:{h}-10.0.2.15:{g}");
                 s
-            })
+            }) + &l.tftp.as_ref().map_or_else(String::new, |(dir, file)| format!(",tftp={},bootfile={file}", dir.display()))
         )));
         a.push(OsString::from("-device"));
-        a.push(OsString::from("virtio-net-pci,netdev=n0"));
+        a.push(OsString::from(if l.tftp.is_some() {
+            "virtio-net-pci,netdev=n0,bootindex=0"
+        } else {
+            "virtio-net-pci,netdev=n0"
+        }));
     } else {
         a.push(OsString::from("-nic"));
         a.push(OsString::from("none"));

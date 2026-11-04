@@ -57,6 +57,7 @@ qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
 tls = { path = "../../net/tls", version = "0.1.0" }
 print = { path = "../../work/print", version = "0.1.0" }
 ntp = { path = "../../net/ntp", version = "0.1.0" }
+mail = { path = "../../net/mail", version = "0.1.0" }
 lpd = { path = "../../net/lpd", version = "0.1.0" }
 ftp = { path = "../../net/ftp", version = "0.1.0" }
 servers = { path = "../../net/servers", version = "0.1.0" }
