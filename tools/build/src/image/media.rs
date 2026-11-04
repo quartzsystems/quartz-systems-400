@@ -13,7 +13,7 @@
 //! the manifest is signed with the build key (docs/INSTALL.md).
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, ensure};
 use optical::IsoBuilder;
@@ -63,6 +63,9 @@ pub struct Parts<'a> {
     pub rsp: Option<String>,
     /// The key the manifest is signed with.
     pub key: Option<ed25519_dalek::SigningKey>,
+    /// Other files: the Knowledge Center (`QS400/KC/`), the PTF
+    /// baseline (`QS400/PTF/`). Not in the install manifest.
+    pub extra: Vec<(String, Vec<u8>)>,
 }
 
 /// The image's tree and options.
@@ -106,10 +109,44 @@ pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
     b.add_file(SLOT_A_FILE, p.slot_a)?;
     b.add_file(SLOT_B_FILE, p.slot_b)?;
     b.add_file(README_FILE, p.readme.into_bytes())?;
+    for (path, data) in p.extra {
+        b.add_file(&path, data)?;
+    }
     b.boot_image(BOOT_IMAGE)?;
     // Protective MBR and GPT: a raw copy onto a disk boots under UEFI.
     b.hybrid(true);
     Ok(b)
+}
+
+/// Where the Knowledge Center (`build kc`) and the PTF baseline (`build
+/// release`) are written, and the directories they take on the media.
+pub const EXTRA_TREES: &[(&str, &str)] = &[("kc", "QS400/KC"), ("ptf-baseline", "QS400/PTF")];
+
+/// Every file of the extra trees that exist, with its path on the media.
+fn extra_files(ctx: &Ctx) -> Result<Vec<(String, Vec<u8>)>> {
+    fn walk(dir: &Path, rel: &str, out: &mut Vec<(String, Vec<u8>)>) -> Result<()> {
+        let mut entries: Vec<_> = fs::read_dir(dir)?.filter_map(|e| e.ok().map(|e| e.path())).collect();
+        entries.sort();
+        for p in entries {
+            let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let r = format!("{rel}/{name}");
+            if p.is_dir() {
+                walk(&p, &r, out)?;
+            } else {
+                out.push((r, fs::read(&p)?));
+            }
+        }
+        Ok(())
+    }
+    let mut out = Vec::new();
+    for (sub, on_media) in EXTRA_TREES {
+        let dir = ctx.paths.images().join(sub);
+        if dir.is_dir() {
+            walk(&dir, on_media, &mut out)?;
+            info!("iso: {on_media} from {}", dir.display());
+        }
+    }
+    Ok(out)
 }
 
 /// Build the ISO from the media UKI.
@@ -181,6 +218,7 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
         lp,
         rsp,
         key: Some(key),
+        extra: extra_files(ctx)?,
     })?;
     let image = b.build()?;
     let checked = validate(&image, &uki_check)?;
@@ -279,6 +317,7 @@ mod tests {
             lp: vec![("QS00SS1".into(), b"os".to_vec())],
             rsp: Some("language = 2924\n".into()),
             key: Some(ed25519_dalek::SigningKey::from_bytes(&[5; 32])),
+            extra: vec![("QS400/KC/index.html".into(), b"<html>".to_vec())],
         }
     }
 

@@ -86,6 +86,13 @@ enum Command {
     Doctor,
     /// Run cargo-deny plus the C-linkage lockfile check.
     Deny,
+    /// The Knowledge Center (`tools/kcbuild`) into `images/kc`; the ISO
+    /// carries it.
+    Kc,
+    /// The release: the pipeline without the service console, the
+    /// Knowledge Center and PTF baseline on the media, and
+    /// `target/release/<VRM>/` with `SHA256SUMS` and its signature.
+    Release,
     /// Fuzz every parser of outside bytes (`tools/fuzz`), instrumented.
     Fuzz {
         /// One target (`qsfuzz list` names them); all when absent.
@@ -110,7 +117,7 @@ fn main() -> Result<()> {
 
     let cli = Cli::parse();
     let ctx = Ctx::new(cli.verbose)?;
-    if !cfg!(target_os = "linux") && !matches!(cli.command, Command::Doctor | Command::Deny | Command::Fuzz { .. }) {
+    if !cfg!(target_os = "linux") && !matches!(cli.command, Command::Doctor | Command::Deny | Command::Fuzz { .. } | Command::Kc) {
         tracing::warn!("the pipeline needs a Linux host; run this from WSL");
     }
 
@@ -150,6 +157,12 @@ fn main() -> Result<()> {
         Command::Doctor => host::doctor::doctor(&ctx)?,
         Command::Deny => host::deny::deny(&ctx)?,
         Command::Fuzz { target, secs, jobs } => host::fuzz::fuzz(&ctx, target.as_deref(), secs, jobs)?,
+        Command::Kc => {
+            image::release::kc(&ctx)?;
+        }
+        Command::Release => {
+            image::release::release(&ctx)?;
+        }
     }
     Ok(())
 }

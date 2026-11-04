@@ -10,3 +10,4 @@ pub mod initramfs;
 pub mod lp;
 pub mod manifest;
 pub mod media;
+pub mod release;

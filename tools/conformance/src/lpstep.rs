@@ -74,6 +74,7 @@ fn serial(s: &mut Session) -> Result<String, String> {
 // The steps share one signature so `step` can take them as fn pointers.
 #[allow(clippy::unused_self)]
 impl Suite {
+    #[allow(clippy::too_many_lines)] // one scenario, with QS00RPG around QS00WDS
     /// Step 80: DLTLICPGM of the compilers makes CRTBNDRPG fail with
     /// CPF0C1F and RSTLICPGM brings them back; a vendor product goes
     /// through QSPKGPRD, RSTLICPGM, ADDLICKEY and DLTLICPGM.

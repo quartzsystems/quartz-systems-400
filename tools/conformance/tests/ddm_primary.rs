@@ -34,6 +34,7 @@ fn connect(host: &str, user: &str, password: &str, access: bool) -> Connection<T
 
 #[test]
 #[ignore = "needs the primary oracle"]
+#[allow(clippy::many_single_char_names)] // one short binding per remote object
 fn requester_against_the_primary() {
     let e = Env::load().expect("the oracle environment");
     let c = e.credentials(Target::Oracle, None).expect("oracle credentials");

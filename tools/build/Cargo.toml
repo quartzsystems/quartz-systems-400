@@ -32,6 +32,8 @@ ed25519-dalek = "3.0.0"
 lpbuild = { path = "../../licpgm/lpbuild", version = "0.1.0" }
 getrandom = "0.4.3"
 fmtcheck = { path = "../fmtcheck", version = "0.1.0" }
+kcbuild = { path = "../kcbuild", version = "0.1.0" }
+ptf-update = { path = "../../ptf/update", version = "0.1.0" }
 helpaudit = { path = "../helpaudit", version = "0.1.0" }
 
 [lints]
