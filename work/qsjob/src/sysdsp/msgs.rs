@@ -7,7 +7,8 @@
 //! on the Display Messages panel of their queue, the screen put back
 //! after. An inquiry a program sends to the external queue (`*EXT`,
 //! the job's `INQMSGRPY(*RQD)`, a function check's `CEE9901`) comes up
-//! on Display Program Messages, whose reply goes back to the program.
+//! on Display Program Messages, whose reply goes back to the program;
+//! so does a program's `DSPLY`.
 
 use mi::job::Inquiry;
 use stg::Client;
@@ -192,9 +193,66 @@ fn ask(host: &Host, q: &Inquiry) -> Option<String> {
     reply
 }
 
+/// `DSPLY` at the job's display: the line on Display Program Messages,
+/// Enter to go on; with `reply` the operator's answer (blank for F3 or
+/// F12, as when nothing is typed).
+pub fn dsply(host: &Host, text: &str, reply: bool) -> String {
+    let saved = host.display.borrow().as_ref().map(crate::display::Display::snapshot);
+    let mut surface = Surface::new(host.clone());
+    let lines = dsply_lines(text);
+    let mut message = String::new();
+    let mut typed = String::new();
+    let answer = loop {
+        let field = surface.with_model(|m| draw(m, &lines, reply.then_some(typed.as_str()), &message));
+        surface.flush(Read::MdtFields);
+        let Some((a, _)) = surface.wait() else {
+            break String::new();
+        };
+        typed = surface.with_model(|m| {
+            field
+                .and_then(|i| m.fields().get(i).map(tn5250::screen::Field::text))
+                .unwrap_or_default()
+        });
+        message.clear();
+        match a {
+            aid::ENTER => break typed.trim_end().to_string(),
+            a if matches!(aid::function_of(a), Some(3 | 12)) => break String::new(),
+            _ => message = crate::display::msgline::text(host, "CPD6A60", &[]),
+        }
+    };
+    keys::put_back(host, saved, None);
+    answer
+}
+
+/// A `DSPLY` line as the display shows it: `DSPLY` and the text,
+/// wrapped at 74 columns.
+#[must_use]
+pub fn dsply_lines(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut line = String::from("DSPLY ");
+    for ch in text.chars() {
+        if line.chars().count() >= 76 {
+            out.push(std::mem::take(&mut line));
+            line.push_str("      ");
+        }
+        line.push(ch);
+    }
+    out.push(line.trim_end().to_string());
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn dsply_lines_wrap() {
+        assert_eq!(dsply_lines("Hello"), vec!["DSPLY Hello".to_string()]);
+        let l = dsply_lines(&"a".repeat(100));
+        assert_eq!(l.len(), 2);
+        assert_eq!(l[0].chars().count(), 76);
+        assert!(l[1].starts_with("      a"));
+    }
 
     #[test]
     fn program_messages_layout() {

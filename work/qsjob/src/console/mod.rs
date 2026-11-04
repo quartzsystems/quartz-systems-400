@@ -342,6 +342,12 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
     job.spool = Some(Box::new(stg::remote::spool::RemoteSpool::new(link.clone())));
     let ask = host.clone();
     job.inquiry = Some(Box::new(move |q| crate::sysdsp::msgs::inquiry(&ask, q)));
+    // DSPLY waits at the display when the job has one.
+    let show = host.clone();
+    job.dsply = Some(Box::new(move |text, reply| {
+        let at_display = show.display.borrow().is_some();
+        at_display.then(|| crate::sysdsp::msgs::dsply(&show, text, reply))
+    }));
     let provider = Rc::new(RefCell::new(s.provider));
     let dyn_provider: Rc<RefCell<dyn sysapi::Provider>> = provider.clone();
     sysapi::install(&mut job, dyn_provider);

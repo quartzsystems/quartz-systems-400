@@ -43,6 +43,11 @@ pub struct Inquiry {
 /// Answers an inquiry: the reply, or `None` for the default.
 pub type InquiryFn = Box<dyn FnMut(&Inquiry) -> Option<String>>;
 
+/// Shows a `dsply` line at the job's display and waits for the
+/// operator: the reply typed when one is asked for (`true`); `None`
+/// when the job has no display to show it on.
+pub type DisplayFn = Box<dyn FnMut(&str, bool) -> Option<String>>;
+
 /// A program implemented in Rust, called like any other: the job and
 /// the parameter addresses.
 pub type NativeFn = Rc<dyn Fn(&mut Job, &[u64])>;
@@ -161,9 +166,12 @@ pub struct Job {
     pub autos: Vec<(u32, Box<[u8]>)>,
     /// Spaces pointers address.
     pub spaces: Spaces,
-    /// Lines `dsply` wrote; the console job shows them
-    /// (`MIGRATE(phase8)`: the job's display).
+    /// Lines `dsply` wrote in a job without a display; the command that
+    /// ran the program shows them.
     pub console: Vec<String>,
+    /// A job at a display shows `dsply` there instead
+    /// (Display Program Messages).
+    pub dsply: Option<DisplayFn>,
     /// Replies `dsply` reads, oldest first.
     pub replies: VecDeque<String>,
     /// Run when generated code finds the attention flag set: the job
@@ -272,6 +280,7 @@ impl Job {
             autos: Vec::new(),
             spaces: Spaces::default(),
             console: Vec::new(),
+            dsply: None,
             replies: VecDeque::new(),
             attn: None,
             act: Activator::new(source),

@@ -343,14 +343,23 @@ pub extern "sysv64" fn unresolved(env: *mut Env) {
 }
 
 /// `dsply(env, src, sty, reply, rty)`: the text goes to the job's
-/// console; a reply, when asked for, comes from the queued replies or
-/// is blank.
+/// display, or without one to its console lines; a reply, when asked
+/// for, is the operator's, else the queued one's, else blank.
 pub extern "sysv64" fn dsply(env: *mut Env, src: i64, sty: i64, reply: i64, rty: i64) {
     let line = display_text(src, sty);
     let j = job(env);
-    j.console.push(line);
+    // At a display the operator reads it and answers; queued replies
+    // (a test's, a batch job's) come first.
+    let shown = if j.replies.is_empty() {
+        j.dsply.as_mut().and_then(|show| show(&line, reply != 0))
+    } else {
+        None
+    };
+    if shown.is_none() {
+        j.console.push(line);
+    }
     if reply != 0 {
-        let r = j.replies.pop_front().unwrap_or_default();
+        let r = shown.unwrap_or_else(|| j.replies.pop_front().unwrap_or_default());
         let units: Vec<u16> = r
             .chars()
             .map(|c| ccsid::byte_of(c).map_or(0x6F, u16::from))
