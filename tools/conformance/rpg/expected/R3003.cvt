@@ -1,0 +1,22 @@
+# R3003 CVTRPGSRC pub400.com
+      * Edit words: separators, fill, floating currency, CR and minus.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C                   Z-ADD     -123456.78    AMT               9 2
+     C                   Z-ADD     4567.8        POS               9 2
+     C                   Z-ADD     110426        DAT               6 0
+     C                   Z-ADD     5551234       PHN               7 0
+     C                   Z-ADD     0             ZRO               9 2
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       AMT                 20 ' ,   ,  0.  -'
+     O                       AMT                 40 ' ,   ,  0.  CR'
+     O                       POS                 60 ' ,   ,  0.  CR'
+     O                       POS                 80 '* ,   ,  0.  '
+     OQSYSPRT   E            LINE           1
+     O                       AMT                 20 '$ ,   ,  0.  '
+     O                       DAT                 40 '  /  /  '
+     O                       PHN                 60 '   -    '
+     O                       ZRO                 80 ' ,   ,  0.  '
+     O                       ZRO                100 ' ,   ,   .  '

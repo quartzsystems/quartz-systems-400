@@ -1,0 +1,24 @@
+                       Create RPG/400 Program (CRTRPGPGM)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Program  . . . . . . . . . . . . PGM            *CTLSPEC                       
+   Library  . . . . . . . . . . .                  *CURLIB                      
+ Source file  . . . . . . . . . . SRCFILE        QRPGSRC                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Source member  . . . . . . . . . SRCMBR         *PGM                           
+ Generation severity level  . . . GENLVL         9                              
+ Text 'description' . . . . . . . TEXT           *SRCMBRTXT                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

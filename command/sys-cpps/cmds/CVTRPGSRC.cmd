@@ -15,27 +15,26 @@
                           SPCVAL((*FROMMBR)) PROMPT('To member')
              PARM       KWD(EXPCPY) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*NO) VALUES(*NO *YES) +
-                          PROMPT('Expand copy member')
+                          PMTCTL(*PMTRQS) PROMPT('Expand copy member')
              PARM       KWD(CVTRPT) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*YES) VALUES(*YES *NO) +
-                          PROMPT('Print conversion report')
+                          PMTCTL(*PMTRQS) PROMPT('Print conversion report')
              PARM       KWD(SECLVL) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*NO) VALUES(*NO *YES) +
-                          PROMPT('Include second level text')
+                          PMTCTL(*PMTRQS) PROMPT('Include second level text')
              PARM       KWD(INSRTPL) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*NO) VALUES(*NO *YES) +
-                          PROMPT('Insert specification template')
+                          PMTCTL(*PMTRQS) PROMPT('Insert specification template')
              PARM       KWD(LOGFILE) TYPE(Q3) SNGVAL((*NONE)) +
-                          PROMPT('Log file')
+                          PMTCTL(*PMTRQS) PROMPT('Log file')
              PARM       KWD(LOGMBR) TYPE(*NAME) LEN(10) DFT(*FIRST) +
-                          SPCVAL((*FIRST) (*LAST)) PROMPT('Log file member')
+                          SPCVAL((*FIRST) (*LAST)) PMTCTL(*PMTRQS) PROMPT('Log file member')
              Q1:        QUAL       TYPE(*NAME) LEN(10)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              Q2:        QUAL       TYPE(*NAME) LEN(10) DFT(QRPGLESRC)
-                        QUAL       TYPE(*NAME) LEN(10) DFT(*FROMLIB) +
-                          SPCVAL((*FROMLIB) (*LIBL) (*CURLIB)) +
-                          PROMPT('Library')
+                        QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
+                          SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              Q3:        QUAL       TYPE(*NAME) LEN(10) DFT(QRNCVTLG)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')

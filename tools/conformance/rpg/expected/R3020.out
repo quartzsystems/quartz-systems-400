@@ -1,0 +1,7 @@
+# R3020 V7R5M0 pub400.com
+# captured 2026-11-04 by rpg-oracle
+created: yes
+diag: QRG7031 00 line 300 seq 
+run: ok
+spool: QSYSPRT
+  |1/1          12    14       21                31    J1B2 A1BK

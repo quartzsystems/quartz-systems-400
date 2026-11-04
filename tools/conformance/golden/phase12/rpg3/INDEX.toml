@@ -1,0 +1,48 @@
+[[golden]]
+name = "prompt-crtrpgpgm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-04"
+script = "prompts-rpg3"
+width = 80
+
+[[golden]]
+name = "prompt-crtrpgpgm-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-04"
+script = "prompts-rpg3"
+width = 80
+
+[[golden]]
+name = "prompt-crtrpgpgm-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-04"
+script = "prompts-rpg3"
+width = 80
+
+[[golden]]
+name = "prompt-crtrpgpgm-f10-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-04"
+script = "prompts-rpg3"
+width = 80
+
+[[golden]]
+name = "prompt-cvtrpgsrc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-04"
+script = "prompts-rpg3"
+width = 80
+
+[[golden]]
+name = "prompt-cvtrpgsrc-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-04"
+script = "prompts-rpg3"
+width = 80
+

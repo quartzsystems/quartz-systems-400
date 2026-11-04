@@ -1,0 +1,24 @@
+                       Create RPG/400 Program (CRTRPGPGM)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Snap dump  . . . . . . . . . . . SNPDUMP        *NONE                          
+                                                                                
+ Codelist . . . . . . . . . . . . CODELIST       *NONE                          
+                                                                                
+ Ignore decimal data error  . . . IGNDECERR      *NO                            
+ Allow null values  . . . . . . . ALWNULL        *NO                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

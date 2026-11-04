@@ -4,7 +4,7 @@
 
 /* CRTRPGPGM: compile RPG III (RPG/400) source into a program           */
 /* (licensed program QS00RPG, docs/RPG3.md).                            */
-             CMD        PROMPT('Create RPG Program') MAXPOS(4) +
+             CMD        PROMPT('Create RPG/400 Program') MAXPOS(4) +
                           ALLOW(*ALL) HLPPNLGRP(QHPGCMD) HLPID(CRTRPGPGM)
              PARM       KWD(PGM) TYPE(Q1) DFT(*CTLSPEC) +
                           SNGVAL((*CTLSPEC)) PROMPT('Program')
@@ -17,15 +17,13 @@
                           SPCVAL((*SRCMBRTXT) (*BLANK ' ')) +
                           PROMPT('Text ''description''')
              PARM       KWD(OPTION) TYPE(*CHAR) LEN(10) RSTD(*YES) +
-                          DFT(*SOURCE *XREF *GEN *NODUMP *NOSECLVL +
-                          *NOSRCDBG *NOLSTDBG) MAX(7) VALUES(*SOURCE +
+                          MAX(7) VALUES(*SOURCE +
                           *NOSOURCE *SRC *NOSRC *XREF *NOXREF *GEN +
                           *NOGEN *DUMP *NODUMP *SECLVL *NOSECLVL +
                           *SRCDBG *NOSRCDBG *LSTDBG *NOLSTDBG) +
                           PMTCTL(*PMTRQS) PROMPT('Source listing options')
              PARM       KWD(GENOPT) TYPE(*CHAR) LEN(11) RSTD(*YES) +
-                          DFT(*NOLIST *NOXREF *NOATR *NODUMP +
-                          *NOOPTIMIZE) MAX(7) VALUES(*LIST *NOLIST +
+                          MAX(7) VALUES(*LIST *NOLIST +
                           *XREF *NOXREF *ATR *NOATR *DUMP *NODUMP +
                           *PATCH *NOPATCH *OPTIMIZE *NOOPTIMIZE) +
                           PMTCTL(*PMTRQS) PROMPT('Generation options')

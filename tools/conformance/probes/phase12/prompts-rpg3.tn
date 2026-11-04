@@ -1,11 +1,12 @@
 # Section 8: CRTRPGPGM's and CVTRPGSRC's prompts, every page with F10's
-# parameters, left with F12. Neither command is run.
+# parameters, left with F12. Neither command is run. Goldens land in
+# tools/conformance/golden/phase12/rpg3/ (command/sys-cpps/tests/rpg3_prompts.rs).
 wait "Main Menu"
 continue
 timeout 30000
 type crtrpgpgm
 key f4
-wait "Create RPG Program"
+wait "Create RPG/400 Program"
 snap prompt-crtrpgpgm
 key f10
 settle 1500
@@ -16,9 +17,6 @@ snap prompt-crtrpgpgm-f10-2
 key pgdn
 settle 1500
 snap prompt-crtrpgpgm-f10-3
-key pgdn
-settle 1500
-snap prompt-crtrpgpgm-f10-4
 key f12
 settle 1500
 wait "Main Menu"
@@ -29,9 +27,6 @@ snap prompt-cvtrpgsrc
 key f10
 settle 1500
 snap prompt-cvtrpgsrc-f10
-key pgdn
-settle 1500
-snap prompt-cvtrpgsrc-f10-2
 key f12
 settle 1500
 wait "Main Menu"

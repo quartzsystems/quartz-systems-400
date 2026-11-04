@@ -1,0 +1,24 @@
+                         Convert RPG Source (CVTRPGSRC)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ From file  . . . . . . . . . . . FROMFILE                                      
+   Library  . . . . . . . . . . .                  *LIBL                        
+ From member  . . . . . . . . . . FROMMBR                                       
+ To file  . . . . . . . . . . . . TOFILE         QRPGLESRC                      
+   Library  . . . . . . . . . . .                  *LIBL                        
+ To member  . . . . . . . . . . . TOMBR          *FROMMBR                       
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Expand copy member . . . . . . . EXPCPY         *NO                            
+ Print conversion report  . . . . CVTRPT         *YES                           
+ Include second level text  . . . SECLVL         *NO                            
+ Insert specification template  . INSRTPL        *NO                            
+ Log file . . . . . . . . . . . . LOGFILE        QRNCVTLG                       
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Log file member  . . . . . . . . LOGMBR         *FIRST                         
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

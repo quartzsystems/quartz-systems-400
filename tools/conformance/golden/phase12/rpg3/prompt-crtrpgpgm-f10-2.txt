@@ -1,0 +1,24 @@
+                       Create RPG/400 Program (CRTRPGPGM)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Type conversion options  . . . . CVTOPT         *NONE                          
+                           + for more values                                    
+ Sort sequence  . . . . . . . . . SRTSEQ         *HEX                           
+   Library  . . . . . . . . . . .                                               
+ Language identifier  . . . . . . LANGID         *JOBRUN                        
+ SAA flagging . . . . . . . . . . SAAFLAG        *NOFLAG                        
+ Print file . . . . . . . . . . . PRTFILE        QSYSPRT                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Replace program  . . . . . . . . REPLACE        *YES                           
+ Target release . . . . . . . . . TGTRLS         *CURRENT                       
+ User profile . . . . . . . . . . USRPRF         *USER                          
+ Authority  . . . . . . . . . . . AUT            *LIBCRTAUT                     
+ Phase trace  . . . . . . . . . . PHSTRC         *NO                            
+ Intermediate text dump . . . . . ITDUMP         *NONE                          
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                
