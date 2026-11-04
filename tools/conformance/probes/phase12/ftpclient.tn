@@ -1,0 +1,36 @@
+# Phase 12: the interactive FTP client's display, to the loopback
+# server, never signed on (a user that does not exist is refused).
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+continue
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type FTP RMTSYS(LOOPBACK)
+key enter
+settle 6000
+snap ftp-login
+type QSNOUSR1
+key enter
+settle 3000
+snap ftp-password
+type x
+key enter
+settle 4000
+snap ftp-refused
+type help
+key enter
+settle 3000
+snap ftp-help
+type quit
+key enter
+settle 3000
+snap ftp-quit
+key f3
+settle 2000
+snap ftp-after
+key f3
+settle 1000

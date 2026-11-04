@@ -1,0 +1,24 @@
+                             File Transfer Protocol                             
+                                                                                
+ Previou ................................................................       
+   Conne :                      Exit FTP Client                         :       
+   220-Q :                                                              :       
+   220 C :   Type choice, press Enter.                                  :       
+ >    QS :                                                              :       
+   501 U :     Exit . . .     1=Yes                                     :       
+ >    x  :                    2=No                                      :       
+   Subco :                                                              :       
+   For a :                                                              :       
+ >    he :                                                              :       
+   Subco :                                                              :       
+ >    qu :..............................................................:       
+   Subcommand '   quit' not valid.                                              
+                                                                                
+ Enter an FTP subcommand.                                                       
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F6=Print       F9=Retrieve                                         
+ F17=Top    F18=Bottom    F21=CL command line                                   
+                                                                                

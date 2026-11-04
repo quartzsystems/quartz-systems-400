@@ -1,0 +1,48 @@
+[[golden]]
+name = "ftp-login"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "ftpclient"
+width = 80
+
+[[golden]]
+name = "ftp-password"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "ftpclient"
+width = 80
+
+[[golden]]
+name = "ftp-refused"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "ftpclient"
+width = 80
+
+[[golden]]
+name = "ftp-help"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "ftpclient"
+width = 80
+
+[[golden]]
+name = "ftp-quit"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "ftpclient"
+width = 80
+
+[[golden]]
+name = "ftp-after"
+source = "oracle"
+release = ""
+date = "2026-11-04"
+script = "ftpclient"
+width = 80
+

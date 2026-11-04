@@ -1,0 +1,24 @@
+                             File Transfer Protocol                             
+                                                                                
+ Previous FTP subcommands and messages:                                         
+   Connecting to host LOOPBACK at address 127.0.0.1 using port 21.              
+   220-QTCP at LOOPBACK.                                                        
+   220 Connection will close if idle more than 5 minutes.                       
+ >    QSNOUSR1                                                                  
+   501 User name not valid in USER subcommand.                                  
+ >    x                                                                         
+   Subcommand '   x' not valid.                                                 
+   For a list of available FTP subcommands, enter subcommand HELP.              
+ >    help                                                                      
+   Subcommand '   help' not valid.                                              
+ >    quit                                                                      
+   Subcommand '   quit' not valid.                                              
+                                                                                
+ Enter an FTP subcommand.                                                       
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F6=Print       F9=Retrieve                                         
+ F17=Top    F18=Bottom    F21=CL command line                                   
+                                                                                

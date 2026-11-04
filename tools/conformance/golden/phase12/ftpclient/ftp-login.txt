@@ -1,0 +1,24 @@
+                             File Transfer Protocol                             
+                                                                                
+ Previous FTP subcommands and messages:                                         
+   Connecting to host LOOPBACK at address 127.0.0.1 using port 21.              
+   220-QTCP at LOOPBACK.                                                        
+   220 Connection will close if idle more than 5 minutes.                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Enter login ID (qsecofr):                                                      
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F6=Print       F9=Retrieve                                         
+ F17=Top    F18=Bottom    F21=CL command line                                   
+                                                                                

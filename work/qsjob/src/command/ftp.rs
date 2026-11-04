@@ -8,9 +8,9 @@
 //! what the session prints goes to the member `OUTPUT` is overridden to
 //! (added to it), or is the command's output when there is no override.
 //! Local objects are reached as the job reaches them; `SYSCMD` runs in
-//! this job.
-// MIGRATE(phase11): the client's own display (the FTP session screen)
-// for an interactive job without an INPUT override.
+//! this job. An interactive job without an `INPUT` override gets the
+//! client's own display, File Transfer Protocol, laid out as the
+//! primary oracle's (`tools/conformance/golden/phase12/ftpclient/`).
 
 use std::collections::VecDeque;
 use std::rc::Rc;
@@ -42,6 +42,156 @@ impl Console for Script {
 
     fn write(&mut self, line: &str) {
         self.out.push(line.to_string());
+    }
+}
+
+/// The File Transfer Protocol display: the previous subcommands and
+/// messages, the prompt, a command line of four rows. F3 ends the
+/// session, F9 retrieves, F17 and F18 and the roll keys page.
+struct Screen {
+    host: Host,
+    lines: Vec<String>,
+    commands: Vec<String>,
+    /// The first line shown; `None` follows the end.
+    top: Option<usize>,
+}
+
+/// Rows of the display.
+mod rows {
+    /// The first of the previous lines.
+    pub const FIRST: usize = 4;
+    /// How many show.
+    pub const SHOWN: usize = 13;
+    /// The prompt.
+    pub const PROMPT: usize = 17;
+    /// The command line.
+    pub const LINE: usize = 18;
+}
+
+/// The command line's length: row 18 column 7 to row 21 column 80.
+const LINE_LEN: usize = 314;
+
+impl Screen {
+    fn new(host: &Host) -> Self {
+        Self {
+            host: host.clone(),
+            lines: Vec::new(),
+            commands: Vec::new(),
+            top: None,
+        }
+    }
+
+    /// The prompt as IBM's client words it.
+    fn prompt_of(&self, prompt: &str) -> String {
+        if prompt.starts_with("Enter the user name") {
+            format!("Enter login ID ({}):", self.host.start.user.to_ascii_lowercase())
+        } else if prompt.starts_with("Enter the password") {
+            "Enter password:".into()
+        } else {
+            prompt.to_string()
+        }
+    }
+
+    fn draw(&self, m: &mut tn5250::screen::ScreenModel, prompt: &str, hidden: bool, value: &str, message: &str) -> Option<usize> {
+        use tn5250::ds::{attr, field::Ffw};
+        m.clear();
+        let title = "File Transfer Protocol";
+        m.put(1, 1 + (m.cols() - title.len()) / 2, title, attr::WHITE);
+        m.put(3, 2, "Previous FTP subcommands and messages:", attr::BLUE);
+        let last = self.lines.len().saturating_sub(rows::SHOWN);
+        let from = self.top.unwrap_or(last).min(last);
+        for (i, l) in self.lines.iter().skip(from).take(rows::SHOWN).enumerate() {
+            let shown: String = l.chars().take(m.cols() - 3).collect();
+            m.put(rows::FIRST + i, 2, &shown, attr::GREEN);
+        }
+        m.put(rows::PROMPT, 2, prompt, attr::GREEN);
+        m.put(rows::LINE, 2, "===>", attr::GREEN);
+        let a = if hidden { attr::NONDISPLAY } else { attr::GREEN_UL };
+        m.field(rows::LINE, 7, LINE_LEN, a, value, Ffw::default(), &[]);
+        m.put(22, 2, "F3=Exit     F6=Print       F9=Retrieve", attr::BLUE);
+        m.put(23, 2, "F17=Top    F18=Bottom    F21=CL command line", attr::BLUE);
+        m.set_cursor(rows::LINE, 7);
+        m.set_error_row(m.rows());
+        if !message.is_empty() {
+            m.error_line(message, attr::WHITE);
+            m.alarm();
+        }
+        m.field_index_at(rows::LINE, 7)
+    }
+
+    fn ask(&mut self, prompt: &str, hidden: bool) -> Option<String> {
+        use tn5250::ds::aid;
+        use tn5250::screen::Read;
+        let prompt = self.prompt_of(prompt);
+        let mut surface = crate::display::surface::Surface::new(self.host.clone());
+        let mut value = String::new();
+        let mut message = String::new();
+        let mut back = 0;
+        loop {
+            let field = surface.with_model(|m| self.draw(m, &prompt, hidden, &value, &message));
+            surface.flush(Read::MdtFields);
+            let (a, _) = surface.wait()?;
+            let typed = surface.with_model(|m| {
+                field
+                    .and_then(|i| m.fields().get(i).map(tn5250::screen::Field::text))
+                    .unwrap_or_default()
+            });
+            message.clear();
+            value.clear();
+            let last = self.lines.len().saturating_sub(rows::SHOWN);
+            match a {
+                aid::ENTER => {
+                    if !hidden {
+                        let t = typed.trim().to_string();
+                        self.lines.push(format!(">    {t}"));
+                        if !t.is_empty() {
+                            self.commands.push(t);
+                        }
+                    }
+                    self.top = None;
+                    return Some(typed.trim().to_string());
+                }
+                aid::ROLL_UP => {
+                    let at = self.top.unwrap_or(last);
+                    self.top = Some((at + rows::SHOWN).min(last));
+                }
+                aid::ROLL_DOWN => {
+                    let at = self.top.unwrap_or(last);
+                    self.top = Some(at.saturating_sub(rows::SHOWN));
+                }
+                a => match aid::function_of(a) {
+                    Some(3) => return None,
+                    Some(9) if !hidden => {
+                        back += 1;
+                        if let Some(c) = self.commands.iter().rev().nth(back - 1) {
+                            value.clone_from(c);
+                        } else {
+                            back = 0;
+                        }
+                    }
+                    Some(17) => self.top = Some(0),
+                    Some(18) => self.top = None,
+                    _ => {
+                        value = typed;
+                        message = crate::display::msgline::text(&self.host, "CPD6A60", &[]);
+                    }
+                },
+            }
+        }
+    }
+}
+
+impl Console for Screen {
+    fn read_line(&mut self, prompt: &str) -> Option<String> {
+        self.ask(prompt, false)
+    }
+
+    fn read_password(&mut self, prompt: &str) -> Option<String> {
+        self.ask(prompt, true)
+    }
+
+    fn write(&mut self, line: &str) {
+        self.lines.push(format!("  {line}"));
     }
 }
 
@@ -227,8 +377,23 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         ifs: RemoteIfs::new(host.link.clone()),
         ccsid: job_ccsid,
     };
+    let opts = |batch: bool| Options {
+        port,
+        security,
+        private,
+        ccsid,
+        tls: if security == Security::None { None } else { client_tls(host) },
+        batch,
+    };
+    let lcwd = ftp::names::library_dir(&curlib);
     let lines = match &input {
         Some((l, f, m)) => member_lines(&mut side, l, f, m).map_err(|e| Fail::check("", format!("INPUT: {e}")))?,
+        None if host.display.borrow().is_some() => {
+            // At a display: the client's own screen.
+            let mut client = Client::new(side, Screen::new(host), opts(false), &lcwd);
+            client.run(&rmtsys);
+            return Ok(format!("FTP session with {rmtsys} ended.\n"));
+        }
         None => {
             return Err(Fail::no_display("FTP"));
         }
@@ -237,16 +402,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         lines: lines.into(),
         out: vec!["Subcommands are read from the file INPUT.".into()],
     };
-    let opts = Options {
-        port,
-        security,
-        private,
-        ccsid,
-        tls: if security == Security::None { None } else { client_tls(host) },
-        batch: true,
-    };
-    let lcwd = ftp::names::library_dir(&curlib);
-    let mut client = Client::new(side, script, opts, &lcwd);
+    let mut client = Client::new(side, script, opts(true), &lcwd);
     client.run(&rmtsys);
     let Client { mut host, console, .. } = client;
     let text = console.out;
