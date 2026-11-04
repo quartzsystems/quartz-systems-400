@@ -888,6 +888,13 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
             exit_decides = true;
             if out.autosignon && !out.user.0.trim().is_empty() {
                 exit_user = Some(out.user.clone());
+            } else {
+                eprintln!(
+                    "qsjob: QTVTELNET: {peer}: {DEVINIT} gave no automatic sign-on (flag {}, user '{}'{})",
+                    out.autosignon,
+                    out.user.0.trim(),
+                    init.error.as_ref().map_or_else(String::new, |e| format!(", {e}"))
+                );
             }
         }
         if let Some((ptype, pmodel)) = printer_type_model(&neg.terminal_type) {
@@ -941,6 +948,9 @@ fn serve(s: Stream, at: &Conn<'_>, link: &mut Link, host: &str) -> Result<(), St
     } else {
         None
     };
+    if auto.is_none() && !console && (exit_decides || neg.var("USER").is_some()) {
+        eprintln!("qsjob: QTVTELNET: {peer}: the sign-on display (QRMTSIGN {rmtsign}, exit program {exit_decides})");
+    }
     let r = serve_device(
         &tr,
         &mut server,
@@ -1171,7 +1181,14 @@ fn exit_signon(
             apply_typed(&mut s, &[String::new(), String::new(), pgm.clone(), menu.clone(), curlib.clone()]);
             Some(s)
         }
-        _ => None,
+        Ok(Err(r)) => {
+            eprintln!("qsjob: QTVTELNET: the exit program's sign-on of {}: {} {}", prf.trim(), r.msgid, r.text);
+            None
+        }
+        Err(e) => {
+            eprintln!("qsjob: QTVTELNET: the exit program's sign-on of {}: {e}", prf.trim());
+            None
+        }
     }
 }
 
@@ -1198,6 +1215,7 @@ fn auto_signon(
         };
     }
     if client_seed.len() != 8 {
+        eprintln!("qsjob: QTVTELNET: automatic sign-on of {user}: a client seed of {} bytes", client_seed.len());
         return None;
     }
     let mut cs = [0u8; 8];
@@ -1207,9 +1225,16 @@ fn auto_signon(
         client_seed: cs,
         substitute: sub.to_vec(),
     };
-    match link.sign_on_substitute(user, device.to_string(), proof) {
+    match link.sign_on_substitute(user.clone(), device.to_string(), proof) {
         Ok(Ok(s)) => Some(s),
-        _ => None,
+        Ok(Err(r)) => {
+            eprintln!("qsjob: QTVTELNET: automatic sign-on of {user} refused: {} {}", r.msgid, r.text);
+            None
+        }
+        Err(e) => {
+            eprintln!("qsjob: QTVTELNET: automatic sign-on of {user}: {e}");
+            None
+        }
     }
 }
 

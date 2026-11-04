@@ -446,11 +446,20 @@ pub fn telnet_ticket(
     sign_on_ticket(system, &user, device)
 }
 
+/// The Telnet server's own jobs: `QTVTELNET` and its sessions (`QTVDEVICE`).
+fn telnet_job(ctx: &JobCtx) -> bool {
+    let ok = ctx.job.name == TELNET || ctx.job.name == "QTVDEVICE";
+    if !ok {
+        eprintln!("qsstg: telnet sign-on asked by job {}", ctx.job.name);
+    }
+    ok
+}
+
 /// `telnet_verify`: whether `proof` is `user`'s password, before the
 /// device exists (the `INIT0100` "client password validated"). Nothing
 /// is changed: the sign-on that follows counts a wrong one.
 pub fn telnet_verify(system: &mut System, ctx: &JobCtx, user: &str, proof: &sec::signon::Substitute) -> bool {
-    if ctx.job.name != TELNET {
+    if !telnet_job(ctx) {
         return false;
     }
     let user = user.trim().to_ascii_uppercase();
@@ -473,10 +482,10 @@ pub fn telnet_exit_signon(
     user: &str,
     device: &str,
 ) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
-    if ctx.job.name != TELNET {
+    if !telnet_job(ctx) {
         return Err(sec::signon::Refused {
-            msgid: "CPF1107".into(),
-            text: "Password or user profile is not correct.".into(),
+            msgid: "CPF2207".into(),
+            text: format!("Job {} may not sign a user on for an exit program.", ctx.job.name),
             vary_off: false,
         });
     }
