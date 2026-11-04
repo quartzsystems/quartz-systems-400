@@ -26,3 +26,4 @@ ERR367 a group child named like an operation code (RNF3556): IBM's follow-on dia
 ERR369 a group child named like an operation code (RNF3556): IBM's follow-on diagnostics of the line read as a calculation differ (PHASE9.md, Checks not yet made)
 ERR370 a group child named like an operation code (RNF3556): IBM's follow-on diagnostics of the line read as a calculation differ (PHASE9.md, Checks not yet made)
 USA001 a *USA time field's record buffer is hh:mm AM on IBM i and hh:mm:ss here (DB_OPEN_QUESTIONS.md, TIMFMT(*USA)); BLOCKED(phase12) in the database's buffer conversion
+R3021 the INFDS's *RECORD names the file's own format (CUSTR) where RPG/400 gives the RENAME name (CREC), and keeps it after a CHAIN finds nothing where RPG/400 blanks it: the IR's file declaration carries no RPG names for formats (docs/RPG3.md)

@@ -1,0 +1,28 @@
+# R3021 CVTRPGSRC pub400.com
+      *; dds: CUSTF
+      *; sqlfile: CUSTF
+      * Continuation lines: RENAME and INFDS; the INFDS's file and status.
+     H
+     FCUSTF     IF   E           K DISK
+     F                                     RENAME(CUSTR:CREC)
+     F                                     INFDS(FEED)
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     D FEED            DS
+     D  FFILE            *FILE
+     D  FSTS             *STATUS
+     D  FOPC             *OPCODE
+     D  FREC             *RECORD
+     C                   Z-ADD     107           K                 5 0
+     C     K             CHAIN     CREC                               91
+     C                   EXCEPT    LINE
+     C                   Z-ADD     999           K
+     C     K             CHAIN     CUSTF                              91
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       FFILE               10
+     O                       FSTS                20
+     O                       FOPC                30
+     O                       FREC                40
+     O                       NAME                60
+     O               91                          63 '91'

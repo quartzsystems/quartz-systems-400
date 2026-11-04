@@ -1,0 +1,21 @@
+# R3023 CVTRPGSRC pub400.com
+      *; setup: CRTDTAARA DTAARA({lib}/R3DTA) TYPE(*CHAR) LEN(10) VALUE('START')
+      *; cleanup: DLTDTAARA DTAARA({lib}/R3DTA)
+      * DEFN: *LIKE and *NAMVAR; IN and OUT of a data area.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C                   Z-ADD     12.5          BASE              5 1
+     C     *LIKE         DEFINE    BASE          COPY            + 2
+     C                   Z-ADD     1234.5        COPY
+     C     *DTAARA       DEFINE    R3DTA         DTA              10
+     C     *LOCK         IN        DTA
+     C                   MOVE      DTA           BEFORE           10
+     C                   MOVEL     'CHANGED'     DTA
+     C                   OUT       DTA
+     C                   IN        DTA
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       COPY          J     10
+     O                       BEFORE              25
+     O                       DTA                 40

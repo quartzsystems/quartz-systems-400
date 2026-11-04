@@ -1,0 +1,157 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3017
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3017
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3017
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   *; dds: TRANF
+       200   *; sqlfile: TRANF
+       300   * Record types by identification codes; others are skipped.
+-      400  H
+-      500  FTRANF   IP  F      20            DISK
+       600  FQSYSPRT O   F     132     OF     PRINTER
+-      700  ITRANF   AA  10   1 CH
+       800  I                                        2   40CUST
+       900  I                                        5  20 CNAME
+      1000  ITRANF   AB  20   1 CD
+      1100  I                                        2   82AMT
+      1200  I                                        9  20 ITEM
+      1300  ITRANF   AC  30
+-     1400  C   20                ADD  AMT       TOT     92
+      1500  C   30                ADD  1         OTH     30
+-     1600  OQSYSPRT D  1     10
+      1700  O                         CUST       5
+      1800  O                         CNAME     22
+      1900  OQSYSPRT D  1     20
+      2000  O                         ITEM      20
+      2100  O                         AMT   J   35
+      2200  OQSYSPRT T  1     LR
+      2300  O                         TOT   J   35
+      2400  O                         OTH   Z   40
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0* 7086       500   RPG PROVIDES BLOCK OR UNBLOCK SUPPORT FOR FILE TRANF.
+-
+-
+-
+-
+1{heading} page 3
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    02  QSYSPRT     PRINTER      600D 1600  1900  2200
+     01  TRANF       DISK         500D  700  1000  1300
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        AMT         P(7,2)  1100D 1400  2100
+         CNAME       A(16)    900D 1800
+         CUST        P(3,0)   800D 1700
+         ITEM        A(12)   1200D 2000
+         OTH         P(3,0)  1500D 2400
+         TOT         P(9,2)  1400D 2300
+         1           LITERAL 1500
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR          500D 2200
+ * 7031  OF          600D
+         10          700M 1600
+         20         1000M 1400  1900
+         30         1300M 1500
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+1{heading} page 4
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0* QRG7086 Severity:  00   Number:    1
+           Message . . . . :   RPG handles blocking function for file. INFDS
+             updated only when blocks of data transferred.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               2       2      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   24
+     Specifications  . . . . . . :   21
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   3
+0 PRM has been called.
+0 Program R3017 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

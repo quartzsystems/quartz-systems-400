@@ -1,0 +1,155 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3023
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3023
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3023
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   *; setup: CRTDTAARA DTAARA(älibü/R3DTA) TYPE(*CHAR) LEN(10) VALUE('S                                  TART')
+       200   *; cleanup: DLTDTAARA DTAARA(älibü/R3DTA)
+       300   * DEFN: *LIKE and *NAMVAR; IN and OUT of a data area.
+-      400  H
+-      500  FQSYSPRT O   F     132     OF     PRINTER
+-      600  C                     Z-ADD12.5      BASE    51
+       700  C           *LIKE     DEFN BASE      COPY  + 2
+       800  C                     Z-ADD1234.5    COPY
+       900  C           *NAMVAR   DEFN R3DTA     DTA    10
+      1000  C           *LOCK     IN   DTA
+      1100  C                     MOVE DTA       BEFORE 10
+      1200  C                     MOVEL'CHANGED' DTA
+      1300  C                     OUT  DTA
+      1400  C                     IN   DTA
+      1500  C                     EXCPTLINE
+      1600  C                     SETON                     LR                    1
+-     1700  OQSYSPRT E  1             LINE
+      1800  O                         COPY  J   10
+      1900  O                         BEFORE    25
+      2000  O                         DTA       40
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 3
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  QSYSPRT     PRINTER      500D 1700
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        *LIKE                700
+         *LOCK               1000
+         *NAMVAR              900
+         BASE        P(5,1)   600D  700
+         BEFORE      A(10)   1100D 1900
+         COPY        P(7,1)   700D  800M 1800
+         DTA         A(10)    900D 1000  1100  1200M 1300  1400  2000
+                     EXTNAME  R3DTA
+         LINE        EXCPT   1500  1700
+         R3DTA                900
+         'CHANGED'   LITERAL 1200
+         12.5        LITERAL  600
+         1234.5      LITERAL  800
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR         1600M
+ * 7031  OF          500D
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+1{heading} page 4
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               1       1      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   20
+     Specifications  . . . . . . :   17
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   3
+0 PRM has been called.
+0 Program R3023 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

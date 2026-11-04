@@ -1,0 +1,8 @@
+# R3024 CVTRPGSRC pub400.com
+      *; run: no
+      * Errors: a field never defined, an operation that does not exist.
+     H
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     C     NOPE          ADD       1             X                 3 0
+     C                   FOO       X
+     C                   SETON                                        LR

@@ -1,0 +1,25 @@
+# R3017 CVTRPGSRC pub400.com
+      *; dds: TRANF
+      *; sqlfile: TRANF
+      * Record types by identification codes; others are skipped.
+     H
+     FTRANF     IP   F   20        DISK
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     ITRANF     AA  10    1 CH
+     I                                  2    4 0CUST
+     I                                  5   20  CNAME
+     ITRANF     AB  20    1 CD
+     I                                  2    8 2AMT
+     I                                  9   20  ITEM
+     ITRANF     AC  30
+     C   20              ADD       AMT           TOT               9 2
+     C   30              ADD       1             OTH               3 0
+     OQSYSPRT   D    10                     1
+     O                       CUST                 5
+     O                       CNAME               22
+     OQSYSPRT   D    20                     1
+     O                       ITEM                20
+     O                       AMT           J     35
+     OQSYSPRT   T    LR                     1
+     O                       TOT           J     35
+     O                       OTH           Z     40

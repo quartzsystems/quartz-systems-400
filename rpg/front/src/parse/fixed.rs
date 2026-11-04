@@ -601,9 +601,12 @@ fn input_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         }
         let t = &x.text;
         let field = if external {
+            // A field not renamed names itself in columns 49-62 only.
+            let name = ifx.cut(t, "field").trim().to_ascii_uppercase();
+            let extname = ifx.cut(t, "extname").trim().to_ascii_uppercase();
             InputField {
-                extname: ifx.cut(t, "extname").trim().to_ascii_uppercase(),
-                name: ifx.cut(t, "field").trim().to_ascii_uppercase(),
+                extname: if extname.is_empty() { name.clone() } else { extname },
+                name,
                 level: ifx.cut(t, "level").trim().to_ascii_uppercase(),
                 matching: ifx.cut(t, "match").trim().to_ascii_uppercase(),
                 inds: [

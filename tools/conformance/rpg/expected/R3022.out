@@ -1,0 +1,21 @@
+# R3022 V7R5M0 pub400.com
+# captured 2026-11-04 by rpg-oracle
+created: yes
+diag: QRG7086 00 line 500 seq 
+diag: QRG7031 00 line 600 seq 
+run: ok
+spool: QSYSPRT
+  |1/1               ORDERS BY CUSTOMER
+  |1/2      101     1  Widget              12.50
+  |1/3              2  Gadget              19.99
+  |1/4              3  Gizmo                7.50
+  |1/5             CUSTOMER TOTAL                    39.99
+  |1/6      102     1  Widget               5.00
+  |1/7             CUSTOMER TOTAL                     5.00
+  |1/8      104     1  Sprocket            21.70
+  |1/9              2  Widget               2.50
+  |1/10            CUSTOMER TOTAL                    24.20
+  |1/11     107     1  Gadget              59.97
+  |1/12             2  Bolt                 5.00
+  |1/13            CUSTOMER TOTAL                    64.97
+  |1/14             ALL CUSTOMERS     4                       134.16

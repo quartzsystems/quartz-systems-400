@@ -45,7 +45,12 @@ pub(super) fn convert(r: &str, at: usize, out: &mut Out) {
     if !ext.is_empty() && !op.is_empty() {
         name = format!("{name}({ext})");
     }
-    c.put("factor1", &factor(&cut3("C", r, "factor1")))
+    // DEFN's data area form is DEFINE *DTAARA.
+    let mut f1 = factor(&cut3("C", r, "factor1"));
+    if f1 == "*NAMVAR" && op == "DEFN" {
+        f1 = "*DTAARA".into();
+    }
+    c.put("factor1", &f1)
         .put("opcode", &name)
         .put("factor2", &factor(&cut3("C", r, "factor2")))
         .put("result", &factor(&cut3("C", r, "result")))

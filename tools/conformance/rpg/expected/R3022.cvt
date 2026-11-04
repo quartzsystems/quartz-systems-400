@@ -1,0 +1,27 @@
+# R3022 CVTRPGSRC pub400.com
+      *; dds: ORDF
+      *; sqlfile: ORDF
+      * Externally described primary file with an L1 break and LR totals.
+     H
+     FORDF      IP   E             DISK
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     IORDR          01
+     I                                          ORDCUS        L1
+     C   01QTY           MULT      PRICE         EXT               9 2
+     C   01              ADD       EXT           CUSTOT            9 2
+     CL1                 ADD       CUSTOT        GRAND            11 2
+     CL1                 ADD       1             NCUS              3 0
+     OQSYSPRT   H    1P                     1
+     O                                           30 'ORDERS BY CUSTOMER'
+     OQSYSPRT   D    01                     1
+     O               L1      ORDCUS        Z      6
+     O                       ORDNO         Z     12
+     O                       ITEM                24
+     O                       EXT           J     40
+     OQSYSPRT   T    L1                     1
+     O                                           24 'CUSTOMER TOTAL'
+     O                       CUSTOT        JB    50
+     OQSYSPRT   T    LR                     1
+     O                                           24 'ALL CUSTOMERS'
+     O                       NCUS          Z     30
+     O                       GRAND         J     60

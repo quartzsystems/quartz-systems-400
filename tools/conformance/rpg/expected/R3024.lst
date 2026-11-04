@@ -1,0 +1,143 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3024
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3024
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3024
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   *; run: no
+       200   * Errors: a field never defined, an operation that does not exist.
+-      300  H
+-      400  FQSYSPRT O   F     132     OF     PRINTER
+-      500  C           NOPE      ADD  1         X       30
+       600  C                     FOO  X
+ * 5014                      5014-*****
+0      700  C                     SETON                     LR                    1
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0* 7064       400   QSYSPRT FILE NOT REFERENCED FOR OUTPUT.
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 3
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  QSYSPRT     PRINTER     400D
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0* 7030  NOPE        P(5,0)  500
+         X           P(3,0)  500D 600
+         1           LITERAL 500
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR         700M
+ * 7031  OF         400D
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+-                         M e s s a g e   S u m m a r y
+0* QRG5014 Severity:  30   Number:    1
+           Message . . . . :   Operation entry invalid. Specification is
+             ignored.
+0* QRG7030 Severity:  30   Number:    1
+           Message . . . . :   The Field or indicator is not defined.
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0* QRG7064 Severity:  40   Number:    1
+           Message . . . . :   The Program file is not referenced. File
+             ignored.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               4       1      0      0      2      1      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   7
+     Specifications  . . . . . . :   5
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   2
+- Compile stopped. Severity level 40 errors found in file.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

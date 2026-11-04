@@ -1,0 +1,166 @@
+1{heading} page 1
+0 Compiler . . . . . . . . . . . . . :   IBM RPG/400
+0 Command Options:
+    Program  . . . . . . . . . . . . :   {lib}/R3022
+    Source file  . . . . . . . . . . :   {lib}/QRPGSRC
+    Source member  . . . . . . . . . :   R3022
+    Source listing options . . . . . :   *SOURCE     *XREF       *GEN        *NODUMP     *NOSECLVL   *NOSRCDBG   *NOLSTDBG
+    Generation options . . . . . . . :   *NOLIST     *NOXREF     *NOATR      *NODUMP     *NOOPTIMIZE
+    Source listing indentation . . . :   *NONE
+    Type conversion options  . . . . :   *NONE
+    Sort sequence  . . . . . . . . . :   *HEX
+    Language identifier  . . . . . . :   *JOBRUN
+    SAA flagging . . . . . . . . . . :   *NOFLAG
+    Generation severity level  . . . :   9
+    Print file . . . . . . . . . . . :   *LIBL/QSYSPRT
+    Replace program  . . . . . . . . :   *YES
+    Target release . . . . . . . . . :   *CURRENT
+    User profile . . . . . . . . . . :   *USER
+    Authority  . . . . . . . . . . . :   *LIBCRTAUT
+    Text . . . . . . . . . . . . . . :   *SRCMBRTXT
+    Phase trace  . . . . . . . . . . :   *NO
+    Intermediate text dump . . . . . :   *NONE
+    Snap dump  . . . . . . . . . . . :   *NONE
+    Codelist . . . . . . . . . . . . :   *NONE
+    Ignore decimal data error  . . . :   *NO
+    Allow null values  . . . . . . . :   *NO
+0 Actual Program Source:
+    Member . . . . . . . . . . . . . :   R3022
+    File . . . . . . . . . . . . . . :   QRPGSRC
+    Library  . . . . . . . . . . . . :   {lib}
+    Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0 SEQUENCE                                                                         IND    DO    LAST       PAGE   PROGRAM
+  NUMBER    *...1....+....2....+....3....+....4....+....5....+....6....+....7...*  USE    NUM   UPDATE     LINE   ID
+0                          S o u r c e   L i s t i n g
+       100   *; dds: ORDF
+       200   *; sqlfile: ORDF
+       300   * Externally described primary file with an L1 break and LR totals.
+-      400  H
+-      500  FORDF    IP  E                    DISK
+             RECORD FORMAT(S):  LIBRARY {lib} FILE ORDF.
+                      EXTERNAL FORMAT ORDR RPG NAME ORDR
+0      600  FQSYSPRT O   F     132     OF     PRINTER
+-      700  IORDR        01
+       800  I                                              ORDCUSL1
+-      800   INPUT  FIELDS FOR RECORD ORDR FILE ORDF FORMAT ORDR.
+   A000001                                       P   1   30ORDCUSL1
+   A000002                                       P   4   60ORDNO
+   A000003                                           7  16 ITEM
+   A000004                                       P  17  190QTY
+   A000005                                       P  20  232PRICE
+       900  C   01      QTY       MULT PRICE     EXT     92
+      1000  C   01                ADD  EXT       CUSTOT  92
+      1100  CL1                   ADD  CUSTOT    GRAND  112
+      1200  CL1                   ADD  1         NCUS    30
+-     1300  OQSYSPRT H  1     1P
+      1400  O                                   30 'ORDERS BY CUSTOMER'
+      1500  OQSYSPRT D  1     01
+      1600  O                 L1      ORDCUSZ    6
+      1700  O                         ORDNO Z   12
+      1800  O                         ITEM      24
+      1900  O                         EXT   J   40
+      2000  OQSYSPRT T  1     L1
+      2100  O                                   24 'CUSTOMER TOTAL'
+      2200  O                         CUSTOTJB  50
+      2300  OQSYSPRT T  1     LR
+      2400  O                                   24 'ALL CUSTOMERS'
+      2500  O                         NCUS  Z   30
+      2600  O                         GRAND J   60
+-           * * * * *   E N D   O F   S O U R C E   * * * * *
+-          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0* 7086       500   RPG PROVIDES BLOCK OR UNBLOCK SUPPORT FOR FILE ORDF.
+1{heading} page 3
+-                         C r o s s   R e f e r e n c e
+-
+0 File and Record References:
+0        FILE/RCD    DEV/RCD     REFERENCES (D=DEFINED)
+0    01  ORDF        DISK            500D
+           ORDR                      500D     700
+     02  QSYSPRT     PRINTER         600D    1300     1500     2000     2300
+-
+  Field References:
+0        FIELD       ATTR    REFERENCES (M=MODIFIED D=DEFINED)
+0        CUSTOT      P(9,2)     1000D    1100     2200M
+         EXT         P(9,2)      900D    1000     1900
+         GRAND       P(11,2)    1100D    2600
+         ITEM        A(10)   A000003D    1800
+         NCUS        P(3,0)     1200D    2500
+         ORDCUS      P(5,0)  A000001D    1600
+         ORDNO       P(5,0)  A000002D    1700
+         PRICE       P(7,2)  A000005D     900
+         QTY         P(5,0)  A000004D     900
+         1           LITERAL    1200
+-
+  Indicator References:
+0        INDICATOR  REFERENCES (M=MODIFIED D=DEFINED)
+0        LR             500D    2300
+         L1         A000001M    1100     1200     1600     2000
+ * 7031  OF             600D
+         01             700M     900     1000     1500
+         1P            1300
+-
+       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+1{heading} page 4
+-                         M e s s a g e   S u m m a r y
+0* QRG7031 Severity:  00   Number:    1
+           Message . . . . :   The Name or indicator is not referenced.
+0* QRG7086 Severity:  00   Number:    1
+           Message . . . . :   RPG handles blocking function for file. INFDS
+             updated only when blocks of data transferred.
+0      * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                           F i n a l   S u m m a r y
+- Message Count:  (by Severity Number)
+0            TOTAL    00     10     20     30     40     50
+               2       2      0      0      0      0      0
+0 Program Source Totals:
+     Records . . . . . . . . . . :   26
+     Specifications  . . . . . . :   23
+     Table Records . . . . . . . :   0
+     Comments  . . . . . . . . . :   3
+0 PRM has been called.
+0 Program R3022 is placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+0          * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

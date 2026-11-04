@@ -4,7 +4,7 @@
      C                     MOVE X'00'     B       1
      C                     BITON'0246'    B
      C                     BITOF'2'       B
-     C                     TESTB'0'       B          1011
+     C                     TESTB'0'       B          10  12
      C                     TESTB'0123'    B          131415
      C                     MOVE '  123'   T1      5
      C                     TESTN          T1         202122
@@ -21,7 +21,6 @@
      C                     SETON                     LR
      OQSYSPRT E  1             LINE
      O                 10                 3 '10'
-     O                 11                 6 '11'
      O                 12                 9 '12'
      O                 13                12 '13'
      O                 14                15 '14'

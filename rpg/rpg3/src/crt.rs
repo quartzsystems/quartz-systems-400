@@ -132,11 +132,12 @@ fn unreferenced(main: &Member, inner: &rpgc::Compiled, diags: &mut Vec<Diag>) {
         if name.chars().all(|c| c.is_ascii_digit()) || files.iter().any(|f| f == name) {
             continue;
         }
-        let Some(defined) = w.iter().find_map(|x| x.strip_suffix('D').and_then(|n| n.parse::<u32>().ok())) else {
-            continue;
-        };
-        let Some(line) = inner.read.lines.iter().find(|r| inner.listing_line(r.no) == defined) else { continue };
-        let stmt = stmt_of(&line.seq);
+        // A field of an externally described file is defined by no
+        // statement of the source (RPG/400's statement 0).
+        let defined = w.iter().find_map(|x| x.strip_suffix('D').and_then(|n| n.parse::<u32>().ok()));
+        let stmt = defined
+            .and_then(|d| inner.read.lines.iter().find(|r| inner.listing_line(r.no) == d))
+            .map_or(0, |line| stmt_of(&line.seq));
         let name = name.strip_prefix("*IN").filter(|n| n.len() == 2).unwrap_or(name).to_string();
         if !diags.iter().any(|d| d.msgid == "QRG7031" && d.stmt == stmt && d.args.first() == Some(&name)) {
             diags.push(Diag {

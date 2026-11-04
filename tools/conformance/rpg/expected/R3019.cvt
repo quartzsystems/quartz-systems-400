@@ -1,0 +1,22 @@
+# R3019 CVTRPGSRC pub400.com
+      *; dds: CUSTF
+      *; sqlfile: CUSTF
+      * An externally described data structure; a renamed input field.
+     H
+     FCUSTF     IF   E           K DISK
+     FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)
+     D CUSTDS        E DS                  EXTNAME(CUSTF)
+     D  DSCITY       E                     EXTFLD(CITY)
+     ICUSTR
+     I              NAME                        CNAME
+     C                   Z-ADD     101           K                 5 0
+     C     K             CHAIN     CUSTF                              91
+     C                   MOVEL     CNAME         SAVNAM           20
+     C                   MOVEL(P)  'Lima'        DSCITY
+     C                   Z-ADD     5             CUSNO
+     C                   EXCEPT    LINE
+     C                   SETON                                        LR
+     OQSYSPRT   E            LINE           1
+     O                       SAVNAM              20
+     O                       CITY                30
+     O                       CUSTDS              70
