@@ -93,6 +93,8 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     job.borrow_mut().started();
     let system = crate::display::dds::system_name(&job.borrow().host);
     let pool = relay::pool(SERVER_PROGRAM);
+    // Idle as a member of the pool between its waits.
+    let me = crate::work::hostsvr::daemon::internal_id(start);
     let limit = maxuse(&start.rqsdta);
     let mut uses = 0;
     loop {
@@ -100,7 +102,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         if !job.borrow_mut().idle(Duration::ZERO) {
             break;
         }
-        let taken = match relay::take(relay::SOCKET, &pool, None, 1000) {
+        let taken = match relay::take_as(relay::SOCKET, &pool, Some(&me), None, 1000) {
             Ok(Some(t)) => t,
             Ok(None) => continue,
             Err(e) => {

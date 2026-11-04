@@ -5,6 +5,13 @@
 //! What the relay holds: descriptors queued per target, and how many
 //! takers wait on each. Generic over the descriptor so it tests
 //! without a kernel.
+//!
+//! A prestart job takes in short waits, one after another, and between
+//! two of them it is not waiting. Counted by its waits alone, a pool
+//! of idle jobs would look busy now and then, and its subsystem would
+//! start more jobs for no work. So a taker that names itself (a pool
+//! member) counts as idle from its first take until a take brings it
+//! a descriptor, or until it has not asked for [`MEMBER_TTL`].
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Condvar, Mutex, PoisonError};
@@ -12,13 +19,20 @@ use std::time::{Duration, Instant};
 
 use crate::pass::JobId;
 
+/// A member silent this long (it ended, or it works) no longer counts
+/// as idle.
+pub const MEMBER_TTL: Duration = Duration::from_secs(30);
+
 /// A queued descriptor: from whom, the note, the descriptor.
 type Entry<F> = (JobId, Vec<u8>, F);
 
 #[derive(Debug)]
 struct Inner<F> {
     queues: HashMap<JobId, VecDeque<Entry<F>>>,
+    /// Takers waiting now that named no member.
     waiting: HashMap<JobId, u32>,
+    /// Idle members by pool, with when each last asked.
+    members: HashMap<JobId, HashMap<JobId, Instant>>,
 }
 
 /// The relay's queues, shared by its connection threads.
@@ -34,6 +48,7 @@ impl<F> Default for State<F> {
             inner: Mutex::new(Inner {
                 queues: HashMap::new(),
                 waiting: HashMap::new(),
+                members: HashMap::new(),
             }),
             cv: Condvar::new(),
         }
@@ -51,9 +66,28 @@ impl<F> State<F> {
     /// Wait up to `wait` (forever with `None`) for a descriptor for
     /// `me`, from `source` when given.
     pub fn take(&self, me: JobId, source: Option<JobId>, wait: Option<Duration>) -> Option<Entry<F>> {
+        self.take_as(me, None, source, wait)
+    }
+
+    /// [`State::take`] by pool member `member`, when given: idle until a
+    /// descriptor comes to it.
+    pub fn take_as(
+        &self,
+        me: JobId,
+        member: Option<JobId>,
+        source: Option<JobId>,
+        wait: Option<Duration>,
+    ) -> Option<Entry<F>> {
         let until = wait.map(|w| Instant::now() + w);
         let mut g = self.inner.lock().unwrap_or_else(PoisonError::into_inner);
-        *g.waiting.entry(me).or_default() += 1;
+        match member {
+            Some(m) => {
+                let ms = g.members.entry(me).or_default();
+                ms.retain(|_, at| at.elapsed() < MEMBER_TTL);
+                ms.insert(m, Instant::now());
+            }
+            None => *g.waiting.entry(me).or_default() += 1,
+        }
         let got = loop {
             if let Some(q) = g.queues.get_mut(&me)
                 && let Some(at) = q.iter().position(|(from, _, _)| source.is_none_or(|s| s == *from))
@@ -71,19 +105,36 @@ impl<F> State<F> {
                 None => g = self.cv.wait(g).unwrap_or_else(PoisonError::into_inner),
             }
         };
-        if let Some(n) = g.waiting.get_mut(&me) {
-            *n = n.saturating_sub(1);
+        match member {
+            Some(m) => {
+                if let Some(ms) = g.members.get_mut(&me) {
+                    if got.is_some() {
+                        ms.remove(&m);
+                    } else {
+                        ms.insert(m, Instant::now());
+                    }
+                }
+            }
+            None => {
+                if let Some(n) = g.waiting.get_mut(&me) {
+                    *n = n.saturating_sub(1);
+                }
+            }
         }
         got
     }
 
-    /// How many takers wait as `me` now, less what is already queued
-    /// for them.
+    /// How many takers are idle as `me` now (waiting, or members between
+    /// two waits), less what is already queued for them.
     pub fn idle(&self, me: &JobId) -> u32 {
-        let g = self.inner.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut g = self.inner.lock().unwrap_or_else(PoisonError::into_inner);
         let waiting = g.waiting.get(me).copied().unwrap_or(0);
+        let members = g.members.get_mut(me).map_or(0, |ms| {
+            ms.retain(|_, at| at.elapsed() < MEMBER_TTL);
+            u32::try_from(ms.len()).unwrap_or(u32::MAX)
+        });
         let queued = g.queues.get(me).map_or(0, |q| u32::try_from(q.len()).unwrap_or(u32::MAX));
-        waiting.saturating_sub(queued)
+        (waiting + members).saturating_sub(queued)
     }
 
     /// Descriptors queued for `me`.
@@ -117,5 +168,23 @@ mod tests {
         s.give(pool, [3; 16], Vec::new(), 9);
         assert_eq!(s.take(pool, Some([3; 16]), None).map(|e| e.2), Some(9));
         assert_eq!(s.queued(&pool), 1);
+    }
+
+    #[test]
+    fn members_stay_idle_between_waits() {
+        let s: State<u32> = State::default();
+        let pool = crate::relay::pool("QZDASOINIT");
+        let (a, b) = ([0xA1; 16], [0xB2; 16]);
+        // Two members whose waits ended with nothing: both still idle.
+        assert_eq!(s.take_as(pool, Some(a), None, Some(Duration::from_millis(5))), None);
+        assert_eq!(s.take_as(pool, Some(b), None, Some(Duration::from_millis(5))), None);
+        assert_eq!(s.idle(&pool), 2);
+        // One takes work: it is busy until it asks again.
+        s.give(pool, [1; 16], Vec::new(), 7);
+        assert_eq!(s.idle(&pool), 1);
+        assert_eq!(s.take_as(pool, Some(a), None, Some(Duration::from_millis(5))).map(|e| e.2), Some(7));
+        assert_eq!(s.idle(&pool), 1);
+        assert_eq!(s.take_as(pool, Some(a), None, Some(Duration::from_millis(5))), None);
+        assert_eq!(s.idle(&pool), 2);
     }
 }

@@ -85,11 +85,26 @@ pub fn give(path: &str, fd: &Fd, target: &JobId, source: &JobId, note: &[u8]) ->
 /// Take a descriptor given to `me` (from `source` when given), waiting
 /// up to `wait_ms` (0 forever); `None` when none came in time.
 pub fn take(path: &str, me: &JobId, source: Option<&JobId>, wait_ms: u32) -> Result<Option<Taken>, Errno> {
+    take_as(path, me, None, source, wait_ms)
+}
+
+/// [`take`] by a member of pool `me` (a prestart job, by its own
+/// identifier): it counts as idle between its waits.
+pub fn take_as(
+    path: &str,
+    me: &JobId,
+    member: Option<&JobId>,
+    source: Option<&JobId>,
+    wait_ms: u32,
+) -> Result<Option<Taken>, Errno> {
     let s = UnixStream::connect(path).map_err(|e| io(&e))?;
     let mut m = vec![op::TAKE];
     m.extend_from_slice(me);
     m.extend_from_slice(source.unwrap_or(&[0; 16]));
     m.extend_from_slice(&wait_ms.to_be_bytes());
+    if let Some(who) = member {
+        m.extend_from_slice(who);
+    }
     send(s.as_fd(), &m, None)?;
     let mut b = [0u8; 300];
     let (n, fd) = recv(s.as_fd(), &mut b)?;
@@ -136,7 +151,8 @@ fn answer(s: &UnixStream, st: &State<OwnedFd>) -> Result<(), Errno> {
             let source = (src != [0; 16]).then_some(src);
             let ms = u32::from_be_bytes([b[33], b[34], b[35], b[36]]);
             let wait = (ms > 0).then(|| Duration::from_millis(u64::from(ms)));
-            match st.take(id(&b[1..17]), source, wait) {
+            let member = (n >= 53).then(|| id(&b[37..53])).filter(|m| *m != [0; 16]);
+            match st.take_as(id(&b[1..17]), member, source, wait) {
                 Some((from, note, fd)) => {
                     let mut m = vec![status::OK];
                     m.extend_from_slice(&from);

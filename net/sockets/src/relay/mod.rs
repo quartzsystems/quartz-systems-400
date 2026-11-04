@@ -13,7 +13,8 @@
 //! The messages: give is `1`, target, source, a note's length and the
 //! note, with the descriptor, answered by one status byte; take is `2`,
 //! the taker, the source wanted (zeros for any) and a wait in
-//! milliseconds (u32, 0 forever), answered by a status byte, the
+//! milliseconds (u32, 0 forever), then optionally the taker's own
+//! identifier as a pool member ([`State`]), answered by a status byte, the
 //! source, the note and the descriptor; idle is `3` and a pool,
 //! answered by the count of takers waiting (u32).
 
@@ -22,7 +23,7 @@ mod linux;
 mod state;
 
 #[cfg(target_os = "linux")]
-pub use linux::{give, idle, serve, take};
+pub use linux::{give, idle, serve, take, take_as};
 pub use state::State;
 
 use crate::pass::{DescriptorPassing, JobId};
@@ -109,13 +110,24 @@ mod host {
     }
 
     /// No relay off Linux.
+    pub fn take_as(
+        _path: &str,
+        _me: &JobId,
+        _member: Option<&JobId>,
+        _source: Option<&JobId>,
+        _wait_ms: u32,
+    ) -> Result<Option<Taken>, Errno> {
+        Err(Errno::ENOSYS)
+    }
+
+    /// No relay off Linux.
     pub fn idle(_path: &str, _pool: &JobId) -> Result<u32, Errno> {
         Err(Errno::ENOSYS)
     }
 }
 
 #[cfg(not(target_os = "linux"))]
-pub use host::{give, idle, take};
+pub use host::{give, idle, take, take_as};
 
 impl DescriptorPassing for Relay {
     fn give(&mut self, fd: Fd, target: &JobId) -> Result<(), Errno> {
