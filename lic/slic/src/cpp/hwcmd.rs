@@ -69,11 +69,12 @@ fn listing(system: &mut System, parms: &Parms, dsp: bool) -> Result<String, Stri
         "*OUTFILE" => outfile(system, parms, &t, spec),
         "*PRINT" => {
             let file = if dsp { "DSPHDWRSC" } else { "WRKHDWRSC" };
-            let lines = view::print_lines(&t, spec);
+            let lines = view::print_lines(&t, spec, &mut |id, v| crate::stgsvc::msgs::text(system, id, v));
             crate::svc::security::print_as(system, "QSYSPRT", file, &lines, false)?;
-            Ok(format!("{} resources printed.\n", spec.word))
+            let word = crate::stgsvc::msgs::text(system, spec.word, &[]);
+            Ok(crate::stgsvc::msgs::text(system, "TXT012E", &[&word]) + "\n")
         }
-        _ => Ok(view::print_lines(&t, spec).join("\n") + "\n"),
+        _ => Ok(view::print_lines(&t, spec, &mut |id, v| crate::stgsvc::msgs::text(system, id, v)).join("\n") + "\n"),
     }
 }
 
@@ -111,7 +112,7 @@ fn outfile(system: &mut System, parms: &Parms, t: &hwrsrc::Table, spec: &TypeSpe
     };
     let flag = |s: &str| if spec.ty == "*AHW" || spec.ty == s { "1" } else { "0" }.to_string();
     let mut rows: Vec<Row> = Vec::new();
-    for row in view::list(t, spec) {
+    for row in view::list(t, spec, &mut view::ids) {
         let Some(r) = t.get(&row.name) else { continue };
         let (ty, md) = r.type_model();
         let mib = if r.kind == hwrsrc::Kind::Memory {

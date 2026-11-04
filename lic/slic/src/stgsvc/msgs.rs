@@ -296,3 +296,12 @@ pub fn send_inquiry(system: &mut System, lib: &str, name: &str, mut m: QMsg, rep
         }
     }
 }
+
+/// Message `msgid`'s first-level text with `values`, from the file its
+/// prefix names on the library list: display text (`QSTXTMSG`) in the
+/// job's language. The identifier itself when no file has it.
+pub fn text(system: &mut System, msgid: &str, values: &[&str]) -> String {
+    let file = sysapi::param::file_of(msgid);
+    description(system, msgid, &(file.to_string(), "*LIBL".to_string()))
+        .map_or_else(|| msgid.to_string(), |d| d.format(&d.data_of(values)))
+}

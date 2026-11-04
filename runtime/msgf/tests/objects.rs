@@ -88,7 +88,7 @@ fn system_files_install_once_and_resolve() {
     let (mut store, qsys, lib) = open_new();
     let mut t = store.begin().unwrap();
     let made = install_builtin(&mut t, &ctx(), qsys).unwrap();
-    assert_eq!(made.len(), 8);
+    assert_eq!(made.len(), 9);
     assert!(install_builtin(&mut t, &ctx(), qsys).unwrap().is_empty());
     // A product library's files come with the library, once.
     let made_p = install_product_files(&mut t, &ctx(), qsys, "QHTTPSVR").unwrap();

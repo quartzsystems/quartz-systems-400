@@ -30,6 +30,9 @@ pub const QEDTMSG: &str = include_str!("../msgs/qedtmsg.toml");
 /// from `net/httpadmin/src/msgs.rs`.
 pub const QZHBMSG: &str = include_str!("../msgs/qzhbmsg.toml");
 
+/// The source of `QSTXTMSG`, the displays' text.
+pub const QSTXTMSG: &str = include_str!("../msgs/qstxtmsg.toml");
+
 /// The source of `QRPGMSG`, the RPG/400 compiler's and converter's
 /// messages (`QS00RPG`).
 pub const QRPGMSG: &str = include_str!("../msgs/qrpgmsg.toml");
@@ -190,7 +193,7 @@ impl MsgToml {
 /// The system message files, parsed from their sources.
 #[must_use]
 pub fn builtin() -> Vec<MsgFile> {
-    [QCPFMSG, QCEEMSG, QSQLMSG, QRPGLEMSG, QRNXMSG, QTCPMSG, QZSHMSGF, QEDTMSG]
+    [QCPFMSG, QCEEMSG, QSQLMSG, QRPGLEMSG, QRNXMSG, QTCPMSG, QZSHMSGF, QEDTMSG, QSTXTMSG]
         .iter()
         .map(|s| parse(s).expect("the built-in sources parse"))
         .collect()
@@ -212,7 +215,7 @@ mod tests {
     #[test]
     fn builtin_sources_parse_and_look_up() {
         let files = builtin();
-        assert_eq!(files.len(), 8);
+        assert_eq!(files.len(), 9);
         let cpf = &files[0];
         assert_eq!(cpf.name, "QCPFMSG");
         let m = cpf.find("MCH1211").unwrap();

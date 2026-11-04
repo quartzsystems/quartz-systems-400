@@ -1,0 +1,276 @@
+# QSTXTMSG: display text. Words and labels the system's displays and
+# printed reports show, kept here rather than in program code so that a
+# secondary language library (QSYS29xx) can carry them translated. The
+# texts are Quartz-written; the identifiers are ours (TXT prefix).
+name = "QSTXTMSG"
+text = "Display text"
+
+[[msg]]
+id = "TXT0101"
+text = "Hardware"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the kind of resources the list shows for TYPE(*AHW)."
+
+[[msg]]
+id = "TXT0102"
+text = "Communication"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the kind of resources for TYPE(*CMN)."
+
+[[msg]]
+id = "TXT0103"
+text = "Local Work Station"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the kind of resources for TYPE(*LWS)."
+
+[[msg]]
+id = "TXT0104"
+text = "Processor"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the kind of resources for TYPE(*PRC)."
+
+[[msg]]
+id = "TXT0105"
+text = "Storage"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the kind of resources for TYPE(*STG)."
+
+[[msg]]
+id = "TXT0106"
+text = "Coupled"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the kind of resources for TYPE(*CSA)."
+
+[[msg]]
+id = "TXT0107"
+text = "Cryptographic"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the kind of resources for TYPE(*CRP)."
+
+[[msg]]
+id = "TXT0110"
+text = "Logical address:"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the heading over a resource's logical address."
+
+[[msg]]
+id = "TXT0111"
+text = "PCI bus:"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the heading over the PCI address parts."
+
+[[msg]]
+id = "TXT0112"
+text = "Domain"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the PCI domain of a resource."
+
+[[msg]]
+id = "TXT0113"
+text = "Bus"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the PCI bus of a resource."
+
+[[msg]]
+id = "TXT0114"
+text = "Device"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the PCI device of a resource."
+
+[[msg]]
+id = "TXT0115"
+text = "Function"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the PCI function of a resource."
+
+[[msg]]
+id = "TXT0116"
+text = "SCSI address:"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the heading over the SCSI address parts."
+
+[[msg]]
+id = "TXT0117"
+text = "Host"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the SCSI host of a unit."
+
+[[msg]]
+id = "TXT0118"
+text = "Channel"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the SCSI channel of a unit."
+
+[[msg]]
+id = "TXT0119"
+text = "Target"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the SCSI target of a unit."
+
+[[msg]]
+id = "TXT011A"
+text = "Logical unit"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the SCSI logical unit number."
+
+[[msg]]
+id = "TXT011B"
+text = "Port:"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the heading over a network port's details."
+
+[[msg]]
+id = "TXT011C"
+text = "Interface"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the system's name for a network interface."
+
+[[msg]]
+id = "TXT011D"
+text = "Adapter address"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): a port's hardware address."
+
+[[msg]]
+id = "TXT011E"
+text = "Driver"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the driver that runs a port."
+
+[[msg]]
+id = "TXT011F"
+text = "Up, &1 Mb/s"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): a port's link is up at the speed shown."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TXT0120"
+text = "Up"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): a port's link is up and reports no speed."
+
+[[msg]]
+id = "TXT0121"
+text = "No link"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): a port's interface is up and nothing is connected."
+
+[[msg]]
+id = "TXT0122"
+text = "Interface down"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): a port's interface is not started."
+
+[[msg]]
+id = "TXT0123"
+text = "Link"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the state of a port's link."
+
+[[msg]]
+id = "TXT0124"
+text = "Driven by"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the resource that drives this one."
+
+[[msg]]
+id = "TXT0125"
+text = "Packaged in"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the resource this one is packaged in."
+
+[[msg]]
+id = "TXT0126"
+text = "Attached resources:"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the heading over the resources a resource drives."
+
+[[msg]]
+id = "TXT0127"
+text = "Description"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): what the device reports about itself."
+
+[[msg]]
+id = "TXT0128"
+text = "&1 Resources"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the title of the printed list."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "TXT0129"
+text = "Resource"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the column of resource names."
+
+[[msg]]
+id = "TXT012A"
+text = "Type-model"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the column of types and models."
+
+[[msg]]
+id = "TXT012B"
+text = "Status"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the column of statuses."
+
+[[msg]]
+id = "TXT012C"
+text = "Text"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the column of resource text."
+
+[[msg]]
+id = "TXT012D"
+text = "(No &1 resources.)"
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the printed list is empty."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "TXT012E"
+text = "&1 resources printed."
+help = "Text of the hardware resource displays (WRKHDWRSC, DSPHDWRSC): the list was printed to a spooled file."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "TXT0140"
+text = "PCI Bridge"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a PCI bridge or root port."
+
+[[msg]]
+id = "TXT0141"
+text = "Network Adapter"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a network adapter."
+
+[[msg]]
+id = "TXT0142"
+text = "Storage Controller"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a disk or SCSI controller."
+
+[[msg]]
+id = "TXT0143"
+text = "Disk Drive"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a disk unit."
+
+[[msg]]
+id = "TXT0144"
+text = "Optical Drive"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, an optical drive."
+
+[[msg]]
+id = "TXT0145"
+text = "Serial Port"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a serial port."
+
+[[msg]]
+id = "TXT0146"
+text = "Ethernet Port"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a network port."
+
+[[msg]]
+id = "TXT0147"
+text = "Keyboard"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a keyboard."
+
+[[msg]]
+id = "TXT0148"
+text = "Other Device"
+help = "Text of the hardware resource displays and APIs: the kind of a resource that the system does not classify."
+
+[[msg]]
+id = "TXT0149"
+text = "Tape Drive"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a tape drive."
+
+[[msg]]
+id = "TXT014A"
+text = "Tape Library"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a tape media library."
+
+[[msg]]
+id = "TXT014B"
+text = "Processor"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, a processor."
+
+[[msg]]
+id = "TXT014C"
+text = "Main Storage"
+help = "Text of the hardware resource displays and APIs: the kind of a resource, the main storage (memory)."
+
+[[msg]]
+id = "TXT0150"
+text = "Operational"
+help = "Text of the hardware resource displays: the resource is present and working."
+
+[[msg]]
+id = "TXT0151"
+text = "Not detected"
+help = "Text of the hardware resource displays: the resource was present before and is not found now."
+

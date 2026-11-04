@@ -62,12 +62,12 @@ pub fn stamp_secs(text: &str) -> u64 {
     }
 }
 
-/// A message's text from `QSQLMSG` (`QCPFMSG` for `CPF`), `data`
+/// A message's text from the file its prefix names, on the library list, `data`
 /// substituted; the ID alone when there is no such message.
 pub fn text_of(m: &Main, id: &str, data: &[&str]) -> String {
-    let file = if id.starts_with("SQL") { "QSQLMSG" } else { "QCPFMSG" };
+    let file = sysapi::param::file_of(id);
     let ask = id.to_string();
-    m.ask(|l| l.describe(ask, file.into(), "QSYS".into()))
+    m.ask(|l| l.describe(ask, file.into(), "*LIBL".into()))
         .map_or_else(|| id.to_string(), |d| substitute(&d.text, data))
 }
 

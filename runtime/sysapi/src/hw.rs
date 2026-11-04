@@ -49,7 +49,7 @@ fn common(o: &mut Out, off: usize, category: u32, depth: usize, r: &Resource) {
 #[must_use]
 pub fn list_image(t: &Table, cat: u32) -> Option<Out> {
     let spec = view::by_category(cat)?;
-    let rows = view::list(t, spec);
+    let rows = view::list(t, spec, &mut view::ids);
     let mut o = Out::new();
     o.zero_to(16);
     o.bin4(8, i32::try_from(rows.len()).unwrap_or(0));

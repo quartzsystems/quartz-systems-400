@@ -38,7 +38,7 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Sys2Dat
         "BNDDIR" => bnddir(system, &arg(0), &arg(1)),
         "CMD" => command(system, &arg(0), &arg(1)),
         "DEVD" => devds(system),
-        "HDWRSC" => hardware(&arg(0)),
+        "HDWRSC" => hardware(system, &arg(0)),
         "UPRF" => user_objects(system, &arg(0), &arg(1)),
         other => super::authdata::panel(system, other, args)
             .or_else(|| super::cppdata::panel(system, other, args))
@@ -459,10 +459,11 @@ fn devds(system: &mut System) -> Result<Sys2Data, String> {
 
 /// `WRKHDWRSC`/`DSPHDWRSC`: the resources of a type, from the hardware
 /// resource service, in the tree order of `hwrsrc::view`.
-fn hardware(ty: &str) -> Result<Sys2Data, String> {
+fn hardware(system: &mut System, ty: &str) -> Result<Sys2Data, String> {
     let spec = hwrsrc::view::spec(ty).ok_or_else(|| format!("CPD0084 {ty} is not a type of resource."))?;
     let t = hwrsrc::client::table(false).map_err(|e| format!("CPF9898 hardware resource service: {e}"))?;
-    let rows = hwrsrc::view::list(&t, spec)
+    let mut w = |id: &str, v: &[&str]| super::msgs::text(system, id, v);
+    let rows = hwrsrc::view::list(&t, spec, &mut w)
         .into_iter()
         .map(|r| {
             vars(&[
@@ -474,7 +475,7 @@ fn hardware(ty: &str) -> Result<Sys2Data, String> {
         })
         .collect();
     Ok((
-        vars(&[("RSCKIND", spec.word.to_string())]),
+        vars(&[("RSCKIND", w(spec.word, &[]))]),
         vec![("RSCS".into(), rows)],
     ))
 }

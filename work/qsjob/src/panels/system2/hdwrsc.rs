@@ -21,6 +21,11 @@ use crate::display::uim::{LineMsg, Response};
 
 type Rows = Vec<Vec<(String, String)>>;
 
+/// The displays' words (`QSTXTMSG`) in the job's language.
+fn words(host: &Host) -> impl FnMut(&str, &[&str]) -> String + '_ {
+    move |id, v| crate::display::msgline::text(host, id, v)
+}
+
 /// The table, or the escape that ends the command.
 fn table(host: &Host, refresh: bool) -> Result<Table, Fail> {
     host.link
@@ -99,7 +104,7 @@ pub fn run(
     }
     let ty = parm(r, "TYPE");
     let Some(spec) = view::spec(&ty) else {
-        return Some(Err(Fail::new("CPD0084", format!("{ty} is not a type of resource."))));
+        return Some(Err(Fail::msg("CPD0084", &[("TYPE", 10)])));
     };
     Some(list_loop(job, host, surface, spec, work))
 }
@@ -112,8 +117,8 @@ fn list_loop(job: &mut Job, host: &Host, surface: &mut Surface, spec: &TypeSpec,
     loop {
         let t = table(host, refresh)?;
         refresh = false;
-        d.set("RSCKIND", spec.word);
-        fill(&mut d, list, rows(&view::list(&t, spec), list));
+        d.set("RSCKIND", &words(host)(spec.word, &[]));
+        fill(&mut d, list, rows(&view::list(&t, spec, &mut words(host)), list));
         match show(&mut d, surface, panel)? {
             Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
             Response::Return(0) if !work => return Ok(String::new()),
@@ -162,7 +167,7 @@ fn detail(host: &Host, surface: &mut Surface, t: &Table, name: &str) -> Result<N
     d.copyright = false;
     let mut t = t.clone();
     loop {
-        let Some(x) = view::detail(&t, name) else {
+        let Some(x) = view::detail(&t, name, &mut words(host)) else {
             return Ok(Next::Back);
         };
         d.set("DRSC", &x.name);
@@ -200,7 +205,7 @@ fn cfgd_rows(host: &Host, name: &str) -> (Rows, Vec<(String, String)>) {
 fn cfgds(job: &mut Job, host: &Host, surface: &mut Surface, t: &Table, name: &str) -> Result<Next, Fail> {
     let mut d = dialog(host, "QUIHDWRSC")?;
     d.copyright = false;
-    let text = t.get(name).map(|r| r.kind.text().to_string()).unwrap_or_default();
+    let text = t.get(name).map(|r| words(host)(view::kind_id(r.kind), &[])).unwrap_or_default();
     let kind = t.get(name).map(|r| r.kind);
     d.set("DRSC", name);
     d.set("DTEXT", &text);
@@ -250,7 +255,7 @@ fn sub_list(job: &mut Job, host: &Host, surface: &mut Surface, name: &str) -> Re
         let tbl = table(host, refresh)?;
         refresh = false;
         let Some(top) = tbl.get(name) else { return Ok(Next::Back) };
-        dlg.set("RSCKIND", top.kind.text());
+        dlg.set("RSCKIND", &words(host)(view::kind_id(top.kind), &[]));
         let picked = tbl.tree(|x| x.name == top.name || x.logical == top.name, true, false);
         let list: Vec<view::Row> = picked
             .iter()
@@ -260,8 +265,8 @@ fn sub_list(job: &mut Job, host: &Host, surface: &mut Surface, name: &str) -> Re
                     name: res.name.clone(),
                     depth: tr.depth,
                     type_col: format!(" {}", view::type_model(res)),
-                    status: res.status.text().into(),
-                    text: res.kind.text().into(),
+                    status: words(host)(view::status_id(res.status), &[]),
+                    text: words(host)(view::kind_id(res.kind), &[]),
                 }
             })
             .collect();

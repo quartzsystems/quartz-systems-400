@@ -60,6 +60,17 @@ impl Fail {
         }
     }
 
+    /// Message `msgid` with its values as fixed-width fields, the
+    /// text the message file's.
+    #[must_use]
+    pub fn msg(msgid: &str, fields: &[(&str, usize)]) -> Self {
+        Self {
+            msgid: msgid.into(),
+            data: cmd::error::data(fields),
+            text: String::new(),
+        }
+    }
+
     /// The function check of command `cmd`: `CPF9898`, with `detail`
     /// for the job log's `CPD9898` only ([`sys_cpps::check`]).
     #[must_use]

@@ -1762,43 +1762,6 @@ lic/console/src/screens.rs	System  . . . . . :
 lic/console/src/screens.rs	System reference code
 lic/console/src/screens.rs	User  . . . . . . . . . . . . . .
 lic/console/src/service.rs	no display
-lic/hwrsrc/src/view.rs	 PCI bus:
-lic/hwrsrc/src/view.rs	 SCSI address:
-lic/hwrsrc/src/view.rs	(No {} resources.)
-lic/hwrsrc/src/view.rs	Adapter address
-lic/hwrsrc/src/view.rs	Attached resources:
-lic/hwrsrc/src/view.rs	Bus
-lic/hwrsrc/src/view.rs	Channel
-lic/hwrsrc/src/view.rs	Communication
-lic/hwrsrc/src/view.rs	Coupled
-lic/hwrsrc/src/view.rs	Cryptographic
-lic/hwrsrc/src/view.rs	Description
-lic/hwrsrc/src/view.rs	Device
-lic/hwrsrc/src/view.rs	Domain
-lic/hwrsrc/src/view.rs	Driven by
-lic/hwrsrc/src/view.rs	Driver
-lic/hwrsrc/src/view.rs	Function
-lic/hwrsrc/src/view.rs	Hardware
-lic/hwrsrc/src/view.rs	Host
-lic/hwrsrc/src/view.rs	Interface
-lic/hwrsrc/src/view.rs	Interface down
-lic/hwrsrc/src/view.rs	Link
-lic/hwrsrc/src/view.rs	Local Work Station
-lic/hwrsrc/src/view.rs	Logical address:
-lic/hwrsrc/src/view.rs	Logical unit
-lic/hwrsrc/src/view.rs	No link
-lic/hwrsrc/src/view.rs	Packaged in
-lic/hwrsrc/src/view.rs	Port:
-lic/hwrsrc/src/view.rs	Processor
-lic/hwrsrc/src/view.rs	Resource
-lic/hwrsrc/src/view.rs	Status
-lic/hwrsrc/src/view.rs	Storage
-lic/hwrsrc/src/view.rs	Target
-lic/hwrsrc/src/view.rs	Text
-lic/hwrsrc/src/view.rs	Type-model
-lic/hwrsrc/src/view.rs	Up
-lic/hwrsrc/src/view.rs	Up, {s} Mb/s
-lic/hwrsrc/src/view.rs	{} Resources
 lic/slic/src/cpp/certcmd.rs	Application ID
 lic/slic/src/cpp/certcmd.rs	Application IDs\n
 lic/slic/src/cpp/certcmd.rs	Certificates in {}\n
@@ -1898,7 +1861,6 @@ lic/slic/src/cpp/dspout.rs	None
 lic/slic/src/cpp/dspout.rs	None
 lic/slic/src/cpp/hwcmd.rs	CPD0084 {ty} is not a type of resource.
 lic/slic/src/cpp/hwcmd.rs	CPF9898 hardware resource service: {e}
-lic/slic/src/cpp/hwcmd.rs	{} resources printed.\n
 lic/slic/src/cpp/ifsgrow.rs	CPF3E21 ASP 1 has room for {} MB more below its threshold
 lic/slic/src/cpp/ifsgrow.rs	CPF3E22 the IFS is in its own partition
 lic/slic/src/cpp/ifsgrow.rs	{GREW} the integrated file system grew by {a} MB to {t} MB\n
@@ -3756,7 +3718,6 @@ work/qsjob/src/panels/system2/editors.rs	Data
 work/qsjob/src/panels/system2/editors.rs	Data
 work/qsjob/src/panels/system2/editors.rs	Object
 work/qsjob/src/panels/system2/editors.rs	Object
-work/qsjob/src/panels/system2/hdwrsc.rs	{ty} is not a type of resource.
 work/qsjob/src/panels/system2/programs.rs	(No activation group exports)
 work/qsjob/src/panels/system2/programs.rs	(No activation group exports)
 work/qsjob/src/panels/system2/programs.rs	(No activation group imports)

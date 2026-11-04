@@ -227,7 +227,7 @@ fn resources(m: &Main) -> Vec<Resource> {
     let Some(all) = view::spec("*AHW") else {
         return Vec::new();
     };
-    view::list(&t, all)
+    view::list(&t, all, &mut |id, v| super::db::text_of(m, id, v))
         .into_iter()
         .map(|row| {
             let r = t.get(&row.name);
