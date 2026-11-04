@@ -66,7 +66,7 @@ rclstg [*CHECK]      reclaim storage (*ALL default), or verify only
 chkstg               checksum sweep of every allocated page
 txn stats            transaction, WAL and cache counters
 ifs                  the IFS mount, its capacity and free space
-sysdump [take|list|show N|delete N]  system dumps (the main storage dump manager)
+sysdump [take|list|show N|delete N|copy N TO]  system dumps (the main storage dump manager)
 liclog [MAJOR]       the storage service's LIC log, one major code or all
 ";
 
@@ -454,7 +454,10 @@ fn sysdump(system: &mut System, rest: &[&str]) -> String {
             Ok(()) => format!("System dump {n} deleted.\n"),
             Err(e) => format!("{e}\n"),
         },
-        _ => "Usage: sysdump [take|list|show NAME|delete NAME]\n".into(),
+        ["copy", n, to] => match crate::stgsvc::dumps::copy(system, n, to) {
+            Ok(m) | Err(m) => format!("{m}\n"),
+        },
+        _ => "Usage: sysdump [take|list|show NAME|delete NAME|copy NAME DEV|LIB/SAVF]\n".into(),
     }
 }
 

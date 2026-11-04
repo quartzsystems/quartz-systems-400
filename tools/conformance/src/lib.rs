@@ -37,6 +37,7 @@ mod ftpsrv;
 mod ifs;
 mod install;
 mod load;
+mod leftovers;
 mod lpstep;
 pub mod media;
 mod nettools;

@@ -590,7 +590,7 @@ Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 [restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench|fill|verify`,
 `dtaara get|set`, `dtaq snd|rcv`, `usrspc rd|wr`, `rclstg [*CHECK]`, `chkstg`,
 `txn stats`, `ifs` (the IFS mount at /run/qs400/ifs, capacity, free space),
-`sysdump [take|list|show N|delete N]` (system dumps), `liclog [MAJOR]` (the LIC log),
+`sysdump [take|list|show N|delete N|copy N TO]` (system dumps), `liclog [MAJOR]` (the LIC log),
 `unit add|rmv`, `mirror start|stop|suspend|resume|replace|status`,
 `key NAME`, `type TEXT` (`QTEMP/NAME` addresses the temporary ASP); database:
 `xfer put|get|ls|rm` (named line buffers pushed over serial), `crtpf`, `crtlf`,
