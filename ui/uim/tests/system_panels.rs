@@ -192,7 +192,6 @@ fn dspsfwrsc() {
 }
 
 #[test]
-#[ignore = "the golden keeps two key rows for one row of keys (row 22, row 23 blank)"]
 fn dspautusr() {
     let g = shipped("QUIAUTUSR");
     let rows: Vec<_> = [
@@ -268,93 +267,246 @@ fn main_menu_help() {
     }
 }
 
-/// A panel without a golden: its title centered on row 1 and its keys
-/// on the key rows.
-fn title_and_keys(group: &str, panel: &str, title: &str, keys: &[&str]) {
-    let g = shipped(group);
-    let s = render(&g, panel, &MapDialog::new(), &sysname()).unwrap();
-    let rows = s.text_rows();
-    let col = 1 + (80 - title.len()) / 2;
-    assert_eq!(rows[0].get(col - 1..col - 1 + title.len()), Some(title), "{panel} title");
-    let key_rows = format!("{}\n{}", rows[21], rows[22]);
-    for k in keys {
-        assert!(key_rows.contains(k), "{panel}: {k} not on the key rows:\n{key_rows}");
+// --- the V7R1M0 captures (golden/verified/oracle71/panels)
+
+/// The copyright line shown, the system name as the capture has it.
+fn v71(group: &uim::PanelGroup, system: &str) -> Options {
+    Options {
+        system: system.into(),
+        show_copyright: true,
+        copyright: group.copyright.clone().unwrap_or_default(),
+        ..Options::default()
+    }
+}
+
+/// A list of entries, `complete` when the capture says `Bottom`.
+fn entries(rows: Vec<Vec<(String, String)>>, complete: bool) -> ListState {
+    ListState {
+        total: complete.then_some(rows.len()),
+        rows,
+        top: 0,
+        complete,
     }
 }
 
 #[test]
-#[ignore = "no golden"]
 fn wrksysval() {
-    title_and_keys(
-        "QUISYSVAL",
-        "WRKSYSVAL",
-        "Work with System Values",
-        &["F3=Exit", "F5=Refresh", "F12=Cancel"],
-    );
+    let g = shipped("QUISYSVAL");
+    let rows = [
+        ("QABNORMSW", "*SYSCTL", "Previous end of system indicator"),
+        ("QACGLVL", "*MSG", "Accounting level"),
+        ("QACTJOB", "*ALC", "Initial number of active jobs"),
+        ("QADLACTJ", "*ALC", "Additional number of active jobs"),
+        ("QADLSPLA", "*ALC", "Spooling control block additional storage"),
+        ("QADLTOTJ", "*ALC", "Additional number of total jobs"),
+        ("QALWJOBITP", "*SYSCTL", "Allow jobs to be interrupted"),
+        ("QALWOBJRST", "*SEC", "Allow object restore option"),
+    ]
+    .iter()
+    .map(|(n, t, d)| row(&[("SVNAME", n), ("SVGROUP", t), ("SVDESC", d)]))
+    .collect();
+    let mut d = MapDialog::new();
+    d.set_list("SYSVALS", entries(rows, false));
+    let o = Options { show_copyright: false, ..v71(&g, "SYSNAME") };
+    common::compare71("wrksysval", &render(&g, "WRKSYSVAL", &d, &o).unwrap());
 }
 
 #[test]
-#[ignore = "no golden"]
 fn wrkusrprf() {
-    title_and_keys(
-        "QUIUSRPRF",
-        "WRKUSRPRF",
-        "Work with User Profiles",
-        &["F3=Exit", "F5=Refresh", "F6=Create", "F12=Cancel"],
-    );
+    let g = shipped("QUIUSRPRF");
+    let rows = [
+        ("GRPA", ""),
+        ("OWNA", ""),
+        ("QANZAGENT", "Trace Analyzer Agent Server"),
+        ("QAUTPROF", "IBM-supplied User Profile"),
+        ("QBRMS", "IBM-supplied User Profile"),
+        ("QCLUMGT", "IBM-supplied User Profile"),
+        ("QCLUSTER", "IBM-supplied User Profile"),
+        ("QCOLSRV", "IBM-supplied User Profile"),
+        ("QDBSHR", "Internal Data Base User Profile"),
+    ]
+    .iter()
+    .map(|(n, t)| row(&[("WUPNAME", n), ("WUPTEXT", t)]))
+    .collect();
+    let mut d = MapDialog::new();
+    d.set_list("USERS", entries(rows, false));
+    let o = Options { show_copyright: false, ..v71(&g, "SYSNAME") };
+    common::compare71("wrkusrprf", &render(&g, "WRKUSRPRF", &d, &o).unwrap());
 }
 
 #[test]
-#[ignore = "no golden"]
 fn wrkcfgsts() {
-    title_and_keys(
-        "QUICFG",
-        "WRKCFGSTS",
-        "Work with Configuration Status",
-        &["F3=Exit", "F5=Refresh", "F12=Cancel"],
-    );
+    let g = shipped("QUICFG");
+    let job = |j: &str, u: &str| format!("{j:<12}{u:<12}NNNNNN");
+    let rows = [
+        ("DSP01", "VARY ON PENDING", String::new()),
+        ("ETHLITCP", "ACTIVE", job("QTCPWRK", "QSYS")),
+        ("OPTVRT01", "ACTIVE", String::new()),
+        ("OPT01", "ACTIVE", String::new()),
+        ("QCONSOLE", "VARIED OFF", String::new()),
+        ("QESPAP", "VARIED OFF", String::new()),
+        ("QIADSP", "VARIED OFF", String::new()),
+        ("QIAPRT", "VARIED OFF", String::new()),
+        ("QPADEV0001", "ACTIVE", job("QPADEV0001", "USERNAM")),
+    ]
+    .iter()
+    .map(|(n, s, j)| row(&[("CFNAME", n), ("CFOBJ", n), ("CFSTS", s), ("CFJOB", j), ("CFTYPE", "*DEV")]))
+    .collect();
+    let mut d = MapDialog::new();
+    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS");
+    d.set_list("CFGS", entries(rows, false));
+    let o = Options { show_copyright: false, ..v71(&g, "S062B175") };
+    common::compare71("wrkcfgsts", &render(&g, "WRKCFGSTS", &d, &o).unwrap());
 }
 
 #[test]
-#[ignore = "no golden"]
 fn dspdevd() {
-    title_and_keys(
-        "QUICFG",
-        "DSPDEVD",
-        "Display Device Description",
-        &["F3=Exit", "F12=Cancel"],
-    );
+    let g = shipped("QUICFG");
+    let mut d = MapDialog::new();
+    for (k, v) in [
+        ("*DATETIME", "MM/DD/YY  HH:MM:SS"),
+        ("DVNAME", "QPADEV0003"),
+        ("DVCAT", "*DSP"),
+        ("DVCLS", "*VRT"),
+        ("DVTYPE", "V100"),
+        ("DVMODEL", "*ASCII"),
+        ("DVEMLDEV", "3196A2"),
+        ("DVONLINE", "*NO"),
+        ("DVCTL", "QPACTL01"),
+        ("DVKBD", "USB"),
+        ("DVPRTDEV", "*SYSVAL"),
+        ("DVOUTQ", "*DEV"),
+        ("DVPRTF", "QSYSPRT"),
+        ("DVPRTFL", "*LIBL"),
+        ("DVLOCNAM", "*NONE"),
+    ] {
+        d.set(k, v);
+    }
+    let o = Options { show_copyright: false, ..v71(&g, "S062B175") };
+    common::compare71("dspdevd", &render(&g, "DSPDEVD", &d, &o).unwrap());
+}
+
+fn autl_users() -> ListState {
+    entries(
+        vec![
+            row(&[("ALUSER", "*PUBLIC"), ("ALAUT", "*USE"), ("ALMGT", "")]),
+            row(&[("ALUSER", "QSYS"), ("ALAUT", "*ALL"), ("ALMGT", " X")]),
+        ],
+        true,
+    )
 }
 
 #[test]
-#[ignore = "no golden"]
 fn dspautl() {
-    title_and_keys(
-        "QUIAUTL",
-        "DSPAUTL",
-        "Display Authorization List",
-        &["F3=Exit", "F12=Cancel"],
-    );
+    let g = shipped("QUIAUTL");
+    let mut d = MapDialog::new();
+    d.set("ALNAME", "QPWFSERVER").set("ALOWNER", "QSYS");
+    d.set_list("USERS", autl_users());
+    common::compare71("dspautl", &render(&g, "DSPAUTL", &d, &v71(&g, "SYSNAME")).unwrap());
 }
 
 #[test]
-#[ignore = "no golden"]
 fn wrkautl() {
-    title_and_keys(
-        "QUIAUTL",
-        "WRKAUTL",
-        "Work with Authorization Lists",
-        &["F3=Exit", "F5=Refresh", "F6=Create", "F12=Cancel"],
-    );
+    let g = shipped("QUIAUTL");
+    let rows = [
+        ("QIWSADM", "IBM i Access Administrators"),
+        ("QLWISVR", ""),
+        ("QOPTSEC", "Default Optical Authorization List"),
+        ("QPMCCDATA", ""),
+        ("QPMCCFCN", ""),
+        ("QPWFSERVER", ""),
+        ("QSYLMTJAVA", ""),
+        ("QZSRVHTTP", ""),
+        ("SECORAL", ""),
+    ]
+    .iter()
+    .map(|(n, t)| row(&[("ALNAME", n), ("ALTEXT", t)]))
+    .collect();
+    let mut d = MapDialog::new();
+    d.set_list("LISTS", entries(rows, true));
+    let o = Options { show_copyright: false, ..v71(&g, "SYSNAME") };
+    common::compare71("wrkautl", &render(&g, "WRKAUTL", &d, &o).unwrap());
 }
 
 #[test]
-#[ignore = "no golden"]
 fn dspsecaud() {
-    title_and_keys(
-        "QUISECAUD",
-        "DSPSECAUD",
-        "Display Security Auditing Values",
-        &["F3=Exit", "F12=Cancel"],
-    );
+    let g = shipped("QUISECAUD");
+    let mut d = MapDialog::new();
+    d.set("SAEXIST", "NO")
+        .set("SARCV", "*NONE")
+        .set("SACTL", "*NONE")
+        .set("SALVL", "*NONE")
+        .set("SALVL2", "*NONE");
+    common::compare71("dspsecaud", &render(&g, "DSPSECAUD", &d, &v71(&g, "SYSNAME")).unwrap());
+}
+
+/// DSPAUTUSR after F11: the password levels (V7R1M0).
+#[test]
+fn dspautusr_f11() {
+    let g = shipped("QUIAUTUSR");
+    let users = [
+        ("GRPA", "", "*NO", "*NO", "*NO"),
+        ("OWNA", "GRPA", "*YES", "*YES", "*YES"),
+        ("QANZAGENT", "", "*NO", "*NO", "*NO"),
+        ("QAUTPROF", "", "*NO", "*NO", "*NO"),
+        ("QBRMS", "", "*NO", "*NO", "*NO"),
+        ("QCLUMGT", "", "*NO", "*NO", "*NO"),
+        ("QCLUSTER", "", "*NO", "*NO", "*NO"),
+        ("QCOLSRV", "", "*NO", "*NO", "*NO"),
+        ("QDBSHR", "", "*NO", "*NO", "*NO"),
+        ("QDBSHRDO", "", "*NO", "*NO", "*NO"),
+        ("QDFTOWN", "", "*NO", "*NO", "*NO"),
+        ("QDIRSRV", "", "*NO", "*NO", "*NO"),
+        ("QDLFM", "", "*NO", "*NO", "*NO"),
+        ("QDOC", "", "*NO", "*NO", "*NO"),
+    ];
+    let pad = |v: &str| format!("  {v}");
+    let rows = users
+        .iter()
+        .map(|(u, gr, a, b, c)| {
+            row(&[
+                ("AUUSER", u),
+                ("AUGROUP", gr),
+                ("AUPWDCHG", "MM/DD/YY"),
+                ("AULVL01", &pad(a)),
+                ("AULVL23", &pad(b)),
+                ("AUNETSVR", &pad(c)),
+                ("AULCLPWD", "*YES"),
+            ])
+        })
+        .collect();
+    let mut d = MapDialog::new();
+    d.set("AUVIEW", "2");
+    d.set_list("USERS", entries(rows, false));
+    let o = Options { view: 1, ..sysname() };
+    common::compare71("dspautusr-f11", &render(&g, "DSPAUTUSR", &d, &o).unwrap());
+}
+
+/// DSPDEVD after F11: each value after its keyword (V7R1M0).
+#[test]
+fn dspdevd_f11() {
+    let g = shipped("QUICFG");
+    let mut d = MapDialog::new();
+    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS").set("DVVIEW", "2");
+    for (k, kw, v) in [
+        ("DVNAME", "DEVD", "QPADEV0003"),
+        ("DVOPTION", "OPTION", "*BASIC"),
+        ("DVCAT", "", "*DSP"),
+        ("DVCLS", "DEVCLS", "*VRT"),
+        ("DVTYPE", "TYPE", "V100"),
+        ("DVMODEL", "MODEL", "*ASCII"),
+        ("DVEMLDEV", "EMLDEV", "3196A2"),
+        ("DVONLINE", "ONLINE", "*NO"),
+        ("DVCTL", "CTL", "QPACTL01"),
+        ("DVKBD", "KBDTYPE", "USB"),
+        ("DVPRTDEV", "PRTDEV", "*SYSVAL"),
+        ("DVOUTQ", "OUTQ", "*DEV"),
+        ("DVPRTF", "PRTFILE", "QSYSPRT"),
+        ("DVPRTFL", "", "*LIBL"),
+        ("DVLOCNAM", "DEPLOCNAME", "*NONE"),
+    ] {
+        d.set(k, &format!("{kw:<12}{v}"));
+    }
+    let o = Options { show_copyright: false, ..v71(&g, "S062B175") };
+    common::compare71("dspdevd-f11", &render(&g, "DSPDEVD", &d, &o).unwrap());
 }

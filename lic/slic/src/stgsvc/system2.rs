@@ -290,7 +290,11 @@ fn module(system: &mut System, lib: &str, name: &str) -> Result<Sys2Data, String
         let mut v = header(txn, id, &lib)?;
         let m = ile::store::load_module(txn, id).map_err(|e| e.to_string())?;
         let c = &m.create;
+        let h = ops::describe(txn, id).map_err(|e| e.to_string())?;
         v.extend(vars(&[
+            ("MODTEXT", text_of(&h.text)),
+            // The CCSID the source was read in; ours is CP037's.
+            ("CCSID", "37".to_string()),
             ("SRCF", c.src_file.clone()),
             ("SRCFLIB", c.src_lib.clone()),
             ("SRCMBR", c.src_mbr.clone()),
@@ -312,6 +316,8 @@ fn module(system: &mut System, lib: &str, name: &str) -> Result<Sys2Data, String
             .map(|p| {
                 vars(&[
                     ("PROCNAME", p.name.clone()),
+                    ("PROCTYPE", if p.entry { "ENTRY POINT" } else { "REGULAR" }.into()),
+                    ("ARGOPT", "*NO".into()),
                     ("PROCSCOPE", if p.export { "*EXPORT" } else { "*LOCAL" }.into()),
                     ("PROCPEP", if p.entry { "*PEP" } else { "" }.into()),
                 ])

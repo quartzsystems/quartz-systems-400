@@ -10,7 +10,7 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 use wm::obj::jobq::JobQ;
-use wm::obj::jobscd::{Frequency, JobScd, SCHEDULE};
+use wm::obj::jobscd::{Frequency, JobScd, RcyAcn, SCHEDULE};
 use wm::obj::outq::OutQ;
 
 use super::{Flow, common, date_time, entry, parm, qualified, refill, render_fail};
@@ -29,10 +29,21 @@ fn list_loop(
     fill: &mut dyn FnMut(&Host, &mut UimDialog),
 ) -> Result<String, Fail> {
     let mut history = Vec::new();
+    // F11 switches the two views of a queue's files and of the printers.
+    let views = match panel {
+        "FILES" => Some("FVIEW"),
+        "WRKWTR" => Some("WVIEW"),
+        _ => None,
+    };
     loop {
         fill(host, d);
         loop {
             let resp = d.show(surface, panel).map_err(|e| render_fail(&e))?;
+            if let (Some(var), crate::display::uim::Response::Return(11)) = (views, &resp) {
+                d.view = 1 - d.view.min(1);
+                d.set(var, if d.view == 1 { "2" } else { "1" });
+                continue;
+            }
             match common(job, host, d, &mut history, resp) {
                 Flow::Stay => {}
                 Flow::Refresh => break,
@@ -75,7 +86,7 @@ pub fn wrkoutq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                     entry(&[
                         ("FILES", q.as_ref().map_or(0, |q| q.files.len()).to_string()),
                         ("WRITER", q.as_ref().map(|q| q.writer.clone()).unwrap_or_default()),
-                        ("STATUS", held(q.as_ref().is_some_and(|q| q.held)).into()),
+                        ("STATUS", format!(" {}", held(q.as_ref().is_some_and(|q| q.held)))),
                         ("QUEUE", name),
                         ("LIB", lib),
                     ])
@@ -110,6 +121,8 @@ pub fn wrkoutq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                             ("STS", f.status.code().to_string()),
                             ("PAGES", f.pages.to_string()),
                             ("COPIES", f.copies_left.max(1).to_string()),
+                            ("FORMTYPE", f.formtype.clone()),
+                            ("PTY", f.outpty.to_string()),
                             ("JOB", f.job.0.clone()),
                             ("NUMBER", format!("{:06}", f.job.2)),
                             ("SPLNBR", f.number.to_string()),
@@ -140,7 +153,7 @@ pub fn wrkjobq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
                         .unwrap_or_default();
                     entry(&[
                         ("JOBS", q.as_ref().map_or(0, |q| q.jobs.len()).to_string()),
-                        ("STATUS", held(q.as_ref().is_some_and(|q| q.held)).into()),
+                        ("STATUS", format!(" {}", held(q.as_ref().is_some_and(|q| q.held)))),
                         ("SBS", sbs),
                         ("QUEUE", name),
                         ("LIB", lib),
@@ -161,7 +174,16 @@ pub fn wrkjobq(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
             list_loop(job, host, surface, &mut d, "JOBS", &mut |host, d| {
                 let now = host.link.borrow_mut().with(Client::now).unix;
                 let q = payload(host, &real, &name, "*JOBQ").and_then(|b| JobQ::decode(&b).ok());
-                d.set("QSTS", held(q.as_ref().is_some_and(|q| q.held)));
+                // `/SBS` while an active subsystem takes jobs from it.
+                let qual = format!("{real}/{name}");
+                let attached = host
+                    .link
+                    .borrow_mut()
+                    .with(Client::jobq_attach)
+                    .iter()
+                    .any(|(k, s)| *k == qual && !s.is_empty());
+                let sts = held(q.as_ref().is_some_and(|q| q.held));
+                d.set("QSTS", &if attached { format!("{sts}/SBS") } else { sts.to_string() });
                 let rows = q
                     .map(|q| q.jobs)
                     .unwrap_or_default()
@@ -243,9 +265,16 @@ pub fn wrkjobscde(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolve
                     Frequency::Weekly => "*WEEKLY",
                     Frequency::Monthly => "*MONTHLY",
                 };
+                let rcy = match e.rcyacn {
+                    RcyAcn::SbmRls => "*SBMRLS",
+                    RcyAcn::SbmHld => "*SBMHLD",
+                    RcyAcn::NoSbm => "*NOSBM",
+                };
                 entry(&[
                     ("JOB", e.job.clone()),
                     ("STATUS", if e.held { "HLD" } else { "SCD" }.into()),
+                    ("RCYACN", rcy.into()),
+                    ("NXTDATE", date.clone()),
                     ("SDATE", date),
                     ("STIME", time),
                     ("FRQ", frq.into()),

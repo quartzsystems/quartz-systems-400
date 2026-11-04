@@ -14,12 +14,13 @@ use crate::console::host::Host;
 use crate::display::surface::Surface;
 
 /// The label of a value's row, for the values that have their own.
-fn label(name: &str) -> &'static str {
+pub(crate) fn label(name: &str) -> &'static str {
     match name {
         "QMODEL" => "Model number",
         "QSRLNBR" => "Serial number",
         "QSECURITY" => "Security level",
         "QDATE" => "Date",
+        "QDATFMT" => "Date format",
         "QTIME" => "Time",
         "QCCSID" => "Coded character set ID",
         "QSYSLIBL" | "QUSRLIBL" => "Libraries",
@@ -97,7 +98,13 @@ pub fn wrksysval(
         let all = host.link.borrow_mut().with(Client::sysval_panel_list);
         let top = d.list_mut("SYSVALS").top;
         d.clear_list("SYSVALS");
+        // A type typed over Subset by Type narrows the list too.
+        let typed = d.get("SUBSET").trim().to_ascii_uppercase();
+        let typed = typed.starts_with('*').then_some(typed).filter(|t| t != "*ALL");
         for (name, group, text) in all {
+            if typed.as_ref().is_some_and(|t| *t != group) {
+                continue;
+            }
             let keep = if which.is_empty() || which == "*ALL" {
                 true
             } else if let Some(prefix) = which.strip_suffix('*') {
@@ -119,9 +126,18 @@ pub fn wrksysval(
                 );
             }
         }
+        // Position to: the first value at or after the characters typed.
+        let pos = d.get("POSTO").trim().to_ascii_uppercase();
+        d.set("POSTO", "");
         let l = d.list_mut("SYSVALS");
         l.complete = true;
         l.top = top.min(l.rows.len().saturating_sub(1));
+        if !pos.is_empty() {
+            let at = l.rows.iter().position(|r| {
+                r.iter().any(|(k, v)| k == "SVNAME" && v.as_str() >= pos.as_str())
+            });
+            l.top = at.unwrap_or(l.rows.len().saturating_sub(1));
+        }
         loop {
             let answer = match d.show(surface, "WRKSYSVAL") {
                 Ok(a) => a,

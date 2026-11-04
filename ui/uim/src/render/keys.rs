@@ -27,12 +27,12 @@ pub(super) fn rows(ctx: &Ctx, keyl: &KeyList, limit: usize) -> Vec<Vec<(usize, S
 
 /// The rows the key area keeps: two when the keys with a condition,
 /// shown or not, would need them (dspusrprf-objaut keeps row 23 blank
-/// under one row of keys because F11 has two texts); else the rows
-/// shown.
-pub(super) fn reserved(keyl: &KeyList, limit: usize, shown: usize) -> usize {
-    if keyl.keys.iter().any(|k| k.action == Action::MoreKeys)
-        || !keyl.keys.iter().any(|k| k.cond.is_some())
-    {
+/// under one row of keys because F11 has two texts), counting every
+/// set of a key list cut by `F24=More keys` only under a command line
+/// (wrkwtr at V7R1M0, wrksplf); else the rows shown.
+pub(super) fn reserved(keyl: &KeyList, limit: usize, shown: usize, cmdline: bool) -> usize {
+    let sets = keyl.keys.iter().any(|k| k.action == Action::MoreKeys);
+    if (sets && !cmdline) || !keyl.keys.iter().any(|k| k.cond.is_some()) {
         return shown;
     }
     let widths: Vec<usize> = keyl

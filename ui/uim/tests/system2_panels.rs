@@ -58,27 +58,6 @@ fn list(rows: &[&[(&str, &str)]]) -> ListState {
     l
 }
 
-/// A panel without a golden: its title centered on row 1 and its keys
-/// on the key rows.
-fn title_and_keys(group: &str, panel: &str, title: &str, keys: &[&str]) {
-    let g = shipped(group);
-    let s = render(&g, panel, &MapDialog::new(), &plain()).unwrap();
-    let rows = s.text_rows();
-    let col = 1 + (80 - title.len()) / 2;
-    assert_eq!(
-        rows[0].get(col - 1..col - 1 + title.len()),
-        Some(title),
-        "{panel} title"
-    );
-    let key_rows = format!("{}\n{}", rows[21], rows[22]);
-    for k in keys {
-        assert!(
-            key_rows.contains(k),
-            "{panel}: {k} not on the key rows:\n{key_rows}"
-        );
-    }
-}
-
 // --- panels batch 2: programs, config, security, editors
 
 fn dspcmd_dialog() -> MapDialog {
@@ -284,7 +263,7 @@ fn srv_dialog(pos: &str, detail: &str) -> MapDialog {
 }
 
 #[test]
-#[ignore = "the golden wraps the 32-character signature into column 1 of row 18 and keeps two key rows"]
+#[ignore = "BLOCKED(phase12): the golden runs the 32-character signature past column 80 into column 1 of row 18; output fields do not wrap rows yet"]
 fn dspsrvpgm() {
     let g = shipped("QUIDSPPGM");
     let d = srv_dialog("Display 1 of 10", "*BASIC");
@@ -292,7 +271,6 @@ fn dspsrvpgm() {
 }
 
 #[test]
-#[ignore = "the golden keeps two key rows (F11 shows on the first display), moving Press Enter to row 20"]
 fn dspsrvpgm_2() {
     let g = shipped("QUIDSPPGM");
     let d = srv_dialog("Display 2 of 10", "*SIZE");
@@ -467,7 +445,6 @@ fn dspusrprf_objpgp() {
 }
 
 #[test]
-#[ignore = "the golden starts Authority one column left of Holder and its field (60 against 61)"]
 fn dspusrprf_objown() {
     let g = shipped("QUIUPRFTYP");
     let mut d = vars(&[("UPNAME", "USERNAME"), ("TOTAL", "173")]);
@@ -517,15 +494,13 @@ fn dspusrprf_devaut() {
     compare("dspusrprf-devaut", &render(&g, "DEVAUT", &d, &opts()).unwrap());
 }
 
+/// A group profile of the primary (V7R1M0) with its one member.
 #[test]
-#[ignore = "no golden: the pub400 account is not a group profile"]
 fn dspusrprf_grpmbr() {
-    title_and_keys(
-        "QUIUPRFTYP",
-        "GRPMBR",
-        "Display Group Members",
-        &["F3=Exit", "F12=Cancel"],
-    );
+    let g = shipped("QUIUPRFTYP");
+    let mut d = vars(&[("UPNAME", "GRPA")]);
+    d.set_list("MBRS", list(&[&[("MBRNAME", "OWNA")]]));
+    common::compare71("dspusrprf-grpmbr", &render(&g, "GRPMBR", &d, &opts()).unwrap());
 }
 
 /// EDTLIBL's rows: sequence numbers ten apart, three columns of 15.
@@ -628,37 +603,65 @@ fn edtobjaut_f6() {
     compare("edtobjaut-f6", &render(&g, "ADDUSERS", &d, &plain()).unwrap());
 }
 
+/// A shipped authorization list of the primary (V7R1M0), left with F12.
 #[test]
-#[ignore = "no golden: pub400 has no authorization list the account may edit"]
 fn edtautl() {
-    title_and_keys(
-        "QUIEDTAUT",
-        "EDTAUTL",
-        "Edit Authorization List",
-        &["F3=Exit", "F5=Refresh", "F6=Add new users", "F12=Cancel"],
+    let g = shipped("QUIEDTAUT");
+    let mut d = vars(&[
+        ("AUTVIEW", "OBJ"),
+        ("OBJ", "QPWFSERVER"),
+        ("OBJLIB", "QSYS"),
+        ("OWNER", "QSYS"),
+    ]);
+    d.set_list(
+        "AUTS",
+        rows(&[
+            [("USER", "*PUBLIC"), ("AUT", "*USE"), ("LSTMGT", "")],
+            [("USER", "QSYS"), ("AUT", "*ALL"), ("LSTMGT", "X")],
+        ]),
     );
+    common::compare71("edtautl", &render(&g, "EDTAUTL", &d, &opts()).unwrap());
+}
+
+/// A CL module made in QSTEST on the primary (V7R1M0).
+fn mod_dialog(detail: &str) -> MapDialog {
+    vars(&[
+        ("DSPPOS", " Display 1 of 1"),
+        ("PGM", "QSMOD"),
+        ("PGMLIB", "QSTEST"),
+        ("DETAIL", detail),
+        ("PGMATTR", "CLLE"),
+        ("CRTDT", "MM/DD/YY  HH:MM:SS"),
+        ("SRCF", "QSMSGSRC"),
+        ("SRCFLIB", "QSTEST"),
+        ("SRCMBR", "QSMOD"),
+        ("SRCCHG", "MM/DD/YY  HH:MM:SS"),
+        ("OWNER", "USERNAM"),
+        ("CCSID", "37"),
+    ])
 }
 
 #[test]
-#[ignore = "no golden: pub400's QSYS holds no module the account may display"]
 fn dspmod() {
-    title_and_keys(
-        "QUIDSPPGM",
-        "MODBASIC",
-        "Display Module Information",
-        &["F3=Exit", "F12=Cancel"],
-    );
+    let g = shipped("QUIDSPPGM");
+    common::compare71("dspmod", &render(&g, "MODBASIC", &mod_dialog("*BASIC"), &opts()).unwrap());
 }
 
 #[test]
-#[ignore = "no golden: the module's procedure list"]
 fn dspmod_2() {
-    title_and_keys(
-        "QUIDSPPGM",
-        "MODPROC",
-        "Display Module Information",
-        &["F3=Exit", "F12=Cancel", "F17=Top", "F18=Bottom"],
-    );
+    let g = shipped("QUIDSPPGM");
+    let mut d = mod_dialog("*PROCLIST");
+    let procs: Vec<[(&str, &str); 3]> = [
+        ("_CL_PEP", "ENTRY POINT"),
+        ("QSMOD", "REGULAR"),
+        ("QCL_Function_Check_Exception_Handler", "REGULAR"),
+        ("Qcl_QCLCLNUP_iexit", "REGULAR"),
+    ]
+    .iter()
+    .map(|(n, t)| [("PROCNAME", *n), ("PROCTYPE", *t), ("ARGOPT", "*NO")])
+    .collect();
+    d.set_list("PROCS", rows(&procs));
+    common::compare71("dspmod-2", &render(&g, "MODPROC", &d, &opts()).unwrap());
 }
 
 /// Against the V7R1M0 capture (pub400 has no list the account may
@@ -690,7 +693,7 @@ fn dspautlobj() {
 }
 
 #[test]
-#[ignore = "no golden: DSPAUDJRNE needs *AUDIT, which the pub400 account lacks"]
+#[ignore = "NEEDS-CODY: no golden; the primary has no QAUDJRN (DSPSECAUD: journal exists NO), see docs/SEC_OPEN_QUESTIONS.md"]
 fn dspaudjrne() {
     let g = shipped("QUIRPTVW");
     let d = vars(&[("RPTTITLE", "Display Audit Journal Entries")]);
@@ -703,32 +706,56 @@ fn dspaudjrne() {
     }
 }
 
+/// The report in the spooled file view, as the system shows it.
 #[test]
-#[ignore = "the golden is DSPSPLF over the spooled report; ours shows the lines directly"]
 fn dsppgmref() {
     let g = shipped("QUIRPTVW");
-    let d = vars(&[("RPTTITLE", "Display Spooled File")]);
+    let mut d = vars(&[
+        ("RPTTITLE", "Display Spooled File"),
+        ("RPTFILE", "QPDSPPGM"),
+        ("RPTCOLS", "1 - 78"),
+    ]);
+    let lines: Vec<String> = common::golden_rows("dsppgmref")[5..15].to_vec();
+    let r: Vec<[(&str, &str); 1]> = lines.iter().map(|l| [("LINE", &l[1..])]).collect();
+    d.set_list("LINES", rows(&r));
     compare("dsppgmref", &render(&g, "RPTVIEW", &d, &plain()).unwrap());
 }
 
+/// WRKSYSVAL option 2 on QDATFMT (V7R1M0), left with F12.
 #[test]
-#[ignore = "no golden: WRKSYSVAL is not authorized to the pub400 account"]
 fn chgsysval() {
-    title_and_keys(
-        "QUICHGSV",
-        "CHGSV",
-        "Change System Value",
-        &["F3=Exit", "F5=Refresh", "F12=Cancel"],
-    );
+    let g = shipped("QUICHGSV");
+    let d = vars(&[
+        ("SVNAME", "QDATFMT"),
+        ("SVTEXT", "Date format"),
+        ("SVLABEL", "Date format"),
+        ("SVSHORT", "MDY"),
+        ("SVHINT", "YMD, MDY, DMY, JUL"),
+    ]);
+    common::compare71("chgsysval", &render(&g, "CHGSV", &d, &plain()).unwrap());
 }
 
+/// WRKSYSVAL option 2 on QSYSLIBL (V7R1M0): sixteen numbered slots in
+/// two columns, the libraries from 10.
 #[test]
-#[ignore = "no golden: WRKSYSVAL is not authorized to the pub400 account"]
 fn chgsysval_list() {
-    title_and_keys(
-        "QUICHGSV",
-        "CHGSVL",
-        "Change System Value",
-        &["F3=Exit", "F5=Refresh", "F12=Cancel"],
-    );
+    let g = shipped("QUICHGSV");
+    let mut d = vars(&[
+        ("SVNAME", "QSYSLIBL"),
+        ("SVTEXT", "System part of the library list"),
+    ]);
+    let libs = ["", "QSYS", "QSYS2", "QHLPSYS", "QUSRSYS", "", "", ""];
+    let seqs: Vec<(String, String)> = (0..8).map(|i| ((i * 10).to_string(), (80 + i * 10).to_string())).collect();
+    let r: Vec<[(&str, &str); 4]> = (0..8)
+        .map(|i| {
+            [
+                ("SEQ1", seqs[i].0.as_str()),
+                ("LIB1", libs[i]),
+                ("SEQ2", seqs[i].1.as_str()),
+                ("LIB2", ""),
+            ]
+        })
+        .collect();
+    d.set_list("LIBS", rows(&r));
+    common::compare71("chgsysval-list", &render(&g, "CHGSVL", &d, &plain()).unwrap());
 }

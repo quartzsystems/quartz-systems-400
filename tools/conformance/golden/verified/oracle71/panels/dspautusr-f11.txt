@@ -1,0 +1,24 @@
+                            Display Authorized Users                            
+                                                                                
+                         Password  Level     Level                Local         
+ User        Group       Last      0 or 1    2 or 3    Netserver  Pwd           
+ Profile     Profile     Changed   Password  Password  Password   Mgt           
+ GRPA                    MM/DD/YY    *NO       *NO       *NO      *YES          
+ OWNA        GRPA        MM/DD/YY    *YES      *YES      *YES     *YES          
+ QANZAGENT               MM/DD/YY    *NO       *NO       *NO      *YES          
+ QAUTPROF                MM/DD/YY    *NO       *NO       *NO      *YES          
+ QBRMS                   MM/DD/YY    *NO       *NO       *NO      *YES          
+ QCLUMGT                 MM/DD/YY    *NO       *NO       *NO      *YES          
+ QCLUSTER                MM/DD/YY    *NO       *NO       *NO      *YES          
+ QCOLSRV                 MM/DD/YY    *NO       *NO       *NO      *YES          
+ QDBSHR                  MM/DD/YY    *NO       *NO       *NO      *YES          
+ QDBSHRDO                MM/DD/YY    *NO       *NO       *NO      *YES          
+ QDFTOWN                 MM/DD/YY    *NO       *NO       *NO      *YES          
+ QDIRSRV                 MM/DD/YY    *NO       *NO       *NO      *YES          
+ QDLFM                   MM/DD/YY    *NO       *NO       *NO      *YES          
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Text Information   F12=Cancel   F17=Top   F18=Bottom             
+                                                                                
+                                                                                

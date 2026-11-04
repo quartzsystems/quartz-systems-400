@@ -41,17 +41,28 @@ pub fn flow(widths: &[usize], start: usize, limit: usize) -> Vec<Vec<(usize, usi
 
 /// R7: each lower item after the first pairs with an upper item that
 /// starts within three columns of it (edtobjaut: F12 under F10,
-/// wrkdevd: 9=Retrieve under 4=Delete), else with the upper item of
-/// its index; the item of a pair that starts earlier moves (and what
-/// follows it in its row) to the other's column when its row still
-/// ends within `limit`; otherwise both stay.
+/// wrkdevd: 9=Retrieve under 4=Delete), else with the nearest upper
+/// item not yet paired that starts up to ten columns left of it
+/// (wrkautl: 5=Display over 13=Change description; wrkf: 5=Display
+/// stays over 9=Save); the item of a pair that starts earlier moves
+/// (and what follows it in its row) to the other's column when its row
+/// still ends within `limit`; otherwise both stay.
 fn align(rows: &mut [Vec<(usize, usize)>], widths: &[usize], limit: usize) {
+    let mut paired: Vec<usize> = Vec::new();
     for k in 1..rows[1].len() {
         let b = rows[1][k].1;
+        let last_lower = k + 1 == rows[1].len();
         let near = (1..rows[0].len()).find(|&j| rows[0][j].1.abs_diff(b) <= 3);
-        let Some(j) = near.or((k < rows[0].len()).then_some(k)) else {
+        let left = (1..rows[0].len())
+            .rev()
+            .find(|&j| rows[0][j].1 < b && b - rows[0][j].1 <= 10 && !paired.contains(&j));
+        let Some(j) = near.or(left) else {
+            if last_lower {
+                snap(rows, widths, limit, k);
+            }
             continue;
         };
+        paired.push(j);
         let a = rows[0][j].1;
         if a == b {
             continue;
@@ -62,16 +73,16 @@ fn align(rows: &mut [Vec<(usize, usize)>], widths: &[usize], limit: usize) {
             for item in &mut rows[r][from..] {
                 item.1 += delta;
             }
-        } else if near.is_none() && r == 0 {
+        } else if near.is_none() && r == 0 && last_lower {
             snap(rows, widths, limit, k);
         }
     }
 }
 
-/// R7: a lower item with no upper item near it, whose pair cannot
-/// move, moves right (with what follows it) to the next upper column
-/// within ten columns when its row still ends within `limit` (wrklnk:
-/// F23 under F9).
+/// R7: the last lower item, with no upper item near it and a pair that
+/// cannot move, moves right to the next upper column within ten
+/// columns when its row still ends within `limit` (wrklnk: F23 under
+/// F9; dspautl's F17, with F18 after it, stays).
 fn snap(rows: &mut [Vec<(usize, usize)>], widths: &[usize], limit: usize, k: usize) {
     let b = rows[1][k].1;
     let Some(a) = rows[0].iter().map(|i| i.1).find(|&a| a > b && a - b <= 10) else {

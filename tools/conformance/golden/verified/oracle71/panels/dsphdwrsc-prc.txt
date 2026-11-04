@@ -1,0 +1,24 @@
+                          Display Processor Resources                           
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   7=Display resource detail                                                    
+                                                                                
+ Opt  Resource        Type-model  Status                Text                    
+      CEC01            8203-E4A   Operational           Main Card Enclosure     
+      PN01             296C       Operational           System Control Panel    
+      MP01             53DE       Operational           System Processor Card   
+      PV01             52A9       Operational           Processor Capacity Card 
+      SP01             53DE       Operational           Service Processor Card  
+      BCC02                       Operational           Bus Adapter             
+      BCC03            53DE       Operational           Bus Adapter             
+      BCC04            53DE       Operational           Bus Adapter             
+      BCC05            53DE       Operational           Bus Adapter             
+      BCC06            53DE       Operational           Bus Adapter             
+      BCC07            53DE       Operational           Bus Adapter             
+      BCC08            53DE       Operational           Bus Adapter             
+      BCC09            53DE       Operational           Bus Adapter             
+      BCC10            53DE       Operational           Bus Adapter             
+      MS01             31A6       Operational           4096MB Main Storage Car 
+                                                                        More... 
+ F3=Exit   F5=Refresh   F6=Print   F12=Cancel                                   
+                                                                                

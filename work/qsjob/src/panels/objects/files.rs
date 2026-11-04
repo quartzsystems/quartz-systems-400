@@ -121,8 +121,15 @@ pub fn dspdtaara(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Str
         }
         DataAreaKind::Lgl => ("*LGL", "1".to_string(), vec![ccsid::from_ebcdic(&value.value)]),
         DataAreaKind::Char => {
+            // In quotes, as the system shows a character value.
             let text: Vec<char> = ccsid::from_ebcdic(&value.value).chars().collect();
-            let rows = text.chunks(50).map(|c| c.iter().collect()).collect();
+            let mut rows: Vec<String> = text.chunks(50).map(|c| c.iter().collect()).collect();
+            if rows.is_empty() {
+                rows.push(String::new());
+            }
+            let last = rows.len() - 1;
+            rows[0].insert(0, '\'');
+            rows[last].push('\'');
             ("*CHAR", value.len.to_string(), rows)
         }
     };

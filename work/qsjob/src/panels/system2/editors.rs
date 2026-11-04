@@ -47,6 +47,31 @@ fn libl_rows(libs: &[String]) -> Vec<Vec<(String, String)>> {
     rows
 }
 
+/// The change panel's rows of a library list system value: the
+/// libraries ten apart from 10, two columns of eight a page.
+fn sysl_rows(libs: &[String]) -> Vec<Vec<(String, String)>> {
+    let slots = (libs.len() + 1).div_ceil(16).max(1) * 16;
+    let name = |seq: usize| {
+        (seq.is_multiple_of(10) && seq >= 10)
+            .then(|| libs.get(seq / 10 - 1).cloned())
+            .flatten()
+            .unwrap_or_default()
+    };
+    let mut rows = Vec::new();
+    for page in 0..slots / 16 {
+        for i in 0..8 {
+            let mut row = Vec::new();
+            for col in 0..2 {
+                let seq = (page * 16 + col * 8 + i) * 10;
+                row.push((format!("SEQ{}", col + 1), seq.to_string()));
+                row.push((format!("LIB{}", col + 1), name(seq)));
+            }
+            rows.push(row);
+        }
+    }
+    rows
+}
+
 /// The libraries the rows hold, in sequence number order (a number
 /// typed twice keeps the order on the display).
 fn libl_of(d: &mut UimDialog) -> Result<Vec<String>, LineMsg> {
@@ -511,23 +536,41 @@ fn chgsysval(
             .borrow_mut()
             .with(|l| l.sysval_panel(name.to_string()))?;
         let list = is_list(name, &elems);
+        let libl = list && name.ends_with("LIBL");
         d.set("SVNAME", name);
         d.set("SVTEXT", &text);
         d.set("SVTYPE", &group);
-        let panel = if list {
-            let mut rows: Vec<Vec<(String, String)>> = elems
+        d.set("SVLABEL", crate::panels::system::sysval::label(name));
+        let shown: Vec<String> = elems
+            .iter()
+            .map(|e| e.trim().to_string())
+            .filter(|e| !e.is_empty() && e != "*NONE")
+            .collect();
+        let entry = sysval::Catalog::builtin().ok().and_then(|c| c.get(name).cloned());
+        // Up to eight characters: the short field with its choices
+        // beside it, as the system shows QDATFMT.
+        let short = entry.as_ref().is_some_and(|e| e.len.is_some_and(|n| n <= 8));
+        let panel = if libl {
+            super::fill(&mut d, "LIBS", sysl_rows(&shown));
+            "CHGSVL"
+        } else if list {
+            let mut rows: Vec<Vec<(String, String)>> = shown
                 .iter()
-                .filter(|e| !e.trim().is_empty() && e.trim() != "*NONE")
-                .map(|e| vec![("SVELEM".to_string(), e.trim().to_string())])
+                .map(|e| vec![("SVELEM".to_string(), e.clone())])
                 .collect();
             while rows.len() < 30 {
                 rows.push(vec![("SVELEM".to_string(), String::new())]);
             }
             super::fill(&mut d, "ELEMS", rows);
-            "CHGSVL"
+            "CHGSVE"
+        } else if short {
+            let hint = entry.as_ref().and_then(|e| e.allowed.as_ref()).map(|a| a.join(", "));
+            d.set("SVSHORT", elems.first().map_or("", |e| e.trim()));
+            d.set("SVHINT", &hint.unwrap_or_default());
+            "CHGSV"
         } else {
             d.set("SVVALUE", elems.first().map_or("", |e| e.trim()));
-            "CHGSV"
+            "CHGSVW"
         };
         let before = elems.join(" ");
         let resp = match show(&mut d, surface, panel) {
@@ -537,7 +580,16 @@ fn chgsysval(
         match resp {
             Response::Exit | Response::Cancel | Response::Gone => return Some(Ok(String::new())),
             Response::Return(0) => {
-                let value = if list {
+                let value = if libl {
+                    match libl_of(&mut d) {
+                        Ok(v) if v.is_empty() => "*NONE".to_string(),
+                        Ok(v) => v.join(" "),
+                        Err(m) => {
+                            d.send(m);
+                            continue;
+                        }
+                    }
+                } else if list {
                     let n = d.list_mut("ELEMS").rows.len();
                     let v: Vec<String> = (0..n)
                         .map(|i| cell(&d, "ELEMS", i, "SVELEM"))
@@ -545,7 +597,8 @@ fn chgsysval(
                         .collect();
                     if v.is_empty() { "*NONE".to_string() } else { v.join(" ") }
                 } else {
-                    let v = d.get("SVVALUE").trim().to_string();
+                    let field = if short { "SVSHORT" } else { "SVVALUE" };
+                    let v = d.get(field).trim().to_string();
                     let quoted = !v.starts_with('*') && v.contains(|c: char| !c.is_ascii_digit());
                     if quoted { format!("'{}'", v.replace('\'', "''")) } else { v }
                 };
@@ -576,5 +629,17 @@ mod tests {
         assert_eq!(rows[2][1].1, "QTEMP");
         assert_eq!(rows[0][2].1, "150");
         assert_eq!(rows[14][4].1, "440");
+    }
+
+    #[test]
+    fn sysl_rows_are_two_columns_of_eight() {
+        let libs: Vec<String> = ["QSYS", "QSYS2", "QHLPSYS", "QUSRSYS"].map(String::from).to_vec();
+        let rows = sysl_rows(&libs);
+        assert_eq!(rows.len(), 8);
+        assert_eq!(rows[0][0].1, "0");
+        assert_eq!(rows[1][1].1, "QSYS");
+        assert_eq!(rows[4][1].1, "QUSRSYS");
+        assert_eq!(rows[0][2].1, "80");
+        assert_eq!(rows[7][2].1, "150");
     }
 }

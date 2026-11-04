@@ -109,6 +109,11 @@ pub fn dspautusr(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
                 ("AUPWDCHG".into(), get(2)),
                 ("AUNOPWD".into(), get(3)),
                 ("AUTEXT".into(), get(4)),
+                // Two columns in, under the middle of their headings.
+                ("AULVL01".into(), format!("  {}", get(5))),
+                ("AULVL23".into(), format!("  {}", get(6))),
+                ("AUNETSVR".into(), format!("  {}", get(7))),
+                ("AULCLPWD".into(), get(8)),
             ],
         );
     }
@@ -116,7 +121,8 @@ pub fn dspautusr(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
     loop {
         match d.show(surface, "DSPAUTUSR") {
             Ok(Response::Return(11)) => {
-                d.info("CPI9B82", &[]);
+                d.view = 1 - d.view.min(1);
+                d.set("AUVIEW", if d.view == 1 { "2" } else { "1" });
             }
             Ok(Response::Print) => {
                 d.error("CPD9B84", &[]);

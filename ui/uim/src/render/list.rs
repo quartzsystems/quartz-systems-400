@@ -269,6 +269,15 @@ fn headings(
                 .filter(|k| k.group.as_ref().is_some_and(|(x, _)| x == g))
                 .collect();
             let len = text.chars().count();
+            // Without `MAXHEAD` the heading sits right over its
+            // columns' (wrkjobscde: Schedule over Date and Time, under
+            // the first row of Next Submit Date).
+            let deepest = members.iter().map(|k| k.heading.len()).max().unwrap_or(0);
+            let row = if shared.is_none() {
+                head_top + head_rows.saturating_sub(deepest + 1)
+            } else {
+                head_top
+            };
             let col = match members.last() {
                 Some(last)
                     if members
@@ -279,7 +288,7 @@ fn headings(
                 }
                 _ => c.start,
             };
-            put_cut(s, head_top, col, limit, Attr::HighIntensity, text);
+            put_cut(s, row, col, limit, Attr::HighIntensity, text);
         }
         // `MAXHEAD`: every column has the rows under the group's.
         let above = shared.unwrap_or(c.group.is_some());

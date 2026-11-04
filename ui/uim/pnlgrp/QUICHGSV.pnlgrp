@@ -2,25 +2,42 @@
 .* licensed under the terms of the MIT license which can be found in the
 .* root directory of this project.
 .*
-.* QUICHGSV: WRKSYSVAL option 2, a system value changed in place. CHGSV
-.* takes one value, CHGSVL a list of them (library lists, the values
-.* that hold several words); the driver applies them with CHGSYSVAL.
+.* QUICHGSV: WRKSYSVAL option 2. CHGSV a value of up to eight
+.* characters with its choices beside it, CHGSVW a longer one, CHGSVL
+.* a library list in sequence-numbered slots, CHGSVE another list
+.* value element by element. CHGSV and CHGSVL follow the V7R1M0
+.* captures (golden/verified/oracle71/panels); the labels are indented
+.* with non-breaking blanks.
 :PNLGRP.
 :COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
 :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
 :ECLASS.
 :CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
 :ECLASS.
+:CLASS NAME=LBLCL BASETYPE='CHAR 30'.
+:ECLASS.
+:CLASS NAME=SHORTCL BASETYPE='CHAR 8'.
+:ECLASS.
 :CLASS NAME=VALCL BASETYPE='CHAR 50'.
 :ECLASS.
 :CLASS NAME=ELEMCL BASETYPE='CHAR 15'.
 :ECLASS.
+:CLASS NAME=SEQCL BASETYPE='PACKED 3 0'.
+:ECLASS.
 :VAR NAME=SVNAME CLASS=NAMECL.
 :VAR NAME=SVTEXT CLASS=TEXTCL.
 :VAR NAME=SVTYPE CLASS=NAMECL.
+:VAR NAME=SVLABEL CLASS=LBLCL VALUE='Value'.
+:VAR NAME=SVSHORT CLASS=SHORTCL.
+:VAR NAME=SVHINT CLASS=TEXTCL.
 :VAR NAME=SVVALUE CLASS=VALCL.
 :VAR NAME=SVELEM CLASS=ELEMCL.
+:VAR NAME=SEQ1 CLASS=SEQCL.
+:VAR NAME=LIB1 CLASS=NAMECL.
+:VAR NAME=SEQ2 CLASS=SEQCL.
+:VAR NAME=LIB2 CLASS=NAMECL.
 :LISTDEF NAME=ELEMS VARS='SVELEM'.
+:LISTDEF NAME=LIBS VARS='SEQ1 LIB1 SEQ2 LIB2'.
 :KEYL NAME=KEYS HELP=KEYSHLP.
 :KEYI KEY=ENTER ACTION=ENTER.
 :KEYI KEY=HELP ACTION=HELP.
@@ -31,25 +48,66 @@
 :KEYI KEY=PAGEUP ACTION=PAGEUP.
 :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
 :EKEYL.
-:PANEL NAME=CHGSV KEYL=KEYS HELP=CHGSVH ENTER='RETURN 0' TOPSEP=SYSNAM.Change System Value
+:PANEL NAME=CHGSV KEYL=KEYS HELP=CHGSVH ENTER='RETURN 0' TOPSEP=SPACE.Change System Value
 :DATA DEPTH=4.
+:DATACOL WIDTH=24.
+:DATACOL WIDTH=78.
 :DATAI VAR=SVNAME USAGE=OUTPUT.System value
 :DATAI VAR=SVTEXT USAGE=OUTPUT.Description
-:DATAI VAR=SVTYPE USAGE=OUTPUT.Type
 :EDATA.
 :TOPINST.Type choice, press Enter.
 :DATA DEPTH='*'.
+:DATACOL WIDTH=24.
+:DATACOL WIDTH=78.
 :DATAC.
-:DATAI VAR=SVVALUE USAGE=INOUT CSRLOC.Value
+:DATAI VAR=SVSHORT USAGE=INOUT CSRLOC.  &SVLABEL.
+:DATAIX VAR=SVHINT USAGE=OUTPUT.
 :EDATA.
 :EPANEL.
-:PANEL NAME=CHGSVL KEYL=KEYS HELP=CHGSVLH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Change System Value
+:PANEL NAME=CHGSVW KEYL=KEYS HELP=CHGSVH ENTER='RETURN 0' TOPSEP=SPACE.Change System Value
 :DATA DEPTH=4.
+:DATACOL WIDTH=24.
+:DATACOL WIDTH=78.
 :DATAI VAR=SVNAME USAGE=OUTPUT.System value
 :DATAI VAR=SVTEXT USAGE=OUTPUT.Description
-:DATAI VAR=SVTYPE USAGE=OUTPUT.Type
 :EDATA.
-:TOPINST.Type choices, press Enter.
+:TOPINST.Type choice, press Enter.
+:DATA DEPTH='*'.
+:DATACOL WIDTH=24.
+:DATACOL WIDTH=78.
+:DATAC.
+:DATAI VAR=SVVALUE USAGE=INOUT CSRLOC.  &SVLABEL.
+:EDATA.
+:EPANEL.
+:PANEL NAME=CHGSVL KEYL=KEYS HELP=CHGSVLH ENTER='RETURN 0' TOPSEP=SPACE BOTSEP=NONE.Change System Value
+:DATA DEPTH=4.
+:DATACOL WIDTH=24.
+:DATACOL WIDTH=78.
+:DATAI VAR=SVNAME USAGE=OUTPUT.System value
+:DATAI VAR=SVTEXT USAGE=OUTPUT.Description
+:EDATA.
+:TOPINST.Type new/changed information, press Enter.
+:DATA DEPTH=4.
+:DATAC.To add a library, type name and desired sequence number.
+:DATAC.To remove a library, space over library name.
+:DATAC.To change position of a library, type new sequence number.
+:DATAC.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=LIBS SCROLL=YES.
+:LISTCOL VAR=SEQ1 USAGE=INOUT.Sequence Number
+:LISTCOL VAR=LIB1 USAGE=INOUT MAXWIDTH=29.Library
+:LISTCOL VAR=SEQ2 USAGE=INOUT.Sequence Number
+:LISTCOL VAR=LIB2 USAGE=INOUT.Library
+:ELIST.
+:EPANEL.
+:PANEL NAME=CHGSVE KEYL=KEYS HELP=CHGSVEH ENTER='RETURN 0' TOPSEP=SPACE BOTSEP=NONE.Change System Value
+:DATA DEPTH=4.
+:DATACOL WIDTH=24.
+:DATACOL WIDTH=78.
+:DATAI VAR=SVNAME USAGE=OUTPUT.System value
+:DATAI VAR=SVTEXT USAGE=OUTPUT.Description
+:EDATA.
+:TOPINST.Type new/changed information, press Enter.
 :DATA DEPTH=1.
 :DATAC.
 :EDATA.
@@ -62,6 +120,12 @@
 as CHGSYSVAL would set it. Some values take effect at the next IPL.
 :EHELP.
 :HELP NAME=CHGSVLH.Change System Value - Help
+:P.The libraries of the list in the order of their sequence numbers.
+Type a name beside a free number to add a library, blank a name to
+take it out, or give a library another number to move it, then press
+Enter.
+:EHELP.
+:HELP NAME=CHGSVEH.Change System Value - Help
 :P.The value is a list: type, change or blank its elements in order
 and press Enter. Blank entries are dropped.
 :EHELP.

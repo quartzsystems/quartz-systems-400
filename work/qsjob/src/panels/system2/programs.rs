@@ -131,6 +131,12 @@ fn sig_chars(hex: &str) -> String {
         .collect()
 }
 
+/// The signature view switched: the F11 text follows it.
+fn flip(d: &mut UimDialog, chars: bool) -> bool {
+    d.set("SIGVIEW", if chars { "H" } else { "C" });
+    !chars
+}
+
 /// `DSPPGM` and `DSPSRVPGM`: each detail asked for, one display at a
 /// time.
 pub fn dsppgm(
@@ -213,7 +219,7 @@ pub fn dsppgm(
             }),
             Response::Return(11) => {
                 // The signatures as characters or hexadecimal.
-                chars = !chars;
+                chars = flip(&mut d, chars);
                 let rows = hex
                     .iter()
                     .map(|row| {
@@ -374,7 +380,7 @@ pub fn dsppgmref(host: &Host, surface: &mut Surface, r: &Resolved) -> Result<Str
     view_report(
         host,
         surface,
-        "Display Program References",
+        "Display Spooled File",
         "QPDSPPGM",
         &text,
     )

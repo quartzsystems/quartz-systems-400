@@ -14,7 +14,7 @@ mod config;
 mod exits;
 mod netattr;
 mod security;
-mod sysval;
+pub(crate) mod sysval;
 mod usrprf;
 
 use cmd::{Resolved, Value};

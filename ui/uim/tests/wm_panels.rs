@@ -8,7 +8,7 @@
 
 mod wmcommon;
 
-use wmcommon::{compare, fields_on_row, golden, shipped};
+use wmcommon::{compare, compare71, fields_on_row, golden, shipped};
 use uim::render::{ListState, MapDialog, Options, render};
 
 /// A complete list from rows of `(variable, value)` pairs.
@@ -718,37 +718,99 @@ fn wrksplf_views() {
     }
 }
 
-/// A panel without a golden: its title on row 1 and its keys above
-/// the message line.
-fn title_and_keys(group: &str, panel: &str, title: &str) {
-    let s = render(&shipped(group), panel, &MapDialog::new(), &opts("QS400")).expect("render");
-    let rows = s.text_rows();
-    assert!(rows[0].contains(title), "{panel}: {}", rows[0]);
-    assert!(rows[22].contains("F3=Exit") || rows[21].contains("F3=Exit"), "{panel}: keys");
+// --- the V7R1M0 captures (golden/verified/oracle71/panels)
+
+/// An entry from `(variable, value)` pairs.
+fn e<'a>(pairs: &[(&'a str, &'a str)]) -> Vec<(&'a str, &'a str)> {
+    pairs.to_vec()
+}
+
+/// An incomplete list: the capture says `More...`.
+fn more(rows: &[Vec<(&str, &str)>]) -> ListState {
+    ListState {
+        total: None,
+        complete: false,
+        ..list(rows)
+    }
 }
 
 #[test]
-#[ignore = "no golden"]
 fn wrkoutq() {
-    title_and_keys("QUIWRKOUTQ", "QUEUES", "Work with All Output Queues");
-    title_and_keys("QUIWRKOUTQ", "FILES", "Work with Output Queue");
+    let g = shipped("QUIWRKOUTQ");
+    let q = |n, l, f| e(&[("QUEUE", n), ("LIB", l), ("FILES", f), ("STATUS", " RLS")]);
+    let rows = [
+        q("QDKT", "QGPL", "0"),
+        q("QPRINT", "QGPL", "197"),
+        q("QPRINTS", "QGPL", "0"),
+        q("QPRINT2", "QGPL", "0"),
+        q("QSPRCLOUTQ", "QRCL", "0"),
+        q("QSCAPAROQ", "QSC0728118", "0"),
+        q("QSCAPAROQ", "QSC0728148", "0"),
+        q("QSCAPAROQ", "QSC0728175", "0"),
+        q("QSRVMON", "QSERVICE", "0"),
+        q("QS9SRVAGT", "QSRVAGT", "0"),
+        q("QEZDEBUG", "QUSRSYS", "6"),
+        q("QEZJOBLOG", "QUSRSYS", "282"),
+    ];
+    let mut d = MapDialog::new();
+    d.set_list("QUEUES", more(&rows));
+    compare71("wrkoutq", &render(&g, "QUEUES", &d, &opts("SYSNAME")).unwrap());
 }
 
 #[test]
-#[ignore = "no golden"]
+fn wrkoutq_files() {
+    let g = shipped("QUIWRKOUTQ");
+    let mut d = MapDialog::new();
+    d.set("QUEUE", "QDKT").set("LIB", "QGPL").set("QSTS", "RLS");
+    d.set_list("FILES", list(&[]));
+    compare71("wrkoutq-files", &render(&g, "FILES", &d, &opts("SYSNAME")).unwrap());
+}
+
+#[test]
 fn wrkjobq() {
-    title_and_keys("QUIWRKJOBQ", "QUEUES", "Work with All Job Queues");
-    title_and_keys("QUIWRKJOBQ", "JOBS", "Work with Job Queue");
+    let g = shipped("QUIWRKJOBQ");
+    let q = |n, l, s| e(&[("QUEUE", n), ("LIB", l), ("JOBS", "0"), ("SBS", s), ("STATUS", " RLS")]);
+    let rows = [
+        q("QBASE", "QGPL", "QBASE"),
+        q("QBATCH", "QGPL", "QBASE"),
+        q("QFNC", "QGPL", ""),
+        q("QINTER", "QGPL", "QBASE"),
+        q("QPGMR", "QGPL", ""),
+        q("QSNADS", "QGPL", ""),
+        q("QSPL", "QGPL", "QSPL"),
+        q("QS36EVOKE", "QGPL", "QBASE"),
+        q("QS36MRT", "QGPL", "QBASE"),
+        q("QTXTSRCH", "QGPL", ""),
+        q("QZHBHTTP", "QHTTPSVR", "QHTTPSVR"),
+        q("QCTL", "QSYS", "QBASE"),
+    ];
+    let mut d = MapDialog::new();
+    d.set_list("QUEUES", more(&rows));
+    compare71("wrkjobq", &render(&g, "QUEUES", &d, &opts("SYSNAME")).unwrap());
 }
 
 #[test]
-#[ignore = "no golden"]
+fn wrkjobq_jobs() {
+    let g = shipped("QUIWRKJOBQ");
+    let mut d = MapDialog::new();
+    d.set("QUEUE", "QBATCH").set("LIB", "QGPL").set("QSTS", "RLS/SBS");
+    d.set_list("JOBS", list(&[]));
+    compare71("wrkjobq-jobs", &render(&g, "JOBS", &d, &opts("SYSNAME")).unwrap());
+}
+
+#[test]
 fn wrkwtr() {
-    title_and_keys("QUIWRKWTR", "WRKWTR", "Work with All Printers");
+    let g = shipped("QUIWRKWTR");
+    let mut d = MapDialog::new();
+    d.set_list("WRITERS", list(&[]));
+    compare71("wrkwtr", &render(&g, "WRKWTR", &d, &opts("SYSNAME")).unwrap());
 }
 
 #[test]
-#[ignore = "no golden"]
 fn wrkjobscde() {
-    title_and_keys("QUIWRKJSCD", "WRKJOBSCDE", "Work with Job Schedule Entries");
+    let g = shipped("QUIWRKJSCD");
+    let mut d = MapDialog::new();
+    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS");
+    d.set_list("ENTRIES", list(&[]));
+    compare71("wrkjobscde", &render(&g, "WRKJOBSCDE", &d, &opts("S062B175")).unwrap());
 }

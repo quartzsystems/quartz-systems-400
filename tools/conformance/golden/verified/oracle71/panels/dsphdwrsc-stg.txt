@@ -1,0 +1,24 @@
+                           Display Storage Resources                            
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   7=Display resource detail   9=Display associated resources                   
+                                                                                
+ Opt  Resource        Type  Status                Text                          
+      CMB01           57B8  Operational           Storage Controller            
+        DC01          57B8  Operational           Storage Controller            
+      CMB05           268C  Operational           Combined function IOP         
+        DC02          6B02  Operational           Storage Controller            
+      CMB06           572A  Operational           Storage Controller            
+        DC03          572A  Operational           Storage Controller            
+      CMB07           57B7  Operational           Storage Controller            
+        DC04          57B7  Operational           Storage Controller            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F6=Print   F12=Cancel                                   
+                                                                                

@@ -11,7 +11,7 @@ use cmd::Resolved;
 use mi::Job;
 use stg::Client;
 
-use super::{command, display, parm};
+use super::{command, parm};
 use crate::command::Fail;
 use crate::console::host::Host;
 use crate::display::surface::Surface;
@@ -177,5 +177,47 @@ pub fn dspdevd(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Resul
     for (k, v) in &vars {
         d.set(k, v);
     }
-    Some(display(surface, &mut d, "DSPDEVD"))
+    // F11 shows each value after its keyword, and back.
+    let plain: Vec<(&str, String)> = DEVD_KEYWORDS.iter().map(|(var, _)| (*var, d.get(var))).collect();
+    let mut keywords = false;
+    loop {
+        match d.show(surface, "DSPDEVD") {
+            Ok(Response::Return(11)) => {
+                keywords = !keywords;
+                d.set("DVVIEW", if keywords { "2" } else { "1" });
+                for ((var, value), (_, kw)) in plain.iter().zip(DEVD_KEYWORDS) {
+                    let shown = if keywords { format!("{kw:<12}{value}") } else { value.clone() };
+                    d.set(var, &shown);
+                }
+            }
+            Ok(Response::Print) => d.error("CPD9B84", &[]),
+            Ok(Response::Options(_) | Response::Command(_) | Response::Retrieve) => {}
+            Ok(_) => return Some(Ok(String::new())),
+            Err(e) => return Some(Err(crate::panels::failed(e.to_string()))),
+        }
+    }
 }
+
+/// `DSPDEVD`'s values and the keywords F11 shows them with (blank: a
+/// value no keyword sets).
+const DEVD_KEYWORDS: &[(&str, &str)] = &[
+    ("DVNAME", "DEVD"),
+    ("DVOPTION", "OPTION"),
+    ("DVCAT", ""),
+    ("DVCLS", "DEVCLS"),
+    ("DVTYPE", "TYPE"),
+    ("DVMODEL", "MODEL"),
+    ("DVEMLDEV", "EMLDEV"),
+    ("DVONLINE", "ONLINE"),
+    ("DVCTL", "CTL"),
+    ("DVKBD", "KBDTYPE"),
+    ("DVPRTDEV", "PRTDEV"),
+    ("DVOUTQ", "OUTQ"),
+    ("DVPRTF", "PRTFILE"),
+    ("DVPRTFL", ""),
+    ("DVLOCNAM", "DEPLOCNAME"),
+    ("DVMSGQ", "MSGQ"),
+    ("DVMSGQL", ""),
+    ("DVSTATUS", ""),
+    ("DVTEXT", "TEXT"),
+];

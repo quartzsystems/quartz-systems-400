@@ -166,3 +166,75 @@ date = "2026-11-04"
 script = "redo"
 width = 80
 
+[[golden]]
+name = "dspdevd-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-keys"
+width = 80
+
+[[golden]]
+name = "dspautusr71"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-keys"
+width = 80
+
+[[golden]]
+name = "dspautusr-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-keys"
+width = 80
+
+[[golden]]
+name = "dsphdwrsc-cmn"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-keys"
+width = 80
+
+[[golden]]
+name = "dsphdwrsc-stg"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-keys"
+width = 80
+
+[[golden]]
+name = "dsphdwrsc-prc"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-keys"
+width = 80
+
+[[golden]]
+name = "dsphdwrsc-lws"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-keys"
+width = 80
+
+[[golden]]
+name = "dsphdwrsc-crp"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-keys"
+width = 80
+
+[[golden]]
+name = "dsphdwrsc-csa"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-04"
+script = "goldens71-keys"
+width = 80
+

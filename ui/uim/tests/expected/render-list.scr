@@ -20,7 +20,7 @@
 |                                                                         Bottom |
 | Options or command                                                             |
 | ===>                                                                           |
-| F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Show quantities        |
+| F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve       F11=Show quantities    |
 | F12=Cancel   F16=Repeat position to   F17=Position to   F24=More keys          |
 |                                                                                |
 cursor: Some((7, 2))
@@ -29,7 +29,7 @@ field 21, 7 len  73 Underline cmdline ""
 field  7, 2 len   2 Underline opt WIDGETS[0] ""
 field  8, 2 len   2 Underline opt WIDGETS[1] ""
 field  9, 2 len   2 Underline opt WIDGETS[2] ""
-blue: 22,2 22,15 22,27 22,40 22,54 23,2 23,15 23,40 23,58 3,2 4,4 4,15 4,26 4,35 4,55
+blue: 22,2 22,15 22,27 22,40 22,58 23,2 23,15 23,40 23,58 3,2 4,4 4,15 4,26 4,35 4,55
 bright: 1,32 6,2 6,7 6,19 6,29 6,41 19,74
 === WRKWDG view 2, more keys, a message
 |                               Work with Widgets                                |
@@ -50,15 +50,15 @@ bright: 1,32 6,2 6,7 6,19 6,29 6,41 19,74
 |      WIDGET10        70    QGPL                                                |
 |      WIDGET11        77    QGPL                                                |
 |      WIDGET12        84    QGPL                                                |
-|      WIDGET13        91    QGPL                                                |
 |                                                                        More... |
 | Options or command                                                             |
 | ===>                                                                           |
 | F18=Bottom   F21=Rename all   F24=More keys                                    |
+|                                                                                |
 | Widget WIDGET03 is in use.                                                     |
 cursor: Some((7, 2))
-more: Some(More { row: 20, col: 73, bottom: false })
-field 22, 7 len  73 Underline cmdline ""
+more: Some(More { row: 19, col: 73, bottom: false })
+field 21, 7 len  73 Underline cmdline ""
 field  7, 2 len   2 Underline opt WIDGETS[0] ""
 field  8, 2 len   2 Underline opt WIDGETS[1] ""
 field  9, 2 len   2 Underline opt WIDGETS[2] ""
@@ -71,9 +71,8 @@ field 15, 2 len   2 Underline opt WIDGETS[8] ""
 field 16, 2 len   2 Underline opt WIDGETS[9] ""
 field 17, 2 len   2 Underline opt WIDGETS[10] ""
 field 18, 2 len   2 Underline opt WIDGETS[11] ""
-field 19, 2 len   2 Underline opt WIDGETS[12] ""
-blue: 23,2 23,15 23,32 3,2 4,4 4,15 4,26 4,35 4,55
-bright: 1,32 6,2 6,7 6,19 6,29 20,73 24,2
+blue: 22,2 22,15 22,32 3,2 4,4 4,15 4,26 4,35 4,55
+bright: 1,32 6,2 6,7 6,19 6,29 19,73 24,2
 === WRKWDG second key set without F21
 |                               Work with Widgets                                |
 |                                                                                |
@@ -93,19 +92,19 @@ bright: 1,32 6,2 6,7 6,19 6,29 20,73 24,2
 |                                                                                |
 |                                                                                |
 |                                                                                |
-|                                                                                |
 |                                                                         Bottom |
 | Options or command                                                             |
 | ===>                                                                           |
 | F18=Bottom   F24=More keys                                                     |
 |                                                                                |
+|                                                                                |
 cursor: Some((7, 2))
-more: Some(More { row: 20, col: 74, bottom: true })
-field 22, 7 len  73 Underline cmdline ""
+more: Some(More { row: 19, col: 74, bottom: true })
+field 21, 7 len  73 Underline cmdline ""
 field  7, 2 len   2 Underline opt WIDGETS[20] ""
 field  8, 2 len   2 Underline opt WIDGETS[21] ""
-blue: 23,2 23,15 3,2 4,4 4,15 4,26 4,35 4,55
-bright: 1,32 6,2 6,7 6,19 6,29 6,41 20,74
+blue: 22,2 22,15 3,2 4,4 4,15 4,26 4,35 4,55
+bright: 1,32 6,2 6,7 6,19 6,29 6,41 19,74
 === SHOWWDG grouped headings
 |                                  Show Widgets                                  |
 |                                                             System:   QUARTZ1  |

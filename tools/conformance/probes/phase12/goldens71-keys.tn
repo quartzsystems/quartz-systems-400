@@ -1,0 +1,64 @@
+# The second displays behind F11 on the 7.1 oracle (DSPDEVD, DSPAUTUSR)
+# and DSPHDWRSC's lists as QSECOFR. Read-only; each left with F3.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type DSPDEVD DEVD(QPADEV0003)
+key enter
+settle 3000
+key f11
+settle 2000
+snap dspdevd-f11
+key f3
+settle 1500
+type DSPAUTUSR
+key enter
+settle 3000
+snap dspautusr71
+key f11
+settle 2000
+snap dspautusr-f11
+key f3
+settle 1500
+type DSPHDWRSC TYPE(*CMN)
+key enter
+settle 4000
+snap dsphdwrsc-cmn
+key f3
+settle 1500
+type DSPHDWRSC TYPE(*STG)
+key enter
+settle 4000
+snap dsphdwrsc-stg
+key f3
+settle 1500
+type DSPHDWRSC TYPE(*PRC)
+key enter
+settle 4000
+snap dsphdwrsc-prc
+key f3
+settle 1500
+type DSPHDWRSC TYPE(*LWS)
+key enter
+settle 4000
+snap dsphdwrsc-lws
+key f3
+settle 1500
+type DSPHDWRSC TYPE(*CRP)
+key enter
+settle 4000
+snap dsphdwrsc-crp
+key f3
+settle 1500
+type DSPHDWRSC TYPE(*CSA)
+key enter
+settle 4000
+snap dsphdwrsc-csa
+key f3
+settle 1500

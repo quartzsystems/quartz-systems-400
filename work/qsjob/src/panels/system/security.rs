@@ -39,7 +39,8 @@ pub fn dspautl(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Resul
             vec![
                 ("ALUSER".into(), cell(r, 0)),
                 ("ALAUT".into(), cell(r, 1)),
-                ("ALMGT".into(), cell(r, 2)),
+                // Under the middle of its two-row heading.
+                ("ALMGT".into(), format!(" {}", cell(r, 2))),
             ],
         );
     }
@@ -105,27 +106,18 @@ pub fn dspsecaud(host: &Host, surface: &mut Surface) -> Option<Result<String, Fa
         Err(e) => return Some(Err(e)),
     };
     for (label, v) in &values {
-        let var = match label.as_str() {
-            "Security journal" => {
-                let lib = v.split_once('/').map_or("", |(l, _)| l);
-                d.set("SAJRNLIB", lib);
-                "SAJRN"
+        match label.as_str() {
+            "Security journal" => d.set("SAEXIST", if v == "*NONE" { "NO" } else { "YES" }),
+            // QAUDJRN's receivers are made in QSYS.
+            "Current receiver" => {
+                d.set("SARCV", v);
+                d.set("SARCVLIB", "QSYS");
             }
-            "Current receiver" => "SARCV",
-            "QAUDCTL" => "SACTL",
-            "QAUDLVL" => "SALVL",
-            "QAUDLVL2" => "SALVL2",
-            "QAUDENDACN" => "SAENDACN",
-            "QAUDFRCLVL" => "SAFRCLVL",
-            "QCRTOBJAUD" => "SACRTAUD",
-            _ => continue,
-        };
-        let shown = if var == "SAJRN" {
-            v.split_once('/').map_or(v.as_str(), |(_, n)| n)
-        } else {
-            v.as_str()
-        };
-        d.set(var, shown);
+            "QAUDCTL" => d.set("SACTL", v),
+            "QAUDLVL" => d.set("SALVL", v),
+            "QAUDLVL2" => d.set("SALVL2", v),
+            _ => {}
+        }
     }
     Some(display(surface, &mut d, "DSPSECAUD"))
 }

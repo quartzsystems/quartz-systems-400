@@ -116,3 +116,13 @@ pub fn compare_in(dir: &Path, golden: &str, screen: &Screen) {
     }
     assert!(diff.is_empty(), "{golden} differs:\n{diff}");
 }
+
+/// The V7R1M0 captures of the primary oracle (`golden/verified/oracle71/panels`).
+pub fn oracle71_dir() -> PathBuf {
+    golden_dir().join("../oracle71/panels")
+}
+
+/// [`compare`] against a V7R1M0 capture.
+pub fn compare71(golden: &str, screen: &Screen) {
+    compare_in(&oracle71_dir(), golden, screen);
+}

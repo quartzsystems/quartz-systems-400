@@ -274,12 +274,22 @@ pub fn autusr(system: &mut System, by_group: bool) -> Result<Vec<Vec<String>>, S
             } else {
                 p.grpprf.clone()
             };
+            // The password levels a password is kept for: the short
+            // form for levels 0 and 1, the long for 2 and 3.
+            let has = |f: sec::profile::payload::PwdForm| {
+                if p.hashes.iter().any(|h| h.form == f) { "*YES" } else { "*NO" }.to_string()
+            };
             rows.push(vec![
                 p.name.clone(),
                 group,
                 mdy(p.pwd_changed),
                 if p.pwd_none { "X".into() } else { String::new() },
                 p.text.clone(),
+                has(sec::profile::payload::PwdForm::Short),
+                has(sec::profile::payload::PwdForm::Long),
+                // QS/400 has no NetServer.
+                "*NO".to_string(),
+                if p.lclpwdmgt { "*YES" } else { "*NO" }.to_string(),
             ]);
         }
         if by_group {
@@ -408,8 +418,16 @@ pub fn devd(system: &mut System, name: &str) -> Result<Vec<(String, String)>, St
         let d = wm::obj::devd::Devd::decode(&b).map_err(|e| e.to_string())?;
         let (outq, outql) = split_qual(&d.outq, "*NONE");
         let (msgq, msgql) = split_qual(&d.msgq, "*NONE");
+        let category = if d.is_display() {
+            "*DSP".to_string()
+        } else if d.is_printer() {
+            "*PRT".to_string()
+        } else {
+            d.devcls.clone()
+        };
         Ok([
             ("DVNAME", name.clone()),
+            ("DVCAT", category),
             ("DVCLS", d.devcls.clone()),
             ("DVTYPE", d.devtype.clone()),
             ("DVMODEL", d.model.clone()),

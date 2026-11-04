@@ -347,7 +347,7 @@ fn msgd_header(d: &mut MapDialog) {
 }
 
 #[test]
-#[ignore = "the golden's message text runs through column 80 and on from column 1"]
+#[ignore = "BLOCKED(phase12): the golden runs the message text through column 80 into column 1 of the next row; output fields do not wrap rows yet"]
 fn dspmsgd_list() {
     let g = shipped("QUIDSPMSGD");
     let mut d = MapDialog::new();
@@ -397,41 +397,55 @@ fn wrkrpyle() {
     compare("wrkrpyle", &render(&g, "WRKRPYLE", &d, &opts()).unwrap());
 }
 
-/// A panel without a golden: its title centered on row 1 and every
-/// key text on the key rows.
-fn title_and_keys(group: &str, panel: &str, title: &str, keys: &[&str]) {
-    let g = shipped(group);
-    let s = render(&g, panel, &MapDialog::new(), &opts()).unwrap();
-    let rows = s.text_rows();
-    assert_eq!(rows[0].trim(), title, "{panel} title");
-    let col = rows[0].find(title).unwrap() + 1;
-    assert_eq!(col, 1 + (80 - title.len()) / 2, "{panel} title column");
-    let bottom = format!("{}{}", rows[21], rows[22]);
-    for k in keys {
-        assert!(bottom.contains(k), "{panel} misses {k}:\n{bottom}");
-    }
-}
-
+/// DSPFD at a display: the printed description in the spooled file
+/// view, against the V7R1M0 capture.
 #[test]
-#[ignore = "no golden"]
 fn dspfd() {
-    title_and_keys(
-        "QUIDSPFD",
-        "SPLF",
-        "Display Spooled File",
-        &["F3=Exit", "F12=Cancel", "F16=Repeat find", "F17=Top", "F18=Bottom"],
-    );
+    let g = shipped("QUIDSPFD");
+    let text = [
+        "   MM/DD/YY                Display File Description",
+        " DSPFD Command Input",
+        "   File  . . . . . . . . . . . . . . . . . . . : FILE       QSMSGSRC",
+        "     Library . . . . . . . . . . . . . . . . . :            QSTEST",
+        "   Type of information . . . . . . . . . . . . : TYPE       *ALL",
+        "   File attributes . . . . . . . . . . . . . . : FILEATR    *ALL",
+        "   System  . . . . . . . . . . . . . . . . . . : SYSNAME    *LCL",
+        " File Description Header",
+        "   File  . . . . . . . . . . . . . . . . . . . : FILE       QSMSGSRC",
+        "   Library . . . . . . . . . . . . . . . . . . :            QSTEST",
+        "   Type of file  . . . . . . . . . . . . . . . :            Physical",
+        "   File type . . . . . . . . . . . . . . . . . : FILETYPE   *SRC",
+        "   Auxiliary storage pool ID . . . . . . . . . :            00001",
+        " Data Base File Attributes",
+        "   Externally described file . . . . . . . . . :            Yes",
+        "   File level identifier . . . . . . . . . . . :            1261031002732",
+        "   Maximum number of members . . . . . . . . . : MAXMBRS    *NOMAX",
+    ];
+    let mut d = MapDialog::new();
+    d.set("SPLF", "QPDSPFD").set("PAGELINE", "1/1");
+    let mut l = lines("LINE", &text);
+    l.complete = true;
+    l.total = Some(text.len());
+    d.set_list("LINES", l);
+    wmcommon::compare71("dspfd", &render(&g, "SPLF", &d, &opts()).unwrap());
 }
 
+/// DSPDTAARA over a character data area made in QSTEST for the
+/// V7R1M0 capture.
 #[test]
-#[ignore = "no golden"]
 fn dspdtaara() {
-    title_and_keys(
-        "QUIDSPDTAA",
-        "DSPDTAARA",
-        "Display Data Area",
-        &["F3=Exit", "F12=Cancel"],
+    let g = shipped("QUIDSPDTAA");
+    let mut d = MapDialog::new();
+    d.set("DTAARA", "QSDTA")
+        .set("DTALIB", "QSTEST")
+        .set("DTATYPE", "*CHAR")
+        .set("DTALEN", "30")
+        .set("DTATEXT", "Section 1 probe");
+    d.set_list(
+        "VALUES",
+        list(vec![vec![("OFFSET", "0"), ("VALUE", "'QS/400 probe                  '")]]),
     );
+    wmcommon::compare71("dspdtaara", &render(&g, "DSPDTAARA", &d, &opts()).unwrap());
 }
 
 #[test]

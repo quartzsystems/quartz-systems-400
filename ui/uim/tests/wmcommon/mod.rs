@@ -176,3 +176,11 @@ pub fn fields_on_row(rel: &str, screen: &Screen, row: usize) {
         .collect();
     assert_eq!(got, want, "{rel}: the input fields of row {row}");
 }
+
+/// [`compare`] against a V7R1M0 capture of the primary
+/// (`golden/verified/oracle71/panels`).
+pub fn compare71(name: &str, screen: &Screen) {
+    let path = golden_dir().join(format!("../oracle71/panels/{name}.txt"));
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+    compare(&text, screen);
+}

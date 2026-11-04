@@ -1,0 +1,24 @@
+                            Display Authorized Users                            
+                                                                                
+                         Password                                               
+ User        Group       Last         No                                        
+ Profile     Profile     Changed   Password  Text                               
+ GRPA                    MM/DD/YY     X                                         
+ OWNA        GRPA        MM/DD/YY                                               
+ QANZAGENT               MM/DD/YY     X      Trace Analyzer Agent Server        
+ QAUTPROF                MM/DD/YY     X      IBM-supplied User Profile          
+ QBRMS                   MM/DD/YY     X      IBM-supplied User Profile          
+ QCLUMGT                 MM/DD/YY     X      IBM-supplied User Profile          
+ QCLUSTER                MM/DD/YY     X      IBM-supplied User Profile          
+ QCOLSRV                 MM/DD/YY     X      IBM-supplied User Profile          
+ QDBSHR                  MM/DD/YY     X      Internal Data Base User Profile    
+ QDBSHRDO                MM/DD/YY     X      Internal Data Base User Profile    
+ QDFTOWN                 MM/DD/YY     X      Default Owner for System Objects   
+ QDIRSRV                 MM/DD/YY     X      System Directory Services Server U 
+ QDLFM                   MM/DD/YY     X      IBM-supplied User Profile          
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Password Level Information   F12=Cancel   F17=Top   F18=Bottom   
+                                                                                
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            
