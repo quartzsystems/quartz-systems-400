@@ -26,6 +26,9 @@
                           PROMPT('Output queue')
              PARM       KWD(USER) TYPE(*NAME) LEN(10) DFT(*CURRENT) +
                           SPCVAL((*CURRENT) (*JOBD)) PROMPT('User')
+             PARM       KWD(ACGCDE) TYPE(*CHAR) LEN(15) DFT(*CURRENT) +
+                          SPCVAL((*CURRENT) (*USRPRF) (*BLANK ' ')) +
+                          CHOICE(*NONE) PROMPT('Accounting code')
              PARM       KWD(PRTTXT) TYPE(*CHAR) LEN(30) DFT(*CURRENT) +
                           SPCVAL((*CURRENT) (*JOBD) (*SYSVAL) (*BLANK ' ')) +
                           PROMPT('Print text')

@@ -24,6 +24,7 @@ chgjobd LIB/JOBD keywords | dltjobd LIB/JOBD | dspjobd LIB/JOBD
 crtcls LIB/CLS [RUNPTY() TIMESLICE() PURGE() DFTWAIT() CPUTIME() MAXTMPSTG() MAXTHD() TEXT()]
 chgcls LIB/CLS keywords | dltcls LIB/CLS | dspcls LIB/CLS
 chgjob [JOB(nnnnnn/USER/NAME)] keywords | dspjob [JOB(nnnnnn/USER/NAME)]
+chgacgcde [JOB(nnnnnn/USER/NAME)] ACGCDE(code|*BLANK)   the job's accounting code
 wrkactjob [VIEW(1|2|3)]   the active jobs: status, elapsed data, numbers and threads
 wrksyssts [RESET(*YES)] | wrkdsksts [RESET(*YES)] | wrksysact   system, disk and job activity
 wmstats              job start latency and spooled data the storage service counted
@@ -46,6 +47,11 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
         "dspjobd" => display(system, &p, types::JOBD),
         "dspcls" => display(system, &p, types::CLS),
         "chgjob" => chgjob(system, &p),
+        "chgacgcde" => {
+            let me = system.current_job;
+            crate::stgsvc::acg::chgacgcde(system, me, &p).map(|s| format!("{s}
+"))
+        }
         "dspjob" => dspjob(system, &p),
         _ => return None,
     };

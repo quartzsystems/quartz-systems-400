@@ -438,6 +438,7 @@ const SBM_CHANGES: &[&str] = &[
     "CNTRYID",
     "CCSID",
     "DUPJOBOPT",
+    "ACGCDE",
 ];
 
 /// `SCDDATE` (`CYYMMDD` from the analyzer, `YYYYMMDD` or `MMDDYY`,

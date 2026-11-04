@@ -113,6 +113,13 @@ pub fn jobd(mut d: JobD, p: &Params) -> Result<JobD> {
             "ALWMLTTHD" => d.alwmltthd = yes_no(kw, v)?,
             "SPLFACN" => d.splfacn = up,
             "DDMCNV" => d.ddmcnv = up,
+            "ACGCDE" => {
+                d.acgcde = match up.trim_matches('\'').trim() {
+                    "*BLANK" | "" => String::new(),
+                    "*USRPRF" => "*USRPRF".into(),
+                    _ => v.trim_matches('\'').to_string(),
+                };
+            }
             "TEXT" => d.text = v.trim_matches('\'').replace("''", "'"),
             _ => {
                 return Err(Error::value(
@@ -188,6 +195,7 @@ pub fn show_jobd(lib: &str, name: &str, d: &JobD) -> String {
         ("Message logging: Text", d.log_text.clone()),
         ("Log CL program commands", d.logclpgm.clone()),
         ("Job log output", d.logoutput.clone()),
+        ("Accounting code", d.acgcde.clone()),
         (
             "Job message queue maximum size",
             or_star(d.jobmsgqmx, "*SYSVAL"),

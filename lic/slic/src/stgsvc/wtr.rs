@@ -595,6 +595,7 @@ pub fn printed(
     if let Some(w) = system.writers.get_mut(name) {
         w.msgw = None;
     }
+    super::acg::printed(system, &attrs, name);
     // A network printer leaves no capture.
     if !text.is_empty() || !pdf.is_empty() {
         capture(system, id, &attrs, text, pdf)?;

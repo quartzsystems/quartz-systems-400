@@ -658,6 +658,8 @@ impl Suite {
         reports.push(self.step(&mut s, "84 console display", Self::console_display)?);
         reports.push(self.step(&mut s, "105 phase 12 leftovers", Self::leftovers)?);
         reports.push(self.step(&mut s, "106 Collection Services", Self::collection_services)?);
+        reports.push(self.step(&mut s, "107 security check", Self::security_check)?);
+        reports.push(self.step(&mut s, "108 job accounting", Self::job_accounting)?);
         reports.push(self.step(&mut s, "120 INSLNG", Self::install_language)?);
         reports.push(self.step(&mut s, "121 Spanish sign-on", Self::spanish_sign_on)?);
         reports.push(self.step(&mut s, "122 date and time formats", Self::date_formats)?);

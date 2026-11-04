@@ -5,8 +5,9 @@
 //! The Phase 12 commands' prompts against the primary's captures under
 //! `tools/conformance/golden/phase12/prompts/` (V7R1M0): the server
 //! authentication entry commands, `WRKDDMF`, `DLTWSCST` and
-//! `RTVWSCST`. Rows 5 to 20 are compared as `printers.rs` compares
-//! them: the prompt texts and the values.
+//! `RTVWSCST`; `CHGACGCDE` against `phase12/acg/`. Rows 5 to 20 are
+//! compared as `printers.rs` compares them: the prompt texts and the
+//! values.
 
 use std::path::Path;
 
@@ -22,9 +23,10 @@ fn source() -> MemSource {
     s
 }
 
-fn golden_rows(name: &str) -> Vec<String> {
+fn golden_rows(dir: &str, name: &str) -> Vec<String> {
     let p = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/conformance/golden/phase12/prompts")
+        .join("../../tools/conformance/golden/phase12")
+        .join(dir)
         .join(format!("{name}.txt"));
     std::fs::read_to_string(&p)
         .unwrap_or_else(|e| panic!("{}: {e}", p.display()))
@@ -34,8 +36,13 @@ fn golden_rows(name: &str) -> Vec<String> {
         .collect()
 }
 
-/// The prompt of `text`, against golden `name`, row by row.
+/// The prompt of `text`, against golden `name` of `prompts/`, row by row.
 fn check(name: &str, text: &str) {
+    check_in("prompts", name, text);
+}
+
+/// The prompt of `text`, against golden `dir/name`, row by row.
+fn check_in(dir: &str, name: &str, text: &str) {
     let mut src = source();
     let r = {
         let mut env = Env::new(&mut src);
@@ -44,7 +51,7 @@ fn check(name: &str, text: &str) {
     };
     let p = Prompter::new(&r);
     let s = p.screen();
-    let want = golden_rows(name);
+    let want = golden_rows(dir, name);
     let mut diffs = Vec::new();
     // The parameter rows: each row's prompt text (to column 34, dot
     // leaders aside) must match, and every value the capture shows after
@@ -102,4 +109,9 @@ fn ddm_files_and_wscst() {
     check("prompt-wrkddmf", "?WRKDDMF");
     check("prompt-dltwscst", "?DLTWSCST");
     check("prompt-rtvwscst", "?RTVWSCST");
+}
+
+#[test]
+fn change_accounting_code() {
+    check_in("acg", "prompt-chgacgcde", "?CHGACGCDE");
 }

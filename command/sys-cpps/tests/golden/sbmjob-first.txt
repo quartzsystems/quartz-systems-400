@@ -14,8 +14,8 @@
  Output queue . . . . . . . . . .   *CURRENT      Name, *CURRENT, *USRPRF...    
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB        
  User . . . . . . . . . . . . . .   *CURRENT      Name, *CURRENT, *JOBD         
+ Accounting code  . . . . . . . .   *CURRENT                                    
  Print text . . . . . . . . . . .   *CURRENT                        *CURRENT... 
-                                                                                
                                                                                 
                                                                                 
                                                                                 

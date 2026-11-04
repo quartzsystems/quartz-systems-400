@@ -142,7 +142,7 @@ pub fn dspjobd(job: &mut Job, host: &Host, surface: &mut Surface, r: &Resolved) 
         ("LOGTXT", j.log_text.clone()),
         ("LOGCLPGM", j.logclpgm.clone()),
         ("LOGOUT", j.logoutput.clone()),
-        ("ACGCDE", "*USRPRF".into()),
+        ("ACGCDE", j.acgcde.clone()),
         ("PRTTXT", j.prttxt.clone()),
         ("RTGDTA", j.rtgdta.clone()),
         ("RQSDTA", j.rqsdta.clone()),

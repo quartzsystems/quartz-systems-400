@@ -3,6 +3,19 @@
 version = 4
 
 [[package]]
+name = "acg"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "db",
+ "dds",
+ "jrn",
+ "qdecimal",
+ "qsname",
+ "store",
+]
+
+[[package]]
 name = "aes"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2165,6 +2178,7 @@ dependencies = [
 name = "osobjects"
 version = "0.1.0"
 dependencies = [
+ "acg",
  "blockdev",
  "ccsid",
  "cl",
@@ -3248,6 +3262,7 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 name = "slic"
 version = "0.1.0"
 dependencies = [
+ "acg",
  "blockdev",
  "ccsid",
  "certs",

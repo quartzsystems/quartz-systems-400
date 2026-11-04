@@ -842,6 +842,8 @@ ipc::rpc! {
     /// The jobs of a display session that are to end, of those named:
     /// `ENDJOB`'s and their subsystem's end, and whether `*IMMED`.
     1440 => fn ws_end_requests / WsEndRequests (jobs: Vec<u32>) -> Vec<(u32, bool)>;
+    /// The job's accounting code (`RTVJOBA ACGCDE`); blank for none.
+    1470 => fn acgcde / Acgcde () -> String;
 }
 
 /// What `machine` answers. Each string is empty when unknown.

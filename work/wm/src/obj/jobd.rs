@@ -51,7 +51,11 @@ pub const LAYOUT: Layout = Layout {
 };
 
 const MAGIC: &[u8; 8] = b"QSWMJOBD";
-const VERSION: u64 = 1;
+/// Version 2 adds `ACGCDE` after the request data; version 1 reads as
+/// `*USRPRF`.
+const VERSION: u64 = 2;
+/// `ACGCDE`'s bytes after the request data.
+const ACGCDE_LEN: usize = 15;
 /// `SYNTAX(*NOCHK)`.
 const NOCHK: u64 = 0xFF;
 
@@ -114,6 +118,8 @@ pub struct JobD {
     pub ddmcnv: String,
     /// `TEXT`.
     pub text: String,
+    /// `ACGCDE`: a code, `*USRPRF`, or blank.
+    pub acgcde: String,
 }
 
 impl Default for JobD {
@@ -148,6 +154,7 @@ impl Default for JobD {
             splfacn: "*SYSVAL".into(),
             ddmcnv: "*KEEP".into(),
             text: String::new(),
+            acgcde: "*USRPRF".into(),
         }
     }
 }
@@ -193,13 +200,15 @@ impl JobD {
         let mut out = r.buf;
         super::put_names(&mut out, self.inllibl.as_deref().unwrap_or(&[]));
         out.extend(rqs);
+        out.extend(crate::rec::text_bytes(&self.acgcde, ACGCDE_LEN));
         out
     }
 
     /// Read a payload back.
     pub fn decode(b: &[u8]) -> Result<Self> {
         let r = Rec::read(&LAYOUT, b)?;
-        if r.bytes("Magic") != MAGIC || r.uint("Version") != VERSION {
+        let version = r.uint("Version");
+        if r.bytes("Magic") != MAGIC || !(1..=VERSION).contains(&version) {
             return Err(Error::Corrupt("not a job description".into()));
         }
         let (libl, used) = super::get_names(r.tail())?;
@@ -241,6 +250,10 @@ impl JobD {
             splfacn: r.text("SplfAcn"),
             ddmcnv: r.text("DdmCnv"),
             text: r.text("Text"),
+            acgcde: match r.tail().get(used.saturating_add(n)..used.saturating_add(n) + ACGCDE_LEN) {
+                Some(b) if version >= 2 => crate::rec::text_of(b),
+                _ => "*USRPRF".into(),
+            },
         })
     }
 
@@ -302,8 +315,18 @@ mod tests {
             ..JobD::default()
         };
         assert_eq!(JobD::decode(&e.encode()).unwrap(), e);
-        assert_eq!(e.encode().len(), 352 + 2 + 20 + e.rqsdta.len());
+        assert_eq!(e.encode().len(), 352 + 2 + 20 + e.rqsdta.len() + ACGCDE_LEN);
         assert!(JobD::decode(b"short").is_err());
+        // A version 1 payload: no accounting code, read as *USRPRF.
+        let coded = JobD {
+            acgcde: "DEPT42".into(),
+            ..e.clone()
+        };
+        assert_eq!(JobD::decode(&coded.encode()).unwrap().acgcde, "DEPT42");
+        let mut v1 = coded.encode();
+        v1.truncate(v1.len() - ACGCDE_LEN);
+        v1[8] = 1;
+        assert_eq!(JobD::decode(&v1).unwrap().acgcde, "*USRPRF");
         assert!(
             JobD {
                 jobpty: 10,

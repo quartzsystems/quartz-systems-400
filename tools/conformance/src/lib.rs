@@ -41,6 +41,7 @@ mod install;
 mod load;
 mod leftovers;
 mod perfstep;
+mod secacg;
 mod lpstep;
 pub mod media;
 mod netauto;

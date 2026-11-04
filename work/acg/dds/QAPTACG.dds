@@ -1,0 +1,32 @@
+     A* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+     A* licensed under the terms of the MIT license which can be found in the
+     A* root directory of this project.
+     A*
+     A* QAPTACG: job accounting model file, printer file (DP and SP) entries
+     A* (docs/WORKMGMT.md). The layout is the V7R1M0 one,
+     A* tools/conformance/oracle/acg/acg-ffd.txt.
+     A          R QSPJAPTE
+     A            JAENTL         5S 0
+     A            JASEQN        10S 0
+     A            JACODE         1A
+     A            JAENTT         2A
+     A            JADATE         6A
+     A            JATIME         6S 0
+     A            JARES         95A
+     A            JAJOB         10A
+     A            JAUSER        10A
+     A            JANBR          6S 0
+     A            JACDE         15A
+     A            JADFN         10A
+     A            JADFNL        10A
+     A            JADEVN        10A
+     A            JADEVT         4A
+     A            JADEVM         4A
+     A            JATPAG        11P 0
+     A            JATLIN        11P 0
+     A            JASPFN        10A
+     A            JASPNB         4A
+     A            JAOPTY         1A
+     A            JAFMTP        10A
+     A            JABYTE        15P 0
+     A            JAUSRD        10A

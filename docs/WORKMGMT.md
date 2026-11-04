@@ -144,7 +144,9 @@ little-endian. `work/wm/tests/spec.rs` compares these tables with the code.
 ### `JobDescription` (352 bytes)
 
 `*JOBD`. After the fixed part: the initial library list (a two-byte
-count, then ten-byte names) and the request data (`RqsDtaLen` bytes).
+count, then ten-byte names), the request data (`RqsDtaLen` bytes) and,
+from version 2, `ACGCDE` (15 bytes CP037: a code, `*USRPRF`, or blank). A
+version 1 payload has no accounting code and reads as `*USRPRF`.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
@@ -994,6 +996,59 @@ as on IBM i. The system's own jobs (`QSVCJOB`, `QCONSOLE`, the `SYS`
 jobs) are in no monitor's care and stay. In the restricted state the
 console signs on to the controlling subsystem's description although
 it is not active; `STRSBS` of it starts the system again.
+
+### Job accounting
+
+`QACGLVL` says what is collected: `*JOB` (job resources), `*PRINT`
+(printed files), both, or `*NONE` (the shipped value). The entries go
+to `QSYS/QACGJRN` as journal code `A`; the journal is not shipped:
+`CRTJRNRCV JRNRCV(QSYS/ACGRCV0001)` and `CRTJRN JRN(QSYS/QACGJRN)
+JRNRCV(QSYS/ACGRCV0001)` make it. With no journal nothing is written.
+The service keeps the state (`lic/slic/src/stgsvc/acg.rs`); the
+layouts are `work/acg`.
+
+A job's accounting code comes from `SBMJOB ACGCDE()` (`*CURRENT`, the
+default, is the submitter's; `*USRPRF` the user's profile's), else from
+its job description's `ACGCDE` (`*USRPRF`, the default, takes the
+profile's; a profile's special value counts as blank). `CHGACGCDE
+JOB() ACGCDE()` changes it (another user's job needs `*JOBCTL`);
+`RTVJOBA ACGCDE()` returns it (request 1470). A queued job's code is
+kept in the service only: a job still on its queue across an IPL starts
+with its job description's.
+
+| Entry | When | Layout (entry-specific data) |
+|---|---|---|
+| `JB` | with `*JOB`: a job ends, or `CHGACGCDE` changes its code (the resources used so far are charged to the old code and counting starts again) | `QSYS/QAJBACG` from `JAJOB` (offset 125 of the model) |
+| `SP` | with `*PRINT`: a writer finished printing a spooled file | `QSYS/QAPTACG` from `JAJOB` |
+| `DP` | with `*PRINT`: a printer file that does not spool is closed | `QSYS/QAPTACG` from `JAJOB` |
+
+Every printer file spools on QS/400 (there is no `SPOOL(*NO)`), so `DP`
+is never written; its layout is the `SP` one with the spooled file
+fields blank. The model files ship in `QSYS` (`QAJBACG`, 449 bytes;
+`QAPTACG`, 259 bytes), field for field the V7R1M0 layouts captured in
+`tools/conformance/oracle/acg/acg-ffd.txt`. Their first 125 bytes are
+the `*TYPE1` journal heading, so `DSPJRN JRN(QSYS/QACGJRN) ENTTYP(JB)
+OUTPUT(*OUTFILE) OUTFILE(lib/file)` into a file made like the model
+(`CREATE TABLE lib.file AS (SELECT * FROM QSYS.QAJBACG) WITH NO DATA`)
+reads field for field, as IBM's `CPYF FMTOPT(*NOCHK)` procedure does.
+`DSPJRN` into a file that does not exist makes one in the `*TYPE1`
+format (`QADSPJRN`, `JOESD` as long as the longest entry).
+
+What the `JB` fields hold: `JACPU` processing time in milliseconds (the
+process's), `JARTGS` 1, `JAEDTE`/`JAETIM` when the job entered the
+system (submitted) and `JASDTE`/`JASTIM` when the segment began, in
+the job's date format, `JAEDTL`/`JASDTL` the same as `YYYYMMDDHHMMSS`;
+`JATRNS` and `JATRNT` the interactive transactions and their time in
+seconds, `JAAUX` the job's storage requests, `JATYPE` the job type,
+`JACCDE` the end code, `JALINE`/`JAPAGE`/`JAPRTF` the records, pages
+and spooled files its printer files closed with, `JADBPT` the database
+writes, updates and deletes, `JADBGT` the reads, `JAACT` the segment's
+elapsed time in milliseconds; the `JAX*` fields repeat the counts at 29
+digits. `JADBUP`, `JACMPT`, `JACMGT`, `JASPN` and `JAAIO` are zero (the
+service does not count them apart). An `SP` entry carries the printer
+file, the writer as the device and the file's type, its pages, records,
+bytes, form type, user data, priority, name and number, and the code
+the job had when the file closed.
 
 ## 5. Statistics
 

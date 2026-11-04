@@ -1,0 +1,52 @@
+     A* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+     A* licensed under the terms of the MIT license which can be found in the
+     A* root directory of this project.
+     A*
+     A* QAJBACG: job accounting model file, job resource (JB) entries
+     A* (docs/WORKMGMT.md). The layout is the V7R1M0 one,
+     A* tools/conformance/oracle/acg/acg-ffd.txt.
+     A          R QWTJAJBE
+     A            JAENTL         5S 0
+     A            JASEQN        10S 0
+     A            JACODE         1A
+     A            JAENTT         2A
+     A            JADATE         6A
+     A            JATIME         6S 0
+     A            JARES         95A
+     A            JAJOB         10A
+     A            JAUSER        10A
+     A            JANBR          6S 0
+     A            JACDE         15A
+     A            JACPU         11P 0
+     A            JARTGS         5P 0
+     A            JAEDTE         6A
+     A            JAETIM         6A
+     A            JASDTE         6A
+     A            JASTIM         6A
+     A            JATRNT        11P 0
+     A            JATRNS        11P 0
+     A            JAAUX         11P 0
+     A            JATYPE         1A
+     A            JACCDE         3P 0
+     A            JALINE        11P 0
+     A            JAPAGE        11P 0
+     A            JAPRTF        11P 0
+     A            JADBPT        11P 0
+     A            JADBGT        11P 0
+     A            JADBUP        11P 0
+     A            JACMPT        11P 0
+     A            JACMGT        11P 0
+     A            JAACT         11P 0
+     A            JASPN         11P 0
+     A            JAEDTL        14A
+     A            JASDTL        14A
+     A            JAAIO         11P 0
+     A            JAXCPU        29P 0
+     A            JAXSIO        29P 0
+     A            JAXAIO        29P 0
+     A            JAXDBP        29P 0
+     A            JAXDBG        29P 0
+     A            JAXDBU        29P 0
+     A            JAXLIN        29P 0
+     A            JAXPAG        29P 0
+     A            JAXPRT        29P 0

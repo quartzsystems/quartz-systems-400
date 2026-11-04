@@ -124,6 +124,7 @@ fn sbm_user(r: &SbmJob, me: &str) -> String {
 }
 
 /// `SBMJOB`: the job's number and the message to the submitter.
+#[allow(clippy::too_many_lines)] // one request, start to queue
 pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String), String> {
     let mine = system.attrs.get(&me).cloned().unwrap_or_default();
     let me_info = system.jobs.get(me).cloned().unwrap_or_default();
@@ -155,7 +156,7 @@ pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String),
     } else {
         Some(r.curlib.clone())
     };
-    for (kw, v) in &r.changes {
+    for (kw, v) in r.changes.iter().filter(|(k, _)| k != "ACGCDE") {
         attrs
             .change(kw, v)
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPD0084")))?;
@@ -211,6 +212,7 @@ pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String),
         Ok((real.to_string(), true))
     })?;
     system.queued.insert(number, real.clone());
+    super::acg::submitted(system, number, me, &user, &r.changes);
     let (lib, qname) = qualified(&real);
     let data = wm::joblog::data(&[
         (&name, 10),
@@ -349,6 +351,7 @@ pub fn endjob(system: &mut System, me: u32, job: &str, immediate: bool) -> Resul
             Ok((j, true))
         })?;
         system.queued.remove(&n);
+        super::acg::forget(system, n);
         let data = wm::joblog::ended_data((&j.name, &j.user, n), now_unix(), 0, 50);
         super::hist::system_message(
             system,
@@ -549,6 +552,7 @@ pub fn queue_op(system: &mut System, q: &str, op: &str) -> Result<String, String
     })?;
     for j in &gone {
         system.queued.remove(&j.number);
+        super::acg::forget(system, j.number);
     }
     Ok(match op {
         "hold" => format!("Job queue {} held.\n", qual(q)),

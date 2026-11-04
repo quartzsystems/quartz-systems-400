@@ -102,6 +102,8 @@ pub struct Stats {
     latest: Option<Sample>,
     /// Collection Services.
     pub perf: super::perfcol::Collector,
+    /// Job accounting.
+    pub acg: super::acg::Acct,
 }
 
 impl Stats {

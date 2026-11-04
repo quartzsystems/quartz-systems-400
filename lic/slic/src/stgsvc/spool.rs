@@ -258,7 +258,7 @@ pub fn update(
 
 /// Close an open file: ready, held, or closed until its job ends.
 pub fn close(system: &mut System, id: u32, hold: bool) -> Result<(), String> {
-    update(system, id, |a| {
+    let a = update(system, id, |a| {
         a.status = match (hold, a.schedule) {
             (true, _) => {
                 a.held_from = Status::Rdy;
@@ -268,8 +268,9 @@ pub fn close(system: &mut System, id: u32, hold: bool) -> Result<(), String> {
             (false, _) => Status::Rdy,
         };
         Ok(())
-    })
-    .map(|_| ())
+    })?;
+    super::acg::spool_closed(system, &a);
+    Ok(())
 }
 
 /// A job ended: its files held for the end become ready, and any it
@@ -298,6 +299,7 @@ pub fn delete(system: &mut System, id: u32) -> Result<(), String> {
         .remove(&id)
         .ok_or_else(|| format!("CPF3309 no spooled file {id}"))?;
     dequeue(system, id, &e.attrs.outq);
+    super::acg::spool_gone(system, id);
     // As `update`: the user's authority was checked to the file, not to
     // `QSPL`.
     sec::guard::as_system(|| {

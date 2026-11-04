@@ -194,6 +194,9 @@ fn filter(p: &Params) -> Result<Filter, String> {
 pub fn dspjrn(system: &mut System, p: &Params) -> Result<String, String> {
     let qual = p.pos_or(0, "JRN")?;
     let f = filter(p)?;
+    if p.upper("OUTPUT").as_deref() == Some("*OUTFILE") {
+        return outfile(system, p, &qual, &f);
+    }
     let (store, ctx) = db(system)?;
     with_txn(store, |txn| {
         let jid = typed_id(txn, ctx, &qual, jrn::JRN)?;
@@ -201,6 +204,61 @@ pub fn dspjrn(system: &mut System, p: &Params) -> Result<String, String> {
         let mut out = jrn::render(&entries);
         let _ = writeln!(out, "{} entries", entries.len());
         Ok(out)
+    })
+}
+
+/// `DSPJRN OUTPUT(*OUTFILE) OUTFILE(LIB/FILE) [OUTMBR(M)]`: one `*TYPE1`
+/// record per entry, its 125-byte heading then the entry-specific data.
+/// A file that exists keeps its own format and takes the bytes as they
+/// are, as `CPYF FMTOPT(*NOCHK)` would (a model file such as `QAJBACG`
+/// then reads field for field); a new one is made in the `*TYPE1` format
+/// with `JOESD` as long as the longest entry's data.
+fn outfile(system: &mut System, p: &Params, qual: &str, f: &Filter) -> Result<String, String> {
+    let target = p
+        .kw("OUTFILE")
+        .ok_or("CPD0071 OUTFILE is required with OUTPUT(*OUTFILE)")?
+        .to_string();
+    let member = p
+        .upper("OUTMBR")
+        .and_then(|m| m.split_whitespace().next().map(str::to_string))
+        .filter(|m| m != "*FIRST")
+        .map(|m| Name::parse(&m).map_err(|e| e.to_string()))
+        .transpose()?
+        .map_or(MemberSpec::First, MemberSpec::Name);
+    let local = system
+        .sysvals
+        .as_ref()
+        .map_or(0, |v| i64::from(v.zone().offset_at(now())));
+    let datfmt = system
+        .attrs
+        .get(&system.current_job)
+        .map_or_else(|| "*YMD".to_string(), |a| a.datfmt.clone());
+    let (store, ctx) = db(system)?;
+    with_txn(store, |txn| {
+        let jid = typed_id(txn, ctx, qual, jrn::JRN)?;
+        let entries = jrn::dspjrn(txn, jid, f).map_err(|e| jrn_err(&e))?;
+        let longest = entries.iter().map(|e| e.data.len()).max().unwrap_or(0);
+        let fmt = acg::type1_definition(longest)?.format;
+        let file = if let Ok(id) = file_id(txn, ctx, &target) {
+            id
+        } else {
+            let name = object_name(&target)?;
+            let lib = ctx.library_for(txn, &name).map_err(|e| e.to_string())?;
+            let n = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
+            let def = acg::type1_definition(longest)?;
+            let opts = db::file::CreateFileOpts {
+                now: now(),
+                ..db::file::CreateFileOpts::default()
+            };
+            db::file::create_pf(txn, lib, n, &def, &opts).map_err(|e| db_err(&e))?
+        };
+        let records = entries
+            .iter()
+            .map(|e| acg::type1_record(&fmt, e, local, &datfmt))
+            .collect::<Result<Vec<_>, _>>()?;
+        let n = db::util::put_records(txn, JOB, file, member, &records, 0x40, now())
+            .map_err(|e| db_err(&e))?;
+        Ok(format!("{n} entries written to {target}."))
     })
 }
 

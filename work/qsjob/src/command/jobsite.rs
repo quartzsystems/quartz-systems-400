@@ -280,6 +280,11 @@ fn rtvsysval(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fai
 /// `RTVJOBA`: the job's names and attributes into the variables named.
 fn rtvjoba(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let a = host.attrs();
+    let acgcde = if r.get("ACGCDE").is_some() {
+        host.link.borrow_mut().with(stg::Client::acgcde)
+    } else {
+        String::new()
+    };
     let s = &host.start;
     let text = |s: &str| Value::Char(s.to_string());
     let num = |n: i64| Value::Num(qdecimal::Decimal::new(i128::from(n), 0).expect("small"));
@@ -326,6 +331,7 @@ fn rtvjoba(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail>
         ("CNTRYID", text(&a.cntryid)),
         ("CCSID", num(i64::from(a.ccsid))),
         ("DFTCCSID", num(i64::from(a.dftccsid))),
+        ("ACGCDE", text(&acgcde)),
     ];
     returned(r, &values, out)
 }

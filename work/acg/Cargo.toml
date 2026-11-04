@@ -1,0 +1,19 @@
+[package]
+name = "acg"
+description = "QS/400 job accounting: QACGLVL, the QACGJRN entries JB, DP and SP in IBM's QAJBACG and QAPTACG layouts, and DSPJRN's *TYPE1 outfile records"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+dds = { path = "../../database/dds", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0" }
+jrn = { path = "../../database/jrn", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+
+[lints]
+workspace = true

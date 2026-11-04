@@ -290,6 +290,8 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
         },
     );
     system.jobs.add(job.clone());
+    let entered = queued.as_ref().map_or(0, |q| q.submitted / 1_000_000);
+    super::acg::job_started(system, &job, entered);
     super::liclog::write(0x0300, 0x0001, job.number, &format!("{}/{}", job.user, job.name));
     super::security::js("S", (&job.name, &job.user, job.number), job.kind, &job.jobd);
     let who = (job.name.clone(), job.user.clone(), job.number);
@@ -363,6 +365,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     for id in std::mem::take(&mut ctx.splfs) {
         let _ = super::spool::close(system, id, false);
     }
+    super::acg::job_ended(system, ctx.job.number, code);
     if ctx.end_code.is_none() {
         super::joblog::ended_here(system, ctx, &data);
     }
@@ -2236,6 +2239,10 @@ impl Service for Served<'_> {
 
     fn svraute_get(&mut self, server: String) -> Option<(String, String)> {
         super::ddm::svraute_get(self.system, self.ctx, &server)
+    }
+
+    fn acgcde(&mut self) -> String {
+        super::acg::code(self.system, self.ctx.job.number)
     }
 
     fn machine(&mut self) -> stg::proto::MachineInfo {

@@ -88,6 +88,10 @@ pub fn create(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Resu
         perf::qapm::install_models(txn, qsys, stamp.now),
     )?;
     r.made += piece(
+        "job accounting model files",
+        acg::install_models(txn, qsys, stamp.now),
+    )?;
+    r.made += piece(
         "registration facility",
         regfac::store::install(txn, qsys, stamp),
     )?;
