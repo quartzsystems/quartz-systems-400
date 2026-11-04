@@ -238,9 +238,9 @@ impl Suite {
         let words: Vec<&str> = printed.split_whitespace().collect();
         let after = |w: &str| words.iter().position(|x| *x == w).and_then(|i| words.get(i + 1)).map(|s| s.trim_end_matches(['.', ',']).to_string());
         let report = after("Report").unwrap_or_else(|| "QSYSPRT".into());
-        let job = after("job").map_or_else(String::new, |j| format!(" JOB({j})"));
+        let job = after("job").unwrap_or_else(|| "*".into());
         let sent = s.command(
-            &format!("SNDTCPSPLF RMTSYS('127.0.0.1') PRTQ('QPRINT') FILE({report}){job} SPLNBR(*LAST) TRANSFORM(*YES) MFRTYPMDL(*WSCST) WSCST(QGPL/MYHP5)"),
+            &format!("SNDTCPSPLF RMTSYS('127.0.0.1') PRTQ('QPRINT') FILE({report}) JOB({job}) SPLNBR(*LAST) TRANSFORM(*YES) MFRTYPMDL(*WSCST) WSCST(QGPL/MYHP5)"),
             CMD,
         )?;
         if !sent.contains(" sent ") {
