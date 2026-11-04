@@ -190,6 +190,15 @@ ones pub400 refused can be captured there (V7R1M0).
 | `d0e9c79e`..`e3bb6e57` | §1 the "no golden" tests (19 captured on the primary), the layout ignores, the open questions the primary answers |
 | `d5ae3d31`..`34ed14e9` | §1 DHCPv4 client (`net/dhcp`), the response file over HTTP(S)/TFTP/PXE, telnet `INIT0100`, spooled bytes from the print server, SMTP relay credentials; QEMU 96-98, install 15 |
 | `6dc772b6`..`e66aabe3` | §3 Collection Services, `*MGTCOL`, `CRTPFRDTA`, the QAPM files, `WRKSYSACT` under QS00PT1, `QPFRADJ`; QEMU 106 |
+| `349f9db8`..`0244f54d` | §4 help everywhere: `tools/helpaudit` (100%), command and parameter help, DDS help, every message's second-level text, F1/F2 at the prompter, `*SCHIDX`, `QHSS1`, `DSPHLPDOC`; help in the Knowledge Center |
+| `730240f9`..`aa24dfbe` | §8 QS00RPG: `CRTRPGPGM`, `CVTRPGSRC`, batch b22rpg3 (26 programs), `RPG3.md` |
+| `e3ce0bda`..`1834615c`, `89e3391d`..`c3e231bf` | §6, §7: `lic/hwqual`, `QSHWQUAL` (command, media option 4), `QUALIFIED_HARDWARE.md`, `lic/guestagent` (QEMU guest agent protocol, vsock), QAP version 7 `Manage` (draft) in `qap-proto`, `qapd` and the connection job; QEMU 114-117, 123, media 5 |
+| `ed5876ab`..`8dd6c0d8` | `tools/textaudit` (baseline), `QSTXTMSG`, CCSIDs kept on objects, `INSLNG`, `QSYS2924`, the `QSYS2931` scaffold, one format path for dates, times and decimals; QEMU 120-122 |
+| `1f4b01d6`..`06c0ff60` | `QSSECCHK`, job accounting (`work/acg`, `QACGJRN`, `CHGACGCDE`), `build soak`; the IPL narrowing of `*PUBLIC` on shipped objects; QEMU 107, 108 |
+| `8e8d6cd5` | problem reports to the update service (`*PRB`), the last `MIGRATE` marker |
+| `52bf54c6` | `build kc`, `build release` (§10, §11) |
+| `d50f4904`.., `3d204664` | `CHGSYSVAL` of a blank value, problem log and PTF spaces `*PUBLIC *USE`, `DSPLIBL *PRINT` spooled; the prestart idle count and the page cache sized from `QMCHPOOL` (the soak's leaks); `procstat` names jobs |
+| `12d1e338`, `3d1cee0c` | the image compressed once with xz: the media UKI from 40.6 to 25.8 MiB; `build iso` refuses a boot image over El Torito's limit |
 
 ## Format freeze (Section 2)
 
@@ -212,6 +221,9 @@ records a bump.
 ## Deviations
 
 - **Adding an object type is not a format change.** A new type code in `storage/store/src/obj/types.rs` (`*MGTCOL`, 0x002C) moves the frozen `store` hash; existing stores read the same, and a V1R0M0 system never opens a V1R1M0 store (the release rule refuses the downgrade). Such additions are recorded with `fmtcheck update --force` and named here; a change to an existing layout still needs the version bump.
+- **The release image is UEFI only and compressed once with xz.** The kernel is an EFI-stub UKI (`ARCHITECTURE.md` §5), so there is no BIOS boot; the initramfs is embedded uncompressed and the whole image is xz, so the media UKI (25.8 MiB) fits the 32 MiB an El Torito boot image can name.
+- **The page cache follows `QMCHPOOL`.** The cache was sized before the system values were loaded and kept every page it touched up to 256 MiB; it now takes `QMCHPOOL` (20,000 KB shipped) once they are loaded.
+- **`textaudit` ships with a baseline.** 3,791 literals on display paths remain (developer tools, service listings, job panels); the count may only go down (Cody's choice, 2026-11-04).
 - **The fuzzer is ours.** `cargo fuzz` runs libFuzzer, which is C++
   compiled by `libfuzzer-sys`'s build script; that breaks the pure-Rust
   rule. `tools/fuzz` (`qsfuzz`) is coverage-guided the same way: the
@@ -229,37 +241,81 @@ records a bump.
 
 ## NEEDS-CODY
 
-Exact steps are filled in as each item is reached.
-
 | # | Item | Steps | State |
 |---|---|---|---|
-| 1 | ACS compatibility checklist for the host servers | `PHASE10.md` "ACS checklist (Cody)", seven checks, on a V1R1M0 install | open |
-| 2 | HLINV: the two printer files using type `Y`; keystroke scripts for the interactive diffs | | open |
-| 3 | The pub400 library name in commit `f994a61` | confirm it is not sensitive (history is not rewritten) | open |
-| 4 | `rpg-oracle clean` on `QSTEST` | | open |
-| 5 | Physical tape acceptance | `MEDIA.md` "Tape: physical tape acceptance" | open |
-| 6 | `QSHWQUAL` on the Dell with the PERC H330 | `QUALIFIED_HARDWARE.md` | open |
-| 7 | Goldens that need a command run on the primary | | open |
-| 8 | `QRPG` on pub400 or the primary for Section 8 | | open |
-| 9 | (dropped: the 72-hour soak; Phase 12 runs a one-hour soak) | | closed |
+| 1 | ACS compatibility checklist for the host servers | `PHASE10.md` "ACS checklist (Cody)": the seven checks, on a V1R1M0 install (ISO in `Desktop\QS400-V1R1M0-release-devkey\`) | open |
+| 2 | HLINV | the two printer files with data type `Y` (IBM refuses them too: decide whether to change the source), and keystroke scripts for the interactive diffs (`PHASE9.md` Acceptance 2) | open |
+| 3 | The pub400 library name in commit `f994a61` | confirm it is not sensitive; history is not rewritten. The account name in the web fixtures is now `TESTUSER` (`125c935d`) | open |
+| 4 | `rpg-oracle clean` | done on pub400 by the RPG agents (Phase 12); on the primary `QSTEST` holds only `QSMSGSRC` and `QSMSGDBG`, which predate Phase 12: confirm they are yours | open |
+| 5 | Physical tape acceptance | `MEDIA.md` "Tape: physical tape acceptance"; settles `SVC_OPEN_QUESTIONS.md` 19 and 20 | open |
+| 6 | `QSHWQUAL` on the Dell with the PERC H330 and the hypervisors | `QUALIFIED_HARDWARE.md` "NEEDS-CODY": Proxmox, ESXi, Workstation, VirtualBox, Hyper-V Gen2 and the Dell checklists; also try booting the ISO as a CD on real firmware | open |
+| 7 | Oracle commands that need a configuration change on the primary | `SEC_OPEN_QUESTIONS.md` (a `QAUDJRN` for the `DSPAUDJRNE` golden and SST's audit code; a test profile for the per-command special-authority IDs), `UI_OPEN_QUESTIONS.md` 8 (a printer device), `NET_OPEN_QUESTIONS.md` IFS 8 (the JTOpen probe of a binary read) | open |
+| 8 | `QRPG` for Section 8 | closed: pub400 has `CRTRPGPGM`, `CVTRPGSRC`, `QRPG` and `QRPG38`; every RPG III result is pub400's | closed |
+| 9 | The 72-hour soak | dropped at Cody's request; a one-hour soak runs instead | closed |
+| 10 | Sign the release | `QS400_SIGNING_KEY=<the release key> cargo run -p build -- release`; the copy on the Desktop is signed with a development key (public key `48c829c2...`) | open |
+| 11 | Two judgement calls | `QSSECCHK` treats `*CHANGE` on device, controller and line descriptions as right (IBM ships them so); job accounting writes no `DP` entries (every printer file spools; a printer file's close adds to the job's `JB`) | open |
+| 12 | Tag `V1R1M0` | after 10, on the commit the release was built from | open |
 
 ## Acceptance
 
+The state on the final tree (`3d1cee0c` and its last fixes), 2026-11-04.
+QEMU runs are KVM guests in WSL on the development PC.
+
 | Criterion | State |
 |---|---|
-| Zero `BLOCKED(phase9|10|11)` and zero `MIGRATE(...)` markers in the tree | |
-| Zero tests ignored for "no golden" | |
-| `fmtcheck` passes; slip-install V1R0M0 → V1R1M0 preserves all user data | |
-| `RELEASE == V1R1M0` everywhere a version is shown | |
-| QAPM* files diff clean against the oracle; collector produces consistent data | |
-| `helpaudit` 100% panels and commands; `textaudit` zero literals | |
-| `INSLNG` installs the `QSYS2931` scaffold; secondary-language sign-on works | |
-| `QSHWQUAL` runs from media under QEMU; qualified-hardware doc written | |
-| QAP spec frozen; guest agent recognised by QEMU as a guest agent | |
-| 20 RPG III programs conformant; `CVTRPGSRC` report diffs clean | |
-| All fuzz targets 3 minutes crash-free, 6 at once (Rust fuzzer, see Notes; shortened from 30 min at Cody's request) | Pass 2026-11-03: 18 targets, 0.26M-1.13M execs each, 0 crashes (two crashes found earlier and fixed: `02ed74f3`, `7eb1c250`) |
-| `QSSECCHK` clean on a fresh install | |
-| Soak clean: one-hour run (the 72-hour run dropped at Cody's request) | |
-| Knowledge Center builds and is served; release notes written | |
-| `build release` produces a signed, bootable, installable ISO | |
-| `CLAUDE.md` accurately describes the system as shipped | |
+| Zero `BLOCKED(phase9|10|11)` and zero `MIGRATE(...)` markers in the tree | Pass: none outside this file's history table |
+| Zero tests ignored for "no golden" | Pass: 19 captured on the primary and un-ignored; `dspaudjrne` is `NEEDS-CODY` (the primary has no `QAUDJRN`) |
+| `fmtcheck` passes; slip-install V1R0M0 → V1R1M0 preserves all user data | Pass: `fmtcheck` in `build test` and `cargo test`; install step 10 installs V1R0M0 media, makes a data area, a journaled table with entries, spooled files and a `SAVLIB` in a save file, upgrades with V1R1M0, finds all of it, restores the V1R0M0 save and refuses the downgrade |
+| `RELEASE == V1R1M0` everywhere a version is shown | Pass: `lic/release` (`73309c30`); no other release literal outside tests |
+| QAPM* files diff clean against the oracle; collector produces consistent data | Pass: `work/perf/tests/ffd.rs` (601 fields of the eight files against the primary's `DSPFFD`); QEMU 106 |
+| `helpaudit` 100% panels and commands; `textaudit` zero literals | Partly: `helpaudit` 100% in every category, in `build test`. `textaudit` ships and fails on any new literal; 3,791 sites remain on its baseline (Cody chose to ship the baseline) |
+| `INSLNG` installs the `QSYS2931` scaffold; secondary-language sign-on works | Pass: QEMU 120 and 121 (`INSLNG`'s prompt has no oracle: V7R1 has no `INSLNG`) |
+| `QSHWQUAL` runs from media under QEMU; qualified-hardware doc written | Pass: media step 5, QEMU 114; `QUALIFIED_HARDWARE.md` (the other platforms `NEEDS-CODY`) |
+| QAP spec frozen; guest agent recognised by QEMU as a guest agent | Pass: versions 1 to 6 frozen, version 7 (`Manage`) draft; QEMU 115 to 117 (QEMU's guest-agent channel answers `guest-ping`, `guest-info`, `guest-shutdown`), 123 (`Manage` end to end) |
+| 20 RPG III programs conformant; `CVTRPGSRC` report diffs clean | Pass: 26 programs, 25 match and one known difference (R3021, `known.txt`); 26 of 26 conversions and reports match pub400's |
+| All fuzz targets crash-free (3 minutes each, shortened at Cody's request) | Pass: 18 targets, 0.26M to 1.13M execs each; two crashes found earlier and fixed |
+| `QSSECCHK` clean on a fresh install | Pass: QEMU 107; 23 checks, 17 pass, 6 warnings (IBM's shipped values and `QAUDCTL *NONE`, `SECURITY.md` §10), 0 failures |
+| Soak clean (one hour, at Cody's request) | Pass (3,600 s on the final tree): 1,726 console cycles, 3,452 batch jobs, 345 save/restore rounds, 924 interactive rounds, 0 failures; the storage service 115 → 122 MB raw, net of its cache 15 → 11 MB, descriptors 81 → 73; every other process flat; disk +35 MiB; active jobs 56 → 48; no new SRC; `QSSECCHK` 0 failures; 5,105 accounting entries. The leaks the first soak found (prestart idle count, an unsized page cache) are fixed |
+| Knowledge Center builds and is served; release notes written | Partly: `build kc` (980 pages) and on the media under `QS400/KC/`; served over HTTP only once QS00AFW ships. `RELEASE_NOTES_V1R1M0.md` written |
+| `build release` produces a signed, bootable, installable ISO | Pass with a development key: the ISO boots under OVMF and its automatic install reaches IPL complete; the dev-build install suite passes steps 1 and 8 (without and with a response file). UEFI only; signing with the release key is `NEEDS-CODY` 10 |
+| `CLAUDE.md` accurately describes the system as shipped | Pass: rewritten (`0f7d4df1`) and kept current with every merge |
+
+QEMU on the merged tree (agents N and O, 2026-11-04): disk suite steps
+1, 64, 68, 70, 80, 86 to 89, 100, 101, 103 to 108, 114 to 117, 120 to
+123 pass; install suite steps 1, 8, 9 and 10 pass; install step 15
+(the network install) fails after its install: the installed system
+never gets a DHCP lease (`BLOCKED(phase12)`).
+
+## Exit review
+
+| Phase | Acceptance today | Reopened or closed in Phase 12 |
+|---|---|---|
+| 0, 1 | stands | the kernel config: more drivers, the image compressed once with xz (`ARCHITECTURE.md` §6) |
+| 2, 2.5 | stands | the store's frozen layouts; the page cache sized from `QMCHPOOL` after the system values load (it had kept every page) |
+| 3 | stands | `ENDCMTCTL` with files open is `CPF8355`; SQL nested past 64 levels is `SQL0101` (found by the fuzzer) |
+| 4 | stands | the IR and object formats frozen; the call ABI items stay `BLOCKED(phase12)` |
+| 5 | stands | `ENDSBS *ALL` reaches the restricted state; Collection Services; job accounting; the prestart idle count (a descriptor leak under load) |
+| 6 | stands | `*PUBLIC *EXCLUDE` had been widened at the first IPL; `QSSECCHK` found it and system data areas changeable by any user |
+| 7 | stands | `%OFFSET`; `CRTBNDCL` with default options; the wrapped command line did not reproduce |
+| 8 | stands | 19 panel goldens on the primary; help on every panel; the renderer's key and option rules |
+| 9 | stands; HLINV and the open-source items as before | `LIKEFILE`, `DATA-INTO`/`DATA-GEN`, Open Access, `DUMP(A)`; RPG III; a reader panic found by the fuzzer |
+| 10 | stands; the ACS checklist still Cody's | DHCP, `INIT0100`, spooled bytes, SMTP credentials, DDM, `*WSCST`, the network response file; the network install itself blocked |
+| 11 | stands | `SAVSYS` in restricted state; the upgrade from V1R0M0 proven end to end; problem reports to the update service |
+
+Verification caveat: all RPG conformance (ILE RPG and RPG III) is
+against pub400.com (IBM i V7R5M0); the primary oracle (V7R1M0) has no
+RPG compiler. Screen goldens added in Phase 12 come from the primary
+(V7R1M0) unless they say otherwise.
+
+## Numbers
+
+| Measure | Value |
+|---|---|
+| Commits in Phase 12 | 170 (`93c6350f`..) |
+| Workspace crates | 114 |
+| `#[test]` functions | 3,643 (54 ignored, each with its reason) |
+| QEMU steps (disk suite) | 96 named steps |
+| `unsafe` blocks | 104 in 19 files (84 outside tests); 105 `SAFETY` comments; the files are the ones `CLAUDE.md` lists |
+| Dependency audit | `build deny` clean (332 crates, no C linkage); cargo-deny's advisories stand in for cargo-audit (same RustSec database) |
+| Media UKI | 25.8 MiB (27,018,240 bytes), boot image 31 MiB |
+| V1R1M0 ISO | `QS400-V1R1M0-c35f266c792f.iso`, 148,516,864 bytes, SHA-256 `b00008946fe2df8ac04818ed10c59581389f4b898be528ec0e857a9ceca6e9ed` (development key; PTF baseline `C26001110`) |
