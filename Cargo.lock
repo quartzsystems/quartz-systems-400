@@ -1808,6 +1808,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "kcbuild"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cmd",
+ "msgf",
+ "release",
+ "sys-cpps",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -126,6 +126,7 @@ members = [
     "tools/pase-probe",
     "tools/fmtcheck",
     "tools/fuzz",
+    "tools/kcbuild",
     # Media: tape, optical, image catalogs.
     "media/tape",
     "media/medio",

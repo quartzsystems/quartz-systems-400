@@ -19,15 +19,22 @@ use crate::host::cmd::Cmd;
 const SANCOV: &str = "-C passes=sancov-module -C llvm-args=-sanitizer-coverage-level=3 \
                       -C llvm-args=-sanitizer-coverage-inline-8bit-counters";
 
+/// The host triple the fuzzer builds for. Naming it keeps `RUSTFLAGS` off
+/// build scripts and proc macros, which must not be instrumented.
+const HOST: &str = "x86_64-unknown-linux-gnu";
+
 /// Runs `target` (every one when `None`) for `secs` seconds each.
 pub fn fuzz(ctx: &Ctx, target: Option<&str>, secs: u64) -> Result<()> {
+    // MSVC's linker cannot take the counters' sections (LLVM's COMDAT
+    // error); the fuzzer runs on Linux, like the rest of the pipeline.
+    anyhow::ensure!(cfg!(target_os = "linux"), "build fuzz runs on Linux (WSL)");
     let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
     let dir = ctx.paths.target.join("fuzz");
     let mut c = Cmd::new(&cargo, "qsfuzz");
     c.cwd(&ctx.paths.repo)
         .env("RUSTFLAGS", SANCOV)
         .env("CARGO_TARGET_DIR", &dir)
-        .args(["run", "--profile", "fuzz", "-p", "fuzz", "--bin", "qsfuzz", "--"]);
+        .args(["run", "--profile", "fuzz", "--target", HOST, "-p", "fuzz", "--bin", "qsfuzz", "--"]);
     match target {
         Some(t) => c.args(["run", t]),
         None => c.arg("all"),

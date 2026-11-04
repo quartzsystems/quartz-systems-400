@@ -1,0 +1,27 @@
+[package]
+name = "kcbuild"
+description = "QS/400 Knowledge Center: a static site of the commands, messages and documents"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "kcbuild"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+cmd = { path = "../../command/cmd", version = "0.1.0" }
+sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
+msgf = { path = "../../runtime/msgf", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+release = { path = "../../lic/release", version = "0.1.0" }
