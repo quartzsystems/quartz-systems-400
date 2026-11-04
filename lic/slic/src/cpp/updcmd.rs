@@ -109,7 +109,7 @@ fn kv_store(system: &mut System, name: &str, text: &str, kv: &BTreeMap<String, S
     })
 }
 
-fn attrs(system: &mut System) -> BTreeMap<String, String> {
+pub(crate) fn attrs(system: &mut System) -> BTreeMap<String, String> {
     kv_load(system, ATTRS)
 }
 
@@ -133,7 +133,7 @@ fn tls_config() -> Option<Arc<rustls::ClientConfig>> {
 }
 
 /// A client for the service the attributes name.
-fn client(system: &mut System) -> Result<(Client, BTreeMap<String, String>), String> {
+pub(crate) fn client(system: &mut System) -> Result<(Client, BTreeMap<String, String>), String> {
     let a = attrs(system);
     let url = a.get("url").map_or(DEFAULT_URL, String::as_str);
     let proxy = a.get("proxy").map_or("", String::as_str);
@@ -419,7 +419,7 @@ pub fn tick(system: &mut System, now: u64) -> Vec<String> {
 }
 
 /// Who the request is from: the contact information `CHGCNTINF` keeps.
-fn contact(system: &mut System) -> String {
+pub(crate) fn contact(system: &mut System) -> String {
     let c = crate::stgsvc::prblog::contact(system).unwrap_or_default();
     [c.company, c.contact, c.email]
         .into_iter()
@@ -430,7 +430,27 @@ fn contact(system: &mut System) -> String {
 
 fn sndsrvrqs(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     if parms.text("ACTION") == "*REPORT" {
-        return Err("CPF9B70 problem reports to the update service arrive in a later release".into());
+        // Every prepared problem, sent to the service.
+        let ids = crate::stgsvc::prblog::prepared(system)?;
+        let mut out = String::new();
+        let mut sent = 0usize;
+        for id in &ids {
+            match crate::stgsvc::prblog::report(system, id)? {
+                prb::Reported::Sent(t) => {
+                    sent += 1;
+                    let _ = writeln!(out, "{SENT} problem {id} sent: {t}");
+                }
+                prb::Reported::Kept(why) => {
+                    return Err(format!("CPF39D3 problem {id} was not sent: {why}"));
+                }
+            }
+        }
+        let n = sent.to_string();
+        return Ok(super::done(
+            format!("{out}{SENT} {sent} prepared problem reports sent\n"),
+            SENT,
+            &[(&n, 10)],
+        ));
     }
     let who = contact(system);
     let (c, _) = client(system)?;

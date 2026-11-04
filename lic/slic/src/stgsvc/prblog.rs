@@ -134,18 +134,51 @@ pub fn message_sent(system: &mut System, msgid: &str, severity: u8, text: &str) 
     }
 }
 
-/// The hook the update service's client fills in: today no service
-/// provider is reachable, so a report is prepared and kept.
-/// MIGRATE(ptf): the client under `ptf/` sends it.
-fn sender() -> Box<dyn Sender> {
-    Box::new(prb::Unconnected)
+/// Sends a report to the update service (`CHGUPDA`'s URL) as a `*PRB`
+/// service request (`docs/UPDATE_PROTOCOL.md` §5).
+struct ToService {
+    client: ptf_update::client::Client,
+    contact: String,
+}
+
+impl Sender for ToService {
+    fn send(&mut self, id: &str, report: &str) -> Result<String, String> {
+        let line = self.client.problem(id, &self.contact, report).map_err(|e| format!("{} {e}", e.msgid()))?;
+        line.strip_prefix("ok ")
+            .map(|t| t.trim().to_string())
+            .ok_or_else(|| format!("the service answered: {line}"))
+    }
+}
+
+/// The sender: the update service when one is configured, else none
+/// (the report is prepared and kept).
+fn sender(system: &mut System) -> Box<dyn Sender> {
+    if !crate::cpp::updcmd::attrs(system).contains_key("url") {
+        return Box::new(prb::Unconnected);
+    }
+    let contact = crate::cpp::updcmd::contact(system);
+    match crate::cpp::updcmd::client(system) {
+        Ok((client, _)) => Box::new(ToService { client, contact }),
+        Err(_) => Box::new(prb::Unconnected),
+    }
+}
+
+/// The problems whose reports are prepared and not yet sent.
+pub fn prepared(system: &mut System) -> Result<Vec<String>, String> {
+    let l = load(system)?;
+    let f = prb::Filter {
+        status: vec![prb::PrbStatus::Prepared],
+        ..prb::Filter::default()
+    };
+    Ok(l.list(&f).into_iter().map(|p| p.id.clone()).collect())
 }
 
 /// Report problem `id` to the service provider.
 pub fn report(system: &mut System, id: &str) -> Result<Reported, String> {
+    let mut s = sender(system);
     let mut l = load(system)?;
     let r = l
-        .report(id, sender().as_mut(), now_unix())
+        .report(id, s.as_mut(), now_unix())
         .ok_or_else(|| format!("CPF3925 Problem {id} not found in the problem log."))?;
     store(system, &l)?;
     super::liclog::write(0x0400, 0x0002, system.current_job, &format!("Problem {id}: {r:?}"));

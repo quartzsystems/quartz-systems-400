@@ -69,12 +69,13 @@ problem with tab-separated fields.
 Work with Problem option 2 and `WRKPRB` F16 (prepared problems) call
 `prblog::report`: `ProblemLog::report` prepares the report (the problem,
 its symptoms and notes as text), keeps it with the log, marks the problem
-PREPARED and hands it to a `prb::Sender`. Today the sender is
-`prb::Unconnected`, which declines; the report stays kept. The hook is
-`prblog::sender()` (`MIGRATE(ptf)`): the update service's client under
-`ptf/` replaces it, and a sent problem becomes SENT with the provider's
-reference as a note. `SNDSRVRQS ACTION(*TEST)` answers `CPF39D3` until
-then.
+PREPARED and hands it to a `prb::Sender` (`prblog::sender()`). When
+the update attributes name a service (`CHGUPDA`), the sender posts the
+report to it as a `*PRB` service request (`UPDATE_PROTOCOL.md` §5) and a
+sent problem becomes SENT with the provider's ticket as a note; with no
+service named the sender is `prb::Unconnected`, which declines, and the
+report stays kept. `SNDSRVRQS ACTION(*REPORT)` sends every prepared
+report; `*TEST` checks the connection.
 
 ### Support contact information
 

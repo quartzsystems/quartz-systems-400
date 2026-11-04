@@ -172,8 +172,10 @@ system NAME
 contact Name of the contact person
 ```
 
-and the service answers one line, `ok <ticket>`. Problem reports are a
-later phase; the request exists so the connection can be tested.
+and the service answers one line, `ok <ticket>`. A problem report
+(`SNDSRVRQS ACTION(*REPORT)`, Work with Problem option 2) is the same
+request with `action *PRB`, a `problem ID` line, a blank line and the
+report's text; the reference server keeps it as `problems/T<n>.txt`.
 
 ## 6. Update attributes
 

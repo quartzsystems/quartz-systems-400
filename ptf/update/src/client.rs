@@ -221,6 +221,16 @@ impl Client {
         OrderResult::decode(&self.text("POST", "/v1/order", req.encode().into_bytes())?)
     }
 
+    /// A problem report (`*PRB`): the report's text after a blank line;
+    /// the service's one line (`ok <ticket>`).
+    pub fn problem(&self, id: &str, contact: &str, report: &str) -> Result<String> {
+        let body = format!(
+            "QS400SERVICE 1\naction *PRB\nsystem {}\ncontact {contact}\nproblem {id}\n\n{report}",
+            self.ident.system
+        );
+        Ok(self.text("POST", "/v1/service", body.into_bytes())?.trim().to_string())
+    }
+
     /// A service request; the service's one line.
     pub fn service(&self, action: &str, contact: &str) -> Result<String> {
         let body = format!(

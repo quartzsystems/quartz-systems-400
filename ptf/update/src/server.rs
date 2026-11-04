@@ -123,6 +123,13 @@ impl Server {
                     return Response::text(400, "not a service request");
                 }
                 let n = self.tickets.fetch_add(1, Ordering::SeqCst) + 1;
+                // A problem report is kept as `problems/T<n>.txt`.
+                if text.lines().any(|l| l == "action *PRB") {
+                    let dir = self.dir.join("problems");
+                    if std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(dir.join(format!("T{n:06}.txt")), text.as_bytes())).is_err() {
+                        return Response::text(500, "the report could not be kept");
+                    }
+                }
                 Response::text(200, &format!("ok T{n:06}\n"))
             }
             ("GET" | "POST", _) => Response::text(404, "no such resource"),

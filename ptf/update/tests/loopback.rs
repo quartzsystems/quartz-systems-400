@@ -195,6 +195,11 @@ fn an_order_over_plain_http() {
     assert!(ok);
     assert_eq!(g.level, 3);
     assert!(c.service("*TEST", "Cody").unwrap().starts_with("ok T"));
+    // A problem report is answered with a ticket and kept by the server.
+    let line = c.problem("P001234567", "Cody", "Symptoms: CPF0001\n").unwrap();
+    let ticket = line.strip_prefix("ok ").unwrap();
+    let kept = std::fs::read_to_string(dir.join("problems").join(format!("{ticket}.txt"))).unwrap();
+    assert!(kept.contains("action *PRB") && kept.contains("problem P001234567") && kept.ends_with("Symptoms: CPF0001\n"));
     let r = c.order(&order(&["*CUMPKG"])).unwrap();
     assert_eq!(r.order, "0000002");
     assert_eq!(r.ptfs.len(), 3);
