@@ -37,8 +37,8 @@ pub fn read_text(c: &dyn IfsClient, path: &str) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&data).into_owned())
 }
 
-// MIGRATE(phase11): INFOSTMF's PCML is written with it.
-/// Write text to a stream file tagged 1208, replacing what was there.
+/// Write text to a stream file tagged 1208, replacing what was there
+/// (`INFOSTMF`'s PCML among others).
 ///
 /// # Errors
 ///

@@ -1332,7 +1332,9 @@ the object's name, when the command gives `*CTLSPEC` and the source no
 are in any source); a relative path is looked for in the current
 directory, each `INCDIR` directory, then the including file's
 directory. `RPGINCDIR` is not read (jobs have no environment variables
-yet). `INFOSTMF` is accepted; no PCML is written. `svc.sqlrun` takes a
+yet). `INFOSTMF` gets the PCML of the program's entry parameters or the
+module's exported procedures (`rpgc::pcml`, as IBM i 7.5 writes it;
+a pointer parameter has none). `svc.sqlrun` takes a
 path as well as an `xfer` buffer.
 
 When RPG calls one of the system's C-style procedures

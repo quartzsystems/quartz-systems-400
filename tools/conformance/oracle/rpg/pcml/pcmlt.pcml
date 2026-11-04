@@ -1,0 +1,15 @@
+<pcml version="7.0">
+   <!-- RPG program: PCMLT  -->
+   <!-- created: 2026-11-04-01.30.59 -->
+   <!-- source: {user}1/QSPCMLSRC(PCMLT) -->
+   <!-- 6 -->
+   <program name="PCMLT" path="/QSYS.LIB/{user}1.LIB/PCMLT.PGM">
+      <data name="WHO" type="char" length="10" usage="inputoutput" />
+      <data name="AMT" type="packed" length="9" precision="2" usage="inputoutput" />
+      <data name="N" type="int" length="4" precision="31" usage="inputoutput" />
+      <data name="U" type="int" length="2" precision="16" usage="inputoutput" />
+      <data name="Z" type="zoned" length="5" precision="1" usage="inputoutput" />
+      <data name="V" type="varchar" length="30" usage="inputoutput" />
+      <data name="ARR" type="char" length="3" count="4" usage="inputoutput" />
+   </program>
+</pcml>

@@ -1,0 +1,18 @@
+<pcml version="7.0">
+   <!-- RPG module: PCMLM  -->
+   <!-- created: 2026-11-04-01.31.04 -->
+   <!-- source: {user}1/QSPCMLSRC(PCMLM) -->
+   <!-- 3 -->
+   <struct name="CUST">
+      <data name="ID" type="packed" length="7" precision="0" usage="inherit" />
+      <data name="NAME" type="char" length="20" usage="inherit" />
+   </struct>
+   <!-- 7 -->
+   <program name="ADD" entrypoint="ADD" returnvalue="integer">
+      <data name="A" type="int" length="4" precision="31" passby="value" usage="input" />
+      <data name="B" type="int" length="4" precision="31" usage="input" />
+      <data name="C" type="struct" struct="CUST" usage="inputoutput" />
+      <data name="F" type="float" length="8" usage="inputoutput" />
+      <data name="I" type="char" length="1" usage="inputoutput" />
+   </program>
+</pcml>

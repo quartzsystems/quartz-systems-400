@@ -93,9 +93,33 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
             Err(e) => writeln!(out, "The listing was not spooled: {e}"),
         };
     }
-    if req.infostmf.is_some() {
-        // MIGRATE(phase11): PGMINFO(*PCML) documents for INFOSTMF.
-        let _ = writeln!(out, "INFOSTMF: no PCML is generated; the stream file is not written.");
+    if let Some(path) = &req.infostmf
+        && compiled.created
+    {
+        // PGMINFO(*PCML): the interface as PCML, in the stream file.
+        let source = match &req.srcstmf {
+            Some(p) => p.clone(),
+            None => format!("{}/{}({})", src.member.lib, src.member.file, src.member.name),
+        };
+        let created = {
+            let t = crate::ipl::system::now_unix();
+            let (y, mo, d, h, mi, s) = crate::platform::rtc::unix_to_civil(t);
+            format!("{y:04}-{mo:02}-{d:02}-{h:02}.{mi:02}.{s:02}")
+        };
+        let subject = rpgc::pcml::Subject {
+            name: &name,
+            lib: lib_name,
+            module: !matches!(shape, object::Shape::Program),
+            source: &source,
+            created: &created,
+        };
+        let _ = match rpgc::pcml::document(&compiled, &subject) {
+            Ok(doc) => match super::stmf::with_job(system, |c| super::stmf::write_text(c, path, &doc)) {
+                Ok(()) => writeln!(out, "PCML for {name} written to {path}."),
+                Err(e) => writeln!(out, "RNS9380 the PCML was not written: {e}"),
+            },
+            Err(p) => writeln!(out, "RNS9381 no PCML: parameter {p} has a type PCML does not describe."),
+        };
     }
     let sev = format!("{:02}", compiled.max_severity);
     let refused = Refused {
