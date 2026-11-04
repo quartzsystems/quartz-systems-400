@@ -115,7 +115,8 @@ the TPM line is `WARN` (with `swtpm` on `PATH` the suite gives the guest a
 - Media step 5: the ISO alone with a SATA disk and a stick, `QSHWQUAL`
   from the menu, the report written to the stick and read back.
 
-Expected result here: `WARN` (Secure Boot off in the test OVMF, no TPM,
+Result here (2026-11-04): `WARN`, 11 passed, 4 warnings, 0 failed: the plain OVMF
+has no `SecureBoot` variable (state unreadable), no TPM,
 1 GiB of main storage).
 
 ## NEEDS-CODY: hypervisor checklists
