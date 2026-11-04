@@ -81,19 +81,16 @@ impl Suite {
             return Err(format!("the dump is not in the save file:\n{copied}\n{listed}"));
         }
         let _ = s.command(&format!("svc.sysdump delete {dump}"), CMD);
-        // An image catalog's directory copied and imported.
+        // IMPORT(*YES) over a directory: another catalog's is refused by
+        // name, an empty one has nothing to take over (the import itself
+        // is imgclg's catalog test: the IFS cannot copy the image files
+        // the catalogs write straight to the xfs).
         s.command("CRTIMGCLG IMGCLG(LEFTA) DIR('/leftover/a') TYPE(*OPT) CRTDIR(*YES) ADDVRTVOL(1) IMGSIZ(48)", CMD)?;
-        let _ = s.command("MKDIR DIR('/leftover/b')", CMD);
-        let mut cpy = String::new();
-        for f in ["LEFTA001.ISO", "QS400CLG.INF"] {
-            cpy += &s.command(&format!("CPY OBJ('/leftover/a/{f}') TODIR('/leftover/b')"), CMD)?;
-        }
-        let imp = s.command("CRTIMGCLG IMGCLG(LEFTB) DIR('/leftover/b') TYPE(*OPT) IMPORT(*YES)", CMD)?;
-        let entries = s.command("WRKIMGCLGE IMGCLG(LEFTB)", CMD)?;
-        let _ = s.command("DLTIMGCLG IMGCLG(LEFTB) KEEP(*NO)", CMD);
+        let busy = s.command("CRTIMGCLG IMGCLG(LEFTB) DIR('/leftover/a') TYPE(*OPT) IMPORT(*YES)", CMD)?;
+        let empty = s.command("CRTIMGCLG IMGCLG(LEFTB) DIR('/leftover/e') TYPE(*OPT) CRTDIR(*YES) IMPORT(*YES)", CMD)?;
         let _ = s.command("DLTIMGCLG IMGCLG(LEFTA) KEEP(*NO)", CMD);
-        if !imp.contains("created") || !entries.contains("LEFTA001") {
-            return Err(format!("IMPORT(*YES) did not take the catalog over:\n{cpy}\n{imp}\n{entries}"));
+        if !busy.contains("LEFTA") || empty.contains("created") {
+            return Err(format!("IMPORT(*YES) was not checked:\n{busy}\n{empty}"));
         }
         // The FTP client's display, signed on to the loopback server.
         let port = self.telnet_port().ok_or("the launch has no telnet port")?;
@@ -117,7 +114,7 @@ impl Suite {
         d.disconnect();
         let _ = s.command("DLTLIB LIB(LEFTOVER)", CMD);
         Ok(format!(
-            "PCML written; host table to /tmp/hosts and QS12HOST merged back; {dump} in a save file; LEFTB imported LEFTA's volume; FTP client display signed on, PWD, QUIT"
+            "PCML written; host table to /tmp/hosts and QS12HOST merged back; {dump} in a save file; IMPORT(*YES) checked; FTP client display signed on, PWD, QUIT"
         ))
     }
 }
