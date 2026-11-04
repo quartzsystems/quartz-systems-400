@@ -412,8 +412,7 @@ fn dltlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     // gone is no error.
     for path in &paths {
         let gone = crate::stgsvc::ifs::with_job_ifs(system, |fs, cx| match fs.remove_tree(cx, path) {
-            Ok(()) => Ok(()),
-            Err(ifs::Errno::ENOENT) => Ok(()),
+            Ok(()) | Err(ifs::Errno::ENOENT) => Ok(()),
             Err(e) => Err(format!("{NOT_DELETED} {path}: {e}")),
         });
         if let Some(Err(e)) = gone {

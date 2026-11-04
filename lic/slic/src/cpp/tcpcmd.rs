@@ -648,13 +648,12 @@ fn mrg_ht(system: &mut System, parms: &Parms) -> Result<CmdReply, Error> {
     let fmt = parms.name("FILEFMT");
     let replace = yes_no(&parms.text("REPLACE"), "REPLACE")?;
     let stmf = parms.specified("FROMOBJ").then(|| parms.text("FROMOBJ"));
-    let recs = match &stmf {
-        Some(_) => Vec::new(),
-        None => {
-            let (file, lib) = parms.qual("FROMFILE");
-            let mbr = parms.name("FROMMBR");
-            records(system, &lib.to_ascii_uppercase(), &file.to_ascii_uppercase(), &mbr)?
-        }
+    let recs = if stmf.is_some() {
+        Vec::new()
+    } else {
+        let (file, lib) = parms.qual("FROMFILE");
+        let mbr = parms.name("FROMMBR");
+        records(system, &lib.to_ascii_uppercase(), &file.to_ascii_uppercase(), &mbr)?
     };
     let from = match fmt.as_str() {
         // A stream file is a host file in its own form: *AIX unless *NIC.

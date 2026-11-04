@@ -70,6 +70,39 @@ pub fn run(system: &mut System, cmdname: &str, parms: &Parms) -> CmdReply {
     }
 }
 
+/// `PGMINFO(*PCML)`: the interface as PCML, in the stream file; the
+/// line for the command's output.
+fn pcml(
+    system: &mut System,
+    req: &Request,
+    src: &Source,
+    compiled: &rpgc::Compiled,
+    (name, lib): (&str, &str),
+    shape: object::Shape,
+    path: &str,
+) -> String {
+    let source = match &req.srcstmf {
+        Some(p) => p.clone(),
+        None => format!("{}/{}({})", src.member.lib, src.member.file, src.member.name),
+    };
+    let (year, month, day, hour, min, sec) = crate::platform::rtc::unix_to_civil(crate::ipl::system::now_unix());
+    let created = format!("{year:04}-{month:02}-{day:02}-{hour:02}.{min:02}.{sec:02}");
+    let subject = rpgc::pcml::Subject {
+        name,
+        lib,
+        module: !matches!(shape, object::Shape::Program),
+        source: &source,
+        created: &created,
+    };
+    match rpgc::pcml::document(compiled, &subject) {
+        Ok(doc) => match super::stmf::with_job(system, |c| super::stmf::write_text(c, path, &doc)) {
+            Ok(()) => format!("PCML for {name} written to {path}."),
+            Err(e) => format!("RNS9380 the PCML was not written: {e}"),
+        },
+        Err(p) => format!("RNS9381 no PCML: parameter {p} has a type PCML does not describe."),
+    }
+}
+
 /// Compile the source, spool the listing, make the object.
 fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> CmdReply {
     let mut options = req.options(&req.object_name(src), lib_name, src);
@@ -96,30 +129,7 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
     if let Some(path) = &req.infostmf
         && compiled.created
     {
-        // PGMINFO(*PCML): the interface as PCML, in the stream file.
-        let source = match &req.srcstmf {
-            Some(p) => p.clone(),
-            None => format!("{}/{}({})", src.member.lib, src.member.file, src.member.name),
-        };
-        let created = {
-            let t = crate::ipl::system::now_unix();
-            let (y, mo, d, h, mi, s) = crate::platform::rtc::unix_to_civil(t);
-            format!("{y:04}-{mo:02}-{d:02}-{h:02}.{mi:02}.{s:02}")
-        };
-        let subject = rpgc::pcml::Subject {
-            name: &name,
-            lib: lib_name,
-            module: !matches!(shape, object::Shape::Program),
-            source: &source,
-            created: &created,
-        };
-        let _ = match rpgc::pcml::document(&compiled, &subject) {
-            Ok(doc) => match super::stmf::with_job(system, |c| super::stmf::write_text(c, path, &doc)) {
-                Ok(()) => writeln!(out, "PCML for {name} written to {path}."),
-                Err(e) => writeln!(out, "RNS9380 the PCML was not written: {e}"),
-            },
-            Err(p) => writeln!(out, "RNS9381 no PCML: parameter {p} has a type PCML does not describe."),
-        };
+        let _ = writeln!(out, "{}", pcml(system, req, src, &compiled, (&name, lib_name), shape, path));
     }
     let sev = format!("{:02}", compiled.max_severity);
     let refused = Refused {
