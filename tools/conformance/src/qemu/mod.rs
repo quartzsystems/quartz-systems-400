@@ -65,6 +65,15 @@ pub struct Launch {
     /// A network boot first: QEMU's TFTP server over this directory, the
     /// DHCP server naming this boot file (install step 15).
     pub tftp: Option<(PathBuf, String)>,
+    /// A virtio-serial port named `org.qemu.guest_agent.0` on this Unix
+    /// socket (QEMU the server), as libvirt and Proxmox give a guest agent.
+    pub guest_agent: Option<PathBuf>,
+    /// A TPM 2.0 (`tpm-crb`) over this swtpm control socket.
+    pub tpm: Option<PathBuf>,
+    /// A USB stick (an xHCI controller and `usb-storage`) with this image.
+    pub usb_stick: Option<PathBuf>,
+    /// Disks on the q35 AHCI controller (SATA), beside the virtio ones.
+    pub sata_disks: Vec<PathBuf>,
 }
 
 /// Find the system emulator: the override variable, else `PATH`.
@@ -150,6 +159,7 @@ pub fn args(l: &Launch) -> Vec<OsString> {
         a.push(OsString::from("-device"));
         a.push(OsString::from("virtio-scsi-pci,id=scsi0"));
     }
+    extras(l, &mut a);
     a.extend(
         [
             "-rtc",
@@ -200,4 +210,39 @@ fn join(prefix: &str, path: &Path) -> OsString {
     let mut s = OsString::from(prefix);
     s.push(path);
     s
+}
+
+/// The devices a hypervisor's management stack adds: SATA disks on the
+/// q35 AHCI controller, the guest agent's virtio-serial port, a TPM, a
+/// USB stick.
+fn extras(l: &Launch, a: &mut Vec<OsString>) {
+    for (i, disk) in l.sata_disks.iter().enumerate() {
+        a.push(OsString::from("-drive"));
+        a.push(join(&format!("if=none,id=sata{i},format=raw,file="), disk));
+        a.push(OsString::from("-device"));
+        a.push(OsString::from(format!("ide-hd,drive=sata{i},bus=ide.{},serial=QS400SD{i}", i + 2)));
+    }
+    if let Some(sock) = &l.guest_agent {
+        a.push(OsString::from("-chardev"));
+        a.push(join("socket,id=qga0,server=on,wait=off,path=", sock));
+        a.extend(
+            ["-device", "virtio-serial-pci", "-device", "virtserialport,chardev=qga0,name=org.qemu.guest_agent.0"]
+                .iter()
+                .map(OsString::from),
+        );
+    }
+    if let Some(sock) = &l.tpm {
+        a.push(OsString::from("-chardev"));
+        a.push(join("socket,id=chrtpm,path=", sock));
+        a.extend(["-tpmdev", "emulator,id=tpm0,chardev=chrtpm", "-device", "tpm-crb,tpmdev=tpm0"].iter().map(OsString::from));
+    }
+    if let Some(img) = &l.usb_stick {
+        a.push(OsString::from("-drive"));
+        a.push(join("if=none,id=stick,format=raw,file=", img));
+        a.extend(
+            ["-device", "qemu-xhci,id=xhci", "-device", "usb-storage,bus=xhci.0,drive=stick,removable=on"]
+                .iter()
+                .map(OsString::from),
+        );
+    }
 }

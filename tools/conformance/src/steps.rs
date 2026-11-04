@@ -181,6 +181,10 @@ impl Suite {
                 display: None,
                 scsi: false,
                 tftp: None,
+                guest_agent: None,
+                tpm: None,
+                usb_stick: None,
+                sata_disks: Vec::new(),
             },
             media,
             install: false,
@@ -446,6 +450,8 @@ impl Suite {
         drop(s);
 
         if self.launch.image.is_none() {
+            #[cfg(unix)]
+            reports.push(self.run_media_qshwqual(&iso)?);
             return Ok(reports);
         }
 
@@ -461,7 +467,7 @@ impl Suite {
 
         // 3. ISO and disk, disk first: the disk must win.
         let disk_first = Launch {
-            cdrom: Some(iso),
+            cdrom: Some(iso.clone()),
             cdrom_first: false,
             ..self.launch.clone()
         };
@@ -475,6 +481,9 @@ impl Suite {
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(20));
         drop(s);
+        // 5. QSHWQUAL from the media's menu, the report on a stick.
+        #[cfg(unix)]
+        reports.push(self.run_media_qshwqual(&iso)?);
         Ok(reports)
     }
 
@@ -659,6 +668,8 @@ impl Suite {
         reports.extend(self.display_steps()?);
         #[cfg(unix)]
         reports.extend(self.hw_steps()?);
+        #[cfg(unix)]
+        reports.extend(self.guest_steps()?);
         if self.only.is_some() {
             return Ok(reports);
         }

@@ -34,6 +34,8 @@ mod httpadm;
 mod navstep;
 pub mod ftp;
 mod ftpsrv;
+#[cfg(unix)]
+mod guest;
 mod ifs;
 mod install;
 mod load;

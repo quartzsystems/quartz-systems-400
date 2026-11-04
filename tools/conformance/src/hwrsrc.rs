@@ -24,7 +24,7 @@ use crate::steps::{CMD, StepReport, Suite};
 const NAME: &str = "83 hardware resources";
 
 /// The screen as text, one row a line.
-fn screen(d: &Display) -> String {
+pub(crate) fn screen(d: &Display) -> String {
     d.term.text_rows().iter().fold(String::new(), |mut s, r| {
         let _ = writeln!(s, "|{r}|");
         s
@@ -32,7 +32,7 @@ fn screen(d: &Display) -> String {
 }
 
 /// The resource names a list shows that start with `prefix`.
-fn names(d: &Display, prefix: &str) -> Vec<String> {
+pub(crate) fn names(d: &Display, prefix: &str) -> Vec<String> {
     d.term
         .text_rows()
         .iter()
@@ -43,7 +43,7 @@ fn names(d: &Display, prefix: &str) -> Vec<String> {
 }
 
 /// The row of resource `name`, if the list shows it.
-fn row_of(d: &Display, name: &str) -> Option<String> {
+pub(crate) fn row_of(d: &Display, name: &str) -> Option<String> {
     d.term
         .text_rows()
         .into_iter()
