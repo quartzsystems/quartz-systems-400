@@ -213,12 +213,15 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
             def.program.clone_from(&pname);
             def.entry = entry.clone().unwrap_or_default();
             let ty = if entry.is_some() { types::SRVPGM } else { types::PGM };
-            let owner = external_object(txn, ctx, &plib, &pname, ty)?.ok_or_else(|| {
-                // BLOCKED(sql): IBM keeps the definition of a routine over a
-                // program not made yet in its catalog only; QS/400 keeps it
-                // with the program.
-                unsupported(&format!("an external routine over {plib}/{pname} before the program exists"))
-            })?;
+            let owner = if let Some(o) = external_object(txn, ctx, &plib, &pname, ty)? {
+                o
+            } else {
+                // A program not made yet: the definition waits in a holder
+                // service program of the routine's own, as a function's does.
+                let h = program_name_of(txn, lib, &r.name.name, types::SRVPGM)?;
+                ctx.warning = Some(no_program(&plib, &pname));
+                holder(txn, ctx, lib, h, &r.text)?
+            };
             (owner, Vec::new())
         }
         RoutineBody::Sourced(..) => return Err(unsupported("sourced functions")),
@@ -467,7 +470,12 @@ fn signature_matches(f: &Found, sig: &[TypeSpec]) -> bool {
 
 /// Drop a routine: an SQL routine's program goes with it; an external
 /// one's program only loses the routine's attributes.
-pub(super) fn remove(txn: &mut Txn<'_>, ctx: &SqlContext, f: &Found) -> Result<()> {
+/// `SQL7909`: the routine's program is not there (yet).
+fn no_program(lib: &str, pgm: &str) -> crate::sqlca::Warning {
+    crate::sqlca::Warning { sqlcode: 7909, sqlstate: "01660".into(), text: format!("{lib}/{pgm}") }
+}
+
+pub(super) fn remove(txn: &mut Txn<'_>, ctx: &mut SqlContext, f: &Found) -> Result<()> {
     if f.routine.def.routine_type == 2 {
         super::udf::forget(&f.routine.def.name, &f.schema, f.routine.def.parm_count.into());
     }
@@ -483,6 +491,15 @@ pub(super) fn remove(txn: &mut Txn<'_>, ctx: &SqlContext, f: &Found) -> Result<(
         sqlinf::save(txn, f.owner, &info, ctx.clock())?;
     } else {
         sqlinf::clear(txn, ctx.job, f.owner)?;
+        // A holder made for a program not there yet goes with it.
+        let (_, h) = ops::read_header(txn, f.owner)?;
+        if f.owner.type_code == types::SRVPGM && h.name.to_string() != f.routine.def.program {
+            ops::delete(txn, ctx.job, f.owner)?;
+            let ty = if f.routine.def.entry.is_empty() { types::PGM } else { types::SRVPGM };
+            if external_object(txn, ctx, &f.routine.def.program_library, &f.routine.def.program, ty)?.is_none() {
+                ctx.warning = Some(no_program(&f.routine.def.program_library, &f.routine.def.program));
+            }
+        }
     }
     Ok(())
 }

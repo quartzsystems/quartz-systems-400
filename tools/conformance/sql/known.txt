@@ -27,7 +27,7 @@ query/STRFUNCS   # DECODE is SQL0204 on pub400 but in the brief's must-have list
 query/NUMFUNCS   # ENCRYPT_AES refused: DB2 for i's encrypted layout is not published
 query/REGISTERS   # CURRENT DEGREE is pub400's system setting (ANY); NONE here
 sqlpl/CATALOG   # PARM_SIGNATURE is LONG VARCHAR FOR BIT DATA at IBM (no such catalog type here)
-sqlpl/EXTERN   # an external procedure over a program not made yet refused SQL0084
+sqlpl/EXTERN   # LANGUAGE JAVA procedures refused SQL0084
 sqlpl/FUNCS   # a function's error comes at fetch at IBM (an empty result first), at run here; catalog LOB columns
 services/SVCCOLS   # a probe of pub400's catalog; QS/400's catalogs do not list the QSYS2 services (sql tests/service_shapes.rs holds the shapes to it)
 services/SVCVALS   # pub400's own jobs, users and values; the value forms are settled in sql tests/services.rs

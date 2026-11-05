@@ -1123,3 +1123,10 @@ sev = 30
 text = "An array is not valid here."
 help = "Array types, array constructors, ARRAY_AGG and UNNEST are used in SQL procedures only: in their variables and the statements that read or assign them."
 vars = []
+
+[[msg]]
+id = "SQL7909"
+sev = 10
+text = "Program &1 of the routine is not there."
+help = "The routine was made or dropped, but the program or service program it names cannot be found. Create the program before the routine is called."
+vars = ["*CHAR 21"]
