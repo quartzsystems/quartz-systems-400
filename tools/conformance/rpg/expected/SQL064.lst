@@ -1,0 +1,200 @@
+1{heading} page 1
+-Source type...............RPG
+ Object name...............{lib}/SQL064
+ Source file...............{lib}/QRPGLESRC
+ Member....................*OBJ
+ To source file............QTEMP/QSQLTEMP1
+ Options...................*XREF
+ RPG preprocessor options..*NONE
+ Listing option............*PRINT
+ Target release............V7R5M0
+ INCLUDE file..............*SRCFILE
+ Commit....................*NONE
+ Allow copy of data........*OPTIMIZE
+ Close SQL cursor..........*ENDACTGRP
+ Allow blocking............*ALLREAD
+ Delay PREPARE.............*NO
+ Concurrent access
+   resolution..............*DFT
+ Generation level..........10
+ Printer file..............*LIBL/QSYSPRT
+ Date format...............*JOB
+ Date separator............*JOB
+ Time format...............*HMS
+ Time separator ...........*JOB
+ Replace...................*YES
+ Relational database.......*LOCAL
+ User .....................*CURRENT
+ RDB connect method........*DUW
+ Default collection........*NONE
+ Dynamic default
+   collection..............*NO
+ Package name..............*OBJLIB/*OBJ
+ Path......................*NAMING
+ SQL rules.................*DB2
+ Created object type.......*PGM
+ Debugging view............*NONE
+ Debugging encryption key..*NONE
+ User profile .............*NAMING
+ Dynamic user profile......*USER
+ Sort sequence.............*JOB
+ Language ID...............*JOB
+ IBM SQL flagging..........*NOFLAG
+ ANS flagging..............*NONE
+ Text......................*SRCMBRTXT
+ Source file CCSID.........37
+ Job CCSID.................273
+ Decimal result options:
+   Maximum precision.......31
+   Maximum scale...........31
+   Minimum divide scale....0
+ DECFLOAT rounding mode....*HALFEVEN
+ Compiler options..........*NONE
+0Source member changed on dd-dd-dd  tt:tt:tt
+-
+1{heading} page 2
+0Record  *...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8 ...+... 9 ...+... 0   SEQNBR  Last change
+0    1   **FREE                                                                                                 000100
+     2   //; cmd: CRTSQLRPGI OBJ({lib}/{name}) SRCFILE({lib}/QRPGLESRC) COMMIT(*NONE) OUTPUT(*PRINT)            000200
+     3   //; sqlfile: EMPT                                                                                      000300
+     4   //; run: no                                                                                            000400
+     5   ctl-opt dftactgrp(*no);                                                                                000500
+     6   dcl-s id int(10);                                                                                      000600
+     7   dcl-s n int(10);                                                                                       000700
+     8   dcl-s ind int(5) dim(3);                                                                               000800
+     9   // What the precompiler refuses: FETCH ABSOLUTE, options of routines only,                             000900
+    10   // an indicator array element, a list of values not in parentheses.                                    001000
+    11   exec sql set option commit = *none, dbgview = *none, output = *print, tgtrls = *current;               001100
+    12   exec sql declare c1 scroll cursor for select ID from EMPT order by ID;                                 001200
+    13   exec sql open c1;                                                                                      001300
+    14   exec sql fetch absolute 2 from c1 into :id;                                                            001400
+    15   exec sql select BONUS into :n :ind(2) from EMPT where ID = 2;                                          001500
+    16   exec sql values 1, 2 into :id, :n;                                                                     001600
+    17   *inlr = *on;                                                                                           001700
+0                                * * * * *  E N D  O F  S O U R C E  * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 3
+0                                               CROSS REFERENCE
+0Data Names                    Define    Reference
+0BONUS                            12       DECIMAL(7,2) COLUMN IN EMPT
+0BONUS                            ****     COLUMN
+                                           15
+ C1                               12       CURSOR
+                                           13 14
+ DEPT                             12       CHARACTER(3) CCSID 37 COLUMN IN EMPT
+0EMPT                             ****     TABLE
+                                           12
+ HIRED                            12       DATE(10) COLUMN IN EMPT
+0ID                               6        INTEGER PRECISION(9,0)
+                                           14 16
+ ID                               ****     COLUMN
+                                           12 12
+ ID                               12       INTEGER PRECISION(9,0) COLUMN (NOT NULL) IN EMPT
+0IND                              8        ARRAY(3) SMALL INTEGER PRECISION(4,0)
+                                           15
+ N                                7        INTEGER PRECISION(9,0)
+                                           15 16
+ NAME                             12       VARCHAR(20) CCSID 37 COLUMN (NOT NULL) IN EMPT
+0SAL                              12       DECIMAL(9,2) COLUMN IN EMPT
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0                                             DIAGNOSTIC MESSAGES
+0MSG ID  SEV  RECORD  TEXT
+ SQL0104  30      11  Position 37 Token DBGVIEW was not valid. Valid tokens:
+                      COMMIT NAMING DECMPT DATFMT TIMFMT DATSEP TIMSEP SRTSEQ
+                      LANGID DFTRDBCOL RDBCNNMTH ALWBLK ALWCPYDTA DLYPRP
+                      DYNUSRPRF USRPRF CLOSQLCSR OPTLOB DYNDFTCOL SQLPATH
+                      SQLCURRULE COMPILEOPT DECRESULT CNULRQD CNULIGN SYSTIME
+                      OUTPUT DBGVIEW TGTRLS EVENTF.
+0SQL0104  30      11  Position 54 Token OUTPUT was not valid. Valid tokens:
+                      COMMIT NAMING DECMPT DATFMT TIMFMT DATSEP TIMSEP SRTSEQ
+                      LANGID DFTRDBCOL RDBCNNMTH ALWBLK ALWCPYDTA DLYPRP
+                      DYNUSRPRF USRPRF CLOSQLCSR OPTLOB DYNDFTCOL SQLPATH
+                      SQLCURRULE COMPILEOPT DECRESULT CNULRQD CNULIGN SYSTIME
+                      OUTPUT DBGVIEW TGTRLS EVENTF.
+0SQL0104  30      11  Position 71 Token TGTRLS was not valid. Valid tokens:
+                      COMMIT NAMING DECMPT DATFMT TIMFMT DATSEP TIMSEP SRTSEQ
+                      LANGID DFTRDBCOL RDBCNNMTH ALWBLK ALWCPYDTA DLYPRP
+                      DYNUSRPRF USRPRF CLOSQLCSR OPTLOB DYNDFTCOL SQLPATH
+                      SQLCURRULE COMPILEOPT DECRESULT CNULRQD CNULIGN SYSTIME
+                      OUTPUT DBGVIEW TGTRLS EVENTF.
+0SQL5066   0      11  Precompile option COMMIT changed by SET OPTION statement.
+0SQL0104  30      11  Position 37 Token DBGVIEW was not valid. Valid tokens:
+                      COMMIT NAMING DECMPT DATFMT TIMFMT DATSEP TIMSEP SRTSEQ
+                      LANGID DFTRDBCOL RDBCNNMTH ALWBLK ALWCPYDTA DLYPRP
+                      DYNUSRPRF USRPRF CLOSQLCSR OPTLOB DYNDFTCOL SQLPATH
+                      SQLCURRULE COMPILEOPT DECRESULT CNULRQD CNULIGN SYSTIME
+                      OUTPUT DBGVIEW TGTRLS EVENTF.
+0SQL0104  30      11  Position 54 Token OUTPUT was not valid. Valid tokens:
+                      COMMIT NAMING DECMPT DATFMT TIMFMT DATSEP TIMSEP SRTSEQ
+                      LANGID DFTRDBCOL RDBCNNMTH ALWBLK ALWCPYDTA DLYPRP
+                      DYNUSRPRF USRPRF CLOSQLCSR OPTLOB DYNDFTCOL SQLPATH
+                      SQLCURRULE COMPILEOPT DECRESULT CNULRQD CNULIGN SYSTIME
+                      OUTPUT DBGVIEW TGTRLS EVENTF.
+0SQL0104  30      11  Position 71 Token TGTRLS was not valid. Valid tokens:
+                      COMMIT NAMING DECMPT DATFMT TIMFMT DATSEP TIMSEP SRTSEQ
+                      LANGID DFTRDBCOL RDBCNNMTH ALWBLK ALWCPYDTA DLYPRP
+                      DYNUSRPRF USRPRF CLOSQLCSR OPTLOB DYNDFTCOL SQLPATH
+                      SQLCURRULE COMPILEOPT DECRESULT CNULRQD CNULIGN SYSTIME
+                      OUTPUT DBGVIEW TGTRLS EVENTF.
+0SQL0104  30      11  Position 37 Token DBGVIEW was not valid. Valid tokens:
+                      COMMIT NAMING DECMPT DATFMT TIMFMT DATSEP TIMSEP SRTSEQ
+                      LANGID DFTRDBCOL RDBCNNMTH ALWBLK ALWCPYDTA DLYPRP
+                      DYNUSRPRF USRPRF CLOSQLCSR OPTLOB DYNDFTCOL SQLPATH
+                      SQLCURRULE COMPILEOPT DECRESULT CNULRQD CNULIGN SYSTIME
+                      OUTPUT DBGVIEW TGTRLS EVENTF.
+0SQL0104  30      11  Position 54 Token OUTPUT was not valid. Valid tokens:
+                      COMMIT NAMING DECMPT DATFMT TIMFMT DATSEP TIMSEP SRTSEQ
+                      LANGID DFTRDBCOL RDBCNNMTH ALWBLK ALWCPYDTA DLYPRP
+                      DYNUSRPRF USRPRF CLOSQLCSR OPTLOB DYNDFTCOL SQLPATH
+1{heading} page 5
+0                                             DIAGNOSTIC MESSAGES
+0                     SQLCURRULE COMPILEOPT DECRESULT CNULRQD CNULIGN SYSTIME
+                      OUTPUT DBGVIEW TGTRLS EVENTF.
+0SQL0104  30      11  Position 71 Token TGTRLS was not valid. Valid tokens:
+                      COMMIT NAMING DECMPT DATFMT TIMFMT DATSEP TIMSEP SRTSEQ
+                      LANGID DFTRDBCOL RDBCNNMTH ALWBLK ALWCPYDTA DLYPRP
+                      DYNUSRPRF USRPRF CLOSQLCSR OPTLOB DYNDFTCOL SQLPATH
+                      SQLCURRULE COMPILEOPT DECRESULT CNULRQD CNULIGN SYSTIME
+                      OUTPUT DBGVIEW TGTRLS EVENTF.
+0SQL0104  30      14  Position 16 Token ABSOLUTE was not valid. Valid tokens:
+                      RELATIVE.
+0SQL0104  30      15  Position 35 Token ( was not valid. Valid tokens: , FROM.
+0SQL0199  30      16  Position 22 Keyword INTO not expected. Valid tokens: FOR
+                      USE SKIP WAIT WITH FETCH LIMIT ORDER UNION EXCEPT OFFSET.
+-
+                     Message Summary
+   Total     Info   Warning      Error   Severe  Terminal
+      13        1         0          0       12         0
+-30 level severity errors found in source
+0   17 Source records processed
+                                * * * * *  E N D  O F  L I S T I N G  * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-

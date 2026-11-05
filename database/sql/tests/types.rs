@@ -287,7 +287,7 @@ fn column_names_up_to_128() {
     let p = prepare("SELECT * FROM QSTEST/LN", Naming::Sys).unwrap();
     let mut t = db.store.begin().unwrap();
     let names: Vec<String> =
-        sql::embed::describe::entries(&mut t, &db.ctx, &p.statement, false).into_iter().map(|(_, n, _)| n).collect();
+        sql::embed::describe::entries(&mut t, &db.ctx, &p.statement, false).into_iter().map(|e| e.name).collect();
     t.abort();
     assert_eq!(names, [long.clone(), "B".into()]);
     let too_long = "Y".repeat(129);
@@ -306,7 +306,7 @@ fn describe_types() {
     let mut t = db.store.begin().unwrap();
     let got: Vec<(i16, i32, u16)> = sql::embed::describe::entries(&mut t, &db.ctx, &p.statement, false)
         .into_iter()
-        .map(|(c, _, _)| (c.base, c.len, c.ccsid))
+        .map(|e| (e.col.base, e.col.len, e.col.ccsid))
         .collect();
     t.abort();
     assert_eq!(
@@ -360,7 +360,7 @@ fn integers_take_their_whole_range() {
     let mut t = db.store.begin().unwrap();
     let got: Vec<(i16, i32)> = sql::embed::describe::entries(&mut t, &db.ctx, &p.statement, false)
         .into_iter()
-        .map(|(c, _, _)| (c.base, c.len))
+        .map(|e| (e.col.base, e.col.len))
         .collect();
     t.abort();
     assert_eq!(got, [(500, 2), (496, 4), (492, 8)]);
@@ -559,7 +559,7 @@ fn registers_catalog_and_predicates() {
     let mut t = db.store.begin().unwrap();
     let got: Vec<(i16, i32)> = sql::embed::describe::entries(&mut t, &db.ctx, &p.statement, false)
         .into_iter()
-        .map(|(c, _, _)| (c.base, c.len))
+        .map(|e| (e.col.base, e.col.len))
         .collect();
     t.abort();
     assert_eq!(got, [(2436, 1), (392, 29)]);

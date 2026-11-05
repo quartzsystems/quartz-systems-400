@@ -30,6 +30,8 @@ struct Out {
     extra: i64,
     ind: Option<u64>,
     stride: i64,
+    /// The indicator array's element size.
+    istride: i64,
 }
 
 /// The statement being put together.
@@ -39,6 +41,8 @@ struct Pending {
     /// Where each input came from, for a `CALL`'s outputs.
     in_vars: Vec<Out>,
     outs: Vec<Out>,
+    /// A blocked INSERT's inputs: each a structure array.
+    rows_in: Vec<Out>,
     /// The SQLDA a `DESCRIBE` or `PREPARE INTO` fills.
     da: Option<u64>,
 }
@@ -116,7 +120,7 @@ pub extern "sysv64" fn sql_in(_env: *mut Env, _argc: i64, _od: i64, var: i64, de
     } else {
         read_value(var.cast_unsigned(), &d, extra)
     };
-    let o = Out { addr: var.cast_unsigned(), desc: d, extra, ind: (has != 0).then_some(ind.cast_unsigned()), stride: 0 };
+    let o = Out { addr: var.cast_unsigned(), desc: d, extra, ind: (has != 0).then_some(ind.cast_unsigned()), stride: 0, istride: 0 };
     PENDING.with(|p| {
         let mut p = p.borrow_mut();
         p.inputs.push(v);
@@ -133,8 +137,54 @@ pub extern "sysv64" fn sql_out(_env: *mut Env, _argc: i64, _od: i64, var: i64, d
         extra,
         ind: (has != 0).then_some(ind.cast_unsigned()),
         stride,
+        istride: stride,
     };
     PENDING.with(|p| p.borrow_mut().outs.push(o));
+}
+
+/// `_QRNX_SQLINA(var, desc, extra, ind, has_ind, stride, istride)`: an
+/// input host variable of a blocked `INSERT`: element 1 of a structure
+/// array; `stride` and `istride` the array's and its indicators'
+/// element sizes.
+#[allow(clippy::too_many_arguments)] // the call's parameters
+pub extern "sysv64" fn sql_in_a(env: *mut Env, argc: i64, od: i64, var: i64, desc: i64, extra: i64, ind: i64, has: i64, stride: i64, istride: i64) {
+    sql_in(env, argc, od, var, desc, extra, ind, has);
+    let o = Out {
+        addr: var.cast_unsigned(),
+        desc: Desc::of(desc),
+        extra,
+        ind: (has != 0).then_some(ind.cast_unsigned()),
+        stride,
+        istride,
+    };
+    PENDING.with(|p| p.borrow_mut().rows_in.push(o));
+}
+
+/// `_QRNX_SQLOUTA(var, desc, extra, ind, has_ind, stride, istride)`: an
+/// output host variable of a multiple-row `FETCH` whose indicators are an
+/// array of their own.
+#[allow(clippy::too_many_arguments)] // the call's parameters
+pub extern "sysv64" fn sql_out_a(_env: *mut Env, _argc: i64, _od: i64, var: i64, desc: i64, extra: i64, ind: i64, has: i64, stride: i64, istride: i64) {
+    let o = Out {
+        addr: var.cast_unsigned(),
+        desc: Desc::of(desc),
+        extra,
+        ind: (has != 0).then_some(ind.cast_unsigned()),
+        stride,
+        istride,
+    };
+    PENDING.with(|p| p.borrow_mut().outs.push(o));
+}
+
+/// The values of row `r` of a blocked `INSERT`'s inputs.
+fn row_inputs(ins: &[Out], r: u64) -> Vec<Value> {
+    ins.iter()
+        .map(|o| {
+            let at = o.addr + u64::try_from(o.stride.max(0)).unwrap_or(0) * r;
+            let ind = o.ind.map(|i| i + u64::try_from(o.istride.max(0)).unwrap_or(0) * r);
+            if ind.is_some_and(|i| read_ind(i) < 0) { Value::Null } else { read_value(at, &o.desc, o.extra) }
+        })
+        .collect()
 }
 
 /// An SQLDA's header: SQLDAID, SQLDABC, SQLN, SQLD; its entries of 80
@@ -196,7 +246,7 @@ pub extern "sysv64" fn sql_da(env: *mut Env, _argc: i64, _od: i64, da: i64, mode
             PENDING.with(|p| {
                 let mut p = p.borrow_mut();
                 p.inputs.push(v);
-                p.in_vars.push(Out { addr: data, desc, extra: 0, ind, stride: 0 });
+                p.in_vars.push(Out { addr: data, desc, extra: 0, ind, stride: 0, istride: 0 });
             });
         } else {
             let o = Out {
@@ -205,36 +255,105 @@ pub extern "sysv64" fn sql_da(env: *mut Env, _argc: i64, _od: i64, da: i64, mode
                 extra: 0,
                 ind,
                 stride: 0,
+                istride: 0,
             };
             PENDING.with(|p| p.borrow_mut().outs.push(o));
         }
     }
 }
 
-/// Fill an SQLDA from a `DESCRIBE`'s rows (type, length, name): SQLD
-/// always, the entries when SQLN has room for them.
-fn write_da(da: u64, rows: &[Vec<Value>]) {
+/// How many names each column has in the SQLDA `USING` asks for: 1, 2
+/// (`BOTH`) or 3 (`ALL`).
+fn name_sets(using: &str) -> usize {
+    match using {
+        "BOTH" => 2,
+        "ALL" => 3,
+        _ => 1,
+    }
+}
+
+/// A row's whole number at `i`.
+fn row_num(r: &[Value], i: usize) -> i64 {
+    r.get(i).and_then(|x| x.as_i64().ok()).unwrap_or(0)
+}
+
+/// A row's text at `i`.
+fn row_text(r: &[Value], i: usize) -> String {
+    r.get(i).map(Value::as_text).unwrap_or_default().trim_end().to_string()
+}
+
+/// SQLNAMELEN and SQLNAME at offset 48 of an entry.
+fn put_name(v: &mut [u8], name: &str) {
+    let mut e = ebcdic(name);
+    e.truncate(30);
+    v[48..50].copy_from_slice(&u16::try_from(e.len()).unwrap_or(0).to_be_bytes());
+    e.resize(30, BLANK);
+    v[50..80].copy_from_slice(&e);
+}
+
+/// Fill an SQLDA from a `DESCRIBE`'s rows (`sql::embed::describe::rows`)
+/// as IBM does (`tools/conformance/rpg/b11sql/SQL056`, `SQL057`): the
+/// header always; the entries when SQLN holds every set; only the base
+/// entries, with `+237`, when large objects need extended entries that
+/// do not fit. `using` is the `USING` choice. The warning, if any, is
+/// the SQLCODE and SQLSTATE.
+fn write_da(da: u64, rows: &[Vec<Value>], using: &str) -> Option<(i32, &'static str)> {
     let sqln = usize::try_from(be16(da + 12)).unwrap_or(0);
+    let lobs = rows.iter().any(|r| matches!(row_num(r, 0) & !1, 404 | 408 | 412));
+    let sets = name_sets(using).max(if lobs { 2 } else { 1 });
     let head = bytes(da, DA_HEAD);
-    head[..8].copy_from_slice(&ebcdic("SQLDA   "));
+    let mut id = ebcdic("SQLDA   ");
+    if sets > 1 {
+        id[6] = ccsid::byte_of(char::from(b'0' + u8::try_from(sets).unwrap_or(2))).unwrap_or(BLANK);
+    }
+    head[..8].copy_from_slice(&id);
     let bc = u32::try_from(DA_HEAD + DA_VAR * sqln).unwrap_or(0);
     head[8..12].copy_from_slice(&bc.to_be_bytes());
     head[14..16].copy_from_slice(&i16::try_from(rows.len()).unwrap_or(i16::MAX).to_be_bytes());
-    if rows.len() > sqln {
-        return;
+    let n = rows.len();
+    if sqln < n {
+        return lobs.then_some((239, "01005"));
+    }
+    let entry = |k: usize| bytes(da + (DA_HEAD + k * DA_VAR) as u64, DA_VAR);
+    for (k, r) in rows.iter().enumerate() {
+        let v = entry(k);
+        let ty = row_num(r, 0);
+        let lob = matches!(ty & !1, 404 | 408 | 412);
+        let num = |x: i64| i16::try_from(x).unwrap_or(0).to_be_bytes();
+        v[..2].copy_from_slice(&num(ty));
+        v[2..4].copy_from_slice(&num(if lob { 0 } else { row_num(r, 1) }));
+        v[4..48].fill(0);
+        v[13] = u8::try_from(row_num(r, 5)).unwrap_or(0);
+        v[15] = u8::try_from(row_num(r, 6)).unwrap_or(0);
+        v[18..20].copy_from_slice(&u16::try_from(row_num(r, 3)).unwrap_or(0).to_be_bytes());
+        let name = match using {
+            "SYSTEM" => row_text(r, 8),
+            "LABELS" | "ANY" => row_text(r, 7),
+            _ => row_text(r, 2),
+        };
+        put_name(v, &name);
+    }
+    if sqln < n * sets {
+        return lobs.then_some((237, "01594"));
     }
     for (k, r) in rows.iter().enumerate() {
-        let v = bytes(da + (DA_HEAD + k * DA_VAR) as u64, DA_VAR);
-        let num = |i: usize| r.get(i).and_then(|x| x.as_i64().ok()).and_then(|x| i16::try_from(x).ok()).unwrap_or(0);
-        v[..2].copy_from_slice(&num(0).to_be_bytes());
-        v[2..4].copy_from_slice(&num(1).to_be_bytes());
-        let name = r.get(2).map(Value::as_text).unwrap_or_default();
-        let mut e = ebcdic(name.trim_end());
-        e.truncate(30);
-        v[48..50].copy_from_slice(&u16::try_from(e.len()).unwrap_or(0).to_be_bytes());
-        e.resize(30, BLANK);
-        v[50..80].copy_from_slice(&e);
+        if lobs {
+            // The extended entry of a large object: its whole length.
+            if matches!(row_num(r, 0) & !1, 404 | 408 | 412) {
+                let v = entry(n + k);
+                v[..4].copy_from_slice(&u32::try_from(row_num(r, 1)).unwrap_or(0).to_be_bytes());
+                v[32..50].fill(0);
+            }
+            continue;
+        }
+        if sets >= 2 {
+            put_name(entry(n + k), &row_text(r, 7));
+        }
+        if sets == 3 {
+            put_name(entry(2 * n + k), "");
+        }
     }
+    None
 }
 
 /// What assigning a value found.
@@ -409,7 +528,7 @@ fn assign(outs: &[Out], row: &[Value], r: usize, ca: &mut Sqlca) {
     for (k, o) in outs.iter().enumerate() {
         let Some(v) = row.get(k) else { break };
         let off = u64::try_from(o.stride.max(0)).unwrap_or(0) * r as u64;
-        let ind = o.ind.map(|i| i + off);
+        let ind = o.ind.map(|i| i + u64::try_from(o.istride.max(0)).unwrap_or(0) * r as u64);
         if v.is_null() {
             let Some(i) = ind else {
                 *ca = Sqlca {
@@ -473,22 +592,31 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
     let job = mi::storage::job_of(env);
     // A module's statements belong to it in its activation group.
     let end = desc.op == sql::embed::Op::End;
-    let req = Request {
+    let using = desc.orient.split_whitespace().nth(1).unwrap_or("NAMES").to_string();
+    let blocked = desc.op == sql::embed::Op::Exec && desc.rows && !pending.rows_in.is_empty();
+    let mut req = Request {
         scope: format!("{}:{scope}", job.act.current),
         desc,
         inputs: pending.inputs,
     };
-    let reply = match job.sql.as_mut() {
-        Some(s) => s.run(&req),
-        None => sql::embed::Reply {
-            sqlca: Sqlca::from_error(&sql::SqlError::Database {
-                what: "no database for embedded SQL in this job".into(),
-                msgid: None,
-            }),
-            rows: Vec::new(),
-            call: None,
-        },
+    let Some(session) = job.sql.as_mut() else {
+        let none = Sqlca::from_error(&sql::SqlError::Database {
+            what: "no database for embedded SQL in this job".into(),
+            msgid: None,
+        });
+        if !end {
+            write_sqlca(ca.cast_unsigned(), &none);
+        }
+        return;
     };
+    // A blocked INSERT: every row's values, then the count.
+    if blocked {
+        let n = req.inputs.last().and_then(|v| v.as_i64().ok()).unwrap_or(0).max(0);
+        let mut all: Vec<Value> = (0..n.cast_unsigned()).flat_map(|r| row_inputs(&pending.rows_in, r)).collect();
+        all.push(Value::int(n));
+        req.inputs = all;
+    }
+    let reply = session.run(&req);
     let reply = match reply.call.clone() {
         Some(plan) => call(job, &req.scope, &plan, &pending.in_vars),
         None => reply,
@@ -499,8 +627,11 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
     }
     let mut sqlca = reply.sqlca;
     if let Some(da) = pending.da {
-        if !sqlca.is_error() {
-            write_da(da, &reply.rows);
+        if !sqlca.is_error()
+            && let Some((code, state)) = write_da(da, &reply.rows, &using)
+        {
+            sqlca.sqlcode = code;
+            sqlca.sqlstate = state.into();
         }
         write_sqlca(ca.cast_unsigned(), &sqlca);
         return;

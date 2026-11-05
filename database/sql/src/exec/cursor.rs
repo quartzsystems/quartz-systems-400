@@ -181,6 +181,14 @@ pub fn fetch(ctx: &mut SqlContext, f: &Fetch, params: &[Value]) -> Result<Outcom
             }
         }
     };
+    // FETCH CURRENT needs a current row (SQL0231).
+    if matches!(f.orientation, FetchOrientation::Current) && (c.pos == 0 || c.pos > n) {
+        return Err(SqlError::Coded {
+            code: -231,
+            state: "22006",
+            what: format!("cursor {name} is not on a row for FETCH CURRENT"),
+        });
+    }
     let pos = usize::try_from(target.clamp(0, i64::try_from(after).expect("fits"))).expect("fits");
     c.pos = pos;
     if pos == 0 || pos > n {

@@ -237,9 +237,28 @@ impl State<'_> {
                 None
             }
             "DESCRIBE" => Some(self.describe(&cx)),
+            "INSERT" => Some(self.insert(&cx)),
             "INCLUDE" | "BEGIN" | "END" => None,
             _ => Some(self.exec(&cx, &w0)),
         }
+    }
+
+    /// An `INTO` list: host variables separated by commas; anything else
+    /// (an indicator array's element) is a syntax error.
+    fn host_into(&mut self, cx: &Cx<'_>, mut i: usize, end: usize) -> Vec<HostTok> {
+        let mut out = Vec::new();
+        while i < end {
+            if let Some(h) = host_at(&cx.toks, i) {
+                i = h.next;
+                out.push(h);
+                if i < end && !cx.toks[i].sym(',') {
+                    self.bad(cx, i);
+                    return out;
+                }
+            }
+            i += 1;
+        }
+        out
     }
 
     /// `SELECT ... INTO :a, :b FROM ...`.
@@ -252,7 +271,7 @@ impl State<'_> {
             return s;
         };
         let from = find_top(&cx.toks, into, |t| t.is("FROM")).unwrap_or(n);
-        s.outputs = host_list(&cx.toks, into + 1, from).iter().map(|h| cx.host_ref(h)).collect();
+        s.outputs = self.host_into(cx, into + 1, from).iter().map(|h| cx.host_ref(h)).collect();
         let (text, ins) = rewrite(cx, &|h| self.fields(cx, h), 0, n, &[(into, from)], &mut Edits::default());
         s.inputs = ins.iter().map(|h| cx.host_ref(h)).collect();
         self.check_hosts(cx.src.scope, &s.outputs);
@@ -269,7 +288,12 @@ impl State<'_> {
         let Some(into) = find_top(&cx.toks, 1, |t| t.is("INTO")) else {
             return self.exec(cx, "VALUES");
         };
-        s.outputs = host_list(&cx.toks, into + 1, n).iter().map(|h| cx.host_ref(h)).collect();
+        // `VALUES a, b` is two rows: no INTO may follow.
+        if find_top(&cx.toks, 1, |t| t.sym(',')).is_some_and(|c| c < into) {
+            self.diag(cx.tok_line(into), "SQL0199", 30, vec!["INTO".into()]);
+            return s;
+        }
+        s.outputs = self.host_into(cx, into + 1, n).iter().map(|h| cx.host_ref(h)).collect();
         let mut e = Edits::default();
         if !cx.toks.get(1).is_some_and(|t| t.sym('(')) {
             let a = cx.toks[1].start;
@@ -346,7 +370,7 @@ impl State<'_> {
     /// `SET OPTION name = value, ...`.
     fn set_option(&mut self, cx: &Cx<'_>) {
         if !self.first {
-            self.diag(cx.src.line, "SQL0199", 30, vec!["SET OPTION".into()]);
+            self.diag(cx.src.line, "SQL0199", 30, vec!["SET".into()]);
         }
         let n = cx.toks.len();
         let mut i = 2;
@@ -366,12 +390,25 @@ impl State<'_> {
                     Kind::Delim(d) | Kind::Host(d) => d.clone(),
                 })
                 .collect();
-            // An ILE program's cursors close at the end of the
-            // activation group or of the module only.
-            if name == "CLOSQLCSR" && !matches!(value.as_str(), "*ENDACTGRP" | "*ENDMOD") {
-                let at = if cx.toks.get(i + 2).is_some_and(|t| t.sym('*')) { i + 3 } else { i + 2 };
-                self.bad(cx, at);
-                return;
+            // An option of SQL routines only, or one that is not an option.
+            if crate::setopt::routine_only(&name) || !crate::setopt::OPTIONS.contains(&name.as_str()) {
+                self.bad(cx, i);
+                i = end + 1;
+                continue;
+            }
+            match crate::setopt::check(&name, &value) {
+                crate::setopt::Check::Ok => {}
+                crate::setopt::Check::Invalid => {
+                    let at = if cx.toks.get(i + 2).is_some_and(|t| t.sym('*')) { i + 3 } else { i + 2 };
+                    self.bad(cx, at);
+                    i = end + 1;
+                    continue;
+                }
+                crate::setopt::Check::Unsupported(what) => {
+                    self.diag(cx.tok_line(i), "SQL0084", 30, vec![what]);
+                    i = end + 1;
+                    continue;
+                }
             }
             self.diag(cx.src.line, "SQL5066", 0, vec![name.clone()]);
             let o = &mut self.opts;
@@ -397,12 +434,20 @@ impl State<'_> {
         if cx.word(2) == "STATEMENT" {
             return;
         }
+        // DECLARE TABLE documents a table; the precompile does not use it.
+        if cx.word(2) == "TABLE" {
+            self.diag(cx.tok_line(1), "SQL5043", 0, Vec::new());
+            return;
+        }
         let mut c = Cursor::default();
         let mut i = 2;
+        let mut insensitive = false;
         while i < n && !cx.toks[i].is("CURSOR") {
             if cx.toks[i].is("SCROLL") && !(i > 0 && cx.toks[i - 1].is("NO")) {
                 c.scroll = true;
             }
+            insensitive |= cx.toks[i].is("INSENSITIVE");
+            c.sensitive |= cx.toks[i].is("SENSITIVE");
             i += 1;
         }
         if i >= n {
@@ -426,6 +471,12 @@ impl State<'_> {
             return;
         }
         let w = cx.word(q);
+        // An INSENSITIVE cursor is read-only.
+        if insensitive
+            && let Some(f) = find_top(&cx.toks, q, |t| t.is("FOR")).filter(|&f| cx.word(f + 1) == "UPDATE")
+        {
+            self.diag(cx.tok_line(f), "SQL0511", 30, Vec::new());
+        }
         if matches!(w, "SELECT" | "WITH" | "VALUES") || cx.toks[q].sym('(') {
             let (text, ins) = rewrite(cx, &|h| self.fields(cx, h), q, n, &[], &mut Edits::default());
             c.inputs = ins.iter().map(|h| cx.host_ref(h)).collect();
@@ -452,6 +503,7 @@ impl State<'_> {
         s.desc.hold = c.hold;
         s.desc.scroll = c.scroll;
         s.desc.returns = c.returns;
+        s.desc.sensitive = c.sensitive;
         s.inputs = c.inputs;
         if let Some(u) = find_top(&cx.toks, 2, |t| t.is("USING")) {
             if cx.word(u + 1) == "DESCRIPTOR" {
@@ -476,7 +528,11 @@ impl State<'_> {
                 orient = w.to_string();
                 i += 1;
             }
-            w @ ("RELATIVE" | "ABSOLUTE") => {
+            "ABSOLUTE" => {
+                self.bad(cx, i);
+                return s;
+            }
+            w @ "RELATIVE" => {
                 orient = w.to_string();
                 i += 1;
                 if let Some(h) = host_at(&cx.toks, i) {
@@ -504,8 +560,13 @@ impl State<'_> {
             self.bad(cx, i);
             return s;
         }
-        if !self.cursors.contains_key(&name) {
-            self.diag(cx.tok_line(i), "SQL0504", 30, vec![name.clone()]);
+        match self.cursors.get(&name) {
+            None => self.diag(cx.tok_line(i), "SQL0504", 30, vec![name.clone()]),
+            // Only NEXT moves a cursor that is not SCROLL.
+            Some(c) if !c.scroll && !matches!(orient.as_str(), "" | "NEXT") => {
+                self.diag(cx.src.line, "SQL0225", 30, vec![name.clone()]);
+            }
+            Some(_) => {}
         }
         s.desc.name = name;
         s.desc.orient = orient;
@@ -525,7 +586,7 @@ impl State<'_> {
             s.desc.rows = true;
         }
         if cx.word(i) == "INTO" {
-            s.outputs = host_list(&cx.toks, i + 1, n).iter().map(|h| cx.host_ref(h)).collect();
+            s.outputs = self.host_into(cx, i + 1, n).iter().map(|h| cx.host_ref(h)).collect();
         } else if cx.word(i) == "USING" && cx.word(i + 1) == "DESCRIPTOR" {
             s.da = self.sqlda(cx, i + 2);
         } else if i < n {
@@ -549,6 +610,12 @@ impl State<'_> {
         if cx.word(2) == "INTO" {
             s.da = self.sqlda(cx, 3);
             s.desc.into = true;
+            let after = host_at(&cx.toks, 3).map_or(4, |h| h.next);
+            s.desc.orient = match (cx.word(after), cx.word(after + 1)) {
+                ("USING", w @ ("NAMES" | "LABELS" | "ANY" | "BOTH" | "ALL")) => format!("OUTPUT {w}"),
+                ("USING", "SYSTEM") => "OUTPUT SYSTEM".into(),
+                _ => "OUTPUT NAMES".into(),
+            };
         }
         s
     }
@@ -564,22 +631,61 @@ impl State<'_> {
         Some(r)
     }
 
-    /// `DESCRIBE [INPUT|OUTPUT] s INTO :sqlda [USING ...]`.
+    /// `DESCRIBE [INPUT|OUTPUT] s INTO :sqlda [USING ...]` and `DESCRIBE
+    /// TABLE :hv INTO :sqlda [USING ...]`: the form and the `USING`
+    /// choice go in the orientation (`OUTPUT LABELS`, `TABLE NAMES`).
     fn describe(&mut self, cx: &Cx<'_>) -> Stmt {
         let mut s = self.base(cx, "DESCRIBE", Op::Describe);
         let mut i = 1;
-        if matches!(cx.word(i), "INPUT" | "OUTPUT") {
-            if cx.word(i) == "INPUT" {
-                s.desc.orient = "INPUT".into();
+        let mut form = "OUTPUT";
+        match cx.word(i) {
+            "INPUT" | "OUTPUT" => {
+                form = if cx.word(i) == "INPUT" { "INPUT" } else { "OUTPUT" };
+                i += 1;
             }
-            i += 1;
+            // BLOCKED(sql): a procedure's result sets (ALLOCATE CURSOR,
+            // ASSOCIATE LOCATORS) wait for CALL.
+            w @ ("CURSOR" | "PROCEDURE") => {
+                self.diag(cx.tok_line(i), "SQL0084", 30, vec![format!("DESCRIBE {w}")]);
+                return s;
+            }
+            "TABLE" => {
+                form = "TABLE";
+                i += 1;
+                let Some(h) = host_at(&cx.toks, i) else {
+                    self.bad(cx, i);
+                    return s;
+                };
+                let r = cx.host_ref(&h);
+                self.check_hosts(cx.src.scope, std::slice::from_ref(&r));
+                s.inputs.push(r);
+                i = h.next - 1;
+            }
+            _ => {}
         }
-        s.desc.name = cx.word(i).to_string();
+        if form != "TABLE" {
+            s.desc.name = cx.word(i).to_string();
+        }
         if cx.word(i + 1) != "INTO" {
             self.bad(cx, i + 1);
             return s;
         }
         s.da = self.sqlda(cx, i + 2);
+        let after = host_at(&cx.toks, i + 2).map_or(i + 3, |h| h.next);
+        let using = match (cx.word(after), cx.word(after + 1), cx.word(after + 2)) {
+            ("", _, _) => "NAMES",
+            ("USING", w @ ("NAMES" | "LABELS" | "ANY" | "BOTH" | "ALL"), _) => w,
+            ("USING", "SYSTEM", "NAMES") => "SYSTEM",
+            ("USING", _, _) => {
+                self.bad(cx, after + 1);
+                return s;
+            }
+            _ => {
+                self.bad(cx, after);
+                return s;
+            }
+        };
+        s.desc.orient = format!("{form} {using}");
         s
     }
 
@@ -672,6 +778,36 @@ impl State<'_> {
             "SQLERROR" => self.whenever.error = action,
             _ => self.whenever.warning = action,
         }
+    }
+
+    /// `INSERT ... n ROWS VALUES (:array)`: a blocked insert, the count
+    /// (a number or a host variable) the last input; any other `INSERT`
+    /// runs as it is.
+    fn insert(&mut self, cx: &Cx<'_>) -> Stmt {
+        let n = cx.toks.len();
+        let Some(r) = find_top(&cx.toks, 1, |t| t.is("ROWS")).filter(|&r| cx.word(r + 1) == "VALUES" && r > 0) else {
+            return self.exec(cx, "INSERT");
+        };
+        let mut s = self.base(cx, "INSERT", Op::Exec);
+        let count = if let Some(h) = cx.toks.get(r - 1).filter(|t| matches!(t.kind, Kind::Host(_))).and_then(|_| host_at(&cx.toks, r - 1)) {
+            Rows::Host(cx.host_ref(&h))
+        } else if let Ok(k) = cx.word(r - 1).parse() {
+            Rows::Lit(k)
+        } else {
+            self.bad(cx, r - 1);
+            return s;
+        };
+        let (text, ins) = rewrite(cx, &|h| self.fields(cx, h), 0, n, &[(r - 1, r + 1)], &mut Edits::default());
+        s.inputs = ins.iter().map(|h| cx.host_ref(h)).collect();
+        self.check_hosts(cx.src.scope, &s.inputs);
+        if let Rows::Host(h) = &count {
+            self.check_hosts(cx.src.scope, std::slice::from_ref(h));
+        }
+        self.check_text(cx, &text);
+        s.desc.text = flat(&text);
+        s.desc.rows = true;
+        s.rows = Some(count);
+        s
     }
 
     /// Any other statement: run as it is, host variables as inputs.

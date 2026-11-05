@@ -677,6 +677,15 @@ impl Parser {
             return Err(Self::unsupported("DECLARE GLOBAL TEMPORARY TABLE: tables in QTEMP"));
         }
         let name = self.ident()?;
+        if self.is_word("SENSITIVE") {
+            // BLOCKED(sql): rows are read when the cursor opens.
+            return Err(SqlError::Coded {
+                code: -243,
+                state: "36001",
+                what: "a SENSITIVE cursor: its rows are read when it opens".into(),
+            });
+        }
+        let _ = self.eat_word("INSENSITIVE") || self.eat_word("ASENSITIVE");
         self.eat_word("DYNAMIC");
         let scroll = self.eat_word("SCROLL");
         self.eat_words(&["NO", "SCROLL"]);
@@ -919,4 +928,14 @@ pub fn parse_expr(text: &str, naming: Naming) -> Result<crate::ast::Expr> {
 /// Parse a `;`-separated script.
 pub fn parse_all(text: &str, naming: Naming) -> Result<Vec<Statement>> {
     Parser::new(text, naming)?.statements()
+}
+
+/// Parse a table name given as text (`DESCRIBE TABLE :hv`).
+pub fn parse_object_name(text: &str, naming: Naming) -> Result<ObjectName> {
+    let mut p = Parser::new(text, naming)?;
+    let n = p.object_name()?;
+    if !p.at_end() {
+        return Err(p.expected("the end of the name"));
+    }
+    Ok(n)
 }

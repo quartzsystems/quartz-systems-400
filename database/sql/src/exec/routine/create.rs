@@ -408,7 +408,8 @@ impl Catalog for Cat<'_, '_> {
     fn describe(&mut self, query: &str) -> Result<Vec<(String, TypeSpec)>> {
         let p = crate::exec::prepare(query, self.ctx.naming)?;
         let mut out = Vec::new();
-        for (c, n, _) in crate::embed::describe::entries(self.txn, self.ctx, &p.statement, false) {
+        for e in crate::embed::describe::entries(self.txn, self.ctx, &p.statement, false) {
+            let (c, n) = (e.col, e.name);
             let t = model::type_of_sqltype(c.base, c.len).ok_or_else(|| unsupported(&format!("a FOR loop over column {n} of SQL type {}", c.base)))?;
             out.push((n, t));
         }

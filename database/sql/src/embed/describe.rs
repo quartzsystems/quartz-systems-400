@@ -16,6 +16,7 @@ use crate::ast::{
     BinOp, DataType, Expr, InsertSource, Literal, Naming, QueryBody, SelectItem, Statement, TableRef, Where,
 };
 use crate::exec::{SqlContext, prepare};
+use crate::error::SqlError;
 use crate::sqlca::Sqlca;
 use crate::value::Value;
 
@@ -31,11 +32,13 @@ pub struct Col {
     /// The CCSID of character data: 65535 for bytes (`FOR BIT DATA`,
     /// DDS `H`); 0 when the job's or not character.
     pub ccsid: u16,
+    /// A column of a table, not an expression (`SQLRES` byte 13).
+    pub column: bool,
 }
 
 impl Col {
     fn new(base: i16, len: i32, null: bool) -> Self {
-        Self { base, len, null, ccsid: 0 }
+        Self { base, len, null, ccsid: 0, column: false }
     }
 
     fn int() -> Self {
@@ -47,7 +50,7 @@ impl Col {
         match self.base {
             484 | 488 => Some((self.len >> 8, self.len & 0xFF)),
             500 => Some((5, 0)),
-            496 => Some((10, 0)),
+            496 => Some((11, 0)),
             492 => Some((19, 0)),
             _ => None,
         }
@@ -97,6 +100,7 @@ fn of_field(f: &dds::FieldDef) -> Col {
         D::Dbclob => f.ccsid.unwrap_or(1200),
         _ => f.ccsid.unwrap_or(0),
     };
+    c.column = true;
     c
 }
 
@@ -210,8 +214,44 @@ impl Tables {
             .find_map(|(_, fs)| fs.iter().find(|f| f.name.to_string() == name || f.alias.as_deref() == Some(name)))
     }
 
-    /// An expression's type.
+    /// The tables' columns as a query's schema.
+    fn schema(&self) -> crate::exec::eval::Schema {
+        let cols = self
+            .0
+            .iter()
+            .flat_map(|(a, fs)| {
+                fs.iter().map(|f| crate::exec::eval::ColInfo {
+                    name: sql_name(f),
+                    table: Some(a.clone()),
+                    field: Some(f.clone()),
+                    nullable: f.allow_null,
+                    hidden: false,
+                })
+            })
+            .collect();
+        crate::exec::eval::Schema { cols }
+    }
+
+    /// An expression's type: the engine's result type when it works one
+    /// out, else what the expression's form says.
     fn type_of(&self, e: &Expr) -> Col {
+        if !matches!(e, Expr::Column(_) | Expr::Param(_))
+            && let Ok(Some(t)) = crate::exec::restype::type_of(e, &self.schema())
+        {
+            let mut c = of_field(&crate::exec::restype::field_of(&t));
+            c.null = t.nullable;
+            c.column = false;
+            return c;
+        }
+        let mut c = self.form_type(e);
+        if !matches!(e, Expr::Column(_)) {
+            c.column = false;
+        }
+        c
+    }
+
+    /// An expression's type from its form.
+    fn form_type(&self, e: &Expr) -> Col {
         match e {
             Expr::Column(c) => self
                 .field(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value)
@@ -343,13 +383,19 @@ fn arith(a: &Col, op: BinOp, b: &Col) -> Col {
 }
 
 /// The markers of a statement, typed by what they stand beside.
-fn markers(t: &Tables, st: &Statement) -> Vec<(usize, Col)> {
-    fn walk(t: &Tables, e: &Expr, out: &mut Vec<(usize, Col)>) {
-        let beside = |x: &Expr, other: &Expr, out: &mut Vec<(usize, Col)>| {
+#[allow(clippy::too_many_lines)] // one arm per statement kind
+fn markers(t: &Tables, st: &Statement) -> Vec<(usize, Col, Option<String>)> {
+    fn walk(t: &Tables, e: &Expr, out: &mut Vec<(usize, Col, Option<String>)>) {
+        let beside = |x: &Expr, other: &Expr, out: &mut Vec<(usize, Col, Option<String>)>| {
             if let Expr::Param(i) = x {
                 let mut c = t.type_of(other);
                 c.null = true;
-                out.push((*i, c));
+                c.column = false;
+                // A marker beside a date takes the ISO length.
+                if c.base == 384 {
+                    c.len = 10;
+                }
+                out.push((*i, c, None));
             }
         };
         match e {
@@ -375,6 +421,13 @@ fn markers(t: &Tables, st: &Statement) -> Vec<(usize, Col)> {
                 walk(t, b, out);
             }
             Expr::Not(a) => walk(t, a, out),
+            // A typed marker: CAST(? AS type).
+            Expr::Cast(x, ty) if matches!(**x, Expr::Param(_)) => {
+                if let Expr::Param(i) = **x {
+                    out.push((i, of_type(&ty.data_type), None));
+                }
+            }
+            Expr::Cast(x, _) => walk(t, x, out),
             Expr::Binary(a, _, b) => {
                 beside(a, b, out);
                 beside(b, a, out);
@@ -399,14 +452,19 @@ fn markers(t: &Tables, st: &Statement) -> Vec<(usize, Col)> {
                     walk(t, h, &mut out);
                 }
             }
+            if let QueryBody::Values(rows) = &q.body {
+                for e in rows.iter().flatten() {
+                    walk(t, e, &mut out);
+                }
+            }
         }
         Statement::Update(u) => {
             for a in &u.set {
                 for (c, v) in a.columns.iter().zip(&a.values) {
                     if let Expr::Param(i) = v {
                         let mut col = column(&c.value);
-                        col.null = true;
-                        out.push((*i, col));
+                        col.column = true;
+                        out.push((*i, col, Some(c.value.clone())));
                     }
                 }
             }
@@ -430,8 +488,8 @@ fn markers(t: &Tables, st: &Statement) -> Vec<(usize, Col)> {
                     for (v, n) in row.iter().zip(&names) {
                         if let Expr::Param(i) = v {
                             let mut col = column(n);
-                            col.null = true;
-                            out.push((*i, col));
+                            col.column = true;
+                            out.push((*i, col, Some(n.clone())));
                         }
                     }
                 }
@@ -439,8 +497,8 @@ fn markers(t: &Tables, st: &Statement) -> Vec<(usize, Col)> {
         }
         _ => {}
     }
-    out.sort_by_key(|(i, _)| *i);
-    out.dedup_by_key(|(i, _)| *i);
+    out.sort_by_key(|(i, _, _)| *i);
+    out.dedup_by_key(|(i, _, _)| *i);
     out
 }
 
@@ -462,21 +520,96 @@ fn tables_of(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement) -> Tables {
         _ => Tables(Vec::new()),
     }
 }
+/// One SQLDA entry: its type and the names `USING` chooses among.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Entry {
+    /// The type.
+    pub col: Col,
+    /// The SQL name (`USING NAMES`).
+    pub name: String,
+    /// The heading as one text of 20-character lines (column labels).
+    pub label: String,
+    /// The heading's words as `USING LABELS` gives them: the name when
+    /// the column has no heading.
+    pub label_name: String,
+    /// The system column name (`USING SYSTEM NAMES`).
+    pub system: String,
+}
 
-/// The entries of `text` (type, name, label): its result columns, or
-/// with `input` its markers. A statement that is not a query has no
-/// result columns.
+impl Entry {
+    fn of_field(f: &dds::FieldDef) -> Self {
+        Self {
+            col: of_field(f),
+            name: sql_name(f),
+            label: label(f),
+            label_name: label_name(f),
+            system: f.name.to_string(),
+        }
+    }
+
+    fn expr(col: Col, name: String) -> Self {
+        Self {
+            col,
+            label: String::new(),
+            label_name: name.clone(),
+            system: name.clone(),
+            name,
+        }
+    }
+}
+
+/// A column's heading lines joined by one blank, or its name.
+fn label_name(f: &dds::FieldDef) -> String {
+    let words: Vec<&str> = f.colhdg.iter().map(|l| l.trim()).filter(|l| !l.is_empty()).collect();
+    if words.is_empty() { sql_name(f) } else { words.join(" ") }
+}
+
+/// The CCSID of the job: what dates, times and markers of character
+/// data describe with. QS/400 jobs run in CCSID 37.
+pub const JOB_CCSID: u16 = 37;
+
+impl Col {
+    /// The CCSID an SQLDA entry gives: the column's, the job's for dates,
+    /// times and character data without one, 0 for numbers.
+    #[must_use]
+    pub fn sqlda_ccsid(&self) -> u16 {
+        match self.base {
+            384 | 388 | 392 | 448 | 452 | 456 | 408 | 464 | 468 | 412 if self.ccsid == 0 => JOB_CCSID,
+            404 | 908 | 912 => 65535,
+            384 | 388 | 392 | 448 | 452 | 456 | 408 | 464 | 468 | 412 => self.ccsid,
+            _ => 0,
+        }
+    }
+
+    /// `SQLRES` byte 15: 0x40 for bit data, 0x10 for graphic data.
+    #[must_use]
+    pub fn data_flags(&self) -> u8 {
+        match self.base {
+            448 | 452 | 456 if self.ccsid == 65535 => 0x40,
+            464 | 468 | 412 => 0x10,
+            _ => 0,
+        }
+    }
+
+    /// A large object: its length is in the extended entry.
+    #[must_use]
+    pub fn is_lob(&self) -> bool {
+        matches!(self.base, 404 | 408 | 412)
+    }
+}
+
+/// The entries of a statement: its result columns, or with `input` its
+/// markers. A statement that is not a query has no result columns.
 #[must_use]
-pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool) -> Vec<(Col, String, String)> {
+pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool) -> Vec<Entry> {
     let tabs = tables_of(txn, ctx, st);
     if input {
         return markers(&tabs, st)
             .into_iter()
             .enumerate()
-            .map(|(k, (_, c))| (c, format!("{:05}", k + 1), String::new()))
+            .map(|(k, (_, c, name))| Entry::expr(c, name.unwrap_or_else(|| format!("{:05}", k + 1))))
             .collect();
     }
-    let of = |f: &dds::FieldDef| (of_field(f), sql_name(f), label(f));
     let Statement::Select(query) = st else { return Vec::new() };
     let QueryBody::Select(sel) = &query.body else { return Vec::new() };
     let mut out = Vec::new();
@@ -484,54 +617,89 @@ pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool)
         match item {
             SelectItem::Star => {
                 for (_, fs) in &tabs.0 {
-                    out.extend(fs.iter().map(of));
+                    out.extend(fs.iter().map(Entry::of_field));
                 }
             }
             SelectItem::TableStar(a) => {
                 for (_, fs) in tabs.0.iter().filter(|(n, _)| *n == a.value) {
-                    out.extend(fs.iter().map(of));
+                    out.extend(fs.iter().map(Entry::of_field));
                 }
             }
             SelectItem::Expr(e, alias) => {
-                // A column keeps its label under a new name.
+                // A column keeps its labels under a new name.
                 let field = match e {
                     Expr::Column(c) => tabs.field(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value),
                     _ => None,
                 };
-                let name = match (alias, field) {
-                    (Some(a), _) => a.value.clone(),
-                    (None, Some(f)) => sql_name(f),
-                    (None, None) => match e {
+                let mut entry = if let Some(f) = field {
+                    Entry { col: tabs.type_of(e), ..Entry::of_field(f) }
+                } else {
+                    let name = match e {
                         Expr::Column(c) => c.column.value.clone(),
                         _ => format!("{:05}", out.len() + 1),
-                    },
+                    };
+                    Entry::expr(tabs.type_of(e), name)
                 };
-                out.push((tabs.type_of(e), name, field.map(label).unwrap_or_default()));
+                if let Some(a) = alias {
+                    entry.name.clone_from(&a.value);
+                }
+                out.push(entry);
             }
         }
     }
     out
 }
 
-/// `DESCRIBE` of prepared `text` as a reply: one row per entry
-/// (SQLTYPE, SQLLEN, SQLNAME, CCSID, label).
+/// The columns of a table (`DESCRIBE TABLE`): every field, none of them
+/// marked as a result column.
+pub fn table_entries(txn: &mut Txn<'_>, ctx: &SqlContext, name: &crate::ast::ObjectName) -> Result<Vec<Entry>, SqlError> {
+    let fields = match ctx.resolve_table(txn, name) {
+        Ok(t) => t.format.format.fields.clone(),
+        Err(e) => match crate::exec::catalog::virtual_table(txn, ctx, name, &name.name.value) {
+            Ok(Some((sch, _))) => sch.cols.iter().filter_map(|c| c.field.clone()).collect(),
+            _ => return Err(e),
+        },
+    };
+    Ok(fields
+        .iter()
+        .map(|f| {
+            let mut e = Entry::of_field(f);
+            e.col.column = false;
+            e
+        })
+        .collect())
+}
+
+/// The reply rows of entries: SQLTYPE, SQLLEN (a large object's whole
+/// length), the SQL name, the CCSID, the label, the column flag, the
+/// data flags, the label as `USING LABELS` gives it, the system name.
+#[must_use]
+pub fn rows(entries: Vec<Entry>) -> Vec<Vec<Value>> {
+    entries
+        .into_iter()
+        .map(|e| {
+            vec![
+                Value::int(i64::from(e.col.sqltype())),
+                Value::int(i64::from(e.col.len)),
+                Value::Str(e.name),
+                Value::int(i64::from(e.col.sqlda_ccsid())),
+                Value::Str(e.label),
+                Value::int(i64::from(e.col.column)),
+                Value::int(i64::from(e.col.data_flags())),
+                Value::Str(e.label_name),
+                Value::Str(e.system),
+            ]
+        })
+        .collect()
+}
+
+/// `DESCRIBE` of prepared `text` as a reply: [`rows`].
 pub fn reply(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, naming: Naming, input: bool) -> Reply {
     let p = match prepare(text, naming) {
         Ok(p) => p,
         Err(e) => return Reply::of(Sqlca::from_error(&e)),
     };
     ctx.naming = naming;
-    let rows = entries(txn, ctx, &p.statement, input)
-        .into_iter()
-        .map(|(c, n, l)| {
-            vec![
-                Value::int(i64::from(c.sqltype())),
-                Value::int(i64::from(c.len)),
-                Value::Str(n),
-                Value::int(i64::from(c.ccsid)),
-                Value::Str(l),
-            ]
-        })
-        .collect();
+    let rows = rows(entries(txn, ctx, &p.statement, input));
     Reply { sqlca: code(0, "00000"), rows, call: None }
 }

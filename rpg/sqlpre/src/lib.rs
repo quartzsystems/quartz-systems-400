@@ -24,6 +24,7 @@ pub mod lines;
 pub mod listing;
 pub mod msgs;
 pub mod scan;
+pub mod setopt;
 mod stmt;
 
 use std::collections::HashMap;
@@ -205,6 +206,7 @@ pub(crate) struct Cursor {
     pub inputs: Vec<HostRef>,
     pub hold: bool,
     pub scroll: bool,
+    pub sensitive: bool,
     pub stmt: String,
     /// `WITH RETURN [TO CALLER|TO CLIENT]`: a procedure's result set.
     pub returns: Option<sql::ast::ReturnTo>,
@@ -227,10 +229,18 @@ pub fn precompile(srcs: &[Source], env: &mut dyn Env, opts: &Options) -> Precomp
             x.n_out = count(st.env, x.scope, &x.outputs);
             stmts.push(x);
         }
-        st.first = false;
+        // SET OPTION statements may follow one another at the start.
+        let words: Vec<String> = s.text.split_whitespace().take(2).map(str::to_ascii_uppercase).collect();
+        if words != ["SET", "OPTION"] {
+            st.first = false;
+        }
     }
     let mut diags = std::mem::take(&mut st.diags);
-    diags.sort();
+    // SET OPTION's messages come in IBM's order of the options.
+    diags.sort_by(|a, b| {
+        let rank = |d: &Diag| if d.msgid == "SQL5066" { d.args.first().map_or(0, |n| setopt::rank(n)) } else { 0 };
+        (a.line, a.msgid, a.sev, rank(a), &a.args).cmp(&(b.line, b.msgid, b.sev, rank(b), &b.args))
+    });
     diags.dedup();
     let max_severity = diags.iter().map(|d| d.sev).max().unwrap_or(0);
     Precompiled {

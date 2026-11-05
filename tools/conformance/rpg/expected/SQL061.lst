@@ -1,0 +1,190 @@
+1{heading} page 1
+-Source type...............RPG
+ Object name...............{lib}/SQL061
+ Source file...............{lib}/QRPGLESRC
+ Member....................*OBJ
+ To source file............QTEMP/QSQLTEMP1
+ Options...................*XREF
+ RPG preprocessor options..*NONE
+ Listing option............*PRINT
+ Target release............V7R5M0
+ INCLUDE file..............*SRCFILE
+ Commit....................*CHG
+ Allow copy of data........*OPTIMIZE
+ Close SQL cursor..........*ENDACTGRP
+ Allow blocking............*ALLREAD
+ Delay PREPARE.............*NO
+ Concurrent access
+   resolution..............*DFT
+ Generation level..........10
+ Printer file..............*LIBL/QSYSPRT
+ Date format...............*JOB
+ Date separator............*JOB
+ Time format...............*HMS
+ Time separator ...........*JOB
+ Replace...................*YES
+ Relational database.......*LOCAL
+ User .....................*CURRENT
+ RDB connect method........*DUW
+ Default collection........*NONE
+ Dynamic default
+   collection..............*NO
+ Package name..............*OBJLIB/*OBJ
+ Path......................*NAMING
+ SQL rules.................*DB2
+ Created object type.......*PGM
+ Debugging view............*NONE
+ Debugging encryption key..*NONE
+ User profile .............*NAMING
+ Dynamic user profile......*USER
+ Sort sequence.............*JOB
+ Language ID...............*JOB
+ IBM SQL flagging..........*NOFLAG
+ ANS flagging..............*NONE
+ Text......................*SRCMBRTXT
+ Source file CCSID.........37
+ Job CCSID.................273
+ Decimal result options:
+   Maximum precision.......31
+   Maximum scale...........31
+   Minimum divide scale....0
+ DECFLOAT rounding mode....*HALFEVEN
+ Compiler options..........*NONE
+0Source member changed on dd-dd-dd  tt:tt:tt
+-
+1{heading} page 2
+0Record  *...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8 ...+... 9 ...+... 0   SEQNBR  Last change
+0    1   **FREE                                                                                                 000100
+     2   //; cmd: CRTSQLRPGI OBJ({lib}/{name}) SRCFILE({lib}/QRPGLESRC) OUTPUT(*PRINT)                          000200
+     3   //; sqlfile: EMPT                                                                                      000300
+     4   ctl-opt dftactgrp(*no);                                                                                000400
+     5   dcl-f QSYSPRT printer(132);                                                                            000500
+     6   dcl-ds line len(132) end-ds;                                                                           000600
+     7   dcl-s d date;                                                                                          000700
+     8   dcl-s t time;                                                                                          000800
+     9   dcl-s nm varchar(20);                                                                                  000900
+    10   // SET OPTION: every option the listing shows, and their effect on the run.                            001000
+    11   exec sql set option commit = *none, naming = *sys, datfmt = *iso, datsep = '-',                        001100
+    12     timfmt = *iso, timsep = '.', closqlcsr = *endmod, alwcpydta = *optimize,                             001200
+    13     alwblk = *allread, dlyprp = *no, dynusrprf = *user, usrprf = *naming,                                001300
+    14     srtseq = *hex, langid = *job, sqlcurrule = *db2, sqlpath = *libl,                                    001400
+    15     rdbcnnmth = *duw, decmpt = *period,                                                                  001500
+    16     decresult = (31, 31, 0), decfltrnd = *halfeven, conacc = *dft,                                       001600
+    17     compileopt = '*NONE', optlob = *yes, extind = *no,                                                   001700
+    18     dftrdbcol = *none, dyndftcol = *no, monitor = *user, sqlca = *yes;                                   001800
+    19   exec sql select HIRED into :d from EMPT where ID = 1;                                                  001900
+    20   line = %char(sqlcode) + ' ' + %char(d);                                                                002000
+    21   write QSYSPRT line;                                                                                    002100
+    22   exec sql values current time into :t;                                                                  002200
+    23   line = %char(sqlcode);                                                                                 002300
+    24   write QSYSPRT line;                                                                                    002400
+    25   exec sql select NAME into :nm from EMPT where ID = 2;                                                  002500
+    26   line = %char(sqlcode) + ' ' + nm;                                                                      002600
+    27   write QSYSPRT line;                                                                                    002700
+    28   *inlr = *on;                                                                                           002800
+0                                * * * * *  E N D  O F  S O U R C E  * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 3
+0                                               CROSS REFERENCE
+0Data Names                    Define    Reference
+0BONUS                            19       DECIMAL(7,2) COLUMN IN EMPT
+0D                                7        DATE(10)
+                                           19
+ DEPT                             19       CHARACTER(3) CCSID 37 COLUMN IN EMPT
+0EMPT                             ****     TABLE
+                                           19 25
+ HIRED                            ****     COLUMN
+                                           19
+ HIRED                            19       DATE(10) COLUMN IN EMPT
+0ID                               ****     COLUMN
+                                           19 25
+ ID                               19       INTEGER PRECISION(9,0) COLUMN (NOT NULL) IN EMPT
+0LINE                             6        CHARACTER(132)
+0NAME                             19       VARCHAR(20) CCSID 37 COLUMN (NOT NULL) IN EMPT
+0NAME                             ****     COLUMN
+                                           25
+ NM                               9        VARCHAR(20)
+                                           25
+ SAL                              19       DECIMAL(9,2) COLUMN IN EMPT
+0T                                8        TIME(8)
+                                           22
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0                                             DIAGNOSTIC MESSAGES
+0MSG ID  SEV  RECORD  TEXT
+ SQL5066   0      11  Precompile option NAMING changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option COMMIT changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option DECMPT changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option DATFMT changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option DATSEP changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option TIMFMT changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option TIMSEP changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option RDBCNNMTH changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option ALWBLK changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option DLYPRP changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option ALWCPYDTA changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option CLOSQLCSR changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option USRPRF changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option DYNUSRPRF changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option DFTRDBCOL changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option OPTLOB changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option DYNDFTCOL changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option DECRESULT changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option COMPILEOPT changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option SQLPATH changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option SQLCURRULE changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option MONITOR changed by SET OPTION
+                      statement.
+1{heading} page 5
+0                                             DIAGNOSTIC MESSAGES
+0SQL5066   0      11  Precompile option DECFLTRND changed by SET OPTION
+                      statement.
+0SQL5066   0      11  Precompile option EXTIND changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option CONACC changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option SQLCA changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option SRTSEQ changed by SET OPTION statement.
+0SQL5066   0      11  Precompile option LANGID changed by SET OPTION statement.
+-
+                     Message Summary
+   Total     Info   Warning      Error   Severe  Terminal
+      28       28         0          0        0         0
+-00 level severity errors found in source
+0   28 Source records processed
+                                * * * * *  E N D  O F  L I S T I N G  * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

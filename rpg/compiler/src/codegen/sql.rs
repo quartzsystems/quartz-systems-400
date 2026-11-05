@@ -108,6 +108,22 @@ impl Gen<'_> {
             && let Some(iv) = self.host_ref(ind, true, at)
         {
             let inds: Vec<String> = match (&iv.ty, iv.dim) {
+                // An array of indicator structures (a multiple-row FETCH or
+                // blocked INSERT): element 1's indicators, an array
+                // subfield's elements in order.
+                (Ty::Ds(di), d) if d > 0 => {
+                    let mut v = Vec::new();
+                    for &sid in &self.t.ds[*di].subfields {
+                        let s = &self.t.syms[sid];
+                        let place = format!("{}[0].{}", iv.op, mangle(&s.name));
+                        if s.dim > 0 {
+                            v.extend((0..s.dim).map(|i| format!("{place}[{i}]")));
+                        } else {
+                            v.push(place);
+                        }
+                    }
+                    v
+                }
                 (_, d) if d > 0 => (0..d).map(|i| format!("{}[{i}]", iv.op)).collect(),
                 (Ty::Ds(di), _) => self.t.ds[*di]
                     .subfields
@@ -159,12 +175,53 @@ impl Gen<'_> {
         self.b.ins(format!("callb _QRNX_SQLOUT({}, {}, {}, {ind}, {has}, {stride})", x.place, x.desc, x.extra));
     }
 
+    /// The element size of the indicator array of a host variable.
+    fn ind_stride(&mut self, h: &HostRef) -> i64 {
+        h.ind.as_ref().map_or(0, |i| {
+            self.stride_of(&HostRef {
+                name: i.clone(),
+                ind: None,
+                line: h.line,
+            })
+        })
+    }
+
+    fn sql_in_a(&mut self, x: &Host, stride: i64, istride: i64) {
+        self.rt_proc(
+            "_QRNX_SQLINA",
+            "($v: bytes(1) *VARSIZE, byval $d: i64, byval $x: i64, $i: bytes(1) *VARSIZE, byval $hi: i64, byval $st: i64, byval $is: i64)",
+        );
+        let (ind, has) = match &x.ind {
+            Some(i) => (i.clone(), 1),
+            None => (x.place.clone(), 0),
+        };
+        self.b.ins(format!("callb _QRNX_SQLINA({}, {}, {}, {ind}, {has}, {stride}, {istride})", x.place, x.desc, x.extra));
+    }
+
+    fn sql_out_a(&mut self, x: &Host, stride: i64, istride: i64) {
+        self.rt_proc(
+            "_QRNX_SQLOUTA",
+            "($v: bytes(1) *VARSIZE, byval $d: i64, byval $x: i64, $i: bytes(1) *VARSIZE, byval $hi: i64, byval $st: i64, byval $is: i64)",
+        );
+        let (ind, has) = match &x.ind {
+            Some(i) => (i.clone(), 1),
+            None => (x.place.clone(), 0),
+        };
+        self.b.ins(format!("callb _QRNX_SQLOUTA({}, {}, {}, {ind}, {has}, {stride}, {istride})", x.place, x.desc, x.extra));
+    }
+
     /// One embedded statement.
     pub fn exec_sql(&mut self, s: &Stmt) {
         let Some(st) = self.sql.get(&s.at.line).cloned() else { return };
+        let blocked = st.rows.is_some() && st.desc.op == Op::Exec;
         for h in &st.inputs {
+            let (stride, istride) = if blocked { (self.stride_of(h), self.ind_stride(h)) } else { (0, 0) };
             for x in self.hosts(h, false) {
-                self.sql_in(&x);
+                if blocked {
+                    self.sql_in_a(&x, stride, istride);
+                } else {
+                    self.sql_in(&x);
+                }
             }
         }
         match &st.rows {
@@ -188,9 +245,15 @@ impl Gen<'_> {
             None => {}
         }
         for h in &st.outputs {
-            let stride = if st.rows.is_some() { self.stride_of(h) } else { 0 };
+            if st.rows.is_some() {
+                let (stride, istride) = (self.stride_of(h), self.ind_stride(h));
+                for x in self.hosts(h, true) {
+                    self.sql_out_a(&x, stride, istride);
+                }
+                continue;
+            }
             for x in self.hosts(h, true) {
-                self.sql_out(&x, stride);
+                self.sql_out(&x, 0);
             }
         }
         if let Some(h) = &st.da

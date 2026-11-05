@@ -118,8 +118,8 @@ help = "YEARS, MONTHS and DAYS go with a date or timestamp; HOURS, MINUTES and S
 [[msg]]
 id = "SQL0199"
 sev = 30
-text = "&1 must be the first SQL statement of the source."
-help = "SET OPTION sets the precompile options for the whole member, so no other SQL statement may come before it."
+text = "Keyword &1 is not expected here."
+help = "The statement has a keyword where the syntax does not allow one: SET OPTION after another SQL statement of the source, INTO after a list of VALUES rows, DEALLOCATE given to a dynamic interface."
 vars = ["*CHAR 30"]
 
 [[msg]]
@@ -925,3 +925,82 @@ sev = 30
 text = "An UNDO handler needs an ATOMIC compound statement."
 help = "Declare the handler in a BEGIN ATOMIC compound statement, or make it CONTINUE or EXIT."
 vars = []
+
+[[msg]]
+id = "SQL0225"
+sev = 30
+text = "FETCH of cursor &1 is not valid: the cursor is not scrollable."
+help = "A cursor declared without SCROLL moves forward only: FETCH takes no orientation but NEXT. Declare the cursor SCROLL to fetch PRIOR, FIRST, LAST, BEFORE, AFTER, CURRENT or RELATIVE."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0231"
+sev = 30
+text = "The position of cursor &1 does not allow FETCH CURRENT."
+help = "The cursor is before the first row or after the last, so there is no current row to fetch again. Position it on a row first."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0237"
+sev = 10
+text = "The SQLDA has too few entries for the extended entries the result needs."
+help = "A large object or distinct type needs a second entry for each column. The base entries were filled; make SQLN twice SQLD and describe again to get the lengths."
+
+[[msg]]
+id = "SQL0239"
+sev = 10
+text = "The SQLDA has too few entries: none were filled."
+help = "SQLD gives the number of columns; a result with large objects needs twice that many entries. Make SQLN large enough and describe again."
+
+[[msg]]
+id = "SQL0243"
+sev = 30
+text = "Cursor &1 cannot be SENSITIVE."
+help = "The rows of a cursor are read when it opens, so changes made later do not show in them. Declare the cursor INSENSITIVE or ASENSITIVE."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0502"
+sev = 30
+text = "Cursor &1 is already open."
+help = "A cursor is opened once until it is closed. Close it before opening it again."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0507"
+sev = 30
+text = "Cursor &1 is not open."
+help = "UPDATE or DELETE WHERE CURRENT OF needs the cursor open and positioned on a row."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0511"
+sev = 30
+text = "FOR UPDATE is not valid for this cursor."
+help = "An INSENSITIVE cursor, or one whose query reads more than one table, cannot be used to change rows. Remove the FOR UPDATE clause or the INSENSITIVE keyword."
+
+[[msg]]
+id = "SQL0514"
+sev = 30
+text = "Prepared statement &1 is not there."
+help = "OPEN and DEALLOCATE need a statement this program prepared, and not yet released, under that name."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0516"
+sev = 30
+text = "DESCRIBE names statement &1, which was not prepared."
+help = "Prepare the statement before describing it, under the same name."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL5043"
+sev = 0
+text = "The SQL statement has no effect on the program."
+help = "DECLARE TABLE documents the columns of a table for the reader of the source; the precompile does not use it."
+
+[[msg]]
+id = "SQL7034"
+sev = 30
+text = "LOB locators need commitment control."
+help = "A locator lives until the end of the unit of work, so a program precompiled with COMMIT(*NONE) cannot use one. Precompile with COMMIT(*CHG) or another level."

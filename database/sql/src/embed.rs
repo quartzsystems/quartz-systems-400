@@ -124,6 +124,8 @@ pub struct Desc {
     pub hold: bool,
     /// `SCROLL`.
     pub scroll: bool,
+    /// `SENSITIVE`: changes made after `OPEN` show in the rows fetched.
+    pub sensitive: bool,
     /// `FETCH ... FOR n ROWS`: the count is the last input.
     pub rows: bool,
     /// `FETCH` orientation (`NEXT`, `PRIOR`, `RELATIVE ?`, ...).
@@ -179,6 +181,7 @@ impl Desc {
             (to_client, 'U'),
             (self.quiet, 'V'),
             (self.calls, 'L'),
+            (self.sensitive, 'Y'),
         ] {
             if on {
                 flags.push(c);
@@ -221,6 +224,7 @@ impl Desc {
             },
             quiet: rest.contains('V'),
             calls: rest.contains('L'),
+            sensitive: rest.contains('Y'),
             commit: if rest.contains('G') {
                 Some(LckLvl::Chg)
             } else if rest.contains('T') {
@@ -402,6 +406,8 @@ pub struct Session {
     pub ctx: SqlContext,
     scopes: HashMap<String, Scope>,
     last: Sqlca,
+    /// The last statement's kind, as `GET DIAGNOSTICS` `COMMAND_FUNCTION` gives it.
+    last_cmd: String,
 }
 
 /// An SQLCA with a code and state of its own.
@@ -481,6 +487,7 @@ impl Session {
             ctx,
             scopes: HashMap::new(),
             last: Sqlca::default(),
+            last_cmd: String::new(),
         }
     }
 
@@ -590,6 +597,31 @@ impl Session {
                     Err(e) => Reply::of(Sqlca::from_error(&e)),
                 }
             }),
+            // A blocked INSERT: the rows' values one after another, the
+            // count last; the statement once per row, SQLERRD(3) the rows.
+            Op::Exec if d.rows => self.with_txn(&req.scope, |txn, ctx, _| {
+                let (count, values) = match req.inputs.split_last() {
+                    Some((c, v)) => (usize::try_from(c.as_i64().unwrap_or(0)).unwrap_or(0), v),
+                    None => (0, &[][..]),
+                };
+                if count == 0 || values.len() % count != 0 {
+                    return Reply::of(code(-302, "22003"));
+                }
+                let width = values.len() / count;
+                let mut done = 0;
+                for row in values.chunks(width) {
+                    let r = exec_text(txn, ctx, &d.text, naming, row);
+                    if r.sqlca.is_error() {
+                        let mut r = r;
+                        r.sqlca.sqlerrd[2] = done;
+                        return r;
+                    }
+                    done += r.sqlca.sqlerrd[2];
+                }
+                let mut ca = Sqlca::rows(u64::try_from(done).unwrap_or(0));
+                ca.sqlerrd[2] = done;
+                Reply::of(ca)
+            }),
             Op::Exec => self.with_txn(&req.scope, |txn, ctx, _| exec_text(txn, ctx, &d.text, naming, &req.inputs)),
             Op::ExecImm => {
                 let text = Self::dynamic_text(req);
@@ -638,6 +670,10 @@ impl Session {
                 };
                 exec_text(txn, ctx, &text, naming, &req.inputs)
             }),
+            // BLOCKED(sql): a cursor's rows are read when it opens, so
+            // none sees later changes: SENSITIVE is refused as IBM refuses
+            // a query it cannot make sensitive.
+            Op::Open if d.sensitive => Reply::of(code(-243, "36001")),
             Op::Open => self.with_txn(&req.scope, |txn, ctx, sc| {
                 if ctx.cursors.get(&d.name).is_some_and(|c| c.open) {
                     return Reply::of(code(-502, "24502"));
@@ -677,14 +713,31 @@ impl Session {
         }
     }
 
-    /// `DESCRIBE [INPUT]` of a statement the scope prepared.
+    /// `DESCRIBE [INPUT|OUTPUT]` of a statement the scope prepared, or
+    /// `DESCRIBE TABLE` of the table the first input names. `orient` is
+    /// the form, then the `USING` choice the program applies.
     fn describe(&mut self, req: &Request) -> Reply {
         let d = &req.desc;
+        let form = d.orient.split_whitespace().next().unwrap_or("");
+        if form == "TABLE" {
+            let text = req.inputs.first().map(|v| v.as_text().trim().to_string()).unwrap_or_default();
+            return self.with_txn(&req.scope, |txn, ctx, _| {
+                ctx.naming = d.naming();
+                let name = match crate::parse::parse_object_name(&text, d.naming()) {
+                    Ok(n) => n,
+                    Err(e) => return Reply::of(Sqlca::from_error(&e)),
+                };
+                match describe::table_entries(txn, ctx, &name) {
+                    Ok(es) => Reply { sqlca: code(0, "00000"), rows: describe::rows(es), call: None },
+                    Err(e) => Reply::of(Sqlca::from_error(&e)),
+                }
+            });
+        }
         self.with_txn(&req.scope, |txn, ctx, sc| {
             let Some(text) = sc.prepared.get(&d.name).cloned() else {
                 return Reply::of(code(-516, "26501"));
             };
-            describe::reply(txn, ctx, &text, d.naming(), d.orient == "INPUT")
+            describe::reply(txn, ctx, &text, d.naming(), form == "INPUT")
         })
     }
 
@@ -805,7 +858,8 @@ impl Session {
                     let i = usize::from(i.trim().as_bytes()[11] - b'1');
                     Value::int(i64::from(ca.sqlerrd[i]))
                 }
-                "COMMAND_FUNCTION" | "DYNAMIC_FUNCTION" => Value::Str(String::new()),
+                "COMMAND_FUNCTION" => Value::Str(self.last_cmd.clone()),
+                "DYNAMIC_FUNCTION" => Value::Str(String::new()),
                 _ => Value::Null,
             })
             .collect();
@@ -845,6 +899,7 @@ impl Embedded for Session {
         }
         if req.desc.op != Op::Diag && !req.desc.quiet {
             self.last = r.sqlca.clone();
+            self.last_cmd = command_function(&req.desc);
         }
         r
     }
@@ -942,6 +997,23 @@ fn fetch(txn: &mut store::txn::Txn<'_>, ctx: &mut SqlContext, d: &Desc, inputs: 
     Reply { sqlca: ca, rows, call: None }
 }
 
+/// A statement's kind as `GET DIAGNOSTICS` names it.
+fn command_function(d: &Desc) -> String {
+    match d.op {
+        Op::Query | Op::Exec => d.text.split_whitespace().next().unwrap_or("").to_ascii_uppercase(),
+        Op::Open => "OPEN".into(),
+        Op::Fetch => "FETCH".into(),
+        Op::Close => "CLOSE".into(),
+        Op::Prepare => "PREPARE".into(),
+        Op::Execute => "EXECUTE".into(),
+        Op::ExecImm => "EXECUTE IMMEDIATE".into(),
+        Op::Describe => "DESCRIBE".into(),
+        Op::Deallocate => "DEALLOCATE".into(),
+        Op::Called => "CALL".into(),
+        Op::Diag | Op::End | Op::Nothing => String::new(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -976,3 +1048,4 @@ mod tests {
         assert_eq!(Desc::decode(&d.encode()), Some(d));
     }
 }
+
