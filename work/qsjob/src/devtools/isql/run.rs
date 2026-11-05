@@ -43,14 +43,20 @@ fn done(host: &Host, s: &mut Session, r: &IsqlReply) {
 /// Run the input as a statement.
 pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
     let lines = s.h.typed();
-    let text = s.h.text();
     let check = s.attrs.syntax_only();
-    let r = if !check && is_call(&text) {
-        call(host, s, &text)
-    } else {
-        host.link
-            .borrow_mut()
-            .with(|l| l.isql_run(text.clone(), s.naming(), check, MAX_ROWS))
+    let (text, r) = match decimal_point(host, s, &s.h.text()) {
+        Err(r) => (String::new(), r),
+        Ok(text) if !check && is_call(&text) => {
+            let r = call(host, s, &text);
+            (text, r)
+        }
+        Ok(text) => {
+            let r = host
+                .link
+                .borrow_mut()
+                .with(|l| l.isql_run(text.clone(), s.naming(), check, MAX_ROWS));
+            (text, r)
+        }
     };
     s.h.statement(lines.clone());
     if r.sqlcode < 0 {
@@ -109,6 +115,25 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
     }
     s.h.clear_input();
     s.h.to_end();
+}
+
+/// The statement as the service reads it: under `DECPNT(*COMMA)` each
+/// decimal comma a period (`sql::lex::decimal_comma`); the SQL0104 of a
+/// number written wrongly there.
+fn decimal_point(host: &Host, s: &Session, text: &str) -> Result<String, IsqlReply> {
+    if s.attrs.format(&super::job_formats(host)).point != ',' {
+        return Ok(text.to_string());
+    }
+    sql::lex::decimal_comma(text).map_err(|e| {
+        let ca = sql::Sqlca::from_error(&e);
+        IsqlReply {
+            sqlcode: ca.sqlcode,
+            sqlstate: ca.sqlstate,
+            msgid: e.msgid(),
+            text: ca.sqlerrmc,
+            ..IsqlReply::default()
+        }
+    })
 }
 
 /// Whether a statement is a `CALL`.

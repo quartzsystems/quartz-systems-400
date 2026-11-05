@@ -90,6 +90,12 @@ struct Lexer<'a> {
     at: usize,
     line: u32,
     col: u32,
+    /// `DECPNT(*COMMA)`: a comma with a digit right after it, in a
+    /// number, is its decimal point.
+    comma: bool,
+    /// The numbers whose decimal point is a comma: byte range and the
+    /// number with a period.
+    commas: Vec<(usize, usize, String)>,
 }
 
 impl Lexer<'_> {
@@ -195,16 +201,36 @@ impl Lexer<'_> {
         self.text[start..self.at].to_ascii_uppercase()
     }
 
+    /// A comma that is a decimal point here.
+    fn decimal_comma(&self) -> bool {
+        self.comma && self.peek() == Some(b',') && self.peek2().is_some_and(|b| b.is_ascii_digit())
+    }
+
     fn number(&mut self) -> Result<String> {
         let start = self.at;
         while self.peek().is_some_and(|b| b.is_ascii_digit()) {
             self.bump();
         }
-        if self.peek() == Some(b'.') && self.peek2().is_none_or(|b| !b.is_ascii_alphabetic()) {
+        let mut comma = None;
+        if self.decimal_comma() {
+            comma = Some(self.at);
             self.bump();
             while self.peek().is_some_and(|b| b.is_ascii_digit()) {
                 self.bump();
             }
+        } else if self.peek() == Some(b'.') && self.peek2().is_none_or(|b| !b.is_ascii_alphabetic()) {
+            self.bump();
+            while self.peek().is_some_and(|b| b.is_ascii_digit()) {
+                self.bump();
+            }
+        }
+        // A second decimal point ends the number wrongly (`1234.5,7`
+        // under DECPNT(*COMMA)).
+        if (comma.is_some() || self.text[start..self.at].contains('.'))
+            && (self.decimal_comma() || (self.comma && self.peek() == Some(b'.') && self.peek2().is_some_and(|b| b.is_ascii_digit())))
+        {
+            let found = char::from(self.peek().unwrap_or(b','));
+            return Err(self.syntax(&found.to_string(), "a separator after the number"));
         }
         if matches!(self.peek(), Some(b'E' | b'e')) {
             self.bump();
@@ -218,7 +244,12 @@ impl Lexer<'_> {
                 self.bump();
             }
         }
-        Ok(self.text[start..self.at].to_string())
+        let mut text = self.text[start..self.at].to_string();
+        if let Some(at) = comma {
+            text.replace_range(at - start..=at - start, ".");
+            self.commas.push((start, self.at, text.clone()));
+        }
+        Ok(text)
     }
 
     fn next(&mut self) -> Result<Token> {
@@ -312,15 +343,19 @@ impl Lexer<'_> {
     }
 }
 
-/// Tokenize the whole text; the last token is `End`.
-pub fn tokenize(text: &str) -> Result<Vec<Token>> {
-    let mut lx = Lexer {
+fn lexer(text: &str, comma: bool) -> Lexer<'_> {
+    Lexer {
         src: text.as_bytes(),
         text,
         at: 0,
         line: 1,
         col: 1,
-    };
+        comma,
+        commas: Vec::new(),
+    }
+}
+
+fn run(lx: &mut Lexer<'_>) -> Result<Vec<Token>> {
     let mut out = Vec::new();
     loop {
         let t = lx.next()?;
@@ -330,6 +365,35 @@ pub fn tokenize(text: &str) -> Result<Vec<Token>> {
             return Ok(out);
         }
     }
+}
+
+/// Tokenize the whole text; the last token is `End`.
+pub fn tokenize(text: &str) -> Result<Vec<Token>> {
+    run(&mut lexer(text, false))
+}
+
+/// Tokenize with the decimal point a comma (`DECPNT(*COMMA)`, as
+/// Interactive SQL's session attribute sets it): a comma with a digit
+/// right after it, in a number, is its decimal point; a separator
+/// comma needs a blank after it there (`DEC(-1234,5, 7, 2)`). Numbers
+/// are given with a period.
+pub fn tokenize_comma(text: &str) -> Result<Vec<Token>> {
+    run(&mut lexer(text, true))
+}
+
+/// `text` with each decimal comma made a period, so it reads the same
+/// under the period: [`tokenize_comma`]'s numbers written back.
+///
+/// # Errors
+/// What [`tokenize_comma`] refuses (SQL0104 for a second decimal point).
+pub fn decimal_comma(text: &str) -> Result<String> {
+    let mut lx = lexer(text, true);
+    run(&mut lx)?;
+    let mut out = text.to_string();
+    for (start, end, num) in lx.commas.iter().rev() {
+        out.replace_range(*start..*end, num);
+    }
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -388,5 +452,24 @@ mod tests {
         assert_eq!((t[1].line, t[1].col), (2, 3));
         assert!(matches!(tokenize("'open"), Err(SqlError::Syntax { .. })));
         assert!(matches!(tokenize("X'ABC'"), Err(SqlError::Literal { .. })));
+    }
+
+    #[test]
+    fn decimal_comma() {
+        // A comma with a digit after it is the decimal point; with a
+        // blank after it, a separator.
+        assert_eq!(super::decimal_comma("dec(-1234,5, 7, 2)").unwrap(), "dec(-1234.5, 7, 2)");
+        assert_eq!(super::decimal_comma("values (1,2)").unwrap(), "values (1.2)");
+        assert_eq!(super::decimal_comma("values 'a,1', x,1").unwrap(), "values 'a,1', x,1");
+        assert_eq!(super::decimal_comma("1,5e3").unwrap(), "1.5e3");
+        // pub400: a second decimal point is SQL0104.
+        for bad in ["dec(-1234.5,7,2)", "1,5,2", "1,5.2"] {
+            let e = super::decimal_comma(bad).unwrap_err();
+            assert!(matches!(e, SqlError::Syntax { .. }), "{bad}");
+            assert_eq!(e.sqlcode(), -104, "{bad}");
+        }
+        // Under the period nothing changes.
+        assert_eq!(toks("1,2"), [Tok::Num("1".into()), Tok::Sym(","), Tok::Num("2".into()), Tok::End]);
+        assert_eq!(tokenize_comma("1,2").unwrap()[0].tok, Tok::Num("1.2".into()));
     }
 }
