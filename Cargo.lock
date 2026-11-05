@@ -2827,6 +2827,7 @@ dependencies = [
  "release",
  "rpgfront",
  "rpgsqlpre",
+ "sql",
 ]
 
 [[package]]
