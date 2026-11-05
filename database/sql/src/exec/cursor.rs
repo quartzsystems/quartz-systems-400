@@ -19,6 +19,7 @@ use crate::value::Value;
 
 /// A declared cursor.
 #[derive(Clone, Debug)]
+#[allow(clippy::struct_excessive_bools)] // the declaration's clauses
 pub struct Cursor {
     /// The query.
     pub query: Query,
