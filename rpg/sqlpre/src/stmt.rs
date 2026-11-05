@@ -414,6 +414,10 @@ impl State<'_> {
             if cx.toks[i].is("HOLD") && cx.toks[i - 1].is("WITH") {
                 c.hold = true;
             }
+            if cx.toks[i].is("RETURN") && cx.toks[i - 1].is("WITH") {
+                let client = i + 2 < n && cx.toks[i + 1].is("TO") && cx.toks[i + 2].is("CLIENT");
+                c.returns = Some(if client { sql::ast::ReturnTo::Client } else { sql::ast::ReturnTo::Caller });
+            }
             i += 1;
         }
         let q = i + 1;
@@ -447,6 +451,7 @@ impl State<'_> {
         s.desc.stmt = c.stmt;
         s.desc.hold = c.hold;
         s.desc.scroll = c.scroll;
+        s.desc.returns = c.returns;
         s.inputs = c.inputs;
         if let Some(u) = find_top(&cx.toks, 2, |t| t.is("USING")) {
             if cx.word(u + 1) == "DESCRIPTOR" {

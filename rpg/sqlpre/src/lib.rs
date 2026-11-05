@@ -206,6 +206,8 @@ pub(crate) struct Cursor {
     pub hold: bool,
     pub scroll: bool,
     pub stmt: String,
+    /// `WITH RETURN [TO CALLER|TO CLIENT]`: a procedure's result set.
+    pub returns: Option<sql::ast::ReturnTo>,
 }
 
 /// Precompile a member's statements.
