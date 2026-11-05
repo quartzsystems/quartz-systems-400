@@ -779,20 +779,20 @@ fn qcmdexc_and_procedures() {
     assert_eq!(db.code("SELECT QSYS2.QCMDEXC('CRTLIB X', 'PRINT') FROM SYSIBM.SYSDUMMY1"), -171);
     let mut t = db.store.begin().unwrap();
     assert!(procs::is_procedure(Some("QSYS2"), "QCMDEXC"));
-    let ok = procs::call(&mut t, &db.ctx, Some("QSYS2"), "QCMDEXC", &[(None, Value::Str("CRTLIB X".into()))]).unwrap();
+    let ok = procs::call(&mut t, &mut db.ctx, Some("QSYS2"), "QCMDEXC", &[(None, Value::Str("CRTLIB X".into()))]).unwrap();
     assert!(ok.is_ok());
-    let bad = procs::call(&mut t, &db.ctx, Some("QSYS2"), "QCMDEXC", &[(None, Value::Str("DLTLIB X".into())), (None, Value::int(8))]).unwrap();
+    let bad = procs::call(&mut t, &mut db.ctx, Some("QSYS2"), "QCMDEXC", &[(None, Value::Str("DLTLIB X".into())), (None, Value::int(8))]).unwrap();
     assert_eq!(bad.unwrap_err().sqlcode(), -443);
     let w = procs::call(
         &mut t,
-        &db.ctx,
+        &mut db.ctx,
         Some("QSYS2"),
         "IFS_WRITE_UTF8",
         &[(Some("PATH_NAME".into()), Value::Str("/home/w.txt".into())), (Some("LINE".into()), Value::Str("hi".into()))],
     )
     .unwrap();
     assert!(w.is_ok(), "{w:?}");
-    assert!(procs::call(&mut t, &db.ctx, None, "NOT_A_PROC", &[]).is_none());
+    assert!(procs::call(&mut t, &mut db.ctx, None, "NOT_A_PROC", &[]).is_none());
     t.abort();
 }
 
@@ -1128,4 +1128,174 @@ fn change_user_profile_and_refused_procedures() {
     assert_eq!(db.code("CALL QSYS2.OVERRIDE_TABLE('QSTEST', 'OT', '*BUF256KB')"), 0);
     assert_eq!(db.code("CALL QSYS2.OVERRIDE_TABLE('QSTEST', 'OT', 'LOTS')"), -171);
     assert_eq!(db.code("CALL QSYS2.OVERRIDE_TABLE('QSTEST', 'NOPE', '*DEFAULT')"), -204);
+}
+
+/// The records `GENERATE_SQL` left open for its caller.
+fn generated(db: &Db) -> Vec<String> {
+    let c = db.ctx.cursors.get("QSQGENSQL").expect("the result set");
+    c.rows.iter().map(|r| r[2].to_string()).collect()
+}
+
+/// A record as pub400 shows it: the text, a blank and a line feed,
+/// padded to 80.
+fn rec(s: &str) -> String {
+    format!("{s:<80}")
+}
+
+#[test]
+fn generate_sql_as_pub400_lays_it_out() {
+    let mut db = Db::new(true);
+    for st in [
+        "CREATE SCHEMA GS",
+        "CREATE TABLE GS.GSQ_DEPT (DEPTNO CHAR(3) NOT NULL PRIMARY KEY, DEPTNAME VARCHAR(36) NOT NULL, BUDGET DECIMAL(11, 2) DEFAULT 0)",
+        "CREATE TABLE GS.GSQ_EMP (EMPNO INTEGER GENERATED ALWAYS AS IDENTITY (START WITH 100 INCREMENT BY 1), LASTNAME VARCHAR(20) NOT NULL, DEPTNO CHAR(3), SALARY DECIMAL(9, 2) CHECK (SALARY >= 0), CONSTRAINT GSQ_EMP_PK PRIMARY KEY (EMPNO), CONSTRAINT GSQ_EMP_FK FOREIGN KEY (DEPTNO) REFERENCES GS.GSQ_DEPT (DEPTNO) ON DELETE SET NULL, CONSTRAINT GSQ_EMP_U UNIQUE (LASTNAME, DEPTNO))",
+        "LABEL ON TABLE GS.GSQ_EMP IS 'Employees'",
+        "LABEL ON COLUMN GS.GSQ_EMP (LASTNAME IS 'Last name')",
+        "CREATE INDEX GS.GSQ_EMP_IX ON GS.GSQ_EMP (LASTNAME DESC, DEPTNO)",
+        "CREATE SEQUENCE GS.GSQ_SEQ AS INTEGER START WITH 10 INCREMENT BY 5 MAXVALUE 1000 CYCLE",
+        "CREATE ALIAS GS.GSQ_ALIAS FOR GS.GSQ_DEPT",
+    ] {
+        let (ca, _) = db.run(st);
+        assert!(!ca.is_error(), "{st}: {}", ca.line());
+    }
+    let (ca, _) = db.run("CALL QSYS2.GENERATE_SQL('GSQ_DEPT', 'GS', 'TABLE', HEADER_OPTION => '0', PRIVILEGES_OPTION => '0', DATABASE_SOURCE_FILE_LIBRARY_NAME => 'GS')");
+    assert_eq!(ca.sqlcode, 466, "{}", ca.line());
+    let pk = db.rows("SELECT CONSTRAINT_NAME FROM QSYS2.SYSCST WHERE TABLE_NAME = 'GSQ_DEPT'")[0][0].clone();
+    let dept = vec![
+        rec("CREATE TABLE GS.GSQ_DEPT ( \n"),
+        rec("\tDEPTNO CHAR(3) CCSID 37 NOT NULL , \n"),
+        rec("\tDEPTNAME VARCHAR(36) CCSID 37 NOT NULL , \n"),
+        rec("\tBUDGET DECIMAL(11, 2) DEFAULT 0 , \n"),
+        rec(&format!("\tCONSTRAINT GS.{pk} PRIMARY KEY( DEPTNO ) )   \n")),
+        rec("\t  \n"),
+        rec("\tRCDFMT GSQ_DEPT   ; \n"),
+        rec("  \n"),
+    ];
+    assert_eq!(generated(&db), dept);
+    // The member has the same records.
+    let member: Vec<String> = db.rows("SELECT SRCDTA FROM GS.Q_GENSQL ORDER BY SRCSEQ").into_iter().map(|r| r[0].clone()).collect();
+    assert_eq!(member, dept.iter().map(|r| r.trim_end().to_string()).collect::<Vec<_>>());
+
+    let (ca, _) = db.run("CALL QSYS2.GENERATE_SQL('GSQ_EMP', 'GS', 'TABLE', HEADER_OPTION => '0', PRIVILEGES_OPTION => '0')");
+    assert_eq!(ca.sqlcode, 466, "{}", ca.line());
+    let ck = db.rows("SELECT CONSTRAINT_NAME FROM QSYS2.SYSCST WHERE TABLE_NAME = 'GSQ_EMP' AND CONSTRAINT_TYPE = 'CHECK'")[0][0].clone();
+    let emp: Vec<String> = [
+        "CREATE TABLE GS.GSQ_EMP ( ",
+        "\tEMPNO INTEGER GENERATED ALWAYS AS IDENTITY ( ",
+        "\tSTART WITH 100 INCREMENT BY 1 ",
+        "\tNO MINVALUE NO MAXVALUE ",
+        "\tNO CYCLE NO ORDER ",
+        "\tCACHE 20 ) ",
+        "\t, ",
+        "\tLASTNAME VARCHAR(20) CCSID 37 NOT NULL , ",
+        "\tDEPTNO CHAR(3) CCSID 37 DEFAULT NULL , ",
+        "\tSALARY DECIMAL(9, 2) DEFAULT NULL , ",
+        "\tCONSTRAINT GS.GSQ_EMP_PK PRIMARY KEY( EMPNO ) )   ",
+        "\t  ",
+        "\tRCDFMT GSQ_EMP    ; ",
+        "  ",
+        "ALTER TABLE GS.GSQ_EMP ",
+        "\tADD CONSTRAINT GS.GSQ_EMP_U ",
+        "\tUNIQUE( LASTNAME , DEPTNO ) ; ",
+        "  ",
+        "ALTER TABLE GS.GSQ_EMP ",
+        "\tADD CONSTRAINT GS.GSQ_EMP_FK ",
+        "\tFOREIGN KEY( DEPTNO ) ",
+        "\tREFERENCES GS.GSQ_DEPT ( DEPTNO ) ",
+        "\tON DELETE SET NULL ",
+        "\tON UPDATE NO ACTION ; ",
+        "  ",
+        "ALTER TABLE GS.GSQ_EMP ",
+        &format!("\tADD CONSTRAINT GS.{ck} "),
+        "\tCHECK( SALARY >= 0 ) ; ",
+        "  ",
+        "LABEL ON TABLE GS.GSQ_EMP ",
+        "\tIS 'Employees' ; ",
+        "  ",
+        "LABEL ON COLUMN GS.GSQ_EMP ",
+        "( LASTNAME IS 'Last name' ) ; ",
+        "  ",
+    ]
+    .iter()
+    .map(|l| rec(&format!("{l}\n")))
+    .collect();
+    assert_eq!(generated(&db), emp);
+
+    let (ca, _) = db.run("CALL QSYS2.GENERATE_SQL('GSQ_EMP_IX', 'GS', 'INDEX', HEADER_OPTION => '0')");
+    assert_eq!(ca.sqlcode, 466, "{}", ca.line());
+    assert_eq!(
+        generated(&db),
+        ["CREATE INDEX GS.GSQ_EMP_IX ", "\tON GS.GSQ_EMP ( LASTNAME DESC , DEPTNO ASC )   ", "\t; ", "  "].iter().map(|l| rec(&format!("{l}\n"))).collect::<Vec<_>>()
+    );
+    let (ca, _) = db.run("CALL QSYS2.GENERATE_SQL('GSQ_SEQ', 'GS', 'SEQUENCE', HEADER_OPTION => '0', PRIVILEGES_OPTION => '0')");
+    assert_eq!(ca.sqlcode, 466, "{}", ca.line());
+    assert_eq!(
+        generated(&db),
+        ["CREATE SEQUENCE GS.GSQ_SEQ ", "\tAS INTEGER ", "\tSTART WITH 10 ", "\tINCREMENT BY 5 ", "\tMINVALUE 10 ", "\tMAXVALUE 1000 ", "\tCYCLE CACHE 20 NO ORDER ; ", "  "]
+            .iter()
+            .map(|l| rec(&format!("{l}\n")))
+            .collect::<Vec<_>>()
+    );
+    let (ca, _) = db.run("CALL QSYS2.GENERATE_SQL('GSQ_ALIAS', 'GS', 'ALIAS', HEADER_OPTION => '0')");
+    assert_eq!(ca.sqlcode, 466, "{}", ca.line());
+    assert_eq!(generated(&db), ["CREATE ALIAS GS.GSQ_ALIAS ", "\tFOR GS.GSQ_DEPT ; ", "  "].iter().map(|l| rec(&format!("{l}\n"))).collect::<Vec<_>>());
+
+    // Unformatted, unqualified, with a DROP, no system names.
+    let (ca, _) = db.run("CALL QSYS2.GENERATE_SQL('GSQ_DEPT', 'GS', 'TABLE', HEADER_OPTION => '0', DROP_OPTION => '1', STATEMENT_FORMATTING_OPTION => '0', SYSTEM_NAME_OPTION => '0', QUALIFIED_NAME_OPTION => '1', PRIVILEGES_OPTION => '0')");
+    assert_eq!(ca.sqlcode, 466, "{}", ca.line());
+    assert_eq!(
+        generated(&db),
+        [
+            "DROP TABLE IF EXISTS GSQ_DEPT ;",
+            "",
+            "CREATE TABLE GSQ_DEPT (",
+            "  DEPTNO CHAR(3) CCSID 37 NOT NULL ,",
+            "  DEPTNAME VARCHAR(36) CCSID 37 NOT NULL ,",
+            "  BUDGET DECIMAL(11, 2) DEFAULT 0 ,",
+            &format!("  CONSTRAINT {pk} PRIMARY KEY( DEPTNO ) )  "),
+            "  ;",
+            "",
+        ]
+        .iter()
+        .map(|l| rec(l))
+        .collect::<Vec<_>>()
+    );
+    assert_eq!(db.run("CALL QSYS2.GENERATE_SQL('NOSUCH', 'GS', 'TABLE')").0.sqlcode, 462);
+    assert_eq!(db.code("CALL QSYS2.GENERATE_SQL('GSQ_DEPT', 'GS', 'BOGUS')"), -443);
+    assert_eq!(db.code("CALL QSYS2.GENERATE_SQL('X', 'GS', 'PROCEDURE')"), -84);
+    assert_eq!(db.code("CALL QSYS2.GENERATE_SQL('GSQ_DEPT', 'GS', 'TABLE', TEMPORAL_OPTION => '1')"), -84);
+}
+
+#[test]
+fn generate_sql_of_views_privileges_and_object_lists() {
+    let mut db = Db::new(true);
+    for st in [
+        "CREATE SCHEMA GS",
+        "CREATE TABLE GS.T1 (A INT NOT NULL, B VARCHAR(10))",
+        "CREATE VIEW GS.V1 (A, B) AS SELECT A, B FROM GS.T1 WHERE A > 1",
+        "CREATE TABLE GS.OBJS (OBJECT_SCHEMA VARCHAR(128), OBJECT_NAME VARCHAR(128), SQL_OBJECT_TYPE VARCHAR(10))",
+        "INSERT INTO GS.OBJS VALUES ('GS', 'V1', 'VIEW'), ('GS', 'T1', 'TABLE')",
+    ] {
+        let (ca, _) = db.run(st);
+        assert!(!ca.is_error(), "{st}: {}", ca.line());
+    }
+    let (ca, _) = db.run("CALL QSYS2.GENERATE_SQL('V1', 'GS', 'VIEW', HEADER_OPTION => '0', PRIVILEGES_OPTION => '0')");
+    assert_eq!(ca.sqlcode, 466, "{}", ca.line());
+    assert_eq!(
+        generated(&db),
+        ["CREATE VIEW GS.V1 ( ", "\tA , ", "\tB ) ", "\tAS ", "\tSELECT A, B FROM GS.T1 WHERE A > 1   ", "\tRCDFMT T1         ; ", "  "]
+            .iter()
+            .map(|l| rec(&format!("{l}\n")))
+            .collect::<Vec<_>>()
+    );
+    let (ca, _) = db.run("CALL QSYS2.GENERATE_SQL('T1', 'GS', 'TABLE', HEADER_OPTION => '0')");
+    assert_eq!(ca.sqlcode, 466, "{}", ca.line());
+    let g = generated(&db);
+    assert!(g.iter().any(|l| l.starts_with("GRANT ") && l.contains("SELECT")), "{g:#?}");
+    let (ca, _) = db.run("CALL QSYS2.GENERATE_SQL_OBJECTS('OBJS', 'GS', HEADER_OPTION => '0', PRIVILEGES_OPTION => '0')");
+    assert_eq!(ca.sqlcode, 466, "{}", ca.line());
+    let g = generated(&db);
+    assert!(g[0].starts_with("CREATE VIEW GS.V1"), "{g:#?}");
+    assert!(g.iter().any(|l| l.starts_with("CREATE TABLE GS.T1")), "{g:#?}");
+    assert_eq!(db.code("CALL QSYS2.GENERATE_SQL_OBJECTS('OBJS')"), -84);
 }

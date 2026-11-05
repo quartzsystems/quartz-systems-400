@@ -1,0 +1,771 @@
+-- captured from pub400
+> CREATE TABLE {lib}.GSQ_DEPT (DEPTNO CHAR(3) NOT NULL PRIMARY KEY, DEPTNA
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.GSQ_EMP (EMPNO INTEGER GENERATED ALWAYS AS IDENTITY (
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> LABEL ON TABLE {lib}.GSQ_EMP IS 'Employees'
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON COLUMN {lib}.GSQ_EMP (LASTNAME IS 'Last name')
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON COLUMN {lib}.GSQ_EMP (SALARY TEXT IS 'Yearly salary')
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON TABLE {lib}.GSQ_EMP IS 'People we pay'
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.GSQ_EMP_IX ON {lib}.GSQ_EMP (LASTNAME DESC, HIRED)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.GSQ_EMPV (EMPNO, LASTNAME) AS SELECT EMPNO, LASTNAME F
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE SEQUENCE {lib}.GSQ_SEQ AS INTEGER START WITH 10 INCREMENT BY 5 MA
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE ALIAS {lib}.GSQ_ALIAS FOR {lib}.GSQ_DEPT
+sqlcode 0 sqlstate 00000 msgid -
+> CALL QSYS2.GENERATE_SQL('GSQ_DEPT', '{lib}', 'TABLE', HEADER_OPTION => '
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# SRCSEQ NUMERIC(6,2) NOT NULL
+# SRCDAT NUMERIC(6,0) NOT NULL
+# SRCDTA CHAR(80) NOT NULL
+| 1.00 | 261105 | 'CREATE TABLE {lib}.GSQ_DEPT ( 
+                                            ' |
+| 2.00 | 261105 | '	DEPTNO CHAR(3) CCSID 273 NOT NULL , 
+                                         ' |
+| 3.00 | 261105 | '	DEPTNAME VARCHAR(36) CCSID 273 NOT NULL , 
+                                   ' |
+| 4.00 | 261105 | '	BUDGET DECIMAL(11, 2) DEFAULT 0 , 
+                                           ' |
+| 5.00 | 261105 | '	CONSTRAINT {lib}.Q_{lib}_GSQ_DEPT_DEPTNO_00001 PRIMARY KEY( DEPTNO ) ) ' |
+| 6.00 | 261105 | '	  
+                                                                           ' |
+| 7.00 | 261105 | '	  
+                                                                           ' |
+| 8.00 | 261105 | '	RCDFMT GSQ_DEPT   ; 
+                                                         ' |
+| 9.00 | 261105 | '  
+                                                                            ' |
+| 10.00 | 261105 | 'GRANT ALTER , DELETE , INDEX , INSERT , REFERENCES , SELECT , UPDATE   
+       ' |
+| 11.00 | 261105 | 'ON {lib}.GSQ_DEPT TO {user} WITH GRANT OPTION ; 
+                        ' |
+| 12.00 | 261105 | '  
+                                                                            ' |
+> SELECT SRCDTA FROM QTEMP.Q_GENSQL ORDER BY SRCSEQ
+sqlcode 0 sqlstate 00000 msgid -
+# SRCDTA CHAR(80) NOT NULL
+| 'CREATE TABLE {lib}.GSQ_DEPT ( 
+                                            ' |
+| '	DEPTNO CHAR(3) CCSID 273 NOT NULL , 
+                                         ' |
+| '	DEPTNAME VARCHAR(36) CCSID 273 NOT NULL , 
+                                   ' |
+| '	BUDGET DECIMAL(11, 2) DEFAULT 0 , 
+                                           ' |
+| '	CONSTRAINT {lib}.Q_{lib}_GSQ_DEPT_DEPTNO_00001 PRIMARY KEY( DEPTNO ) ) ' |
+| '	  
+                                                                           ' |
+| '	  
+                                                                           ' |
+| '	RCDFMT GSQ_DEPT   ; 
+                                                         ' |
+| '  
+                                                                            ' |
+| 'GRANT ALTER , DELETE , INDEX , INSERT , REFERENCES , SELECT , UPDATE   
+       ' |
+| 'ON {lib}.GSQ_DEPT TO {user} WITH GRANT OPTION ; 
+                        ' |
+| '  
+                                                                            ' |
+> CALL QSYS2.GENERATE_SQL('GSQ_EMP', '{lib}', 'TABLE', HEADER_OPTION => '0
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# SRCSEQ NUMERIC(6,2) NOT NULL
+# SRCDAT NUMERIC(6,0) NOT NULL
+# SRCDTA CHAR(80) NOT NULL
+| 1.00 | 261105 | 'CREATE TABLE {lib}.GSQ_EMP ( 
+                                             ' |
+| 2.00 | 261105 | '	EMPNO INTEGER GENERATED ALWAYS AS IDENTITY ( 
+                                ' |
+| 3.00 | 261105 | '	START WITH 100 INCREMENT BY 1 
+                                               ' |
+| 4.00 | 261105 | '	NO MINVALUE NO MAXVALUE 
+                                                     ' |
+| 5.00 | 261105 | '	NO CYCLE NO ORDER 
+                                                           ' |
+| 6.00 | 261105 | '	CACHE 20 ) 
+                                                                  ' |
+| 7.00 | 261105 | '	, 
+                                                                           ' |
+| 8.00 | 261105 | '	LASTNAME VARCHAR(20) CCSID 273 NOT NULL , 
+                                   ' |
+| 9.00 | 261105 | '	DEPTNO CHAR(3) CCSID 273 DEFAULT NULL , 
+                                     ' |
+| 10.00 | 261105 | '	SALARY DECIMAL(9, 2) DEFAULT NULL , 
+                                         ' |
+| 11.00 | 261105 | '	HIRED DATE DEFAULT CURRENT_DATE , 
+                                           ' |
+| 12.00 | 261105 | '	NOTE CLOB(1048576) CCSID 273 DEFAULT NULL , 
+                                 ' |
+| 13.00 | 261105 | '	CONSTRAINT {lib}.GSQ_EMP_PK PRIMARY KEY( EMPNO ) )   
+                    ' |
+| 14.00 | 261105 | '	  
+                                                                           ' |
+| 15.00 | 261105 | '	RCDFMT GSQ_EMP    ; 
+                                                         ' |
+| 16.00 | 261105 | '  
+                                                                            ' |
+| 17.00 | 261105 | 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| 18.00 | 261105 | '	ADD CONSTRAINT {lib}.GSQ_EMP_U 
+                                          ' |
+| 19.00 | 261105 | '	UNIQUE( LASTNAME , DEPTNO ) ; 
+                                               ' |
+| 20.00 | 261105 | '  
+                                                                            ' |
+| 21.00 | 261105 | 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| 22.00 | 261105 | '	ADD CONSTRAINT {lib}.GSQ_EMP_FK 
+                                         ' |
+| 23.00 | 261105 | '	FOREIGN KEY( DEPTNO ) 
+                                                       ' |
+| 24.00 | 261105 | '	REFERENCES {lib}.GSQ_DEPT ( DEPTNO ) 
+                                    ' |
+| 25.00 | 261105 | '	ON DELETE SET NULL 
+                                                          ' |
+| 26.00 | 261105 | '	ON UPDATE NO ACTION ; 
+                                                       ' |
+| 27.00 | 261105 | '  
+                                                                            ' |
+| 28.00 | 261105 | 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| 29.00 | 261105 | '	ADD CONSTRAINT {lib}.Q_{lib}_GSQ_EMP_SALARY_00001 
+                   ' |
+| 30.00 | 261105 | '	CHECK( SALARY >= 0 ) ; 
+                                                      ' |
+| 31.00 | 261105 | '  
+                                                                            ' |
+| 32.00 | 261105 | 'COMMENT ON TABLE {lib}.GSQ_EMP 
+                                           ' |
+| 33.00 | 261105 | '	IS ''People we pay'' ; 
+                                                        ' |
+| 34.00 | 261105 | '  
+                                                                            ' |
+| 35.00 | 261105 | 'LABEL ON TABLE {lib}.GSQ_EMP 
+                                             ' |
+| 36.00 | 261105 | '	IS ''Employees'' ; 
+                                                            ' |
+| 37.00 | 261105 | '  
+                                                                            ' |
+| 38.00 | 261105 | 'LABEL ON COLUMN {lib}.GSQ_EMP 
+                                            ' |
+| 39.00 | 261105 | '( LASTNAME IS ''Last name'' ) ; 
+                                                ' |
+| 40.00 | 261105 | '  
+                                                                            ' |
+| 41.00 | 261105 | 'LABEL ON COLUMN {lib}.GSQ_EMP 
+                                            ' |
+| 42.00 | 261105 | '( SALARY TEXT IS ''Yearly salary'' ) ; 
+                                         ' |
+| 43.00 | 261105 | '  
+                                                                            ' |
+| 44.00 | 261105 | 'GRANT ALTER , DELETE , INDEX , INSERT , REFERENCES , SELECT , UPDATE   
+       ' |
+| 45.00 | 261105 | 'ON {lib}.GSQ_EMP TO {user} WITH GRANT OPTION ; 
+                         ' |
+| 46.00 | 261105 | '  
+                                                                            ' |
+> SELECT SRCDTA FROM QTEMP.Q_GENSQL ORDER BY SRCSEQ
+sqlcode 0 sqlstate 00000 msgid -
+# SRCDTA CHAR(80) NOT NULL
+| 'CREATE TABLE {lib}.GSQ_EMP ( 
+                                             ' |
+| '	EMPNO INTEGER GENERATED ALWAYS AS IDENTITY ( 
+                                ' |
+| '	START WITH 100 INCREMENT BY 1 
+                                               ' |
+| '	NO MINVALUE NO MAXVALUE 
+                                                     ' |
+| '	NO CYCLE NO ORDER 
+                                                           ' |
+| '	CACHE 20 ) 
+                                                                  ' |
+| '	, 
+                                                                           ' |
+| '	LASTNAME VARCHAR(20) CCSID 273 NOT NULL , 
+                                   ' |
+| '	DEPTNO CHAR(3) CCSID 273 DEFAULT NULL , 
+                                     ' |
+| '	SALARY DECIMAL(9, 2) DEFAULT NULL , 
+                                         ' |
+| '	HIRED DATE DEFAULT CURRENT_DATE , 
+                                           ' |
+| '	NOTE CLOB(1048576) CCSID 273 DEFAULT NULL , 
+                                 ' |
+| '	CONSTRAINT {lib}.GSQ_EMP_PK PRIMARY KEY( EMPNO ) )   
+                    ' |
+| '	  
+                                                                           ' |
+| '	RCDFMT GSQ_EMP    ; 
+                                                         ' |
+| '  
+                                                                            ' |
+| 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| '	ADD CONSTRAINT {lib}.GSQ_EMP_U 
+                                          ' |
+| '	UNIQUE( LASTNAME , DEPTNO ) ; 
+                                               ' |
+| '  
+                                                                            ' |
+| 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| '	ADD CONSTRAINT {lib}.GSQ_EMP_FK 
+                                         ' |
+| '	FOREIGN KEY( DEPTNO ) 
+                                                       ' |
+| '	REFERENCES {lib}.GSQ_DEPT ( DEPTNO ) 
+                                    ' |
+| '	ON DELETE SET NULL 
+                                                          ' |
+| '	ON UPDATE NO ACTION ; 
+                                                       ' |
+| '  
+                                                                            ' |
+| 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| '	ADD CONSTRAINT {lib}.Q_{lib}_GSQ_EMP_SALARY_00001 
+                   ' |
+| '	CHECK( SALARY >= 0 ) ; 
+                                                      ' |
+| '  
+                                                                            ' |
+| 'COMMENT ON TABLE {lib}.GSQ_EMP 
+                                           ' |
+| '	IS ''People we pay'' ; 
+                                                        ' |
+| '  
+                                                                            ' |
+| 'LABEL ON TABLE {lib}.GSQ_EMP 
+                                             ' |
+| '	IS ''Employees'' ; 
+                                                            ' |
+| '  
+                                                                            ' |
+| 'LABEL ON COLUMN {lib}.GSQ_EMP 
+                                            ' |
+| '( LASTNAME IS ''Last name'' ) ; 
+                                                ' |
+| '  
+                                                                            ' |
+| 'LABEL ON COLUMN {lib}.GSQ_EMP 
+                                            ' |
+| '( SALARY TEXT IS ''Yearly salary'' ) ; 
+                                         ' |
+| '  
+                                                                            ' |
+| 'GRANT ALTER , DELETE , INDEX , INSERT , REFERENCES , SELECT , UPDATE   
+       ' |
+| 'ON {lib}.GSQ_EMP TO {user} WITH GRANT OPTION ; 
+                         ' |
+| '  
+                                                                            ' |
+> CALL QSYS2.GENERATE_SQL('GSQ_EMP', '{lib}', 'TABLE', HEADER_OPTION => '0
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# SRCSEQ NUMERIC(6,2) NOT NULL
+# SRCDAT NUMERIC(6,0) NOT NULL
+# SRCDTA CHAR(80) NOT NULL
+| 1.00 | 261105 | 'CREATE OR REPLACE TABLE {lib}.GSQ_EMP ( 
+                                  ' |
+| 2.00 | 261105 | '	EMPNO INTEGER GENERATED ALWAYS AS IDENTITY ( 
+                                ' |
+| 3.00 | 261105 | '	START WITH 100 INCREMENT BY 1 
+                                               ' |
+| 4.00 | 261105 | '	NO MINVALUE NO MAXVALUE 
+                                                     ' |
+| 5.00 | 261105 | '	NO CYCLE NO ORDER 
+                                                           ' |
+| 6.00 | 261105 | '	CACHE 20 ) 
+                                                                  ' |
+| 7.00 | 261105 | '	, 
+                                                                           ' |
+| 8.00 | 261105 | '	LASTNAME VARCHAR(20) CCSID 273 NOT NULL , 
+                                   ' |
+| 9.00 | 261105 | '	DEPTNO CHAR(3) CCSID 273 DEFAULT NULL , 
+                                     ' |
+| 10.00 | 261105 | '	SALARY DECIMAL(9, 2) DEFAULT NULL , 
+                                         ' |
+| 11.00 | 261105 | '	HIRED DATE DEFAULT CURRENT_DATE , 
+                                           ' |
+| 12.00 | 261105 | '	NOTE CLOB(1048576) CCSID 273 DEFAULT NULL )   
+                               ' |
+| 13.00 | 261105 | '	  
+                                                                           ' |
+| 14.00 | 261105 | '	RCDFMT GSQ_EMP    ; 
+                                                         ' |
+| 15.00 | 261105 | '  
+                                                                            ' |
+> SELECT SRCDTA FROM QTEMP.Q_GENSQL ORDER BY SRCSEQ
+sqlcode 0 sqlstate 00000 msgid -
+# SRCDTA CHAR(80) NOT NULL
+| 'CREATE OR REPLACE TABLE {lib}.GSQ_EMP ( 
+                                  ' |
+| '	EMPNO INTEGER GENERATED ALWAYS AS IDENTITY ( 
+                                ' |
+| '	START WITH 100 INCREMENT BY 1 
+                                               ' |
+| '	NO MINVALUE NO MAXVALUE 
+                                                     ' |
+| '	NO CYCLE NO ORDER 
+                                                           ' |
+| '	CACHE 20 ) 
+                                                                  ' |
+| '	, 
+                                                                           ' |
+| '	LASTNAME VARCHAR(20) CCSID 273 NOT NULL , 
+                                   ' |
+| '	DEPTNO CHAR(3) CCSID 273 DEFAULT NULL , 
+                                     ' |
+| '	SALARY DECIMAL(9, 2) DEFAULT NULL , 
+                                         ' |
+| '	HIRED DATE DEFAULT CURRENT_DATE , 
+                                           ' |
+| '	NOTE CLOB(1048576) CCSID 273 DEFAULT NULL )   
+                               ' |
+| '	  
+                                                                           ' |
+| '	RCDFMT GSQ_EMP    ; 
+                                                         ' |
+| '  
+                                                                            ' |
+> CALL QSYS2.GENERATE_SQL('GSQ_EMP_IX', '{lib}', 'INDEX', HEADER_OPTION =>
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# SRCSEQ NUMERIC(6,2) NOT NULL
+# SRCDAT NUMERIC(6,0) NOT NULL
+# SRCDTA CHAR(80) NOT NULL
+| 1.00 | 261105 | 'CREATE INDEX {lib}.GSQ_EMP_IX 
+                                            ' |
+| 2.00 | 261105 | '	ON {lib}.GSQ_EMP ( LASTNAME DESC , HIRED ASC )   
+                        ' |
+| 3.00 | 261105 | '	; 
+                                                                           ' |
+| 4.00 | 261105 | '  
+                                                                            ' |
+> SELECT SRCDTA FROM QTEMP.Q_GENSQL ORDER BY SRCSEQ
+sqlcode 0 sqlstate 00000 msgid -
+# SRCDTA CHAR(80) NOT NULL
+| 'CREATE INDEX {lib}.GSQ_EMP_IX 
+                                            ' |
+| '	ON {lib}.GSQ_EMP ( LASTNAME DESC , HIRED ASC )   
+                        ' |
+| '	; 
+                                                                           ' |
+| '  
+                                                                            ' |
+> CALL QSYS2.GENERATE_SQL('GSQ_EMPV', '{lib}', 'VIEW', HEADER_OPTION => '0
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# SRCSEQ NUMERIC(6,2) NOT NULL
+# SRCDAT NUMERIC(6,0) NOT NULL
+# SRCDTA CHAR(80) NOT NULL
+| 1.00 | 261105 | 'CREATE VIEW {lib}.GSQ_EMPV ( 
+                                             ' |
+| 2.00 | 261105 | '	EMPNO , 
+                                                                     ' |
+| 3.00 | 261105 | '	LASTNAME ) 
+                                                                  ' |
+| 4.00 | 261105 | '	AS 
+                                                                          ' |
+| 5.00 | 261105 | '	SELECT EMPNO, LASTNAME FROM {lib}.GSQ_EMP WHERE SALARY > 1000   
+         ' |
+| 6.00 | 261105 | '	RCDFMT GSQ_EMPV   ; 
+                                                         ' |
+| 7.00 | 261105 | '  
+                                                                            ' |
+| 8.00 | 261105 | 'LABEL ON COLUMN {lib}.GSQ_EMPV 
+                                           ' |
+| 9.00 | 261105 | '( LASTNAME IS ''Last name'' ) ; 
+                                                ' |
+| 10.00 | 261105 | '  
+                                                                            ' |
+| 11.00 | 261105 | 'GRANT ALTER , DELETE , INSERT , REFERENCES , SELECT , UPDATE   
+               ' |
+| 12.00 | 261105 | 'ON {lib}.GSQ_EMPV TO {user} WITH GRANT OPTION ; 
+                        ' |
+| 13.00 | 261105 | '  
+                                                                            ' |
+> SELECT SRCDTA FROM QTEMP.Q_GENSQL ORDER BY SRCSEQ
+sqlcode 0 sqlstate 00000 msgid -
+# SRCDTA CHAR(80) NOT NULL
+| 'CREATE VIEW {lib}.GSQ_EMPV ( 
+                                             ' |
+| '	EMPNO , 
+                                                                     ' |
+| '	LASTNAME ) 
+                                                                  ' |
+| '	AS 
+                                                                          ' |
+| '	SELECT EMPNO, LASTNAME FROM {lib}.GSQ_EMP WHERE SALARY > 1000   
+         ' |
+| '	RCDFMT GSQ_EMPV   ; 
+                                                         ' |
+| '  
+                                                                            ' |
+| 'LABEL ON COLUMN {lib}.GSQ_EMPV 
+                                           ' |
+| '( LASTNAME IS ''Last name'' ) ; 
+                                                ' |
+| '  
+                                                                            ' |
+| 'GRANT ALTER , DELETE , INSERT , REFERENCES , SELECT , UPDATE   
+               ' |
+| 'ON {lib}.GSQ_EMPV TO {user} WITH GRANT OPTION ; 
+                        ' |
+| '  
+                                                                            ' |
+> CALL QSYS2.GENERATE_SQL('GSQ_SEQ', '{lib}', 'SEQUENCE', HEADER_OPTION =>
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# SRCSEQ NUMERIC(6,2) NOT NULL
+# SRCDAT NUMERIC(6,0) NOT NULL
+# SRCDTA CHAR(80) NOT NULL
+| 1.00 | 261105 | 'CREATE SEQUENCE {lib}.GSQ_SEQ 
+                                            ' |
+| 2.00 | 261105 | '	AS INTEGER 
+                                                                  ' |
+| 3.00 | 261105 | '	START WITH 10 
+                                                               ' |
+| 4.00 | 261105 | '	INCREMENT BY 5 
+                                                              ' |
+| 5.00 | 261105 | '	MINVALUE 10 
+                                                                 ' |
+| 6.00 | 261105 | '	MAXVALUE 1000 
+                                                               ' |
+| 7.00 | 261105 | '	CYCLE CACHE 20 NO ORDER ; 
+                                                   ' |
+| 8.00 | 261105 | '  
+                                                                            ' |
+| 9.00 | 261105 | 'GRANT ALTER , USAGE   
+                                                        ' |
+| 10.00 | 261105 | 'ON SEQUENCE {lib}.GSQ_SEQ 
+                                                ' |
+| 11.00 | 261105 | 'TO {user} WITH GRANT OPTION ; 
+                                              ' |
+| 12.00 | 261105 | '  
+                                                                            ' |
+> SELECT SRCDTA FROM QTEMP.Q_GENSQL ORDER BY SRCSEQ
+sqlcode 0 sqlstate 00000 msgid -
+# SRCDTA CHAR(80) NOT NULL
+| 'CREATE SEQUENCE {lib}.GSQ_SEQ 
+                                            ' |
+| '	AS INTEGER 
+                                                                  ' |
+| '	START WITH 10 
+                                                               ' |
+| '	INCREMENT BY 5 
+                                                              ' |
+| '	MINVALUE 10 
+                                                                 ' |
+| '	MAXVALUE 1000 
+                                                               ' |
+| '	CYCLE CACHE 20 NO ORDER ; 
+                                                   ' |
+| '  
+                                                                            ' |
+| 'GRANT ALTER , USAGE   
+                                                        ' |
+| 'ON SEQUENCE {lib}.GSQ_SEQ 
+                                                ' |
+| 'TO {user} WITH GRANT OPTION ; 
+                                              ' |
+| '  
+                                                                            ' |
+> CALL QSYS2.GENERATE_SQL('GSQ_ALIAS', '{lib}', 'ALIAS', HEADER_OPTION => 
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# SRCSEQ NUMERIC(6,2) NOT NULL
+# SRCDAT NUMERIC(6,0) NOT NULL
+# SRCDTA CHAR(80) NOT NULL
+| 1.00 | 261105 | 'CREATE ALIAS {lib}.GSQ_ALIAS 
+                                             ' |
+| 2.00 | 261105 | '	FOR {lib}.GSQ_DEPT ; 
+                                                    ' |
+| 3.00 | 261105 | '  
+                                                                            ' |
+> SELECT SRCDTA FROM QTEMP.Q_GENSQL ORDER BY SRCSEQ
+sqlcode 0 sqlstate 00000 msgid -
+# SRCDTA CHAR(80) NOT NULL
+| 'CREATE ALIAS {lib}.GSQ_ALIAS 
+                                             ' |
+| '	FOR {lib}.GSQ_DEPT ; 
+                                                    ' |
+| '  
+                                                                            ' |
+> CALL QSYS2.GENERATE_SQL('GSQ_DEPT', '{lib}', 'TABLE', HEADER_OPTION => '
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# SRCSEQ NUMERIC(6,2) NOT NULL
+# SRCDAT NUMERIC(6,0) NOT NULL
+# SRCDTA CHAR(80) NOT NULL
+| 1.00 | 261105 | 'DROP TABLE IF EXISTS GSQ_DEPT ;                                                 ' |
+| 2.00 | 261105 | '                                                                                ' |
+| 3.00 | 261105 | 'CREATE TABLE GSQ_DEPT (                                                         ' |
+| 4.00 | 261105 | '  DEPTNO CHAR(3) CCSID 273 NOT NULL ,                                           ' |
+| 5.00 | 261105 | '  DEPTNAME VARCHAR(36) CCSID 273 NOT NULL ,                                     ' |
+| 6.00 | 261105 | '  BUDGET DECIMAL(11, 2) DEFAULT 0 ,                                             ' |
+| 7.00 | 261105 | '  CONSTRAINT Q_{lib}_GSQ_DEPT_DEPTNO_00001 PRIMARY KEY( DEPTNO ) )          ' |
+| 8.00 | 261105 | '  ;                                                                             ' |
+| 9.00 | 261105 | '                                                                                ' |
+| 10.00 | 261105 | 'GRANT ALTER , DELETE , INDEX , INSERT , REFERENCES , SELECT , UPDATE            ' |
+| 11.00 | 261105 | 'ON GSQ_DEPT TO {user} WITH GRANT OPTION ;                                     ' |
+| 12.00 | 261105 | '                                                                                ' |
+> SELECT SRCDTA FROM QTEMP.Q_GENSQL ORDER BY SRCSEQ
+sqlcode 0 sqlstate 00000 msgid -
+# SRCDTA CHAR(80) NOT NULL
+| 'DROP TABLE IF EXISTS GSQ_DEPT ;                                                 ' |
+| '                                                                                ' |
+| 'CREATE TABLE GSQ_DEPT (                                                         ' |
+| '  DEPTNO CHAR(3) CCSID 273 NOT NULL ,                                           ' |
+| '  DEPTNAME VARCHAR(36) CCSID 273 NOT NULL ,                                     ' |
+| '  BUDGET DECIMAL(11, 2) DEFAULT 0 ,                                             ' |
+| '  CONSTRAINT Q_{lib}_GSQ_DEPT_DEPTNO_00001 PRIMARY KEY( DEPTNO ) )          ' |
+| '  ;                                                                             ' |
+| '                                                                                ' |
+| 'GRANT ALTER , DELETE , INDEX , INSERT , REFERENCES , SELECT , UPDATE            ' |
+| 'ON GSQ_DEPT TO {user} WITH GRANT OPTION ;                                     ' |
+| '                                                                                ' |
+> CALL QSYS2.GENERATE_SQL('GSQ_%', '{lib}', 'TABLE', HEADER_OPTION => '0',
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# SRCSEQ NUMERIC(6,2) NOT NULL
+# SRCDAT NUMERIC(6,0) NOT NULL
+# SRCDTA CHAR(80) NOT NULL
+| 1.00 | 261105 | 'CREATE TABLE {lib}.GSQ_DEPT ( 
+                                            ' |
+| 2.00 | 261105 | '	DEPTNO CHAR(3) CCSID 273 NOT NULL , 
+                                         ' |
+| 3.00 | 261105 | '	DEPTNAME VARCHAR(36) CCSID 273 NOT NULL , 
+                                   ' |
+| 4.00 | 261105 | '	BUDGET DECIMAL(11, 2) DEFAULT 0 , 
+                                           ' |
+| 5.00 | 261105 | '	CONSTRAINT {lib}.Q_{lib}_GSQ_DEPT_DEPTNO_00001 PRIMARY KEY( DEPTNO ) ) ' |
+| 6.00 | 261105 | '	  
+                                                                           ' |
+| 7.00 | 261105 | '	  
+                                                                           ' |
+| 8.00 | 261105 | '	RCDFMT GSQ_DEPT   ; 
+                                                         ' |
+| 9.00 | 261105 | '  
+                                                                            ' |
+| 10.00 | 261105 | '  
+                                                                            ' |
+| 11.00 | 261105 | 'CREATE TABLE {lib}.GSQ_EMP ( 
+                                             ' |
+| 12.00 | 261105 | '	EMPNO INTEGER GENERATED ALWAYS AS IDENTITY ( 
+                                ' |
+| 13.00 | 261105 | '	START WITH 100 INCREMENT BY 1 
+                                               ' |
+| 14.00 | 261105 | '	NO MINVALUE NO MAXVALUE 
+                                                     ' |
+| 15.00 | 261105 | '	NO CYCLE NO ORDER 
+                                                           ' |
+| 16.00 | 261105 | '	CACHE 20 ) 
+                                                                  ' |
+| 17.00 | 261105 | '	, 
+                                                                           ' |
+| 18.00 | 261105 | '	LASTNAME VARCHAR(20) CCSID 273 NOT NULL , 
+                                   ' |
+| 19.00 | 261105 | '	DEPTNO CHAR(3) CCSID 273 DEFAULT NULL , 
+                                     ' |
+| 20.00 | 261105 | '	SALARY DECIMAL(9, 2) DEFAULT NULL , 
+                                         ' |
+| 21.00 | 261105 | '	HIRED DATE DEFAULT CURRENT_DATE , 
+                                           ' |
+| 22.00 | 261105 | '	NOTE CLOB(1048576) CCSID 273 DEFAULT NULL , 
+                                 ' |
+| 23.00 | 261105 | '	CONSTRAINT {lib}.GSQ_EMP_PK PRIMARY KEY( EMPNO ) )   
+                    ' |
+| 24.00 | 261105 | '	  
+                                                                           ' |
+| 25.00 | 261105 | '	RCDFMT GSQ_EMP    ; 
+                                                         ' |
+| 26.00 | 261105 | '  
+                                                                            ' |
+| 27.00 | 261105 | 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| 28.00 | 261105 | '	ADD CONSTRAINT {lib}.GSQ_EMP_U 
+                                          ' |
+| 29.00 | 261105 | '	UNIQUE( LASTNAME , DEPTNO ) ; 
+                                               ' |
+| 30.00 | 261105 | '  
+                                                                            ' |
+| 31.00 | 261105 | 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| 32.00 | 261105 | '	ADD CONSTRAINT {lib}.GSQ_EMP_FK 
+                                         ' |
+| 33.00 | 261105 | '	FOREIGN KEY( DEPTNO ) 
+                                                       ' |
+| 34.00 | 261105 | '	REFERENCES {lib}.GSQ_DEPT ( DEPTNO ) 
+                                    ' |
+| 35.00 | 261105 | '	ON DELETE SET NULL 
+                                                          ' |
+| 36.00 | 261105 | '	ON UPDATE NO ACTION ; 
+                                                       ' |
+| 37.00 | 261105 | '  
+                                                                            ' |
+| 38.00 | 261105 | 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| 39.00 | 261105 | '	ADD CONSTRAINT {lib}.Q_{lib}_GSQ_EMP_SALARY_00001 
+                   ' |
+| 40.00 | 261105 | '	CHECK( SALARY >= 0 ) ; 
+                                                      ' |
+| 41.00 | 261105 | '  
+                                                                            ' |
+| 42.00 | 261105 | 'COMMENT ON TABLE {lib}.GSQ_EMP 
+                                           ' |
+| 43.00 | 261105 | '	IS ''People we pay'' ; 
+                                                        ' |
+| 44.00 | 261105 | '  
+                                                                            ' |
+| 45.00 | 261105 | 'LABEL ON TABLE {lib}.GSQ_EMP 
+                                             ' |
+| 46.00 | 261105 | '	IS ''Employees'' ; 
+                                                            ' |
+| 47.00 | 261105 | '  
+                                                                            ' |
+| 48.00 | 261105 | 'LABEL ON COLUMN {lib}.GSQ_EMP 
+                                            ' |
+| 49.00 | 261105 | '( LASTNAME IS ''Last name'' ) ; 
+                                                ' |
+| 50.00 | 261105 | '  
+                                                                            ' |
+| 51.00 | 261105 | 'LABEL ON COLUMN {lib}.GSQ_EMP 
+                                            ' |
+| 52.00 | 261105 | '( SALARY TEXT IS ''Yearly salary'' ) ; 
+                                         ' |
+| 53.00 | 261105 | '  
+                                                                            ' |
+> SELECT SRCDTA FROM QTEMP.Q_GENSQL ORDER BY SRCSEQ
+sqlcode 0 sqlstate 00000 msgid -
+# SRCDTA CHAR(80) NOT NULL
+| 'CREATE TABLE {lib}.GSQ_DEPT ( 
+                                            ' |
+| '	DEPTNO CHAR(3) CCSID 273 NOT NULL , 
+                                         ' |
+| '	DEPTNAME VARCHAR(36) CCSID 273 NOT NULL , 
+                                   ' |
+| '	BUDGET DECIMAL(11, 2) DEFAULT 0 , 
+                                           ' |
+| '	CONSTRAINT {lib}.Q_{lib}_GSQ_DEPT_DEPTNO_00001 PRIMARY KEY( DEPTNO ) ) ' |
+| '	  
+                                                                           ' |
+| '	  
+                                                                           ' |
+| '	RCDFMT GSQ_DEPT   ; 
+                                                         ' |
+| '  
+                                                                            ' |
+| '  
+                                                                            ' |
+| 'CREATE TABLE {lib}.GSQ_EMP ( 
+                                             ' |
+| '	EMPNO INTEGER GENERATED ALWAYS AS IDENTITY ( 
+                                ' |
+| '	START WITH 100 INCREMENT BY 1 
+                                               ' |
+| '	NO MINVALUE NO MAXVALUE 
+                                                     ' |
+| '	NO CYCLE NO ORDER 
+                                                           ' |
+| '	CACHE 20 ) 
+                                                                  ' |
+| '	, 
+                                                                           ' |
+| '	LASTNAME VARCHAR(20) CCSID 273 NOT NULL , 
+                                   ' |
+| '	DEPTNO CHAR(3) CCSID 273 DEFAULT NULL , 
+                                     ' |
+| '	SALARY DECIMAL(9, 2) DEFAULT NULL , 
+                                         ' |
+| '	HIRED DATE DEFAULT CURRENT_DATE , 
+                                           ' |
+| '	NOTE CLOB(1048576) CCSID 273 DEFAULT NULL , 
+                                 ' |
+| '	CONSTRAINT {lib}.GSQ_EMP_PK PRIMARY KEY( EMPNO ) )   
+                    ' |
+| '	  
+                                                                           ' |
+| '	RCDFMT GSQ_EMP    ; 
+                                                         ' |
+| '  
+                                                                            ' |
+| 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| '	ADD CONSTRAINT {lib}.GSQ_EMP_U 
+                                          ' |
+| '	UNIQUE( LASTNAME , DEPTNO ) ; 
+                                               ' |
+| '  
+                                                                            ' |
+| 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| '	ADD CONSTRAINT {lib}.GSQ_EMP_FK 
+                                         ' |
+| '	FOREIGN KEY( DEPTNO ) 
+                                                       ' |
+| '	REFERENCES {lib}.GSQ_DEPT ( DEPTNO ) 
+                                    ' |
+| '	ON DELETE SET NULL 
+                                                          ' |
+| '	ON UPDATE NO ACTION ; 
+                                                       ' |
+| '  
+                                                                            ' |
+| 'ALTER TABLE {lib}.GSQ_EMP 
+                                                ' |
+| '	ADD CONSTRAINT {lib}.Q_{lib}_GSQ_EMP_SALARY_00001 
+                   ' |
+| '	CHECK( SALARY >= 0 ) ; 
+                                                      ' |
+| '  
+                                                                            ' |
+| 'COMMENT ON TABLE {lib}.GSQ_EMP 
+                                           ' |
+| '	IS ''People we pay'' ; 
+                                                        ' |
+| '  
+                                                                            ' |
+| 'LABEL ON TABLE {lib}.GSQ_EMP 
+                                             ' |
+| '	IS ''Employees'' ; 
+                                                            ' |
+| '  
+                                                                            ' |
+| 'LABEL ON COLUMN {lib}.GSQ_EMP 
+                                            ' |
+| '( LASTNAME IS ''Last name'' ) ; 
+                                                ' |
+| '  
+                                                                            ' |
+| 'LABEL ON COLUMN {lib}.GSQ_EMP 
+                                            ' |
+| '( SALARY TEXT IS ''Yearly salary'' ) ; 
+                                         ' |
+| '  
+                                                                            ' |
+> CALL QSYS2.GENERATE_SQL('NOSUCH', '{lib}', 'TABLE')
+sqlcode 0 sqlstate 00000 msgid -
+warning 462 01532 SQL0462
+> CALL QSYS2.GENERATE_SQL('GSQ_DEPT', '{lib}', 'BOGUS')
+sqlcode -443 sqlstate 22023 msgid SQL0443
+> DROP ALIAS {lib}.GSQ_ALIAS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP SEQUENCE {lib}.GSQ_SEQ
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VIEW {lib}.GSQ_EMPV
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.GSQ_EMP
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.GSQ_DEPT
+sqlcode 0 sqlstate 00000 msgid -

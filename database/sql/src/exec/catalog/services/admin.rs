@@ -90,19 +90,19 @@ fn refused(what: &str) -> SqlError {
 
 /// `SET_SERVER_SBS_ROUTING`: the host servers' prestart jobs run in
 /// `QUSRWRK` for every user; routing by user is not kept.
-pub fn set_server_sbs_routing(_txn: &mut Txn<'_>, _ctx: &SqlContext, _args: &Args) -> Result<Vec<Value>> {
+pub fn set_server_sbs_routing(_txn: &mut Txn<'_>, _ctx: &mut SqlContext, _args: &Args) -> Result<Vec<Value>> {
     Err(refused("QSYS2.SET_SERVER_SBS_ROUTING: host server routing by user is not supported"))
 }
 
 /// `SET_PASE_SHELL_INFO`: the SSH server starts QSH for every user; a
 /// user's PASE shell is not kept.
-pub fn set_pase_shell_info(_txn: &mut Txn<'_>, _ctx: &SqlContext, _args: &Args) -> Result<Vec<Value>> {
+pub fn set_pase_shell_info(_txn: &mut Txn<'_>, _ctx: &mut SqlContext, _args: &Args) -> Result<Vec<Value>> {
     Err(refused("QSYS2.SET_PASE_SHELL_INFO: a user's PASE shell is not supported; SSH sessions run QSH"))
 }
 
 /// `SYSTOOLS.LPRINTF`: the job log is the job's, not the storage
 /// service's.
-pub fn lprintf(_txn: &mut Txn<'_>, _ctx: &SqlContext, _args: &Args) -> Result<Vec<Value>> {
+pub fn lprintf(_txn: &mut Txn<'_>, _ctx: &mut SqlContext, _args: &Args) -> Result<Vec<Value>> {
     // BLOCKED(sql): a statement runs in the storage service, which
     // cannot write the asking job's log.
     Err(refused("SYSTOOLS.LPRINTF: writing the job log from a statement is not supported"))
@@ -111,7 +111,7 @@ pub fn lprintf(_txn: &mut Txn<'_>, _ctx: &SqlContext, _args: &Args) -> Result<Ve
 /// `OVERRIDE_TABLE(TABLE_SCHEMA, TABLE_NAME, BLOCK_SIZE)`: the table
 /// must exist and the size be `*DEFAULT`, `*BUF32KB` ... or a number of
 /// bytes; QS/400 reads records unblocked, so it changes nothing else.
-pub fn override_table(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args) -> Result<Vec<Value>> {
+pub fn override_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -> Result<Vec<Value>> {
     let schema = args.word("TABLE_SCHEMA").unwrap_or_default();
     let table = args.word("TABLE_NAME").unwrap_or_default();
     let size = args.word("BLOCK_SIZE").unwrap_or_default();

@@ -18,7 +18,7 @@ use crate::error::{Result, SqlError};
 use crate::value::Value;
 
 /// A procedure's body: its bound arguments, its `OUT` values.
-type ProcFn = fn(&mut Txn<'_>, &SqlContext, &Args) -> Result<Vec<Value>>;
+type ProcFn = fn(&mut Txn<'_>, &mut SqlContext, &Args) -> Result<Vec<Value>>;
 
 /// The engine's procedures, by specific name.
 const PROCEDURES: &[(&str, &str, ProcFn)] = &[
@@ -31,6 +31,8 @@ const PROCEDURES: &[(&str, &str, ProcFn)] = &[
     ("QSYS2", "SET_SERVER_SBS_ROUTING", super::admin::set_server_sbs_routing),
     ("QSYS2", "SET_PASE_SHELL_INFO", super::admin::set_pase_shell_info),
     ("SYSTOOLS", "LPRINTF", super::admin::lprintf),
+    ("QSYS2", "QSQGENSQL", super::gensql::generate_sql),
+    ("QSYS2", "QSQGENSQLO", super::gensql::generate_sql_objects),
 ];
 
 /// Whether `schema.name` is one of the engine's procedures.
@@ -46,7 +48,7 @@ pub fn is_procedure(schema: Option<&str>, name: &str) -> bool {
 /// parameters the arguments bind to.
 pub fn call(
     txn: &mut Txn<'_>,
-    ctx: &SqlContext,
+    ctx: &mut SqlContext,
     schema: Option<&str>,
     name: &str,
     args: &[(Option<String>, Value)],
@@ -76,7 +78,7 @@ fn run(txn: &mut Txn<'_>, ctx: &SqlContext, cmd: &str) -> Result<()> {
 }
 
 /// `QCMDEXC(COMMAND)`.
-fn qcmdexc(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args) -> Result<Vec<Value>> {
+fn qcmdexc(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -> Result<Vec<Value>> {
     let cmd = args.text("COMMAND").unwrap_or_default();
     run(txn, ctx, &cmd)?;
     Ok(Vec::new())
@@ -84,7 +86,7 @@ fn qcmdexc(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args) -> Result<Vec<Value
 
 /// The old form `QCMDEXC(command, length)`: the length is the
 /// command's, as the system API takes it.
-fn qcmdexc_length(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args) -> Result<Vec<Value>> {
+fn qcmdexc_length(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -> Result<Vec<Value>> {
     let shape = shape::index_specific("QSYS2", "QCMDEXC").map(|s| s.parms.clone()).unwrap_or_default();
     let (Some(c), Some(l)) = (shape.first(), shape.get(1)) else {
         return Ok(Vec::new());
@@ -152,7 +154,7 @@ fn write(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, data: Vec<u8>, ccsid:
 
 /// `IFS_WRITE(PATH_NAME, LINE, FILE_CCSID, OVERWRITE, END_OF_LINE)`:
 /// the line in the file's CCSID (the job's EBCDIC by default).
-fn ifs_write(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args) -> Result<Vec<Value>> {
+fn ifs_write(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -> Result<Vec<Value>> {
     let ccsid = args.int("FILE_CCSID").and_then(|n| u16::try_from(n).ok()).filter(|n| *n != 0).unwrap_or(37);
     let line = args.text("LINE").unwrap_or_default();
     let data = match ccsid::conv::Codec::of(ccsid).ok().flatten() {
@@ -169,13 +171,13 @@ fn ifs_write(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args) -> Result<Vec<Val
 }
 
 /// `IFS_WRITE_UTF8`: the line as UTF-8, a new file tagged 1208.
-fn ifs_write_utf8(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args) -> Result<Vec<Value>> {
+fn ifs_write_utf8(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -> Result<Vec<Value>> {
     let line = args.text("LINE").unwrap_or_default();
     write(txn, ctx, args, line.into_bytes(), 1208)
 }
 
 /// `IFS_WRITE_BINARY`: the bytes as they are.
-fn ifs_write_binary(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args) -> Result<Vec<Value>> {
+fn ifs_write_binary(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -> Result<Vec<Value>> {
     let data = match args.get("LINE") {
         Value::Bin(b) => b.clone(),
         Value::Null => Vec::new(),

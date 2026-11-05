@@ -406,7 +406,13 @@ impl Parser {
             text: None,
             is_text: comment,
         };
-        if self.eat_word("COLUMN") {
+        // `LABEL ON COLUMN table ( column IS ... )`: the list form, as
+        // GENERATE_SQL writes it.
+        let column = self.eat_word("COLUMN");
+        let at = self.at;
+        let list = column && self.object_name().is_ok() && self.is_sym("(");
+        self.at = at;
+        if column && !list {
             let name = self.object_name_and_column()?;
             l.target = LabelTarget::Column(name.0, name.1);
             if self.eat_word("TEXT") {
@@ -420,13 +426,13 @@ impl Parser {
                 Statement::LabelOn(l)
             });
         }
-        if self.eat_word("TRIGGER") {
+        if !list && self.eat_word("TRIGGER") {
             l.target = LabelTarget::Trigger(self.object_name()?);
             self.expect_word("IS")?;
             l.text = Some(self.string()?);
             return Ok(if comment { Statement::CommentOn(l) } else { Statement::LabelOn(l) });
         }
-        let is_table = self.eat_word("TABLE") || self.eat_word("VIEW");
+        let is_table = list || self.eat_word("TABLE") || self.eat_word("VIEW");
         let is_index = !is_table && self.eat_word("INDEX");
         let is_alias = !is_table && !is_index && self.eat_word("ALIAS");
         if !(is_table || is_index || is_alias) {

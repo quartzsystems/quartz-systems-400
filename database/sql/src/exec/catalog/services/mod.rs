@@ -21,6 +21,7 @@ mod out;
 
 mod absent;
 mod admin;
+mod gensql;
 mod joblog;
 mod jrnent;
 mod locks;

@@ -41,3 +41,4 @@ objects2/VARIABLE   # SYSVARIABLES.DEFAULT is NCLOB at IBM, VARGRAPHIC(2000) her
 objects2/TYPES   # distinct types as column types, casts and their strong typing refused SQL0084 (BLOCKED(sql))
 trigger/TRGDEFS   # TRIGGER_TEXT is NVARCHAR and LONG_COMMENT DBCLOB at IBM, VARGRAPHIC here (no LOB catalog columns)
 trigger/TRGCAT   # ACTION_CONDITION and ACTION_STATEMENT are DBCLOB at IBM, VARGRAPHIC(2000) here (no LOB catalog columns)
+services/GENSQL    # QTEMP/Q_GENSQL is not written (the result set is); pub400 CCSID 273; QS/400 keeps COMMENT ON as the label; generated constraint names differ

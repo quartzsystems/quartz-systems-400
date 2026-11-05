@@ -787,7 +787,7 @@ fn pad_fixed(cols: &[ColInfo], mut rows: Vec<Row>) -> Vec<Row> {
 
 /// A column default as `SYSCOLUMNS.COLUMN_DEFAULT` writes it: the SQL
 /// text of the value.
-fn default_text(d: &dds::DefaultValue) -> String {
+pub(crate) fn default_text(d: &dds::DefaultValue) -> String {
     use dds::DefaultValue as D;
     match d {
         D::Null => "NULL".into(),

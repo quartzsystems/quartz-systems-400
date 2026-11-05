@@ -88,6 +88,32 @@ pub fn declare(ctx: &mut SqlContext, d: &DeclareCursor) -> Outcome {
     Outcome::Done
 }
 
+/// A cursor open on rows a service made (`GENERATE_SQL`), returned to
+/// the procedure's caller.
+pub(crate) fn open_rows(ctx: &mut SqlContext, name: &str, columns: Vec<ColumnDesc>, rows: Vec<Vec<Value>>) {
+    // The query is never run: the cursor is open on its rows.
+    let Ok(crate::ast::Statement::Select(query)) = crate::parse::parse("VALUES 0", crate::Naming::Sql) else {
+        return;
+    };
+    let n = rows.len();
+    ctx.cursors.insert(
+        name.to_string(),
+        Cursor {
+            query,
+            hold: true,
+            scroll: false,
+            open: true,
+            columns,
+            rows,
+            table: None,
+            rrns: vec![None; n],
+            pos: 0,
+            returns: Some(crate::ast::ReturnTo::Caller),
+            seq: OPENS.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1,
+        },
+    );
+}
+
 fn get<'a>(ctx: &'a mut SqlContext, name: &str) -> Result<&'a mut Cursor> {
     ctx.cursors
         .get_mut(name)
