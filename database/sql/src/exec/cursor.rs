@@ -121,6 +121,8 @@ pub(crate) fn open_rows(ctx: &mut SqlContext, name: &str, columns: Vec<ColumnDes
             pos: 0,
             returns: Some(crate::ast::ReturnTo::Caller),
             seq: OPENS.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1,
+            sensitive: false,
+            params: Vec::new(),
         },
     );
 }

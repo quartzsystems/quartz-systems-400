@@ -150,6 +150,10 @@ ibm = "RTVDTAARA, DSPDTAARA, QWCRDTAA: *USE"
 need = ["*CHANGE"]
 ibm = "CHGDTAARA: *CHANGE"
 
+[op."sequence.alter"]
+need = ["*OBJALTER"]
+ibm = "ALTER SEQUENCE: the ALTER privilege, *OBJALTER to the sequence's data area"
+
 [op."sqlpkg.use"]
 need = ["*OBJOPR", "*EXECUTE"]
 ibm = "running a statement of an SQL package, DSPSQLPKG, PRTSQLINF: *OBJOPR and *EXECUTE"

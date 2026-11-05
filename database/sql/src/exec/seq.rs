@@ -139,7 +139,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateSequence) -> Re
 /// `ALTER SEQUENCE`.
 pub fn alter(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName, o: &Identity) -> Result<()> {
     let (id, mut s) = resolve(txn, ctx, name)?;
-    db::auth::check(txn, "obj.change", id).map_err(SqlError::from)?;
+    db::auth::check(txn, "sequence.alter", id).map_err(SqlError::from)?;
     s.attrs = merge(&s.attrs, o, super::column::type_range(&sql_type(s.data_type, s.precision)).expect("integer"), &format!("sequence {}", name.name.value))?;
     // Values IBM had cached are passed over; an exhausted sequence goes on
     // from its last value under the new attributes.
