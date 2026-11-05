@@ -92,7 +92,7 @@ hash = "c51f59ebe8bc095431a309616a3b1d5e3e79e87904b204b3fd9067169c9ba7d2"
 [format.sql-package]
 frozen_at = "V1R2M0"
 version = "1"
-hash = "a2c33692ddc0c1d4b0da48aaf01be7f77a56aeb65815067d9f71935202eb3c53"
+hash = "93289e038536d1d624770652f25953dee8938b931f54c0513ec636b192464cfa"
 
 [format.store]
 frozen_at = "V1R1M0"
