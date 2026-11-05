@@ -112,6 +112,7 @@ const SCENARIOS: &[(&str, &str)] = &[
     ("sysval", "SysVal"),
     ("central", "Central"),
     ("jdbc", "Jdbc"),
+    ("metadata", "MetaData"),
     ("dtaq", "DtaQ"),
     ("ifs", "Ifs"),
     ("splf", "Splf"),

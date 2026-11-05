@@ -19,6 +19,8 @@ import java.sql.Statement;
  */
 public final class MetaData {
     private static final String LIB = "QSTEST";
+    /** The server's name (the catalog, CURRENT SERVER): written {server}, so QS/400's run diffs with the oracle's. */
+    private static String server = "";
 
     private static Connection open() throws Exception {
         String url = "jdbc:as400://" + Hs.host() + (Hs.skipSignon() ? ":8471" : "")
@@ -41,6 +43,7 @@ public final class MetaData {
                 exec(c, "LABEL ON TABLE " + LIB + ".QSMDP IS 'Metadata parent'");
             });
             DatabaseMetaData m = c.getMetaData();
+            server = c.getCatalog() == null ? "" : c.getCatalog().trim();
             Hs.step("scalars", () -> {
                 Hs.out("     product=" + m.getDatabaseProductName() + " " + m.getDatabaseProductVersion().replaceAll("\\d", "n"));
                 Hs.out("     quote=" + m.getIdentifierQuoteString() + " catalogSep=" + m.getCatalogSeparator()
@@ -110,7 +113,8 @@ public final class MetaData {
                 StringBuilder b = new StringBuilder("     |");
                 for (int i = 1; i <= n; i++) {
                     String v = r.getString(i);
-                    b.append(' ').append(v == null ? "NULL" : v.trim()).append(" |");
+                    String t = v == null ? "NULL" : v.trim();
+                    b.append(' ').append(!server.isEmpty() && t.equals(server) ? "{server}" : t).append(" |");
                 }
                 Hs.out(b.toString().replace(Hs.user().toUpperCase(), "{user}"));
                 rows++;
