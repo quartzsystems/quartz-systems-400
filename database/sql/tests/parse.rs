@@ -262,7 +262,7 @@ fn ddl_and_dml_shapes() {
     };
     assert_eq!(t.columns.len(), 5);
     assert_eq!(t.columns[0].type_spec.data_type, DataType::Decimal(7, 0));
-    assert!(t.columns[0].not_null && t.columns[0].primary_key);
+    assert!(t.columns[0].not_null && matches!(t.columns[0].constraints[0], Constraint::PrimaryKey { .. }));
     assert_eq!(t.columns[1].default, Some(ColumnDefault::System));
     assert_eq!(t.columns[2].type_spec.data_type, DataType::Numeric(9, 2));
     assert_eq!(
@@ -271,7 +271,7 @@ fn ddl_and_dml_shapes() {
     );
     assert_eq!(t.columns[3].type_spec.ccsid, Some(37));
     let id = t.columns[4].identity.as_ref().unwrap();
-    assert_eq!((id.always, id.start, id.increment), (true, 100, 10));
+    assert_eq!((id.always, id.start, id.increment), (true, Some(100), Some(10)));
     assert!(
         matches!(&t.constraints[0], Constraint::Unique { name: Some(n), columns } if n.value == "UQ" && columns.len() == 1)
     );
@@ -284,7 +284,7 @@ fn ddl_and_dml_shapes() {
     assert_eq!(a.actions.len(), 4);
     assert!(matches!(&a.actions[0], AlterAction::AddColumn(c) if c.name.value == "PHONE"));
     assert!(matches!(&a.actions[2], AlterAction::SetDefault(_, None)));
-    assert_eq!(a.actions[3], AlterAction::DropPrimaryKey);
+    assert_eq!(a.actions[3], AlterAction::DropPrimaryKey { cascade: true });
     let Statement::CreateIndex(i) = sys("CREATE UNIQUE INDEX ix ON cust (name DESC, cusno)") else {
         panic!()
     };

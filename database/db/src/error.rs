@@ -249,6 +249,13 @@ pub enum DbError {
         what: String,
     },
 
+    /// An identity column has given every value its range holds.
+    #[error("the identity column of file {file} has no more values")]
+    IdentityExhausted {
+        /// File name.
+        file: String,
+    },
+
     /// A record breaks a check constraint.
     #[error("check constraint {cst} of member {member} in file {file} is not met")]
     CheckViolation {
@@ -360,6 +367,7 @@ impl DbError {
             Self::MemberFull { .. }
             | Self::RecordLength { .. }
             | Self::HasDependents { .. }
+            | Self::IdentityExhausted { .. }
             | Self::Closed
             | Self::Ended
             | Self::Definition { .. } => return None,

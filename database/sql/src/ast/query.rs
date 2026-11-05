@@ -157,6 +157,8 @@ pub struct Insert {
     pub table: ObjectName,
     /// Column list.
     pub columns: Vec<Ident>,
+    /// `OVERRIDING SYSTEM VALUE` (true) or `OVERRIDING USER VALUE` (false).
+    pub overriding: Option<bool>,
     /// The rows.
     pub source: InsertSource,
     /// Isolation.
@@ -331,6 +333,8 @@ fn walk(e: &Expr, out: &mut Vec<ColumnRef>) {
         | Expr::Register(_)
         | Expr::Exists(..)
         | Expr::Subquery(_)
+        | Expr::NextValue(_)
+        | Expr::PrevValue(_)
         | Expr::Default => {}
     }
 }

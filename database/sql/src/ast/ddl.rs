@@ -17,17 +17,49 @@ pub enum ColumnDefault {
     Value(Expr),
 }
 
-/// `GENERATED ... AS IDENTITY`.
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// `GENERATED ... AS IDENTITY` (and an identity column's or sequence's
+/// options): values as written; `None` for the default.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct Identity {
     /// `ALWAYS` (else `BY DEFAULT`).
     pub always: bool,
     /// `START WITH`.
-    pub start: i64,
+    pub start: Option<i128>,
     /// `INCREMENT BY`.
-    pub increment: i64,
-    /// `CYCLE`.
-    pub cycle: bool,
+    pub increment: Option<i128>,
+    /// `MINVALUE n`; `Some(None)` for `NO MINVALUE`.
+    pub min: Option<Option<i128>>,
+    /// `MAXVALUE n`; `Some(None)` for `NO MAXVALUE`.
+    pub max: Option<Option<i128>>,
+    /// `CYCLE` / `NO CYCLE`.
+    pub cycle: Option<bool>,
+    /// `CACHE n`; `Some(0)` for `NO CACHE`.
+    pub cache: Option<u32>,
+    /// `ORDER` / `NO ORDER`.
+    pub order: Option<bool>,
+    /// `RESTART [WITH n]` (alter only): `Some(None)` restarts at `START WITH`.
+    pub restart: Option<Option<i128>>,
+}
+
+/// What a generated column holds, besides an identity.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Generated {
+    /// `FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP`.
+    RowChangeTimestamp {
+        /// `ALWAYS` (else `BY DEFAULT`).
+        always: bool,
+    },
+    /// `AS (expression)`.
+    Expr(Box<Expr>),
+    /// An auditing column (7.3): `AS (DATA CHANGE OPERATION)`,
+    /// `AS (SESSION_USER)` and the other special registers IBM allows.
+    Audit {
+        /// `ALWAYS` (else `BY DEFAULT`).
+        always: bool,
+        /// What it records, as IBM writes it.
+        what: String,
+    },
 }
 
 /// A column definition.
@@ -45,10 +77,13 @@ pub struct ColumnDef {
     pub default: Option<ColumnDefault>,
     /// Identity.
     pub identity: Option<Identity>,
-    /// `PRIMARY KEY` on the column.
-    pub primary_key: bool,
-    /// `UNIQUE` on the column.
-    pub unique: bool,
+    /// `GENERATED ... AS (...)` and row change timestamps.
+    pub generated: Option<Generated>,
+    /// `IMPLICITLY HIDDEN`.
+    pub hidden: bool,
+    /// The column's own constraints (`PRIMARY KEY`, `UNIQUE`, `CHECK`,
+    /// `REFERENCES`), as table constraints over this column.
+    pub constraints: Vec<Constraint>,
 }
 
 /// A table constraint.
@@ -68,7 +103,7 @@ pub enum Constraint {
         /// Columns.
         columns: Vec<Ident>,
     },
-    /// `FOREIGN KEY (cols) REFERENCES t (cols)`: parsed, not enforced.
+    /// `FOREIGN KEY (cols) REFERENCES t (cols) ON DELETE ... ON UPDATE ...`.
     ForeignKey {
         /// Name.
         name: Option<Ident>,
@@ -76,16 +111,65 @@ pub enum Constraint {
         columns: Vec<Ident>,
         /// Parent table.
         parent: ObjectName,
-        /// Parent columns.
+        /// Parent columns; empty for its primary key.
         parent_columns: Vec<Ident>,
+        /// `ON DELETE`.
+        on_delete: RefRule,
+        /// `ON UPDATE`: `NO ACTION` or `RESTRICT`.
+        on_update: RefRule,
     },
-    /// `CHECK (cond)`: parsed, not enforced.
+    /// `CHECK (cond)`.
     Check {
         /// Name.
         name: Option<Ident>,
         /// The condition.
         cond: Expr,
+        /// The condition as the catalogs show it: its tokens with a blank
+        /// between each and after the last.
+        text: String,
     },
+}
+
+impl Constraint {
+    /// The constraint's name, when given.
+    #[must_use]
+    pub fn name(&self) -> Option<&Ident> {
+        match self {
+            Self::PrimaryKey { name, .. }
+            | Self::Unique { name, .. }
+            | Self::ForeignKey { name, .. }
+            | Self::Check { name, .. } => name.as_ref(),
+        }
+    }
+}
+
+/// A referential constraint's delete or update rule.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RefRule {
+    /// `NO ACTION`.
+    #[default]
+    NoAction,
+    /// `RESTRICT`.
+    Restrict,
+    /// `CASCADE`.
+    Cascade,
+    /// `SET NULL`.
+    SetNull,
+    /// `SET DEFAULT`.
+    SetDefault,
+}
+
+/// Which constraint `ALTER TABLE ... DROP` names.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DropKind {
+    /// `DROP CONSTRAINT`.
+    Any,
+    /// `DROP UNIQUE`.
+    Unique,
+    /// `DROP FOREIGN KEY`.
+    ForeignKey,
+    /// `DROP CHECK`.
+    Check,
 }
 
 /// `CREATE TABLE`.
@@ -131,12 +215,37 @@ pub enum AlterAction {
     SetNotNull(Ident, bool),
     /// `ALTER COLUMN ... SET DEFAULT` / `DROP DEFAULT`.
     SetDefault(Ident, Option<ColumnDefault>),
+    /// `ALTER COLUMN ... SET GENERATED ...`, `SET INCREMENT BY ...`,
+    /// `RESTART [WITH]`: the identity options changed.
+    AlterIdentity {
+        /// The column.
+        column: Ident,
+        /// `SET GENERATED ALWAYS` (true) or `BY DEFAULT` (false).
+        always: Option<bool>,
+        /// The options given; `always` there is unused.
+        options: Identity,
+    },
+    /// `ALTER COLUMN ... DROP IDENTITY`.
+    DropIdentity(Ident),
+    /// `ALTER COLUMN ... DROP GENERATED` (a row change timestamp or
+    /// generated expression column becomes an ordinary one).
+    DropGenerated(Ident),
     /// `ADD constraint`.
     AddConstraint(Constraint),
-    /// `DROP PRIMARY KEY`.
-    DropPrimaryKey,
-    /// `DROP CONSTRAINT name` / `DROP UNIQUE name`.
-    DropConstraint(Ident),
+    /// `DROP PRIMARY KEY [CASCADE | RESTRICT]`.
+    DropPrimaryKey {
+        /// `CASCADE` (the default): dependent foreign keys go too.
+        cascade: bool,
+    },
+    /// `DROP CONSTRAINT | UNIQUE | FOREIGN KEY | CHECK name [CASCADE | RESTRICT]`.
+    DropConstraint {
+        /// The name.
+        name: Ident,
+        /// What the statement said it is.
+        kind: DropKind,
+        /// `CASCADE` (the default).
+        cascade: bool,
+    },
 }
 
 /// `ALTER TABLE`.
@@ -192,4 +301,19 @@ pub struct CreateView {
     pub query_text: String,
     /// `RCDFMT`.
     pub rcdfmt: Option<Ident>,
+}
+
+/// `CREATE SEQUENCE`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateSequence {
+    /// The sequence.
+    pub name: ObjectName,
+    /// `FOR SYSTEM NAME`.
+    pub system_name: Option<Ident>,
+    /// `AS data-type`; `INTEGER` when not given.
+    pub data_type: Option<TypeSpec>,
+    /// The options.
+    pub options: Identity,
+    /// `OR REPLACE`.
+    pub replace: bool,
 }

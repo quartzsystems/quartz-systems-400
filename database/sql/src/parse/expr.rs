@@ -229,6 +229,9 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Result<Expr> {
+        if let Some(e) = self.sequence_reference()? {
+            return Ok(e);
+        }
         match self.tok().clone() {
             Tok::Str(s) => {
                 self.advance();

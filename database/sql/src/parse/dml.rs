@@ -20,9 +20,18 @@ impl Parser {
         } else {
             Vec::new()
         };
-        if self.eat_word("OVERRIDING") {
-            return Err(Self::unsupported("OVERRIDING USER VALUE"));
-        }
+        let overriding = if self.eat_word("OVERRIDING") {
+            let system = if self.eat_word("SYSTEM") {
+                true
+            } else {
+                self.expect_word("USER")?;
+                false
+            };
+            self.expect_word("VALUE")?;
+            Some(system)
+        } else {
+            None
+        };
         let source = if self.eat_words(&["DEFAULT", "VALUES"]) {
             InsertSource::DefaultValues
         } else if self.eat_word("VALUES") {
@@ -38,6 +47,7 @@ impl Parser {
         Ok(Statement::Insert(Insert {
             table,
             columns,
+            overriding,
             source,
             isolation,
         }))

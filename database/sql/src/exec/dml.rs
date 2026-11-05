@@ -68,33 +68,43 @@ fn default_value(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, f: &FieldDef) -> Res
 }
 
 /// Fill what the system generates in a row about to be inserted: the
-/// identity column's next value and expression defaults.
+/// identity column's next value, row change timestamps and auditing
+/// columns, and expression defaults. `overriding` is the statement's
+/// `OVERRIDING SYSTEM VALUE` (true) or `USER VALUE` (false).
+#[allow(clippy::too_many_arguments)]
 fn fill_generated(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
     params: &[Value],
     t: &TableInfo,
     o: &mut Odp,
+    gn: &super::column::Generation,
+    overriding: Option<bool>,
     per_field: &mut [Option<Value>],
 ) -> Result<()> {
     for (fi, f) in t.format.format.fields.iter().enumerate() {
         if let Some(id) = &f.identity {
             if per_field[fi].is_some() {
-                if id.always {
+                if overriding == Some(false) {
+                    // The value given is not used.
+                    per_field[fi] = None;
+                } else if id.always && overriding != Some(true) {
                     return Err(SqlError::IdentityValue {
                         column: f.name.to_string(),
                     });
+                } else {
+                    continue;
                 }
-                continue;
             }
             let v = o.next_identity(txn)?.unwrap_or(id.start);
             per_field[fi] = Some(Value::int(v));
+            ctx.seq.identity = per_field[fi].clone();
         } else if per_field[fi].is_none() && matches!(f.default, Some(DefaultValue::Expr(_))) {
             let mut ev = Evaluator { ctx, params };
             per_field[fi] = default_value(txn, &mut ev, f)?;
         }
     }
-    Ok(())
+    gn.fill(ctx, &t.format.format.fields, per_field, true, overriding == Some(true))
 }
 
 /// Write `values` (one per field, `None` for the default) into a record.
@@ -249,7 +259,7 @@ pub fn insert(
             }
         }
     }
-    write_rows(txn, ctx, params, &t, &idx, rows)
+    write_rows(txn, ctx, params, &t, &idx, ins.overriding, rows)
 }
 
 /// Write rows of values for the fields `idx` into `t`, `None` for a
@@ -260,9 +270,11 @@ pub(crate) fn write_rows(
     params: &[Value],
     t: &TableInfo,
     idx: &[usize],
+    overriding: Option<bool>,
     rows: Vec<Vec<Option<Value>>>,
 ) -> Result<u64> {
     let t = t.clone();
+    let gn = super::column::Generation::of(txn, &t)?;
     let mut o = ctx.open(txn, &t, Usage::OUTPUT)?;
     let mut n = 0u64;
     let mut result = Ok(());
@@ -276,7 +288,7 @@ pub(crate) fn write_rows(
         for (k, &fi) in idx.iter().enumerate() {
             per_field[fi] = r.get(k).cloned().flatten();
         }
-        let written = fill_generated(txn, ctx, params, &t, &mut o, &mut per_field)
+        let written = fill_generated(txn, ctx, params, &t, &mut o, &gn, overriding, &mut per_field)
             .and_then(|()| build_record(txn, &t, &per_field, None))
             .and_then(|(rec, nulls)| Ok(o.write(txn, &rec, &nulls)?));
         if let Err(e) = written {
@@ -470,6 +482,7 @@ fn change_rows(
     set: Option<&[Assignment]>,
     mut cond: Option<Recheck<'_>>,
 ) -> Result<u64> {
+    let gn = if set.is_some() { super::column::Generation::of(txn, t)? } else { super::column::Generation::default() };
     let mut ev = Evaluator { ctx, params };
     let mut n = 0u64;
     for r in rows {
@@ -508,6 +521,12 @@ fn change_rows(
                 for (i, v) in assigned {
                     per_field[i] = v;
                 }
+                for (i, f) in t.format.format.fields.iter().enumerate() {
+                    if per_field[i].is_some() && f.identity.as_ref().is_some_and(|id| id.always) {
+                        return Err(SqlError::IdentityValue { column: f.name.to_string() });
+                    }
+                }
+                gn.fill(ev.ctx, &t.format.format.fields, &mut per_field, false, false)?;
                 let (rec, nulls) =
                     build_record(txn, t, &per_field, Some((&current.data, &current.null_map)))?;
                 o.update(txn, &rec, &nulls)?;

@@ -198,6 +198,9 @@ pub struct Member {
     pub jrn: crate::journal::JrnCtx,
     /// Physical member: the file's constraints.
     pub csts: Option<std::sync::Arc<crate::cst::Active>>,
+    /// Physical member: the identity column's full attributes, when SQL
+    /// keeps them (`COLUMN` entry).
+    pub identity: Option<crate::sqlinf::seq::SeqAttrs>,
 }
 
 /// What a new physical member takes from its file.
@@ -368,6 +371,7 @@ impl Member {
             dependents: Vec::new(),
             jrn: crate::journal::JrnCtx::default(),
             csts: None,
+            identity: None,
         };
         if file.attr.kind == file::FileKind::Logical {
             let members = m.core.base_members(txn)?;
@@ -386,6 +390,12 @@ impl Member {
         } else {
             m.load_dependents(txn)?;
             m.csts = crate::cst::Active::load(txn, file)?;
+            if !file.header.sql.is_none() {
+                m.identity = crate::sqlinf::seq::columns(txn, file.id)?.into_iter().find_map(|c| match c.kind {
+                    crate::sqlinf::seq::ColumnKind::Identity(a) => Some(a),
+                    _ => None,
+                });
+            }
         }
         if m.core.attr.path_invalid && m.file.attr.maint == Maint::Dly {
             m.rebuild_path(txn, &mut |_, _| {})?;
@@ -574,10 +584,35 @@ impl Member {
         else {
             return Ok(None);
         };
-        let v = self.core.attr.identity_next;
-        self.core.attr.identity_next = v.wrapping_add(id.increment);
+        let field = self.format().format.fields.iter().find(|f| f.identity.is_some()).expect("found above");
+        let (lo, hi) = crate::sqlinf::seq::field_range(field);
+        let attrs = self.identity.unwrap_or(crate::sqlinf::seq::SeqAttrs {
+            start: i128::from(id.start),
+            increment: i128::from(id.increment),
+            min: if id.increment > 0 { 1 } else { lo },
+            max: if id.increment > 0 { hi } else { -1 },
+            cycle: id.cycle,
+            cache: 20,
+            order: false,
+            always: id.always,
+        });
+        let mut v = i128::from(self.core.attr.identity_next);
+        if !attrs.holds(v) {
+            if !attrs.cycle {
+                return Err(DbError::IdentityExhausted { file: self.file.name().to_string() });
+            }
+            v = if attrs.increment > 0 { attrs.min } else { attrs.max };
+        }
+        // Past the range, the next value is kept just outside it.
+        let next = attrs.after(v).unwrap_or(if attrs.increment > 0 {
+            attrs.max.saturating_add(1)
+        } else {
+            attrs.min.saturating_sub(1)
+        });
+        let clamp = |x: i128| i64::try_from(x).unwrap_or(if x > 0 { i64::MAX } else { i64::MIN });
+        self.core.attr.identity_next = clamp(next);
         self.core.save(txn)?;
-        Ok(Some(v))
+        Ok(Some(clamp(v)))
     }
 
     /// The slot at `rrn` of a physical member.

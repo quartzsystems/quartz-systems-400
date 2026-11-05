@@ -267,6 +267,18 @@ pub enum SqlError {
         what: String,
     },
 
+    /// A constraint, identity or sequence refused the statement, with the
+    /// SQLCODE and SQLSTATE IBM gives (`exec::cst`, `exec::seq`).
+    #[error("{what}")]
+    Integrity {
+        /// The SQLCODE.
+        sqlcode: i32,
+        /// The SQLSTATE.
+        sqlstate: &'static str,
+        /// What happened.
+        what: String,
+    },
+
     /// The database failed in a way SQL has no code for.
     #[error("database error: {what}")]
     Database {
@@ -313,6 +325,7 @@ impl SqlError {
             Self::CheckOption { .. } => -161,
             Self::PrivilegeNotValid { .. } => -557,
             Self::CannotGrant { .. } => -7027,
+            Self::Integrity { sqlcode, .. } => *sqlcode,
             Self::Database { .. } => -901,
             Self::Coded { code, .. } => *code,
         }
@@ -353,6 +366,7 @@ impl SqlError {
             Self::CheckOption { .. } => "44000",
             Self::PrivilegeNotValid { .. } => "42852",
             Self::CannotGrant { .. } => "42984",
+            Self::Integrity { sqlstate, .. } => sqlstate,
             Self::Database { .. } => "58004",
             Self::Coded { state, .. } => state,
         }

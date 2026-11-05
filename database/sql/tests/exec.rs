@@ -566,9 +566,9 @@ fn identity_defaults_and_alter_table() {
 fn indexes_and_plans() {
     let mut db = Db::new();
     setup(&mut db);
-    // The primary key is the file's own path.
+    // The primary key is a constraint the planner reads by key.
     let p = db.plan("SELECT * FROM cust WHERE cusno = 3");
-    assert!(p.contains("keyed via QSTEST/CUST own key eq=1"), "{p}");
+    assert!(p.contains("keyed via QSTEST/CUST constraint Q_QSTEST_CUST_CUSNO_00001 eq=1"), "{p}");
     let p = db.plan("SELECT * FROM cust WHERE cusno BETWEEN 2 AND 3 ORDER BY cusno");
     assert!(
         p.contains("range=yes") && p.contains("ordered") && p.contains("ORDER BY satisfied"),
@@ -615,7 +615,7 @@ fn indexes_and_plans() {
             row(&["Dave"])
         ]
     );
-    // A UNIQUE constraint is a unique index the catalog lists.
+    // A UNIQUE constraint is a constraint the catalog lists, named as IBM names it.
     db.ok("CREATE TABLE qstest/tags (id INTEGER NOT NULL PRIMARY KEY, tag CHAR(10) NOT NULL UNIQUE, grp CHAR(5), CONSTRAINT grptag UNIQUE (grp, tag))");
     assert_eq!(
         db.count("INSERT INTO tags VALUES (1, 'a', 'x'), (2, 'b', 'x')"),
@@ -624,7 +624,7 @@ fn indexes_and_plans() {
     assert_eq!(db.code("INSERT INTO tags VALUES (3, 'a', 'y')"), -803);
     assert_eq!(
         db.rows("SELECT constraint_name, constraint_type FROM qsys2/syscst WHERE table_name = 'TAGS' ORDER BY 1"),
-        [row(&["GRPTAG", "UNIQUE"]), row(&["Q_QSTEST_TAGS_ID_00001", "PRIMARY KEY"]), row(&["Q_TAGS_1", "UNIQUE"])]
+        [row(&["GRPTAG", "UNIQUE"]), row(&["Q_QSTEST_TAGS_ID_00001", "PRIMARY KEY"]), row(&["Q_QSTEST_TAGS_TAG_00001", "UNIQUE"])]
     );
     db.ok("DROP TABLE qstest/tags");
     // A unique index over rows that repeat a key (two null notes count

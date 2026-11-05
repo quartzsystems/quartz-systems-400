@@ -226,7 +226,7 @@ fn set_null_set_default_and_check_pending() {
     c.write(&mut t, &r, &n).unwrap();
     c.close(&mut t);
     let ch = ops::set_state(&mut t, chd, &one, true, 3).unwrap();
-    assert_eq!(ch.pending, [name0.clone()]);
+    assert_eq!(ch.pending, std::slice::from_ref(&name0));
     t.commit().unwrap();
 
     // SET DEFAULT: the default 0 is a parent.

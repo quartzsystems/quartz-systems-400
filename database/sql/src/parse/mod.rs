@@ -7,6 +7,8 @@
 //! names and types, and the statement dispatch.
 
 mod ddl;
+mod integrity;
+mod sequence;
 mod dml;
 mod expr;
 mod objects;
@@ -301,16 +303,6 @@ impl Parser {
             }
             _ => Err(self.expected("an integer")),
         }
-    }
-
-    /// A possibly signed integer literal.
-    fn signed_integer(&mut self) -> Result<i64> {
-        let neg = self.eat_sym("-");
-        if !neg {
-            self.eat_sym("+");
-        }
-        let v = i64::try_from(self.integer()?).map_err(|_| self.expected("an integer"))?;
-        Ok(if neg { -v } else { v })
     }
 
     /// A string literal.

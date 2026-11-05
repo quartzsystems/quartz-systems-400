@@ -12,6 +12,8 @@ use std::fmt::Write as _;
 use db::record::datetime::{Date, Time, days_in_month, is_leap};
 use qdecimal::{Decimal, Rounding, Shape};
 
+mod integrity;
+
 use super::SqlContext;
 use super::eval::{add_months, date_from_days, days_of};
 use crate::error::{Result, SqlError};
@@ -114,7 +116,7 @@ pub(crate) struct Family {
 }
 
 /// The families, asked in order before the first set.
-const FAMILIES: &[Family] = &[Family { call: decfloat::call }, Family { call: super::json::plain }];
+const FAMILIES: &[Family] = &[Family { call: decfloat::call }, Family { call: super::json::plain }, Family { call: integrity::call }];
 
 /// Call a scalar function; `args` are already evaluated.
 #[allow(clippy::too_many_lines)]

@@ -7,6 +7,7 @@
 //! order they are asked.
 
 pub mod auth;
+pub mod cst;
 pub mod sys;
 
 use store::txn::Txn;
@@ -32,6 +33,7 @@ pub(crate) struct Provider {
 const PROVIDERS: &[Provider] = &[
     Provider { has: sys::has, table: sys::virtual_table },
     Provider { has: auth::has, table: auth::virtual_table },
+    Provider { has: cst::has, table: cst::table },
 ];
 
 /// Whether `name` names a computed view.

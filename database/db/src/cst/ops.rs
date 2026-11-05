@@ -149,6 +149,9 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
         super::generated_name(&lib_name, &desc.name().to_string(), &c, &|n| taken.iter().any(|t| t == n))
     };
     c.name.clone_from(&name);
+    if c.kind == Kind::PrimaryKey && csts.iter().any(|x| x.kind == Kind::PrimaryKey) {
+        return Err(refuse(ADD, Refusal::SecondPrimary, &name, format!("file {} has a primary key", desc.name())));
+    }
     for (i, col) in c.columns.iter().enumerate() {
         let Some((_, f)) = fmt.format.field(col) else {
             return Err(refuse(ADD, Refusal::NoColumn, &name, format!("field {col} is not in file {}", desc.name())));
@@ -225,14 +228,23 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
     }
     store(txn, file, &csts, now)?;
     names::put(txn, lib, Space::Constraint, &name, Target { id: file, system: desc.name() })?;
-    // The records as they are.
-    let broken = rebuild_and_validate(txn, file, &name)?;
+    // The records as they are. A refusal takes the constraint out again
+    // itself: a caller that committed parts (a statement that took turns)
+    // keeps nothing of it.
+    let broken = match rebuild_and_validate(txn, file, &name) {
+        Ok(b) => b,
+        Err(e) => {
+            drop_one(txn, file, &name, now)?;
+            return Err(e);
+        }
+    };
     if broken {
         if !new.pending_ok {
             let reason = match c.kind {
                 Kind::Check => Refusal::CheckData,
                 _ => Refusal::RefData,
             };
+            drop_one(txn, file, &name, now)?;
             return Err(refuse(ADD, reason, &name, format!("records of {} break constraint {name}", desc.name())));
         }
         set_pending(txn, file, &name, true, now)?;

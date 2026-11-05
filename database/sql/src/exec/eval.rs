@@ -539,6 +539,8 @@ impl Evaluator<'_> {
             Expr::Row(_) => Err(SqlError::Unsupported {
                 what: "a row value where a single value is needed".into(),
             }),
+            Expr::NextValue(n) => super::seq::next_value(txn, self.ctx, n),
+            Expr::PrevValue(n) => super::seq::previous_value(txn, self.ctx, n),
             Expr::Default => Err(SqlError::Unsupported {
                 what: "DEFAULT outside an INSERT or UPDATE value".into(),
             }),

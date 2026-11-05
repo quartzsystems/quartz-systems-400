@@ -45,6 +45,17 @@ pub fn drop_with_dependents(txn: &mut Txn<'_>, ctx: &mut SqlContext, id: ObjectI
 /// depends on the object goes with it, as with `CASCADE`.
 pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName, restrict: bool) -> Result<()> {
     let id = ctx.resolve_file(txn, name)?;
+    // A parent table: RESTRICT refuses it (`SQL0478`); otherwise the
+    // dependents' foreign keys go with it.
+    if restrict
+        && let Some(d) = db::cst::list(txn, id)?.iter().find(|c| c.kind == db::cst::Kind::Dependent && c.other != id)
+    {
+        return Err(SqlError::Integrity {
+            sqlcode: -478,
+            sqlstate: "42893",
+            what: format!("{} is the parent of constraint {}", name.name.value, d.other_name),
+        });
+    }
     if restrict {
         let deps = dependents(txn, ctx, id)?;
         if !deps.is_empty() {

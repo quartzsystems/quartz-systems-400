@@ -411,11 +411,132 @@ text = "&1 in &2 type &3 already exists."
 help = "An object of that name and type is in the schema. Choose another name, drop the object first, or use OR REPLACE where the statement allows it."
 vars = ["*CHAR 128", "*CHAR 128", "*CHAR 7"]
 
+# Table integrity: constraints, identity columns and sequences.
+
+[[msg]]
+id = "SQL0195"
+sev = 30
+text = "Column &1 is the last column of table &2 and cannot be dropped."
+help = "A table keeps one column at least. Drop the table instead."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0205"
+sev = 30
+text = "Column &1 is not in table &2."
+help = "A constraint or change names a column the table does not have. Correct the name."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0359"
+sev = 30
+text = "Identity column or sequence &1 has no more values."
+help = "Every value between the minimum and maximum has been given and the column or sequence does not cycle. Restart it, widen its range, or let it cycle."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0372"
+sev = 30
+text = "Table &1 cannot have that generated column."
+help = "A table has one identity column and one row change timestamp column at most, and only an identity column can be changed as one."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0478"
+sev = 30
+text = "Object &1 cannot be dropped or changed: &2 depends on it."
+help = "With RESTRICT nothing that depends on the object may remain. Drop the dependent object first, or use CASCADE."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0530"
+sev = 30
+text = "Referential constraint &1 in &2 refuses the value: its parent key has no match."
+help = "Each foreign key value that is not null must match a parent key value. Insert the parent row first, change the value, or drop the constraint."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0531"
+sev = 30
+text = "Referential constraint &1 in &2 prevents the change of a parent key."
+help = "Rows of the dependent table still match the parent key, and the update rule is RESTRICT or NO ACTION. Change or delete those rows first."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0532"
+sev = 30
+text = "Referential constraint &1 in &2 prevents the delete of a parent row."
+help = "Rows of the dependent table still match the row's parent key, and the delete rule is RESTRICT or NO ACTION. Delete those rows first."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0537"
+sev = 30
+text = "Column &1 cannot be a key of the constraint."
+help = "A key names each column once and names no LOB column."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0538"
+sev = 30
+text = "The foreign key of constraint &1 in &2 does not match the parent key."
+help = "The parent table needs a primary key or unique constraint over the referenced columns, as many as the foreign key has and of the same types and lengths."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0541"
+sev = 30
+text = "Table &2 in &3 already has a unique key over the columns of constraint &1."
+help = "A primary key or unique constraint over the same columns exists. Use it, or drop it first."
+vars = ["*CHAR 128", "*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0542"
+sev = 30
+text = "Column &1 allows nulls and cannot be part of a primary key."
+help = "Make the column NOT NULL first, or use a unique constraint."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0544"
+sev = 30
+text = "CHECK constraint &1 cannot be added: rows of the table do not meet it."
+help = "Change the rows that break the condition, or the condition, then add the constraint again."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0545"
+sev = 30
+text = "CHECK constraint &1 refuses the row."
+help = "The row inserted or changed does not meet the condition of the constraint. Change the values, or drop the constraint."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0546"
+sev = 30
+text = "The CHECK condition of constraint &1 is not valid."
+help = "A check condition names columns of its own table and constants only: no special registers, variables, sequences or subqueries."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0574"
+sev = 30
+text = "The definition of column &1 is not valid for what it generates or defaults."
+help = "An identity column is an integer or DECIMAL with no scale; a row change timestamp is a TIMESTAMP; a generated column has no default."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0612"
+sev = 30
+text = "Column &1 is already in the table."
+help = "A table names each column once. Choose another name."
+vars = ["*CHAR 128"]
+
 [[msg]]
 id = "SQL0616"
 sev = 30
 text = "&1 in &2 cannot be dropped with RESTRICT."
-help = "Views, indexes or other objects depend on it. Drop them first, or drop it without RESTRICT so that they go with it."
+help = "Views, indexes, referential constraints or other objects depend on it. Drop them first, or drop it without RESTRICT so that they go with it."
 vars = ["*CHAR 128", "*CHAR 128"]
 
 [[msg]]
@@ -438,6 +559,7 @@ sev = 10
 text = "Table &1 in &2 was made but is not journaled."
 help = "The library is not an SQL schema, so it has no QSQJRN journal to start journaling to. The table works; changes to it under commitment control need journaling started with STRJRNPF."
 vars = ["*CHAR 128", "*CHAR 128"]
+
 [[msg]]
 id = "SQL0171"
 sev = 30
@@ -581,4 +703,46 @@ id = "SQ20477"
 sev = 30
 text = "The string &1 does not match the format &2."
 help = "DECFLOAT_FORMAT read a character the format model has no element for, such as a sign without S, MI or PR. Correct the string or the format."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0624"
+sev = 30
+text = "Table &1 in &2 already has a primary key."
+help = "A table has one primary key. Drop it first, or make the new key a unique constraint."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0629"
+sev = 30
+text = "SET NULL is not valid for referential constraint &1: no column of its foreign key allows nulls."
+help = "Make a foreign key column null-capable, or choose another delete rule."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0667"
+sev = 30
+text = "Referential constraint &1 cannot be added: foreign keys of the table have no parent key."
+help = "Rows of the table hold foreign key values the parent table does not have. Change or delete them, or add the parent rows, then add the constraint again."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0815"
+sev = 30
+text = "The values of the identity column or sequence &1 are not consistent."
+help = "INCREMENT BY is not zero, MINVALUE is less than MAXVALUE, and START WITH and RESTART WITH lie between them, all within the data type."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0845"
+sev = 30
+text = "PREVIOUS VALUE for sequence &1 is not yet set in this job."
+help = "The job has not used NEXT VALUE for the sequence. Use NEXT VALUE first."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0971"
+sev = 30
+text = "Constraint &1 of table &2 is in check pending."
+help = "Rows of the table break the constraint, which was enabled again. Correct the rows (EDTCPCST, DSPCPCST show them) or disable the constraint."
 vars = ["*CHAR 128", "*CHAR 128"]

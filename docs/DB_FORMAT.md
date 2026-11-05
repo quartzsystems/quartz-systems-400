@@ -825,6 +825,48 @@ three nodes), 17 function (function byte: 0 `UPPER`, 1 `LOWER`, 2
 `LENGTH`, 3 `SUBSTR`, 4 `TRIM`, 5 `LTRIM`, 6 `RTRIM`, 7 `ABS`, 8 `MOD`, 9
 `COALESCE`; argument count byte; the arguments).
 
+### `SqlColumn` (variable)
+
+The body of a `COLUMN` entry on a table: what one column's definition
+says beyond its `FieldEntry`. The full identity attributes live here
+(the field keeps what its four-byte `id_start` and `id_incr` hold); the
+counter is the member's `identity_next`, 8 bytes, so an identity range
+stays within 19 digits. Integers are signed little-endian.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | field | the field's system name, CP037 |
+| 10 | 1 | kind | 0 nothing generated, 1 identity, 2 row change timestamp, 3 generated expression (refused, not written), 4 auditing column |
+| 11 | 1 | flags | bit 0 `GENERATED ALWAYS`, bit 1 `CYCLE`, bit 2 `ORDER`, bit 3 `IMPLICITLY HIDDEN` |
+| 12 | 4 | cache | `CACHE n`, 0 for `NO CACHE` |
+| 16 | 16 | start | `START WITH` |
+| 32 | 16 | increment | `INCREMENT BY` |
+| 48 | 16 | min | `MINVALUE` |
+| 64 | 16 | max | `MAXVALUE` |
+| 80 | 2 | text_len | bytes of `text` |
+| 82 | 46 | reserved | 0 |
+| 128 | variable | text | kind 4: what it records, as IBM writes it (`DATA CHANGE OPERATION`, `SESSION_USER`, ...), UTF-8 |
+
+### `SqlSequence` (128 bytes)
+
+The body of the `SEQUENCE` entry of a sequence's `*DTAARA` (kind 8):
+its attributes and the value the next `NEXT VALUE` gives, changed in
+the statement's transaction.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | data_type | 1 `SMALLINT`, 2 `INTEGER`, 3 `BIGINT`, 4 `DECIMAL`, 5 `NUMERIC` |
+| 1 | 1 | flags | bit 0 unused, bit 1 `CYCLE`, bit 2 `ORDER`, bit 3 exhausted: the range is used up |
+| 2 | 1 | precision | digits of a `DECIMAL` or `NUMERIC` sequence, 0 otherwise |
+| 3 | 1 | reserved | 0 |
+| 4 | 4 | cache | `CACHE n`, 0 for `NO CACHE` |
+| 8 | 16 | start | `START WITH` |
+| 24 | 16 | increment | `INCREMENT BY` |
+| 40 | 16 | min | `MINVALUE` |
+| 56 | 16 | max | `MAXVALUE` |
+| 72 | 16 | next | the next value |
+| 88 | 40 | reserved2 | 0 |
+
 ### 8.2 The SQL name index
 
 A B+tree in a library header's tree root slot 0, keyed by `SqlNameKey`

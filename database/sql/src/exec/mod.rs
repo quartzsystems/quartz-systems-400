@@ -6,10 +6,13 @@
 //! and `Prepared::execute`. Queries are planned in `query`, data
 //! changes in `dml`, definitions in `ddl`, expressions in `eval`.
 
+pub mod alter;
+mod column;
 pub mod alias;
 mod answers;
 pub mod cast;
 pub mod catalog;
+pub mod cst;
 pub mod cursor;
 pub mod ddl;
 pub mod dml;
@@ -29,6 +32,7 @@ pub mod rename;
 pub mod schema;
 pub mod restype;
 pub mod xml;
+pub mod seq;
 mod sort;
 pub mod spill;
 pub mod table;
@@ -169,6 +173,8 @@ pub struct SqlContext {
     last_yield: Option<std::time::Instant>,
     /// The warning the last statement left (`SQL7905`, `SQL0569`).
     pub warning: Option<crate::sqlca::Warning>,
+    /// The values the job was given by sequences and identity columns.
+    pub seq: seq::JobValues,
 }
 
 /// See [`SqlContext::yielder`].
@@ -262,6 +268,7 @@ impl SqlContext {
             meter: mem::Meter::default(),
             last_yield: None,
             warning: None,
+            seq: seq::JobValues::default(),
         }
     }
 
@@ -870,7 +877,10 @@ impl Prepared {
             Statement::CreateIndex(i) => index::create(txn, ctx, i).map(|()| Outcome::Done),
             Statement::CreateSchema(name) => schema::create(txn, ctx, name).map(|()| Outcome::Done),
             Statement::DropSchema { name, restrict, .. } => schema::drop(txn, ctx, name, *restrict).map(|()| Outcome::Done),
-            Statement::AlterTable(a) => ddl::alter_table(txn, ctx, a).map(|()| Outcome::Done),
+            Statement::AlterTable(a) => alter::alter_table(txn, ctx, a).map(|()| Outcome::Done),
+            Statement::CreateSequence(s) => seq::create(txn, ctx, s).map(|()| Outcome::Done),
+            Statement::AlterSequence { name, options } => seq::alter(txn, ctx, name, options).map(|()| Outcome::Done),
+            Statement::DropSequence { name } => seq::drop(txn, ctx, name).map(|()| Outcome::Done),
             Statement::DropTable { name, restrict, .. } | Statement::DropView { name, restrict, .. } => {
                 drop::drop(txn, ctx, name, *restrict).map(|()| Outcome::Done)
             }
@@ -995,6 +1005,9 @@ pub fn statement_name(s: &Statement) -> &'static str {
     match s {
         Statement::CreateTable(_) => "CREATE TABLE",
         Statement::AlterTable(_) => "ALTER TABLE",
+        Statement::CreateSequence(_) => "CREATE SEQUENCE",
+        Statement::AlterSequence { .. } => "ALTER SEQUENCE",
+        Statement::DropSequence { .. } => "DROP SEQUENCE",
         Statement::DropTable { .. } => "DROP TABLE",
         Statement::CreateIndex(_) => "CREATE INDEX",
         Statement::DropIndex(_) => "DROP INDEX",
@@ -1063,6 +1076,13 @@ impl From<db::DbError> for SqlError {
             D::DataMapping { .. } => Self::Conversion {
                 what: e.to_string(),
             },
+            D::CheckViolation { .. }
+            | D::RefNoParent { .. }
+            | D::RefRestricted { .. }
+            | D::CheckPending { .. }
+            | D::RuleNeedsJournal { .. }
+            | D::IdentityExhausted { .. }
+            | D::Constraint { .. } => cst::from_db(&e),
             D::Ended => Self::Cancelled,
             D::NotAFile { .. } | D::MemberNotFound { .. } => Self::ObjectNotFound {
                 name: e.to_string(),

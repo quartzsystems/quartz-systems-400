@@ -118,6 +118,20 @@ pub enum Statement {
     CreateTable(CreateTable),
     /// `ALTER TABLE`.
     AlterTable(AlterTable),
+    /// `CREATE SEQUENCE`.
+    CreateSequence(CreateSequence),
+    /// `ALTER SEQUENCE`.
+    AlterSequence {
+        /// The sequence.
+        name: ObjectName,
+        /// What changes.
+        options: Identity,
+    },
+    /// `DROP SEQUENCE`.
+    DropSequence {
+        /// The sequence.
+        name: ObjectName,
+    },
     /// `DROP TABLE`.
     DropTable {
         /// The table.

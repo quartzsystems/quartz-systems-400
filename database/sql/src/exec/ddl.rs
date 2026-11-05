@@ -14,8 +14,7 @@ use store::txn::Txn;
 
 use super::{SqlContext, TableInfo};
 use crate::ast::{
-    ColumnDef, ColumnDefault, Constraint, CreateIndex, CreateTable, DataType, Expr, Ident, Literal,
-    ObjectName,
+    ColumnDef, ColumnDefault, CreateIndex, CreateTable, DataType, Expr, Ident, Literal,
 };
 use crate::error::{Result, SqlError};
 
@@ -78,7 +77,7 @@ fn dds_literal(e: &Expr) -> Result<String> {
 }
 
 /// The `DFT` of `WITH DEFAULT`: the type's own default.
-fn system_default(t: &DataType) -> &'static str {
+pub(super) fn system_default(t: &DataType) -> &'static str {
     match t {
         DataType::Decimal(..)
         | DataType::Numeric(..)
@@ -100,7 +99,7 @@ fn system_default(t: &DataType) -> &'static str {
 }
 
 /// The text an expression default is kept as: a special register.
-fn register_text(r: crate::ast::Register) -> Result<String> {
+pub(super) fn register_text(r: crate::ast::Register) -> Result<String> {
     use crate::ast::Register;
     Ok(match r {
         Register::Date => "CURRENT DATE",
@@ -121,26 +120,26 @@ fn register_text(r: crate::ast::Register) -> Result<String> {
 
 /// What DDS cannot say about a column, set on the compiled field: the
 /// identity definition and an expression default.
-fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
+pub(super) fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
     // The SQL name when it is not the system name, up to 128 characters
     // (`column_lines` refused a longer one).
     if c.name.value != f.name.to_string() {
         f.alias = Some(c.name.value.clone());
     }
     if let Some(id) = &c.identity {
-        if !matches!(
-            c.type_spec.data_type,
-            DataType::SmallInt | DataType::Integer | DataType::BigInt | DataType::Decimal(_, 0)
-        ) {
-            return Err(SqlError::Unsupported {
-                what: "an identity column that is not an integer or DECIMAL(n, 0)".into(),
-            });
-        }
+        // The full attributes are the table's `COLUMN` entry (`column`);
+        // the field keeps what four bytes hold.
+        let range = super::column::type_range(&c.type_spec.data_type).ok_or_else(|| SqlError::Integrity {
+            sqlcode: -574,
+            sqlstate: "42894",
+            what: format!("identity column {} must be an integer or DECIMAL(n, 0)", c.name.value),
+        })?;
+        let a = super::column::attrs(id, range, &format!("identity column {}", c.name.value))?;
         f.identity = Some(dds::IdentityDef {
             always: id.always,
-            start: id.start,
-            increment: id.increment,
-            cycle: id.cycle,
+            start: i64::try_from(a.start).unwrap_or(i64::MAX),
+            increment: i64::try_from(a.increment).unwrap_or(1),
+            cycle: a.cycle,
         });
     }
     if let Some(ColumnDefault::Value(Expr::Register(r))) = &c.default {
@@ -296,53 +295,16 @@ pub fn create_table_def(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable
     let library = ctx.library_for(txn, &t.name)?;
     let (name, sql) = super::names::new_object(txn, library, &t.name.name, t.system_name.as_ref())?;
     let col_names = super::table::column_names(&t.columns)?;
-    let col_sys = |i: &Ident| -> Result<Name> {
-        t.columns
-            .iter()
-            .position(|c| c.name.value == i.value)
-            .map_or_else(|| SqlContext::sys_name(i), |p| Ok(col_names[p]))
-    };
     let rcdfmt = match &t.rcdfmt {
         Some(r) => SqlContext::sys_name(r)?,
         // IBM names the format after the table.
         None => super::names::format_name(name),
     };
-    // Keys: the primary key, from the table or a column; UNIQUE
-    // constraints become unique indexes afterwards.
-    let mut keys: Vec<Name> = Vec::new();
-    let mut uniques: Vec<(Option<Ident>, Vec<Ident>)> = Vec::new();
-    for c in &t.constraints {
-        match c {
-            Constraint::PrimaryKey { columns, .. } => {
-                keys = columns
-                    .iter()
-                    .map(col_sys)
-                    .collect::<Result<_>>()?;
-            }
-            Constraint::Unique { name, columns } => {
-                uniques.push((name.clone(), columns.clone()));
-            }
-            Constraint::ForeignKey { .. } | Constraint::Check { .. } => {}
-        }
-    }
-    for (c, n) in t.columns.iter().zip(&col_names) {
-        if c.primary_key {
-            keys.push(*n);
-        }
-        if c.unique && !c.primary_key {
-            uniques.push((None, vec![c.name.clone()]));
-        }
-    }
+    // The table is arrival sequence; its keys are constraints.
     let mut lines = Vec::new();
-    if !keys.is_empty() {
-        lines.push(kw("UNIQUE"));
-    }
     lines.push(dds("R", &rcdfmt.to_string(), "", "", "", ""));
     for (c, n) in t.columns.iter().zip(&col_names) {
         lines.extend(column_lines_as(c, *n)?);
-    }
-    for k in &keys {
-        lines.push(dds("K", &k.to_string(), "", "", "", ""));
     }
     let mut def = compile_table(&lines)?;
     for (f, c) in def.format.fields.iter_mut().zip(&t.columns) {
@@ -366,12 +328,12 @@ pub fn create_table_def(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable
         },
     )?;
     finish_table(txn, ctx, library, id, sql.as_deref(), &t.name.name.value)?;
-    let mut anon = 0;
-    for (cname, columns) in uniques {
-        if cname.is_none() {
-            anon += 1;
-        }
-        add_unique(txn, ctx, &t.name, &name, anon, cname.as_ref(), &columns)?;
+    super::column::create(txn, ctx, id, t)?;
+    // The constraints: the columns' own, then the table's, numbered
+    // in that order.
+    let rf = file::describe(txn, id)?.formats[0].format.clone();
+    for c in t.columns.iter().flat_map(|c| &c.constraints).chain(&t.constraints) {
+        super::cst::add(txn, ctx, id, &rf, c)?;
     }
     Ok(id)
 }
@@ -462,48 +424,8 @@ fn journal_in_schema(
     Ok(true)
 }
 
-/// A `UNIQUE` constraint: a unique index over the columns, its file
-/// named after the constraint (or `Q<table>U<n>`) and its text recording
-/// the constraint for the catalog.
-pub fn add_unique(
-    txn: &mut Txn<'_>,
-    ctx: &mut SqlContext,
-    table: &ObjectName,
-    sys_table: &Name,
-    n: usize,
-    cname: Option<&Ident>,
-    columns: &[Ident],
-) -> Result<()> {
-    let cname = cname.map_or_else(|| format!("Q_{sys_table}_{n}"), |c| c.value.clone());
-    let index_name = match cname.len() {
-        0..=10 if Name::parse(&cname).is_ok() => cname.clone(),
-        _ => {
-            let stem: String = sys_table.to_string().chars().take(6).collect();
-            format!("{stem}U{n:03}")
-        }
-    };
-    let i = CreateIndex {
-        name: ObjectName {
-            schema: table.schema.clone(),
-            name: Ident::new(&index_name),
-        },
-        unique: true,
-        where_not_null: false,
-        table: table.clone(),
-        columns: columns.iter().map(|c| (c.clone(), false)).collect(),
-        rcdfmt: None,
-        sparse: None,
-        encoded_vector: false,
-        includes: Vec::new(),
-    };
-    create_index_with_text(txn, ctx, &i, &format!("{UNIQUE_TEXT}{cname}"))
-}
-
-/// What the text of a unique constraint's index starts with.
-pub const UNIQUE_TEXT: &str = "SQL unique constraint ";
-
 /// The physical file definition the DDS lines make.
-fn compile_table(lines: &[String]) -> Result<dds::PfDefinition> {
+pub(super) fn compile_table(lines: &[String]) -> Result<dds::PfDefinition> {
     let (source, _) = Source::from_text(&lines.join("\n"));
     let comp = compile_pf(&source, &NoRefs, &CompileOpts::default());
     comp.definition.ok_or_else(|| SqlError::Database {
@@ -513,7 +435,7 @@ fn compile_table(lines: &[String]) -> Result<dds::PfDefinition> {
 }
 
 /// A column's field, compiled on its own.
-fn field_of(c: &ColumnDef) -> Result<dds::FieldDef> {
+pub(super) fn field_of(c: &ColumnDef) -> Result<dds::FieldDef> {
     let mut lines = vec![dds("R", "ALTERED", "", "", "", "")];
     lines.extend(column_lines(c)?);
     let def = compile_table(&lines)?;
@@ -531,7 +453,7 @@ fn field_of(c: &ColumnDef) -> Result<dds::FieldDef> {
 }
 
 /// A column default as DDS keeps it.
-fn default_def(d: &ColumnDefault, t: &DataType) -> Result<Option<dds::DefaultValue>> {
+pub(super) fn default_def(d: &ColumnDefault, t: &DataType) -> Result<Option<dds::DefaultValue>> {
     use dds::DefaultValue as D;
     Ok(Some(match d {
         ColumnDefault::System => {
@@ -551,223 +473,6 @@ fn default_def(d: &ColumnDefault, t: &DataType) -> Result<Option<dds::DefaultVal
             }
         }
     }))
-}
-
-/// `ALTER TABLE`: columns added, dropped or changed and keys changed in
-/// the record format, the data converted as `CHGPF SRCFILE` converts
-/// it; `UNIQUE` constraints added or dropped as unique indexes. A table
-/// with indexes or views over it refuses a format change: drop them
-/// first.
-#[allow(clippy::too_many_lines)]
-pub fn alter_table(
-    txn: &mut Txn<'_>,
-    ctx: &mut SqlContext,
-    stmt: &crate::ast::AlterTable,
-) -> Result<()> {
-    use crate::ast::AlterAction;
-    let table = ctx.resolve_table(txn, &stmt.name)?;
-    if table.desc.attr.kind != FileKind::Physical {
-        return Err(SqlError::Unsupported {
-            what: "ALTER TABLE on a view or an index".into(),
-        });
-    }
-    let mut rf = table.format.format.clone();
-    let mut unique = table.format.unique;
-    let mut touched = false;
-    let mut indexes: Vec<(Option<Ident>, Vec<Ident>)> = Vec::new();
-    let mut drops: Vec<Ident> = Vec::new();
-    let find = |rf: &dds::RecordFormat, name: &Ident| -> Result<usize> {
-        let n = SqlContext::sys_name(name)?;
-        rf.field(&n)
-            .map(|(i, _)| i)
-            .ok_or_else(|| SqlError::ColumnNotFound {
-                name: name.value.clone(),
-            })
-    };
-    for act in &stmt.actions {
-        match act {
-            AlterAction::AddColumn(c) => {
-                let f = field_of(c)?;
-                if rf.field(&f.name).is_some() {
-                    return Err(SqlError::Database {
-                        what: format!("column {} already exists", f.name),
-                        msgid: Some("CPF3204".into()),
-                    });
-                }
-                rf.fields.push(f);
-                touched = true;
-            }
-            AlterAction::DropColumn { name, .. } => {
-                let i = find(&rf, name)?;
-                if rf.keys.iter().any(|k| k.field == i) {
-                    return Err(SqlError::Unsupported {
-                        what: "dropping a key column; drop the primary key first".into(),
-                    });
-                }
-                rf.fields.remove(i);
-                for k in &mut rf.keys {
-                    if k.field > i {
-                        k.field -= 1;
-                    }
-                }
-                touched = true;
-            }
-            AlterAction::SetDataType(name, ts) => {
-                let i = find(&rf, name)?;
-                let old = rf.fields[i].clone();
-                let c = ColumnDef {
-                    name: name.clone(),
-                    system_name: None,
-                    type_spec: ts.clone(),
-                    not_null: !old.allow_null,
-                    default: None,
-                    identity: None,
-                    primary_key: false,
-                    unique: false,
-                };
-                let mut f = field_of(&c)?;
-                f.name = old.name;
-                f.text = old.text;
-                f.alias = old.alias;
-                f.colhdg = old.colhdg;
-                f.default = old.default;
-                f.identity = old.identity;
-                rf.fields[i] = f;
-                touched = true;
-            }
-            AlterAction::SetNotNull(name, yes) => {
-                let i = find(&rf, name)?;
-                rf.fields[i].allow_null = !yes;
-                touched = true;
-            }
-            AlterAction::SetDefault(name, d) => {
-                let i = find(&rf, name)?;
-                let data_type = rf.fields[i].data_type;
-                rf.fields[i].default = match d {
-                    Some(d) => default_def(d, &data_type_of(&rf.fields[i], data_type))?,
-                    None => None,
-                };
-                touched = true;
-            }
-            AlterAction::AddConstraint(Constraint::PrimaryKey { columns, .. }) => {
-                rf.keys.clear();
-                for c in columns {
-                    let i = find(&rf, c)?;
-                    let f = &rf.fields[i];
-                    rf.keys.push(dds::KeyField {
-                        name: f.name,
-                        field: i,
-                        descend: false,
-                        transform: if f.data_type.is_numeric() {
-                            dds::KeyTransform::Signed
-                        } else {
-                            dds::KeyTransform::Unsigned
-                        },
-                        noaltseq: false,
-                        line: 0,
-                    });
-                }
-                unique = Some(dds::NullKeys::Include);
-                touched = true;
-            }
-            AlterAction::AddConstraint(Constraint::Unique { name, columns }) => {
-                indexes.push((name.clone(), columns.clone()));
-            }
-            AlterAction::AddConstraint(_) => {}
-            AlterAction::DropPrimaryKey => {
-                rf.keys.clear();
-                unique = None;
-                touched = true;
-            }
-            AlterAction::DropConstraint(name) => drops.push(name.clone()),
-        }
-    }
-    if touched {
-        rf.lay_out();
-        let def = dds::PfDefinition {
-            format: rf,
-            unique,
-            dup_order: table.format.dup_order,
-            reference: None,
-            refaccpth: None,
-            altseq: None,
-            ccsid: None,
-            text: None,
-        };
-        // The records are read and converted taking turns, the table
-        // held `*EXCL`; they are written in one step.
-        let job = ctx.job;
-        db::chg::chgpf_srcfile_paused(txn, job, table.id, &def, &mut |t| ctx.pause(t))?;
-    }
-    for name in &drops {
-        drop_constraint(txn, ctx, &table, name)?;
-    }
-    let sys = table.desc.name();
-    let mut anon = existing_unique(txn, &table);
-    for (cname, columns) in indexes {
-        if cname.is_none() {
-            anon += 1;
-        }
-        add_unique(txn, ctx, &stmt.name, &sys, anon, cname.as_ref(), &columns)?;
-    }
-    Ok(())
-}
-
-/// The SQL data type a field's DDS type stands for, for its default.
-fn data_type_of(f: &dds::FieldDef, t: dds::DataType) -> DataType {
-    match t {
-        dds::DataType::Date => DataType::Date,
-        dds::DataType::Time => DataType::Time,
-        dds::DataType::Timestamp => DataType::Timestamp(dds::DataType::timestamp_precision(f.length)),
-        dds::DataType::DecFloat => DataType::DecFloat(if f.length <= 16 { 16 } else { 34 }),
-        dds::DataType::Bytes => DataType::Varbinary(f.length),
-        dds::DataType::Boolean => DataType::Boolean,
-        dds::DataType::Blob => DataType::Blob(f.length),
-        dds::DataType::Clob => DataType::Clob(f.length),
-        dds::DataType::Dbclob => DataType::Dbclob(f.length),
-        t if t.is_numeric() => DataType::Decimal(u8::try_from(f.length).unwrap_or(63), f.decimals),
-        _ => DataType::Char(f.length),
-    }
-}
-
-/// How many unnamed unique constraints the table has, from the texts
-/// of the indexes over it.
-fn existing_unique(txn: &mut Txn<'_>, t: &TableInfo) -> usize {
-    let mut n = 0;
-    let stem = format!("{UNIQUE_TEXT}Q_{}_", t.desc.name());
-    for d in &t.desc.dependents {
-        if let Ok(lf) = file::describe(txn, d.lf_file)
-            && ccsid::decode_trimmed(&lf.header.text).starts_with(&stem)
-        {
-            n += 1;
-        }
-    }
-    n
-}
-
-/// `DROP CONSTRAINT name`: the unique index recorded for it goes.
-fn drop_constraint(
-    txn: &mut Txn<'_>,
-    ctx: &mut SqlContext,
-    t: &TableInfo,
-    name: &Ident,
-) -> Result<()> {
-    let want = format!("{UNIQUE_TEXT}{}", name.value);
-    let mut ids: Vec<_> = t.desc.dependents.iter().map(|d| d.lf_file).collect();
-    ids.sort();
-    ids.dedup();
-    for lf in ids {
-        if let Ok(d) = file::describe(txn, lf)
-            && ccsid::decode_trimmed(&d.header.text) == want
-        {
-            file::delete_file(txn, ctx.job, lf)?;
-            return Ok(());
-        }
-    }
-    Err(SqlError::ObjectNotFound {
-        kind: "constraint",
-        name: name.value.clone(),
-    })
 }
 
 /// `CREATE INDEX`: a keyed logical file over the table.
@@ -909,28 +614,6 @@ pub(crate) fn build_index(
     base_hold.release(txn);
     built?;
     Ok(lf)
-}
-
-/// `DROP TABLE`, `DROP INDEX`, `DROP VIEW`: the file and, for a table,
-/// the indexes and views over it.
-pub fn drop(
-    txn: &mut Txn<'_>,
-    ctx: &mut SqlContext,
-    name: &ObjectName,
-    _cascade: bool,
-) -> Result<()> {
-    let id = ctx.resolve_file(txn, name)?;
-    let desc = file::describe(txn, id)?;
-    let mut dependents: Vec<_> = desc.dependents.iter().map(|d| d.lf_file).collect();
-    dependents.sort();
-    dependents.dedup();
-    for lf in dependents {
-        if file::describe(txn, lf).is_ok() {
-            file::delete_file(txn, ctx.job, lf)?;
-        }
-    }
-    file::delete_file(txn, ctx.job, id)?;
-    Ok(())
 }
 
 /// A DDS literal for `COMP`, `RANGE` and `VALUES`.

@@ -27,10 +27,6 @@ pub const TABLES: &[&str] = &[
     "SYSKEYS",
     "SYSVIEWS",
     "SYSVIEWDEP",
-    "SYSCST",
-    "SYSCSTCOL",
-    "SYSKEYCST",
-    "SYSREFCST",
     "SYSSCHEMAS",
     "SYSPARTITIONSTAT",
     "SYSTABLESTAT",
@@ -615,18 +611,6 @@ pub fn virtual_table(
             }
             (cols, rows)
         }
-        "SYSCST" | "SYSCSTCOL" | "SYSKEYCST" => constraints(which, alias, &all),
-        "SYSREFCST" => (
-            vec![
-                c("CONSTRAINT_NAME", DataType::Char, 128, 0, false),
-                c("CONSTRAINT_SCHEMA", DataType::Char, 128, 0, false),
-                c("UNIQUE_CONSTRAINT_NAME", DataType::Char, 128, 0, false),
-                c("UNIQUE_CONSTRAINT_SCHEMA", DataType::Char, 128, 0, false),
-                c("UPDATE_RULE", DataType::Char, 11, 0, false),
-                c("DELETE_RULE", DataType::Char, 11, 0, false),
-            ],
-            Vec::new(),
-        ),
         "SYSSCHEMAS" => {
             let cols = vec![
                 c("SCHEMA_NAME", DataType::Char, 128, 0, false),
@@ -779,99 +763,6 @@ fn base_of(txn: &mut Txn<'_>, fmt: &db::format::FormatDef) -> (String, String, O
         }
         None => (String::new(), String::new(), None),
     }
-}
-
-/// `SYSCST`, `SYSCSTCOL` and `SYSKEYCST`: the primary keys, which are
-/// the `UNIQUE` keys of physical files.
-fn constraints(which: &str, alias: &str, all: &[(Name, FileDesc)]) -> (Vec<ColInfo>, Vec<Row>) {
-    let c = |nm: &str, ty: DataType, len: u32, dec: u8, nullable: bool| {
-        col(alias, nm, ty, len, dec, nullable)
-    };
-    let mut rows = Vec::new();
-    for (lib, d) in all {
-        let Some(fmt) = d.formats.first() else {
-            continue;
-        };
-        if fmt.unique.is_none() || fmt.format.keys.is_empty() {
-            continue;
-        }
-        // A unique index made for a UNIQUE constraint carries the
-        // constraint's name in its text and belongs to its based-on table.
-        let text = ccsid::decode_trimmed(&d.header.text);
-        let (cname, ctype, table) = match (d.attr.kind, text.strip_prefix(crate::exec::ddl::UNIQUE_TEXT))
-        {
-            (FileKind::Logical, Some(c)) => {
-                let base = fmt
-                    .logical
-                    .as_ref()
-                    .and_then(|l| l.based_on.first())
-                    .and_then(|(id, _)| all.iter().find(|(_, f)| f.id == *id))
-                    .map_or_else(|| d.name().to_string(), |(_, f)| f.name().to_string());
-                (c.to_string(), "UNIQUE", base)
-            }
-            (FileKind::Logical, None) => continue,
-            _ => (
-                format!("Q_{lib}_{}_{}_00001", d.name(), fmt.format.keys[0].name),
-                "PRIMARY KEY",
-                d.name().to_string(),
-            ),
-        };
-        if which == "SYSCST" {
-            rows.push(vec![
-                s(cname),
-                s(lib.to_string()),
-                s(ctype),
-                s(lib.to_string()),
-                s(table.clone()),
-                s("NO"),
-                s("NO"),
-                n(fmt.format.keys.len() as u64),
-                s(table),
-                s(lib.to_string()),
-            ]);
-        } else {
-            for (i, k) in fmt.format.keys.iter().enumerate() {
-                let mut row = vec![
-                    s(cname.clone()),
-                    s(lib.to_string()),
-                    s(k.name.to_string()),
-                    s(lib.to_string()),
-                    s(table.clone()),
-                ];
-                if which == "SYSKEYCST" {
-                    row.push(n(i as u64 + 1));
-                }
-                rows.push(row);
-            }
-        }
-    }
-    let cols = if which == "SYSCST" {
-        vec![
-            c("CONSTRAINT_NAME", DataType::Char, 128, 0, false),
-            c("CONSTRAINT_SCHEMA", DataType::Char, 128, 0, false),
-            c("CONSTRAINT_TYPE", DataType::Char, 11, 0, false),
-            c("TABLE_SCHEMA", DataType::Char, 128, 0, false),
-            c("TABLE_NAME", DataType::Char, 128, 0, false),
-            c("IS_DEFERRABLE", DataType::Char, 3, 0, false),
-            c("INITIALLY_DEFERRED", DataType::Char, 3, 0, false),
-            c("CONSTRAINT_KEYS", DataType::Packed, 9, 0, false),
-            c("SYSTEM_TABLE_NAME", DataType::Char, 10, 0, false),
-            c("SYSTEM_TABLE_SCHEMA", DataType::Char, 10, 0, false),
-        ]
-    } else {
-        let mut v = vec![
-            c("CONSTRAINT_NAME", DataType::Char, 128, 0, false),
-            c("CONSTRAINT_SCHEMA", DataType::Char, 128, 0, false),
-            c("COLUMN_NAME", DataType::Char, 128, 0, false),
-            c("TABLE_SCHEMA", DataType::Char, 128, 0, false),
-            c("TABLE_NAME", DataType::Char, 128, 0, false),
-        ];
-        if which == "SYSKEYCST" {
-            v.push(c("ORDINAL_POSITION", DataType::Packed, 9, 0, false));
-        }
-        v
-    };
-    (cols, rows)
 }
 
 /// A fixed-length character column's values padded with blanks to its

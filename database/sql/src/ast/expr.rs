@@ -243,6 +243,10 @@ pub enum Expr {
     Row(Vec<Expr>),
     /// `DEFAULT` in an `INSERT` or `UPDATE` value.
     Default,
+    /// `NEXT VALUE FOR sequence`.
+    NextValue(super::ObjectName),
+    /// `PREVIOUS VALUE FOR sequence`.
+    PrevValue(super::ObjectName),
 }
 
 /// A function call, scalar or aggregate.

@@ -528,6 +528,9 @@ struct Candidate {
     /// Key field names with `DESCEND`.
     keys: Vec<(String, bool)>,
     label: String,
+    /// A unique or primary key of the table's constraint tree: the
+    /// constraint's number and the tree's key length.
+    cst: Option<(u16, usize)>,
 }
 
 /// The paths over a table: its own and those of dependent logical files
@@ -554,10 +557,29 @@ fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
             fmt: t.format.clone(),
             keys: key_names(&t.format),
             label: format!("{}/{} own key", t.desc.library_name, t.desc.name()),
+            cst: None,
         });
     }
     if t.desc.attr.kind == FileKind::Logical {
         return out;
+    }
+    // Unique and primary keys of null-free fields: their tree entries
+    // are the path's encoding behind the constraint's number.
+    if let Ok(Some(a)) = db::cst::Active::load(txn, &t.desc) {
+        for k in &a.keys {
+            let c = &a.csts[k.index];
+            if !c.kind.unique() || k.format.format.keys.iter().any(|kf| k.format.format.fields[kf.field].allow_null) {
+                continue;
+            }
+            out.push(Candidate {
+                member: t.member,
+                file: t.id,
+                fmt: k.format.clone(),
+                keys: key_names(&k.format),
+                label: format!("{}/{} constraint {}", t.desc.library_name, t.desc.name(), c.name),
+                cst: Some((k.number, a.key_len)),
+            });
+        }
     }
     for d in &t.desc.dependents {
         if d.base_member != t.member.object || in_build(txn, d.lf_file) {
@@ -596,6 +618,7 @@ fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
             fmt: fmt.clone(),
             keys: key_names(fmt),
             label: format!("{}/{} ({})", lf.library_name, lf.name(), entry.name),
+            cst: None,
         });
     }
     out
@@ -843,9 +866,16 @@ fn scan_table_in(
                 what: e.to_string(),
             })
         };
-        let lo = encode(&lo_vals)?;
-        let mut hi = encode(&hi_vals)?;
-        hi.resize(usize::from(c.fmt.key_len), 0xFF);
+        let (mut lo, mut hi) = (encode(&lo_vals)?, encode(&hi_vals)?);
+        let hi_len = match c.cst {
+            Some((number, len)) => {
+                lo.splice(0..0, number.to_be_bytes());
+                hi.splice(0..0, number.to_be_bytes());
+                len
+            }
+            None => usize::from(c.fmt.key_len),
+        };
+        hi.resize(hi_len, 0xFF);
         if explain_only {
             return Ok((Vec::new(), ordered));
         }
@@ -858,7 +888,7 @@ fn scan_table_in(
         let backward = ch.ordered == Some(true);
         // The path in batches, each read as far as the bounds allow.
         let path_of = |pm: &Member| {
-            pm.path().ok_or_else(|| SqlError::Database {
+            if c.cst.is_some() { pm.cst_tree() } else { pm.path() }.ok_or_else(|| SqlError::Database {
                 what: format!("{} has no access path", c.label),
                 msgid: None,
             })

@@ -174,7 +174,7 @@ fn insert_rows(txn: &mut Txn<'_>, ctx: &mut SqlContext, id: ObjectId, rows: Vec<
     let info = table_info(txn, id)?;
     let idx: Vec<usize> = (0..info.format.format.fields.len()).collect();
     let rows = rows.into_iter().map(|r| r.into_iter().map(Some).collect()).collect();
-    super::dml::write_rows(txn, ctx, &[], &info, &idx, rows)
+    super::dml::write_rows(txn, ctx, &[], &info, &idx, None, rows)
 }
 
 /// A file's first member and format as a table.
@@ -235,6 +235,6 @@ fn restore_rows(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable, old: K
         }
     }
     let rows = old.rows.into_iter().map(|r| from.iter().map(|&i| Some(r[i].clone())).collect()).collect();
-    super::dml::write_rows(txn, ctx, &[], &info, &idx, rows)?;
+    super::dml::write_rows(txn, ctx, &[], &info, &idx, None, rows)?;
     Ok(())
 }

@@ -6,8 +6,8 @@
 
 use super::Parser;
 use crate::ast::{
-    AlterAction, AlterTable, ColumnDef, ColumnDefault, Constraint, CreateIndex, CreateTable,
-    CreateView, Ident, Identity, Label, LabelTarget, Rename, Statement,
+    ColumnDef, ColumnDefault, CreateIndex, CreateTable, CreateView, Ident, Label, LabelTarget, Rename,
+    Statement,
 };
 use crate::error::Result;
 use crate::lex::Tok;
@@ -54,6 +54,9 @@ impl Parser {
                 member,
                 replace,
             });
+        }
+        if self.eat_word("SEQUENCE") {
+            return self.create_sequence(replace);
         }
         if self.eat_word("SCHEMA") || self.eat_word("COLLECTION") {
             let name = self.ident()?;
@@ -158,64 +161,7 @@ impl Parser {
         Ok(Statement::CreateTable(t))
     }
 
-    fn starts_constraint(&self) -> bool {
-        self.is_word("CONSTRAINT")
-            || self.is_words(&["PRIMARY", "KEY"])
-            || self.is_word("UNIQUE") && matches!(self.tok_at(1), Tok::Sym("("))
-            || self.is_words(&["FOREIGN", "KEY"])
-            || self.is_word("CHECK") && matches!(self.tok_at(1), Tok::Sym("("))
-    }
-
-    fn constraint(&mut self) -> Result<Constraint> {
-        let name = if self.eat_word("CONSTRAINT") {
-            Some(self.ident()?)
-        } else {
-            None
-        };
-        if self.eat_words(&["PRIMARY", "KEY"]) {
-            let columns = self.ident_list()?;
-            return Ok(Constraint::PrimaryKey { name, columns });
-        }
-        if self.eat_word("UNIQUE") {
-            let columns = self.ident_list()?;
-            return Ok(Constraint::Unique { name, columns });
-        }
-        if self.eat_words(&["FOREIGN", "KEY"]) {
-            let columns = self.ident_list()?;
-            self.expect_word("REFERENCES")?;
-            let parent = self.object_name()?;
-            let parent_columns = if self.is_sym("(") {
-                self.ident_list()?
-            } else {
-                Vec::new()
-            };
-            // ON DELETE / ON UPDATE actions are read and ignored.
-            while self.eat_word("ON") {
-                self.advance();
-                if self.eat_word("NO") {
-                    self.expect_word("ACTION")?;
-                } else {
-                    self.eat_word("SET");
-                    self.advance();
-                }
-            }
-            return Ok(Constraint::ForeignKey {
-                name,
-                columns,
-                parent,
-                parent_columns,
-            });
-        }
-        if self.eat_word("CHECK") {
-            self.expect_sym("(")?;
-            let cond = self.expr()?;
-            self.expect_sym(")")?;
-            return Ok(Constraint::Check { name, cond });
-        }
-        Err(self.expected("PRIMARY KEY, UNIQUE, FOREIGN KEY or CHECK"))
-    }
-
-    fn column_def(&mut self) -> Result<ColumnDef> {
+    pub(crate) fn column_def(&mut self) -> Result<ColumnDef> {
         let name = self.ident()?;
         let mut system_name = None;
         if self.eat_word("FOR") {
@@ -230,8 +176,9 @@ impl Parser {
             not_null: false,
             default: None,
             identity: None,
-            primary_key: false,
-            unique: false,
+            generated: None,
+            hidden: false,
+            constraints: Vec::new(),
         };
         loop {
             if self.eat_word("FOR") {
@@ -242,39 +189,18 @@ impl Parser {
             } else if self.eat_words(&["WITH", "DEFAULT"]) || self.eat_word("DEFAULT") {
                 c.default = Some(self.default_value()?);
             } else if self.eat_word("GENERATED") {
-                let always = if self.eat_word("ALWAYS") {
-                    true
-                } else {
-                    self.expect_words(&["BY", "DEFAULT"])?;
-                    false
-                };
-                self.expect_words(&["AS", "IDENTITY"])?;
-                c.identity = Some(self.identity_options(always)?);
-            } else if self.eat_words(&["PRIMARY", "KEY"]) {
-                c.primary_key = true;
-            } else if self.eat_word("UNIQUE") {
-                c.unique = true;
-            } else if self.eat_word("CONSTRAINT") {
-                self.ident()?;
-            } else if self.eat_word("CHECK") {
-                self.expect_sym("(")?;
-                self.expr()?;
-                self.expect_sym(")")?;
-            } else if self.eat_word("REFERENCES") {
-                self.object_name()?;
-                if self.is_sym("(") {
-                    self.ident_list()?;
-                }
-            } else if self.eat_words(&["IMPLICITLY", "HIDDEN"]) || self.eat_word("HIDDEN") {
-                return Err(Self::unsupported("hidden columns"));
+                self.generated(&mut c)?;
+            } else if self.eat_words(&["IMPLICITLY", "HIDDEN"]) {
+                c.hidden = true;
+            } else if let Some(k) = self.column_constraint(&c)? {
+                c.constraints.push(k);
             } else {
                 return Ok(c);
             }
         }
     }
-
     /// What follows `DEFAULT`: a value, or nothing for the type's default.
-    fn default_value(&mut self) -> Result<ColumnDefault> {
+    pub(crate) fn default_value(&mut self) -> Result<ColumnDefault> {
         match self.tok() {
             Tok::Sym("," | ")") => Ok(ColumnDefault::System),
             Tok::Word(w)
@@ -296,44 +222,6 @@ impl Parser {
             }
             _ => Ok(ColumnDefault::Value(self.expr()?)),
         }
-    }
-
-    fn identity_options(&mut self, always: bool) -> Result<Identity> {
-        let mut id = Identity {
-            always,
-            start: 1,
-            increment: 1,
-            cycle: false,
-        };
-        if !self.eat_sym("(") {
-            return Ok(id);
-        }
-        loop {
-            if self.eat_words(&["START", "WITH"]) {
-                id.start = self.signed_integer()?;
-            } else if self.eat_words(&["INCREMENT", "BY"]) {
-                id.increment = self.signed_integer()?;
-            } else if self.eat_word("CYCLE") {
-                id.cycle = true;
-            } else if self.eat_words(&["NO", "CYCLE"]) {
-                id.cycle = false;
-            } else if self.eat_word("MINVALUE") || self.eat_word("MAXVALUE") {
-                self.signed_integer()?;
-            } else if self.eat_words(&["NO", "MINVALUE"])
-                || self.eat_words(&["NO", "MAXVALUE"])
-                || self.eat_words(&["NO", "CACHE"])
-                || self.eat_words(&["NO", "ORDER"])
-                || self.eat_word("ORDER")
-            {
-            } else if self.eat_word("CACHE") {
-                self.integer()?;
-            } else {
-                break;
-            }
-            self.eat_sym(",");
-        }
-        self.expect_sym(")")?;
-        Ok(id)
     }
 
     fn create_index(&mut self, unique: bool, where_not_null: bool, encoded_vector: bool) -> Result<Statement> {
@@ -446,70 +334,6 @@ impl Parser {
         }))
     }
 
-    pub(crate) fn alter(&mut self) -> Result<Statement> {
-        self.expect_word("ALTER")?;
-        self.expect_word("TABLE")?;
-        let name = self.object_name()?;
-        let mut actions = Vec::new();
-        loop {
-            if self.eat_word("ADD") {
-                if self.starts_constraint() {
-                    actions.push(AlterAction::AddConstraint(self.constraint()?));
-                } else {
-                    self.eat_word("COLUMN");
-                    actions.push(AlterAction::AddColumn(self.column_def()?));
-                }
-            } else if self.eat_word("DROP") {
-                if self.eat_words(&["PRIMARY", "KEY"]) {
-                    actions.push(AlterAction::DropPrimaryKey);
-                } else if self.eat_word("CONSTRAINT")
-                    || self.eat_word("UNIQUE")
-                    || self.eat_words(&["FOREIGN", "KEY"])
-                    || self.eat_word("CHECK")
-                {
-                    actions.push(AlterAction::DropConstraint(self.ident()?));
-                } else {
-                    self.eat_word("COLUMN");
-                    let col = self.ident()?;
-                    let cascade = if self.eat_word("CASCADE") {
-                        true
-                    } else {
-                        self.eat_word("RESTRICT");
-                        false
-                    };
-                    actions.push(AlterAction::DropColumn { name: col, cascade });
-                }
-            } else if self.eat_word("ALTER") {
-                self.eat_word("COLUMN");
-                let col = self.ident()?;
-                if self.eat_words(&["SET", "DATA", "TYPE"]) {
-                    actions.push(AlterAction::SetDataType(col, self.type_spec()?));
-                } else if self.eat_words(&["SET", "NOT", "NULL"]) {
-                    actions.push(AlterAction::SetNotNull(col, true));
-                } else if self.eat_words(&["DROP", "NOT", "NULL"]) {
-                    actions.push(AlterAction::SetNotNull(col, false));
-                } else if self.eat_words(&["SET", "DEFAULT"])
-                    || self.eat_words(&["SET", "WITH", "DEFAULT"])
-                {
-                    actions.push(AlterAction::SetDefault(col, Some(self.default_value()?)));
-                } else if self.eat_words(&["DROP", "DEFAULT"]) {
-                    actions.push(AlterAction::SetDefault(col, None));
-                } else {
-                    return Err(
-                        self.expected("SET DATA TYPE, SET/DROP NOT NULL or SET/DROP DEFAULT")
-                    );
-                }
-            } else {
-                break;
-            }
-            self.eat_sym(",");
-        }
-        if actions.is_empty() {
-            return Err(self.expected("ADD, DROP or ALTER"));
-        }
-        Ok(Statement::AlterTable(AlterTable { name, actions }))
-    }
-
     pub(crate) fn drop(&mut self) -> Result<Statement> {
         self.expect_word("DROP")?;
         let Tok::Word(kind) = self.tok().clone() else {
@@ -539,7 +363,8 @@ impl Parser {
             }
             "INDEX" => Ok(Statement::DropIndex(name)),
             "ALIAS" => Ok(Statement::DropAlias(name)),
-            _ => Err(self.expected("TABLE, INDEX, VIEW, ALIAS or SCHEMA")),
+            "SEQUENCE" => Ok(Statement::DropSequence { name }),
+            _ => Err(self.expected("TABLE, INDEX, VIEW, ALIAS, SEQUENCE or SCHEMA")),
         }
     }
 
