@@ -90,12 +90,11 @@ fn fields_of(given: &[Ident], cols: &[ColInfo]) -> Result<Vec<FieldDef>> {
     let mut sql = Vec::with_capacity(cols.len());
     let mut fields = Vec::with_capacity(cols.len());
     for (i, c) in cols.iter().enumerate() {
+        // A result column with only its position for a name needs one given.
+        if c.name.chars().all(|ch| ch.is_ascii_digit()) && given.get(i).is_none() {
+            return Err(SqlError::ColumnListRequired);
+        }
         let Some(f) = &c.field else {
-            // BLOCKED(sql): expression columns have no type until the
-            // executor types its expressions (SQL-3, SQL-4).
-            if c.name.chars().all(|ch| ch.is_ascii_digit()) && given.get(i).is_none() {
-                return Err(SqlError::ColumnListRequired);
-            }
             return Err(SqlError::Unsupported {
                 what: format!("CREATE TABLE AS with the expression column {}: its type is not derived yet", c.name),
             });
