@@ -8540,6 +8540,12 @@ help = "ENDDBMON ends a monitor STRDBMON started for the same job, or for every 
 vars = ["*CHAR 28"]
 
 [[msg]]
+id = "CPF43A3"
+sev = 40
+text = "The SQL plan cache needs *JOBCTL special authority."
+help = "Dumping, clearing or resizing the plan cache works on every job's statements, so the user needs *JOBCTL special authority. Ask a security officer for it, or have such a user run the request."
+
+[[msg]]
 id = "CPF43A1"
 sev = 40
 text = "More than one database monitor records job &1."

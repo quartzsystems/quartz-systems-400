@@ -63,7 +63,7 @@ rows the work has not reached as refused, as the code does today.
 | `RENAME TABLE/INDEX` (`TO SYSTEM NAME`, `FOR SYSTEM NAME`) | supported; refused SQL0084 for an object other views read | primary, pub400 | `ddl/RENAME`, `ddl/SYSNAME` |
 | `COMMIT`, `ROLLBACK` | supported | primary | |
 | `SET SCHEMA`, `SET PATH`, `SET CURRENT ...`, `SET TRANSACTION` | supported (§6) | pub400 | `query/REGISTERS` |
-| `EXPLAIN` | partial: a query only | none: our own plan text | |
+| `EXPLAIN` (a Quartz statement; pub400 answers SQL0104) | partial: a query's plan text with `QQRID`, `QQRCOD`, `QVC13` per line; ACS Visual Explain (`QSYS.QQQDBVE`, undocumented) not provided | none | `sql::planner` |
 | `CREATE SEQUENCE`, `ALTER SEQUENCE`, `DROP SEQUENCE`, `NEXT VALUE FOR`, `PREVIOUS VALUE FOR` | supported, IBM's cache blocks matched; `ALTER SEQUENCE AS` refused SQL0084; a failed statement gives back the value it used, where IBM keeps it used | primary | `integrity/SEQUENCE` |
 | `GRANT` on sequences | refused SQL0084 | none | |
 | `CREATE [OR REPLACE] PROCEDURE` with an SQL body, compiled through QIR to a `*PGM` | supported | primary | `sqlpl/*` |
@@ -150,7 +150,7 @@ rows the work has not reached as refused, as the code does today.
 | `SKIP LOCKED DATA` on queries | supported; on other statements refused SQL0084 | pub400 | |
 | `USE AND KEEP ... LOCKS`, `WAIT FOR OUTCOME`, `USE CURRENTLY COMMITTED` | refused SQL0084 | pub400 | |
 | `FOR UPDATE OF`, `FOR READ ONLY` | supported | pub400 | `query/LIMITS` |
-| `OPTIMIZE FOR n ROWS` | no-op: a hint, as on IBM | pub400 | `query/LIMITS` |
+| `OPTIMIZE FOR n ROWS`, `ALL ROWS` | supported: a row goal for join and index choice; `0 ROWS` SQL0405, as pub400 | pub400 | `perf/OPTFOR` |
 | `FINAL TABLE`, `NEW TABLE` of `INSERT` | supported; of `UPDATE/DELETE/MERGE` SQL0199, as pub400 | pub400 | `query/CHANGES` |
 | `MERGE` with a joined source, `DELETE` with a correlated subquery | supported | pub400 | `query/CHANGES` |
 | `UPDATE ... FROM` | refused SQL0199, as pub400 | pub400 | `query/CHANGES` |
@@ -369,6 +369,20 @@ in our own words); a function that checks nothing is listed in
 | Authority of `NEXT VALUE`/`PREVIOUS VALUE` (USAGE: `*CHANGE`), `ALTER TABLE`, `LABEL ON TRIGGER`, `DROP` and `REPLACE` of routines (`*OBJEXIST` on the program), `FOREIGN KEY` (`*OBJREF` on the parent), SQL packages, `ADDPFTRG`/`RMVPFTRG`/`CHGPFTRG`, `ADDPFCST`/`CHGPFCST`/`RMVPFCST`/`DSPCPCST`, `CPYF` by `MBROPT` and based-on files, `RGZPFM`, `APYJRNCHG`/`RMVJRNCHG` on the files they change | supported: SQL0551 or CPF2189 | none: no profile without authority can be made on the primary; IBM's documented requirements | `sql::dbauth` |
 | `*EXECUTE` on an SQL trigger's program, `*OBJEXIST` on it for `DROP TRIGGER` and `CREATE OR REPLACE TRIGGER`, `*USE` on journal receivers for `APYJRNCHG`/`RMVJRNCHG`, `*USE` on `CRTPF` for `CPYF CRTFILE(*YES)` | supported | none | `sql::dbauth` |
 
+## 9b. Performance
+
+| Item | Status | Oracle | Test |
+|---|---|---|---|
+| Join methods: nested loop, hash join, sort-merge join, chosen by cost; same rows in the same order whichever runs | supported | primary | `perf/JOINM`, `sql::planner` |
+| Index-only access (fixed CHAR and signed numeric keys of a physical file's own path) | supported | none | `sql::planner` |
+| Column statistics on `CREATE INDEX` and by the `QDBFSTCCOL` system job; key-range estimates from them | partial: kept in the storage service's memory, lost at IPL (BLOCKED(sql)); `SYSCOLUMNSTAT` with IBM's 45 columns lists every column, null where nothing was collected | pub400 (shape) | `sql::planner` |
+| Several indexes at once (union for `OR`/`IN`, intersection for conjuncts) | supported where a full scan would run otherwise | none | `sql::planner` |
+| Predicate pushdown into views, nested table expressions and CTEs; subquery decorrelation | supported for the plain forms (listed in `docs/SQL.md` history); others run as before | primary | `perf/PUSHDN`, `perf/DECORR` |
+| `FETCH FIRST`/`OFFSET` stopping a lone scan early | supported | pub400 | `perf/OPTFOR` |
+| Plan cache (statement text and naming, 512 MiB or 10,000 entries); `QSYS2.DUMP_PLAN_CACHE`, `CLEAR_PLAN_CACHE`, `CHANGE_PLAN_CACHE_SIZE` (`*JOBCTL`) | partial: the parsed statement is cached, the access plan chosen again each run; the entry-selection parameters refused SQL0084; `QIBM_DB_SQLADM` not accepted (no function usage registry) | pub400 (names) | `sql::planner` |
+| QAQQINI `QUERY_TIME_LIMIT`, `QUERY_STORAGE_LIMIT`, `STORAGE_LIMIT` (SQL0666) | supported: predictive governor | pub400 | `perf/GOVERN` |
+| Spilling temporary results | partial: `ORDER BY` spills; a hash join without room becomes a sort-merge join; join, grouping and `DISTINCT` rows stay in memory under the SQL0904 limit | none | |
+
 ## 10. Refused
 
 Every form the engine refuses, with its SQLCODE, is in the tables above
@@ -377,7 +391,24 @@ verbatim for the release notes.
 
 ## 11. Benchmarks
 
-Recorded by `build bench` when Section 7 of the work lands.
+Recorded by `cargo run -p build -- bench` (release, host-side, a store in
+memory; Windows 11, 2026-11-05):
+
+| Benchmark | Time |
+|---|---|
+| Load 1,000,000 rows, 1,000 a statement | 10.7 s |
+| `SELECT * ... ORDER BY V` over 1,000,000 rows | 11.4 s |
+| Three-way join of 1,000,000 x 1,000 x 10 rows, grouped | 14.6 s |
+| Recursive CTE of 99,999 levels | 1.2 s |
+| `SUM() OVER (PARTITION BY ... ORDER BY ... ROWS UNBOUNDED PRECEDING)` over 100,000 rows | 3.2 s |
+| An SQL procedure calling another 10,000 times | 0.96 s |
+| A 100 MB CLOB inserted / read back | 4.3 s / 0.55 s |
+
+Phase 3: the database kit's outputs are identical before and after; the
+`db_bench` (20,000 rows) path does not touch the planner. A member whose
+records and key grow together reaches the store's extent limit near
+853,000 rows (the bench creates its key after the load); see the open
+items.
 
 ## Acceptance
 
