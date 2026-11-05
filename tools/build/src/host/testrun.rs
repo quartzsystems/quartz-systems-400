@@ -61,6 +61,26 @@ fn help(ctx: &Ctx) -> Result<()> {
     Ok(())
 }
 
+/// The SQL kit (`tools/conformance/sql`) in memory: a difference from
+/// the oracle's capture not listed in `known.txt` fails the run.
+fn sql(_ctx: &Ctx) -> Result<()> {
+    let report = conformance::sql::run_all(None).map_err(anyhow::Error::msg)?;
+    let problems = report.problems();
+    if !problems.is_empty() {
+        anyhow::bail!(
+            "SQL kit (cargo test -p conformance --test sql_kit):\n{}",
+            problems.join("\n")
+        );
+    }
+    info!(
+        "sql kit: {} agree, {} known to differ, {} not captured",
+        report.pass.len(),
+        report.fail.len(),
+        report.uncaptured.len()
+    );
+    Ok(())
+}
+
 /// Run the Phase 1 suite for `media`.
 pub fn test(
     ctx: &Ctx,
@@ -72,6 +92,7 @@ pub fn test(
     freeze(ctx)?;
     help(ctx)?;
     text(ctx)?;
+    sql(ctx)?;
     let image = paths::read_pointer(&ctx.paths.disk_pointer())
         .context("no disk image; run `disk` first")?;
     let iso = paths::read_pointer(&ctx.paths.iso_pointer()).ok();

@@ -1,0 +1,3 @@
+# Cases known to differ from their oracle capture: area/NAME, one per line.
+# A new difference fails the kit; remove a line when the case agrees.
+kit/BASIC   # expression result types, SQL7905, AVG scale

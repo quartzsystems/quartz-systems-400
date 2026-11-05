@@ -67,6 +67,7 @@ mod savrst;
 mod medlib;
 mod tapeopt;
 pub mod rpg;
+pub mod sql;
 mod servers;
 mod service;
 mod smallsvr;

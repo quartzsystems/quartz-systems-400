@@ -1,0 +1,37 @@
+-- captured from primary
+> CREATE TABLE {lib}.SQLKIT1 (ID INTEGER NOT NULL, NAME VARCHAR(20), AMT D
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.SQLKIT1 VALUES (1, 'one', 12.5, 1.5E10, TIMESTAMP('202
+sqlcode 0 sqlstate 00000 msgid - count 2
+> SELECT * FROM {lib}.SQLKIT1 ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# NAME VARCHAR(20)
+# AMT DECIMAL(9,2)
+# F DOUBLE
+# TS TIMESTAMP
+# D DATE
+# C CHAR(4)
+| 1 | 'one' | 12.50 | 1.5E10 | 2026-01-02-03.04.05.000006 | '2026-01-02' | 'ab  ' |
+| 2 | NULL | -0.01 | 0.001 | NULL | NULL | NULL |
+> UPDATE {lib}.SQLKIT1 SET NAME = 'x' WHERE ID = 99
+sqlcode 0 sqlstate 00000 msgid - count 0
+warning 100 02000 SQL0100
+> SELECT COUNT(*), SUM(AMT), AVG(AMT) FROM {lib}.SQLKIT1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+# 00002 DECIMAL(31,2)
+# 00003 DECIMAL(31,24)
+| 2 | 12.49 | 6.245000000000000000000000 |
+> SELECT * FROM {lib}.SQLKIT_NO
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES (CAST(1 AS SMALLINT), BIGINT(9), CAST('x' AS CHAR(3)), X'C1F0')
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 SMALLINT NOT NULL
+# 00002 BIGINT NOT NULL
+# 00003 CHAR(3) NOT NULL
+# 00004 VARCHAR(2) NOT NULL
+| 1 | 9 | 'x  ' | 'A0' |
+> DROP TABLE {lib}.SQLKIT1
+sqlcode 0 sqlstate 00000 msgid -
