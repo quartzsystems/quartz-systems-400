@@ -697,3 +697,14 @@ fn job_description_info() {
         vec![row(&["QGPL", "QDFTJOBD", "*RQD", "QBATCH", "*SYSVAL", "Default"])]
     );
 }
+
+#[test]
+fn call_of_service_procedures() {
+    let mut db = Db::new(true);
+    assert_eq!(db.code("CALL QSYS2.QCMDEXC('CRTLIB X')"), 0);
+    assert_eq!(db.code("CALL QCMDEXC('CRTLIB X')"), 0);
+    assert_eq!(db.code("CALL QSYS2.QCMDEXC('DLTLIB X')"), -443);
+    assert_eq!(db.code("CALL QSYS2.QCMDEXC('CRTLIB X', 8)"), 0);
+    assert_eq!(db.code("CALL QSYS2.IFS_WRITE_UTF8(PATH_NAME => '/home/w.txt', LINE => 'hi')"), 0);
+    assert_eq!(db.code("CALL QSYS2.IFS_WRITE_UTF8(PATH_NAME => '/home/w.txt', BOGUS => 'hi')"), -440);
+}

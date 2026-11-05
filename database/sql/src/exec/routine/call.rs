@@ -82,6 +82,9 @@ impl Called {
 /// `CALL`.
 pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value]) -> Result<Outcome> {
     let all = find::named(txn, ctx, &c.name, 1)?;
+    if let Some(done) = service_call(txn, ctx, c, params, all.is_empty())? {
+        return Ok(done);
+    }
     let plan = if all.is_empty() {
         program_call(txn, ctx, c, params)?
     } else {
@@ -125,6 +128,36 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value])
     }
     ctx.routine.pending = Some(Box::new(plan));
     Ok(Outcome::Done)
+}
+
+/// `CALL` of one of the procedures the engine runs itself
+/// (`QSYS2.QCMDEXC`, `IFS_WRITE` ...): qualified with its schema, or
+/// unqualified when no procedure of the name is found. Their arguments
+/// may be named (`PATH_NAME => ...`).
+fn service_call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value], none_found: bool) -> Result<Option<Outcome>> {
+    use crate::exec::catalog::services::procs;
+    let schema = c.name.schema.as_ref().map(|s| s.value.as_str());
+    let ours = match schema {
+        Some("QSYS2" | "SYSTOOLS") => true,
+        None => none_found,
+        _ => false,
+    };
+    if !ours || !procs::is_procedure(schema, &c.name.name.value) {
+        return Ok(None);
+    }
+    let mut args = Vec::new();
+    for a in &c.args {
+        let (name, e) = match a {
+            Expr::Function(f) if f.name.starts_with("=>") && f.args.len() == 1 => (Some(f.name[2..].to_string()), &f.args[0]),
+            e => (None, e),
+        };
+        let v = Evaluator { ctx, params }.eval(txn, e, &Env::default())?;
+        args.push((name, v));
+    }
+    match procs::call(txn, ctx, schema, &c.name.name.value, &args) {
+        Some(r) => r.map(|_| Some(Outcome::Done)),
+        None => Ok(None),
+    }
 }
 
 /// One argument for a parameter of `ty`.

@@ -340,7 +340,8 @@ impl Parser {
         let mut args = Vec::new();
         if self.eat_sym("(") && !self.eat_sym(")") {
             loop {
-                args.push(self.expr()?);
+                // `name => value` as a table function's argument.
+                args.push(self.table_arg()?);
                 if self.eat_sym(")") {
                     break;
                 }

@@ -82,7 +82,7 @@ impl Parser {
     /// A table function's argument: an expression, or `name => expr`,
     /// kept as the function `=>NAME` of the expression
     /// ([`crate::exec::catalog::named_arg`]).
-    fn table_arg(&mut self) -> Result<Expr> {
+    pub(crate) fn table_arg(&mut self) -> Result<Expr> {
         if let Tok::Word(w) = self.tok().clone()
             && self.is_sym_at(1, "=>")
         {
