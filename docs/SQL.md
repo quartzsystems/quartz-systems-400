@@ -87,7 +87,9 @@ rows the work has not reached as refused, as the code does today.
 | `CREATE [OR REPLACE] VARIABLE` (`DEFAULT`, `CONSTANT`), `SET` (also the row form and `DEFAULT`), use in expressions and DML, `DROP VARIABLE` | supported; `SET` of a constant SQL0151 | primary | `objects2/VARIABLE` |
 | `CREATE TYPE ... AS` source type `[WITH COMPARISONS]`, `DROP TYPE` | supported (a `*SQLUDT`) | primary | `sql::objects2` |
 | Using a distinct type (column type, `CAST`, generated casts, strong typing) | refused SQL0084: BLOCKED(sql), the engine has no strong typing yet | primary | `objects2/TYPES` |
-| `CREATE TRIGGER`, `DROP TRIGGER` | refused SQL0084 | primary | |
+| `CREATE [OR REPLACE] TRIGGER` `BEFORE`/`AFTER`, `INSERT`/`UPDATE [OF]`/`DELETE`, `FOR EACH ROW`, `REFERENCING OLD/NEW [ROW]`, `WHEN`, `MODE DB2ROW/DB2SQL`, `SET OPTION`; `DROP TRIGGER`; `LABEL ON`/`COMMENT ON TRIGGER` | supported: a `*PGM` named as the primary names it, over the trigger buffer, so record I/O fires SQL triggers too; SQL7051 for a BEFORE trigger in DB2SQL mode | primary | `trigger/TRGFIRE`, `trigger/TRGDEFS` |
+| `FOR EACH STATEMENT`, `OLD/NEW TABLE`, `INSTEAD OF`, several events (`INSERT OR ...`), `SECURED` | refused SQL0084 after IBM's own checks (SQL0628, SQL0696, SQL0159, SQL0156): BLOCKED(sql) | primary | `trigger/TRGDEFS` |
+| `BEGIN ATOMIC` in a trigger body | supported in BEFORE triggers; in AFTER triggers refused SQL0084 until savepoints | none | `qrpgrt::sqltrg` |
 | `GRANT` on variables and types | refused SQL0084 | none | |
 | `GRANT`, `REVOKE` on tables and views (`WITH GRANT OPTION`, SQL0569, SQL0557, SQL7027) | supported, mapped to object authorities as the primary does | primary | `ddl/GRANT` |
 | `GRANT`, `REVOKE` on schemas, routines, sequences, variables, types; column privileges | refused SQL0084 | none | `sql::objects` |
@@ -254,8 +256,9 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `QSYS2.SYSSCHEMAS`, `SYSTABLES`, `SYSCOLUMNS`, `SYSINDEXES`, `SYSKEYS`, `SYSVIEWS`, `SYSVIEWDEP`, `SYSTABLESTAT`, `SYSCOLUMNSTAT`, `SYSPARTITIONSTAT` | partial: computed from the store; SQL and system names; SYSVIEWS with the 7.1 columns | primary | `ddl/LONGNAME`, `ddl/VIEWQRY` |
 | `QSYS2.SYSCST`, `SYSCSTCOL`, `SYSKEYCST`, `SYSCHKCST`, `SYSREFCST`, `SYSCSTDEP`, `SYSSEQUENCES` | supported with the oracle's columns | primary | `integrity/CSTBASIC`, `integrity/SEQUENCE` |
 | `QSYS2.SYSROUTINES`, `SYSPROCS`, `SYSFUNCS`, `SYSPARMS`, `SYSROUTINEDEP` | supported (`PARSE_TREE`, `PARM_ARRAY` empty) | primary | `sqlpl/CATALOG` |
-| `QSYS2.SYSVARIABLES`, `SYSTYPES`, `SYSTRIGGERS` (external triggers) | supported; `SYSVARIABLES.DEFAULT` is VARGRAPHIC(2000) where IBM has NCLOB | primary | `objects2/VARIABLE` |
-| `QSYS2.SYSVARIABLEDEP`, `SYSTRIGCOL`, `SYSTRIGDEP`, `SYSTRIGUPD`, `SYSJARCONTENTS`, `SYSJAROBJECTS` | present, empty | primary (columns) | `objects2/TYPES` |
+| `QSYS2.SYSVARIABLES`, `SYSTYPES`, `SYSTRIGGERS`, `SYSTRIGDEP`, `SYSTRIGUPD` | supported; LOB catalog columns are VARGRAPHIC where IBM has NCLOB; `SYSTRIGGERS.SQL_PATH` null | primary | `objects2/VARIABLE`, `trigger/TRGCAT` |
+| `QSYS2.SYSTRIGCOL` | partial: transition variables and INSERT target columns; other tables' columns not listed | primary | `trigger/TRGCAT` |
+| `QSYS2.SYSVARIABLEDEP`, `SYSJARCONTENTS`, `SYSJAROBJECTS` | present, empty | primary (columns) | `objects2/TYPES` |
 | `QSYS2.SYSTABAUTH` | supported | pub400 | `sql::objects` |
 | `QSYS2.SYSCOLAUTH` | present, always empty: BLOCKED(sql), the store keeps no column authorities | pub400 | `sql::objects` |
 | Catalog views in a schema (`CREATE SCHEMA`) | partial: the QSYS2 views above only | none | |
@@ -307,7 +310,7 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | Trigger buffer | supported, byte for byte as the primary's | primary | `db::trg`, `mi::trigger` |
 | `*BEFORE`/`*AFTER` x `*INSERT`/`*UPDATE`/`*DELETE` from record I/O (physical and logical files; status 01023/01024, CPF502B) | supported | primary | `mi::trigger` |
 | `*READ` triggers | partial: record I/O of a physical file; logical reads and SQL queries of the table refused SQL0084 | primary | `sql::trigger` |
-| SQL changes firing external triggers | partial: in the engine (SQL0443 38501, SQL0204 for a missing program); refused SQL0084 in the storage service until its call path exists (BLOCKED(sql)) | primary | `sql::trigger` |
+| SQL changes firing external and SQL triggers | supported for statements of programs, the host server, DRDA, QAP and STRSQL; refused SQL0084 from the service console and `RUNSQL`/`RUNSQLSTM` (BLOCKED(sql): service commands carry no call plan) | primary | `qrpgrt::sqltrg`, `trigger/TRGFIRE` |
 | Triggers from `CPYF`, DFU, FTP, the DDM server, the service console | refused (CPF502B, SQL0084) | none | |
 | `ALWREPCHG(*NO)` on after triggers | partial: the program's own change of the row is not refused | none | |
 | `ADDPFCST`, `RMVPFCST`, `CHGPFCST`, `DSPCPCST`, `DSPFD TYPE(*CST)` | supported, the primary's messages; not yet run end to end under QEMU | primary | `sys-cpps` |
