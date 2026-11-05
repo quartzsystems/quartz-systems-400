@@ -2,9 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The QSYS2 catalog views, computed from the store when a query names
-//! them. The column names are IBM's; the rows come from the files and
-//! libraries as they are now.
+//! The first QSYS2 catalog views and `SYSIBM.SYSDUMMY1`, computed from
+//! the store when a query names them. The column names are IBM's; the
+//! rows come from the files and libraries as they are now.
 
 use db::file::{self, FileDesc, FileKind};
 use db::member::Core;
@@ -13,13 +13,13 @@ use qsname::Name;
 use store::obj::{ObjectId, ops, types};
 use store::txn::Txn;
 
-use super::SqlContext;
-use super::eval::{ColInfo, Row, Schema, sql_type};
+use super::super::SqlContext;
+use super::super::eval::{ColInfo, Row, Schema, sql_type};
 use crate::ast::ObjectName;
 use crate::error::Result;
 use crate::value::{Timestamp, Value};
 
-/// The catalog tables.
+/// The QSYS2 views here.
 pub const TABLES: &[&str] = &[
     "SYSTABLES",
     "SYSCOLUMNS",
@@ -126,7 +126,7 @@ fn alias_rows(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
             };
             let (_, h) = ops::read_header(txn, id)?;
             let (count, len) = ctx
-                .resolve_table(txn, &super::alias::target(&def))
+                .resolve_table(txn, &crate::exec::alias::target(&def))
                 .map_or((0, 0), |t| (t.format.format.fields.len() as u64, u64::from(t.desc.attr.record_len)));
             rows.push(vec![
                 s(h.name.to_string()),
@@ -164,9 +164,9 @@ fn is_index(desc: &FileDesc) -> bool {
         && table_type(desc) != "V"
 }
 
-/// Whether `name` names a catalog view (`QSYS2` or no schema).
+/// Whether `name` is one of the views here (`QSYS2` or no schema).
 #[must_use]
-pub fn is_view(name: &ObjectName) -> bool {
+pub fn has(name: &ObjectName) -> bool {
     if name.name.value == "SYSDUMMY1" && name.schema.as_ref().is_none_or(|s| s.value == "SYSIBM") {
         return true;
     }
@@ -634,7 +634,7 @@ fn constraints(which: &str, alias: &str, all: &[(Name, FileDesc)]) -> (Vec<ColIn
         // A unique index made for a UNIQUE constraint carries the
         // constraint's name in its text and belongs to its based-on table.
         let text = ccsid::decode_trimmed(&d.header.text);
-        let (cname, ctype, table) = match (d.attr.kind, text.strip_prefix(super::ddl::UNIQUE_TEXT))
+        let (cname, ctype, table) = match (d.attr.kind, text.strip_prefix(crate::exec::ddl::UNIQUE_TEXT))
         {
             (FileKind::Logical, Some(c)) => {
                 let base = fmt
