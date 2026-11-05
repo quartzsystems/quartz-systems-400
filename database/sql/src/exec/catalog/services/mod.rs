@@ -17,6 +17,7 @@ mod args;
 mod out;
 
 mod joblog;
+mod history;
 mod jobs;
 mod libl;
 mod netstat;
@@ -84,6 +85,7 @@ const FUNCTIONS: &[Function] = &[
     Function { schema: "QSYS2", specific: "QSQJOBINFO", no_value: &[], rows: jobs::job_info },
     Function { schema: "QSYS2", specific: "QSQOBSTAT", no_value: &[], rows: objects::rows },
     Function { schema: "QSYS2", specific: "QSQJOBLOG", no_value: &[], rows: joblog::rows },
+    Function { schema: "QSYS2", specific: "QSQHSTLOG", no_value: &[], rows: history::rows },
     Function { schema: "SYSTOOLS", specific: "SPOOL_FILE", no_value: &[], rows: spool::data },
     Function { schema: "QSYS2", specific: "HTTP_GETV", no_value: &[], rows: http::get_v },
     Function { schema: "QSYS2", specific: "HTTP_GETBV", no_value: &[], rows: http::get_bv },

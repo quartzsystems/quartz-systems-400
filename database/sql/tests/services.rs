@@ -573,3 +573,22 @@ fn products_and_ptfs() {
         vec![row(&["QS00001", "QS00SS1", "APPLIED", "NONE", "NO"])]
     );
 }
+
+#[test]
+fn history_log_info() {
+    let mut db = Db::new(true);
+    let (ca, _) = db.run(
+        "CREATE TABLE QSYS.QHST260101 (QHDATE CHAR(7), QHTIME CHAR(6), QHJOB CHAR(10), QHUSER CHAR(10), QHNBR CHAR(6),          QHMSGID CHAR(7), QHSEV NUMERIC(2, 0), QHTYPE CHAR(2), QHMSGF CHAR(10), QHMSGL CHAR(10), QHTEXT CHAR(256))",
+    );
+    assert!(!ca.is_error(), "{}", ca.line());
+    let (ca, _) = db.run(
+        "INSERT INTO QSYS.QHST260101 VALUES ('1260101', '000100', 'QPADEV0001', 'CODY', '000009', 'CPF1124', 0, '04', 'QCPFMSG', 'QSYS', 'Job started.'),          ('1251230', '235959', 'OLD', 'CODY', '000001', 'CPF1164', 0, '04', 'QCPFMSG', 'QSYS', 'Job ended.')",
+    );
+    assert!(!ca.is_error(), "{}", ca.line());
+    assert_eq!(
+        db.rows("SELECT MESSAGE_ID, MESSAGE_TYPE, MESSAGE_TIMESTAMP, FROM_JOB, MESSAGE_TEXT FROM TABLE(QSYS2.HISTORY_LOG_INFO()) X"),
+        vec![row(&["CPF1124", "INFORMATIONAL", "2026-01-01 00:01:00.000000", "000009/CODY/QPADEV0001", "Job started."])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.HISTORY_LOG_INFO(TIMESTAMP('2025-01-01-00.00.00'))) X"), vec![row(&["2"])]);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.HISTORY_LOG_INFO(EOF_DELAY => 5)) X"), -443);
+}
