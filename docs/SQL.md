@@ -329,7 +329,10 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | JDBC catalog requests (`DatabaseMetaData`) | partial: answered from the views; replies not yet byte-identical; `SQLPROCEDURES`, `SQLFUNCTIONS`, `SQLUDTS` empty | primary | replay `database-metadata` |
 | Other `SYSIBM` views (`_S` forms, `ROUTINES`, `PARAMETERS`, ...) | not present: SQL0204 | primary | `sysibm/SYSIBMLS` |
 | DRDA client | partial (§2) | primary | `conformance::drda_client` |
-| SQL CLI (`QSQCLI`), server mode, `QSQSRVR` | not present: BLOCKED(sql), needs handles holding the caller's bound storage across calls, the job's SQL session from a bound procedure, and a `QSQSRVR` prestart role | none | |
+| SQL CLI (`QSQCLI`): the 40 functions of the brief's list (handles, attributes, connect, prepare, execute, describe, bind, fetch, scroll, `SQLGetData`, diagnostics, transactions), `SQLTables`, `SQLColumns`, `SQLPrimaryKeys` | supported; bound storage checked at every use | pub400 | `rpg_kit` CLI001-CLI005, `sqlcli::engine` |
+| CLI server mode (`SQL_ATTR_SERVER_MODE`): statements in `QSQSRVR` prestart jobs in `QSYSWRK` | partial: matches pub400 in the kit, where a second session stands in for the job; the real prestart path not yet run on a system (NEEDS-CODY: QEMU) | pub400 | CLI001 |
+| The other 81 `QSQCLI` exports (`SQLGetInfo`, `SQLMoreResults`, the wide forms, descriptors, locators) | not present: a program that imports one fails to bind (CPD5D02) | pub400 (export list) | |
+| CLI divergences: `SQLGetData` of an integer as characters, the length of a cut column name, 01002 on disconnect | differ from pub400, listed in `docs/SYSAPI.md` §13 | pub400 | |
 | `*SQLPKG` packages: made by the host server's package requests (JTOpen extended dynamic) and by DRDA bind; statements run by name; saved and restored | supported | primary | `sql::package`, replay `database-sqlpkg`, `ddm`, `saverst::sqlpkg` |
 | `DLTSQLPKG` | supported | primary | `sys-cpps` |
 | `DSPSQLPKG` | not present: no such command on V7R1M0 either (CPD0030) | primary | |
