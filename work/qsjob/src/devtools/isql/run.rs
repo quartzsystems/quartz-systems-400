@@ -11,6 +11,7 @@ use isql::history::{History, Line};
 use isql::result::{Column, Data, report};
 use isql::screen::data;
 use isql::screen::enter::Slot;
+use sql::embed::{Desc, Op, Request};
 use stg::Client;
 use stg::proto::IsqlReply;
 
@@ -44,10 +45,13 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
     let lines = s.h.typed();
     let text = s.h.text();
     let check = s.attrs.syntax_only();
-    let r = host
-        .link
-        .borrow_mut()
-        .with(|l| l.isql_run(text.clone(), s.naming(), check, MAX_ROWS));
+    let r = if !check && is_call(&text) {
+        call(host, s, &text)
+    } else {
+        host.link
+            .borrow_mut()
+            .with(|l| l.isql_run(text.clone(), s.naming(), check, MAX_ROWS))
+    };
     s.h.statement(lines.clone());
     if r.sqlcode < 0 {
         if r.text.is_empty() {
@@ -91,6 +95,42 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
     }
     s.h.clear_input();
     s.h.to_end();
+}
+
+/// Whether a statement is a `CALL`.
+fn is_call(text: &str) -> bool {
+    text.split_whitespace().next().is_some_and(|w| w.eq_ignore_ascii_case("CALL"))
+}
+
+/// A `CALL`: run as the job's embedded SQL, the procedure called in a
+/// runtime job of the session's own. Its result sets are not shown, as
+/// STRSQL shows none; its changes are under the procedure's own
+/// commitment control.
+fn call(host: &Host, s: &mut Session, text: &str) -> IsqlReply {
+    let desc = Desc {
+        op: Op::ExecImm,
+        sql_naming: s.attrs.sql_naming(),
+        ..Desc::default()
+    };
+    let req = Request {
+        scope: "QSQISQL:".into(),
+        desc,
+        inputs: vec![sql::Value::Str(text.to_string())],
+    };
+    let job = s.calls.get_or_insert_with(|| crate::console::build_job(host).0);
+    let a = host.attrs();
+    job.ident.libl = a.libl.search();
+    job.ident.curlib = a.libl.cur;
+    let (r, _) = crate::console::sqlcall::run(&host.link, &req, |p| qrpgrt::sqlcall::perform(job, p));
+    let ca = r.sqlca;
+    IsqlReply {
+        sqlcode: ca.sqlcode,
+        msgid: if ca.sqlcode < 0 { ca.msgid() } else { String::new() },
+        sqlstate: ca.sqlstate,
+        text: ca.sqlerrmc,
+        statement: "CALL".into(),
+        ..IsqlReply::default()
+    }
 }
 
 /// Display Data until F3 or F12.

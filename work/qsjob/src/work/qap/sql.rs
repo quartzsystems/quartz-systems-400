@@ -5,19 +5,20 @@
 //! The `Sql` service in the connection job: the engine through the
 //! storage service as the job's embedded SQL reaches it (`sql_run`,
 //! the job's own session, so as the signed-on profile with its
-//! authority), over the job's own link for the lane and a secondary
-//! thread's link for the catalog. A cancel of a running `Execute` or
+//! authority), over the job's own link for the lane, where a `CALL` is
+//! made in the job's runtime, and a secondary thread's link for the
+//! catalog. A cancel of a running `Execute` or
 //! `Fetch` is the file [`stg::sql_cancel_path`], which the engine looks
 //! for between rows; the lane removes it when the operation ends.
 
-use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use qap_proto::ServerMessage;
-use sql::embed::{Embedded, Reply, Request};
+use sql::embed::{Reply, Request};
 use stg::{Client, Link, Shared};
 
+use crate::console::Console;
 use crate::qapsql::Engine;
 
 /// Nothing runs in the lane.
@@ -30,12 +31,13 @@ pub const SQL: u8 = 2;
 /// What runs in the lane now, for the canceller.
 pub type Running = Arc<AtomicU8>;
 
-/// The engine over the job's own link.
-pub struct LaneDb<'a>(pub &'a Shared);
+/// The engine over the job's own link; calls made in the console's job.
+pub struct LaneDb<'a>(pub &'a Shared, pub &'a mut Console);
 
 impl Engine for LaneDb<'_> {
     fn run(&mut self, req: &Request) -> Reply {
-        stg::remote::RemoteSql::new(Rc::clone(self.0)).run(req)
+        let console = &mut *self.1;
+        crate::console::sqlcall::run(self.0, req, |p| crate::console::sqlcall::perform(console, p)).0
     }
 
     fn message(&mut self, id: &str, data: &[&str]) -> ServerMessage {

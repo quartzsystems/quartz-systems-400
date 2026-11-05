@@ -259,41 +259,41 @@ impl Host for JobHost {
     }
 
     fn sql_set_options(&mut self, options: &SetOptions) -> Result<(), Refusal> {
-        self.sql.set_options(&mut LaneDb(&self.link), options)
+        self.sql.set_options(&mut LaneDb(&self.link, &mut self.console), options)
     }
 
     fn sql_prepare(&mut self, sql: &str) -> SqlResult<Prepared> {
-        self.sql.prepare(&mut LaneDb(&self.link), sql)
+        self.sql.prepare(&mut LaneDb(&self.link, &mut self.console), sql)
     }
 
     fn sql_execute(&mut self, req: &Execute, cancelled: &dyn Fn() -> bool) -> SqlResult<Executed> {
-        let (lane, link) = (&mut self.sql, &self.link);
-        super::sql::running(&self.running, self.me, || lane.execute(&mut LaneDb(link), req, cancelled))
+        let (lane, link, console) = (&mut self.sql, &self.link, &mut self.console);
+        super::sql::running(&self.running, self.me, || lane.execute(&mut LaneDb(link, console), req, cancelled))
     }
 
     fn sql_fetch(&mut self, req: &Fetch, cancelled: &dyn Fn() -> bool) -> SqlResult<Fetched> {
-        let (lane, link) = (&mut self.sql, &self.link);
-        super::sql::running(&self.running, self.me, || lane.fetch(&mut LaneDb(link), req, cancelled))
+        let (lane, link, console) = (&mut self.sql, &self.link, &mut self.console);
+        super::sql::running(&self.running, self.me, || lane.fetch(&mut LaneDb(link, console), req, cancelled))
     }
 
     fn sql_close_cursor(&mut self, cursor: u32) -> Result<(), Refusal> {
-        self.sql.close_cursor(&mut LaneDb(&self.link), cursor)
+        self.sql.close_cursor(&mut LaneDb(&self.link, &mut self.console), cursor)
     }
 
     fn sql_release(&mut self, statement: u32) -> Result<(), Refusal> {
-        self.sql.release(&mut LaneDb(&self.link), statement)
+        self.sql.release(&mut LaneDb(&self.link, &mut self.console), statement)
     }
 
     fn sql_commit(&mut self) -> SqlResult<()> {
-        self.sql.end_unit(&mut LaneDb(&self.link), true)
+        self.sql.end_unit(&mut LaneDb(&self.link, &mut self.console), true)
     }
 
     fn sql_rollback(&mut self) -> SqlResult<()> {
-        self.sql.end_unit(&mut LaneDb(&self.link), false)
+        self.sql.end_unit(&mut LaneDb(&self.link, &mut self.console), false)
     }
 
     fn sql_end(&mut self) {
-        self.sql.end(&mut LaneDb(&self.link));
+        self.sql.end(&mut LaneDb(&self.link, &mut self.console));
     }
 
     fn threads(&mut self) -> Threads {

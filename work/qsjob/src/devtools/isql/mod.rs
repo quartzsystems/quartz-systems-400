@@ -58,6 +58,8 @@ pub struct Session {
     pub files: Vec<(String, String)>,
     /// The session started commitment control, so ends it.
     pub own_cmt: bool,
+    /// The runtime job a `CALL` is made in, built on the first.
+    pub calls: Option<Box<mi::Job>>,
 }
 
 impl Session {
@@ -136,6 +138,7 @@ fn open(host: &Host, r: &Resolved) -> Session {
         libs: Vec::new(),
         files: Vec::new(),
         own_cmt: false,
+        calls: None,
     };
     if let Some(saved) = stored {
         s.attrs = saved.attrs;

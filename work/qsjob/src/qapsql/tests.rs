@@ -74,6 +74,22 @@ fn engine() -> Mem {
         },
     )
     .unwrap();
+    // A program external procedures name.
+    ops::create(
+        &mut t,
+        &CreateParams {
+            library: lib,
+            name: Name::parse("RSPGM").unwrap(),
+            type_code: types::PGM,
+            attribute: "RPGLE".into(),
+            text: String::new(),
+            owner: "QSECOFR".into(),
+            system: "QS400".into(),
+            now: NOW,
+            by_system: false,
+        },
+    )
+    .unwrap();
     t.commit().unwrap();
     let names = NameContext {
         curlib: Some(lib),
@@ -375,4 +391,48 @@ fn the_newer_types_both_ways() {
     assert_eq!(got.rows[1][1], SqlValue::Decimal { text: "-Infinity".into() });
     assert_eq!(got.rows[2][1], SqlValue::Decimal { text: "sNaN".into() });
     assert_eq!(got.rows[1][3], SqlValue::Boolean { value: false });
+}
+
+/// The engine with a job that makes the calls it plans: the procedure
+/// opens a cursor `WITH RETURN` over `T`.
+struct Calling(Mem);
+
+impl Engine for Calling {
+    fn run(&mut self, req: &Request) -> Reply {
+        use sql::embed::{Desc, Op};
+        let mut req = req.clone();
+        req.desc.calls = true;
+        let r = self.0.run(&req);
+        let Some(plan) = r.call else { return r };
+        let open = Desc { op: Op::Open, name: "C1".into(), text: "SELECT ID, NAME FROM QSTEST.T ORDER BY ID".into(), returns: Some(sql::ast::ReturnTo::Client), ..Desc::default() };
+        assert_eq!(self.0.run(&Request { scope: "9:PROC".into(), desc: open, inputs: Vec::new() }).sqlca.sqlcode, 0);
+        let called = sql::exec::routine::Called { seq: plan.seq, max: plan.max_results, sqlstate: "00000".into(), ..Default::default() };
+        self.0.run(&Request { scope: req.scope, desc: Desc { op: Op::Called, ..Desc::default() }, inputs: called.inputs() })
+    }
+
+    fn message(&mut self, id: &str, data: &[&str]) -> ServerMessage {
+        self.0.message(id, data)
+    }
+}
+
+#[test]
+fn a_calls_first_result_set_is_its_cursor() {
+    let mut e = Calling(engine());
+    let mut lane = Lane::default();
+    let ddl = "CREATE PROCEDURE QSTEST.RSP (IN A INT) DYNAMIC RESULT SETS 1 EXTERNAL NAME QSTEST.RSPGM PARAMETER STYLE GENERAL";
+    let c = lane.prepare(&mut e, ddl).unwrap();
+    lane.execute(&mut e, &Execute { statement: c.statement, rows: Vec::new() }, &never).unwrap();
+    let call = lane.prepare(&mut e, "CALL QSTEST.RSP(?)").unwrap();
+    let x = lane.execute(&mut e, &Execute { statement: call.statement, rows: vec![vec![SqlValue::Integer { value: 1 }]] }, &never).unwrap();
+    let cursor = x.cursor.expect("the result set");
+    let f = lane.fetch(&mut e, &Fetch { cursor, max_rows: 0 }, &never).unwrap();
+    assert_eq!((f.rows.len(), f.end), (2, true));
+    assert_eq!(f.rows[0][1], SqlValue::Text { text: "Ann".into() });
+    // OUT parameters have nowhere to go: refused before the call.
+    let ddl = "CREATE PROCEDURE QSTEST.OUTP (OUT A INT) EXTERNAL NAME QSTEST.RSPGM PARAMETER STYLE GENERAL";
+    let c = lane.prepare(&mut e, ddl).unwrap();
+    lane.execute(&mut e, &Execute { statement: c.statement, rows: Vec::new() }, &never).unwrap();
+    let call = lane.prepare(&mut e, "CALL QSTEST.OUTP(?)").unwrap();
+    let r = lane.execute(&mut e, &Execute { statement: call.statement, rows: vec![vec![SqlValue::Null]] }, &never);
+    assert_eq!(failed(r).1, -84);
 }

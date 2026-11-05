@@ -97,6 +97,9 @@ struct Stmt {
     name: String,
     columns: Vec<Described>,
     parameters: Vec<Described>,
+    /// A `CALL` with `OUT` or `INOUT` parameters: QAP has no way to
+    /// give their values back.
+    outputs: bool,
 }
 
 /// An open cursor.
@@ -211,6 +214,7 @@ impl Lane {
         if m.sqlca.is_error() {
             return Err(stop(e, &m.sqlca, None));
         }
+        let outputs = m.rows.iter().any(|row| matches!(row.get(9).and_then(|v| v.as_i64().ok()), Some(2 | 3)));
         let parameters: Vec<Described> = m
             .rows
             .iter()
@@ -226,7 +230,7 @@ impl Lane {
             columns: columns.iter().map(|c| c.column.clone()).collect(),
             parameters: parameters.iter().map(|c| c.column.clone()).collect(),
         };
-        self.statements.insert(statement, Stmt { name, columns, parameters });
+        self.statements.insert(statement, Stmt { name, columns, parameters, outputs });
         Ok(reply)
     }
 
@@ -297,6 +301,17 @@ impl Lane {
                 cursor: Some(cursor),
             });
         }
+        if s.outputs {
+            // BLOCKED(sql): QAP's Executed has no output values (a later
+            // protocol version); refused rather than dropped.
+            let ca = Sqlca {
+                sqlcode: -84,
+                sqlstate: "42612".into(),
+                sqlerrmc: "CALL with OUT or INOUT parameters through QAP: the protocol gives no output values back".into(),
+                ..Sqlca::default()
+            };
+            return Err(stop(e, &ca, None));
+        }
         let several = !req.rows.is_empty();
         let rows = if several { req.rows.clone() } else { vec![Vec::new()] };
         let mut updated = 0i64;
@@ -317,6 +332,10 @@ impl Lane {
                 },
                 inputs,
             );
+            if r.sqlca.sqlcode == 466 && rows.len() == 1 {
+                // A CALL's first result set is the statement's cursor.
+                return self.result_set(e, &r);
+            }
             match r.sqlca.sqlcode {
                 0 => updated += i64::from(r.sqlca.sqlerrd[2]),
                 100 => {}
@@ -326,6 +345,35 @@ impl Lane {
             }
         }
         Ok(Executed { updated, cursor: None })
+    }
+
+    /// The first result set a `CALL` left (`RS#1`) as a cursor.
+    /// BLOCKED(sql): `Executed` names one cursor, so a second set is not
+    /// reachable through QAP.
+    fn result_set(&mut self, e: &mut dyn Engine, called: &Reply) -> SqlResult<Executed> {
+        let name = called.rows.first().and_then(|r| r.first()).map_or_else(|| "RS#1".to_string(), Value::as_text);
+        let d = self.run(
+            e,
+            Desc {
+                name: name.clone(),
+                orient: "CURSOR".into(),
+                ..self.desc(Op::Describe)
+            },
+            Vec::new(),
+        );
+        if d.sqlca.is_error() {
+            return Err(stop(e, &d.sqlca, None));
+        }
+        let cursor = self.id();
+        self.cursors.insert(
+            cursor,
+            Cursor {
+                name,
+                columns: d.rows.iter().map(|row| values::described(row)).collect(),
+                end: false,
+            },
+        );
+        Ok(Executed { updated: 0, cursor: Some(cursor) })
     }
 
     /// `Fetch`: up to `max_rows` (0 for all), in batches.
