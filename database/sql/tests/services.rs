@@ -371,3 +371,44 @@ fn http_functions_through_the_host() {
         vec![row(&["{\"HTTP_STATUS_CODE\":404}"])]
     );
 }
+
+#[test]
+fn object_statistics() {
+    let mut db = Db::new(true);
+    let (ca, _) = db.run("CREATE TABLE QSTEST.ORDERS (ID INT)");
+    assert!(!ca.is_error(), "{}", ca.line());
+    let (ca, _) = db.run("CREATE VIEW QSTEST.ORDERV AS SELECT ID FROM QSTEST.ORDERS");
+    assert!(!ca.is_error(), "{}", ca.line());
+    assert_eq!(
+        db.rows("SELECT OBJNAME, OBJTYPE, OBJLIB, SQL_OBJECT_TYPE, IASP_NAME FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*FILE')) X ORDER BY OBJNAME"),
+        vec![row(&["ORDERS", "*FILE", "QSTEST", "TABLE", "*SYSBAS"]), row(&["ORDERV", "*FILE", "QSTEST", "VIEW", "*SYSBAS"])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*ALL', 'ORDERS')) X"), vec![row(&["1"])]);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*FILE', OBJECT_NAME => 'ORD*')) X"), vec![row(&["2"])]);
+    assert_eq!(db.rows("SELECT OBJNAME FROM TABLE(QSYS2.OBJECT_STATISTICS('QSYS', '*LIB', 'QGPL')) X"), vec![row(&["QGPL"])]);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.OBJECT_STATISTICS('*LIBL', '*LIB')) X"), -443);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.OBJECT_STATISTICS('QSTEST', '*NOTATYPE')) X"), -443);
+}
+
+#[test]
+fn user_info_and_groups() {
+    let mut db = Db::new(true);
+    {
+        let mut t = db.store.begin().unwrap();
+        let mut g = sec::profile::UsrPrf::new("DEVS", 40);
+        g.text = "Developers".into();
+        g.gid = 500;
+        sec::profile::objects::create(&mut t, db.ctx.qsys, &g, "QSECOFR", store::obj::header::Authority::EXCLUDE, 1_767_225_600).unwrap();
+        let mut u = sec::profile::UsrPrf::new("CODY", 40);
+        u.text = "Cody".into();
+        u.grpprf = "DEVS".into();
+        sec::profile::objects::create(&mut t, db.ctx.qsys, &u, "QSECOFR", store::obj::header::Authority::EXCLUDE, 1_767_225_600).unwrap();
+        t.commit().unwrap();
+    }
+    assert_eq!(
+        db.rows("SELECT AUTHORIZATION_NAME, STATUS, USER_CLASS_NAME, GROUP_PROFILE_NAME, TEXT_DESCRIPTION FROM QSYS2.USER_INFO ORDER BY 1"),
+        vec![row(&["CODY", "*ENABLED", "*USER", "DEVS", "Cody"]), row(&["DEVS", "*ENABLED", "*USER", "*NONE", "Developers"])]
+    );
+    assert_eq!(db.rows("SELECT GROUP_MEMBER_INDICATOR FROM QSYS2.USER_INFO_BASIC WHERE AUTHORIZATION_NAME = 'DEVS'"), vec![row(&["YES"])]);
+    assert_eq!(db.rows("SELECT * FROM QSYS2.GROUP_PROFILE_ENTRIES"), vec![row(&["DEVS", "CODY", "Cody"])]);
+}

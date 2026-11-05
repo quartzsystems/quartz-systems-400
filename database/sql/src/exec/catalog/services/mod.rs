@@ -18,7 +18,9 @@ mod out;
 
 mod jobs;
 mod libl;
+mod objects;
 mod sysval;
+mod users;
 
 pub use args::Args;
 pub use out::Out;
@@ -58,12 +60,16 @@ const VIEWS: &[View] = &[
     View { schema: "QSYS2", name: "SYSTEM_VALUE_INFO", no_value: &[], rows: sysval::rows },
     View { schema: "QSYS2", name: "SYSTEM_STATUS_INFO", no_value: jobs::STATUS_NO_VALUE, rows: jobs::status },
     View { schema: "QSYS2", name: "SYSTEM_STATUS_INFO_BASIC", no_value: jobs::STATUS_NO_VALUE, rows: jobs::status },
+    View { schema: "QSYS2", name: "USER_INFO", no_value: users::NO_VALUE, rows: users::info },
+    View { schema: "QSYS2", name: "USER_INFO_BASIC", no_value: users::NO_VALUE, rows: users::info },
+    View { schema: "QSYS2", name: "GROUP_PROFILE_ENTRIES", no_value: &[], rows: users::groups },
 ];
 
 /// The table functions.
 const FUNCTIONS: &[Function] = &[
     Function { schema: "QSYS2", specific: "QSQACTJOB", no_value: &[], rows: jobs::active },
     Function { schema: "QSYS2", specific: "QSQJOBINFO", no_value: &[], rows: jobs::job_info },
+    Function { schema: "QSYS2", specific: "QSQOBSTAT", no_value: &[], rows: objects::rows },
     Function { schema: "QSYS2", specific: "HTTP_GETV", no_value: &[], rows: http::get_v },
     Function { schema: "QSYS2", specific: "HTTP_GETBV", no_value: &[], rows: http::get_bv },
     Function { schema: "QSYS2", specific: "HTTP_POSTV", no_value: &[], rows: http::post_v },
@@ -228,8 +234,9 @@ pub fn self_check(txn: &mut Txn<'_>, ctx: &SqlContext) -> Vec<String> {
     }
     for f in FUNCTIONS {
         let r = shape::index_specific(f.schema, f.specific).ok_or_else(|| missing(f.specific)).and_then(|shape| {
-            // A parameter with no default gets a sample: a path or URL
-            // for text, 1 for a number.
+            // A parameter with no default gets a sample: `*ALL` for a
+            // type list, QSYS for a library, a path or URL for other
+            // text, 1 for a number.
             let sample = shape
                 .parms
                 .iter()
@@ -237,6 +244,10 @@ pub fn self_check(txn: &mut Txn<'_>, ctx: &SqlContext) -> Vec<String> {
                 .map(|p| {
                     let v = if matches!(p.ty.as_str(), "INTEGER" | "SMALLINT" | "BIGINT" | "DECIMAL") {
                         crate::value::Value::int(1)
+                    } else if p.name.contains("TYPE") || p.name.contains("LIST") {
+                        crate::value::Value::Str("*ALL".into())
+                    } else if p.name.contains("SCHEMA") || p.name.contains("LIBRARY") {
+                        crate::value::Value::Str("QSYS".into())
                     } else {
                         crate::value::Value::Str("/".into())
                     };
