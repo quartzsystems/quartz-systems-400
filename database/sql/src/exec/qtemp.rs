@@ -5,15 +5,15 @@
 //! `QTEMP` for SQL: `DECLARE GLOBAL TEMPORARY TABLE` and the tables,
 //! views, indexes and aliases a job makes in `QTEMP`.
 //!
-//! A statement runs in one transaction of one store, and the job's
-//! `QTEMP` of other objects is in the temporary ASP. SQL's `QTEMP` is
-//! therefore a library of the job in the ASP the statement runs in: a
-//! root in no other library ([`ops::create_temporary_root`]), so no
-//! listing, catalog view or save sees it, made at the job's first use
-//! and shared by every SQL context of the job ([`Qtemp`]). The job's end
-//! drops it ([`drop_library`]); the next start of the service drops what
-//! a stopped system left ([`purge`]). `SESSION.name` finds only what was
-//! not made by a plain `CREATE TABLE QTEMP.name` (the primary's rule).
+//! A job has one `QTEMP`, which CL, RPG, record I/O and SQL all reach:
+//! a root in ASP 1 in no other library ([`ops::create_temporary_root`]),
+//! so no listing, catalog view or save sees it. The storage service
+//! makes it when the job starts and hands it to the job's SQL contexts
+//! ([`Qtemp::adopt`]); a context without a job makes its own at first
+//! use. The job's end drops it ([`drop_library`]); the next start of the
+//! service drops what a stopped system left ([`purge`]). `SESSION.name`
+//! finds only what was not made by a plain `CREATE TABLE QTEMP.name`
+//! (the primary's rule).
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -69,6 +69,12 @@ impl Qtemp {
                 None
             }
         }
+    }
+
+    /// The job's `QTEMP` is `lib`, made at `created` when the job started
+    /// (the storage service's one `QTEMP` per job).
+    pub fn adopt(&self, lib: ObjectId, created: u64) {
+        *self.0.borrow_mut() = State { lib: Some((lib, created)), ..State::default() };
     }
 
     /// The library made now, if a job's end left one to drop.
@@ -293,8 +299,14 @@ pub fn drop_library(txn: &mut Txn<'_>, qsys: ObjectId, job: JobHandle, lib: Obje
     ctx.qtemp.0.borrow_mut().lib = Some((lib, ops::read_header(txn, lib)?.1.created));
     let objects: Vec<ObjectId> = ops::list(txn, lib, None)?.into_iter().map(|(_, id)| id).filter(|&id| id != lib).collect();
     for &id in objects.iter().filter(|id| id.type_code == types::FILE) {
-        if ops::read_header(txn, id).is_ok() {
+        if ops::read_header(txn, id).is_err() {
+            continue;
+        }
+        // A display, printer or DDM file is no database file.
+        if db::file::describe(txn, id).is_ok() {
             super::drop::drop_with_dependents(txn, &mut ctx, id)?;
+        } else {
+            ops::delete(txn, job, id)?;
         }
     }
     let now = ctx.clock();

@@ -96,7 +96,19 @@ client trait. `stg::proto` is that list:
 | 690 | TCP/IP: one request carrying a `stg::tcp::TcpOp` (`STRTCP`, `ENDTCP`, `QTCPWRK`'s heartbeat, the status snapshot, the panels' data, the resolver's configuration, the port restrictions, the services table, the servers' attributes, `svc.tcp`), answered as a `TcpReply` (`docs/TCPIP.md`) |
 
 Every connection starts with `hello`, naming the job and the lock
-handle its locks are taken under. A secondary thread of a job starts
+handle its locks are taken under. The service makes the job's `QTEMP`
+then: a temporary root library in ASP 1 (`STORE_FORMAT.md` §8), owned
+by the job's user. It is the job's only `QTEMP`. CL commands, record
+I/O opens (by `QTEMP/` and through `*LIBL`, where `QTEMP` stands where
+the job's library list puts it), overrides, `DSPLIB QTEMP`, the APIs
+and SQL (`database/sql/src/exec/qtemp.rs`) all reach the same objects:
+while a request of the job is answered, the store's `QTEMP` name finds
+that root (`store::obj::ops::set_job_qtemp`). The job's end deletes it
+with everything in it. The temporary ASP (ASP 0) still holds `slic`'s
+own `QTEMP` before the handover and that of a console line with no job.
+Before this design, `QTEMP` for CL objects was a library in ASP 0 and
+SQL made a second one in ASP 1; one statement's transaction cannot
+span two stores, so the CL side moved. A secondary thread of a job starts
 with `hello_thread` instead, naming the job and its process. It shares
 the job (number, `QTEMP`, lock handle) and its security session, so a
 profile swap on any of the job's links reaches them all. Its link

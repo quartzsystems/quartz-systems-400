@@ -376,8 +376,7 @@ fn cpyaudjrne(system: &mut System, p: &Params, k: &Keywords) -> Result<String, S
         let n = rows.len();
         let job = store::obj::JobHandle(u64::from(system.current_job));
         let (st, root) = if lib == "QTEMP" {
-            let t = system.temp.as_mut().ok_or("QTEMP is not available")?;
-            (&mut t.store, t.qtemp)
+            crate::ipl::storage::qtemp_store(system.storage.as_mut(), system.temp.as_mut())?
         } else {
             let s = system.storage.as_mut().ok_or("object store not open")?;
             (&mut s.store, s.qsys.ok_or("object store not initialized")?)

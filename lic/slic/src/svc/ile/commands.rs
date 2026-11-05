@@ -75,9 +75,8 @@ pub(crate) fn in_store<T>(
     f: impl FnOnce(&mut Txn<'_>, &Ctx, ObjectId) -> Result<T, String>,
 ) -> Result<T, String> {
     if lib.eq_ignore_ascii_case("QTEMP") {
-        let t = system.temp.as_mut().ok_or("QTEMP is not available")?;
-        let qtemp = t.qtemp;
-        return with_txn(&mut t.store, |txn| {
+        let (st, qtemp) = crate::ipl::storage::qtemp_store(system.storage.as_mut(), system.temp.as_mut())?;
+        return with_txn(st, |txn| {
             let c = Ctx {
                 qsys: qtemp,
                 names: NameContext {

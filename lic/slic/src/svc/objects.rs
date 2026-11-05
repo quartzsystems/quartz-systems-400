@@ -34,8 +34,7 @@ const CHECKPOINT_EVERY: u64 = 4;
 /// The store and root library a library name lives in.
 pub(super) fn target<'a>(system: &'a mut System, lib: &str) -> Result<(&'a mut Store, ObjectId), String> {
     if lib.eq_ignore_ascii_case("QTEMP") {
-        let t = system.temp.as_mut().ok_or("QTEMP is not available")?;
-        return Ok((&mut t.store, t.qtemp));
+        return crate::ipl::storage::qtemp_store(system.storage.as_mut(), system.temp.as_mut());
     }
     let s = system.storage.as_mut().ok_or("object store not open")?;
     let qsys = s.qsys.ok_or("object store not initialized")?;

@@ -81,7 +81,7 @@ pub fn with_main<T>(
     }
 }
 
-/// Run `f` in a transaction on the lent temporary store.
+/// Run `f` in a transaction on the store the job's `QTEMP` is in.
 pub fn with_temp<T>(
     shared: &Shared,
     f: impl FnOnce(&mut Txn<'_>, ObjectId) -> Result<T, String>,
@@ -90,9 +90,9 @@ pub fn with_temp<T>(
     let lent = b
         .as_mut()
         .ok_or("the object store is not available to the job")?;
-    let temp = lent.temp.as_mut().ok_or("QTEMP is not available")?;
-    let qtemp = temp.qtemp;
-    let mut txn = temp.store.begin().map_err(|e| e.to_string())?;
+    let Lent { storage, temp, .. } = lent;
+    let (store, qtemp) = crate::ipl::storage::qtemp_store(Some(storage), temp.as_mut())?;
+    let mut txn = store.begin().map_err(|e| e.to_string())?;
     match f(&mut txn, qtemp) {
         Ok(v) => {
             txn.commit().map_err(|e| e.to_string())?;
@@ -123,14 +123,15 @@ pub fn current_libl() -> Option<wm::job::LibList> {
 }
 
 /// The library list as the store resolves names: the requesting job's
-/// list in search order (`QTEMP` and libraries that do not exist left
-/// out), its current library or, for `*CRTDFT`, `QGPL`. Without a job,
+/// list in search order (libraries that do not exist left out, `QTEMP`
+/// the job's), its current library or, for `*CRTDFT`, `QGPL`. Without a job,
 /// `QSYS` then `QGPL`.
 pub fn name_context(txn: &mut Txn<'_>, qsys: ObjectId) -> NameContext {
     let mut find = |n: &str| -> Option<ObjectId> {
         match n {
             "QSYS" => Some(qsys),
-            "QTEMP" => None,
+            // The job's, when it has one in this ASP.
+            "QTEMP" => ops::job_qtemp().filter(|q| q.asp == qsys.asp),
             _ => ops::find_library(txn, qsys, Name::parse(n).ok()?)
                 .map(|f| f.id)
                 .ok(),

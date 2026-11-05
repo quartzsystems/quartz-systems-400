@@ -190,8 +190,39 @@ pub fn temporary_roots(txn: &mut Txn<'_>) -> Result<Vec<ObjectId>> {
     Ok(out)
 }
 
-/// The library called `name`.
+thread_local! {
+    /// The `QTEMP` of the job whose request is being answered: a
+    /// temporary root ([`create_temporary_root`]) the name `QTEMP` finds.
+    static JOB_QTEMP: std::cell::Cell<Option<ObjectId>> = const { std::cell::Cell::new(None) };
+}
+
+/// The name `QTEMP` finds `lib` (a job's temporary root) until the next
+/// call; `None` for no job's.
+pub fn set_job_qtemp(lib: Option<ObjectId>) -> Option<ObjectId> {
+    JOB_QTEMP.with(|c| c.replace(lib))
+}
+
+/// The job's `QTEMP` [`set_job_qtemp`] named.
+#[must_use]
+pub fn job_qtemp() -> Option<ObjectId> {
+    JOB_QTEMP.with(std::cell::Cell::get)
+}
+
+/// The name QTEMP.
+fn qtemp_name() -> Name {
+    Name::parse("QTEMP").expect("valid")
+}
+
+/// The library called `name`; `QTEMP` the job's ([`set_job_qtemp`]) when
+/// it is in this ASP.
 pub fn find_library(txn: &mut Txn<'_>, qsys: ObjectId, name: Name) -> Result<Found> {
+    if let Some(q) = job_qtemp()
+        && q.asp == txn.store().asp_number()
+        && name == qtemp_name()
+    {
+        let page = dir::header_page(txn, q)?;
+        return Ok(Found { id: q, library: q, page });
+    }
     let lib = Library::load(txn, qsys)?;
     let id = lib
         .lookup(txn, types::LIB, name)?

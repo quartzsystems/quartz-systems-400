@@ -60,7 +60,8 @@ impl Conn {
 pub struct JobCtx {
     /// Who.
     pub job: JobInfo,
-    /// Its `QTEMP` in ASP 0.
+    /// Its `QTEMP`: a temporary root in ASP 1, the one CL, record I/O
+    /// and SQL share.
     pub qtemp: Option<ObjectId>,
     /// Where its completion message goes, `lib/name`; empty for none.
     pub completion: String,
@@ -266,7 +267,7 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     if job.class.is_empty() {
         job.class = "QGPL/QBATCH".into();
     }
-    let qtemp = super::jobs::make_qtemp(system, job.number)?;
+    let (qtemp, made) = super::jobs::make_qtemp(system, &job.user)?;
     // A submitted job starts as SBMJOB resolved it, with its class's
     // run attributes; any other from its job description.
     let queued = system.pending.remove(&job.number);
@@ -310,6 +311,7 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     let mut ctx = JobCtx::new(system, job);
     ctx.session = super::security::session(system, &ctx.job.user);
     ctx.qtemp = Some(qtemp);
+    ctx.svc.qtemp.adopt(qtemp, made);
     if let Some(a) = system.attrs.get(&ctx.job.number) {
         ctx.joblog = wm::joblog::JobLog::new(a.jobmsgqmx, wm::joblog::Full::parse(&a.jobmsgqfl));
     }
@@ -378,9 +380,8 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     super::spool::job_ended(system, &who);
     super::wtr::job_ended(system, ctx.job.number);
     completion_message(system, ctx);
-    if let Some(q) = ctx.qtemp.take() {
-        super::jobs::drop_qtemp(system, ctx.job.number, q);
-    }
+    // `end_db` dropped it.
+    ctx.qtemp = None;
     super::security::js(
         "E",
         (&ctx.job.name, &ctx.job.user, ctx.job.number),
@@ -420,19 +421,12 @@ fn end_db(system: &mut System, ctx: &mut JobCtx) {
             eprintln!("qsstg: ending {}: {e}", ctx.job.name);
         }
     }
-    // The job's SQL `QTEMP` in ASP 1.
+    // The job's `QTEMP`, in ASP 1.
     if !ctx.thread
-        && let Some(lib) = ctx.svc.qtemp.take()
-        && let Some(s) = system.storage.as_mut()
-        && let Some(qsys) = s.qsys
-        && let Ok(mut txn) = s.store.begin()
+        && let Some(lib) = ctx.svc.qtemp.take().or(ctx.qtemp)
+        && let Err(e) = super::jobs::drop_qtemp(system, JobHandle(ctx.job.handle), lib)
     {
-        let r = sql::exec::qtemp::drop_library(&mut txn, qsys, JobHandle(ctx.job.handle), lib)
-            .map_err(|e| e.to_string())
-            .and_then(|()| txn.commit().map_err(|e| e.to_string()));
-        if let Err(e) = r {
-            eprintln!("qsstg: SQL QTEMP of {}: {e}", ctx.job.name);
-        }
+        eprintln!("qsstg: QTEMP of {}: {e}", ctx.job.name);
     }
     let _ = lent;
 }
@@ -485,6 +479,7 @@ impl Served<'_> {
     fn own_qtemp(&mut self) -> Option<ObjectId> {
         let t = self.system.temp.as_mut()?;
         let q = self.ctx.qtemp?;
+        store::obj::ops::set_job_qtemp(Some(q));
         Some(std::mem::replace(&mut t.qtemp, q))
     }
 
@@ -503,6 +498,8 @@ impl Served<'_> {
         if let (Some(t), Some(r)) = (self.system.temp.as_mut(), root) {
             t.qtemp = r;
         }
+        // A nested request's end leaves the outer job's in force.
+        store::obj::ops::set_job_qtemp(root.filter(|r| r.asp != 0));
     }
 
     /// Run `f` as one of the job's commands: its `QTEMP`, library list
@@ -611,6 +608,7 @@ pub fn enter(system: &mut System, ctx: &JobCtx) -> Entered {
         (Some(t), Some(q)) => Some(std::mem::replace(&mut t.qtemp, q)),
         _ => None,
     };
+    store::obj::ops::set_job_qtemp(ctx.qtemp);
     ile::set_libl(system.attrs.get(&ctx.job.number).map(|a| a.libl.clone()));
     let lent = ile::lend(system).is_ok();
     Entered { root, lent }
@@ -658,6 +656,7 @@ pub fn leave(system: &mut System, e: Entered) {
     if let (Some(t), Some(r)) = (system.temp.as_mut(), e.root) {
         t.qtemp = r;
     }
+    store::obj::ops::set_job_qtemp(e.root.filter(|r| r.asp != 0));
 }
 
 impl Service for Served<'_> {

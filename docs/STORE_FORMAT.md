@@ -470,14 +470,18 @@ is a stale reference (MCH3402); a serial at or above it was never an
 object.
 
 A library is in QSYS's directory, or is a root: QSYS itself, the
-temporary ASP's `QTEMP`, or a job's SQL `QTEMP` in ASP 1 (`library` its
-own ID, `temporary` 1, its own entry in its directory). SQL runs a
-statement in one ASP's transaction, so the tables, views, indexes and
-aliases a job makes in `QTEMP` through SQL (and its declared temporary
-tables) are in such a root, reached only through the job's SQL context
-(`database/sql/src/exec/qtemp.rs`); the job's end deletes it, and the
-storage service deletes any temporary root a stopped system left when
-it opens the store.
+temporary ASP's `QTEMP`, or a job's `QTEMP` in ASP 1 (`library` its own
+ID, `temporary` 1, its own entry in its directory). The storage service
+makes a job's `QTEMP` when the job starts; it is the only `QTEMP` the
+job has, so the objects CL, record I/O and SQL make there are one set
+(`docs/STORAGE_SERVICE.md`). It sits in ASP 1 rather than the temporary
+ASP because an SQL statement runs in one ASP's transaction and may join
+`QTEMP` tables with permanent ones. Reached only by the job (the name
+`QTEMP` resolves to it while the job's request is answered), it is in
+no listing, catalog or save; the job's end deletes it, and the storage
+service deletes any temporary root a stopped system left when it opens
+the store. The temporary ASP's own root `QTEMP` serves `slic` before
+the handover and a service console line with no job.
 
 ### `ObjectHeader` (1024 bytes)
 
@@ -518,7 +522,7 @@ At offset 0 of the body. Text fields are CP037, space padded.
 | 502 | 1 | domain | 0 `*SYSTEM`, 1 `*USER` |
 | 503 | 1 | state | 0 system, 1 user |
 | 504 | 1 | damaged | |
-| 505 | 1 | temporary | 1 for a job's SQL `QTEMP` (below) |
+| 505 | 1 | temporary | 1 for a job's `QTEMP` in ASP 1 (below) |
 | 506 | 1 | compression | always 0 |
 | 507 | 1 | reserved3 | 0 |
 | 508 | 256 | extents | 16 × `ExtentRef` |

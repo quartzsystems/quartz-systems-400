@@ -119,6 +119,20 @@ pub struct Temp {
     pub qtemp: ObjectId,
 }
 
+/// The store `QTEMP` is in now and the library: a job's in ASP 1
+/// (`stgsvc::jobs::make_qtemp`), else the temporary ASP's root.
+pub fn qtemp_store<'a>(
+    storage: Option<&'a mut Storage>,
+    temp: Option<&'a mut Temp>,
+) -> Result<(&'a mut Store, ObjectId), String> {
+    let t = temp.ok_or("QTEMP is not available")?;
+    if t.qtemp.asp == 0 {
+        return Ok((&mut t.store, t.qtemp));
+    }
+    let s = storage.ok_or("object store not open")?;
+    Ok((&mut s.store, t.qtemp))
+}
+
 /// The store's tunables.
 pub fn config() -> StoreConfig {
     StoreConfig::default()

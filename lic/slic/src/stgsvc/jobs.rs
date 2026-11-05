@@ -3,8 +3,8 @@
 // root directory of this project.
 
 //! What the service keeps per job beyond its files: the job number
-//! counter in `QSYS/QJOBNBR`, each job's `QTEMP` (a library of its own
-//! in ASP 0, `QT` and the job number), and the active job list.
+//! counter in `QSYS/QJOBNBR`, each job's `QTEMP` (a temporary root
+//! library in ASP 1), and the active job list.
 
 use qsname::Name;
 use store::obj::dtaara::{self, DataAreaType, DataAreaValue};
@@ -30,14 +30,20 @@ fn params(library: ObjectId, name: Name, type_code: u16, text: &str) -> CreatePa
     }
 }
 
+/// ASP 1's store and `QSYS`.
+fn asp1(system: &mut System) -> Result<(&mut store::Store, ObjectId), String> {
+    let s = system.storage.as_mut().ok_or("object store not open")?;
+    let qsys = s.qsys.ok_or("object store not initialized")?;
+    Ok((&mut s.store, qsys))
+}
+
 /// The data area holding the next IPL's `QIPLSTS`.
 const NEXT_IPLSTS: &str = "QWCIPLSTS";
 
 /// Keep `QIPLSTS` for the next IPL (`2` after `PWRDWNSYS RESTART(*YES)`).
 pub fn set_next_iplsts(system: &mut System, value: u8) -> Result<(), String> {
-    let s = system.storage.as_mut().ok_or("object store not open")?;
-    let qsys = s.qsys.ok_or("object store not initialized")?;
-    crate::svc::db::with_txn(&mut s.store, |txn| {
+    let (store, qsys) = asp1(system)?;
+    crate::svc::db::with_txn(store, |txn| {
         let name = Name::parse(NEXT_IPLSTS).expect("valid");
         let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
         let v = DataAreaValue::Dec(i128::from(value));
@@ -133,44 +139,26 @@ pub fn next(system: &mut System) -> Result<u32, String> {
     Ok(n)
 }
 
-/// A job's `QTEMP`: a new library in ASP 0.
-pub fn make_qtemp(system: &mut System, number: u32) -> Result<ObjectId, String> {
-    let t = system
-        .temp
-        .as_mut()
-        .ok_or("the temporary ASP is not open")?;
-    let name = Name::parse(&format!("QT{number:06}")).map_err(|e| e.to_string())?;
-    let mut txn = t.store.begin().map_err(|e| e.to_string())?;
-    let id = ops::create(
-        &mut txn,
-        &params(t.qtemp, name, types::LIB, "Job temporary library"),
-    )
-    .map_err(|e| e.to_string())?;
-    txn.commit().map_err(|e| e.to_string())?;
-    Ok(id)
+/// A job's `QTEMP`: a temporary root library in ASP 1, owned by its
+/// user, which CL, RPG, record I/O and SQL all reach (one `QTEMP` per
+/// job). The library and when it was made.
+pub fn make_qtemp(system: &mut System, user: &str) -> Result<(ObjectId, u64), String> {
+    let (store, _) = asp1(system)?;
+    let owner = if user.is_empty() { "QSYS" } else { user };
+    crate::svc::db::with_txn(store, |txn| {
+        let id = ops::create_temporary_root(txn, Name::parse("QTEMP").expect("valid"), owner, now_unix())
+            .map_err(|e| e.to_string())?;
+        let made = ops::read_header(txn, id).map_err(|e| e.to_string())?.1.created;
+        Ok((id, made))
+    })
 }
 
 /// Delete a job's `QTEMP` and everything in it.
-pub fn drop_qtemp(system: &mut System, number: u32, lib: ObjectId) {
-    let Some(t) = system.temp.as_mut() else {
-        return;
-    };
-    let job = JobHandle(u64::from(number));
-    let r = t
-        .store
-        .begin()
-        .map_err(|e| e.to_string())
-        .and_then(|mut txn| {
-            let objs = ops::list(&mut txn, lib, None).map_err(|e| e.to_string())?;
-            for (_, id) in objs {
-                ops::delete(&mut txn, job, id).map_err(|e| e.to_string())?;
-            }
-            ops::delete(&mut txn, job, lib).map_err(|e| e.to_string())?;
-            txn.commit().map_err(|e| e.to_string())
-        });
-    if let Err(e) = r {
-        eprintln!("qsstg: QTEMP of job {number:06}: {e}");
-    }
+pub fn drop_qtemp(system: &mut System, job: JobHandle, lib: ObjectId) -> Result<(), String> {
+    let (store, qsys) = asp1(system)?;
+    crate::svc::db::with_txn(store, |txn| {
+        sql::exec::qtemp::drop_library(txn, qsys, job, lib).map_err(|e| e.to_string())
+    })
 }
 
 /// The status of a job that has just said hello.
