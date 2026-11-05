@@ -201,7 +201,8 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
             let mut cat = Cat { txn: &mut *txn, ctx: &mut *ctx, deps: Vec::new() };
             let qir = pl::compile(&sig, body, &mut cat)?;
             let deps = std::mem::take(&mut cat.deps);
-            let id = make_program(txn, ctx, lib, program, &qir, &r.text)?;
+            // The program's text, as IBM i gives it.
+            let id = make_program(txn, ctx, lib, program, &qir, &format!("SQL PROCEDURE {}", r.name.name.value))?;
             (id, deps)
         }
         RoutineBody::External => {

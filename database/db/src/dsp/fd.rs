@@ -127,6 +127,45 @@ pub struct FileDescription {
     pub constraints: Vec<(crate::cst::Constraint, String)>,
     /// Physical file: its triggers, in the order added.
     pub triggers: Vec<crate::trg::Trigger>,
+    /// What SQL made it, when SQL did.
+    pub sql: Option<SqlAttrs>,
+}
+
+/// A file's SQL attributes, as the primary's `DSPFD` shows them.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SqlAttrs {
+    /// `SQL file type`: `TABLE`, `VIEW` or `INDEX`.
+    pub file_type: &'static str,
+    /// A view's `CREATE VIEW` statement.
+    pub view_text: Option<String>,
+    /// A view's check option: `NONE`, `CASCADED` or `LOCAL`.
+    pub check: Option<&'static str>,
+    /// A view that runs its query: no logical file under it.
+    pub query_view: bool,
+}
+
+/// The SQL attributes `file` keeps, if SQL made it.
+fn sql_attrs(txn: &mut Txn<'_>, file: ObjectId, name: Name) -> Result<Option<SqlAttrs>> {
+    use crate::sqlinf::{Kind, tag};
+    let Some(info) = crate::sqlinf::load(txn, file)? else { return Ok(None) };
+    let file_type = match info.kind {
+        Kind::Table | Kind::Mqt => "TABLE",
+        Kind::View => "VIEW",
+        Kind::Index => "INDEX",
+        _ => return Ok(None),
+    };
+    let def = info.first(tag::VIEW).and_then(|b| crate::sqlinf::body::ViewDef::decode(b).ok());
+    let sql_name = info.name().unwrap_or_else(|| name.to_string());
+    Ok(Some(SqlAttrs {
+        file_type,
+        view_text: def.as_ref().map(|d| format!("CREATE VIEW {sql_name} AS {}", d.query.trim_end())),
+        check: def.as_ref().map(|d| match d.check {
+            crate::sqlinf::body::CheckOption::None => "NONE",
+            crate::sqlinf::body::CheckOption::Cascaded => "CASCADED",
+            crate::sqlinf::body::CheckOption::Local => "LOCAL",
+        }),
+        query_view: def.is_some_and(|d| d.read_only),
+    }))
 }
 
 /// The display's words: the text of a `QSTXTMSG` identifier in the
@@ -184,6 +223,7 @@ pub fn dspfd(txn: &mut Txn<'_>, file: ObjectId) -> Result<FileDescription> {
         constraints.push((c, parent));
     }
     let triggers = if desc.attr.kind == FileKind::Logical { Vec::new() } else { crate::trg::list(txn, file)? };
+    let sql = sql_attrs(txn, file, desc.name())?;
     Ok(FileDescription {
         name: desc.name(),
         library: library_name(txn, desc.header.library),
@@ -198,6 +238,7 @@ pub fn dspfd(txn: &mut Txn<'_>, file: ObjectId) -> Result<FileDescription> {
         based_on,
         constraints,
         triggers,
+        sql,
     })
 }
 
@@ -205,6 +246,10 @@ impl FileDescription {
     /// The `TYPE(*BASATR)` name of the kind.
     #[must_use]
     pub fn kind_text(&self) -> &'static str {
+        // A view is a logical file to IBM i, whether or not one is under it.
+        if self.sql.as_ref().is_some_and(|q| q.file_type == "VIEW") {
+            return "LF";
+        }
         match self.kind {
             FileKind::Physical => "PF",
             FileKind::Logical => "LF",
@@ -227,9 +272,14 @@ impl FileDescription {
         let want = |t: FdType| ty == FdType::All || ty == t;
         if want(FdType::BasAtr) {
             self.basatr(&mut out);
+            self.sql_basatr(&mut out, words);
         }
         if want(FdType::Atr) {
             self.atr(&mut out);
+            // A view's check option (`TXT0322`).
+            if let Some(c) = self.sql.as_ref().and_then(|q| q.check) {
+                kv(&mut out, &words("TXT0322"), c);
+            }
         }
         if want(FdType::AccPth) {
             self.accpth(&mut out);
@@ -327,6 +377,21 @@ impl FileDescription {
         kv(out, "Changed", timestamp(self.changed));
         kv(out, "Record formats", self.formats.len());
         kv(out, "Members", self.members.len());
+    }
+
+    /// The SQL attributes under the basic ones: the SQL file type and a
+    /// view's statement (`TXT0320`, `TXT0321`).
+    fn sql_basatr(&self, out: &mut String, words: &mut Words<'_>) {
+        let Some(q) = &self.sql else { return };
+        kv(out, &words("TXT0320"), q.file_type);
+        if let Some(text) = &q.view_text {
+            kv(out, &words("TXT0321"), "");
+            // The statement in lines of 68, as the primary prints it.
+            let chars: Vec<char> = text.chars().collect();
+            for line in chars.chunks(68) {
+                let _ = writeln!(out, "  {}", line.iter().collect::<String>());
+            }
+        }
     }
 
     fn atr(&self, out: &mut String) {

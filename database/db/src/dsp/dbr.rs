@@ -98,6 +98,9 @@ pub fn dspdbr(
                 dependents.push(r);
             }
         }
+        if member.is_none() {
+            dependents.extend(query_views(txn, &desc)?);
+        }
     }
     Ok(DbRelations {
         file: desc.name(),
@@ -140,4 +143,31 @@ impl DbRelations {
         }
         out
     }
+}
+
+/// The SQL views over `desc` that run their query (no logical member is
+/// under them): each a data dependent, as the primary lists its views.
+fn query_views(txn: &mut Txn<'_>, desc: &file::FileDesc) -> Result<Vec<Relation>> {
+    use crate::sqlinf::{Kind, body::Dependency, tag};
+    let (_, lh) = ops::read_header(txn, desc.header.library)?;
+    let me = (lh.name, desc.name());
+    let qsys = lh.library;
+    let mut libs: Vec<ObjectId> = ops::list(txn, qsys, Some(store::obj::types::LIB))?.into_iter().map(|(_, l)| l).collect();
+    libs.push(qsys);
+    let mut out = Vec::new();
+    for lib in libs {
+        let Ok(files) = ops::list(txn, lib, Some(store::obj::types::FILE)) else { continue };
+        for (_, f) in files {
+            let Ok(Some(info)) = crate::sqlinf::load(txn, f) else { continue };
+            let read_only = info.first(tag::VIEW).and_then(|b| crate::sqlinf::body::ViewDef::decode(b).ok()).is_some_and(|d| d.read_only);
+            if info.kind != Kind::View || !read_only {
+                continue;
+            }
+            if info.all(tag::DEPENDENCY).filter_map(|b| Dependency::decode(b).ok()).any(|d| (d.library, d.name) == me) {
+                let (_, h) = ops::read_header(txn, f)?;
+                out.push(Relation { library: library_name(txn, lib), file: h.name, member: h.name, access_path: false });
+            }
+        }
+    }
+    Ok(out)
 }

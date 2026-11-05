@@ -125,8 +125,10 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateSequence) -> Re
     let id = store::obj::dtaara::create(
         txn,
         &params,
-        store::obj::dtaara::DataAreaType::Char { len: 1 },
-        &store::obj::dtaara::DataAreaValue::Char(String::new()),
+        // As IBM i makes it: *CHAR 2000, marked QSQLSEQ; the state is in
+        // the *SQLINF.
+        store::obj::dtaara::DataAreaType::Char { len: 2000 },
+        &store::obj::dtaara::DataAreaValue::Char("QSQLSEQ".into()),
     )?;
     let mut info = SqlInfo::new(Kind::Sequence);
     info.set(tag::NAME, c.name.name.value.as_bytes().to_vec());

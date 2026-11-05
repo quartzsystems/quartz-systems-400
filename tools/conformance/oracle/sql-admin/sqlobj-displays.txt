@@ -1,0 +1,467 @@
+# The primary (V7R1M0), 2026-11-05: displays of SQL objects in QSTEST, OUTPUT(*PRINT) copied with
+# CPYSPLF CTLCHAR(*FCFC). DBM1 is CREATE TABLE (K INT NOT NULL PRIMARY KEY, V VARCHAR(20), N DEC(7,2));
+# DBM1V CREATE INDEX ON DBM1 (V); DBM1VW CREATE VIEW AS SELECT K, UPPER(V) AS UV FROM DBM1 WHERE N > 1;
+# DBMSEQ CREATE SEQUENCE START WITH 5 INCREMENT BY 2; DBMPRC CREATE PROCEDURE (IN A INT) LANGUAGE SQL.
+# Non-printable bytes of the sequence's data area are shown as '.'.
+=== DSPFD FILE(QSTEST/DBM1VW) TYPE(*ALL) OUTPUT(*PRINT).
+--- QPDSPFD.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:50       Page    1.
+0   File  . . . . . . . . . . . : DBM1VW.
+      Library . . . . . . . . . : QSTEST.
+    Type of information . . . . : *ALL.
+    File attributes . . . . . . : *ALL.
+    System  . . . . . . . . . . : *LCL.
+    Processor . . . . . . . . . : IBM AS/400 Display File Description Processor.
+0 File . : DBM1VW       Library . : QSTEST       Type of file . : Logical *DATA             Auxiliary Storage Pool ID . : 00001.
+0                                    Data Base File Attributes.
+0   Externally described file . . . . . . . . . :            Yes.
+    SQL file type . . . . . . . . . . . . . . . :            VIEW.
+    File level identifier . . . . . . . . . . . :            1261105031021.
+    Creation date . . . . . . . . . . . . . . . :            11/05/26.
+    Text 'description'  . . . . . . . . . . . . : TEXT.
+    Distributed file  . . . . . . . . . . . . . :            No.
+    Partitioned SQL Table . . . . . . . . . . . :            No.
+    DBCS capable  . . . . . . . . . . . . . . . :            No.
+    Maximum members . . . . . . . . . . . . . . : MAXMBRS        1.
+    Number of triggers  . . . . . . . . . . . . :                0.
+    Number of members . . . . . . . . . . . . . :                1.
+    SQL view create statement . . . . . . . . . :.
+      CREATE VIEW DBM1VW AS SELECT K, UPPER(V) AS UV FROM QSTEST.DBM1 WHER.
+      E N > 1.
+-.
+0   Record format selector program  . . . . . . : FMTSLR     *NONE.
+    Records to force a write  . . . . . . . . . : FRCRATIO   *NONE.
+    Maximum file wait time  . . . . . . . . . . : WAITFILE      30.
+    Maximum record wait time  . . . . . . . . . : WAITRCD       60.
+    With check option . . . . . . . . . . . . . :            NONE.
+    Allow read operation  . . . . . . . . . . . :            Yes.
+    Allow write operation . . . . . . . . . . . :            Yes.
+    Allow update operation  . . . . . . . . . . : ALWUPD     *YES.
+    Allow delete operation  . . . . . . . . . . : ALWDLT     *YES.
+    Record format level check . . . . . . . . . : LVLCHK     *YES.
+    Access path . . . . . . . . . . . . . . . . :            Arrival.
+    Maximum record length . . . . . . . . . . . :               26.
+    Keep in memory  . . . . . . . . . . . . . . : KEEPINMEM  *NO.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:50       Page    2.
+0 File . : DBM1VW       Library . : QSTEST       Type of file . : Logical *DATA             Auxiliary Storage Pool ID . : 00001.
+0                                     Access Path Description.
+0   Access path . . . . . . . . . . . . . . . . :            Arrival.
+      Files accessed by logical file              PFILE.
+         File               Library              LF Format.
+         DBM1               QSTEST               DBM1VW.
+    Sort Sequence . . . . . . . . . . . . . . . : SRTSEQ     *HEX.
+0   Language identifier . . . . . . . . . . . . : LANGID     ENU.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:50       Page    3.
+0 File . : DBM1VW       Library . : QSTEST       Type of file . : Logical *DATA             Auxiliary Storage Pool ID . : 00001.
+0                                        Member Description.
+-   Member  . . . . . . . . . . . . . . . . . . : MBR        DBM1VW.
+      Member level identifier . . . . . . . . . :            1261105031021.
+      Member creation date  . . . . . . . . . . :            11/05/26.
+      Text 'description'  . . . . . . . . . . . : TEXT.
+      Expiration date for member  . . . . . . . : EXPDATE    *NONE.
+      Current number of records . . . . . . . . :                     3.
+      Number of deleted records . . . . . . . . :                     0.
+      Record format selector program  . . . . . : FMTSLR     *NONE.
+      Records to force a write  . . . . . . . . : FRCRATIO   *NONE.
+      Share open data path  . . . . . . . . . . : SHARE      *NO.
+        Implicit access path sharing  . . . . . :            No.
+      Last change date/time . . . . . . . . . . :            11/05/26  03:10:21.
+      Last save date/time . . . . . . . . . . . :.
+      Last restore date/time  . . . . . . . . . :.
+      Last used date  . . . . . . . . . . . . . :.
+      Days used count . . . . . . . . . . . . . :                0.
+        Reset date  . . . . . . . . . . . . . . :.
+      Number of data members  . . . . . . . . . :              1.
+      Based on file . . . . . . . . . . . . . . :            DBM1.
+        Library . . . . . . . . . . . . . . . . :            QSTEST.
+        Member  . . . . . . . . . . . . . . . . :            DBM1.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:50       Page    4.
+0 File . : DBM1VW       Library . : QSTEST       Type of file . : Logical *DATA             Auxiliary Storage Pool ID . : 00001.
+0                                         Record Format List.
+0                      Record  Format Level.
+  Format       Fields  Length  Identifier.
+0 DBM1VW           2      26   28757D9D9F221.
+     Text . . . :  FORMAT0001.
+0    Total number of formats  . . . . . . . . . :           1.
+     Total number of fields . . . . . . . . . . :           2.
+     Total record length  . . . . . . . . . . . :          26.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:50       Page    5.
+0 File . : DBM1VW       Library . : QSTEST       Type of file . : Logical *DATA             Auxiliary Storage Pool ID . : 00001.
+0                                           Member List.
+0                              Source Creation    Last Change                  Deleted.
+   Member           Size        Type  Date       Date     Time      Records    Records.
+   DBM1VW                    0        11/05/26 11/05/26 03:10:21          3          0.
+     Text:.
+0  Total number of members  . . . . . . . . . :                 1.
+   Total number of members not available  . . :                 0.
+   Total records  . . . . . . . . . . . . . . :                 3.
+   Total deleted records  . . . . . . . . . . :                 0.
+   Total of member sizes  . . . . . . . . . . :                 0.
+=== DSPFD FILE(QSTEST/DBM1V) TYPE(*ALL) OUTPUT(*PRINT).
+--- QPDSPFD.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:51       Page    1.
+0   File  . . . . . . . . . . . : DBM1V.
+      Library . . . . . . . . . : QSTEST.
+    Type of information . . . . : *ALL.
+    File attributes . . . . . . : *ALL.
+    System  . . . . . . . . . . : *LCL.
+    Processor . . . . . . . . . : IBM AS/400 Display File Description Processor.
+0 File . : DBM1V        Library . : QSTEST       Type of file . : Logical *DATA             Auxiliary Storage Pool ID . : 00001.
+0                                    Data Base File Attributes.
+0   Externally described file . . . . . . . . . :            Yes.
+    SQL file type . . . . . . . . . . . . . . . :            INDEX.
+    File level identifier . . . . . . . . . . . :            1261105022659.
+    Creation date . . . . . . . . . . . . . . . :            11/05/26.
+    Text 'description'  . . . . . . . . . . . . : TEXT.
+    Distributed file  . . . . . . . . . . . . . :            No.
+    Partitioned SQL Table . . . . . . . . . . . :            No.
+    DBCS capable  . . . . . . . . . . . . . . . :            No.
+    Maximum members . . . . . . . . . . . . . . : MAXMBRS        1.
+    Number of triggers  . . . . . . . . . . . . :                0.
+    Number of members . . . . . . . . . . . . . :                1.
+    Access path maintenance . . . . . . . . . . : MAINT      *IMMED.
+    Access path recovery  . . . . . . . . . . . : RECOVER    *AFTIPL.
+    Force keyed access path . . . . . . . . . . : FRCACCPTH  *NO.
+    Preferred storage unit  . . . . . . . . . . : UNIT       *ANY.
+    Record format selector program  . . . . . . : FMTSLR     *NONE.
+    Records to force a write  . . . . . . . . . : FRCRATIO   *NONE.
+    Maximum file wait time  . . . . . . . . . . : WAITFILE      30.
+    Maximum record wait time  . . . . . . . . . : WAITRCD       60.
+    With check option . . . . . . . . . . . . . :            NONE.
+    Allow read operation  . . . . . . . . . . . :            Yes.
+    Allow write operation . . . . . . . . . . . :            Yes.
+    Allow update operation  . . . . . . . . . . : ALWUPD     *YES.
+    Allow delete operation  . . . . . . . . . . : ALWDLT     *YES.
+    Record format level check . . . . . . . . . : LVLCHK     *YES.
+    Access path . . . . . . . . . . . . . . . . :            Keyed.
+    Access path size  . . . . . . . . . . . . . : ACCPTHSIZ  *MAX1TB.
+    Access path logical page size . . . . . . . : PAGESIZE   *KEYLEN.
+    Maximum key length  . . . . . . . . . . . . :               22.
+    Maximum record length . . . . . . . . . . . :               30.
+    Keep in memory  . . . . . . . . . . . . . . : KEEPINMEM  *NO.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:51       Page    2.
+0 File . : DBM1V        Library . : QSTEST       Type of file . : Logical *DATA             Auxiliary Storage Pool ID . : 00001.
+0                                     Access Path Description.
+0   Access path maintenance . . . . . . . . . . : MAINT      *IMMED.
+    Unique key values required  . . . . . . . . : UNIQUE     No.
+    Key order . . . . . . . . . . . . . . . . . :            Not specified.
+    Select/omit specified . . . . . . . . . . . :            No.
+    Access path journaled . . . . . . . . . . . :            No.
+    Access path . . . . . . . . . . . . . . . . :            Keyed.
+    Number of key fields  . . . . . . . . . . . :              1.
+    Record format . . . . . . . . . . . . . . . :            DBM1.
+      Key field . . . . . . . . . . . . . . . . :            V.
+        Sequence  . . . . . . . . . . . . . . . :            Ascending.
+        Sign specified  . . . . . . . . . . . . :            UNSIGNED.
+        Zone/digit specified  . . . . . . . . . :            *NONE.
+        Alternative collating sequence  . . . . :            No.
+      Files accessed by logical file              PFILE.
+         File               Library              LF Format.
+         DBM1               QSTEST               DBM1.
+    Sort Sequence . . . . . . . . . . . . . . . : SRTSEQ     *HEX.
+0   Language identifier . . . . . . . . . . . . : LANGID     ENU.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:51       Page    3.
+0 File . : DBM1V        Library . : QSTEST       Type of file . : Logical *DATA             Auxiliary Storage Pool ID . : 00001.
+0                                        Member Description.
+-   Member  . . . . . . . . . . . . . . . . . . : MBR        DBM1V.
+      Member level identifier . . . . . . . . . :            1261105022659.
+      Member creation date  . . . . . . . . . . :            11/05/26.
+      Text 'description'  . . . . . . . . . . . : TEXT.
+      Expiration date for member  . . . . . . . : EXPDATE    *NONE.
+      Access path maintenance . . . . . . . . . : MAINT      *IMMED.
+      Access path recovery  . . . . . . . . . . : RECOVER    *AFTIPL.
+      Preferred storage unit  . . . . . . . . . : UNIT       *ANY.
+      Record format selector program  . . . . . : FMTSLR     *NONE.
+      Records to force a write  . . . . . . . . : FRCRATIO   *NONE.
+      Share open data path  . . . . . . . . . . : SHARE      *NO.
+      Access Path Activity Statistics . . . . . :.
+        Access path logical reads . . . . . . . :.
+        Access path physical reads  . . . . . . :.
+        Index size  . . . . . . . . . . . . . . :                     155648.
+        Access path valid . . . . . . . . . . . :            Yes.
+        Implicit access path sharing  . . . . . :            No.
+        Access path journaled . . . . . . . . . :            No.
+        Number of unique partial key values . . :.
+          Key field 1 . . . . . . . . . . . . . :                          3.
+      Last change date/time . . . . . . . . . . :            11/05/26  02:27:00.
+      Last save date/time . . . . . . . . . . . :.
+      Last restore date/time  . . . . . . . . . :.
+      Last used date  . . . . . . . . . . . . . :.
+      Days used count . . . . . . . . . . . . . :                0.
+        Reset date  . . . . . . . . . . . . . . :.
+      Number of data members  . . . . . . . . . :              1.
+      Based on file . . . . . . . . . . . . . . :            DBM1.
+        Library . . . . . . . . . . . . . . . . :            QSTEST.
+        Member  . . . . . . . . . . . . . . . . :            DBM1.
+        Logical file format . . . . . . . . . . :            DBM1.
+        Number of index entries . . . . . . . . :                     3.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:51       Page    4.
+0 File . : DBM1V        Library . : QSTEST       Type of file . : Logical *DATA             Auxiliary Storage Pool ID . : 00001.
+0                                         Record Format List.
+0                      Record  Format Level.
+  Format       Fields  Length  Identifier.
+0 DBM1             3      30   24C1DBB1CE2AC.
+     Text . . . :.
+0    Total number of formats  . . . . . . . . . :           1.
+     Total number of fields . . . . . . . . . . :           3.
+     Total record length  . . . . . . . . . . . :          30.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:51       Page    5.
+0 File . : DBM1V        Library . : QSTEST       Type of file . : Logical *DATA             Auxiliary Storage Pool ID . : 00001.
+0                                           Member List.
+0                              Source Creation    Last Change.
+   Member           Size        Type  Date       Date     Time.
+   DBM1V                155648        11/05/26 11/05/26 02:27:00.
+     Text:.
+0  Total number of members  . . . . . . . . . :                 1.
+   Total number of members not available  . . :                 0.
+   Total of member sizes  . . . . . . . . . . :            155648.
+=== DSPFD FILE(QSTEST/DBM1) TYPE(*ATR) OUTPUT(*PRINT).
+--- QPDSPFD.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:51       Page    1.
+0   File  . . . . . . . . . . . : DBM1.
+      Library . . . . . . . . . : QSTEST.
+    Type of information . . . . : *ATR.
+    File attributes . . . . . . : *ALL.
+    System  . . . . . . . . . . : *LCL.
+    Processor . . . . . . . . . : IBM AS/400 Display File Description Processor.
+0 File . : DBM1         Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001.
+0                                    Data Base File Attributes.
+0   Externally described file . . . . . . . . . :            Yes.
+    SQL file type . . . . . . . . . . . . . . . :            TABLE.
+    File level identifier . . . . . . . . . . . :            1261105022659.
+    Creation date . . . . . . . . . . . . . . . :            11/05/26.
+    Text 'description'  . . . . . . . . . . . . : TEXT.
+    Distributed file  . . . . . . . . . . . . . :            No.
+    Partitioned SQL Table . . . . . . . . . . . :            No.
+    DBCS capable  . . . . . . . . . . . . . . . :            No.
+    Maximum members . . . . . . . . . . . . . . : MAXMBRS        1.
+    Number of constraints . . . . . . . . . . . :                1.
+    Number of triggers  . . . . . . . . . . . . :                0.
+    Number of members . . . . . . . . . . . . . :                1.
+    Access path maintenance . . . . . . . . . . : MAINT      *IMMED.
+    Access path recovery  . . . . . . . . . . . : RECOVER    *AFTIPL.
+    Force keyed access path . . . . . . . . . . : FRCACCPTH  *NO.
+    Member size . . . . . . . . . . . . . . . . : SIZE       *NOMAX.
+    Allocate storage  . . . . . . . . . . . . . : ALLOCATE   *NO.
+    Contiguous storage  . . . . . . . . . . . . : CONTIG     *NO.
+    Preferred storage unit  . . . . . . . . . . : UNIT       *ANY.
+    Records to force a write  . . . . . . . . . : FRCRATIO   *NONE.
+    Maximum file wait time  . . . . . . . . . . : WAITFILE      30.
+    Maximum record wait time  . . . . . . . . . : WAITRCD       60.
+    Max % deleted records allowed . . . . . . . : DLTPCT     *NONE.
+    Reuse deleted records . . . . . . . . . . . : REUSEDLT   *YES.
+1 5770SS1 V7R1M0  100423               Display File Description                                  11/05/26   3:10:51       Page    2.
+0 File . : DBM1         Library . : QSTEST       Type of file . : Physical *DATA            Auxiliary Storage Pool ID . : 00001.
+0                                    Data Base File Attributes.
+0   Sort Sequence . . . . . . . . . . . . . . . : SRTSEQ     *HEX.
+0   Language identifier . . . . . . . . . . . . : LANGID     ENU.
+    Coded character set identifier  . . . . . . : CCSID         37.
+    Allow read operation  . . . . . . . . . . . :            Yes.
+    Allow write operation . . . . . . . . . . . :            Yes.
+    Allow update operation  . . . . . . . . . . : ALWUPD     *YES.
+    Allow delete operation  . . . . . . . . . . : ALWDLT     *YES.
+    Record format level check . . . . . . . . . : LVLCHK     *YES.
+    Access path . . . . . . . . . . . . . . . . :            Keyed.
+    Access path size  . . . . . . . . . . . . . : ACCPTHSIZ  *MAX1TB.
+    Access path logical page size . . . . . . . : PAGESIZE   *KEYLEN.
+    Maximum key length  . . . . . . . . . . . . :                4.
+    Maximum record length . . . . . . . . . . . :               30.
+    Volatile  . . . . . . . . . . . . . . . . . :            No.
+    Keep in memory  . . . . . . . . . . . . . . : KEEPINMEM  *NO.
+    File is currently journaled . . . . . . . . :            No.
+=== DSPDBR FILE(QSTEST/DBM1) OUTPUT(*PRINT).
+--- QPDSPDBR.
+1 5770SS1 V7R1M0  100423               Display Data Base Relations                               11/05/26   3:10:51       Page    1.
+0 DSPDBR Command Input.
+    File  . . . . . . . . . . . . . . . . . . . : FILE       DBM1.
+      Library . . . . . . . . . . . . . . . . . :            QSTEST.
+    Member  . . . . . . . . . . . . . . . . . . : MBR        *NONE.
+    Record format . . . . . . . . . . . . . . . : RCDFMT     *NONE.
+    Output  . . . . . . . . . . . . . . . . . . : OUTPUT     *PRINT.
+0 Specifications.
+    Type of file  . . . . . . . . . . . . . . . :            Physical.
+    File  . . . . . . . . . . . . . . . . . . . :            DBM1.
+      Library . . . . . . . . . . . . . . . . . :            QSTEST.
+      Member  . . . . . . . . . . . . . . . . . :            *NONE.
+      Record format . . . . . . . . . . . . . . :            *NONE.
+      Number of dependent files . . . . . . . . :                2.
+  Files Dependent On Specified File.
+    Dependent File         Library       Dependency   JREF    Constraint.
+        DBM1V              QSTEST        Data.
+        DBM1VW             QSTEST        Data.
+=== DSPDTAARA DTAARA(QSTEST/DBMSEQ) OUTPUT(*PRINT).
+--- QPDSPDTA.
+1 5770SS1 V7R1M0 100423                            Display Data Area     QSTEST/DBMSEQ           11/05/26  3:10:51        Page    1.
+0 Data area . . . . . . . . . . . :   DTAARA      DBMSEQ.
+    Library . . . . . . . . . . . :                 QSTEST.
+  Type  . . . . . . . . . . . . . :   TYPE        *CHAR.
+  Length  . . . . . . . . . . . . :   LEN         2000.
+  Text description  . . . . . . . :   TEXT.
+0                Value.
++    Offset.
+                  *...+....1....+....2....+....3....+....4....+....5.
+0     0          'QSQLSEQ      .aI...N\PQ.;/.                   INTE'.
+     50          'GER                                               '.
+    100          '                                                  '.
+    150          '                                                  '.
+    200          '                                                  '.
+    250          '                                                  '.
+    300          '    B                                       .     '.
+    350          '                                                  '.
+    400          '     .c."                               .    NN202'.
+    450          '6-11-05-03.10.21.501691h  0                       '.
+    500          '     DBMSEQ                                       '.
+    550          '                                                  '.
+    600          '                                 {user}     QSTES'.
+    650          'T                                                 '.
+    700          '                                                  '.
+    750          '                       DBMSEQ    QSTEST    2026-11'.
+    800          '-05-03.10.21.501691.                              '.
+    850          '                                                  '.
+    900          '                                                  '.
+    950          '                                                  '.
+   1000          '                                                  '.
+   1050          '                                                  '.
+   1100          '                                                  '.
+   1150          '                                                  '.
+   1200          '                                                  '.
+   1250          '                                                  '.
+   1300          '                                                  '.
+   1350          '                                                  '.
+   1400          '                                                  '.
+   1450          '                                                  '.
+   1500          '                                                  '.
+   1550          '                                                  '.
+   1600          '                                                  '.
+   1650          '                                                  '.
+   1700          '                                                  '.
+   1750          '                                                  '.
+   1800          '                                                  '.
+   1850          '                                                  '.
+   1900          '                                                  '.
+   1950          '                                                  '.
+0                          * * * * *  E N D  O F  L I S T I N G  * * * * *.
+=== DSPPGM PGM(QSTEST/DBMPRC) OUTPUT(*PRINT).
+--- QPDPGM.
+1                                            Display Program Information                                                 Page     1.
+ 5770SS1 V7R1M0  100423                                                                            S062B175  11/05/26  03:10:51 EST.
+0 Program  . . . . . . . :   DBMPRC                                  Library  . . . . . . . :   QSTEST.
+  Owner  . . . . . . . . :   {user}.
+  Program attribute  . . :   CLE.
+  Detail . . . . . . . . :   *BASIC.
+0 Program creation information:.
+    Program creation date/time . . . . . . . . . . :   11/05/26  03:10:21.
+    Type of program  . . . . . . . . . . . . . . . :   ILE.
+    Program entry procedure module . . . . . . . . :   DBMPRC.
+      Library  . . . . . . . . . . . . . . . . . . :     QSTEST.
+    Activation group attribute . . . . . . . . . . :   *CALLER.
+    Shared activation group  . . . . . . . . . . . :   *NO.
+    User profile . . . . . . . . . . . . . . . . . :   *OWNER.
+    Use adopted authority  . . . . . . . . . . . . :   *YES.
+    Coded character set identifier . . . . . . . . :   65535.
+    Number of modules  . . . . . . . . . . . . . . :   1.
+    Number of service programs . . . . . . . . . . :   3.
+    Number of unresolved references  . . . . . . . :   0.
+    Number of copyrights . . . . . . . . . . . . . :   0.
+    All creation data  . . . . . . . . . . . . . . :   *YES.
+    Observable information compressed  . . . . . . :   *NO.
+    Run time information compressed  . . . . . . . :   *NO.
+    Allow update . . . . . . . . . . . . . . . . . :   *YES.
+    Allow bound *SRVPGM library name update  . . . :   *NO.
+    Profiling data . . . . . . . . . . . . . . . . :   *NOCOL.
+    Teraspace storage enabled PEP  . . . . . . . . :   *YES.
+    Teraspace storage enabled modules  . . . . . . :   *ALL.
+    Storage model  . . . . . . . . . . . . . . . . :   *INHERIT.
+    Argument optimization  . . . . . . . . . . . . :   *NO.
+    Text description . . . . . . . . . . . . . . . :   SQL PROCEDURE DBMPRC.
+  Program statistics:.
+    Number of parameters . . . . . . . . . . . . . :   0            65535.
+    Associated space size (decompressed) . . . . . :   4096.
+    Static storage size  . . . . . . . . . . . . . :   2192.
+    Allow static storage reinitialization  . . . . :   *NO.
+    Program size . . . . . . . . . . . . . . . . . :   65536.
+    Program state  . . . . . . . . . . . . . . . . :   *USER.
+    Program domain . . . . . . . . . . . . . . . . :   *USER.
+    Release program created on . . . . . . . . . . :   V7R1M0.
+    Release program created for  . . . . . . . . . :   V7R1M0.
+    Earliest release program can run . . . . . . . :   V7R1M0.
+    Conversion required  . . . . . . . . . . . . . :   *NO.
+    Conversion detail  . . . . . . . . . . . . . . :   *COMPAT.
+  Program performance information:.
+    Paging pool  . . . . . . . . . . . . . . . . . :   *USER.
+    Paging amount  . . . . . . . . . . . . . . . . :   *BLOCK.
+1                                            Display Program Information                                                 Page     2.
+ 5770SS1 V7R1M0  100423                                                                            S062B175  11/05/26  03:10:51 EST.
+0 Program  . . . . . . . :   DBMPRC                                  Library  . . . . . . . :   QSTEST.
+  Owner  . . . . . . . . :   {user}.
+  Program attribute  . . :   CLE.
+  Detail . . . . . . . . :   *SIZE.
+0 Program size (decompressed) and limit information:.
+    Total program size (KB):.
+      Current  . . . . . . . . . . . . . . . . . . :   64.
+      Maximum  . . . . . . . . . . . . . . . . . . :   268435456.
+    Number of modules:.
+      Current  . . . . . . . . . . . . . . . . . . :   1.
+      Maximum  . . . . . . . . . . . . . . . . . . :   32767.
+    Number of service programs:.
+      Current  . . . . . . . . . . . . . . . . . . :   3.
+      Maximum  . . . . . . . . . . . . . . . . . . :   32766.
+    String directory (bytes):.
+      Current  . . . . . . . . . . . . . . . . . . :   28.
+      Maximum  . . . . . . . . . . . . . . . . . . :   16777184.
+    Copyright strings (bytes):.
+      Current  . . . . . . . . . . . . . . . . . . :   0.
+      Maximum  . . . . . . . . . . . . . . . . . . :   16777184.
+    Number of auxiliary storage segments:.
+      Current  . . . . . . . . . . . . . . . . . . :   5.
+      Maximum  . . . . . . . . . . . . . . . . . . :   16384.
+    Static storage size (bytes):.
+      Minimum  . . . . . . . . . . . . . . . . . . :   2192.
+      Maximum  . . . . . . . . . . . . . . . . . . :   2192.
+1                                            Display Program Information                                                 Page     3.
+ 5770SS1 V7R1M0  100423                                                                            S062B175  11/05/26  03:10:51 EST.
+0 Program  . . . . . . . :   DBMPRC                                  Library  . . . . . . . :   QSTEST.
+  Owner  . . . . . . . . :   {user}.
+  Program attribute  . . :   CLE.
+  Detail . . . . . . . . :   *MODULE.
+0                                              Creation     Optimization     Debug.
+  Module         Library        Attribute      Date            Level         Data.
+0 DBMPRC         QSTEST         CLE            11/05/26     40               *NO.
+1                                            Display Program Information                                                 Page     4.
+ 5770SS1 V7R1M0  100423                                                                            S062B175  11/05/26  03:10:51 EST.
+0 Program  . . . . . . . :   DBMPRC                                  Library  . . . . . . . :   QSTEST.
+  Owner  . . . . . . . . :   {user}.
+  Program attribute  . . :   CLE.
+  Detail . . . . . . . . :   *SRVPGM.
+0 Service.
+  Program        Library        Activation     Signature.
+0 QSQSQPRC       QSYS           *IMMED         D8E2D8E2D8D7D9C34040404040404040.
+  QC2UTIL1       QSYS           *IMMED         CB1F803582C31AC25B4DCBDD1B6D0948.
+  QLEAWI         QSYS           *IMMED         44F70FABA08585397BDF0CF195F82EC1.
+1                                            Display Program Information                                                 Page     5.
+ 5770SS1 V7R1M0  100423                                                                            S062B175  11/05/26  03:10:51 EST.
+0 Program  . . . . . . . :   DBMPRC                                  Library  . . . . . . . :   QSTEST.
+  Owner  . . . . . . . . :   {user}.
+  Program attribute  . . :   CLE.
+  Detail . . . . . . . . :   *ACTGRPEXP.
+0                                                     Activation group exports:.
+0 Data Item                                                               Size.
+0   (No activation group exports).
+1                                            Display Program Information                                                 Page     6.
+ 5770SS1 V7R1M0  100423                                                                            S062B175  11/05/26  03:10:51 EST.
+0 Program  . . . . . . . :   DBMPRC                                  Library  . . . . . . . :   QSTEST.
+  Owner  . . . . . . . . :   {user}.
+  Program attribute  . . :   CLE.
+  Detail . . . . . . . . :   *ACTGRPIMP.
+0                                                     Activation group imports:.
+0 Data Item.
+0   (No activation group imports).
+1                                            Display Program Information                                                 Page     7.
+ 5770SS1 V7R1M0  100423                                                                            S062B175  11/05/26  03:10:51 EST.
+0 Program  . . . . . . . :   DBMPRC                                  Library  . . . . . . . :   QSTEST.
+  Owner  . . . . . . . . :   {user}.
+  Program attribute  . . :   CLE.
+  Detail . . . . . . . . :   *COPYRIGHT.
+0                                                       Copyright information:.
+0   (No copyright information).
+-                                        * * * * *   E N D   O F   L I S T I N G   * * * * *.

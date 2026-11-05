@@ -356,6 +356,21 @@ id = "TXT0311"
 text = "Check condition"
 help = "Text of the Display File Description report: the label of a check constraint's condition."
 
+[[msg]]
+id = "TXT0320"
+text = "SQL file type"
+help = "Text of the file description (DSPFD): what SQL made the file, a TABLE, VIEW or INDEX."
+
+[[msg]]
+id = "TXT0321"
+text = "SQL view create statement"
+help = "Text of the file description (DSPFD): the label over the statement that made an SQL view."
+
+[[msg]]
+id = "TXT0322"
+text = "With check option"
+help = "Text of the file description (DSPFD): an SQL view's check option, NONE, CASCADED or LOCAL."
+
 # Display Check Pending Constraint (DSPCPCST).
 
 [[msg]]
