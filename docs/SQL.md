@@ -131,7 +131,7 @@ rows the work has not reached as refused, as the code does today.
 | Derived tables and nested table expressions anywhere; `ORDER BY`, `FETCH FIRST` in subselects | supported | pub400 | `query/LIMITS` |
 | `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`, `DISTINCT` | supported | primary | `kit/BASIC` |
 | `GROUPING SETS`, `ROLLUP`, `CUBE`, `GROUPING()` | supported | pub400 | `query/GROUPSETS` |
-| `UNION`, `EXCEPT`, `INTERSECT` | supported | primary | |
+| `UNION`, `EXCEPT`, `INTERSECT` [`DISTINCT`], with `ORDER BY`; `INTERSECT` binding tighter | supported; `EXCEPT ALL`/`INTERSECT ALL` SQL0104 as 7.1; SQL0421 for a column-count mismatch | primary | `query/SETOPS` |
 | `FETCH FIRST n ROWS ONLY`, `LIMIT`, `OFFSET`, `LIMIT n OFFSET m`, `LIMIT m,n` | supported | pub400 | `query/LIMITS` |
 | `FETCH FIRST n PERCENT` | refused SQL0104, as pub400 | pub400 | `query/LIMITS` |
 | `ORDER BY` column number (SQL0125 past the list), `ORDER OF` | supported | pub400 | `query/LIMITS` |
@@ -255,7 +255,8 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `ROWID`, `DATALINK` | refused SQL0084 | primary | `types/LOB1` |
 | `JSON_OBJECT`, `JSON_ARRAY` (incl. a fullselect), `FORMAT JSON/BSON`, `RETURNING`, `ABSENT/NULL ON NULL`, `WITH UNIQUE KEYS` | supported | pub400 | `types/JSON1` |
 | `JSON_VALUE`, `JSON_QUERY`, `JSON_EXISTS`, `IS JSON`, lax and strict paths, `ON EMPTY`, `ON ERROR` | supported | pub400 | `types/JSON1` |
-| SQL/JSON path filters, item methods, `**`, `@`, variables, `PASSING` | refused SQL0084 | pub400 | |
+| SQL/JSON path filters, item methods, `**`, `@`, variables, `PASSING` | refused SQL0084 (pub400 runs them) | pub400 | `query/REFUSED3` |
+| `JSON_TABLE ... EMPTY ON ERROR`/`ERROR ON ERROR` (SQ16402, SQ16410, SQL0406) | supported | pub400 | `types/JSONTERR` |
 | `JSON_TO_BSON`, `BSON_TO_JSON` | supported, byte-exact | pub400 | `types/JSON1` |
 | `JSON_ARRAYAGG`, `JSON_OBJECTAGG` (also over windows) | supported | pub400 | `types/JSON1` |
 | `JSON_TABLE` (in `FROM`, as a table function) | supported | pub400 | `types/JSON1` |
@@ -375,7 +376,7 @@ in our own words); a function that checks nothing is listed in
 |---|---|---|---|
 | Join methods: nested loop, hash join, sort-merge join, chosen by cost; same rows in the same order whichever runs | supported | primary | `perf/JOINM`, `sql::planner` |
 | Index-only access (fixed CHAR and signed numeric keys of a physical file's own path) | supported | none | `sql::planner` |
-| Column statistics on `CREATE INDEX` and by the `QDBFSTCCOL` system job; key-range estimates from them | partial: kept in the storage service's memory, lost at IPL (BLOCKED(sql)); `SYSCOLUMNSTAT` with IBM's 45 columns lists every column, null where nothing was collected | pub400 (shape) | `sql::planner` |
+| Column statistics on `CREATE INDEX` and by the `QDBFSTCCOL` system job, kept in the file's SQL information across IPL; key-range estimates from them | supported; `SYSCOLUMNSTAT` with IBM's 45 columns lists every column, null where nothing was collected | pub400 (shape) | `sql::planner` |
 | Several indexes at once (union for `OR`/`IN`, intersection for conjuncts) | supported where a full scan would run otherwise | none | `sql::planner` |
 | Predicate pushdown into views, nested table expressions and CTEs; subquery decorrelation | supported for the plain forms (listed in `docs/SQL.md` history); others run as before | primary | `perf/PUSHDN`, `perf/DECORR` |
 | `FETCH FIRST`/`OFFSET` stopping a lone scan early | supported | pub400 | `perf/OPTFOR` |
@@ -406,9 +407,9 @@ memory; Windows 11, 2026-11-05):
 
 Phase 3: the database kit's outputs are identical before and after; the
 `db_bench` (20,000 rows) path does not touch the planner. A member whose
-records and key grow together reaches the store's extent limit near
-853,000 rows (the bench creates its key after the load); see the open
-items.
+records and key grow together used to reach the store's extent limit;
+members now grow by an eighth of their size (`db::extents` loads a
+million keyed rows).
 
 ## Acceptance
 
