@@ -1227,6 +1227,7 @@ name = "fuzz"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "blockdev",
  "ccsid",
  "cl",
  "cmd",
@@ -1243,12 +1244,14 @@ dependencies = [
  "ptf",
  "qap-proto",
  "qapd",
+ "qsname",
  "rpgfront",
  "savfmt",
  "servers",
  "sha2",
  "sql",
  "sshd",
+ "store",
  "sys-cpps",
  "tls",
  "tn5250",

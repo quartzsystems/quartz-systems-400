@@ -40,6 +40,9 @@ servers = { path = "../../net/servers", version = "0.1.0" }
 sshd = { path = "../../net/sshd", version = "0.1.0" }
 tls = { path = "../../net/tls", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
 
 [lints]
 workspace = true

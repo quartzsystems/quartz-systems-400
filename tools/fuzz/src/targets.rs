@@ -88,11 +88,6 @@ fn rpg(data: &[u8]) {
     let _ = rpgfront::front(member, &mut rpgfront::NoIncludes, &opts);
 }
 
-fn sql(data: &[u8]) {
-    let t = text(data);
-    let _ = sql::parse_all(&t, sql::Naming::Sql);
-    let _ = sql::parse_all(&t, sql::Naming::Sys);
-}
 
 fn tn5250(data: &[u8]) {
     let _ = tn5250::ds::parse::parse(data);
@@ -286,10 +281,18 @@ pub const TARGETS: &[Target] = &[
     },
     Target {
         name: "sql",
-        what: "SQL statements",
-        run: sql,
-        seeds: &[b"SELECT A, COUNT(*) FROM T WHERE B > 1 GROUP BY A ORDER BY 2 FETCH FIRST 5 ROWS ONLY"],
-        dict: &[b"SELECT ", b" FROM ", b" WHERE ", b" JOIN ", b"(", b")", b"'", b"CASE WHEN ", b" UNION ", b"MERGE INTO "],
+        what: "SQL statements, SQL PL bodies and SQL/JSON paths, parsed",
+        run: crate::sql::parse,
+        seeds: crate::sql::SEEDS,
+        dict: crate::sql::DICT,
+        max_len: 4096,
+    },
+    Target {
+        name: "sqlrun",
+        what: "SQL statements run against a store in memory",
+        run: crate::sql::run,
+        seeds: crate::sql::SEEDS,
+        dict: crate::sql::DICT,
         max_len: 2048,
     },
     Target {
