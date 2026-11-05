@@ -18,13 +18,16 @@ use stg::remote::RemoteSql;
 
 use super::Console;
 
-/// Run `req` over `link`; a call it plans is made by `perform`. The
-/// reply, and the `OUT` and `INOUT` values by marker.
-pub fn run(link: &Shared, req: &Request, perform: impl FnOnce(&CallPlan) -> Outcome) -> (Reply, Vec<(usize, Value)>) {
+/// Run `req` over `link`; a call it plans is made by `perform`, and so
+/// is each trigger program the statement calls in its middle (answered
+/// at once, the statement going on). The reply, and the `OUT` and
+/// `INOUT` values by marker.
+pub fn run(link: &Shared, req: &Request, mut perform: impl FnMut(&CallPlan) -> Outcome) -> (Reply, Vec<(usize, Value)>) {
     let mut req = req.clone();
     req.desc.calls = true;
     let mut sql = RemoteSql::new(link.clone());
     let reply = sql.run(&req);
+    let reply = answered(&mut sql, &req.scope, reply, &mut perform);
     let Some(plan) = reply.call.as_deref() else { return (reply, Vec::new()) };
     let out = perform(plan);
     let called = Request {
@@ -33,8 +36,24 @@ pub fn run(link: &Shared, req: &Request, perform: impl FnOnce(&CallPlan) -> Outc
         inputs: out.called.inputs(),
     };
     let r = sql.run(&called);
+    let r = answered(&mut sql, &req.scope, r, &mut perform);
     let outs = if r.sqlca.is_error() { Vec::new() } else { out.outs };
     (r, outs)
+}
+
+/// The calls a statement makes in its middle, made and answered until
+/// its reply is its end (or a `CALL`'s plan).
+fn answered(sql: &mut RemoteSql, scope: &str, mut reply: Reply, perform: &mut impl FnMut(&CallPlan) -> Outcome) -> Reply {
+    use sql::exec::routine::{CallStyle, midcall};
+    while let Some(plan) = reply.call.take_if(|p| p.style == CallStyle::Trigger) {
+        let answer = perform(&plan).answer.unwrap_or_default();
+        reply = sql.run(&Request {
+            scope: scope.to_string(),
+            desc: Desc { op: Op::Called, name: midcall::ANSWER.into(), ..Desc::default() },
+            inputs: answer,
+        });
+    }
+    reply
 }
 
 /// Make `plan`'s call in the console's job, as the profile it runs as

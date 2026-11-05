@@ -27,6 +27,19 @@ pub struct Outcome {
     /// The values for the statement's `OUT` and `INOUT` markers: the
     /// marker and its value.
     pub outs: Vec<(usize, Value)>,
+    /// For a call in the middle of a statement (a trigger program, plan
+    /// style `Trigger`): the answer that resumes it ([`answer`]).
+    pub answer: Option<Vec<Value>>,
+}
+
+/// Make a call a statement asked for in its middle and answer it: the
+/// statement goes on (`midcall::ANSWER`). `None` for a `CALL`'s plan.
+pub fn answer(job: &mut mi::Job, plan: &CallPlan) -> Option<Outcome> {
+    (plan.style == CallStyle::Trigger).then(|| Outcome {
+        called: Called::default(),
+        outs: Vec::new(),
+        answer: Some(mi::io::trigger::answer_plan(job, plan)),
+    })
 }
 
 fn varchar(s: &str, cap: usize) -> Vec<u8> {
@@ -46,6 +59,9 @@ fn read_varchar(b: &[u8]) -> String {
 /// Make the call the plan describes.
 #[allow(clippy::too_many_lines)] // the styles in order
 pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
+    if let Some(a) = answer(job, plan) {
+        return a;
+    }
     let n = plan.parms.len();
     let mut called = Called {
         seq: plan.seq,
@@ -61,7 +77,7 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
         called.sqlcode = -84;
         called.sqlstate = "42612".into();
         called.message = format!("CALL of service program procedure {}/{}({}): not supported", plan.library, plan.program, plan.entry);
-        return Outcome { called, outs: Vec::new() };
+        return Outcome { called, outs: Vec::new(), answer: None };
     }
     let mut bufs: Vec<Vec<u8>> = Vec::with_capacity(n);
     let mut inds: Vec<i16> = Vec::with_capacity(n);
@@ -76,7 +92,7 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
                     called.sqlcode = code;
                     called.sqlstate = state.into();
                     called.message = "an argument does not fit its parameter".into();
-                    return Outcome { called, outs: Vec::new() };
+                    return Outcome { called, outs: Vec::new(), answer: None };
                 }
             }
         };
@@ -113,14 +129,14 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
         called.sqlcode = -204;
         called.sqlstate = "42704".into();
         called.message = format!("program {}/{} could not be called: {}", plan.library, plan.program, c.msgid());
-        return Outcome { called, outs: Vec::new() };
+        return Outcome { called, outs: Vec::new(), answer: None };
     }
     if let Some(e) = job.clear() {
         // The program ended with an exception it did not handle.
         called.sqlcode = -443;
         called.sqlstate = "38501".into();
         called.message = format!("procedure {} ended with {}", plan.routine, e.msgid);
-        return Outcome { called, outs: Vec::new() };
+        return Outcome { called, outs: Vec::new(), answer: None };
     }
     match plan.style {
         CallStyle::SqlRoutine => {
@@ -156,7 +172,7 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
             outs.push((m, v));
         }
     }
-    Outcome { called, outs }
+    Outcome { called, outs, answer: None }
 }
 
 /// Run one statement for a requester in the job that has no host
