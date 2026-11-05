@@ -2809,7 +2809,6 @@ lic/slic/src/stgsvc/jobqs.rs	{} job(s) removed from job queue {}.\n
 lic/slic/src/stgsvc/jobs.rs	CPF1070 job {job} not found
 lic/slic/src/stgsvc/jobs.rs	CPF1070 job {job} not found
 lic/slic/src/stgsvc/jobs.rs	CPF1070 job {number:06} not found
-lic/slic/src/stgsvc/jobs.rs	Job temporary library
 lic/slic/src/stgsvc/jobs.rs	Last job number
 lic/slic/src/stgsvc/jobs.rs	QIPLSTS of the next IPL
 lic/slic/src/stgsvc/jobs.rs	every job number is in use
@@ -2817,7 +2816,6 @@ lic/slic/src/stgsvc/jobs.rs	object store not initialized
 lic/slic/src/stgsvc/jobs.rs	object store not initialized
 lic/slic/src/stgsvc/jobs.rs	object store not open
 lic/slic/src/stgsvc/jobs.rs	object store not open
-lic/slic/src/stgsvc/jobs.rs	the temporary ASP is not open
 lic/slic/src/stgsvc/jobscd.rs	CPD0084 ENTRYNBR({n}) is not valid
 lic/slic/src/stgsvc/jobscd.rs	CPF1629 job schedule {lib}/{name}: {e}
 lic/slic/src/stgsvc/jobscd.rs	Job schedule entry {job} number {:06} changed.\n
