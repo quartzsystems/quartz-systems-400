@@ -676,3 +676,34 @@ fn decfloat_from_doubles() {
     assert_eq!(db.one("SELECT CHAR(DECFLOAT(1) + CAST(0.1 AS REAL)) FROM QSTEST/DD WHERE K = 3"), "1.100000001490116119384765625");
     assert_eq!(db.one("SELECT CHAR(DECFLOAT(1.0E0) * 3) FROM QSTEST/DD WHERE K = 3"), "3");
 }
+
+#[test]
+fn column_ccsids() {
+    // The primary's answers (tools/conformance/sql/cases/types/LOB1.sql); its
+    // SYSCOLUMNS spells VARGRAPHIC as VARG (the catalog's, not ours yet).
+    let mut db = Db::new();
+    let code = |db: &mut Db, s: &str| db.run_with(s, &[]).map_or_else(|e| e.sqlcode(), |_| 0);
+    assert_eq!(code(&mut db, "CREATE TABLE QSTEST/C1 (G GRAPHIC(3) CCSID 37)"), -189);
+    assert_eq!(code(&mut db, "CREATE TABLE QSTEST/C1 (G CHAR(3) CCSID 1200)"), -189);
+    assert_eq!(code(&mut db, "CREATE TABLE QSTEST/C1 (H VARCHAR(3) FOR MIXED DATA)"), -604);
+    assert_eq!(code(&mut db, "CREATE TABLE QSTEST/C1 (J CLOB(5) FOR BIT DATA)"), -683);
+    for t in ["CHAR(3) CCSID 500", "VARCHAR(5) CCSID 65535", "NCHAR(2)", "NVARCHAR(4)", "NCLOB(10)", "VARGRAPHIC(4) CCSID 13488", "CHAR(3) FOR SBCS DATA"] {
+        let r = db.run_with(&format!("CREATE TABLE QSTEST/C2 (X {t})"), &[]);
+        assert!(r.is_ok(), "{t}: {r:?}");
+        db.ok("DROP TABLE QSTEST/C2");
+    }
+    db.ok("CREATE TABLE QSTEST/C3 (A CHAR(3) CCSID 500, B VARCHAR(5) CCSID 65535, C NCHAR(2), D NVARCHAR(4), E NCLOB(10), F VARGRAPHIC(4) CCSID 13488)");
+    db.ok("INSERT INTO QSTEST/C3 VALUES ('abc', 'ab', 'éx', 'ünï', 'nclob', 'grap')");
+    assert_eq!(db.rows("SELECT A, HEX(B), C, D, E, F FROM QSTEST/C3")[0], ["abc", "8182", "éx", "ünï", "nclob", "grap"]);
+    assert_eq!(
+        db.rows("SELECT COLUMN_NAME, DATA_TYPE, LENGTH, CCSID FROM QSYS2.SYSCOLUMNS WHERE TABLE_NAME = 'C3' ORDER BY ORDINAL_POSITION"),
+        [
+            ["A", "CHAR", "3", "500"],
+            ["B", "VARCHAR", "5", "65535"],
+            ["C", "GRAPHIC", "2", "1200"],
+            ["D", "VARGRAPHIC", "4", "1200"],
+            ["E", "DBCLOB", "10", "1200"],
+            ["F", "VARGRAPHIC", "4", "13488"]
+        ]
+    );
+}

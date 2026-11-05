@@ -223,6 +223,7 @@ fn column_lines(c: &ColumnDef) -> Result<Vec<String>> {
 
 /// The DDS field line(s) of a column whose system name is `name`.
 pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> {
+    crate::exec::cast::check_column(&c.type_spec)?;
     if c.name.value.chars().count() > db::format::sections::ALIAS_MAX {
         return Err(SqlError::NameTooLong { name: c.name.value.clone(), max: db::format::sections::ALIAS_MAX });
     }

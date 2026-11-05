@@ -561,3 +561,17 @@ sev = 30
 text = "Locator &1 is not valid."
 help = "The LOB locator was never assigned, was freed, or ended with its unit of work. Use a locator the unit of work still holds."
 vars = ["*BIN 4"]
+
+[[msg]]
+id = "SQL0604"
+sev = 30
+text = "The length, precision, scale or data option of &1 is not valid."
+help = "A data type was given a length, precision or option it cannot have, for example FOR MIXED DATA where the CCSID has no mixed form. Correct the type."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0683"
+sev = 30
+text = "A clause is not valid for the data type of &1."
+help = "FOR BIT DATA, CCSID or another option was given to a type that does not take it, for example FOR BIT DATA on a CLOB. Remove the clause."
+vars = ["*CHAR 128"]

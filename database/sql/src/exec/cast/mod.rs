@@ -379,3 +379,18 @@ fn cast_date(s: &str) -> Option<db::record::datetime::Date> {
         .iter()
         .find_map(|f| db::record::datetime::Date::parse(t, *f))
 }
+
+/// `SQL0604` for `FOR MIXED DATA`: CCSID 37 has no mixed form.
+pub(crate) fn no_mixed() -> SqlError {
+    coded(-604, "42611", "FOR MIXED DATA needs a mixed CCSID; the job's CCSID 37 has none")
+}
+
+/// A column's type options: its CCSID (`SQL0189`), and `FOR BIT DATA`
+/// only on `CHAR` and `VARCHAR` (`SQL0683`).
+pub fn check_column(t: &TypeSpec) -> Result<()> {
+    check_ccsid(t)?;
+    if t.bit_data && !matches!(t.data_type, DataType::Char(_) | DataType::Varchar(_)) {
+        return Err(coded(-683, "42842", format!("FOR BIT DATA is not valid for {}", type_name(&t.data_type))));
+    }
+    Ok(())
+}

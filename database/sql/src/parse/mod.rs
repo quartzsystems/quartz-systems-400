@@ -479,9 +479,10 @@ impl Parser {
                     Some(u16::try_from(self.integer()?).map_err(|_| self.expected("a CCSID"))?);
             } else if self.eat_words(&["FOR", "BIT", "DATA"]) {
                 spec.bit_data = true;
-            } else if self.eat_words(&["FOR", "SBCS", "DATA"])
-                || self.eat_words(&["FOR", "MIXED", "DATA"])
-            {
+            } else if self.eat_words(&["FOR", "MIXED", "DATA"]) {
+                // The job's CCSID 37 has no mixed form (the primary: SQL0604).
+                return Err(crate::exec::cast::no_mixed());
+            } else if self.eat_words(&["FOR", "SBCS", "DATA"]) {
             } else {
                 return Ok(spec);
             }
