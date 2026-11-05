@@ -316,11 +316,12 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `OVERRIDE_QAQQINI` | partial: tuning options kept as no-ops; options that change results or messages refused SQL0084 unless `*DEFAULT` | none | `sql::services` |
 | `SET_SERVER_SBS_ROUTING`, `SET_PASE_SHELL_INFO` (SSH always starts QSH; no per-user shell is kept), `SYSTOOLS.LPRINTF`, `SYSTOOLS.GENERATE_SPREADSHEET` | refused SQL0084 | pub400 | |
 | `STRSQL`: saved sessions (SQL6102, SQL6335, SQL7971), F13 options 1 to 4 (session attributes reshaping as pub400's, printer file, remove entries, save to a source file), SELECT output to display, printer (`QPQUPRFIL` report) and file, display formats (edited numbers, every date and time format, `*COMMA`), F19/F20 at pub400's column widths, F4 then F12 | partial: output to a file supports options 1, 2, 4, 5; OUTMBR other than `*FILE`/`*FIRST` and OUTOPT(3) refused SQL0084; the driver has not yet run at a real console | pub400 | `isql --test services`, `isql::print`, `isql::format`, `isql::result`; `golden/sql/strsql/` |
-| `STRSQL` F4 prompts of `ALTER TABLE` through `SET TRANSACTION` (26 statements), the second `INSERT`, `UPDATE`, `CREATE INDEX` displays | captured from pub400, not built: F4 refused CPD9CD4 | pub400 | `golden/sql/prompts/` |
-| `CONNECT` and the connection statements in STRSQL | refused SQL0084 until STRSQL routes them through the DRDA client | none | |
+| `STRSQL` F4 prompts of `ALTER TABLE` through `SET TRANSACTION` (26 statements), the second `INSERT`, `UPDATE`, `CREATE INDEX` displays | supported as pub400 shows them; `ALTER TABLE`, `COMMENT ON`, `LABEL ON`, `RENAME`, `GRANT`/`REVOKE`, `CONNECT`, `RELEASE`/`DISCONNECT`, `CREATE PROCEDURE` build as far as their first display and leave the rest on the input lines; the column lists' other keys answer CPD6A60 | pub400 | `isql --test stmts` |
+| `CONNECT`, `SET CONNECTION`, `RELEASE`, `DISCONNECT` in STRSQL | supported through the DRDA client; other statements go to the current remote server; a query there refused SQL0084 (BLOCKED(sql): no column descriptions come back) | none | |
+| `DECPNT(*COMMA)` in STRSQL: a comma followed by a digit inside a number is the decimal point | supported; a second decimal point SQL0104 | pub400 | `sql::lex` |
 | Command prompts of `RUNSQL`, `RUNSQLSTM`, `CRTSQLRPGI`, `STRSQL` | supported: parameters, order, defaults and labels as pub400's | pub400 | `sys-cpps --test sql_prompts` |
-| Command prompts of `STRDBMON`, `ENDDBMON`, `PRTSQLINF`, `DLTSQLPKG` | captured; tests ignored until they are run against the merged definitions | pub400 | `sys-cpps --test sql_prompts` |
-| `RUNSQLSTM`, `RUNSQL` | partial: options checked (non-default `USRPRF`, `DYNUSRPRF`, `SAAFLAG`, `FLAGSTD` and values QS/400 cannot honour refused SQL0084; `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `SYSTIME`, `TGTRLS` without effect); a SELECT in RUNSQLSTM runs here where pub400 refuses it; not yet run end to end | pub400 | |
+| Command prompts of `STRDBMON`, `ENDDBMON` (7.5 definitions: `TYPE` default `*DETAIL`), `PRTSQLINF`, `DLTSQLPKG` | supported | pub400 | `sys-cpps --test sql_prompts` |
+| `RUNSQLSTM`, `RUNSQL` | partial: options checked (non-default `USRPRF`, `DYNUSRPRF`, `SAAFLAG`, `FLAGSTD` and values QS/400 cannot honour refused SQL0084; `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `SYSTIME`, `TGTRLS` without effect); a SELECT in RUNSQLSTM or RUNSQL refused SQL0084 (severity 30), as pub400; not yet run end to end | pub400 | |
 | `RUNSQLSTM OUTPUT(*PRINT)` listing | partial: pub400's layout (options page, numbered source, messages, summary); message positions always 1, CCSIDs shown as 37, no "source member changed" line | pub400 | `sql::listing` |
 | `CRTSQLRPGI` options | settings it does not apply refused SQL0084 (`RPGPPOPT`, `CONACC`, `DECFLTRND`, `SQLCURRULE`, `DECRESULT`, `SRTSEQ`, `DFTRDBCOL`, `DYNDFTCOL`, `SQLPATH`, `COMPILEOPT`, `DYNUSRPRF`, `SAAFLAG`, `FLAGSTD`), accepted and ignored before | none | |
 | SQLRPGLE precompiler (`CRTSQLRPGI`) | partial (Phase 9) | pub400 | |
@@ -337,7 +338,7 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `DLTSQLPKG` | supported | primary | `sys-cpps` |
 | `DSPSQLPKG` | not present: no such command on V7R1M0 either (CPD0030) | primary | |
 | `CRTSQLCI`, `CRTSQLCBLI` | not present | none | |
-| `STRDBMON`, `ENDDBMON` (output file of the primary's 276-column `QQQDBMN` format) | partial: record types 3018, 1000, 3000, 3001, 3003, 3010, 3014; programs, host servers, DDM and QAP monitored, STRSQL, RUNSQL and RUNSQLSTM not; `FTR*` filters, thresholds, `INCSYSSQL(*YES)`, `TYPE(*DETAIL)` refused CPF9898 | primary | `sql::dbmon` |
+| `STRDBMON`, `ENDDBMON` (output file of the primary's 276-column `QQQDBMN` format) | partial: record types 3018, 1000, 3000, 3001, 3003, 3010, 3014; programs, host servers, DDM and QAP monitored, STRSQL, RUNSQL and RUNSQLSTM not; `TYPE(*DETAIL)` writes the same records as `*SUMMARY` (no 3019); `FTR*` filters, `FTRSQLCODE`, `JOB` operator `*NE`, `HOSTVAR` other than `*BASIC`, thresholds, `INCSYSSQL(*YES)` refused CPF9898 | primary | `sql::dbmon` |
 | `CHGQRYA` | partial: `DEGREE`, `ASYNCJ`, `APYRMT` accepted without effect (hints); governor limits and `QRYOPTLIB` only at their defaults | primary | |
 | `PRTSQLINF` of `*PGM`/`*SRVPGM` | supported for programs `CRTSQLRPGI` makes from now on, laid out as pub400's; of `*SQLPKG` and `*JOB` refused SQL9011 (BLOCKED(sql)) | pub400 | `rpgc::prtsqlinf` |
 | `DSPFD`, `DSPDBR` of SQL tables, views, indexes; DSPDTAARA of a sequence; DSPPGM of an SQL procedure | supported (SQL file type, view statement, check option; views as dependents) | primary | `sql::sqldsp` |
@@ -364,7 +365,7 @@ in our own words); a function that checks nothing is listed in
 | Item | Status | Oracle | Test |
 |---|---|---|---|
 | Authority of `NEXT VALUE`/`PREVIOUS VALUE` (USAGE: `*CHANGE`), `ALTER TABLE`, `LABEL ON TRIGGER`, `DROP` and `REPLACE` of routines (`*OBJEXIST` on the program), `FOREIGN KEY` (`*OBJREF` on the parent), SQL packages, `ADDPFTRG`/`RMVPFTRG`/`CHGPFTRG`, `ADDPFCST`/`CHGPFCST`/`RMVPFCST`/`DSPCPCST`, `CPYF` by `MBROPT` and based-on files, `RGZPFM`, `APYJRNCHG`/`RMVJRNCHG` on the files they change | supported: SQL0551 or CPF2189 | none: no profile without authority can be made on the primary; IBM's documented requirements | `sql::dbauth` |
-| `*EXECUTE` on an SQL trigger's own program, `*OBJEXIST` on it for `DROP TRIGGER`, `*USE` on journal receivers for `APYJRNCHG`, `*USE` on `CRTPF` for `CPYF CRTFILE(*YES)` | not checked | none | |
+| `*EXECUTE` on an SQL trigger's program, `*OBJEXIST` on it for `DROP TRIGGER` and `CREATE OR REPLACE TRIGGER`, `*USE` on journal receivers for `APYJRNCHG`/`RMVJRNCHG`, `*USE` on `CRTPF` for `CPYF CRTFILE(*YES)` | supported | none | `sql::dbauth` |
 
 ## 10. Refused
 
