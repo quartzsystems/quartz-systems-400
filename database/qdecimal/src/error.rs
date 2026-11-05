@@ -66,6 +66,14 @@ pub enum DecimalError {
         what: &'static str,
     },
 
+    /// A decimal floating point result below the smallest exponent that
+    /// loses digits.
+    #[error("underflow: {what}")]
+    Underflow {
+        /// What underflowed.
+        what: &'static str,
+    },
+
     /// A decimal floating point result past the largest exponent.
     #[error("overflow: {what}")]
     Overflow {
@@ -94,6 +102,7 @@ impl DecimalError {
             | Self::NotFinite { .. }
             | Self::Invalid { .. }
             | Self::Overflow { .. }
+            | Self::Underflow { .. }
             | Self::Edit { .. } => return None,
         })
     }

@@ -136,11 +136,13 @@ fn arithmetic() {
     assert_eq!(s(mul(&d34("-Infinity"), &d34("2"))), "-Infinity");
     assert_eq!(s(add(&d34("NaN"), &d34("1"))), "NaN");
     assert_eq!(s(div(&d34("1"), &d34("Infinity"))), "0E-6176");
-    assert!(matches!(sub(&d34("Infinity"), &d34("Infinity")), Err(DecimalError::Invalid { .. })));
-    assert!(matches!(mul(&d34("0"), &d34("Infinity")), Err(DecimalError::Invalid { .. })));
+    // Invalid operations give NaN, as IBM i returns them.
+    assert_eq!(s(sub(&d34("Infinity"), &d34("Infinity"))), "NaN");
+    assert_eq!(s(mul(&d34("0"), &d34("Infinity"))), "NaN");
     assert!(matches!(add(&d34("sNaN"), &d34("1")), Err(DecimalError::Invalid { .. })));
     assert!(matches!(div(&d34("1"), &d34("0")), Err(DecimalError::DivideByZero)));
-    assert!(matches!(div(&d34("0"), &d34("0")), Err(DecimalError::Invalid { .. })));
+    assert!(matches!(div(&d34("0"), &d34("0")), Err(DecimalError::DivideByZero)));
+    assert!(matches!(div(&d16("1E-398"), &d16("10")), Err(DecimalError::Underflow { .. })));
     assert!(matches!(mul(&d16("9E+384"), &d16("10")), Err(DecimalError::Overflow { .. })));
 }
 
@@ -196,4 +198,77 @@ fn conversions() {
     assert_eq!(DecFloat::from_f64(0.1, DfFormat::D16).unwrap().to_string(), "0.1");
     assert_eq!(d34("1.2300").normalized().to_string(), "1.23");
     assert_eq!(d34("1.2E+40").to_format(DfFormat::D16).unwrap().to_string(), "1.2E+40");
+}
+
+#[test]
+fn rounding_modes() {
+    let q = |a: &str, b: &str, m: DfRounding| quantize(&d34(a), &d34(b), m).unwrap().to_string();
+    // The primary's QUANTIZE results under each mode.
+    assert_eq!(q("2.17", "0.001", DfRounding::HalfEven), "2.170");
+    assert_eq!(q("2.15", "0.1", DfRounding::HalfEven), "2.2");
+    assert_eq!(q("2.25", "0.1", DfRounding::HalfEven), "2.2");
+    assert_eq!(q("2.35", "0.1", DfRounding::HalfEven), "2.4");
+    assert_eq!(q("-0.1", "1", DfRounding::HalfEven), "-0");
+    assert_eq!(q("217", "1E+1", DfRounding::HalfEven), "2.2E+2");
+    assert_eq!(q("2.19", "0.1", DfRounding::Down), "2.1");
+    assert_eq!(q("2.25", "0.1", DfRounding::HalfUp), "2.3");
+    assert_eq!(q("-2.25", "0.1", DfRounding::HalfUp), "-2.3");
+    assert_eq!(q("2.25", "0.1", DfRounding::HalfDown), "2.2");
+    assert_eq!(q("2.26", "0.1", DfRounding::HalfDown), "2.3");
+    assert_eq!(q("2.21", "0.1", DfRounding::Up), "2.3");
+    assert_eq!(q("-2.21", "0.1", DfRounding::Up), "-2.3");
+    assert_eq!(q("Infinity", "1", DfRounding::HalfEven), "NaN");
+    assert_eq!(q("123456789012345678", "0.1", DfRounding::HalfEven), "123456789012345678.0");
+    assert_eq!(q("1E+40", "1", DfRounding::HalfEven), "NaN");
+    let d = |a: &str, m: DfRounding| div_in(&d16(a), &d16("3"), m).unwrap().to_string();
+    assert_eq!(d("2", DfRounding::Down), "0.6666666666666666");
+    assert_eq!(d("-2", DfRounding::Down), "-0.6666666666666666");
+    assert_eq!(d("2", DfRounding::Ceiling), "0.6666666666666667");
+    assert_eq!(d("-2", DfRounding::Ceiling), "-0.6666666666666666");
+    assert_eq!(d("2", DfRounding::Floor), "0.6666666666666666");
+    assert_eq!(d("-2", DfRounding::Floor), "-0.6666666666666667");
+    assert_eq!(DfRounding::parse("round_half_up"), Some(DfRounding::HalfUp));
+    assert_eq!(DfRounding::parse("ROUND_SIDEWAYS"), None);
+}
+
+#[test]
+fn compare_and_total_order() {
+    assert_eq!(compare_total(&d34("1"), &d34("2")), 1);
+    assert_eq!(compare_total(&d34("2.0"), &d34("2.00")), 2);
+    assert_eq!(compare_total(&d34("2.00"), &d34("2.0")), 1);
+    assert_eq!(compare_total(&d34("3"), &d34("2")), 2);
+    assert_eq!(compare_total(&d34("NaN"), &d34("2")), 3);
+    assert_eq!(compare_total(&d34("2"), &d34("2")), 0);
+    assert_eq!(d34("NaN").total_cmp(&d34("sNaN")), Ordering::Greater);
+    assert_eq!(d34("-NaN").total_cmp(&d34("-Infinity")), Ordering::Less);
+}
+
+#[test]
+fn exact_binary_values() {
+    let e = |f: f64, fmt: DfFormat| DecFloat::from_f64_exact(f, fmt, DfRounding::HalfEven).unwrap().to_string();
+    // The primary's values for these doubles in DECFLOAT(34).
+    assert_eq!(e(0.1, DfFormat::D34), "0.1000000000000000055511151231257827");
+    assert_eq!(e(1E-30, DfFormat::D34), "1.000000000000000083336420607585985E-30");
+    assert_eq!(e(1.0, DfFormat::D34), "1");
+    assert_eq!(e(1.5, DfFormat::D16), "1.5");
+    assert_eq!(e(1E10, DfFormat::D34), "1E+10");
+    assert_eq!(e(-0.0, DfFormat::D34), "-0");
+    assert_eq!(e(f64::INFINITY, DfFormat::D16), "Infinity");
+}
+
+#[test]
+fn encodings_match_the_primary() {
+    // HEX() of DECFLOAT columns on the primary (tools/conformance/sql/cases/types/DECFLT1.sql).
+    let h = |v: DecFloat| v.encode().iter().fold(String::new(), |mut s, b| {
+        use std::fmt::Write as _;
+        let _ = write!(s, "{b:02X}");
+        s
+    });
+    assert_eq!(h(d16("1.50")), "22300000000000D0");
+    assert_eq!(h(d16("Infinity")), "7800000000000000");
+    assert_eq!(h(d16("0")), "2238000000000000");
+    assert_eq!(h(d16("12345678901234567")), "263D34B9C1E28E57");
+    assert_eq!(h(d34("1.500")), "22074000000000000000000000000680");
+    assert_eq!(h(d34("-NaN")), "FC000000000000000000000000000000");
+    assert_eq!(h(d34("1.000000000000000083336420607585985E-30")), "25F840000000000000ADB688307B2E8F");
 }

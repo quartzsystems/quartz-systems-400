@@ -9,6 +9,12 @@
 
 mod arith;
 mod dpd;
+mod exact;
+mod mode;
+mod quantize;
+
+pub use mode::DfRounding;
+pub use quantize::{compare_total, quantize};
 
 use std::cmp::Ordering;
 use std::fmt;
@@ -184,14 +190,35 @@ impl DecFloat {
 
     /// The same value in another format, rounded when narrower.
     pub fn to_format(&self, format: DfFormat) -> Result<Self> {
+        self.to_format_in(format, DfRounding::HalfEven)
+    }
+
+    /// The same value in another format, rounded in `mode` when narrower.
+    pub fn to_format_in(&self, format: DfFormat, mode: DfRounding) -> Result<Self> {
         if !self.is_finite() {
             return Ok(Self { format, ..*self });
         }
-        Self::round(self.neg, &digits::from_u128(self.coeff), self.exp, format)
+        Self::round_in(self.neg, &digits::from_u128(self.coeff), self.exp, format, mode)
     }
 
     /// Round `mag * 10^exp` to the format, half-even; clamp the exponent.
     pub(crate) fn round(neg: bool, mag: &[u8], exp: i32, format: DfFormat) -> Result<Self> {
+        Self::round_in(neg, mag, exp, format, DfRounding::HalfEven)
+    }
+
+    /// Round `mag * 10^exp` to the format in `mode`; clamp the exponent.
+    /// A result below the normal range that loses digits underflows.
+    pub(crate) fn round_in(neg: bool, mag: &[u8], exp: i32, format: DfFormat, mode: DfRounding) -> Result<Self> {
+        Self::round_impl(neg, mag, exp, format, mode, false)
+    }
+
+    /// As [`Self::round_in`], for an arithmetic result: one that loses
+    /// digits below the smallest exponent underflows, as IBM i reports it.
+    pub(crate) fn round_arith(neg: bool, mag: &[u8], exp: i32, format: DfFormat, mode: DfRounding) -> Result<Self> {
+        Self::round_impl(neg, mag, exp, format, mode, true)
+    }
+
+    fn round_impl(neg: bool, mag: &[u8], exp: i32, format: DfFormat, mode: DfRounding, strict: bool) -> Result<Self> {
         let mut mag: Digits = mag.to_vec();
         digits::trim(&mut mag);
         let mut exp = exp;
@@ -199,15 +226,20 @@ impl DecFloat {
         // Too many digits, or below the smallest exponent: drop some.
         let len = i32::try_from(mag.len()).expect("small");
         let mut drop = (len - format.p()).max(0);
+        let mut tiny = false;
         if exp + drop < format.etiny() {
             drop = format.etiny() - exp;
+            tiny = true;
         }
         if drop > 0 {
             let n = usize::try_from(drop).expect("positive");
             let (kept, dropped) = digits::shr(&mag, n);
             mag = kept;
             exp += drop;
-            if round_up(&mag, &dropped) {
+            if strict && tiny && dropped.iter().any(|d| *d != 0) {
+                return Err(DecimalError::Underflow { what: "a DECFLOAT result is below its smallest exponent" });
+            }
+            if mode.rounds_up(neg, mag.first().copied().unwrap_or(0), &dropped) {
                 mag = digits::add_one(&mag);
                 if mag.len() > p {
                     mag = digits::shr(&mag, 1).0;
@@ -232,7 +264,12 @@ impl DecFloat {
 
     /// From a decimal, rounded when it has more digits than the format.
     pub fn from_decimal(d: &Decimal, format: DfFormat) -> Result<Self> {
-        Self::round(d.is_negative(), d.digits_le(), -i32::from(d.scale()), format)
+        Self::from_decimal_in(d, format, DfRounding::HalfEven)
+    }
+
+    /// From a decimal, rounded in `mode`.
+    pub fn from_decimal_in(d: &Decimal, format: DfFormat, mode: DfRounding) -> Result<Self> {
+        Self::round_in(d.is_negative(), d.digits_le(), -i32::from(d.scale()), format, mode)
     }
 
     /// From an integer.
@@ -324,6 +361,11 @@ impl DecFloat {
     /// Parse `[+-]digits[.digits][E[+-]n]`, `Infinity`, `Inf`, `NaN` or
     /// `sNaN` (any case), rounded to the format.
     pub fn parse(text: &str, format: DfFormat) -> Result<Self> {
+        Self::parse_in(text, format, DfRounding::HalfEven)
+    }
+
+    /// Parse as [`Self::parse`], rounded in `mode`.
+    pub fn parse_in(text: &str, format: DfFormat, mode: DfRounding) -> Result<Self> {
         let bad = || DecimalError::Parse { text: text.to_string() };
         let s = text.trim();
         let (neg, s) = match s.strip_prefix('-') {
@@ -351,7 +393,7 @@ impl DecFloat {
         let exp = e - i64::try_from(frac.len()).map_err(|_| bad())?;
         // Far past any format: zero clamps, anything else overflows or underflows.
         let exp = i32::try_from(exp.clamp(-100_000, 100_000)).expect("clamped");
-        Self::round(neg, &mag, exp, format)
+        Self::round_in(neg, &mag, exp, format, mode)
     }
 
     /// Negated (the sign of a NaN too).
@@ -434,17 +476,6 @@ impl DecFloat {
             (true, true) => by_exp.reverse(),
             (false, false) => by_exp,
         }
-    }
-}
-
-/// Whether the dropped digits (high first at the end) round `kept` up,
-/// half-even.
-fn round_up(kept: &[u8], dropped: &[u8]) -> bool {
-    let Some((&first, rest)) = dropped.split_last() else { return false };
-    match first.cmp(&5) {
-        Ordering::Less => false,
-        Ordering::Greater => true,
-        Ordering::Equal => rest.iter().any(|d| *d != 0) || kept.first().is_some_and(|d| d % 2 == 1),
     }
 }
 
@@ -533,7 +564,7 @@ impl fmt::Display for DecFloat {
     }
 }
 
-pub use arith::{add, div, mul, sub};
+pub use arith::{add, add_in, div, div_in, mul, mul_in, sub, sub_in};
 
 #[cfg(test)]
 mod tests;

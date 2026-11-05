@@ -2,13 +2,14 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Addition, subtraction, multiplication and division, each rounded
-//! half-even to the wider operand's format. A NaN operand gives NaN; a
-//! signaling NaN, `Infinity - Infinity`, `0 * Infinity`, `0 / 0` and
-//! `Infinity / Infinity` are invalid operations; a nonzero over zero is
-//! division by zero.
+//! Addition, subtraction, multiplication and division, each rounded to
+//! the wider operand's format in a rounding mode (half-even for the
+//! plain forms). A NaN operand gives NaN; a signaling NaN is an invalid
+//! operation; `Infinity - Infinity`, `0 * Infinity` and `Infinity /
+//! Infinity` give NaN, as IBM i returns them; anything over zero (`0 /
+//! 0` too) is division by zero.
 
-use super::{DecFloat, DfFormat, DfKind, invalid};
+use super::{DecFloat, DfFormat, DfKind, DfRounding, invalid};
 use crate::decimal::digits::{self, Digits};
 use crate::error::{DecimalError, Result};
 
@@ -33,14 +34,38 @@ fn top(m: &Digits, e: i32) -> i32 {
     e + i32::try_from(m.len()).expect("small")
 }
 
-/// `a + b`.
+fn nan(format: DfFormat) -> DecFloat {
+    DecFloat::special(DfKind::NaN, false, format)
+}
+
+/// `a + b`, half-even.
 pub fn add(a: &DecFloat, b: &DecFloat) -> Result<DecFloat> {
+    add_in(a, b, DfRounding::HalfEven)
+}
+
+/// `a - b`, half-even.
+pub fn sub(a: &DecFloat, b: &DecFloat) -> Result<DecFloat> {
+    sub_in(a, b, DfRounding::HalfEven)
+}
+
+/// `a * b`, half-even.
+pub fn mul(a: &DecFloat, b: &DecFloat) -> Result<DecFloat> {
+    mul_in(a, b, DfRounding::HalfEven)
+}
+
+/// `a / b`, half-even.
+pub fn div(a: &DecFloat, b: &DecFloat) -> Result<DecFloat> {
+    div_in(a, b, DfRounding::HalfEven)
+}
+
+/// `a + b` in `mode`.
+pub fn add_in(a: &DecFloat, b: &DecFloat, mode: DfRounding) -> Result<DecFloat> {
     let format = a.format.max(b.format);
     if let Some(n) = nans(a, b, format)? {
         return Ok(n);
     }
     match (a.kind, b.kind) {
-        (DfKind::Infinity, DfKind::Infinity) if a.neg != b.neg => return Err(invalid("Infinity - Infinity")),
+        (DfKind::Infinity, DfKind::Infinity) if a.neg != b.neg => return Ok(nan(format)),
         (DfKind::Infinity, _) => return Ok(DecFloat { format, ..*a }),
         (_, DfKind::Infinity) => return Ok(DecFloat { format, ..*b }),
         _ => {}
@@ -67,24 +92,25 @@ pub fn add(a: &DecFloat, b: &DecFloat) -> Result<DecFloat> {
         match digits::cmp(&wa, &wb) {
             std::cmp::Ordering::Less => (b.neg, digits::sub(&wb, &wa)),
             std::cmp::Ordering::Greater => (a.neg, digits::sub(&wa, &wb)),
-            // An exact zero is positive, unless both were negative.
-            std::cmp::Ordering::Equal => (false, Vec::new()),
+            // An exact zero is positive, unless both were negative (or
+            // the mode rounds towards negative infinity).
+            std::cmp::Ordering::Equal => (mode == DfRounding::Floor, Vec::new()),
         }
     };
-    let neg = if sum.is_empty() { a.neg && b.neg } else { neg };
-    DecFloat::round(neg, &sum, e, format)
+    let neg = if sum.is_empty() { (a.neg && b.neg) || neg } else { neg };
+    DecFloat::round_arith(neg, &sum, e, format, mode)
 }
 
-/// `a - b`.
-pub fn sub(a: &DecFloat, b: &DecFloat) -> Result<DecFloat> {
+/// `a - b` in `mode`.
+pub fn sub_in(a: &DecFloat, b: &DecFloat, mode: DfRounding) -> Result<DecFloat> {
     if b.kind == DfKind::NaN || b.kind == DfKind::SNaN {
-        return add(a, b);
+        return add_in(a, b, mode);
     }
-    add(a, &b.negated())
+    add_in(a, &b.negated(), mode)
 }
 
-/// `a * b`.
-pub fn mul(a: &DecFloat, b: &DecFloat) -> Result<DecFloat> {
+/// `a * b` in `mode`.
+pub fn mul_in(a: &DecFloat, b: &DecFloat, mode: DfRounding) -> Result<DecFloat> {
     let format = a.format.max(b.format);
     if let Some(n) = nans(a, b, format)? {
         return Ok(n);
@@ -92,33 +118,33 @@ pub fn mul(a: &DecFloat, b: &DecFloat) -> Result<DecFloat> {
     let neg = a.neg != b.neg;
     if a.kind == DfKind::Infinity || b.kind == DfKind::Infinity {
         if a.is_zero() || b.is_zero() {
-            return Err(invalid("0 * Infinity"));
+            return Ok(nan(format));
         }
         return Ok(DecFloat::special(DfKind::Infinity, neg, format));
     }
-    DecFloat::round(neg, &digits::mul(&mag(a), &mag(b)), a.exp + b.exp, format)
+    DecFloat::round_arith(neg, &digits::mul(&mag(a), &mag(b)), a.exp + b.exp, format, mode)
 }
 
-/// `a / b`.
-pub fn div(a: &DecFloat, b: &DecFloat) -> Result<DecFloat> {
+/// `a / b` in `mode`.
+pub fn div_in(a: &DecFloat, b: &DecFloat, mode: DfRounding) -> Result<DecFloat> {
     let format = a.format.max(b.format);
     if let Some(n) = nans(a, b, format)? {
         return Ok(n);
     }
     let neg = a.neg != b.neg;
     match (a.kind, b.kind) {
-        (DfKind::Infinity, DfKind::Infinity) => return Err(invalid("Infinity / Infinity")),
+        (DfKind::Infinity, DfKind::Infinity) => return Ok(nan(format)),
         (DfKind::Infinity, _) => return Ok(DecFloat::special(DfKind::Infinity, neg, format)),
         // A number over infinity is zero at the smallest exponent.
-        (_, DfKind::Infinity) => return DecFloat::round(neg, &[], format.etiny(), format),
+        (_, DfKind::Infinity) => return DecFloat::round_in(neg, &[], format.etiny(), format, mode),
         _ => {}
     }
     if b.is_zero() {
-        return if a.is_zero() { Err(invalid("0 / 0")) } else { Err(DecimalError::DivideByZero) };
+        return Err(DecimalError::DivideByZero);
     }
     let ideal = a.exp - b.exp;
     if a.is_zero() {
-        return DecFloat::round(neg, &[], ideal, format);
+        return DecFloat::round_in(neg, &[], ideal, format, mode);
     }
     let (ma, mb) = (mag(a), mag(b));
     // Enough quotient digits for the rounding digit and a sticky one.
@@ -137,5 +163,5 @@ pub fn div(a: &DecFloat, b: &DecFloat) -> Result<DecFloat> {
         quot[0] = 1;
         exp -= 1;
     }
-    DecFloat::round(neg, &quot, exp, format)
+    DecFloat::round_arith(neg, &quot, exp, format, mode)
 }

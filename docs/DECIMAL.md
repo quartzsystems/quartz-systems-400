@@ -222,7 +222,12 @@ Trailing zeros are kept: `1.0` and `1.00` are equal but are different
 values and print differently.
 
 - **Rounding** is half-even, IBM i's default `DECFLOAT` rounding mode,
-  to the format's digits. Below the smallest exponent digits are dropped
+  or a mode of `CURRENT DECFLOAT ROUNDING MODE` (`DfRounding`:
+  `ROUND_HALF_EVEN`, `ROUND_HALF_UP`, `ROUND_HALF_DOWN`, `ROUND_DOWN`,
+  `ROUND_UP`, `ROUND_CEILING`, `ROUND_FLOOR`; the `_in` functions take
+  one), to the format's digits. An arithmetic result below the smallest
+  exponent that loses digits is `Underflow` (the primary's SQL0802 type
+  3); parsing and conversion round it quietly. Below the smallest exponent digits are dropped
   the same way (subnormals, then zero). A result past the largest
   exponent is padded with zeros when the coefficient has room (the
   clamp), else it overflows.
@@ -230,9 +235,10 @@ values and print differently.
   operand's format. The exact result's exponent is the smaller operand
   exponent for addition and subtraction, their sum for multiplication
   and as near `a - b` as the digits allow for division. A NaN operand
-  gives that NaN; an `sNaN` operand, `Infinity - Infinity`,
-  `0 * Infinity`, `0 / 0` and `Infinity / Infinity` are invalid
-  operations (`Invalid`); a nonzero number over zero is `DivideByZero`;
+  gives that NaN; an `sNaN` operand is an invalid operation (`Invalid`,
+  the primary's SQ20365); `Infinity - Infinity`, `0 * Infinity` and
+  `Infinity / Infinity` give NaN, as the primary returns them; anything
+  over zero, `0 / 0` too, is `DivideByZero`;
   overflow is `Overflow`. An exact zero sum is positive unless both
   operands were negative.
 - **Comparison** (`sql_cmp`) is SQL's: `-NaN < -sNaN < -Infinity <
@@ -251,7 +257,16 @@ values and print differently.
   `0E+3`, `0.00` and `-0` stay as they are.
 - **From binary floats** (`from_f64`, `from_f32`): the float's shortest
   digits. A float has no exponent of its own, so a whole number takes
-  exponent 0 when its digits fit the format (`100`, not `1E+2`).
+  exponent 0 when its digits fit the format (`100`, not `1E+2`). SQL
+  uses `from_f64_exact`, as the primary converts a double: every digit
+  of its binary value, rounded to the format in the current mode, then
+  normalized (`0.1E0` is `0.1000000000000000055511151231257827`, `1E10`
+  is `1E+10`).
+- **QUANTIZE** (`quantize`) gives the first operand the second's
+  exponent, rounded in the mode; a coefficient too long for the format,
+  or infinity beside a number, is NaN. `compare_total` is
+  `COMPARE_DECFLOAT`: 0 equal, 1 less, 2 greater in the total order (so
+  `2.0 > 2.00`), 3 with a NaN.
 - **Encoding** is the IEEE interchange format with a densely packed
   decimal coefficient, as IBM i stores it, big-endian: the sign bit, a
   5-bit combination field (the exponent's two high bits and the first
