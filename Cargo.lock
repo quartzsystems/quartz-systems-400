@@ -3413,6 +3413,7 @@ dependencies = [
  "store",
  "thiserror",
  "tracing",
+ "wm",
 ]
 
 [[package]]
