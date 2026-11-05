@@ -789,18 +789,11 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             id::ROLLBACK => Some(self.transaction(&r, false)),
             id::SEND_RESULTS => Some(self.send_results(&r)),
             id::DELETE_RESULTS | id::TEST_CONNECTION => None,
+            id::END => return Outcome::close(),
             // BLOCKED(sql): LOB locators of the database server (RETRIEVE_LOB,
             // WRITE_LOB, FREE_LOB) and *SQLPKG packages are not kept; a driver
             // with extended dynamic support goes on without a package, as it
             // does when one fails.
-            id::RETRIEVE_LOB
-            | id::WRITE_LOB
-            | id::FREE_LOB
-            | id::CREATE_PACKAGE
-            | id::CLEAR_PACKAGE
-            | id::DELETE_PACKAGE
-            | id::RETURN_PACKAGE => Some(self.finish(&r, code(-84, "42612"), Vec::new())),
-            id::END => return Outcome::close(),
             _ => Some(self.finish(&r, code(-84, "42612"), Vec::new())),
         };
         match ans {
