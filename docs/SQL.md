@@ -347,6 +347,19 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `WRKPFCST`, `EDTCPCST` | supported: `QSDBCST` panels as 7.1 shows them (options 2, 4, 6; a sequence verifies a constraint in check pending again); F15, F16, F17, F22 and F11 not yet | primary (`verified/oracle71/audit/wrkpfcst`, `edtcpcst`) | `uim --test audit_panels` |
 | Query/400 (`WRKQRY`, `RUNQRY`, product QS00QU1) | not in this work: a follow-on product | | |
 
+## 9a. Authority
+
+Every SQL statement and database command checks the object authority IBM
+requires (`security/sec/required.toml` holds each requirement with IBM's
+in our own words); a function that checks nothing is listed in
+`security/sec/exempt.toml` with the caller that checked first, and
+`cargo test -p sec --test exempt` fails on any other.
+
+| Item | Status | Oracle | Test |
+|---|---|---|---|
+| Authority of `NEXT VALUE`/`PREVIOUS VALUE` (USAGE: `*CHANGE`), `ALTER TABLE`, `LABEL ON TRIGGER`, `DROP` and `REPLACE` of routines (`*OBJEXIST` on the program), `FOREIGN KEY` (`*OBJREF` on the parent), SQL packages, `ADDPFTRG`/`RMVPFTRG`/`CHGPFTRG`, `ADDPFCST`/`CHGPFCST`/`RMVPFCST`/`DSPCPCST`, `CPYF` by `MBROPT` and based-on files, `RGZPFM`, `APYJRNCHG`/`RMVJRNCHG` on the files they change | supported: SQL0551 or CPF2189 | none: no profile without authority can be made on the primary; IBM's documented requirements | `sql::dbauth` |
+| `*EXECUTE` on an SQL trigger's own program, `*OBJEXIST` on it for `DROP TRIGGER`, `*USE` on journal receivers for `APYJRNCHG`, `*USE` on `CRTPF` for `CPYF CRTFILE(*YES)` | not checked | none | |
+
 ## 10. Refused
 
 Every form the engine refuses, with its SQLCODE, is in the tables above
