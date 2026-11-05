@@ -230,6 +230,8 @@ pub struct SqlContext {
     pub(crate) loose_savepoints: Vec<(String, bool)>,
     /// The statement is an SQL procedure's: arrays may be used.
     pub arrays: bool,
+    /// The database monitor's view of the job.
+    pub dbmon: crate::dbmon::JobState,
 }
 
 /// See [`SqlContext::yielder`].
@@ -339,6 +341,7 @@ impl SqlContext {
             loose_savepoints: Vec::new(),
             ext_functions: routine::extfunc::State::default(),
             arrays: false,
+            dbmon: crate::dbmon::JobState::default(),
         }
     }
 

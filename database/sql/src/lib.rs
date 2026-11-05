@@ -11,6 +11,7 @@
 mod error;
 
 pub mod ast;
+pub mod dbmon;
 pub mod embed;
 pub mod exec;
 pub mod lex;

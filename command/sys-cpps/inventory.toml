@@ -558,6 +558,16 @@ note = "the FTP client: subcommands from the display, or from the file INPUT whe
 site = "job"
 note = "the FTP client under its long name"
 
+# --- the database monitor and query attributes (lic/slic/src/cpp/dbmoncmd.rs, database/sql/src/dbmon)
+[cmd.STRDBMON]
+note = "records in QAQQDBMN's layout; filters, thresholds, INCSYSSQL(*YES) and TYPE(*DETAIL) refused"
+
+[cmd.ENDDBMON]
+note = "writes what the monitor holds and the 3018 end record"
+
+[cmd.CHGQRYA]
+note = "DEGREE, ASYNCJ and APYRMT are hints without effect; the governors and QRYOPTLIB keep *SAME or *NOMAX"
+
 # --- DDM and DRDA (work/qsjob/src/command/ddm.rs, net/ddm)
 [cmd.ADDRDBDIRE]
 site = "job"

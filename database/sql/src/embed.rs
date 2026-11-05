@@ -956,6 +956,18 @@ pub fn may_yield(desc: &Desc) -> bool {
 
 impl Embedded for Session {
     fn run(&mut self, req: &Request) -> Reply {
+        let watched = crate::dbmon::begin(&mut self.ctx);
+        let started = (crate::dbmon::record::now(&self.ctx), std::time::Instant::now());
+        let r = self.run_watched(req);
+        if watched {
+            self.monitored(req, &r, started);
+        }
+        r
+    }
+}
+
+impl Session {
+    fn run_watched(&mut self, req: &Request) -> Reply {
         let kept = if may_yield(&req.desc) { None } else { self.ctx.yielder.take() };
         self.ctx.routine.can_call = req.desc.calls;
         self.ctx.routine.pending = None;
@@ -987,6 +999,68 @@ impl Embedded for Session {
             self.last_cmd = command_function(&req.desc);
         }
         r
+    }
+
+    /// Report a watched statement to the database monitor; write its
+    /// records when one holds enough.
+    fn monitored(&mut self, req: &Request, r: &Reply, (start, clock): (crate::value::Timestamp, std::time::Instant)) {
+        let d = &req.desc;
+        let prepared = |name: &str| self.scopes.get(&req.scope).and_then(|s| s.prepared.get(name)).cloned().unwrap_or_default();
+        let dyn_inputs = if req.inputs.is_empty() { &[][..] } else { &req.inputs[1..] };
+        let (op, text, inputs, dynamic): (&'static str, String, &[Value], bool) = match d.op {
+            Op::Query | Op::Exec => (crate::dbmon::record::operation(&d.text), d.text.clone(), &req.inputs, false),
+            Op::ExecImm => ("EI", Self::dynamic_text(req), dyn_inputs, true),
+            Op::Prepare => (if d.into { "PD" } else { "PR" }, Self::dynamic_text(req), &[], true),
+            Op::Execute => {
+                let t = prepared(&d.name);
+                (crate::dbmon::record::operation(&t), t, &req.inputs, true)
+            }
+            Op::Open => {
+                let t = if d.stmt.is_empty() { d.text.clone() } else { prepared(&d.stmt) };
+                ("OP", t, &req.inputs, !d.stmt.is_empty())
+            }
+            Op::Fetch => ("FE", format!("FETCH {}", d.name), &[], false),
+            Op::Close => ("CL", format!("CLOSE {}", d.name), &[], false),
+            Op::Describe => ("DE", format!("DESCRIBE {}", d.name), &[], false),
+            Op::Diag | Op::End | Op::Nothing | Op::Deallocate | Op::Called => {
+                self.ctx.dbmon.trace = None;
+                return;
+            }
+        };
+        let rows = matches!(op, "IN" | "UP" | "DL" | "MG").then(|| i64::from(r.sqlca.sqlerrd[2]));
+        let micros = u64::try_from(clock.elapsed().as_micros()).unwrap_or(u64::MAX);
+        let end = crate::dbmon::record::now(&self.ctx);
+        let o = crate::dbmon::Observed {
+            op,
+            text: &text,
+            cursor: if matches!(d.op, Op::Open | Op::Fetch | Op::Close) { &d.name } else { "" },
+            statement: if matches!(d.op, Op::Prepare | Op::Execute) { &d.name } else { &d.stmt },
+            start,
+            end,
+            micros,
+            sqlca: &r.sqlca,
+            rows,
+            inputs,
+            dynamic,
+        };
+        if crate::dbmon::finish(&mut self.ctx, &o) {
+            self.flush_monitors(false);
+        }
+    }
+
+    /// Write what the database monitors hold (all of it with `force`).
+    pub fn flush_monitors(&mut self, force: bool) {
+        let lender = &self.store;
+        if let Ok(mut txn) = store::txn::Txn::lent(Box::new(|| lender.store())) {
+            match crate::dbmon::flush(&mut txn, &mut self.ctx, force) {
+                Ok(()) => {
+                    if let Err(e) = txn.commit() {
+                        tracing::warn!("database monitor records not written: {e}");
+                    }
+                }
+                Err(e) => tracing::warn!("database monitor records not written: {e}"),
+            }
+        }
     }
 }
 

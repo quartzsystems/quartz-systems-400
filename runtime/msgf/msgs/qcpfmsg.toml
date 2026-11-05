@@ -8507,3 +8507,48 @@ sev = 50
 text = "Program &1 in &2 not found."
 help = "A trigger program the file names could not be found: it was deleted or renamed after the trigger was added. Restore the program, or remove the trigger (RMVPFTRG)."
 vars = ["*CHAR 10", "*CHAR 10"]
+
+# The database monitor (STRDBMON, ENDDBMON) and query attributes
+# (CHGQRYA). Data: the job as number/user/name, the monitor ID.
+
+[[msg]]
+id = "CPI436A"
+sev = 0
+text = "Monitor &2 now records the SQL of job &1."
+help = "The database monitor writes its records to the output file STRDBMON named. ENDDBMON ends it."
+vars = ["*CHAR 28", "*CHAR 10"]
+
+[[msg]]
+id = "CPF436C"
+sev = 40
+text = "A database monitor already records job &1."
+help = "A job has one monitor of its own at a time. End it with ENDDBMON before starting another."
+vars = ["*CHAR 28"]
+
+[[msg]]
+id = "CPF436D"
+sev = 40
+text = "No database monitor records job &1."
+help = "ENDDBMON ends a monitor STRDBMON started for the same job, or for every job when JOB(*ALL) is given."
+vars = ["*CHAR 28"]
+
+[[msg]]
+id = "CPF43A1"
+sev = 40
+text = "More than one database monitor records job &1."
+help = "Name the monitor to end with MONID, or give MONID(*ALL) to end them all."
+vars = ["*CHAR 28"]
+
+[[msg]]
+id = "CPF3061"
+sev = 40
+text = "Output file &2 does not have record format &1."
+help = "A file that receives monitor records must have the model file's record format. Name a new file, or one an earlier monitor made."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3064"
+sev = 40
+text = "Library &1 does not exist."
+help = "Name a library that exists, or create it first."
+vars = ["*CHAR 10"]

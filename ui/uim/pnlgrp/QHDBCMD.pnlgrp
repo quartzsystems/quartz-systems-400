@@ -1886,6 +1886,109 @@ work-with and display commands next to its name.
 :PD.Type up to 50 characters.
 :EPARML.
 :EHELP.
+:HELP NAME=CHGQRYA.Change Query Attributes (CHGQRYA)
+:P.Use the Change Query Attributes (CHGQRYA) command to change a job's
+query attributes.
+:EHELP.
+:HELP NAME='CHGQRYA/JOB'.Job name (JOB)
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:PARML.
+:EPARML.
+:P.Also accepted&colon. *.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.User&colon. the name can be qualified by it.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Number&colon. the name can be qualified by it.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 6 characters. The value must be from 000000 to 999999.
+:EPARML.
+:EHELP.
+:HELP NAME='CHGQRYA/QRYTIMLMT'.Query processing time limit (QRYTIMLMT)
+:P.The query processing time limit for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PK.*NOMAX:EPK.
+:PD.No limit.
+:PT.:PK.*SYSVAL:EPK.
+:PD.The value of the system value that holds the default.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 0 to 2147352578.
+:EPARML.
+:EHELP.
+:HELP NAME='CHGQRYA/DEGREE'.Parallel processing degree (DEGREE)
+:P.The parallel processing degree for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:PT.:PK.*OPTIMIZE:EPK.
+:PD.The system chooses the best way.
+:PT.:PK.*MAX:EPK.
+:PD.The largest value.
+:PT.:PK.*SYSVAL:EPK.
+:PD.The value of the system value that holds the default.
+:PT.:PK.*ANY:EPK.
+:PD.Any value matches.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *IO, *NBRTASKS.
+:EHELP.
+:HELP NAME='CHGQRYA/ASYNCJ'.Asynchronous job usage (ASYNCJ)
+:P.The asynchronous job usage for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PK.*LOCAL:EPK.
+:PD.This system.
+:PT.:PK.*ANY:EPK.
+:PD.Any value matches.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *DIST.
+:EHELP.
+:HELP NAME='CHGQRYA/APYRMT'.Apply CHGQRYA to remote (APYRMT)
+:P.The apply CHGQRYA to remote for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:EPARML.
+:EHELP.
+:HELP NAME='CHGQRYA/QRYOPTLIB'.Query options file library (QRYOPTLIB)
+:P.The query options file library for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CHGQRYA/QRYSTGLMT'.Query storage limit (QRYSTGLMT)
+:P.The query storage limit for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PK.*NOMAX:EPK.
+:PD.No limit.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 0 to 2147352578.
+:EPARML.
+:EHELP.
 :HELP NAME=CHGSRCPF.Change Source Physical File (CHGSRCPF)
 :P.Use the Change Source Physical File (CHGSRCPF) command to change a
 source physical file's attributes.
@@ -5926,6 +6029,59 @@ constraints in check pending and their verification.
 control; takes no parameters.
 :P.The command has no parameters.
 :EHELP.
+:HELP NAME=ENDDBMON.End Database Monitor (ENDDBMON)
+:P.Use the End Database Monitor (ENDDBMON) command to end a database
+monitor, writing what it holds.
+:EHELP.
+:HELP NAME='ENDDBMON/JOB'.Job name (JOB)
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:PARML.
+:EPARML.
+:P.Also accepted&colon. *.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.generic-name:EPV.
+:PD.Type a name of up to 10 characters, or a generic name&colon.
+characters that end with an asterisk (*) select every name that starts
+with them.
+:EPARML.
+:P.User&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.generic-name:EPV.
+:PD.Type a name of up to 10 characters, or a generic name&colon.
+characters that end with an asterisk (*) select every name that starts
+with them.
+:EPARML.
+:P.Number&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 6 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='ENDDBMON/MONID'.Monitor ID (MONID)
+:P.The monitor ID for this command.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='ENDDBMON/COMMENT'.Monitor comment (COMMENT)
+:P.The monitor comment for this command.
+:PARML.
+:PT.:PK DEF.*BLANK:EPK.
+:PD.Blanks&colon. no value.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 100 characters.
+:EPARML.
+:EHELP.
 :HELP NAME=INZPFM.Initialize Physical File Mbr (INZPFM)
 :P.Use the Initialize Physical File Mbr (INZPFM) command to initialize a
 physical file member with default or deleted records.
@@ -8420,6 +8576,266 @@ work-with and display commands next to its name.
 :PD.No text.
 :PT.:PV.character-value:EPV.
 :PD.Type up to 50 characters.
+:EPARML.
+:EHELP.
+:HELP NAME=STRDBMON.Start Database Monitor (STRDBMON)
+:P.Use the Start Database Monitor (STRDBMON) command to start the
+database monitor over a job or every job.
+:EHELP.
+:HELP NAME='STRDBMON/OUTFILE'.File to receive output (OUTFILE)
+:P.The database file that receives the output when OUTPUT(*OUTFILE) is
+given. The file is created with the system's model format when it does
+not exist.
+:P.A value is required.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/OUTMBR'.Output member options (OUTMBR)
+:P.The member of the output file that receives the records, and whether
+they replace the member's records or are added after them.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Member to receive output
+:PARML.
+:PT.:PK DEF.*FIRST:EPK.
+:PD.The first member of the file. A member with the file's name is added
+when the file has none.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:H4.Part 2&colon. Replace or add records
+:PARML.
+:PT.:PK DEF.*REPLACE:EPK.
+:PD.The member's records are cleared first.
+:PT.:PK.*ADD:EPK.
+:PD.The records are added after the member's records.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/JOB'.Job name (JOB)
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:PARML.
+:EPARML.
+:P.Also accepted&colon. *.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.generic-name:EPV.
+:PD.Type a name of up to 10 characters, or a generic name&colon.
+characters that end with an asterisk (*) select every name that starts
+with them.
+:EPARML.
+:P.User&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.generic-name:EPV.
+:PD.Type a name of up to 10 characters, or a generic name&colon.
+characters that end with an asterisk (*) select every name that starts
+with them.
+:EPARML.
+:P.Number&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 6 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/TYPE'.Type of records (TYPE)
+:P.The type of records for this command.
+:PARML.
+:PT.:PK DEF.*BASIC:EPK.
+:PD.Basic.
+:EPARML.
+:P.Also accepted&colon. *DETAIL, *SUMMARY.
+:EHELP.
+:HELP NAME='STRDBMON/FRCRCD'.Force record write (FRCRCD)
+:P.The force record write for this command.
+:PARML.
+:PT.:PK DEF.*CALC:EPK.
+:PD.The system calculates the value.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 0 to 32767.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/INLNBRRCD'.Initial number of records (INLNBRRCD)
+:P.The initial number of records for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 0 to 2147483646.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/RUNTHLD'.Run time threshold (RUNTHLD)
+:P.The run time threshold for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 0 to 2147483647.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/STGTHLD'.Storage threshold (STGTHLD)
+:P.The storage threshold for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 0 to 2147483647.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/INCSYSSQL'.Include system SQL (INCSYSSQL)
+:P.The include system SQL for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.No.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:EPARML.
+:P.Also accepted&colon. *INI.
+:EHELP.
+:HELP NAME='STRDBMON/FTRFILE'.Filter by query file (FTRFILE)
+:P.The filter by query file for this command.
+:P.Up to 10 values can be given.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:EPARML.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.generic-name:EPV.
+:PD.Type a name of up to 10 characters, or a generic name&colon.
+characters that end with an asterisk (*) select every name that starts
+with them.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/FTRUSER'.Filter by user profile (FTRUSER)
+:P.The filter by user profile for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*CURRENT:EPK.
+:PD.The current one.
+:PT.:PV.generic-name:EPV.
+:PD.Type a name of up to 10 characters, or a generic name&colon.
+characters that end with an asterisk (*) select every name that starts
+with them.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/FTRINTNETA'.Filter by internet address (FTRINTNETA)
+:P.The filter by internet address for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*LOCAL:EPK.
+:PD.This system.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 254 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/FTRLCLPORT'.Filter by port number (FTRLCLPORT)
+:P.The filter by port number for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 0 to 65535.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/FTRQRYGOVR'.Filter by query governor (FTRQRYGOVR)
+:P.The filter by query governor for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:EPARML.
+:P.Also accepted&colon. *COND.
+:EHELP.
+:HELP NAME='STRDBMON/FTRCLTACG'.Filter by accounting string (FTRCLTACG)
+:P.The filter by accounting string for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 128 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/FTRCLTAPP'.Filter by application name (FTRCLTAPP)
+:P.The filter by application name for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 128 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/FTRCLTPGM'.Filter by program name (FTRCLTPGM)
+:P.The filter by program name for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 128 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/FTRCLTUSR'.Filter by client user ID (FTRCLTUSR)
+:P.The filter by client user ID for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 128 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/FTRCLTWS'.Filter by work station (FTRCLTWS)
+:P.The filter by work station for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 128 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRDBMON/COMMENT'.Monitor comment (COMMENT)
+:P.The monitor comment for this command.
+:PARML.
+:PT.:PK DEF.*BLANK:EPK.
+:PD.Blanks&colon. no value.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 100 characters.
 :EPARML.
 :EHELP.
 :HELP NAME=STRSQL.Start SQL Interactive Session (STRSQL)

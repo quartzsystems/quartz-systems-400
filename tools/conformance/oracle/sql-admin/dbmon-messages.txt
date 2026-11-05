@@ -1,0 +1,64 @@
+# Message IDs of STRDBMON, ENDDBMON and CHGQRYA on the primary (V7R1M0), 2026-11-05, run
+# through the remote command server. Texts are IBM's and are not kept; only the IDs.
+>> cl STRDBMON OUTFILE(QSTEST/QS15M2) JOB(*)
+   ok
+   CPI436A
+>> cl STRDBMON OUTFILE(QSTEST/QS15M2) JOB(*)
+   failed
+   CPF436C
+>> cl STRDBMON OUTFILE(QSTEST/QS15M4) JOB(*)
+   failed
+   CPF436C
+>> cl ENDDBMON
+   ok
+>> cl ENDDBMON
+   failed
+   CPF436D
+>> cl STRDBMON OUTFILE(QSTEST/DBM1)
+   failed
+   CPF3061
+>> cl ENDDBMON
+   failed
+   CPF436D
+>> cl STRDBMON OUTFILE(QSTEST/QS15M3) OUTMBR(OTHER)
+   ok
+   CPI436A
+>> cl ENDDBMON
+   ok
+>> cl STRDBMON OUTFILE(QSTEST/QS15M3) OUTMBR(*FIRST *ADD) TYPE(*DETAIL) FRCRCD(5) INCSYSSQL(*YES)
+   ok
+   CPI436A
+>> cl ENDDBMON COMMENT('bye')
+   ok
+>> cl STRDBMON OUTFILE(QSTEST/QS15M5) JOB(*ALL)
+   ok
+   CPI436A
+>> cl STRDBMON OUTFILE(QSTEST/QS15M6) JOB(*ALL)
+   ok
+   CPI436A
+>> cl ENDDBMON JOB(*ALL)
+   failed
+   CPF43A1
+>> cl ENDDBMON JOB(*ALL)
+   failed
+   CPF43A1
+>> cl STRDBMON OUTFILE(NOSUCHLIB/X)
+   failed
+   CPF3064
+>> cl CHGQRYA QRYTIMLMT(10)
+   ok
+>> cl CHGQRYA DEGREE(*MAX) ASYNCJ(*ANY) APYRMT(*NO) QRYSTGLMT(100)
+   ok
+>> cl CHGQRYA QRYOPTLIB(QSTEST)
+   ok
+>> cl CHGQRYA QRYOPTLIB(NOSUCHLIB)
+   ok
+   CPI433C
+>> cl CHGQRYA JOB(123456/QUSER/NOSUCH) QRYTIMLMT(*NOMAX)
+   failed
+   CPF1321
+   ok count=0
+   ok count=0
+# The 3018 start record's QQ1000L (the command as the system expands it), first part:
+# STRDBMON  OUTFILE(QSTEST/QS15M3)  OUTMBR(OTHER *REPLACE)  JOB(*                         )  TYPE(*BASIC)  FRCRCD(0)  INLNBRRCD(*NONE) ...
+# OUTMBR(name) on a new file makes the member under that name; two JOB(*ALL) monitors may run at once.

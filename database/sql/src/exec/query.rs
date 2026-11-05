@@ -351,6 +351,8 @@ fn body(
                 charge.row(&p.out)?;
             }
             if !*all {
+                let n = all_rows.len() as u64;
+                ctx.dbmon.note(crate::dbmon::plan::PlanEvent::Sort { rows: n, reason: "F5" });
                 distinct(&mut charge, &mut all_rows)?;
             }
             if explain_only {
@@ -568,6 +570,9 @@ struct Candidate {
     /// A unique or primary key of the table's constraint tree: the
     /// constraint's number and the tree's key length.
     cst: Option<(u16, usize)>,
+    /// The path's file and member, and its constraint, as the database
+    /// monitor names them.
+    ix: (crate::dbmon::plan::TableName, Option<String>),
 }
 
 /// The paths over a table: its own and those of dependent logical files
@@ -595,6 +600,7 @@ fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
             keys: key_names(&t.format),
             label: format!("{}/{} own key", t.desc.library_name, t.desc.name()),
             cst: None,
+            ix: (table_name(t), None),
         });
     }
     if t.desc.attr.kind == FileKind::Logical {
@@ -615,6 +621,7 @@ fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
                 keys: key_names(&k.format),
                 label: format!("{}/{} constraint {}", t.desc.library_name, t.desc.name(), c.name),
                 cst: Some((k.number, a.key_len)),
+                ix: (table_name(t), Some(c.name.clone())),
             });
         }
     }
@@ -656,9 +663,47 @@ fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
             keys: key_names(fmt),
             label: format!("{}/{} ({})", lf.library_name, lf.name(), entry.name),
             cst: None,
+            ix: (
+                crate::dbmon::plan::TableName { lib: lf.library_name.to_string(), file: lf.name().to_string(), member: entry.name.to_string() },
+                None,
+            ),
         });
     }
     out
+}
+
+/// A table as the database monitor names it.
+fn table_name(t: &TableInfo) -> crate::dbmon::plan::TableName {
+    crate::dbmon::plan::TableName {
+        lib: t.desc.library_name.to_string(),
+        file: t.desc.name().to_string(),
+        member: t.member.name.to_string(),
+    }
+}
+
+/// Tell the database monitor how `t` is read.
+fn monitor_access(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &TableInfo, cands: &[Candidate], choice: Option<&Choice>, selection: bool) {
+    use crate::dbmon::plan::PlanEvent;
+    let rows = Member::open(txn, &t.desc, &t.member).map_or(0, |m| m.attr().record_count);
+    let position = ctx.dbmon.trace.as_ref().map_or(1, |p| p.iter().filter(|e| !matches!(e, PlanEvent::Sort { .. })).count() + 1);
+    let position = u32::try_from(position).unwrap_or(u32::MAX);
+    let e = match choice {
+        Some(ch) => {
+            let c = &cands[ch.cand];
+            let n = ch.eq.len() + usize::from(ch.lo.is_some() || ch.hi.is_some());
+            PlanEvent::Index {
+                table: table_name(t),
+                index: c.ix.0.clone(),
+                constraint: c.ix.1.clone(),
+                rows,
+                positioned: c.keys.iter().take(n).map(|(k, _)| k.clone()).collect(),
+                ordering: ch.ordered.is_some(),
+                position,
+            }
+        }
+        None => PlanEvent::Scan { table: table_name(t), rows, indexes: !cands.is_empty(), selection, position },
+    };
+    ctx.dbmon.note(e);
 }
 
 /// A predicate `col op value` with a value free of columns.
@@ -851,6 +896,9 @@ fn scan_table_in(
     let label = format!("{}/{} ({})", t.desc.library_name, t.desc.name(), scan.alias);
     // Reading a table needs what a read open needs: `*OBJOPR` and `*READ`.
     db::auth::check_open(txn, t.id, db::Usage::INPUT)?;
+    if !explain_only && ev.ctx.dbmon.trace.is_some() {
+        monitor_access(txn, ev.ctx, t, &cands, choice.as_ref(), !scan.preds.is_empty());
+    }
     if !explain_only {
         let mut objects = vec![t.id, t.member.object];
         if let Some(ch) = &choice {
@@ -1580,6 +1628,9 @@ fn select(
         distinct(&mut charge, &mut produced)?;
     }
     if !order_items.is_empty() && !ordered {
+        let joined = from_items.len() > 1 || sel.from.iter().any(|f| matches!(f, TableRef::Join { .. } | TableRef::JoinUsing { .. }));
+        let n = produced.len() as u64;
+        ev.ctx.dbmon.note(crate::dbmon::plan::PlanEvent::Sort { rows: n, reason: if joined { "F2" } else { "F7" } });
         order_rows(txn, ev.ctx, params, &out_schema, &mut produced, &order_items)?;
     }
     Ok((out_schema, produced))

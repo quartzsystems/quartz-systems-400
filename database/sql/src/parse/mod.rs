@@ -393,7 +393,9 @@ impl Parser {
             _ => 1,
         };
         self.expect_sym(")")?;
-        u32::try_from(n * unit)
+        // `2G` is the largest LOB, one byte short of 2 to the 31st.
+        let n = if n * unit == 1 << 31 { (1 << 31) - 1 } else { n * unit };
+        u32::try_from(n)
             .ok()
             .filter(|n| (1..=2_147_483_647).contains(n))
             .ok_or_else(|| self.expected("a LOB length of 1 to 2G"))

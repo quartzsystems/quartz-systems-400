@@ -616,6 +616,9 @@ pub fn sql_session<'c>(
         Session::with_ctx(Box::new(MainStore::new(Rc::clone(shared))), ctx)
     });
     s.ctx.names = names;
+    if s.ctx.dbmon.ident.is_none() {
+        s.ctx.dbmon.ident = Some(sql::dbmon::JobIdent { name: c.job.name.clone(), user: c.job.user.clone(), number: c.job.number });
+    }
     // The job's own thread can be asked to end a statement.
     if !c.thread {
         let flag = stg::sql_cancel_path(c.job.number);
@@ -1501,8 +1504,12 @@ impl Service for Served<'_> {
         };
         let shared = Rc::clone(&self.system.lent);
         let locks = self.system.locks.clone();
+        let sysname = sql::dbmon::watching(self.ctx.job.number).then(|| self.system.system_name());
         self.lent(|c| match sql_session(&shared, locks, c) {
             Ok(s) => {
+                if let Some(n) = sysname {
+                    s.ctx.dbmon.system = n;
+                }
                 let req = Request { scope, desc, inputs: inputs.iter().map(from_wire).collect() };
                 s.run(&req).to_wire()
             }
