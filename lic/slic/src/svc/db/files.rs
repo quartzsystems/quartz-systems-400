@@ -766,10 +766,12 @@ pub fn dspfd(system: &mut System, p: &Params) -> Result<String, String> {
         }
     };
     let (store, ctx) = db(system)?;
-    with_txn(store, |txn| {
+    let desc = with_txn(store, |txn| {
         let id = file_id(txn, ctx, &qual)?;
-        Ok(db::dsp::dspfd(txn, id).map_err(|e| db_err(&e))?.render(ty))
-    })
+        db::dsp::dspfd(txn, id).map_err(|e| db_err(&e))
+    })?;
+    // The constraint section's labels in the job's language.
+    Ok(desc.render_with(ty, &mut |id| crate::stgsvc::msgs::text(system, id, &[])))
 }
 
 /// `dspffd LIB/FILE`.

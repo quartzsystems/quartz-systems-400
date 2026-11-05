@@ -124,6 +124,10 @@ pub struct FileDescription {
     pub constraints: Vec<(crate::cst::Constraint, String)>,
 }
 
+/// The display's words: the text of a `QSTXTMSG` identifier in the
+/// job's language (the caller looks it up).
+pub type Words<'a> = dyn FnMut(&str) -> String + 'a;
+
 /// Describe the file.
 pub fn dspfd(txn: &mut Txn<'_>, file: ObjectId) -> Result<FileDescription> {
     crate::auth::check(txn, "file.describe", file)?;
@@ -201,9 +205,17 @@ impl FileDescription {
         }
     }
 
-    /// Render the sections `ty` asks for.
+    /// Render the sections `ty` asks for, the constraint section's labels
+    /// as their `QSTXTMSG` identifiers.
     #[must_use]
     pub fn render(&self, ty: FdType) -> String {
+        self.render_with(ty, &mut |id| id.to_string())
+    }
+
+    /// Render the sections `ty` asks for, the constraint section's labels
+    /// from `words` (the text of a `QSTXTMSG` identifier).
+    #[must_use]
+    pub fn render_with(&self, ty: FdType, words: &mut Words<'_>) -> String {
         let mut out = String::new();
         let want = |t: FdType| ty == FdType::All || ty == t;
         if want(FdType::BasAtr) {
@@ -228,36 +240,39 @@ impl FileDescription {
             self.members(&mut out, ty != FdType::MbrList);
         }
         if (ty == FdType::Cst || (ty == FdType::All && !self.constraints.is_empty())) && self.kind != FileKind::Logical {
-            self.cst(&mut out);
+            self.cst(&mut out, words);
         }
         out
     }
 
-    fn cst(&self, out: &mut String) {
-        out.push_str("Constraint description
-");
-        kv(out, "Number of constraints", self.constraints.len());
+    /// `TYPE(*CST)`: the constraints, labelled with `words`, which gives
+    /// the text of a `QSTXTMSG` identifier (`TXT0301` to `TXT0311`).
+    fn cst(&self, out: &mut String, words: &mut Words<'_>) {
+        let indented = |w: &mut Words<'_>, id: &str| format!("  {}", w(id));
+        out.push_str(&words("TXT0301"));
+        out.push('\n');
+        kv(out, &words("TXT0302"), self.constraints.len());
         for (c, parent) in &self.constraints {
-            kv(out, "Constraint", &c.name);
-            kv(out, "  Type", c.kind.word());
+            kv(out, &words("TXT0303"), &c.name);
+            kv(out, &indented(words, "TXT0304"), c.kind.word());
             let state = match (c.enabled, c.check_pending) {
                 (false, _) => "*DISABLED",
                 (true, true) => "*CHKPND",
                 (true, false) => "*ENABLED",
             };
-            kv(out, "  State", state);
+            kv(out, &indented(words, "TXT0305"), state);
             if !c.columns.is_empty() && c.kind != crate::cst::Kind::Check {
                 let keys: Vec<String> = c.columns.iter().map(ToString::to_string).collect();
-                kv(out, "  Key", keys.join(" "));
+                kv(out, &indented(words, "TXT0306"), keys.join(" "));
             }
             if c.kind == crate::cst::Kind::Referential {
-                kv(out, "  Parent file", parent);
-                kv(out, "  Parent key constraint", &c.other_name);
-                kv(out, "  Delete rule", c.delete_rule.word());
-                kv(out, "  Update rule", c.update_rule.word());
+                kv(out, &indented(words, "TXT0307"), parent);
+                kv(out, &indented(words, "TXT0308"), &c.other_name);
+                kv(out, &indented(words, "TXT0309"), c.delete_rule.word());
+                kv(out, &indented(words, "TXT0310"), c.update_rule.word());
             }
             if c.kind == crate::cst::Kind::Check {
-                kv(out, "  Check condition", &c.text);
+                kv(out, &indented(words, "TXT0311"), &c.text);
             }
         }
     }

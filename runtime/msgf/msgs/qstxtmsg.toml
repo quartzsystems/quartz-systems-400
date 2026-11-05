@@ -298,3 +298,68 @@ text = "No text for language feature &1 is shipped with this release."
 help = "INSLNG installs the languages whose text the system carries. Display the feature codes it knows in the INSLNG command help."
 vars = ["*CHAR 4"]
 
+
+# Display File Description (DSPFD TYPE(*CST)): the constraint section.
+
+[[msg]]
+id = "TXT0301"
+text = "Constraint description"
+help = "Text of the Display File Description report: the heading of the constraints of a physical file (TYPE(*CST))."
+
+[[msg]]
+id = "TXT0302"
+text = "Number of constraints"
+help = "Text of the Display File Description report: the label of how many constraints the file has."
+
+[[msg]]
+id = "TXT0303"
+text = "Constraint"
+help = "Text of the Display File Description report: the label of a constraint's name."
+
+[[msg]]
+id = "TXT0304"
+text = "Type"
+help = "Text of the Display File Description report: the label of a constraint's type (*UNQCST, *PRIKEY, *REFCST, *CHKCST)."
+
+[[msg]]
+id = "TXT0305"
+text = "State"
+help = "Text of the Display File Description report: the label of whether a constraint is enabled, disabled or in check pending."
+
+[[msg]]
+id = "TXT0306"
+text = "Key"
+help = "Text of the Display File Description report: the label of the fields of a unique, primary or foreign key."
+
+[[msg]]
+id = "TXT0307"
+text = "Parent file"
+help = "Text of the Display File Description report: the label of the file a referential constraint's foreign key refers to."
+
+[[msg]]
+id = "TXT0308"
+text = "Parent key constraint"
+help = "Text of the Display File Description report: the label of the unique or primary key of the parent file the foreign key matches."
+
+[[msg]]
+id = "TXT0309"
+text = "Delete rule"
+help = "Text of the Display File Description report: the label of what deleting a parent record does to its dependents."
+
+[[msg]]
+id = "TXT0310"
+text = "Update rule"
+help = "Text of the Display File Description report: the label of what changing a parent key does to its dependents."
+
+[[msg]]
+id = "TXT0311"
+text = "Check condition"
+help = "Text of the Display File Description report: the label of a check constraint's condition."
+
+# Display Check Pending Constraint (DSPCPCST).
+
+[[msg]]
+id = "TXT0312"
+text = "Records of file &2 that keep constraint &1 in check pending, by relative record number:"
+help = "Text of the Display Check Pending Constraint display: the heading over the relative record numbers of the records that break the constraint."
+vars = ["*CHAR 258", "*CHAR 10"]
