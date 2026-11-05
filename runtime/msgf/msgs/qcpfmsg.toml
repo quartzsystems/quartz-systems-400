@@ -8500,3 +8500,10 @@ sev = 30
 text = "Trigger program of file &1 ended in error."
 help = "The trigger program called for the change or read of a record of the file ended with an exception, could not be called, or cannot be called by this function. Messages before this one say why; the operation was not done when the trigger was a before trigger."
 vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF4160"
+sev = 50
+text = "Program &1 in &2 not found."
+help = "A trigger program the file names could not be found: it was deleted or renamed after the trigger was added. Restore the program, or remove the trigger (RMVPFTRG)."
+vars = ["*CHAR 10", "*CHAR 10"]
