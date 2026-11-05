@@ -49,7 +49,7 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
     let lines = s.h.typed();
     let check = s.attrs.syntax_only();
     let (text, r) = match decimal_point(host, s, &s.h.text()) {
-        Err(r) => (String::new(), r),
+        Err(r) => (String::new(), *r),
         Ok(text) if !check && let Some(r) = connection(host, s, &text) => (text, r),
         Ok(text) if !check && is_call(&text) => {
             let r = call(host, s, &text);
@@ -125,19 +125,19 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
 /// The statement as the service reads it: under `DECPNT(*COMMA)` each
 /// decimal comma a period (`sql::lex::decimal_comma`); the SQL0104 of a
 /// number written wrongly there.
-fn decimal_point(host: &Host, s: &Session, text: &str) -> Result<String, IsqlReply> {
+fn decimal_point(host: &Host, s: &Session, text: &str) -> Result<String, Box<IsqlReply>> {
     if s.attrs.format(&super::job_formats(host)).point != ',' {
         return Ok(text.to_string());
     }
     sql::lex::decimal_comma(text).map_err(|e| {
         let ca = sql::Sqlca::from_error(&e);
-        IsqlReply {
+        Box::new(IsqlReply {
             sqlcode: ca.sqlcode,
             sqlstate: ca.sqlstate,
             msgid: e.msgid(),
             text: ca.sqlerrmc,
             ..IsqlReply::default()
-        }
+        })
     })
 }
 
