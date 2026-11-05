@@ -30,6 +30,8 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
         return Err(err(-7008, "55019", format!("{} is not a table", stmt.name)));
     }
     let id = table.id;
+    // The ALTER privilege, before anything changes.
+    db::auth::check(txn, "file.change", id)?;
     // 1. Constraints dropped, by the statement or with the columns it drops.
     for act in &stmt.actions {
         match act {

@@ -477,6 +477,9 @@ fn no_program(lib: &str, pgm: &str) -> crate::sqlca::Warning {
 }
 
 pub(super) fn remove(txn: &mut Txn<'_>, ctx: &mut SqlContext, f: &Found) -> Result<()> {
+    // *OBJEXIST on the routine's program, before anything goes, even when
+    // the program stays (another routine's, or an external one).
+    db::auth::check(txn, "obj.delete", f.owner)?;
     if f.routine.def.routine_type == 2 {
         super::udf::forget(&f.routine.def.name, &f.schema, f.routine.def.parm_count.into());
     }

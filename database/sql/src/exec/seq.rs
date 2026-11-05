@@ -219,6 +219,7 @@ fn value_of(s: &Sequence, v: i128) -> Value {
 /// `NEXT VALUE FOR name`.
 pub fn next_value(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) -> Result<Value> {
     let (id, mut s) = resolve(txn, ctx, name)?;
+    db::auth::check(txn, "sequence.use", id).map_err(SqlError::from)?;
     if s.exhausted {
         return Err(err(-359, "23522", format!("sequence {} has no more values", name.name.value)));
     }
@@ -241,6 +242,7 @@ pub fn next_value(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) ->
 /// `PREVIOUS VALUE FOR name`: this job's last.
 pub fn previous_value(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) -> Result<Value> {
     let (id, _) = resolve(txn, ctx, name)?;
+    db::auth::check(txn, "sequence.use", id).map_err(SqlError::from)?;
     ctx.seq.previous.get(&id).cloned().ok_or_else(|| {
         err(-845, "51035", format!("NEXT VALUE has not been used for sequence {} in this job", name.name.value))
     })

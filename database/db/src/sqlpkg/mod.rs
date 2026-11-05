@@ -53,8 +53,10 @@ impl Package {
     }
 }
 
-/// Package `name` in `lib`, if there is one.
+/// Package `name` in `lib`, if there is one: `*EXECUTE` to the library
+/// first, as naming any object in it needs.
 pub fn find(txn: &mut Txn<'_>, lib: ObjectId, name: Name) -> Result<Option<ObjectId>> {
+    crate::auth::check(txn, "lib.search", lib)?;
     Ok(Library::load(txn, lib)?.lookup(txn, SQLPKG, name)?)
 }
 
