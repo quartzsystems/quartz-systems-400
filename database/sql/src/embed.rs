@@ -376,10 +376,17 @@ pub fn tables(st: &Statement) -> Vec<ObjectName> {
         match r {
             TableRef::Table { name, .. } => out.push(name.clone()),
             TableRef::Subquery { query, .. } => from_body(&query.body, out),
-            TableRef::Join { left, right, .. } => {
+            TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => {
                 from_ref(left, out);
                 from_ref(right, out);
             }
+            TableRef::Lateral(inner) => from_ref(inner, out),
+            TableRef::Recursive { cte, .. } => {
+                for b in cte.seed.iter().chain(&cte.step) {
+                    from_body(b, out);
+                }
+            }
+            TableRef::Function { .. } | TableRef::DataChange { .. } => {}
         }
     }
     fn from_body(b: &QueryBody, out: &mut Vec<ObjectName>) {

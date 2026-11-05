@@ -109,6 +109,9 @@ pub enum Register {
     Timezone,
     /// `CURRENT DECFLOAT ROUNDING MODE`.
     DecfloatRounding,
+    /// Another special register or built-in global variable, by its
+    /// canonical name (`CURRENT DEGREE`, `QSYS2.JOB_NAME`, ...).
+    Named(&'static str),
 }
 
 /// Comparison operators.
@@ -247,6 +250,86 @@ pub enum Expr {
     NextValue(super::ObjectName),
     /// `PREVIOUS VALUE FOR sequence`.
     PrevValue(super::ObjectName),
+    /// An OLAP specification: a function `OVER (...)`.
+    Over(Box<Over>),
+    /// An aggregate with `WITHIN GROUP (ORDER BY ...)` or `ON OVERFLOW`.
+    WithinGroup(Box<WithinGroup>),
+}
+
+/// A function over a window.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Over {
+    /// The function: a [`Function`] or a [`WithinGroup`].
+    pub func: Expr,
+    /// `IGNORE NULLS` (else `RESPECT NULLS`).
+    pub ignore_nulls: bool,
+    /// The window.
+    pub window: Window,
+    /// The statement's number for this specification: where its value
+    /// is found while the select list is evaluated.
+    pub slot: usize,
+}
+
+/// `OVER (PARTITION BY ... ORDER BY ... frame)`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Window {
+    /// `PARTITION BY`.
+    pub partition: Vec<Expr>,
+    /// `ORDER BY`.
+    pub order: Vec<super::query::OrderItem>,
+    /// `ROWS` or `RANGE`.
+    pub frame: Option<Frame>,
+}
+
+/// A window frame.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Frame {
+    /// `ROWS` (else `RANGE`).
+    pub rows: bool,
+    /// Start.
+    pub start: FrameBound,
+    /// End.
+    pub end: FrameBound,
+}
+
+/// One end of a frame.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FrameBound {
+    /// `UNBOUNDED PRECEDING`.
+    UnboundedPreceding,
+    /// `n PRECEDING`.
+    Preceding(Expr),
+    /// `CURRENT ROW`.
+    CurrentRow,
+    /// `n FOLLOWING`.
+    Following(Expr),
+    /// `UNBOUNDED FOLLOWING`.
+    UnboundedFollowing,
+}
+
+/// `LISTAGG`, `PERCENTILE_CONT` and the like with their ordering.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WithinGroup {
+    /// The aggregate.
+    pub func: Function,
+    /// `WITHIN GROUP (ORDER BY ...)`.
+    pub order: Vec<super::query::OrderItem>,
+    /// `ON OVERFLOW ...` of `LISTAGG`.
+    pub overflow: Option<Overflow>,
+}
+
+/// `LISTAGG ... ON OVERFLOW`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Overflow {
+    /// `ERROR`.
+    Error,
+    /// `TRUNCATE [filler] WITH|WITHOUT COUNT`.
+    Truncate {
+        /// The filler, `...` when none.
+        filler: Option<String>,
+        /// `WITH COUNT`.
+        count: bool,
+    },
 }
 
 /// A function call, scalar or aggregate.

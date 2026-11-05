@@ -8,28 +8,38 @@
 
 pub mod alter;
 mod column;
+pub mod agg;
 pub mod alias;
 mod answers;
 pub mod cast;
+mod change;
 pub mod catalog;
 pub mod cst;
+mod cte;
+pub mod datetime;
 pub mod cursor;
 pub mod ddl;
 pub mod dml;
 pub mod drop;
 pub mod eval;
+mod from;
+pub use from::ORDER_COLUMN;
 pub mod func;
 pub mod grant;
 pub mod index;
 pub mod json;
 pub mod locator;
+mod grouping;
 mod join;
 pub mod mem;
 pub mod names;
 pub mod opnqryf;
+mod olap;
 pub mod query;
 pub mod rename;
 pub mod schema;
+pub mod registers;
+pub mod rtype;
 pub mod restype;
 pub mod xml;
 pub mod seq;
@@ -93,6 +103,7 @@ pub const DEFAULT_SORT_BUDGET: usize = 100_000;
 
 /// What a job brings to SQL: naming, the library list, the schema, the
 /// job handle and its database session.
+#[allow(clippy::struct_excessive_bools)]
 pub struct SqlContext {
     /// Naming mode.
     pub naming: Naming,
@@ -175,6 +186,21 @@ pub struct SqlContext {
     pub warning: Option<crate::sqlca::Warning>,
     /// The values the job was given by sequences and identity columns.
     pub seq: seq::JobValues,
+    /// The values of the OLAP specifications of the row being
+    /// projected, by slot.
+    pub(crate) windows: std::collections::HashMap<usize, Value>,
+    /// The rows a recursive common table expression's name stands for
+    /// while its step runs, innermost last.
+    pub(crate) ctes: Vec<cte::Binding>,
+    /// The records a change wrote (or replaced, with `capture_old`), for
+    /// a data-change table reference: RRN, record, null map.
+    pub(crate) captured: Option<Vec<change::Captured>>,
+    /// [`SqlContext::captured`] keeps the rows as they were.
+    pub(crate) capture_old: bool,
+    /// The query being run has `SKIP LOCKED DATA`.
+    pub(crate) skip_locked: bool,
+    /// Special registers and built-in global variables.
+    pub registers: registers::Registers,
 }
 
 /// See [`SqlContext::yielder`].
@@ -269,6 +295,12 @@ impl SqlContext {
             last_yield: None,
             warning: None,
             seq: seq::JobValues::default(),
+            windows: std::collections::HashMap::new(),
+            ctes: Vec::new(),
+            captured: None,
+            capture_old: false,
+            skip_locked: false,
+            registers: registers::Registers::default(),
         }
     }
 
@@ -361,6 +393,13 @@ impl SqlContext {
             };
             SqlError::from(e)
         })
+    }
+
+    /// Under `SKIP LOCKED DATA`: whether another job holds record `rrn`
+    /// of `member` locked, so the row is left out.
+    pub(crate) fn skips(&self, member: Option<ObjectId>, rrn: u64) -> bool {
+        self.skip_locked
+            && member.is_some_and(|m| self.locks.lock().expect("lock table").holder(m, rrn).is_some_and(|j| j != self.job))
     }
 
     /// The statement ended: the read locks it kept itself go.
@@ -854,6 +893,7 @@ impl Prepared {
             | Statement::Update(_)
             | Statement::Delete(_)
             | Statement::Merge(_)
+            | Statement::Truncate(_)
             | Statement::CreateIndex(_)
             | Statement::AlterTable(_)
             | Statement::Rollback { .. }
@@ -864,6 +904,7 @@ impl Prepared {
         r
     }
 
+    #[allow(clippy::too_many_lines)]
     fn dispatch(&self, txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value]) -> Result<Outcome> {
         match &self.statement {
             Statement::Select(q) => {
@@ -940,7 +981,11 @@ impl Prepared {
                 };
                 Ok(Outcome::Done)
             }
-            Statement::SetPath(_) | Statement::SetCurrentDegree => Ok(Outcome::Done),
+            Statement::SetPath(entries) => {
+                ctx.registers.path = Some(registers::path_text(ctx, entries));
+                Ok(Outcome::Done)
+            }
+            Statement::SetCurrentDegree => Ok(Outcome::Done),
             Statement::SetDecfloatRounding(m) => Ok(ctx.set_decfloat_rounding(*m)),
             Statement::SetTransaction(iso) => set_transaction(ctx, *iso).map(|()| Outcome::Done),
             Statement::Grant(g) => grant::run(txn, ctx, g, false).map(|()| Outcome::Done),
@@ -964,6 +1009,12 @@ impl Prepared {
                 }))
             }
             Statement::Rename(r) => rename::run(txn, ctx, r).map(|()| Outcome::Done),
+            Statement::Truncate(t) => change::truncate(txn, ctx, params, t).map(|()| Outcome::Done),
+            Statement::SetRegister { name, value } => {
+                let v = eval::Evaluator { ctx, params }.eval(txn, value, &eval::Env::default())?;
+                ctx.registers.set(name, &v)?;
+                Ok(Outcome::Done)
+            }
         }
     }
 }
@@ -1039,6 +1090,8 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::Explain(_) => "EXPLAIN",
         Statement::Grant(_) => "GRANT",
         Statement::Revoke(_) => "REVOKE",
+        Statement::Truncate(_) => "TRUNCATE",
+        Statement::SetRegister { .. } => "SET",
     }
 }
 

@@ -228,7 +228,7 @@ fn tables_inserts_and_selects() {
     );
     assert_eq!(
         db.rows("SELECT CURRENT DATE, CURRENT USER, COALESCE(note, 'none'), ROUND(bal, -1), MOD(cusno, 2), DIGITS(cusno), HEX(name) FROM cust WHERE cusno = 3"),
-        [row(&["2026-01-01", "QSECOFR", "vip", "250", "1", "0000003", &format!("C381999693{}", "40".repeat(25))])]
+        [row(&["2026-01-01", "QSECOFR", "vip", "250.00", "1", "0000003", &format!("C381999693{}", "40".repeat(25))])]
     );
     assert_eq!(
         db.rows("SELECT 1 + 2 * 3, 7 / 2, 'a' CONCAT 'b', -bal FROM cust WHERE cusno = 1"),
@@ -288,10 +288,8 @@ fn tables_inserts_and_selects() {
         db.rows("SELECT cusno FROM cust ORDER BY since DESC, cusno"),
         [row(&["3"]), row(&["4"]), row(&["1"]), row(&["2"])]
     );
-    assert_eq!(
-        db.rows("SELECT cusno FROM cust ORDER BY since NULLS LAST, cusno"),
-        [row(&["2"]), row(&["1"]), row(&["3"]), row(&["4"])]
-    );
+    // DB2 for i has no NULLS FIRST or NULLS LAST (pub400: SQL0199).
+    assert_eq!(db.run("SELECT cusno FROM cust ORDER BY since NULLS LAST, cusno").unwrap_err().sqlcode(), -199);
 }
 
 #[test]
@@ -354,7 +352,7 @@ fn joins_groups_and_subqueries() {
     // Aggregates with and without groups, HAVING.
     assert_eq!(
         db.rows("SELECT COUNT(*), COUNT(since), SUM(bal), AVG(bal), MIN(name), MAX(bal) FROM cust"),
-        [row(&["4", "2", "260.50", "65.12500000", "Alice", "250.00"])]
+        [row(&["4", "2", "260.50", "65.125000000000000000000000", "Alice", "250.00"])]
     );
     assert_eq!(
         db.rows("SELECT COUNT(*) FROM cust WHERE cusno > 100"),

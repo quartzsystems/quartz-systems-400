@@ -6,6 +6,10 @@
 //! their own modules, each listed in [`FAMILIES`] and asked first.
 
 mod decfloat;
+pub(crate) mod datetime;
+pub(crate) mod math;
+pub(crate) mod misc;
+pub(crate) mod string;
 
 use std::fmt::Write as _;
 
@@ -116,7 +120,15 @@ pub(crate) struct Family {
 }
 
 /// The families, asked in order before the first set.
-const FAMILIES: &[Family] = &[Family { call: decfloat::call }, Family { call: super::json::plain }, Family { call: integrity::call }];
+const FAMILIES: &[Family] = &[
+    Family { call: decfloat::call },
+    Family { call: super::json::plain },
+    Family { call: integrity::call },
+    Family { call: string::call },
+    Family { call: datetime::call },
+    Family { call: math::call },
+    Family { call: misc::call },
+];
 
 /// Call a scalar function; `args` are already evaluated.
 #[allow(clippy::too_many_lines)]

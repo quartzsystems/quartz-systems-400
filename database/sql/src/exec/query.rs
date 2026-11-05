@@ -22,6 +22,8 @@ use store::obj::{LockState, ObjectId};
 use store::txn::Txn;
 
 use super::eval::{ColInfo, Env, Evaluator, Row, Schema, has_aggregate, sql_type};
+use super::grouping;
+use super::rtype::{Scope, SqlType, conform, infer};
 use super::join::{self, Item};
 use super::sort::{KeySpec, Sorter};
 use super::{ColumnDesc, ResultSet, SqlContext, TableInfo};
@@ -36,7 +38,7 @@ use crate::value::Value;
 const KEY_BATCH: usize = 256;
 
 /// A table in `FROM`, with its schema and the predicates pushed to it.
-struct Scan {
+pub(super) struct Scan {
     /// The file, or `None` for a catalog table.
     info: Option<TableInfo>,
     /// Rows of a catalog table.
@@ -120,7 +122,22 @@ pub(crate) struct Produced {
     pub(crate) source: Env,
 }
 
-fn run_body(
+pub(crate) fn run_body(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    q: &Query,
+    outer: &Env,
+    explain_only: bool,
+) -> Result<(Rc<Schema>, Vec<Produced>)> {
+    let saved_skip = ctx.skip_locked;
+    ctx.skip_locked |= q.skip_locked;
+    let r = run_limited(txn, ctx, params, q, outer, explain_only);
+    ctx.skip_locked = saved_skip;
+    r
+}
+
+fn run_limited(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
     params: &[Value],
@@ -231,6 +248,7 @@ pub fn run_cursor_query(
     Ok((rs, Some(table), rrns))
 }
 
+#[allow(clippy::too_many_lines)]
 fn body(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
@@ -421,8 +439,8 @@ fn aliases_of(e: &Expr, scans: &[Scan]) -> Option<HashSet<String>> {
 fn has_derived(t: &TableRef) -> bool {
     match t {
         TableRef::Table { .. } => false,
-        TableRef::Subquery { .. } => true,
-        TableRef::Join { left, right, .. } => has_derived(left) || has_derived(right),
+        TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => has_derived(left) || has_derived(right),
+        _ => true,
     }
 }
 
@@ -471,6 +489,20 @@ fn collect_scans(
             let alias = alias
                 .as_ref()
                 .map_or_else(|| name.name.value.clone(), |a| a.value.clone());
+            // The name of a recursive expression while its step runs.
+            if name.schema.is_none()
+                && let Some(b) = ctx.ctes.iter().rev().find(|b| b.name == name.name.value)
+            {
+                out.push(Scan {
+                    info: None,
+                    rows: Some(b.rows.clone()),
+                    schema: Rc::new(b.schema_as(&alias)),
+                    alias,
+                    preds: Vec::new(),
+                    pushable,
+                });
+                return Ok(());
+            }
             match ctx.resolve_table(txn, name) {
                 Ok(info) => {
                     let schema = Rc::new(table_schema(&info, &alias));
@@ -500,10 +532,12 @@ fn collect_scans(
                 }
             }
         }
-        TableRef::Subquery { .. } => {}
-        TableRef::Join {
-            left, right, kind, ..
-        } => {
+        TableRef::Subquery { .. }
+        | TableRef::Lateral(_)
+        | TableRef::Function { .. }
+        | TableRef::Recursive { .. }
+        | TableRef::DataChange { .. } => {}
+        TableRef::Join { left, right, kind, .. } | TableRef::JoinUsing { left, right, kind, .. } => {
             let (lp, rp) = match kind {
                 JoinKind::Inner | JoinKind::Cross => (pushable, pushable),
                 JoinKind::Left | JoinKind::LeftException => (pushable, false),
@@ -925,6 +959,9 @@ fn scan_table_in(
                 let held = if base_pf.is_some() { Some(t.member.object) } else { base_of(&pm, k.format) };
                 for s in slots {
                     ev.ctx.poll_interrupt()?;
+                    if ev.ctx.skips(held, s.rrn) {
+                        continue;
+                    }
                     lock_read(ev.ctx, held, s.rrn)?;
                     let r = row_of(txn, t, &s)?;
                     charge.row(&r)?;
@@ -959,6 +996,9 @@ fn scan_table_in(
                 };
                 for s in slots {
                     ev.ctx.poll_interrupt()?;
+                    if ev.ctx.skips(Some(t.member.object), s.rrn) {
+                        continue;
+                    }
                     lock_read(ev.ctx, Some(t.member.object), s.rrn)?;
                     let r = row_of(txn, t, &s)?;
                     charge.row(&r)?;
@@ -981,6 +1021,9 @@ fn scan_table_in(
             let held = base_of(&m, 0);
             for s in &slots {
                 ev.ctx.poll_interrupt()?;
+                if ev.ctx.skips(held, s.rrn) {
+                    continue;
+                }
                 lock_read(ev.ctx, held, s.rrn)?;
                 let r = row_of(txn, t, s)?;
                 charge.row(&r)?;
@@ -1037,7 +1080,8 @@ fn filter_rows(
 
 /// Rows of a `FROM` item: (schema, rows, ordered by the ORDER BY).
 #[allow(clippy::too_many_arguments)]
-fn from_rows(
+#[allow(clippy::too_many_lines)]
+pub(super) fn from_rows(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
     params: &[Value],
@@ -1070,7 +1114,7 @@ fn from_rows(
                 .filter(|(_, c)| !c.hidden)
                 .map(|(i, _)| i)
                 .collect();
-            let cols = visible
+            let mut cols: Vec<ColInfo> = visible
                 .iter()
                 .enumerate()
                 .map(|(n, &i)| ColInfo {
@@ -1081,14 +1125,38 @@ fn from_rows(
                     ..inner.cols[i].clone()
                 })
                 .collect();
+            // The row's place in the derived table's order, for ORDER OF.
+            cols.push(super::from::order_column(&alias.value));
             let rows = rows
                 .into_iter()
-                .map(|r| visible.iter().map(|&i| r[i].clone()).collect())
+                .enumerate()
+                .map(|(k, r)| {
+                    let mut v: Row = visible.iter().map(|&i| r[i].clone()).collect();
+                    v.push(Value::int(i64::try_from(k).expect("fits")));
+                    v
+                })
                 .collect();
             if explain_only {
                 ctx.explain.push(format!("DERIVED TABLE ({})", alias.value));
             }
             Ok((Rc::new(Schema { cols }), rows, false))
+        }
+        TableRef::Join { left, right, kind, on } if matches!(**right, TableRef::Lateral(_)) => {
+            super::from::lateral_join(txn, ctx, params, left, right, *kind, on.as_ref(), scans, outer, order, explain_only)
+        }
+        TableRef::JoinUsing { left, right, kind, columns } => {
+            super::from::join_using(txn, ctx, params, left, right, *kind, columns, scans, outer, order, explain_only)
+        }
+        TableRef::Lateral(inner) => from_rows(txn, ctx, params, inner, scans, outer, &[], explain_only),
+        TableRef::Function { name, args, alias, columns } => {
+            super::from::table_function(txn, ctx, params, name, args, alias, columns, outer, explain_only)
+        }
+        TableRef::Recursive { cte, alias, columns } => {
+            let (s, rows) = super::cte::run(txn, ctx, params, cte, &alias.value, columns, outer, explain_only)?;
+            Ok((s, rows, false))
+        }
+        TableRef::DataChange { kind, statement, alias, columns } => {
+            super::from::data_change(txn, ctx, params, *kind, statement, alias, columns, explain_only)
         }
         TableRef::Join {
             left,
@@ -1170,10 +1238,12 @@ fn select(
     explain_only: bool,
 ) -> Result<(Rc<Schema>, Vec<Produced>)> {
     // The tables and what each may filter.
+    let folded = fold_laterals(&sel.from);
+    let from_items = folded.as_slice();
     let mut scans = Vec::new();
     // Which FROM item each scan belongs to.
     let mut item_of = Vec::new();
-    for (i, t) in sel.from.iter().enumerate() {
+    for (i, t) in from_items.iter().enumerate() {
         collect_scans(txn, ctx, t, true, &mut scans)?;
         item_of.resize(scans.len(), i);
     }
@@ -1198,7 +1268,7 @@ fn select(
     }
     // Only a lone table reads in ORDER BY order.
     let order_hint: &[OrderItem] =
-        if sel.from.len() == 1 && sel.group_by.is_empty() && !sel.distinct {
+        if from_items.len() == 1 && sel.group_by.is_empty() && !sel.distinct {
             order
         } else {
             &[]
@@ -1206,10 +1276,10 @@ fn select(
     // FROM: each item with its joins, then the items joined depth first
     // with each remaining conjunct tested once the items it names are
     // bound (`join::product`); no cross product is built.
-    let mut items = Vec::with_capacity(sel.from.len());
+    let mut items = Vec::with_capacity(from_items.len());
     let mut item_charge = ctx.charge();
     let mut ordered = false;
-    for (i, t) in sel.from.iter().enumerate() {
+    for (i, t) in from_items.iter().enumerate() {
         let (s, r, o) = from_rows(txn, ctx, params, t, &scans, outer, order_hint, explain_only)?;
         for row in &r {
             item_charge.row(row)?;
@@ -1224,9 +1294,9 @@ fn select(
     }
     // A derived table's columns are not among the scans: its conjuncts
     // wait for every item.
-    let last = sel.from.len().saturating_sub(1);
-    let derived = sel.from.iter().any(has_derived);
-    let mut levels: Vec<Vec<Expr>> = vec![Vec::new(); sel.from.len().max(1)];
+    let last = from_items.len().saturating_sub(1);
+    let derived = from_items.iter().any(has_derived);
+    let mut levels: Vec<Vec<Expr>> = vec![Vec::new(); from_items.len().max(1)];
     for p in &rest {
         let level = match aliases_of(p, &scans) {
             Some(set) if !derived && !set.is_empty() => set
@@ -1275,59 +1345,71 @@ fn select(
     }
     let (schema, rows, mut charge) = join::product(txn, &mut ev, outer, items, &levels)?;
     drop(item_charge);
-    // Grouping.
+    // Grouping: one pass per grouping set.
     let grouped = !sel.group_by.is_empty()
         || sel
             .items
             .iter()
             .any(|i| matches!(i, SelectItem::Expr(e, _) if has_aggregate(e)))
         || sel.having.as_ref().is_some_and(has_aggregate);
-    let mut envs: Vec<Env> = Vec::new();
+    let with_sets = grouping::has_sets(&sel.group_by);
+    let sets = if with_sets {
+        grouping::sets(&sel.group_by)?
+    } else {
+        vec![grouping::GroupingSet { keys: sel.group_by.clone(), absent: Vec::new() }]
+    };
+    // Each output row's environment and grouping set.
+    let mut envs: Vec<(Env, usize)> = Vec::new();
     if grouped {
-        let mut groups: Vec<(Row, Vec<Row>)> = Vec::new();
-        let mut index: HashMap<String, usize> = HashMap::new();
-        for r in rows {
-            ev.ctx.tick(txn)?;
-            let env = outer.with(schema.clone(), r.clone());
-            let mut key_vals = Vec::with_capacity(sel.group_by.len());
-            for g in &sel.group_by {
-                key_vals.push(ev.eval(txn, g, &env)?);
+        let rows = Rc::new(rows);
+        for (si, set) in sets.iter().enumerate() {
+            let having = sel.having.as_ref().map(|h| if with_sets { grouping::rewrite(h, set) } else { h.clone() });
+            let mut groups: Vec<(Row, Vec<Row>)> = Vec::new();
+            let mut index: HashMap<String, usize> = HashMap::new();
+            for r in rows.iter() {
+                ev.ctx.tick(txn)?;
+                let env = outer.with(schema.clone(), r.clone());
+                let mut key_vals = Vec::with_capacity(set.keys.len());
+                for g in &set.keys {
+                    key_vals.push(ev.eval(txn, g, &env)?);
+                }
+                let key = row_key(&key_vals);
+                if let Some(&gi) = index.get(&key) {
+                    groups[gi].1.push(r.clone());
+                } else {
+                    charge.add(2 * key.len() + super::mem::row_bytes(r) + 64)?;
+                    index.insert(key, groups.len());
+                    groups.push((r.clone(), vec![r.clone()]));
+                }
             }
-            let key = row_key(&key_vals);
-            if let Some(&gi) = index.get(&key) {
-                groups[gi].1.push(r);
-            } else {
-                charge.add(2 * key.len() + super::mem::row_bytes(&r) + 64)?;
-                index.insert(key, groups.len());
-                groups.push((r.clone(), vec![r]));
+            if groups.is_empty() && set.keys.is_empty() {
+                // An aggregate over no rows is one row.
+                groups.push((vec![Value::Null; schema.cols.len()], Vec::new()));
             }
-        }
-        if groups.is_empty() && sel.group_by.is_empty() {
-            // An aggregate over no rows is one row.
-            groups.push((vec![Value::Null; schema.cols.len()], Vec::new()));
-        }
-        for (first, members) in groups {
-            ev.ctx.tick(txn)?;
-            let mut env = outer.with(schema.clone(), first);
-            env.group = Some(Rc::new(members));
-            if let Some(h) = &sel.having
-                && ev.truth(txn, h, &env)? != Some(true)
-            {
-                continue;
+            for (first, members) in groups {
+                ev.ctx.tick(txn)?;
+                let mut env = outer.with(schema.clone(), first);
+                env.group = Some(Rc::new(members));
+                if let Some(h) = &having
+                    && ev.truth(txn, h, &env)? != Some(true)
+                {
+                    continue;
+                }
+                envs.push((env, si));
             }
-            envs.push(env);
         }
     } else {
         envs = rows
             .into_iter()
-            .map(|r| outer.with(schema.clone(), r))
+            .map(|r| (outer.with(schema.clone(), r), 0))
             .collect();
     }
-    // The select list.
+    // The select list, its columns typed in the scope of the rows.
+    let scope = Scope {
+        frames: outer.frames.iter().map(|(s, _)| s.as_ref()).chain(std::iter::once(schema.as_ref())).collect(),
+    };
     let mut out_cols: Vec<ColInfo> = Vec::new();
-    let mut plan: Vec<(Expr, usize)> = Vec::new();
-    // The result types computed columns are fitted to.
-    let mut fits: Vec<Option<super::restype::SqlType>> = Vec::new();
+    let mut plan: Vec<(Expr, usize, Option<SqlType>)> = Vec::new();
     let mut n = 0;
     for item in &sel.items {
         match item {
@@ -1339,8 +1421,7 @@ fn select(
                             table: None,
                             ..c.clone()
                         });
-                        plan.push((column_at(&schema, i), i));
-                        fits.push(None);
+                        plan.push((column_at(&schema, i), i, None));
                     }
                 }
             }
@@ -1354,8 +1435,7 @@ fn select(
                             table: None,
                             ..c.clone()
                         });
-                        plan.push((column_at(&schema, i), i));
-                        fits.push(None);
+                        plan.push((column_at(&schema, i), i, None));
                     }
                 }
                 if !any {
@@ -1366,56 +1446,109 @@ fn select(
             }
             SelectItem::Expr(e, alias) => {
                 n += 1;
-                let ty = if matches!(e, Expr::Column(_)) { None } else { super::restype::type_of(e, &schema)? };
-                let field = match e {
-                    Expr::Column(c) => {
+                // A grouping expression another set leaves out is null.
+                let absent = with_sets && sets.iter().any(|s| s.absent.contains(e));
+                let (field, nullable, ty) = if let Expr::Column(c) = e {
                         let table = c.table.as_ref().map(|t| t.value.as_str());
-                        schema
-                            .find(table, &c.column.value)?
-                            .and_then(|i| schema.cols[i].field.clone())
-                    }
-                    _ => ty.as_ref().map(super::restype::field_of),
+                        let found = schema.find(table, &c.column.value)?;
+                        let field = found.and_then(|i| schema.cols[i].field.clone());
+                        let null = found.is_none_or(|i| schema.cols[i].nullable);
+                        if field.is_some() {
+                            (field, null || absent, None)
+                        } else {
+                            let t = infer(e, &scope);
+                            (Some(t.to_field()), t.null || absent, Some(t))
+                        }
+                } else {
+                    let t = infer(e, &scope);
+                    let t = t.nullable(t.null || absent);
+                    (Some(t.to_field()), t.null, Some(t))
                 };
                 out_cols.push(ColInfo {
                     name: item_name(e, alias.as_ref(), n),
                     table: None,
-                    nullable: field.as_ref().is_none_or(|f| f.allow_null),
+                    nullable,
                     field,
                     hidden: false,
                 });
-                plan.push((e.clone(), usize::MAX));
-                fits.push(ty);
+                plan.push((e.clone(), usize::MAX, ty));
             }
+        }
+    }
+    // ORDER BY items with an OLAP specification are worked out with the
+    // select list, as hidden columns.
+    let mut order_items: Vec<OrderItem> = order.to_vec();
+    for (k, item) in order_items.iter_mut().enumerate() {
+        if super::olap::has_over(&item.expr) {
+            let name = format!("*O{k}");
+            out_cols.push(ColInfo { name: name.clone(), table: None, field: None, nullable: true, hidden: true });
+            plan.push((item.expr.clone(), usize::MAX, None));
+            item.expr = Expr::Column(ColumnRef {
+                table: None,
+                column: crate::ast::Ident { value: name, delimited: true },
+            });
         }
     }
     let out_schema = Rc::new(Schema { cols: out_cols });
-    let mut produced = Vec::with_capacity(envs.len());
-    for env in envs {
-        ev.ctx.tick(txn)?;
-        let mut row = Vec::with_capacity(plan.len());
-        for ((e, direct), fit) in plan.iter().zip(&fits) {
-            if *direct == usize::MAX {
-                let mode = ev.ctx.decfloat_rounding;
-                let v = ev.eval(txn, e, &env).and_then(|v| match fit {
-                    Some(t) => super::restype::conform(v, t, mode),
-                    None => Ok(v),
-                });
-                row.push(super::cast::mapped(ev.ctx, v)?);
-            } else {
-                row.push(env.frames.last().expect("row").1[*direct].clone());
+    // The select list of each grouping set.
+    let set_plans: Vec<Vec<Expr>> = if with_sets {
+        sets.iter().map(|s| plan.iter().map(|(e, _, _)| grouping::rewrite(e, s)).collect()).collect()
+    } else {
+        Vec::new()
+    };
+    // OLAP specifications over the rows, before the select list.
+    let mut overs = Vec::new();
+    for (e, _, _) in &plan {
+        super::olap::collect(e, &mut overs);
+    }
+    let saved = std::mem::take(&mut ev.ctx.windows);
+    let windows = if overs.is_empty() {
+        Vec::new()
+    } else {
+        let only: Vec<Env> = envs.iter().map(|(e, _)| e.clone()).collect();
+        match super::olap::compute(txn, &mut ev, &only, &overs) {
+            Ok(w) => w,
+            Err(e) => {
+                ev.ctx.windows = saved;
+                return Err(e);
             }
         }
-        charge.row(&row)?;
-        produced.push(Produced {
-            out: row,
-            source: env,
-        });
-    }
+    };
+    let mut produced = Vec::with_capacity(envs.len());
+    let r = (|| -> Result<()> {
+        for (ri, (env, si)) in envs.into_iter().enumerate() {
+            ev.ctx.tick(txn)?;
+            if let Some(w) = windows.get(ri) {
+                ev.ctx.windows.clone_from(w);
+            }
+            let mut row = Vec::with_capacity(plan.len());
+            for (pi, (e, direct, ty)) in plan.iter().enumerate() {
+                if *direct == usize::MAX {
+                    let e = if with_sets { &set_plans[si][pi] } else { e };
+                    let v = ev.eval(txn, e, &env).map(|v| match ty {
+                        Some(t) => conform(v, t),
+                        None => v,
+                    });
+                    row.push(super::cast::mapped(ev.ctx, v)?);
+                } else {
+                    row.push(env.frames.last().expect("row").1[*direct].clone());
+                }
+            }
+            charge.row(&row)?;
+            produced.push(Produced {
+                out: row,
+                source: env,
+            });
+        }
+        Ok(())
+    })();
+    ev.ctx.windows = saved;
+    r?;
     if sel.distinct {
         distinct(&mut charge, &mut produced)?;
     }
-    if !order.is_empty() && !ordered {
-        order_rows(txn, ev.ctx, params, &out_schema, &mut produced, order)?;
+    if !order_items.is_empty() && !ordered {
+        order_rows(txn, ev.ctx, params, &out_schema, &mut produced, &order_items)?;
     }
     Ok((out_schema, produced))
 }
@@ -1443,6 +1576,15 @@ fn order_rows(
     produced: &mut Vec<Produced>,
     order: &[OrderItem],
 ) -> Result<()> {
+    // A number past the select list is refused before any row is read.
+    let visible = out_schema.cols.iter().filter(|c| !c.hidden).count();
+    for item in order {
+        if let Expr::Literal(Literal::Num(n)) = &item.expr
+            && n.parse::<usize>().map_or(true, |p| p == 0 || p > visible)
+        {
+            return Err(SqlError::OrderByNumber { n: n.clone() });
+        }
+    }
     let mut ev = Evaluator { ctx, params };
     let mut keys: Vec<Vec<Value>> = Vec::with_capacity(produced.len());
     for p in produced.iter() {
@@ -1459,11 +1601,11 @@ fn order_rows(
                         found: n.clone(),
                         expected: "a select-list position".into(),
                     })?;
-                    p.out.get(pos.wrapping_sub(1)).cloned().ok_or_else(|| {
-                        SqlError::ColumnNotFound {
-                            name: format!("ORDER BY {pos}"),
-                        }
-                    })?
+                    let visible = out_schema.cols.iter().filter(|c| !c.hidden).count();
+                    if pos == 0 || pos > visible {
+                        return Err(SqlError::OrderByNumber { n: n.clone() });
+                    }
+                    p.out[pos - 1].clone()
                 }
                 e => ev.eval(txn, e, &env)?,
             };
@@ -1585,4 +1727,22 @@ pub(crate) fn columns_and_rows_planned(
     ctx.explain = kept;
     let (schema, _) = r?;
     Ok((schema.cols.iter().filter(|c| !c.hidden).cloned().collect(), Vec::new()))
+}
+
+/// `FROM a, b, LATERAL (...) x, c`: the items before a lateral one joined
+/// to it, so it runs once for each of their rows.
+fn fold_laterals(from: &[TableRef]) -> Vec<TableRef> {
+    let mut out: Vec<TableRef> = Vec::with_capacity(from.len());
+    for t in from {
+        if matches!(t, TableRef::Lateral(_)) && !out.is_empty() {
+            let mut left = out.remove(0);
+            for x in out.drain(..) {
+                left = TableRef::Join { left: Box::new(left), right: Box::new(x), kind: JoinKind::Cross, on: None };
+            }
+            out.push(TableRef::Join { left: Box::new(left), right: Box::new(t.clone()), kind: JoinKind::Cross, on: None });
+        } else {
+            out.push(t.clone());
+        }
+    }
+    out
 }

@@ -279,6 +279,59 @@ pub enum SqlError {
         what: String,
     },
 
+    /// A result longer than its type allows (`SQL0137`).
+    #[error("the result is too long: {what}")]
+    TooLong {
+        /// Which.
+        what: String,
+    },
+
+    /// An aggregate or OLAP specification where none may be (`SQL0120`).
+    #[error("{what} is not allowed here")]
+    Misplaced {
+        /// Which.
+        what: String,
+    },
+
+    /// `ORDER BY n` past the select list (`SQL0125`).
+    #[error("ORDER BY column number {n} is not in the select list")]
+    OrderByNumber {
+        /// The number.
+        n: String,
+    },
+
+    /// A keyword where none is expected (`SQL0199`).
+    #[error("keyword {word} not expected at line {line} column {col}")]
+    Keyword {
+        /// The keyword.
+        word: String,
+        /// Line, from 1.
+        line: u32,
+        /// Column, from 1.
+        col: u32,
+    },
+
+    /// A comparison other than = or <> between rows (`SQL0115`).
+    #[error("comparison {op} is not valid between rows of values")]
+    RowComparison {
+        /// The operator.
+        op: String,
+    },
+
+    /// Date, time or timestamp arithmetic that is not valid (`SQL0182`).
+    #[error("date, time or timestamp expression not valid: {what}")]
+    DateTimeExpr {
+        /// Which.
+        what: String,
+    },
+
+    /// A labeled duration where it cannot be (`SQL0187`).
+    #[error("labeled duration not valid: {what}")]
+    Duration {
+        /// Which.
+        what: String,
+    },
+
     /// The database failed in a way SQL has no code for.
     #[error("database error: {what}")]
     Database {
@@ -326,6 +379,13 @@ impl SqlError {
             Self::PrivilegeNotValid { .. } => -557,
             Self::CannotGrant { .. } => -7027,
             Self::Integrity { sqlcode, .. } => *sqlcode,
+            Self::TooLong { .. } => -137,
+            Self::Misplaced { .. } => -120,
+            Self::OrderByNumber { .. } => -125,
+            Self::Keyword { .. } => -199,
+            Self::RowComparison { .. } => -115,
+            Self::DateTimeExpr { .. } => -182,
+            Self::Duration { .. } => -187,
             Self::Database { .. } => -901,
             Self::Coded { code, .. } => *code,
         }
@@ -335,7 +395,7 @@ impl SqlError {
     #[must_use]
     pub fn sqlstate(&self) -> &'static str {
         match self {
-            Self::Syntax { .. } | Self::ThreePartName { .. } => "42601",
+            Self::Syntax { .. } | Self::ThreePartName { .. } | Self::Keyword { .. } | Self::RowComparison { .. } => "42601",
             Self::Unsupported { .. } => "42612",
             Self::NameTooLong { .. } => "42622",
             Self::Literal { .. } | Self::Conversion { .. } => "22018",
@@ -367,6 +427,10 @@ impl SqlError {
             Self::PrivilegeNotValid { .. } => "42852",
             Self::CannotGrant { .. } => "42984",
             Self::Integrity { sqlstate, .. } => sqlstate,
+            Self::TooLong { .. } => "54006",
+            Self::Misplaced { .. } => "42903",
+            Self::OrderByNumber { .. } => "42805",
+            Self::DateTimeExpr { .. } | Self::Duration { .. } => "42816",
             Self::Database { .. } => "58004",
             Self::Coded { state, .. } => state,
         }

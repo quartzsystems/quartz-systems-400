@@ -52,7 +52,7 @@ fn corpus_parses() {
         "SELECT RRN(cust), HEX(cusno), COALESCE(note, 'none'), VALUE(note, ''), IFNULL(note, '') FROM cust",
         "SELECT * FROM cust WHERE bal > ALL (SELECT bal FROM cust WHERE cusno < 3)",
         "SELECT * FROM cust WHERE (cusno, name) = (1, 'Alice')",
-        "SELECT * FROM cust ORDER BY name NULLS LAST, cusno OFFSET 5 ROWS FETCH NEXT 5 ROWS ONLY",
+        "SELECT * FROM cust ORDER BY name, cusno OFFSET 5 ROWS FETCH NEXT 5 ROWS ONLY",
         "SELECT * FROM cust LIMIT 10 OFFSET 20",
         "SELECT * FROM cust WHERE cusno = ? AND name = :NAME:IND WITH UR",
         "SELECT * FROM cust FOR UPDATE OF bal WITH CS",

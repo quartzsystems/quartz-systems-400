@@ -56,6 +56,45 @@ text = "The number of values does not match the number of columns."
 help = "An INSERT lists a different number of values than columns."
 
 [[msg]]
+id = "SQL0115"
+sev = 30
+text = "Comparison operator &1 is not valid here."
+help = "Rows of values can be compared only for equal and not equal. Compare the values one by one, or with a quantified comparison against a fullselect."
+vars = ["*CHAR 3"]
+
+[[msg]]
+id = "SQL0120"
+sev = 30
+text = "An aggregate function or OLAP specification is not valid here."
+help = "Aggregate functions belong in the select list or HAVING of a grouped query, OLAP specifications in the select list or ORDER BY. Move the function, or compute it in a nested table expression."
+
+[[msg]]
+id = "SQL0125"
+sev = 30
+text = "ORDER BY column number &1 is not in the select list."
+help = "A number in ORDER BY names a column of the result by its place, from 1 to the number of columns selected. Correct the number."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "SQL0137"
+sev = 30
+text = "The result of &1 is too long."
+help = "The result is longer than its type allows. Shorten the operands, or for LISTAGG give ON OVERFLOW TRUNCATE."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0182"
+sev = 30
+text = "A date, time or timestamp expression is not valid."
+help = "A date, time or timestamp can be added to or subtracted from only a duration: a labeled duration such as 3 DAYS, or for subtraction a value of the same type. Correct the expression."
+
+[[msg]]
+id = "SQL0187"
+sev = 30
+text = "The use of a labeled duration is not valid."
+help = "YEARS, MONTHS and DAYS go with a date or timestamp; HOURS, MINUTES and SECONDS with a time or timestamp; MICROSECONDS with a timestamp. A labeled duration stands only beside + or -."
+
+[[msg]]
 id = "SQL0199"
 sev = 30
 text = "&1 must be the first SQL statement of the source."

@@ -229,10 +229,13 @@ fn from_names(b: &QueryBody, out: &mut Vec<ObjectName>) {
         match t {
             TableRef::Table { name, .. } => out.push(name.clone()),
             TableRef::Subquery { query, .. } => from_names(&query.body, out),
-            TableRef::Join { left, right, .. } => {
+            TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => {
                 walk(left, out);
                 walk(right, out);
             }
+            TableRef::Lateral(inner) => walk(inner, out),
+            TableRef::Recursive { cte, .. } => cte.seed.iter().chain(&cte.step).for_each(|b| from_names(b, out)),
+            TableRef::Function { .. } | TableRef::DataChange { .. } => {}
         }
     }
     match b {
@@ -288,7 +291,18 @@ fn expand_ref(txn: &mut Txn<'_>, ctx: &SqlContext, t: &mut TableRef) -> Result<b
             Ok(true)
         }
         TableRef::Subquery { .. } => Ok(false),
-        TableRef::Join { left, right, .. } => Ok(expand_ref(txn, ctx, left)? | expand_ref(txn, ctx, right)?),
+        TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => {
+            Ok(expand_ref(txn, ctx, left)? | expand_ref(txn, ctx, right)?)
+        }
+        TableRef::Lateral(inner) => expand_ref(txn, ctx, inner),
+        TableRef::Recursive { cte, .. } => {
+            let mut any = false;
+            for b in cte.seed.iter_mut().chain(cte.step.iter_mut()) {
+                any |= expand_body(txn, ctx, b)?;
+            }
+            Ok(any)
+        }
+        TableRef::Function { .. } | TableRef::DataChange { .. } => Ok(false),
     }
 }
 
@@ -321,10 +335,17 @@ fn qualify(txn: &mut Txn<'_>, qsys: ObjectId, b: &mut QueryBody, deps: &[Depende
             }
             TableRef::Table { .. } => {}
             TableRef::Subquery { query, .. } => qualify(txn, qsys, &mut query.body, deps),
-            TableRef::Join { left, right, .. } => {
+            TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => {
                 walk(txn, qsys, left, deps);
                 walk(txn, qsys, right, deps);
             }
+            TableRef::Lateral(inner) => walk(txn, qsys, inner, deps),
+            TableRef::Recursive { cte, .. } => {
+                for b in cte.seed.iter_mut().chain(cte.step.iter_mut()) {
+                    qualify(txn, qsys, b, deps);
+                }
+            }
+            TableRef::Function { .. } | TableRef::DataChange { .. } => {}
         }
     }
     match b {

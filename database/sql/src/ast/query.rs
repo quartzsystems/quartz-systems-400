@@ -24,6 +24,8 @@ pub struct Query {
     pub read_only: bool,
     /// `WITH xx` isolation.
     pub isolation: Option<Isolation>,
+    /// `SKIP LOCKED DATA`: rows another job holds locked are left out.
+    pub skip_locked: bool,
 }
 
 /// The body of a query.
@@ -126,6 +128,106 @@ pub enum TableRef {
         /// `ON`.
         on: Option<Expr>,
     },
+    /// `JOIN ... USING (columns)`: the named columns once, coalesced,
+    /// before the others.
+    JoinUsing {
+        /// Left.
+        left: Box<TableRef>,
+        /// Right.
+        right: Box<TableRef>,
+        /// Kind.
+        kind: JoinKind,
+        /// The columns.
+        columns: Vec<Ident>,
+    },
+    /// `LATERAL (...)` or `TABLE (...)`: a derived table or table
+    /// function that sees the columns of the items before it.
+    Lateral(Box<TableRef>),
+    /// A table function: `TABLE (f(args)) AS x [(columns)]`.
+    Function {
+        /// The function.
+        name: ObjectName,
+        /// Its arguments.
+        args: Vec<Expr>,
+        /// Correlation name.
+        alias: Ident,
+        /// Column names.
+        columns: Vec<Ident>,
+    },
+    /// A recursive common table expression where the body names it.
+    Recursive {
+        /// The expression.
+        cte: Box<RecursiveCte>,
+        /// Correlation name.
+        alias: Ident,
+        /// Column names.
+        columns: Vec<Ident>,
+    },
+    /// `FINAL TABLE (INSERT ...)`, `NEW TABLE (...)`, `OLD TABLE (...)`.
+    DataChange {
+        /// Which rows.
+        kind: ChangeRows,
+        /// The `INSERT`, `UPDATE`, `DELETE` or `MERGE`.
+        statement: Box<super::Statement>,
+        /// Correlation name.
+        alias: Ident,
+        /// Column names.
+        columns: Vec<Ident>,
+    },
+}
+
+/// The rows of a data-change table reference.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ChangeRows {
+    /// `FINAL TABLE`: as they are when the statement ends.
+    Final,
+    /// `NEW TABLE`: as written, before `AFTER` triggers.
+    New,
+    /// `OLD TABLE`: as they were.
+    Old,
+}
+
+/// A recursive common table expression.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RecursiveCte {
+    /// Its name.
+    pub name: Ident,
+    /// Its column names.
+    pub columns: Vec<Ident>,
+    /// The initial rows: the union's sides that do not name it.
+    pub seed: Vec<QueryBody>,
+    /// The sides that name it, run on the rows of the step before.
+    pub step: Vec<QueryBody>,
+    /// `SEARCH DEPTH|BREADTH FIRST BY cols SET col`.
+    pub search: Option<Search>,
+    /// `CYCLE cols SET col TO v DEFAULT d [USING col]`.
+    pub cycle: Option<Cycle>,
+}
+
+/// The `SEARCH` clause.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Search {
+    /// `DEPTH FIRST` (else `BREADTH FIRST`).
+    pub depth: bool,
+    /// `BY` columns.
+    pub by: Vec<Ident>,
+    /// `SET` column: the ordering value.
+    pub set: Ident,
+}
+
+/// The `CYCLE` clause.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Cycle {
+    /// The columns whose values repeating is a cycle.
+    pub columns: Vec<Ident>,
+    /// The mark column.
+    pub set: Ident,
+    /// The mark of a row that repeats.
+    pub to: String,
+    /// The mark of the others.
+    pub default: String,
+    /// `USING`: the path column.
+    pub using: Option<Ident>,
 }
 
 /// `ORDER BY` item.
@@ -266,6 +368,7 @@ impl Query {
             for_update: None,
             read_only: false,
             isolation: None,
+            skip_locked: false,
         }
     }
 }
@@ -336,6 +439,23 @@ fn walk(e: &Expr, out: &mut Vec<ColumnRef>) {
         | Expr::NextValue(_)
         | Expr::PrevValue(_)
         | Expr::Default => {}
+        Expr::Over(o) => {
+            walk(&o.func, out);
+            for p in &o.window.partition {
+                walk(p, out);
+            }
+            for i in &o.window.order {
+                walk(&i.expr, out);
+            }
+        }
+        Expr::WithinGroup(w) => {
+            for x in &w.func.args {
+                walk(x, out);
+            }
+            for i in &w.order {
+                walk(&i.expr, out);
+            }
+        }
     }
 }
 

@@ -183,11 +183,15 @@ impl Tables {
                     );
                     out.push((a, fields));
                 }
-                TableRef::Join { left, right, .. } => {
+                TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => {
                     walk(txn, ctx, left, out);
                     walk(txn, ctx, right, out);
                 }
-                TableRef::Subquery { .. } => {}
+                TableRef::Lateral(inner) => walk(txn, ctx, inner, out),
+                TableRef::Subquery { .. }
+                | TableRef::Function { .. }
+                | TableRef::Recursive { .. }
+                | TableRef::DataChange { .. } => {}
             }
         }
         let mut out = Vec::new();

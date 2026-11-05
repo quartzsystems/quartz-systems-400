@@ -290,10 +290,20 @@ pub(crate) fn write_rows(
         }
         let written = fill_generated(txn, ctx, params, &t, &mut o, &gn, overriding, &mut per_field)
             .and_then(|()| build_record(txn, &t, &per_field, None))
-            .and_then(|(rec, nulls)| Ok(o.write(txn, &rec, &nulls)?));
-        if let Err(e) = written {
-            result = Err(e);
-            break;
+            .and_then(|(rec, nulls)| {
+                o.write(txn, &rec, &nulls)?;
+                Ok((rec, nulls))
+            });
+        match written {
+            Err(e) => {
+                result = Err(e);
+                break;
+            }
+            Ok((rec, nulls)) => {
+                if let Some(c) = ctx.captured.as_mut() {
+                    c.push((0, rec, nulls));
+                }
+            }
         }
         n += 1;
     }
@@ -507,6 +517,12 @@ fn change_rows(
             o.unlock();
             continue;
         }
+        // OLD TABLE: the row as it was.
+        if ev.ctx.capture_old
+            && let Some(c) = ev.ctx.captured.as_mut()
+        {
+            c.push((rrn, current.data.clone(), current.null_map.clone()));
+        }
         match set {
             None => {
                 o.delete(txn)?;
@@ -531,6 +547,11 @@ fn change_rows(
                     build_record(txn, t, &per_field, Some((&current.data, &current.null_map)))?;
                 o.update(txn, &rec, &nulls)?;
                 release_lobs(txn, t, &current.data, Some(&rec))?;
+                if !ev.ctx.capture_old
+                    && let Some(c) = ev.ctx.captured.as_mut()
+                {
+                    c.push((rrn, rec, nulls));
+                }
             }
         }
         n += 1;
@@ -654,8 +675,11 @@ fn merge_plan(
         crate::ast::TableRef::Table { name, alias, .. } => alias
             .as_ref()
             .map_or_else(|| name.name.value.clone(), |a| a.value.clone()),
-        crate::ast::TableRef::Subquery { alias, .. } => alias.value.clone(),
-        crate::ast::TableRef::Join { .. } => {
+        crate::ast::TableRef::Subquery { alias, .. }
+        | crate::ast::TableRef::Function { alias, .. }
+        | crate::ast::TableRef::Recursive { alias, .. }
+        | crate::ast::TableRef::DataChange { alias, .. } => alias.value.clone(),
+        crate::ast::TableRef::Lateral(_) | crate::ast::TableRef::JoinUsing { .. } | crate::ast::TableRef::Join { .. } => {
             return Err(SqlError::Unsupported {
                 what: "a join as the MERGE source".into(),
             });

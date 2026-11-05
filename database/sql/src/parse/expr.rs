@@ -44,6 +44,7 @@ impl Parser {
     }
 
     /// A value expression followed by an optional predicate tail.
+    #[allow(clippy::too_many_lines)]
     fn predicate(&mut self) -> Result<Expr> {
         if self.is_word("EXISTS") {
             self.advance();
@@ -101,6 +102,19 @@ impl Parser {
             if self.is_word("JSON") {
                 return self.is_json(left, not);
             }
+            if self.eat_words(&["DISTINCT", "FROM"]) {
+                // DB2 for i reads NULL here as a name.
+                if self.is_word("NULL") {
+                    return Err(crate::error::SqlError::ColumnNotFound { name: "NULL".into() });
+                }
+                let right = self.additive()?;
+                return Ok(Expr::Function(Function {
+                    name: if not { "*NOTDISTINCT" } else { "*DISTINCT" }.into(),
+                    distinct: false,
+                    star: false,
+                    args: vec![left, right],
+                }));
+            }
             if self.eat_word("NULL") || self.eat_word("UNKNOWN") {
                 return Ok(Expr::IsNull(Box::new(left), not));
             }
@@ -148,7 +162,7 @@ impl Parser {
         ))
     }
 
-    fn additive(&mut self) -> Result<Expr> {
+    pub(crate) fn additive(&mut self) -> Result<Expr> {
         let mut left = self.term()?;
         loop {
             let op = match self.tok() {
@@ -364,7 +378,15 @@ impl Parser {
                         self.advance();
                         Register::DecfloatRounding
                     }
-                    _ => return Err(Self::unsupported(&format!("CURRENT {next}"))),
+                    "IMPLICIT" if self.is_words(&["IMPLICIT", "XMLPARSE", "OPTION"]) => {
+                        self.advance();
+                        self.advance();
+                        Register::Named("CURRENT IMPLICIT XMLPARSE OPTION")
+                    }
+                    w => match crate::exec::registers::CURRENT.iter().find(|(k, _)| *k == w) {
+                        Some((_, n)) => Register::Named(n),
+                        None => return Err(Self::unsupported(&format!("CURRENT {next}"))),
+                    },
                 };
                 self.advance();
                 match r {
@@ -434,6 +456,13 @@ impl Parser {
         if self.eat_sym(".") {
             // T.C; T.* is handled by the select list.
             let column = self.ident()?;
+            // A built-in global variable: QSYS2.JOB_NAME and the like.
+            if !first.delimited
+                && !column.delimited
+                && let Some(n) = crate::exec::registers::global(Some(&first.value), &column.value)
+            {
+                return Ok(Expr::Register(Register::Named(n)));
+            }
             if self.is_sym(".") {
                 return Err(crate::error::SqlError::ThreePartName {
                     name: format!("{first}.{column}..."),
@@ -464,10 +493,10 @@ impl Parser {
         if self.eat_sym("*") {
             f.star = true;
             self.expect_sym(")")?;
-            return Ok(Expr::Function(f));
+            return self.call_tail(f, None);
         }
         if self.eat_sym(")") {
-            return Ok(Expr::Function(f));
+            return self.call_tail(f, None);
         }
         if self.eat_word("DISTINCT") {
             f.distinct = true;
@@ -500,9 +529,18 @@ impl Parser {
             }
         } else if self.eat_word("IN") {
             f.args.push(self.expr()?);
+        } else if self.eat_word("PLACING") {
+            // OVERLAY(s PLACING t FROM n [FOR m]).
+            f.args.push(self.expr()?);
+            self.expect_word("FROM")?;
+            f.args.push(self.expr()?);
+            if self.eat_word("FOR") {
+                f.args.push(self.expr()?);
+            }
         }
+        let overflow = self.listagg_overflow(&f.name)?;
         self.expect_sym(")")?;
-        Ok(Expr::Function(f))
+        self.call_tail(f, overflow)
     }
 
     /// A column name, for `ORDER BY`, keys and assignments.

@@ -52,10 +52,21 @@ impl Schema {
     /// The column `table.name` (or `name`), or an ambiguity error.
     pub fn find(&self, table: Option<&str>, name: &str) -> Result<Option<usize>> {
         let mut found = None;
+        let mut hidden = None;
         for (i, c) in self.cols.iter().enumerate() {
             // A column by its system name or its SQL name.
             let named = c.name == name || c.field.as_ref().is_some_and(|f| f.alias.as_deref() == Some(name) || f.name.to_string() == name);
             if !named || table.is_some_and(|t| c.table.as_deref() != Some(t)) {
+                continue;
+            }
+            // Unqualified, a hidden column (a column of JOIN USING
+            // behind its coalesced one) yields to a visible one.
+            if c.hidden && table.is_none() {
+                if hidden.is_some() && found.is_none() {
+                    hidden = Some(None);
+                } else if hidden.is_none() {
+                    hidden = Some(Some(i));
+                }
                 continue;
             }
             if found.is_some() {
@@ -63,7 +74,11 @@ impl Schema {
             }
             found = Some(i);
         }
-        Ok(found)
+        match (found, hidden) {
+            (Some(i), _) | (None, Some(Some(i))) => Ok(Some(i)),
+            (None, Some(None)) => Err(SqlError::AmbiguousColumn { name: name.into() }),
+            (None, None) => Ok(None),
+        }
     }
 
     /// Whether a table name is one of ours.
@@ -166,10 +181,19 @@ pub const AGGREGATES: &[&str] = &["COUNT", "SUM", "AVG", "MIN", "MAX", "COUNT_BI
 #[must_use]
 pub fn has_aggregate(e: &Expr) -> bool {
     match e {
-        Expr::Function(f) => {
-            (AGGREGATES.contains(&f.name.as_str()) && (f.star || f.args.len() == 1))
-                || super::json::is_aggregate(f)
-                || f.args.iter().any(has_aggregate)
+        Expr::Function(f) => super::agg::is_aggregate(f) || super::json::is_aggregate(f) || f.args.iter().any(has_aggregate),
+        Expr::WithinGroup(_) => true,
+        // A window function is not the group's aggregate; its arguments
+        // may hold one.
+        Expr::Over(o) => {
+            let inner = match &o.func {
+                Expr::Function(f) => f.args.iter().any(has_aggregate),
+                Expr::WithinGroup(w) => w.func.args.iter().any(has_aggregate),
+                e => has_aggregate(e),
+            };
+            inner
+                || o.window.partition.iter().any(has_aggregate)
+                || o.window.order.iter().any(|i| has_aggregate(&i.expr))
         }
         Expr::Neg(a)
         | Expr::Not(a)
@@ -290,6 +314,41 @@ impl Evaluator<'_> {
             Expr::IsNull(a, not) => {
                 let v = self.eval(txn, a, env)?;
                 Ok(Some(v.is_null() != *not))
+            }
+            Expr::Compare(a, op, b, None) if is_row(a) || is_row(b) => {
+                if !matches!(op, CmpOp::Eq | CmpOp::Ne) {
+                    return Err(SqlError::RowComparison { op: cmp_text(*op).into() });
+                }
+                let x = self.row_values(txn, a, env)?;
+                let y = self.row_values(txn, b, env)?;
+                let eq = row_eq(&x, &y)?;
+                Ok(if *op == CmpOp::Eq { eq } else { eq.map(|b| !b) })
+            }
+            Expr::InList(a, list, not) if is_row(a) => {
+                let x = self.row_values(txn, a, env)?;
+                let mut unknown = false;
+                for item in list {
+                    let y = self.row_values(txn, item, env)?;
+                    match row_eq(&x, &y)? {
+                        Some(true) => return Ok(Some(!*not)),
+                        None => unknown = true,
+                        Some(false) => {}
+                    }
+                }
+                Ok(if unknown { None } else { Some(*not) })
+            }
+            Expr::InSubquery(a, q, not) if is_row(a) => {
+                let x = self.row_values(txn, a, env)?;
+                let rows = self.subquery(txn, q, env)?;
+                let mut unknown = false;
+                for r in rows.iter() {
+                    match row_eq(&x, r)? {
+                        Some(true) => return Ok(Some(!*not)),
+                        None => unknown = true,
+                        Some(false) => {}
+                    }
+                }
+                Ok(if unknown { None } else { Some(*not) })
             }
             Expr::Compare(a, op, b, None) => {
                 let x = self.eval(txn, a, env)?;
@@ -473,8 +532,7 @@ impl Evaluator<'_> {
                     if x.is_null() || n.is_null() {
                         return Ok(Value::Null);
                     }
-                    let n = n.as_i64()?;
-                    return add_duration(&x, if *op == BinOp::Sub { -n } else { n }, *unit);
+                    return super::datetime::labeled(&x, &n, *op == BinOp::Sub, *unit);
                 }
                 if let Expr::Duration(inner, unit) = &**a
                     && *op == BinOp::Add
@@ -484,7 +542,7 @@ impl Evaluator<'_> {
                     if x.is_null() || n.is_null() {
                         return Ok(Value::Null);
                     }
-                    return add_duration(&x, n.as_i64()?, *unit);
+                    return super::datetime::labeled(&x, &n, false, *unit);
                 }
                 let x = self.eval(txn, a, env)?;
                 let y = self.eval(txn, b, env)?;
@@ -544,6 +602,15 @@ impl Evaluator<'_> {
             Expr::Default => Err(SqlError::Unsupported {
                 what: "DEFAULT outside an INSERT or UPDATE value".into(),
             }),
+            Expr::Over(o) => self.ctx.windows.get(&o.slot).cloned().ok_or_else(|| SqlError::Misplaced {
+                what: "an OLAP specification outside the select list and ORDER BY".into(),
+            }),
+            Expr::WithinGroup(w) => {
+                let Some(group) = env.group.clone() else {
+                    return Err(SqlError::Misplaced { what: format!("{} where no group is being formed", w.func.name) });
+                };
+                self.aggregate_call(txn, &w.func, &w.order, w.overflow.as_ref(), env, &group)
+            }
             Expr::And(..)
             | Expr::Or(..)
             | Expr::Not(_)
@@ -571,14 +638,24 @@ impl Evaluator<'_> {
                 Value::Timestamp(Timestamp::new(Date::from_unix(secs), Time::from_unix(secs), picos).with_precision(p))
             }
             Register::User => Value::Str(self.ctx.user.clone()),
-            Register::Server => Value::Str("QS400".into()),
+            Register::Server => Value::Str(self.ctx.registers.server.clone()),
+            Register::Named(n) => self.ctx.registers.value(n),
             Register::Schema => Value::Str(
                 self.ctx
                     .current_schema
                     .map_or_else(|| "*LIBL".to_string(), |n| n.to_string()),
             ),
-            Register::Path => Value::Str("*LIBL".into()),
-            Register::Timezone => Value::int(0),
+            Register::Path => Value::Str(self.ctx.registers.path.clone().unwrap_or_else(|| match self.ctx.naming {
+                crate::ast::Naming::Sys => "*LIBL".into(),
+                crate::ast::Naming::Sql => format!("\"QSYS\",\"QSYS2\",\"SYSPROC\",\"SYSIBMADM\",\"{}\"", self.ctx.user),
+            })),
+            Register::Timezone => {
+                // hhmmss of the offset from UTC, signed.
+                let s = self.ctx.registers.timezone_secs;
+                let a = s.abs();
+                let n = a / 3600 * 10_000 + a % 3600 / 60 * 100 + a % 60;
+                Value::int(if s < 0 { -n } else { n })
+            }
             Register::DecfloatRounding => Value::Str(self.ctx.decfloat_rounding.name().into()),
         }
     }
@@ -589,13 +666,23 @@ impl Evaluator<'_> {
             return r;
         }
         let name = f.name.as_str();
-        if AGGREGATES.contains(&name) && (f.star || f.args.len() == 1) {
+        if super::agg::is_aggregate(f) {
             let Some(group) = env.group.clone() else {
-                return Err(SqlError::Unsupported {
+                return Err(SqlError::Misplaced {
                     what: format!("{name} where no group is being formed"),
                 });
             };
-            return self.aggregate(txn, f, env, &group);
+            return self.aggregate_call(txn, f, &[], None, env, &group);
+        }
+        if (name == "*DISTINCT" || name == "*NOTDISTINCT") && f.args.len() == 2 {
+            let a = self.eval(txn, &f.args[0], env)?;
+            let b = self.eval(txn, &f.args[1], env)?;
+            let same = not_distinct(&a, &b)?;
+            return Ok(Value::Bool(if name == "*DISTINCT" { !same } else { same }));
+        }
+        // GROUPING of a query that is not grouped by sets.
+        if name == "GROUPING" && f.args.len() == 1 {
+            return Ok(Value::int(0));
         }
         if name == "RRN" {
             let Some(Expr::Column(c)) = f.args.first() else {
@@ -653,82 +740,108 @@ impl Evaluator<'_> {
         Ok(v)
     }
 
-    fn aggregate(
+    /// An aggregate over the rows of a group: each row's arguments and
+    /// `WITHIN GROUP` keys gathered, then folded (`agg`).
+    pub(crate) fn aggregate_call(
         &mut self,
         txn: &mut Txn<'_>,
         f: &Function,
+        order: &[crate::ast::OrderItem],
+        overflow: Option<&crate::ast::Overflow>,
         env: &Env,
         group: &Rc<Vec<Row>>,
     ) -> Result<Value> {
-        let mut values = Vec::new();
-        if f.star {
-            return Ok(Value::int(i64::try_from(group.len()).expect("fits")));
-        }
+        let mut rows = Vec::with_capacity(group.len());
         for row in group.iter() {
             self.ctx.tick(txn)?;
             let e = env.replaced(row.clone());
-            let v = self.eval(txn, &f.args[0], &e)?;
-            if v.is_null() {
-                self.ctx.nulls_eliminated = true;
-            } else {
-                values.push(v);
+            let mut args = Vec::with_capacity(f.args.len());
+            if !f.star {
+                for a in &f.args {
+                    args.push(self.eval(txn, a, &e)?);
+                }
             }
+            let mut keys = Vec::with_capacity(order.len());
+            for o in order {
+                keys.push(self.eval(txn, &o.expr, &e)?);
+            }
+            rows.push(super::agg::Input { args, keys });
         }
-        if f.distinct {
-            let mut seen = std::collections::HashSet::new();
-            values.retain(|v| seen.insert(v.key()));
+        let call = super::agg::Call { name: &f.name, distinct: f.distinct, star: f.star, order, overflow };
+        let mut nulls = false;
+        let v = super::agg::finish(&call, rows, &mut nulls)?;
+        if nulls {
+            self.ctx.nulls_eliminated = true;
         }
-        match f.name.as_str() {
-            "COUNT" | "COUNT_BIG" => Ok(Value::int(i64::try_from(values.len()).expect("fits"))),
-            "SUM" | "AVG" => {
-                if values.is_empty() {
-                    return Ok(Value::Null);
+        Ok(v)
+    }
+}
+
+/// Whether `e` is a row of more than one value.
+fn is_row(e: &Expr) -> bool {
+    matches!(e, Expr::Row(items) if items.len() > 1)
+}
+
+fn cmp_text(op: CmpOp) -> &'static str {
+    match op {
+        CmpOp::Eq => "=",
+        CmpOp::Ne => "<>",
+        CmpOp::Lt => "<",
+        CmpOp::Le => "<=",
+        CmpOp::Gt => ">",
+        CmpOp::Ge => ">=",
+    }
+}
+
+/// Two rows equal: every pair equal; unknown when no pair differs and a
+/// pair is unknown.
+fn row_eq(x: &[Value], y: &[Value]) -> Result<Option<bool>> {
+    if x.is_empty() || y.is_empty() {
+        return Ok(None);
+    }
+    if x.len() != y.len() {
+        return Err(SqlError::ValueCount { what: format!("a row of {} values beside one of {}", x.len(), y.len()) });
+    }
+    let mut unknown = false;
+    for (a, b) in x.iter().zip(y) {
+        match compare(a, CmpOp::Eq, b)? {
+            Some(false) => return Ok(Some(false)),
+            None => unknown = true,
+            Some(true) => {}
+        }
+    }
+    Ok(if unknown { None } else { Some(true) })
+}
+
+/// `a IS [NOT] DISTINCT FROM b`: nulls are equal to each other.
+pub fn not_distinct(a: &Value, b: &Value) -> Result<bool> {
+    Ok(match (a.is_null(), b.is_null()) {
+        (true, true) => true,
+        (true, false) | (false, true) => false,
+        _ => compare(a, CmpOp::Eq, b)? == Some(true),
+    })
+}
+
+impl Evaluator<'_> {
+    /// The values of a row, a scalar, or a subquery's one row.
+    fn row_values(&mut self, txn: &mut Txn<'_>, e: &Expr, env: &Env) -> Result<Vec<Value>> {
+        match e {
+            Expr::Row(items) => {
+                let mut v = Vec::with_capacity(items.len());
+                for i in items {
+                    v.push(self.eval(txn, i, env)?);
                 }
-                if values.iter().any(|v| matches!(v, Value::DecFloat(_)) || v.is_float()) {
-                    let mut sum = values[0].clone();
-                    for v in &values[1..] {
-                        sum = binary(&sum, BinOp::Add, v)?;
-                    }
-                    if f.name == "AVG" {
-                        let n = Value::int(i64::try_from(values.len()).expect("fits"));
-                        return binary(&sum, BinOp::Div, &n);
-                    }
-                    return Ok(sum);
-                }
-                let mut sum = Decimal::zero();
-                for v in &values {
-                    sum = sum.add_exact(&v.as_decimal()?).map_err(overflow)?;
-                }
-                if f.name == "AVG" {
-                    let n =
-                        Decimal::new(i128::try_from(values.len()).expect("fits"), 0).expect("fits");
-                    let scale = (sum.scale() + 6).min(31);
-                    return Ok(Value::Num(sum.div_to_scale(&n, scale).map_err(overflow)?));
-                }
-                Ok(Value::Num(sum))
+                Ok(v)
             }
-            "MIN" | "MAX" => {
-                let want = if f.name == "MIN" {
-                    Ordering::Less
-                } else {
-                    Ordering::Greater
-                };
-                let mut best: Option<Value> = None;
-                for v in values {
-                    best = Some(match best {
-                        None => v,
-                        Some(b) => {
-                            if v.compare(&b)? == Some(want) {
-                                v
-                            } else {
-                                b
-                            }
-                        }
-                    });
+            Expr::Subquery(q) => {
+                let rows = self.subquery(txn, q, env)?;
+                match rows.len() {
+                    0 => Ok(Vec::new()),
+                    1 => Ok(rows[0].clone()),
+                    _ => Err(SqlError::TooManyRows),
                 }
-                Ok(best.unwrap_or(Value::Null))
             }
-            _ => unreachable!("aggregate list"),
+            e => Ok(vec![self.eval(txn, e, env)?]),
         }
     }
 }
@@ -809,6 +922,9 @@ pub fn binary(a: &Value, op: BinOp, b: &Value) -> Result<Value> {
     if a.is_null() || b.is_null() {
         return Ok(Value::Null);
     }
+    if let Some(r) = super::datetime::binary(a, op, b) {
+        return r;
+    }
     if op != BinOp::Concat && (matches!(a, Value::DecFloat(_)) || matches!(b, Value::DecFloat(_))) {
         return decfloat_binary(a, op, b);
     }
@@ -822,19 +938,6 @@ pub fn binary(a: &Value, op: BinOp, b: &Value) -> Result<Value> {
             _ => Ok(Value::Str(format!("{}{}", a.as_text(), b.as_text()))),
         },
         BinOp::Add | BinOp::Sub => {
-            if matches!(a, Value::Date(_) | Value::Timestamp(_)) && matches!(b, Value::Num(_)) {
-                return Err(SqlError::Unsupported {
-                    what: "date arithmetic without a labeled duration".into(),
-                });
-            }
-            if let (Value::Date(x), Value::Date(y)) = (a, b) {
-                if op == BinOp::Add {
-                    return Err(SqlError::TypeMismatch {
-                        what: "date + date".into(),
-                    });
-                }
-                return Ok(Value::Num(date_duration(*x, *y)));
-            }
             let x = a.as_decimal()?;
             let y = b.as_decimal()?;
             let r = if op == BinOp::Add {
@@ -894,36 +997,6 @@ fn decfloat_binary(a: &Value, op: BinOp, b: &Value) -> Result<Value> {
     out.map(Value::DecFloat).map_err(crate::value::decfloat_error)
 }
 
-/// `date - date` as the `yyyymmdd` duration DB2 gives.
-fn date_duration(a: Date, b: Date) -> Decimal {
-    let (hi, lo, neg) = if cmp_dates(a, b) == Ordering::Less {
-        (b, a, true)
-    } else {
-        (a, b, false)
-    };
-    let mut years = i64::from(hi.year) - i64::from(lo.year);
-    let mut months = i64::from(hi.month) - i64::from(lo.month);
-    let mut days = i64::from(hi.day) - i64::from(lo.day);
-    // Borrow from the months before the first date's until the days are
-    // not negative.
-    let (mut py, mut pm) = (hi.year, hi.month);
-    while days < 0 {
-        months -= 1;
-        (py, pm) = if pm == 1 { (py - 1, 12) } else { (py, pm - 1) };
-        days += i64::from(days_in_month(py, pm));
-    }
-    if months < 0 {
-        years -= 1;
-        months += 12;
-    }
-    let n = years * 10_000 + months * 100 + days;
-    Decimal::new(i128::from(if neg { -n } else { n }), 0).expect("fits")
-}
-
-fn cmp_dates(a: Date, b: Date) -> Ordering {
-    crate::value::cmp_date(&a, &b)
-}
-
 /// Add a labeled duration to a date or timestamp.
 pub fn add_duration(v: &Value, n: i64, unit: DurationUnit) -> Result<Value> {
     let bad = || SqlError::Overflow {
@@ -936,7 +1009,7 @@ pub fn add_duration(v: &Value, n: i64, unit: DurationUnit) -> Result<Value> {
             DurationUnit::Months => add_months(*d, n).ok_or_else(bad)?,
             DurationUnit::Days => date_from_days(days_of(*d) + n).ok_or_else(bad)?,
             _ => {
-                return Err(SqlError::TypeMismatch {
+                return Err(SqlError::Duration {
                     what: "a time duration on a date".into(),
                 });
             }
@@ -984,7 +1057,7 @@ pub fn add_duration(v: &Value, n: i64, unit: DurationUnit) -> Result<Value> {
                 DurationUnit::Minutes => secs += n * 60,
                 DurationUnit::Seconds => secs += n,
                 _ => {
-                    return Err(SqlError::TypeMismatch {
+                    return Err(SqlError::Duration {
                         what: "a date duration on a time".into(),
                     });
                 }
@@ -1053,14 +1126,6 @@ mod tests {
         assert_eq!(
             add_months(Date::new(2026, 1, 31).unwrap(), 1).unwrap(),
             Date::new(2026, 2, 28).unwrap()
-        );
-        assert_eq!(
-            date_duration(
-                Date::new(2026, 3, 1).unwrap(),
-                Date::new(2025, 12, 31).unwrap()
-            )
-            .to_string(),
-            "129"
         );
     }
 }

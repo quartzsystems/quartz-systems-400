@@ -6,12 +6,18 @@
 //! families live in their own modules; this one has the cursor, the
 //! names and types, and the statement dispatch.
 
+mod change;
 mod ddl;
 mod integrity;
 mod sequence;
+mod from;
 mod dml;
 mod expr;
 mod objects;
+mod cte;
+mod olap;
+
+pub use olap::GROUPING_SETS;
 mod query;
 mod json;
 mod types;
@@ -85,6 +91,12 @@ pub struct Parser {
     at: usize,
     naming: Naming,
     params: usize,
+    /// OLAP specifications so far, each its slot.
+    windows: usize,
+    /// A clause parsed only to be refused, reported once the statement parses.
+    refused: Option<SqlError>,
+    /// `SKIP LOCKED DATA` seen and not yet taken by a query.
+    skip_locked: bool,
     /// Expressions and queries open around the current token.
     depth: u16,
     /// The statement text, for the parts kept as written (a view's query).
@@ -99,6 +111,9 @@ impl Parser {
             at: 0,
             naming,
             params: 0,
+            windows: 0,
+            refused: None,
+            skip_locked: false,
             depth: 0,
             src: text.to_string(),
         })
@@ -145,6 +160,12 @@ impl Parser {
         let r = f(self);
         self.depth -= 1;
         r
+    }
+
+    /// `SQL0199`: the current keyword is not expected.
+    fn keyword(&self) -> SqlError {
+        let t = &self.toks[self.at.min(self.toks.len() - 1)];
+        SqlError::Keyword { word: t.tok.describe(), line: t.line, col: t.col }
     }
 
     fn unsupported(what: &str) -> SqlError {
@@ -244,6 +265,13 @@ impl Parser {
     /// token alone.
     fn optional_name(&mut self) -> Result<Option<Ident>> {
         match self.tok() {
+            // Not the concurrent access resolution clause.
+            Tok::Word(w)
+                if self.is_words(&["WAIT", "FOR"]) || self.is_words(&["SKIP", "LOCKED"]) || self.is_words(&["USE", "CURRENTLY"]) =>
+            {
+                let _ = w;
+                Ok(None)
+            }
             Tok::Word(w) if !RESERVED.contains(&w.as_str()) => Ok(Some(self.ident()?)),
             Tok::Delimited(_) => Ok(Some(self.ident()?)),
             _ => Ok(None),
@@ -488,6 +516,30 @@ impl Parser {
 
     /// `WITH NC|UR|CS|RS|RR`, when present.
     fn isolation(&mut self) -> Option<Isolation> {
+        let iso = self.isolation_clause();
+        // The concurrent access resolution clause.
+        if self.eat_words(&["SKIP", "LOCKED", "DATA"]) {
+            self.skip_locked = true;
+        } else if self.is_words(&["WAIT", "FOR", "OUTCOME"]) {
+            self.refuse(Self::unsupported("WAIT FOR OUTCOME"));
+            self.advance();
+            self.advance();
+            self.advance();
+        } else if self.is_words(&["USE", "CURRENTLY", "COMMITTED"]) {
+            self.refuse(Self::unsupported("USE CURRENTLY COMMITTED"));
+            self.advance();
+            self.advance();
+            self.advance();
+        }
+        iso
+    }
+
+    /// Keep the first refusal found while parsing goes on.
+    fn refuse(&mut self, e: SqlError) {
+        self.refused.get_or_insert(e);
+    }
+
+    fn isolation_clause(&mut self) -> Option<Isolation> {
         let iso = match self.tok_at(1) {
             Tok::Word(w) if self.is_word("WITH") => match w.as_str() {
                 "NC" | "NONE" => Isolation::Nc,
@@ -501,8 +553,9 @@ impl Parser {
         };
         self.advance();
         self.advance();
-        // USE AND KEEP ... LOCKS is accepted and ignored.
+        // USE AND KEEP x LOCKS: the engine takes no such locks.
         if self.eat_words(&["USE", "AND", "KEEP"]) {
+            self.refuse(Self::unsupported("USE AND KEEP ... LOCKS"));
             self.advance();
             self.eat_word("LOCKS");
         }
@@ -511,7 +564,7 @@ impl Parser {
 
     /// One statement; the text must end after it (a `;` is allowed).
     pub fn statement(&mut self) -> Result<Statement> {
-        let s = self.statement_body()?;
+        let s = self.checked_body()?;
         self.eat_sym(";");
         if !self.at_end() {
             return Err(self.expected("end of statement"));
@@ -526,12 +579,24 @@ impl Parser {
             if self.eat_sym(";") {
                 continue;
             }
-            out.push(self.statement_body()?);
+            out.push(self.checked_body()?);
             if !self.at_end() {
                 self.expect_sym(";")?;
             }
         }
         Ok(out)
+    }
+
+    /// A statement, then any clause it holds that is refused.
+    fn checked_body(&mut self) -> Result<Statement> {
+        let s = self.statement_body()?;
+        if let Some(e) = self.refused.take() {
+            return Err(e);
+        }
+        if std::mem::take(&mut self.skip_locked) {
+            return Err(Self::unsupported("SKIP LOCKED DATA on a statement that is not a query"));
+        }
+        Ok(s)
     }
 
     fn statement_body(&mut self) -> Result<Statement> {
@@ -575,6 +640,7 @@ impl Parser {
                 })
             }
             "SET" => self.set(),
+            "TRUNCATE" => self.truncate(),
             "EXPLAIN" => {
                 self.advance();
                 Ok(Statement::Explain(Box::new(self.statement_body()?)))
@@ -582,7 +648,7 @@ impl Parser {
             "GRANT" => self.grant(false),
             "REVOKE" => self.grant(true),
             "CALL" | "LOCK" | "PREPARE" | "EXECUTE" | "DESCRIBE"
-            | "CONNECT" | "DISCONNECT" | "RELEASE" | "SAVEPOINT" | "TRUNCATE" | "REFRESH" => {
+            | "CONNECT" | "DISCONNECT" | "RELEASE" | "SAVEPOINT" | "REFRESH" => {
                 Err(Self::unsupported(&format!("{w} statement")))
             }
             _ => Err(self.expected("a statement")),
@@ -731,11 +797,23 @@ impl Parser {
             }
             return Ok(Statement::SetPath(entries));
         }
-        if self.eat_words(&["CURRENT", "DEGREE"]) || self.eat_word("CURRENT_DEGREE") {
-            self.eat_sym("=");
-            // ANY, NONE, MAX, IO, OPTIMIZE, a number or a string.
-            self.advance();
-            return Ok(Statement::SetCurrentDegree);
+        for (words, name) in [
+            (&["CURRENT", "DEGREE"][..], "CURRENT DEGREE"),
+            (&["CURRENT_DEGREE"][..], "CURRENT DEGREE"),
+            (&["CURRENT", "IMPLICIT", "XMLPARSE", "OPTION"][..], "CURRENT IMPLICIT XMLPARSE OPTION"),
+        ] {
+            if self.eat_words(words) {
+                self.eat_sym("=");
+                // A keyword (ANY, ROUND_HALF_UP, ...) stands for its text.
+                let value = match self.tok().clone() {
+                    Tok::Word(w) if !self.is_sym_at(1, "(") => {
+                        self.advance();
+                        crate::ast::Expr::Literal(crate::ast::Literal::Str(w))
+                    }
+                    _ => self.expr()?,
+                };
+                return Ok(Statement::SetRegister { name, value });
+            }
         }
         if self.eat_words(&["CURRENT", "DECFLOAT", "ROUNDING", "MODE"]) {
             return self.set_decfloat_rounding();

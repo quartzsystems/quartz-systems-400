@@ -398,7 +398,8 @@ const SUBQUERY_CHANGES: &[(&str, &str, i32)] = &[
     ("T", "DELETE FROM QSTEST.T WHERE ID IN (SELECT ID + 1 FROM QSTEST.T WHERE ID < 600)", 599),
     // The same through a correlated subquery (by key).
     ("K", "DELETE FROM QSTEST.K A WHERE EXISTS (SELECT 1 FROM QSTEST.K B WHERE B.ID = A.ID - 1)", 999),
-    ("T", "UPDATE QSTEST.T SET ID = ID + 1 WHERE ID < (SELECT AVG(ID) FROM QSTEST.T)", 500),
+    // AVG of an INTEGER is an INTEGER: 500, not 500.5.
+    ("T", "UPDATE QSTEST.T SET ID = ID + 1 WHERE ID < (SELECT AVG(ID) FROM QSTEST.T)", 499),
 ];
 
 #[test]

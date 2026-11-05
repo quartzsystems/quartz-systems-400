@@ -199,6 +199,7 @@ pub fn type_of(e: &Expr, schema: &Schema) -> Result<Option<SqlType>> {
             Register::User | Register::Server => nn(DataType::Varchar(18)),
             Register::Schema | Register::DecfloatRounding => nn(DataType::Varchar(128)),
             Register::Path => nn(DataType::Varchar(3483)),
+            Register::Named(_) => Ok(None),
             Register::Timezone => nn(DataType::Decimal(6, 0)),
         },
         Expr::Cast(a, t) => {

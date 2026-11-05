@@ -9,6 +9,7 @@ pub mod ddl;
 pub mod expr;
 pub mod grant;
 pub mod query;
+pub mod visit;
 
 pub use ddl::*;
 pub use expr::*;
@@ -235,6 +236,28 @@ pub enum Statement {
     Grant(Grant),
     /// `REVOKE`.
     Revoke(Grant),
+    /// `TRUNCATE [TABLE]`.
+    Truncate(Truncate),
+    /// `SET` of a settable special register (`CURRENT DEGREE`, ...).
+    SetRegister {
+        /// The register's canonical name.
+        name: &'static str,
+        /// The value.
+        value: Expr,
+    },
+}
+
+/// `TRUNCATE`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Truncate {
+    /// The table.
+    pub table: ObjectName,
+    /// `REUSE STORAGE` (else `DROP STORAGE`).
+    pub reuse: bool,
+    /// `RESTRICT WHEN DELETE TRIGGERS` (else `IGNORE`).
+    pub restrict_triggers: bool,
+    /// `RESTART IDENTITY` (else `CONTINUE IDENTITY`).
+    pub restart_identity: bool,
 }
 
 /// `SET SCHEMA` argument.

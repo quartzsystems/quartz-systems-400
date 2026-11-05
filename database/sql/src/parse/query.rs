@@ -19,30 +19,8 @@ impl Parser {
     }
 
     fn query_body(&mut self) -> Result<Query> {
-        if self.is_word("WITH") && !self.is_word_at(2, "AS") {
-            // WITH NC and the like belong after the body; a common table
-            // expression is WITH name AS (...).
-        }
-        if self.is_word("WITH") && (self.is_word_at(2, "AS") || self.is_sym_at(2, "(")) {
-            // Common table expressions: each becomes a derived table
-            // wherever the body names it.
-            self.advance();
-            let mut ctes = Vec::new();
-            loop {
-                let name = self.ident()?;
-                let columns = self.optional_ident_list()?;
-                self.expect_word("AS")?;
-                self.expect_sym("(")?;
-                let q = self.query()?;
-                self.expect_sym(")")?;
-                ctes.push((name, columns, q));
-                if !self.eat_sym(",") {
-                    break;
-                }
-            }
-            let mut q = self.query()?;
-            substitute_query(&mut q, &ctes);
-            return Ok(q);
+        if self.starts_cte() {
+            return self.with_query();
         }
         let body = self.union_body()?;
         let mut q = Query::of(body);
@@ -104,7 +82,9 @@ impl Parser {
                 }
             } else if let Some(iso) = self.isolation() {
                 q.isolation = Some(iso);
+                q.skip_locked |= std::mem::take(&mut self.skip_locked);
             } else {
+                q.skip_locked |= std::mem::take(&mut self.skip_locked);
                 return Ok(q);
             }
         }
@@ -131,7 +111,21 @@ impl Parser {
         }
     }
 
-    fn order_item(&mut self) -> Result<OrderItem> {
+    pub(crate) fn order_item(&mut self) -> Result<OrderItem> {
+        // ORDER OF x: the order of derived table x.
+        if self.is_words(&["ORDER", "OF"]) {
+            self.advance();
+            self.advance();
+            let t = self.ident()?;
+            return Ok(OrderItem {
+                expr: Expr::Column(crate::ast::ColumnRef {
+                    table: Some(t),
+                    column: Ident { value: crate::exec::ORDER_COLUMN.into(), delimited: true },
+                }),
+                desc: false,
+                nulls_first: None,
+            });
+        }
         let expr = self.expr()?;
         let desc = if self.eat_word("DESC") {
             true
@@ -139,16 +133,11 @@ impl Parser {
             self.eat_word("ASC");
             false
         };
-        let nulls_first = if self.eat_word("NULLS") {
-            if self.eat_word("FIRST") {
-                Some(true)
-            } else {
-                self.expect_word("LAST")?;
-                Some(false)
-            }
-        } else {
-            None
-        };
+        // DB2 for i has no NULLS FIRST or NULLS LAST.
+        if self.is_word("NULLS") {
+            return Err(self.keyword());
+        }
+        let nulls_first = None;
         Ok(OrderItem {
             expr,
             desc,
@@ -234,9 +223,9 @@ impl Parser {
         };
         let mut group_by = Vec::new();
         if self.eat_words(&["GROUP", "BY"]) {
-            group_by.push(self.expr()?);
+            group_by.push(self.grouping_element()?);
             while self.eat_sym(",") {
-                group_by.push(self.expr()?);
+                group_by.push(self.grouping_element()?);
             }
         }
         let having = if self.eat_word("HAVING") {
@@ -308,6 +297,11 @@ impl Parser {
                 return Ok(left);
             };
             let right = self.table_primary()?;
+            if kind != JoinKind::Cross && self.eat_word("USING") {
+                let columns = self.ident_list()?;
+                left = TableRef::JoinUsing { left: Box::new(left), right: Box::new(right), kind, columns };
+                continue;
+            }
             let on = if kind == JoinKind::Cross {
                 None
             } else {
@@ -344,8 +338,8 @@ impl Parser {
             self.expect_sym(")")?;
             return Ok(inner);
         }
-        if self.eat_word("TABLE") || self.eat_word("LATERAL") {
-            return Err(Self::unsupported("TABLE(...) and LATERAL table references"));
+        if let Some(t) = self.special_table()? {
+            return Ok(t);
         }
         let name = self.object_name()?;
         let alias = self.alias()?;
@@ -370,153 +364,3 @@ impl Parser {
     }
 }
 
-/// A common table expression: its name, column names and query.
-type Cte = (Ident, Vec<Ident>, Query);
-
-/// Every table reference of `q` that names a common table expression
-/// becomes that expression as a derived table.
-fn substitute_query(q: &mut Query, ctes: &[Cte]) {
-    substitute_body(&mut q.body, ctes);
-    for item in &mut q.order_by {
-        substitute_expr(&mut item.expr, ctes);
-    }
-}
-
-fn substitute_body(b: &mut QueryBody, ctes: &[Cte]) {
-    match b {
-        QueryBody::Select(sel) => {
-            for t in &mut sel.from {
-                substitute_table(t, ctes);
-            }
-            for item in &mut sel.items {
-                if let SelectItem::Expr(e, _) = item {
-                    substitute_expr(e, ctes);
-                }
-            }
-            if let Some(w) = &mut sel.where_clause {
-                substitute_expr(w, ctes);
-            }
-            for g in &mut sel.group_by {
-                substitute_expr(g, ctes);
-            }
-            if let Some(h) = &mut sel.having {
-                substitute_expr(h, ctes);
-            }
-        }
-        QueryBody::Values(rows) => {
-            for r in rows {
-                for e in r {
-                    substitute_expr(e, ctes);
-                }
-            }
-        }
-        QueryBody::Union { left, right, .. } => {
-            substitute_body(left, ctes);
-            substitute_body(right, ctes);
-        }
-        QueryBody::Nested(inner) => substitute_query(inner, ctes),
-    }
-}
-
-fn substitute_table(t: &mut TableRef, ctes: &[Cte]) {
-    match t {
-        TableRef::Table {
-            name,
-            alias,
-            columns,
-        } if name.schema.is_none() => {
-            if let Some((cname, ccols, q)) =
-                ctes.iter().find(|(n, _, _)| n.value == name.name.value)
-            {
-                let alias = alias.clone().unwrap_or_else(|| cname.clone());
-                let cols = if columns.is_empty() {
-                    ccols.clone()
-                } else {
-                    columns.clone()
-                };
-                *t = TableRef::Subquery {
-                    query: Box::new(q.clone()),
-                    alias,
-                    columns: cols,
-                };
-            }
-        }
-        TableRef::Table { .. } => {}
-        TableRef::Subquery { query, .. } => substitute_query(query, ctes),
-        TableRef::Join {
-            left, right, on, ..
-        } => {
-            substitute_table(left, ctes);
-            substitute_table(right, ctes);
-            if let Some(e) = on {
-                substitute_expr(e, ctes);
-            }
-        }
-    }
-}
-
-fn substitute_expr(e: &mut Expr, ctes: &[Cte]) {
-    match e {
-        Expr::Neg(a)
-        | Expr::Not(a)
-        | Expr::IsNull(a, _)
-        | Expr::Cast(a, _)
-        | Expr::Duration(a, _) => {
-            substitute_expr(a, ctes);
-        }
-        Expr::Binary(a, _, b) | Expr::And(a, b) | Expr::Or(a, b) | Expr::Compare(a, _, b, _) => {
-            substitute_expr(a, ctes);
-            substitute_expr(b, ctes);
-        }
-        Expr::Between(a, lo, hi, _) => {
-            substitute_expr(a, ctes);
-            substitute_expr(lo, ctes);
-            substitute_expr(hi, ctes);
-        }
-        Expr::InList(a, list, _) => {
-            substitute_expr(a, ctes);
-            for x in list {
-                substitute_expr(x, ctes);
-            }
-        }
-        Expr::Like(a, p, esc, _) => {
-            substitute_expr(a, ctes);
-            substitute_expr(p, ctes);
-            if let Some(x) = esc {
-                substitute_expr(x, ctes);
-            }
-        }
-        Expr::InSubquery(a, q, _) => {
-            substitute_expr(a, ctes);
-            substitute_query(q, ctes);
-        }
-        Expr::Exists(q, _) | Expr::Subquery(q) => substitute_query(q, ctes),
-        Expr::Case {
-            operand,
-            whens,
-            otherwise,
-        } => {
-            if let Some(o) = operand {
-                substitute_expr(o, ctes);
-            }
-            for (w, t) in whens {
-                substitute_expr(w, ctes);
-                substitute_expr(t, ctes);
-            }
-            if let Some(o) = otherwise {
-                substitute_expr(o, ctes);
-            }
-        }
-        Expr::Function(f) => {
-            for a in &mut f.args {
-                substitute_expr(a, ctes);
-            }
-        }
-        Expr::Row(items) => {
-            for x in items {
-                substitute_expr(x, ctes);
-            }
-        }
-        _ => {}
-    }
-}
