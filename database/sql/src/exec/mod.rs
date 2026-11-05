@@ -553,6 +553,11 @@ impl SqlContext {
     /// The library to create an object in.
     pub fn library_for(&self, txn: &mut Txn<'_>, name: &ObjectName) -> Result<ObjectId> {
         match self.lib_spec_in(txn, name)? {
+            // BLOCKED(sql): QTEMP is in the temporary ASP, and a statement
+            // runs in one ASP's transaction.
+            LibSpec::Name(n) if n.to_string() == "QTEMP" => {
+                Err(SqlError::Unsupported { what: "SQL objects in QTEMP".into() })
+            }
             LibSpec::Name(n) => ops::find_library(txn, self.qsys, n)
                 .map(|f| f.id)
                 .map_err(|_| SqlError::ObjectNotFound {

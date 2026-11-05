@@ -2987,6 +2987,7 @@ dependencies = [
  "release",
  "savfmt",
  "sha2",
+ "sql",
  "store",
  "tape",
  "thiserror",
