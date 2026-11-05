@@ -476,7 +476,7 @@ At offset 0 of the body. Text fields are CP037, space padded.
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | magic | `QS400OBJ` |
-| 8 | 4 | header_version | 1 |
+| 8 | 4 | header_version | 2; a version 1 header (before `sql`) reads as having no SQL information and is written as version 2 at its next change |
 | 12 | 4 | flags | bit 0: a program that adopts its owner's authority (`USRPRF(*OWNER)`) |
 | 16 | 16 | id | `ObjectId` |
 | 32 | 16 | library | `ObjectId` of the containing library; QSYS contains itself |
@@ -534,7 +534,8 @@ At offset 0 of the body. Text fields are CP037, space padded.
 | 980 | 8 | sig_key | first 8 bytes of the SHA-256 of the signer's public key |
 | 988 | 4 | sig_flags | bit 0 signed, bit 1 signed by a key the system trusts for system objects |
 | 992 | 8 | change | the ID of the last transaction that changed the object; 0 for none yet |
-| 1000 | 24 | reserved7 | 0 |
+| 1000 | 16 | sql | `ObjectId` of the owned `*SQLINF` holding the object's SQL attributes (`docs/DB_FORMAT.md` §8); zero for none |
+| 1016 | 8 | reserved7 | 0 |
 
 Public authority bits: 0x0001 `*OBJOPR`, 0x0002 `*OBJMGT`, 0x0004
 `*OBJEXIST`, 0x0008 `*OBJALTER`, 0x0010 `*OBJREF`, 0x0020 `*READ`,
@@ -621,6 +622,13 @@ directory keys and headers; see that table for the list. `*SYSVAL`
 
 `*MBR` (0x00FE) is internal too: a database file member, created only by
 the database layer and owned by its `*FILE`.
+
+`*SQLINF` (0x00FD) is internal: the SQL attributes of one object (its
+SQL name, definition text, constraints, triggers, routine, sequence or
+variable state; `docs/DB_FORMAT.md` §8), owned by that object and named
+by its header's `sql` field. Deleting the owner deletes it. A library's
+SQL names are not kept this way: its header's tree root slot 0 is the
+library's SQL name index (`docs/DB_FORMAT.md` §8.2).
 
 **Owned objects.** An object whose `library` field names an object that
 is not a library belongs to that object and has no library directory

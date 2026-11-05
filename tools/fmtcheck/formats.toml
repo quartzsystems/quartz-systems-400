@@ -59,6 +59,19 @@ files = [
 
 # --- The database and journals ---
 
+# SQL information (*SQLINF) and the library SQL name index: a draft until
+# the SQL completion work (docs/SQL.md) freezes the entry bodies.
+[[format]]
+name = "sql-info"
+frozen_at = "V1R2M0"
+draft = true
+doc = "docs/DB_FORMAT.md"
+version = ["database/db/src/sqlinf/entry.rs::VERSION"]
+files = [
+    "database/db/src/sqlinf/entry.rs",
+    "database/db/src/sqlinf/names.rs",
+]
+
 [[format]]
 name = "database"
 frozen_at = "V1R1M0"

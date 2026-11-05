@@ -319,6 +319,12 @@ fn delete_locked(txn: &mut Txn<'_>, id: ObjectId, page: PageNo, h: &ObjectHeader
         }
         lib.free_dir(txn)?;
     }
+    if !h.sql.is_none() && h.sql != id {
+        // The object's SQL information goes with it.
+        if let Ok((sql_page, sql_h)) = read_header(txn, h.sql) {
+            delete_locked(txn, h.sql, sql_page, &sql_h)?;
+        }
+    }
     for run in all_extents(txn, h)? {
         txn.free_run(run.start, run.len)?;
     }

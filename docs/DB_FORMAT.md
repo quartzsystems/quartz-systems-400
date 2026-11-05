@@ -664,6 +664,71 @@ record written, `R UB` the record before an update (under
 `J PR` and `J NR` name the previous and next receiver in `object`.
 File-level entries (`F`) carry no data.
 
+## 8. SQL information
+
+SQL attributes the DDS-shaped structures above cannot hold live beside
+them: an object's in a `*SQLINF` it owns (`docs/STORE_FORMAT.md` §8,
+the header's `sql` link), a library's SQL names in its name index. A
+format 1 object has neither; it gains them the first time SQL gives it
+an attribute, so no conversion runs. The entry bodies are a draft until
+the SQL completion work freezes them (`docs/SQL.md`); a reader skips a
+tag it does not know.
+
+### 8.1 `*SQLINF`
+
+The attribute area holds `SqlInfAttr`; the byte space holds
+`entry_count` entries, each an `SqlEntry` header followed by its body.
+
+### `SqlInfAttr` (32 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | magic | `QS400SQI` |
+| 8 | 2 | version | 1 |
+| 10 | 1 | kind | 1 table, 2 view, 3 index, 4 alias, 5 procedure, 6 function, 7 trigger, 8 sequence, 9 global variable, 10 user-defined type, 11 materialized query table |
+| 11 | 1 | reserved | 0 |
+| 12 | 4 | entry_count | |
+| 16 | 8 | body_len | bytes of the byte space in use |
+| 24 | 8 | reserved2 | 0 |
+
+### `SqlEntry` (8 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | tag | below |
+| 2 | 2 | reserved | 0 |
+| 4 | 4 | len | bytes of the body that follows |
+
+| Tag | Body |
+|---|---|
+| 1 `NAME` | the SQL name, UTF-8, as stored in the catalogs (ordinary names upper case) |
+| 2 `TEXT` | the definition statement as given, UTF-8 |
+| 3 `COLUMN` | one column's SQL attributes |
+| 4 `CONSTRAINT` | one constraint of the table |
+| 5 `TRIGGER` | one trigger of the table |
+| 6 `SEQUENCE` | a sequence's or identity column's attributes and state |
+| 7 `ROUTINE` | a procedure's or function's attributes |
+| 8 `PARM` | one routine parameter |
+| 9 `VARIABLE` | a global variable's attributes |
+| 10 `TYPE` | a user-defined type's attributes |
+| 11 `INDEX` | an index's sparse condition, key expressions and `INCLUDE` columns |
+| 12 `DEPENDENCY` | one object this one depends on |
+| 13 `VIEW` | a view's attributes and query text |
+| 14 `OPTIONS` | the `SET OPTION` values a routine or trigger was made with |
+
+### 8.2 The SQL name index
+
+A B+tree in a library header's tree root slot 0, keyed by `SqlNameKey`
+(513 bytes), valued by the system object's `ObjectId` and its 10-byte
+CP037 name. Schemas' SQL names are in QSYS's index.
+
+### `SqlNameKey` (513 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | space | 1 tables, views, aliases; 2 indexes; 3 routine specific names; 4 sequences; 5 global variables; 6 types; 7 triggers; 8 constraints; 9 schemas |
+| 1 | 512 | name | UTF-8, zero padded |
+
 ## Frozen at V1R1M0
 
 Frozen: the `*FILE` attribute and alias payloads, the member and dependents tables, the format sections and level identifiers, the member attribute, record slots, LOB storage and the key encoding of access paths (`database`); the `*JRN` and `*JRNRCV` payloads and the journal entry layout (`journal`). Each payload carries its own `VERSION`.

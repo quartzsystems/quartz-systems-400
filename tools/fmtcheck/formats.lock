@@ -84,10 +84,15 @@ frozen_at = "V1R1M0"
 version = "2"
 hash = "b72809bdaea4a59970f33a5ae766678dcf3d1c1064c5065e44feba85be92a714"
 
+[format.sql-info]
+frozen_at = "V1R2M0"
+version = "1"
+hash = "807f547832fe78b2a4faf08d921dd2cf60f7f4576f7975d074df886c5409edaf"
+
 [format.store]
 frozen_at = "V1R1M0"
-version = "2/2/1"
-hash = "9c9dc6e9647be9767e5479486a45dcefb31ac8e860f40c095e6438c471b29c0c"
+version = "2/2/2"
+hash = "b09474183c0979c7798f9c39fa76598c38fa26ad277e3e8aedea69a79a6af72a"
 
 [format.ui-objects]
 frozen_at = "V1R1M0"

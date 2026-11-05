@@ -29,6 +29,9 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::member::slots::LAYOUT,
         &crate::member::lob::LAYOUT,
         &crate::path::LAYOUT,
+        &crate::sqlinf::entry::ATTR_LAYOUT,
+        &crate::sqlinf::entry::ENTRY_LAYOUT,
+        &crate::sqlinf::names::KEY_LAYOUT,
     ]
     .into_iter()
     .chain(jrn::spec::layouts())

@@ -118,6 +118,11 @@ pub const PGM: u16 = 0x0015;
 pub const SRVPGM: u16 = 0x0016;
 /// Code of `*BNDDIR`.
 pub const BNDDIR: u16 = 0x0017;
+/// Code of `*SQLUDT`, an SQL user-defined type.
+pub const SQLUDT: u16 = 0x002D;
+/// Code of `*SQLINF` (internal): the SQL attributes of the object that
+/// owns it (`docs/DB_FORMAT.md` §8).
+pub const SQLINF: u16 = 0x00FD;
 /// Code of `*MBR`: a database file member, owned by its file and listed
 /// in no library.
 pub const MBR: u16 = 0x00FE;
@@ -198,6 +203,8 @@ pub static TYPES: &[TypeInfo] = &[
     t(PRDDFN, "*PRDDFN", true, false, false, false, Module::Opaque),
     t(PRDLOD, "*PRDLOD", true, false, false, false, Module::Opaque),
     t(MGTCOL, "*MGTCOL", false, false, false, false, Module::Opaque),
+    t(SQLUDT, "*SQLUDT", true, true, false, false, Module::Opaque),
+    t(SQLINF, "*SQLINF", false, true, false, false, Module::Opaque),
     t(MBR, "*MBR", false, true, false, false, Module::Opaque),
     t(SYSVAL, "*SYSVAL", false, false, true, true, Module::SysVal),
 ];
@@ -224,7 +231,7 @@ mod tests {
         codes.sort_unstable();
         codes.dedup();
         assert_eq!(codes.len(), TYPES.len(), "codes unique");
-        assert_eq!(TYPES.len(), 42);
+        assert_eq!(TYPES.len(), 44);
         assert!(TYPES.iter().all(|t| t.name.starts_with('*')));
         assert_eq!(type_by_name("*dtaara").unwrap().code, DTAARA);
         assert_eq!(type_by_code(SYSVAL).unwrap().module, Module::SysVal);

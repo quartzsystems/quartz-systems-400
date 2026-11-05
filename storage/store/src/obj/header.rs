@@ -17,8 +17,9 @@ use crate::{Result, StoreError};
 
 /// Magic at offset 0.
 pub const MAGIC: &[u8; 8] = b"QS400OBJ";
-/// Header version this code writes and reads.
-pub const HEADER_VERSION: u32 = 1;
+/// Header version this code writes. Version 1 headers (before the `sql`
+/// link) read as having none.
+pub const HEADER_VERSION: u32 = 2;
 /// Bytes of the fixed part.
 pub const FIXED_LEN: usize = 1024;
 /// Body offset of the type-specific attribute area.
@@ -77,6 +78,8 @@ const OFF_SAVE: usize = 840;
 const OFF_SIGNATURE: usize = 916;
 /// Body offset of the change stamp, set at commit (`Txn`).
 pub const OFF_CHANGE: usize = 992;
+/// Offset of the `sql` link.
+pub const OFF_SQL: usize = 1000;
 /// `auth_flags`: the owner's authority was reduced from `*ALL`.
 const OWNER_REDUCED: u32 = 1;
 
@@ -147,7 +150,8 @@ pub static LAYOUT: Layout = Layout {
         field("sig_key", 980, 8),
         field("sig_flags", 988, 4),
         field("change", OFF_CHANGE, 8),
-        field("reserved7", 1000, 24),
+        field("sql", OFF_SQL, 16),
+        field("reserved7", OFF_SQL + 16, 8),
     ],
 };
 
@@ -326,6 +330,9 @@ pub struct ObjectHeader {
     /// The ID of the last transaction that changed the object (0: none
     /// since the stamp was added). Set at commit; never repeats.
     pub change: u64,
+    /// The owned `*SQLINF` holding the object's SQL attributes, or
+    /// [`ObjectId::NONE`].
+    pub sql: ObjectId,
 }
 
 /// An object's signature: ed25519 over its content digest
@@ -455,6 +462,7 @@ impl ObjectHeader {
             save: SaveInfo::default(),
             signature: None,
             change: 0,
+            sql: ObjectId::NONE,
         }
     }
 
@@ -527,6 +535,7 @@ impl ObjectHeader {
             put_u32(b, OFF_SIGNATURE + 72, 1 | u32::from(sig.system) << 1);
         }
         put_u64(b, OFF_CHANGE, self.change);
+        b[OFF_SQL..OFF_SQL + 16].copy_from_slice(&self.sql.to_bytes());
     }
 
     /// Decode the fixed part of a page body. `page` is for errors.
@@ -538,7 +547,8 @@ impl ObjectHeader {
         if &body[OFF_MAGIC..OFF_MAGIC + 8] != MAGIC {
             return Err(corrupt("bad magic"));
         }
-        if get_u32(body, OFF_VERSION) != HEADER_VERSION {
+        let version = get_u32(body, OFF_VERSION);
+        if version != 1 && version != HEADER_VERSION {
             return Err(corrupt("unknown version"));
         }
         let private_count = usize::from(get_u16(body, OFF_PRIVATE_COUNT));
@@ -622,6 +632,11 @@ impl ObjectHeader {
                 system: get_u32(body, OFF_SIGNATURE + 72) & 2 != 0,
             }),
             change: get_u64(body, OFF_CHANGE),
+            sql: if version == 1 {
+                ObjectId::NONE
+            } else {
+                ObjectId::from_bytes(&body[OFF_SQL..OFF_SQL + 16])
+            },
         })
     }
 }
