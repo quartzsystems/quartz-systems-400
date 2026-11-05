@@ -274,7 +274,7 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | SQL CLI (`QSQCLI`) | not present | primary | |
 | `STRDBMON`, `PRTSQLINF`, `DSPSQLPKG` | not present | primary | |
 | `ADDPFCST`, `RMVPFCST`, `CHGPFCST`, `DSPCPCST`, `DSPFD TYPE(*CST)` | supported, the primary's messages; not yet run end to end under QEMU | primary | `sys-cpps` |
-| `WRKPFCST`, `EDTCPCST` | partial: a text list, not IBM's panels (BLOCKED(sql)) | none | |
+| `WRKPFCST`, `EDTCPCST` | supported: `QSDBCST` panels as 7.1 shows them (options 2, 4, 6; a sequence verifies a constraint in check pending again); F15, F16, F17, F22 and F11 not yet | primary (`verified/oracle71/audit/wrkpfcst`, `edtcpcst`) | `uim --test audit_panels` |
 | Query/400 (`WRKQRY`, `RUNQRY`, product QS00QU1) | not in this work: a follow-on product | | |
 
 ## 10. Refused

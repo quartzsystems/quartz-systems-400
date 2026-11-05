@@ -126,6 +126,8 @@ pub fn data(
         "JRNE" => jrne(system, arg(0)),
         "JRNRCVA" => jrnrcva(system, arg(0)),
         "OVR" => Ok(ovr(system)),
+        "PFCST" => crate::cpp::cstcmd::wrkpfcst_panel(system, arg(0), arg(1), arg(2), arg(3)),
+        "CPCST" => crate::cpp::cstcmd::edtcpcst_panel(system),
         _ => Err(format!("CPF9899 no display data called {what}")),
     }
 }

@@ -50,9 +50,7 @@ pub fn run(
         "DSPFD" => files::splf(host, surface, r, "QPDSPFD"),
         "DSPFFD" => files::splf(host, surface, r, "QPDSPFFD"),
         "DSPDBR" => files::splf(host, surface, r, "QPDSPDBR"),
-        // BLOCKED(sql): WRKPFCST and EDTCPCST as IBM's list panels with
-        // options; until then the service's list in the viewer.
-        "DSPCPCST" | "WRKPFCST" | "EDTCPCST" => files::splf(host, surface, r, "QSYSPRT"),
+        "DSPCPCST" => files::splf(host, surface, r, "QSYSPRT"),
         "DSPDTAARA" => files::dspdtaara(host, surface, r),
         "WRKOBJOWN" => files::wrkobjown(job, host, surface, r),
         _ => return None,

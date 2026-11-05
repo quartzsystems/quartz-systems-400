@@ -1118,8 +1118,8 @@ note = "the records in check pending in the viewer at a display; the text form i
 
 [cmd.WRKPFCST]
 site = "job"
-note = "the constraint list in the viewer at a display (BLOCKED(sql): the list panel with options); the text form in the service otherwise"
+note = "QSDBCST WRKPFCST (panels/work2/cst.rs), its list from the service (cstcmd.rs wrkpfcst_panel); options 2, 4 and 6 run CHGPFCST, RMVPFCST and DSPCPCST"
 
 [cmd.EDTCPCST]
 site = "job"
-note = "the constraints in check pending in the viewer at a display (BLOCKED(sql): the edit panel); the text form in the service otherwise"
+note = "QSDBCST EDTCPCST (panels/work2/cst.rs): the constraints in check pending; a sequence number verifies one again (CHGPFCST STATE(*ENABLED)) in sequence order, *HLD leaves it"

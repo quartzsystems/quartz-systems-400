@@ -1,0 +1,228 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* Physical file constraints: WRKPFCST (the constraints a file name
+.* selects, with change, remove and the records in check pending) and
+.* EDTCPCST (the constraints in check pending, with the order they are
+.* verified in). Geometry from the 7.1 captures
+.* (verified/oracle71/audit/wrkpfcst, edtcpcst).
+:PNLGRP.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=CSTCL BASETYPE='CHAR 15'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 11'.
+:ECLASS.
+:CLASS NAME=TYPECL BASETYPE='CHAR 9'.
+:ECLASS.
+:CLASS NAME=STATECL BASETYPE='CHAR 8'.
+:ECLASS.
+:CLASS NAME=YNCL BASETYPE='CHAR 5'.
+:ECLASS.
+:CLASS NAME=SEQCL BASETYPE='CHAR 4'.
+:ECLASS.
+:CLASS NAME=STSCL BASETYPE='CHAR 15'.
+:ECLASS.
+:CLASS NAME=SHORTCL BASETYPE='CHAR 8'.
+:ECLASS.
+:CLASS NAME=LIBCL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TIMECL BASETYPE='CHAR 8'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=CST CLASS=CSTCL.
+:VAR NAME=FILE CLASS=NAMECL.
+:VAR NAME=FILELIB CLASS=NAMECL.
+:VAR NAME=CSTTYPE CLASS=TYPECL.
+:VAR NAME=CSTSTATE CLASS=STATECL.
+:VAR NAME=CHKPND CLASS=YNCL.
+:VAR NAME=SEQ CLASS=SEQCL.
+:VAR NAME=CPSTS CLASS=STSCL.
+:VAR NAME=CPCST CLASS=SHORTCL.
+:VAR NAME=CPFILE CLASS=LIBCL.
+:VAR NAME=CPLIB CLASS=LIBCL.
+:VAR NAME=VFYTIME CLASS=TIMECL.
+:VAR NAME=ELAPSED CLASS=TIMECL.
+:LISTDEF NAME=CSTS VARS='OPT CST FILE FILELIB CSTTYPE CSTSTATE CHKPND'.
+:LISTDEF NAME=CPCSTS VARS='SEQ CPSTS CPCST CPFILE CPLIB VFYTIME ELAPSED'.
+:KEYL NAME=WCKEYS HELP='KEYS/WCKEYS'.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F15 ACTION='RETURN 15'.F15=Sort by
+:KEYI KEY=F16 ACTION='RETURN 16'.F16=Repeat position to
+:KEYI KEY=F17 ACTION='RETURN 17'.F17=Position to
+:KEYI KEY=F22 ACTION='RETURN 22'.F22=Display constraint name
+:EKEYL.
+:KEYL NAME=ECKEYS HELP='KEYS/ECKEYS'.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F11 ACTION='RETURN 11'.F11=Display type
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='RETURN 13'.F13=Repeat all
+:KEYI KEY=F15 ACTION='RETURN 15'.F15=Sort by
+:KEYI KEY=F16 ACTION='RETURN 16'.F16=Repeat position to
+:KEYI KEY=F17 ACTION='RETURN 17'.F17=Position to
+:KEYI KEY=F24 ACTION=MOREKEYS.F24=More keys
+:EKEYL.
+:PANEL NAME=WRKPFCST KEYL=WCKEYS HELP=WRKPFCST ENTER='RETURN 1' TOPSEP=SPACE.Work with Physical File Constraints
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=CSTS ACTLEN=1.(No constraints to display)
+:LISTACT OPTION=2 ENTER='CMD ?CHGPFCST FILE(&FILELIB./&FILE.) CST(&CST.)' HELP='WRKPFCST/OPTIONS'.2=Change
+:LISTACT OPTION=4 ENTER='CMD RMVPFCST FILE(&FILELIB./&FILE.) CST(&CST.)' HELP='WRKPFCST/OPTIONS'.4=Remove
+:LISTACT OPTION=6 ENTER='CMD DSPCPCST FILE(&FILELIB./&FILE.) CST(&CST.)' HELP='WRKPFCST/OPTIONS'.6=Display records in check pending
+:LISTCOL VAR=OPT USAGE=INPUT HELP='WRKPFCST/OPT'.Opt
+:LISTCOL VAR=CST USAGE=OUTPUT ATCOL=8 HELP='FLD/CST'.Constraint
+:LISTCOL VAR=FILE USAGE=OUTPUT HELP='FLD/FILE'.File
+:LISTCOL VAR=FILELIB USAGE=OUTPUT HELP='FLD/FILELIB'.Library
+:LISTCOL VAR=CSTTYPE USAGE=OUTPUT HELP='FLD/CSTTYPE'.Type
+:LISTCOL VAR=CSTSTATE USAGE=OUTPUT HELP='FLD/CSTSTATE'.State
+:LISTCOL VAR=CHKPND USAGE=OUTPUT HELP='FLD/CHKPND'.Check Pending
+:ELIST.
+:CMDLINE SIZE=SHORT.Parameters for options 2, 4, 6 or command
+:EPANEL.
+:PANEL NAME=EDTCPCST KEYL=ECKEYS HELP=EDTCPCST ENTER='RETURN 1' TOPSEP=DATETIME BOTSEP=NONE.Edit Check Pending Constraints
+:TOPINST.Type sequence, press Enter.
+:TOPINST.Sequence:  1-99, *HLD
+:TOPINST.
+:LIST DEPTH='*' LISTDEF=CPCSTS.(No constraints to display)
+:LISTCOL VAR=SEQ USAGE=INPUT HELP='FLD/SEQ'.Seq
+:LISTCOL VAR=CPSTS USAGE=OUTPUT HELP='FLD/CPSTS'.Status
+:LISTGRP COL=CSTGRP.----------Constraints-----------
+:LISTCOL VAR=CPCST USAGE=OUTPUT HELP='FLD/CST'.Cst
+:LISTCOL VAR=CPFILE USAGE=OUTPUT HELP='FLD/FILE'.File
+:LISTCOL VAR=CPLIB USAGE=OUTPUT HELP='FLD/FILELIB'.Library
+:ELISTGRP.
+:LISTCOL VAR=VFYTIME USAGE=OUTPUT HELP='FLD/VFYTIME'.Verify Time
+:LISTCOL VAR=ELAPSED USAGE=OUTPUT HELP='FLD/ELAPSED'.Elapsed Time
+:ELIST.
+:EPANEL.
+:HELP NAME=WRKPFCST.Work with Physical File Constraints - Help
+:P.The constraints of the files the name selects: unique and primary
+keys, referential constraints and check constraints, with the state of
+each. Option 2 enables or disables one, option 4 removes it, option 6
+shows the records that keep it in check pending.
+:EHELP.
+:HELP NAME=EDTCPCST.Edit Check Pending Constraints - Help
+:P.The constraints whose files hold records that break them. A file
+with such a constraint cannot be used until the records are corrected
+or the constraint is disabled. Give a constraint a sequence number to
+have it verified again, lower numbers first; *HLD leaves it as it is.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='KEYS/WCKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line, or the command of the
+option typed.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line; press it again
+for the one before.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F15=Sort by
+:PD.Orders the list by another column.
+:PT.F16=Repeat position to
+:PD.Moves to the next entry that starts with what was last asked for.
+:PT.F17=Position to
+:PD.Asks for a constraint name to move the list to.
+:PT.F22=Display constraint name
+:PD.Shows the whole name of the constraint the cursor is on, when it is
+longer than the column.
+:EPARML.
+:EHELP.
+:HELP NAME='KEYS/ECKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F5=Refresh
+:PD.Shows the display again with the current information.
+:PT.F11=Display type
+:PD.Shows the type of each constraint in place of its status.
+:PT.F12=Cancel
+:PD.Returns to the previous display without acting on what was typed.
+:PT.F13=Repeat all
+:PD.Gives every entry below the sequence number typed on the first.
+:PT.F15=Sort by
+:PD.Orders the list by another column.
+:PT.F16=Repeat position to
+:PD.Moves to the next entry that starts with what was last asked for.
+:PT.F17=Position to
+:PD.Asks for a constraint name to move the list to.
+:PT.F24=More keys
+:PD.Shows the other function keys of the display.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKPFCST/OPT'.Option
+:P.Type the number of an option next to a constraint and press Enter.
+The options the list allows are shown above it; F1 on one of them
+explains it.
+:EHELP.
+:HELP NAME='WRKPFCST/OPTIONS'.Options
+:P.Type an option number next to one or more constraints and press
+Enter. The option runs for each constraint it is typed next to, in
+order.
+:PARML.
+:PT.2=Change
+:PD.Prompts the Change Physical File Constraint (CHGPFCST) command for
+the constraint, to enable or disable it.
+:PT.4=Remove
+:PD.Runs the Remove Physical File Constraint (RMVPFCST) command for the
+constraint.
+:PT.6=Display records in check pending
+:PD.Runs the Display Check Pending Constraint (DSPCPCST) command for the
+constraint: the records that break it.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/CST'.Constraint
+:P.The name of the constraint.
+:EHELP.
+:HELP NAME='FLD/FILE'.File
+:P.The physical file the constraint belongs to.
+:EHELP.
+:HELP NAME='FLD/FILELIB'.Library
+:P.The library of the file.
+:EHELP.
+:HELP NAME='FLD/CSTTYPE'.Type
+:P.*UNQCST for a unique constraint, *PRIKEY for a primary key, *REFCST
+for a referential constraint, *CHKCST for a check constraint.
+:EHELP.
+:HELP NAME='FLD/CSTSTATE'.State
+:P.For a referential or check constraint: EST when it is established,
+then ENB when it is enabled or DSB when it is disabled. Unique and
+primary keys are always in force and show no state.
+:EHELP.
+:HELP NAME='FLD/CHKPND'.Check pending
+:P.YES when records of the file break the enabled constraint, so that
+the file cannot be used until they are corrected; NO otherwise.
+:EHELP.
+:HELP NAME='FLD/SEQ'.Sequence
+:P.The order in which the constraint is verified again: 1 to 99, lower
+numbers first. *HLD leaves the constraint in check pending.
+:EHELP.
+:HELP NAME='FLD/CPSTS'.Status
+:P.What is happening to the constraint: held, waiting to be verified,
+being verified, or still in check pending after it was.
+:EHELP.
+:HELP NAME='FLD/VFYTIME'.Verify time
+:P.How long verifying the constraint is expected to take.
+:EHELP.
+:HELP NAME='FLD/ELAPSED'.Elapsed time
+:P.How long the verification has run.
+:EHELP.
+:EPNLGRP.

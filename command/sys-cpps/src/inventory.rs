@@ -170,9 +170,7 @@ pub const DIRECT: &[&str] = &[
     "ADDPFCST",
     "CHGPFCST",
     "DSPCPCST",
-    "EDTCPCST",
     "RMVPFCST",
-    "WRKPFCST",
     // --- IFS commands (lic/slic/src/cpp/ifscmd.rs)
     "ADDLNK",
     "ADDMFS",
@@ -524,8 +522,6 @@ pub const JOB_SITE: &[&str] = &[
     "WRKJOBSCDE",
     // --- panels: messages and objects (panels/objects.rs)
     "DSPCPCST",
-    "EDTCPCST",
-    "WRKPFCST",
     "DSPDBR",
     "DSPDTAARA",
     "DSPFD",
@@ -586,6 +582,8 @@ pub const JOB_SITE: &[&str] = &[
     "DSPJRN",
     "WRKJRN",
     "WRKJRNA",
+    "WRKPFCST",
+    "EDTCPCST",
     "DSPJRNRCVA",
     "DSPOVR",
     "WRKOBJPGP",

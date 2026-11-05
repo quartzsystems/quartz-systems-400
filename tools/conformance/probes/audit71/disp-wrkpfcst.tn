@@ -1,0 +1,66 @@
+# Constraint displays on the 7.1 oracle: a copy of QSYS/QADSPOBJ in
+# QSTEST filled by DSPOBJD, with a unique constraint and a check
+# constraint its records break (check pending), then WRKPFCST,
+# EDTCPCST and DSPCPCST, each left with F12; the file is deleted at
+# the end.
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type DLTF FILE(QSTEST/CSTPF)
+key enter
+settle 2000
+key reset
+key eraseinput
+type CRTDUPOBJ OBJ(QADSPOBJ) FROMLIB(QSYS) OBJTYPE(*FILE) TOLIB(QSTEST) NEWOBJ(CSTPF)
+key enter
+settle 2000
+key reset
+key eraseinput
+type DSPOBJD OBJ(QSYS/CRTD*) OBJTYPE(*CMD) OUTPUT(*OUTFILE) OUTFILE(QSTEST/CSTPF)
+key enter
+settle 3000
+key reset
+key eraseinput
+type ADDPFCST FILE(QSTEST/CSTPF) TYPE(*UNQCST) KEY(ODOBNM) CST(CSTPF_UQ)
+key enter
+settle 3000
+key reset
+key eraseinput
+type ADDPFCST FILE(QSTEST/CSTPF) TYPE(*CHKCST) CST(CSTPF_CK) CHKCST('ODOBTP = ''*PGM''')
+key enter
+settle 3000
+key reset
+snap cstcmdentry
+key eraseinput
+type WRKPFCST FILE(QSTEST/CSTPF)
+key enter
+settle 3000
+snap wrkpfcst
+key f12
+settle 2000
+key reset
+key eraseinput
+type EDTCPCST
+key enter
+settle 3000
+snap edtcpcst
+key f12
+settle 2000
+key reset
+key eraseinput
+type DSPCPCST FILE(QSTEST/CSTPF) CST(CSTPF_CK)
+key enter
+settle 3000
+snap dspcpcst
+key f12
+settle 2000
+key reset
+key eraseinput
+type DLTF FILE(QSTEST/CSTPF)
+key enter
+settle 2000

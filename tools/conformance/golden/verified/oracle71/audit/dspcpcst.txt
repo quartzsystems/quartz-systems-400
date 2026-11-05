@@ -1,0 +1,24 @@
+                                 Display Report                                 
+ Width . . .:      1278                                                         
+ Column  . .:         1                                                         
+ Control  . . . .                                                               
+ Line   ....+....1....+....2....+....3....+....4....+....5....+....6....+....7. 
+                                                                                
+          Display  Display  Display                          Object     Object  
+          Century   Date     Time    Library     Object       Type     Attribut 
+          -------  -------  -------  ----------  ----------  --------  -------- 
+ 000001   1        110526   003451   QSYS        CRTDDMF     *CMD               
+ 000002   1        110526   003451   QSYS        CRTDEVAPPC  *CMD               
+ 000003   1        110526   003451   QSYS        CRTDEVASC   *CMD               
+ 000004   1        110526   003451   QSYS        CRTDEVASP   *CMD               
+ 000005   1        110526   003451   QSYS        CRTDEVBSC   *CMD               
+ 000006   1        110526   003451   QSYS        CRTDEVCRP   *CMD               
+ 000007   1        110526   003451   QSYS        CRTDEVDKT   *CMD               
+ 000008   1        110526   003451   QSYS        CRTDEVDSP   *CMD               
+ 000009   1        110526   003451   QSYS        CRTDEVFNC   *CMD               
+ 000010   1        110526   003451   QSYS        CRTDEVHOST  *CMD               
+ 000011   1        110526   003451   QSYS        CRTDEVINTR  *CMD               
+ 000012   1        110526   003451   QSYS        CRTDEVMLB   *CMD               
+                                                                        More... 
+  F3=Exit    F12=Cancel    F19=Left    F20=Right    F21=Split                   
+                                                                                

@@ -16,7 +16,7 @@ pub(crate) mod certcmd;
 pub(crate) mod clpgm;
 mod cmncmd;
 mod cmntrc;
-mod cstcmd;
+pub(crate) mod cstcmd;
 mod dbcmd;
 mod hwcmd;
 mod direct;

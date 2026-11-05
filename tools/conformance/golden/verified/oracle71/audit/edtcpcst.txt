@@ -1,0 +1,24 @@
+                         Edit Check Pending Constraints                S062B175 
+                                                             MM/DD/YY  HH:MM:SS 
+ Type sequence, press Enter.                                                    
+ Sequence:  1-99, *HLD                                                          
+                                                                                
+                        ----------Constraints-----------  Verify    Elapsed     
+ Seq   Status           Cst       File        Library     Time      Time        
+                                                                                
+   (No constraints to display)                                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit       F5=Refresh   F11=Display type   F12=Cancel   F13=Repeat all      
+ F15=Sort by   F16=Repeat position to          F17=Position to   F24=More keys  
+                                                                                

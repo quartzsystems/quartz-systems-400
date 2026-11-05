@@ -7,7 +7,7 @@
 //! `WRKSYSACT`, `WRKSHRPOOL` (`sys`); `WRKOUTQD`, `DSPSPLF` (`spool`);
 //! `WRKLIB`, `WRKOBJLCK`, `WRKOBJPGP`, `DSPOVR`, `DSPSAVF`, `WRKPRB`
 //! (`objs`); `DSPPFM` (`pfm`); `WRKJRN`, `WRKJRNA`, `DSPJRN`,
-//! `DSPJRNRCVA` (`jrn`); the service displays `WRKPRB`, `DSPPRB`, `ANZPRB`,
+//! `DSPJRNRCVA` (`jrn`); `WRKPFCST`, `EDTCPCST` (`cst`); the service displays `WRKPRB`, `DSPPRB`, `ANZPRB`,
 //! `WRKCNTINF`, `WRKSRVPVD`, `DSPSRVSTS` (`service`); `WRKIMGCLG`,
 //! `WRKIMGCLGE`, `WRKTAPCTG`, `WRKMLBSTS` (`media`). Their data comes through `panel2_data`, named
 //! as the panel groups' variables; `viewer` is the window the two
@@ -16,6 +16,7 @@
 // Throughout: `d` the dialog, `r` the command, `c` a choice.
 #![allow(clippy::many_single_char_names)]
 
+mod cst;
 mod jobs;
 mod jrn;
 mod media;
@@ -73,6 +74,8 @@ pub fn run(
         "WRKJRNA" => jrn::wrkjrna(job, host, surface, r),
         "DSPJRN" => jrn::dspjrn(host, surface, r),
         "DSPJRNRCVA" => jrn::dspjrnrcva(host, surface, r),
+        "WRKPFCST" => cst::wrkpfcst(job, host, surface, r),
+        "EDTCPCST" => cst::edtcpcst(job, host, surface),
         _ => return None,
     })
 }

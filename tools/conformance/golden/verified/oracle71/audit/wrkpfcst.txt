@@ -1,0 +1,24 @@
+                      Work with Physical File Constraints                       
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   4=Remove   6=Display records in check pending                     
+                                                                                
+                                                                        Check   
+ Opt   Constraint       File         Library      Type       State     Pending  
+       CSTPF_UQ         CSTPF        QSTEST       *UNQCST                       
+       CSTPF_CK         CSTPF        QSTEST       *CHKCST    EST/DSB     NO     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters for options 2, 4, 6 or command                                      
+ ===>                                                                           
+ F3=Exit   F4=Prompt      F5=Refresh   F9=Retrieve   F12=Cancel   F15=Sort by   
+ F16=Repeat position to   F17=Position to   F22=Display constraint name         
+                                                                                

@@ -491,3 +491,41 @@ fn dspudfs_mounted_and_not() {
     d.set_list("MOUNTS", list(Vec::new()));
     ours("dspudfs-unmounted", &render(&g, "DSPUDFS", &d, &opts(0)).unwrap());
 }
+
+// ------------------------------------------------------- WRKPFCST, EDTCPCST
+
+/// `WRKPFCST` over a file with a unique and a disabled check constraint
+/// (`verified/oracle71/audit/wrkpfcst`, `probes/audit71/disp-wrkpfcst.tn`).
+#[test]
+fn wrkpfcst_matches_71() {
+    let mut d = MapDialog::new();
+    d.set_list(
+        "CSTS",
+        list(vec![
+            vec![("CST", "CSTPF_UQ"), ("FILE", "CSTPF"), ("FILELIB", "QSTEST"), ("CSTTYPE", "*UNQCST")],
+            vec![
+                ("CST", "CSTPF_CK"),
+                ("FILE", "CSTPF"),
+                ("FILELIB", "QSTEST"),
+                ("CSTTYPE", "*CHKCST"),
+                ("CSTSTATE", "EST/DSB"),
+                ("CHKPND", "  NO"),
+            ],
+        ]),
+    );
+    let s = render(&group("QSDBCST"), "WRKPFCST", &d, &opts(0)).unwrap();
+    against("verified/oracle71/audit/wrkpfcst", &s, &[]);
+}
+
+/// `EDTCPCST` with nothing in check pending (`verified/oracle71/audit/edtcpcst`).
+#[test]
+fn edtcpcst_matches_71() {
+    let mut d = MapDialog::new();
+    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS").set_list("CPCSTS", list(vec![]));
+    let mut o = opts(0);
+    o.system = "S062B175".into();
+    let s = render(&group("QSDBCST"), "EDTCPCST", &d, &o).unwrap();
+    // Row 23: 7.1 puts F17 under F12 (the first row's fourth column),
+    // past where R7 aligns the two key rows; the keys are the same.
+    against("verified/oracle71/audit/edtcpcst", &s, &[23]);
+}

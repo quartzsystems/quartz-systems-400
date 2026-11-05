@@ -111,3 +111,36 @@ release = "V7R1M0"
 date = "2026-10-31"
 script = "disp-dspautlobj"
 width = 80
+
+[[golden]]
+name = "cstcmdentry"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-05"
+script = "disp-wrkpfcst"
+width = 80
+
+[[golden]]
+name = "wrkpfcst"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-05"
+script = "disp-wrkpfcst"
+width = 80
+
+[[golden]]
+name = "edtcpcst"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-05"
+script = "disp-wrkpfcst"
+width = 80
+
+[[golden]]
+name = "dspcpcst"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-05"
+script = "disp-wrkpfcst"
+width = 80
+
