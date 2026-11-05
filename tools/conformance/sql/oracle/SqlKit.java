@@ -75,15 +75,23 @@ public final class SqlKit {
             List<String> stmts = Case.statements(Files.readString(c, StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             sb.append("-- captured from ").append(a[0]).append('\n');
+            String server = null;
             try (Connection conn = DriverManager.getConnection(url, user, pass)) {
                 try (Statement s = conn.createStatement()) {
                     s.execute("SET SCHEMA " + lib);
+                    try (ResultSet r = s.executeQuery("VALUES CURRENT SERVER")) {
+                        server = r.next() ? r.getString(1).trim() : null;
+                    }
                 }
                 for (String st : stmts) {
                     run(conn, st.replace("{lib}", lib), st, sb);
                 }
             }
             String text = sb.toString().replace(lib, "{lib}").replace(user.toUpperCase(), "{user}");
+            // The server's name as a value (CURRENT SERVER, the SYSIBM views' catalog).
+            if (server != null && !server.isEmpty()) {
+                text = text.replace("'" + server + "'", "'{server}'");
+            }
             Path dir = out.resolve(area);
             Files.createDirectories(dir);
             Files.writeString(dir.resolve(name + ".out"), text, StandardCharsets.UTF_8);

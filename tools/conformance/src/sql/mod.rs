@@ -37,7 +37,32 @@ pub fn expected(c: &Case) -> Option<String> {
 /// The outcome lines that are compared: all but the `-- captured from`
 /// line, line ends normalized.
 fn body(text: &str) -> Vec<&str> {
-    text.lines().filter(|l| !l.starts_with("-- captured from")).map(str::trim_end).collect()
+    let lines: Vec<&str> = text.lines().filter(|l| !l.starts_with("-- captured from")).map(str::trim_end).collect();
+    at_fetch(&lines)
+}
+
+/// An error a query raises before its first row reaches the requester
+/// shows over JDBC at the first fetch (the status line 0, the columns,
+/// then the error) or at the open; QS/400 raises it at the open. Both
+/// compare as the error alone. An error after rows is kept as it is.
+fn at_fetch<'a>(lines: &[&'a str]) -> Vec<&'a str> {
+    let mut out = Vec::with_capacity(lines.len());
+    let mut i = 0;
+    while i < lines.len() {
+        if lines[i].starts_with("sqlcode 0 ") {
+            let mut j = i + 1;
+            while j < lines.len() && (lines[j].starts_with("# ") || lines[j].starts_with("warning ")) {
+                j += 1;
+            }
+            if j > i + 1 && j < lines.len() && lines[j].starts_with("sqlcode -") {
+                i = j;
+                continue;
+            }
+        }
+        out.push(lines[i]);
+        i += 1;
+    }
+    out
 }
 
 /// The first difference between two outcomes, `None` when they agree.
@@ -158,4 +183,19 @@ pub fn run_all(only: Option<&str>) -> Result<Report, String> {
         }
     }
     Ok(r)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_error_before_the_first_row_compares_as_the_error() {
+        let jdbc = "> SELECT 1\nsqlcode 0 sqlstate 00000 msgid -\n# 00001 INTEGER NOT NULL\nsqlcode -802 sqlstate 22012 msgid SQL0802\n";
+        let ours = "> SELECT 1\nsqlcode -802 sqlstate 22012 msgid SQL0802\n";
+        assert_eq!(diff(ours, jdbc), None);
+        // Rows before the error stay a difference.
+        let rows = "> SELECT 1\nsqlcode 0 sqlstate 00000 msgid -\n# 00001 INTEGER NOT NULL\n| 1 |\nsqlcode -802 sqlstate 22012 msgid SQL0802\n";
+        assert!(diff(ours, rows).is_some());
+    }
 }

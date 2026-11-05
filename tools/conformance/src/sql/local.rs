@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
 use qsname::Name;
+use sql::embed::describe::{self, Col};
 use sql::embed::{Desc, Embedded, Op, Reply, Request, Session};
 use sql::{Naming, Outcome, SqlContext, Statement, prepare_dynamic};
 use store::obj::ops::{self, NameContext};
@@ -24,6 +25,8 @@ use super::render;
 
 /// The library a case writes in here.
 pub const LIBRARY: &str = "QSTEST";
+/// The system name, what `CURRENT SERVER` gives here.
+pub const SERVER: &str = "QS400";
 /// The clock: 2026-01-01 00:00:00 UTC.
 pub const NOW: u64 = 1_767_225_600;
 
@@ -45,7 +48,9 @@ pub fn run(c: &Case) -> Result<String, String> {
     let mut store =
         Store::format(vec![Box::new(dev) as Box<dyn BlockDev>], &params, StoreConfig::default()).map_err(s)?;
     let mut txn = store.begin().map_err(s)?;
-    let qsys = ops::bootstrap(&mut txn, NOW, "QS400").map_err(s)?;
+    let qsys = ops::bootstrap(&mut txn, NOW, SERVER).map_err(s)?;
+    // The shipped profiles (QUSER, QPGMR, QSYSOPR, ...) GRANT names.
+    sec::profile::shipped::install(&mut txn, qsys, 40, 3, NOW).map_err(s)?;
     let lib = ops::create(
         &mut txn,
         &CreateParams {
@@ -53,7 +58,8 @@ pub fn run(c: &Case) -> Result<String, String> {
             name: Name::parse(LIBRARY).expect("valid"),
             type_code: types::LIB,
             attribute: String::new(),
-            text: "SQL conformance kit".into(),
+            // The text QSTEST has on the primary.
+            text: "Database".into(),
             owner: "QSECOFR".into(),
             system: "QS400".into(),
             now: NOW,
@@ -85,6 +91,8 @@ pub fn run(c: &Case) -> Result<String, String> {
         let text = st.replace("{lib}", LIBRARY);
         let _ = writeln!(out, "> {}", case::first(st));
         let prepared = prepare_dynamic(&text, Naming::Sql);
+        let mut described: Vec<Col> = Vec::new();
+        let mut nulls = false;
         let (sqlca, outcome) = if matches!(&prepared, Ok(p) if matches!(p.statement, Statement::Call(_))) {
             // A CALL runs the procedure's program in a job, as on the system.
             let j = job.get_or_insert_with(|| new_job(&store, &session, lib));
@@ -93,7 +101,18 @@ pub fn run(c: &Case) -> Result<String, String> {
             // Lent, so a change can give the store back to a trigger program.
             let mut txn = store::txn::Txn::lent(Box::new(|| store.borrow_mut())).map_err(s)?;
             let r = match &prepared {
-                Ok(p) => p.run(&mut txn, &mut session.borrow_mut().ctx, &[]),
+                Ok(p) => {
+                    let ctx = &mut session.borrow_mut().ctx;
+                    // What a requester's PREPARE describes: the CCSIDs JTOpen
+                    // names the column types by.
+                    if matches!(p.statement, Statement::Select(_)) {
+                        described = describe::entries(&mut txn, ctx, &p.statement, false).into_iter().map(|e| e.col).collect();
+                    }
+                    ctx.nulls_eliminated = false;
+                    let r = p.run(&mut txn, ctx, &[]);
+                    nulls = ctx.nulls_eliminated;
+                    r
+                }
                 Err(e) => (sql::Sqlca::from_error(e), None),
             };
             if r.0.sqlcode < 0 {
@@ -103,31 +122,47 @@ pub fn run(c: &Case) -> Result<String, String> {
             }
             r
         };
-        let count = match &outcome {
-            Some(Outcome::Count(n)) if case::changes(st) => Some(*n),
-            _ if case::changes(st) && sqlca.sqlcode >= 0 => Some(u64::try_from(sqlca.sqlerrd[2]).unwrap_or(0)),
-            _ => None,
-        };
-        // JDBC reports warnings apart; the status line has 0 for them. A
-        // query with no rows is no warning over JDBC.
-        let empty_query = sqlca.sqlcode == 100 && matches!(outcome, Some(Outcome::Rows(_)));
-        if empty_query {
-            out.push_str(&render::status(0, "00000", "-", count));
-            out.push('\n');
-        } else if sqlca.sqlcode > 0 {
-            out.push_str(&render::status(0, "00000", "-", count));
-            out.push('\n');
-            let _ = writeln!(out, "warning {} {} {}", sqlca.sqlcode, sqlca.sqlstate, sqlca.msgid());
-        } else {
-            let msgid = if sqlca.sqlcode == 0 { "-".to_string() } else { sqlca.msgid() };
-            out.push_str(&render::status(sqlca.sqlcode, &sqlca.sqlstate, &msgid, count));
-            out.push('\n');
-        }
-        if let Some(Outcome::Rows(rs)) = &outcome {
-            out.push_str(&render::rows(rs));
+        outcome_lines(&mut out, st, &sqlca, outcome.as_ref(), &described, nulls);
+    }
+    let mut out = render::mask_server(&out.replace(LIBRARY, "{lib}"), SERVER);
+    // The primary's account is QSECOFR, which its captures write {user}.
+    if c.oracle == case::Oracle::Primary {
+        out = out.replace("QSECOFR", "{user}");
+    }
+    Ok(out)
+}
+
+/// A statement's status, warning, column and row lines, as JDBC shows
+/// them; `nulls` when a column function left out a null.
+fn outcome_lines(out: &mut String, st: &str, sqlca: &sql::Sqlca, outcome: Option<&Outcome>, described: &[Col], nulls: bool) {
+    let count = match outcome {
+        Some(Outcome::Count(n)) if case::changes(st) => Some(*n),
+        _ if case::changes(st) && sqlca.sqlcode >= 0 => Some(u64::try_from(sqlca.sqlerrd[2]).unwrap_or(0)),
+        _ => None,
+    };
+    let rows = matches!(outcome, Some(Outcome::Rows(_)));
+    // JDBC reports warnings apart; the status line has 0 for them. A
+    // query with no rows is no warning over JDBC.
+    if sqlca.sqlcode == 100 && rows {
+        out.push_str(&render::status(0, "00000", "-", count));
+        out.push('\n');
+    } else if sqlca.sqlcode > 0 {
+        out.push_str(&render::status(0, "00000", "-", count));
+        out.push('\n');
+        let _ = writeln!(out, "warning {} {} {}", sqlca.sqlcode, sqlca.sqlstate, sqlca.msgid());
+    } else {
+        let msgid = if sqlca.sqlcode == 0 { "-".to_string() } else { sqlca.msgid() };
+        out.push_str(&render::status(sqlca.sqlcode, &sqlca.sqlstate, &msgid, count));
+        out.push('\n');
+        // A column function left out a null: JDBC's SQLWarning with
+        // SQLCODE 0.
+        if sqlca.sqlcode == 0 && nulls && rows {
+            out.push_str("warning 0 01003 -\n");
         }
     }
-    Ok(out.replace(LIBRARY, "{lib}"))
+    if let Some(Outcome::Rows(rs)) = outcome {
+        out.push_str(&render::rows(rs, described));
+    }
 }
 
 /// The session as the job's embedded SQL.

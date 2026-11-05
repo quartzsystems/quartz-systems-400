@@ -35,11 +35,24 @@ warning CODE STATE MSGID            (one per JDBC warning, positive SQLCODEs)
 | value | value |                   (one per row)
 ```
 
+`warning` lines are JDBC's `SQLWarning`s, SQLCODE 0 ones too (`01003`
+null values left out, `01506` a date adjusted, `01004` truncation; message
+`-`). Column types are JTOpen's names: graphic types in CCSID 1200 are
+`NCHAR`, `NVARCHAR`, `NCLOB`; character types in CCSID 65535 `CHAR () FOR
+BIT DATA` and `VARCHAR () FOR BIT DATA` (their values read as bytes); here
+the CCSIDs come from what the statement's PREPARE describes. An error a
+query raises while its rows are fetched shows as the status line 0, the
+columns, the rows fetched, then the error's status line; QS/400 raises
+such errors at the open, so an error before the first row compares as
+the error alone. `CURRENT SERVER` and the `SYSIBM` views' catalog name
+are written `{server}`; on the primary the account is `QSECOFR`, written
+`{user}` on both sides.
+
 `count` is shown for `INSERT`, `UPDATE`, `DELETE` and `MERGE`. Values:
 `NULL`; numbers as JTOpen's `getString` gives them (decimals to their
 scale); `DOUBLE` and `REAL` as Java's `Double.toString`/`Float.toString`;
 character, date and time values quoted, blanks kept; timestamps as
-`YYYY-MM-DD-HH.MM.SS.ffffff`; binary as `X'..'`. The library and the
+`YYYY-MM-DD-HH.MM.SS.ffffff`; binary as `X'..'`; `BOOLEAN` as `1` and `0`. The library and the
 account name are written `{lib}` and `{user}`. The first line, `--
 captured from ...`, is not compared.
 

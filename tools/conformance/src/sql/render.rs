@@ -6,6 +6,7 @@
 //! returns: status lines, column lines, value cells.
 
 use std::fmt::Write as _;
+use sql::embed::describe::Col;
 use sql::{ColumnDesc, ResultSet, Value};
 
 /// The status line.
@@ -33,10 +34,36 @@ fn scale(data_type: &str) -> Option<usize> {
     args.trim_end_matches(')').split(',').nth(1)?.parse().ok()
 }
 
+/// A column type as `JTOpen` names it from what the server described:
+/// graphic types in CCSID 1200 are `NCHAR`, `NVARCHAR` and `NCLOB`;
+/// character types in CCSID 65535 `CHAR () FOR BIT DATA` and the like.
+#[must_use]
+pub fn jtopen_type(data_type: &str, described: Option<&Col>) -> String {
+    let t = column_type(data_type);
+    let Some(d) = described else { return t };
+    let head = t.split('(').next().unwrap_or("");
+    let n = |name: &str| format!("{name}{}", &t[head.len()..]);
+    match (head, d.base, d.ccsid) {
+        ("GRAPHIC", 468, 1200) => n("NCHAR"),
+        ("VARGRAPHIC", 464, 1200) => n("NVARCHAR"),
+        ("DBCLOB", 412, 1200) => n("NCLOB"),
+        ("CHAR", 452, 65535) => "CHAR () FOR BIT DATA".into(),
+        ("VARCHAR", 448, 65535) => "VARCHAR () FOR BIT DATA".into(),
+        _ => t,
+    }
+}
+
 /// A column line.
 #[must_use]
-pub fn column(c: &ColumnDesc) -> String {
-    format!("# {} {}{}", c.name, column_type(&c.data_type), if c.nullable { "" } else { " NOT NULL" })
+pub fn column(c: &ColumnDesc, described: Option<&Col>) -> String {
+    format!("# {} {}{}", c.name, jtopen_type(&c.data_type, described), if c.nullable { "" } else { " NOT NULL" })
+}
+
+/// The server's name written `{server}` where it is a value, on both
+/// sides (`CURRENT SERVER`, the catalog name of the `SYSIBM` views).
+#[must_use]
+pub fn mask_server(text: &str, server: &str) -> String {
+    text.replace(&format!("'{server}'"), "'{server}'")
 }
 
 /// Java's `Double.toString`/`Float.toString`: the shortest digits that
@@ -105,7 +132,8 @@ pub fn value(v: &Value, data_type: &str) -> String {
             h.push('\'');
             h
         }
-        Value::Bool(b) => if *b { "true" } else { "false" }.into(),
+        // JTOpen's getString of a BOOLEAN.
+        Value::Bool(b) => if *b { "1" } else { "0" }.into(),
         // No result set holds an array (SQ20441 first).
         Value::Date(_) | Value::Time(_) | Value::Array(_) => format!("'{v}'"),
         // JDBC's form, then IBM's separators, as SqlKit.java does.
@@ -113,19 +141,26 @@ pub fn value(v: &Value, data_type: &str) -> String {
     }
 }
 
-/// A result set's column and row lines.
+/// A result set's column and row lines; `described` is the PREPARE's
+/// description of its columns, when it has as many.
 #[must_use]
-pub fn rows(rs: &ResultSet) -> String {
+pub fn rows(rs: &ResultSet, described: &[Col]) -> String {
     let mut out = String::new();
-    for c in &rs.columns {
-        out.push_str(&column(c));
+    let described = if described.len() == rs.columns.len() { described } else { &[] };
+    for (i, c) in rs.columns.iter().enumerate() {
+        out.push_str(&column(c, described.get(i)));
         out.push('\n');
     }
     for r in &rs.rows {
         out.push('|');
-        for (v, c) in r.iter().zip(&rs.columns) {
+        for (i, (v, c)) in r.iter().zip(&rs.columns).enumerate() {
             out.push(' ');
-            out.push_str(&value(v, &c.data_type));
+            let bits = described.get(i).is_some_and(|d| d.ccsid == 65535 && matches!(d.base, 448 | 452));
+            match v {
+                // Character data FOR BIT DATA: JTOpen reads its bytes.
+                Value::Str(s) if bits => out.push_str(&value(&Value::Bin(ccsid::to_ebcdic(s).unwrap_or_default()), "")),
+                _ => out.push_str(&value(v, &c.data_type)),
+            }
             out.push_str(" |");
         }
         out.push('\n');

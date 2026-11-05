@@ -1,52 +1,52 @@
 # Cases known to differ from their oracle capture: area/NAME, one per line.
 # A new difference fails the kit; remove a line when the case agrees.
-ddl/VIEWQRY   # VIEW_DEFINITION described as VARCHAR, NVARCHAR at IBM (no NVARCHAR type name)
-ddl/INDEXEXT   # SEARCH_CONDITION is NCLOB at IBM, CHAR here (no LOB catalog columns)
-ddl/GRANT   # the kit store has no QUSER/QSYSOPR/QPGMR profiles (SQL0204); USAGE ON SCHEMA refused SQL0084 where 7.1 says SQL0104
-types/CASTSTR   # errors the primary raises at fetch (SQL0433), 01004 truncation warnings, HEX of CCSID-tagged strings, NCHAR and FOR BIT DATA type names, a hex constant into VARBINARY (SQL0301)
-types/DECFLT1   # DECFLOAT_FORMAT absent on 7.1 (SQL0204), SYSCOLUMNS column types
-types/DECFLT2   # errors at fetch, HEX of CCSID-tagged strings, FOR SBCS/MIXED DATA in CAST (SQL0604), CAST('abc' AS INTEGER) in WHERE (SQL0802 22023)
-types/FLOATFMT  # errors at fetch (SQL0433); the primary makes CHAR(4.9E-324) a CHAR(42)
-types/JSON1     # BOOLEAN shown as 1/0 by JTOpen, 01003 warnings, a predicate as a JSON_ARRAY value (SQL0104 on 7.5), FORMAT in JSON_UPDATE (SQL0199)
-types/XML1      # XMLPARSE describes as XML on the primary (QS/400 has no XML type), errors at fetch, 01004 warnings, XMLELEMENT refused (SQL0084)
-types/BOOL1     # BOOLEAN shown as 1/0 by JTOpen, NOT on a null BOOLEAN column is true on pub400, 01003 warnings, catalog and function column types, SQL7905
-types/LOB1      # NCLOB/NVARCHAR type names, function result types (SQL-3), OCTET_LENGTH of a DBCLOB, SYSCOLUMNS column types, SQL7905
+ddl/VIEWQRY   # engine: SYSVIEWS.VIEW_DEFINITION is VARCHAR here, NVARCHAR (CCSID 1200) at IBM
+ddl/INDEXEXT   # engine: SYSINDEXES.SEARCH_CONDITION is NCLOB at IBM, VARCHAR(2000) here (no LOB catalog columns)
+ddl/GRANT   # engine: GRANT USAGE ON SCHEMA refused SQL0084 where 7.1 says SQL0104
+types/CASTSTR   # engine: no 01004 truncation warning; CAST(TIMESTAMP AS TIME) style casts SQL0171 on the primary; CAST(... FOR BIT DATA) result described as character; an extra SQL0420 warning; a predicate as a value (SQL0104 on 7.1); a hex constant into VARBINARY (SQL0301); an extra row
+types/DECFLT1   # engine: CHAR of DECFLOAT columns VARCHAR here, CHAR at IBM; SYSCOLUMNS.DATA_TYPE CHAR(8) padded here, VARCHAR(8) at IBM, NUMERIC_PRECISION of INTEGER 10 here, 9 there
+types/DECFLT2   # engine: CAST('abc' AS INTEGER) in WHERE SQL0420 here, SQL0802 22023 there; no 01004; HEX of CCSID-tagged strings; CHAR of a float's length
+types/FLOATFMT  # engine: the primary makes CHAR(4.9E-324) a CHAR(42)
+types/JSON1     # engine: a predicate as a JSON_ARRAY value (SQL0104 on 7.5); FORMAT in JSON_UPDATE (SQL0199 there, SQL0204 here); a JSON_TABLE ordinality column NOT NULL here
+types/XML1      # engine: XMLPARSE describes as XML on the primary (QS/400 has no XML type); no 01004; XMLELEMENT refused (SQL0084)
+types/BOOL1     # engine: no 01004; predicates in a select list described nullable here; NOT of a null BOOLEAN column is true on pub400; SYSCOLUMNS.DATA_TYPE CHAR(8) here; a CHAR result VARCHAR here
+types/LOB1      # engine: function result types (LENGTH of a LOB, CAST of a DBCLOB), a LOB index key SQL0084 here, SQL0350 there; no 01004; SYSCOLUMNS column types and CCSIDs; SQL7905
 types/DECFLT3   # errors at fetch, SQL7905
 integrity/CSTBASIC   # NVARCHAR catalog columns described as VARGRAPHIC
 integrity/CSTALTER   # NVARCHAR catalog columns described as VARGRAPHIC
-integrity/SEQUENCE   # an error after the row description; a column named ORDER in a select list (SQL0104)
-integrity/AUDITCOL   # IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
-query/JOINS   # ORDER BY an unqualified USING column is SQL0203 on DB2 for i, resolved here
+integrity/SEQUENCE   # engine: a column named ORDER in a select list (SQL0104 here)
+integrity/AUDITCOL   # engine: IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
+query/JOINS   # engine: ORDER BY an unqualified USING column is SQL0203 on DB2 for i, resolved here
 query/OLAP   # the 01003 warning (SQLCODE 0) is not reported by the local runner
 query/STATAGG   # 01003 warnings (SQLCODE 0) not reported by the local runner
 query/ORDAGG   # 01003 not reported
-query/DATEARITH   # the 01506 warning (date adjusted to month end, SQLCODE 0) not reported
-query/DTFUNCS   # 01506 not reported; TIMESTAMP_FORMAT's SQ20448 comes at fetch there, SQL0302 at run here
-query/STRFUNCS   # DECODE is SQL0204 on pub400 but in the brief's must-have list
-query/NUMFUNCS   # ENCRYPT_AES refused: DB2 for i's encrypted layout is not published
-query/REGISTERS   # CURRENT DEGREE is pub400's system setting (ANY); NONE here
-sqlpl/CATALOG   # PARM_SIGNATURE is LONG VARCHAR FOR BIT DATA at IBM (no such catalog type here)
-sqlpl/EXTERN   # LANGUAGE JAVA procedures refused SQL0084
-sqlpl/FUNCS   # a function's error comes at fetch at IBM (an empty result first), at run here; catalog LOB columns
-services/SVCCOLS   # a probe of pub400's catalog; QS/400's catalogs do not list the QSYS2 services (sql tests/service_shapes.rs holds the shapes to it)
-services/SVCVALS   # pub400's own jobs, users and values; the value forms are settled in sql tests/services.rs
-sysibm/SQLMETA   # the catalog name is the server's (S062B175 there, QS400 here); LABEL ON COLUMN ... TEXT IS refused (SQL0104); NVARCHAR/NCLOB described as VARGRAPHIC/DBCLOB
-sysibm/SYSIBMLS   # QSYS2.SYSTABLES and SYSROUTINES do not list the computed SYSIBM views and the SYSIBM routines
-sysibm/SYSIBMCOL   # QSYS2.SYSCOLUMNS does not list the columns of computed views
-sysibm/SYSIBMPRM   # QSYS2.SYSPARMS is not there
-objects2/VARIABLE   # SYSVARIABLES.DEFAULT is NCLOB at IBM, VARGRAPHIC(2000) here (no LOB catalog columns)
-objects2/TYPES   # SYSCOLUMNS.DATA_TYPE is CHAR(8) here, VARCHAR(8) at IBM
-trigger/TRGDEFS   # TRIGGER_TEXT is NVARCHAR and LONG_COMMENT DBCLOB at IBM, VARGRAPHIC here (no LOB catalog columns)
-trigger/TRGCAT   # ACTION_CONDITION and ACTION_STATEMENT are DBCLOB at IBM, VARGRAPHIC(2000) here (no LOB catalog columns)
-services/GENSQL    # QTEMP/Q_GENSQL is not written (the result set is); pub400 CCSID 273; QS/400 keeps COMMENT ON as the label; generated constraint names differ
-sqlpl/ARRAYS   # array parameters and array arguments in CALL refused SQL0084 (BLOCKED(sql)); ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here
-sqlpl/ARRAYERR   # the primary cannot see a one-column UNNEST correlation's column (SQL0206), QS/400 can
+query/DATEARITH   # engine: the 01506 warning (date adjusted to month end, SQLCODE 0) is not raised
+query/DTFUNCS   # engine: 01506 not raised; TIMESTAMP_FORMAT('bad') SQL0302 here, SQ20448 there
+query/STRFUNCS   # engine (by choice): DECODE is SQL0204 on pub400 but in the brief's must-have list
+query/NUMFUNCS   # engine (by choice): ENCRYPT_AES refused, DB2 for i's encrypted layout is not published
+query/REGISTERS   # oracle: CURRENT DEGREE is pub400's system setting (ANY); engine: CURRENT PATH is VARCHAR(3483) here, VARCHAR(8843) there
+sqlpl/CATALOG   # engine: PARM_SIGNATURE is LONG VARCHAR FOR BIT DATA and ROUTINE_DEFINITION DBCLOB at IBM; EXTERNAL_NAME of an SQL procedure is LIB/SPECIFIC there; SYSPARMS lengths of DATE/TIMESTAMP
+sqlpl/EXTERN   # engine: LANGUAGE JAVA procedures refused SQL0084
+sqlpl/FUNCS   # engine: catalog LOB columns (PARM_SIGNATURE, ROUTINE_DEFINITION)
+services/SVCCOLS   # engine: QS/400's catalogs do not list the QSYS2 services (sql tests/service_shapes.rs holds the shapes to it)
+services/SVCVALS   # oracle: pub400's own jobs, users and values; the value forms are settled in sql tests/services.rs
+sysibm/SQLMETA   # oracle: DTD identifiers are the system's own counter; engine: character set columns of a VARCHAR column null here
+sysibm/SYSIBMLS   # engine: QSYS2.SYSTABLES and SYSROUTINES do not list the computed SYSIBM views and the SYSIBM routines
+sysibm/SYSIBMCOL   # engine: QSYS2.SYSCOLUMNS does not list the columns of computed views
+sysibm/SYSIBMPRM   # engine: QSYS2.SYSPARMS does not list the SYSIBM routines' parameters
+objects2/VARIABLE   # engine: SYSVARIABLES.DEFAULT is NCLOB at IBM, VARGRAPHIC(2000) here (no LOB catalog columns)
+objects2/TYPES   # engine: distinct types as column types, casts and their strong typing refused SQL0084 (BLOCKED(sql))
+trigger/TRGDEFS   # engine: TRIGGER_TEXT is NVARCHAR and LONG_COMMENT DBCLOB at IBM, VARGRAPHIC here
+trigger/TRGCAT   # engine: ACTION_CONDITION and ACTION_STATEMENT are DBCLOB at IBM, VARGRAPHIC(2000) here
+services/GENSQL    # engine: QTEMP/Q_GENSQL is not written (the result set is); oracle: pub400 CCSID 273; engine: generated constraint names differ
+sqlpl/ARRAYS   # engine: array parameters and array arguments in CALL refused SQL0084 (BLOCKED(sql)); ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here
+sqlpl/ARRAYERR   # engine: the primary cannot see a one-column UNNEST correlation's column (SQL0206), QS/400 can
 sqlpl/PLBOOL   # BOOLEAN shown as 1/0 by JTOpen
-sqlpl/PLTYPES   # HEX of CCSID-tagged strings; a character DEFAULT for a VARGRAPHIC variable is SQL0408 there, converted here; 1E400 into DECFLOAT(16) is SQL0304 there, SQL0302 here
-sqlpl/PARMDFT   # SYSPARMS.DEFAULT is NCLOB at IBM, VARCHAR(2000) here (no LOB catalog columns)
-ddl/DGTTCLS   # ALTER TABLE of a table with an index or view over it refused (SQL0084, BLOCKED(sql) in alter)
-trigger/DLTFTRG   # the kit's in-memory store runs no commands (QSYS.QCMDEXC is SQL0204 there); DLTF's dropping of SQL trigger programs runs in the service (svc/db/files.rs)
-objects2/GRANTUDT   # the kit store has no QUSER/QPGMR profiles (SQL0204) and runs no commands (DSPOBJAUT through QSYS.QCMDEXC); the authorities are checked in sql::objects grant_on_types_and_variables_as_the_primary
+sqlpl/PLTYPES   # engine: HEX of CCSID-tagged strings; a character DEFAULT for a VARGRAPHIC variable is SQL0408 there, converted here; 1E400 into DECFLOAT(16) is SQL0304 there, SQL0302 here
+sqlpl/PARMDFT   # engine: SYSPARMS.DEFAULT is NCLOB at IBM, VARCHAR(2000) here (no LOB catalog columns)
+ddl/DGTTCLS   # engine: ALTER TABLE of a table with an index or view over it refused (SQL0084, BLOCKED(sql) in alter)
+trigger/DLTFTRG   # kit: the in-memory store runs no commands (QSYS.QCMDEXC is SQL0204 there); DLTF's dropping of SQL trigger programs runs in the service (svc/db/files.rs)
+objects2/GRANTUDT   # kit: the in-memory store runs no commands (DSPOBJAUT through QSYS.QCMDEXC); the authorities are checked in sql::objects grant_on_types_and_variables_as_the_primary
 objects2/TYPES2   # SYSCOLUMNS.DATA_TYPE is CHAR(8) here, VARCHAR(8) at IBM
 objects2/TYPES3   # a distinct type compared with a quantified subquery's column of another type is not refused (SQL0401 there; BLOCKED(sql) in udt::typing::check)
 ddl/QTEMPCL   # the kit's in-memory store runs no commands (QCMDEXC); one QTEMP for CL and SQL is tested in sql tests/qtemp_job.rs and in the service
