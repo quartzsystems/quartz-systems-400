@@ -82,6 +82,16 @@ pub fn physical(desc: &FileDesc, command: &str) -> Result<()> {
     Ok(())
 }
 
+/// A copy from a logical file reads its based-on files: `*READ` to each.
+fn check_based_on(txn: &mut Txn<'_>, desc: &FileDesc) -> Result<()> {
+    for f in &desc.formats {
+        for (base, _) in f.logical.iter().flat_map(|l| &l.based_on) {
+            crate::auth::check(txn, "file.read-based", *base)?;
+        }
+    }
+    Ok(())
+}
+
 /// Objects a utility holds while it runs; released in reverse order.
 pub struct Hold {
     job: JobHandle,

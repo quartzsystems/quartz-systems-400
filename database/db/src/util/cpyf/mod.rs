@@ -183,11 +183,17 @@ pub fn cpyf_paused(
         });
     }
     let from_desc = file::describe(txn, from)?;
+    super::check_based_on(txn, &from_desc)?;
     let from_entry = member_of(&from_desc, opts.from_member)?;
     let mut from_m = Member::open(txn, &from_desc, &from_entry)?;
     let (to_id, created) = match to {
         Target::File(id) => {
             crate::auth::check(txn, "file.open-output", *id)?;
+            match opts.mbropt {
+                MbrOpt::Replace => crate::auth::check(txn, "file.copy-replace", *id)?,
+                MbrOpt::UpdAdd => crate::auth::check(txn, "file.open-update", *id)?,
+                MbrOpt::None | MbrOpt::Add => {}
+            }
             (*id, None)
         }
         Target::Create { library, name } => {

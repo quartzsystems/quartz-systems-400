@@ -47,6 +47,7 @@ pub fn cpytoimpf_paused(
 ) -> Result<Vec<u8>> {
     crate::auth::check(txn, "file.open-input", file)?;
     let desc = file::describe(txn, file)?;
+    crate::util::check_based_on(txn, &desc)?;
     let entry = member_of(&desc, member)?;
     let hold = Hold::take(
         txn,
