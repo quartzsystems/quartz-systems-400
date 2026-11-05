@@ -73,7 +73,7 @@ rows the work has not reached as refused, as the code does today.
 | Cursors `WITH RETURN [TO CALLER \| TO CLIENT]`, `DYNAMIC RESULT SETS` (SQL0464), `SET RESULT SETS CURSOR` | supported | primary | `sqlpl/RESULT1`, `sqlpl/DYNSQL` |
 | `CALL` from embedded SQL and SQL routines; unqualified through the path or library list | supported | primary | `sqlpl/NESTED` |
 | `CALL` from the database host server (JTOpen, ACS): OUT/INOUT values, result sets one after another, parameter modes and names | supported | primary | `hostserver::call`, replay `database-callproc` |
-| `CALL` from DRDA: result sets as IBM i sends them (`RSLSETRM`, `SQLRSLRD`, per set `OPNQRYRM`, `SQLCINRD`, `QRYDSC`) | supported; output values (`OUTEXP`) refused SQL0084 | pub400 | `ddm::session` (`drda-call.trace`) |
+| `CALL` from DRDA: result sets as IBM i sends them (`RSLSETRM`, `SQLRSLRD`, per set `OPNQRYRM`, `SQLCINRD`, `QRYDSC`), output values as `SQLDTARD` | supported | pub400, primary | `ddm::session` |
 | `CALL` from QAP | partial: the first result set only; OUT/INOUT refused SQL0084 | none | `qsjob qapsql` |
 | `CALL` from STRSQL | supported (no result sets shown, as STRSQL) | none | |
 | `CALL` from `RUNSQL`, `RUNSQLSTM` | refused SQL0084: BLOCKED(sql), they run in the storage service, which needs the statement-fiber call path | none | |
@@ -98,7 +98,7 @@ rows the work has not reached as refused, as the code does today.
 | SQLDA from `DESCRIBE OUTPUT/INPUT/TABLE` and `PREPARE INTO` (`USING NAMES/SYSTEM NAMES/LABELS/ANY/BOTH/ALL`, LOB extended entries, +237) | supported byte for byte, except the job CCSID and a reserved area IBM leaves unset | pub400 | `rpg/b11sql/SQL056`, `SQL057` |
 | `DESCRIBE CURSOR`, `DESCRIBE PROCEDURE`, `ALLOCATE/ASSOCIATE LOCATORS` in programs | refused SQL0084 (requesters describe `RS#n` cursors internally) | none | |
 | Scrollable cursors (`SCROLL`, every orientation, SQL0231), `WITH HOLD`, `INSENSITIVE`, `ASENSITIVE` | supported | pub400 | `rpg/b11sql/SQL058` |
-| `SENSITIVE` cursors | refused SQL0243: BLOCKED(sql), rows are read at OPEN | pub400 | `rpg/b11sql/SQL058` |
+| `SENSITIVE` cursors | partial: a plain single-table query, read again at each fetch; others SQL0243; JDBC `TYPE_SCROLL_SENSITIVE` is treated as insensitive | pub400 | `sql::embed` |
 | `SET OPTION` (every program option, SQL5066 order) | supported; values QS/400 cannot honour refused SQL0084 | pub400 | `rpg/b11sql/SQL061`, `SQL062` |
 | Blocked `INSERT ... n ROWS`, indicator arrays, `GET DIAGNOSTICS` in programs, `DECLARE TABLE`, `DECLARE STATEMENT` | supported | pub400 | `rpg/b11sql/SQL063`, `SQL064` |
 | `SQLTYPE` host variables (LOBs, locators, `BINARY`, `VARBINARY`, `ROWID`, `RESULT_SET_LOCATOR`), `FREE LOCATOR`, `HOLD LOCATOR` (SQL7034, SQL0423) | supported | pub400 | `rpg/b11sql/SQL060`, `SQL065` |
@@ -308,13 +308,16 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `STRSQL` | partial (Phase 8) | pub400 | |
 | `RUNSQLSTM`, `RUNSQL` | partial: options checked (values QS/400 cannot honour refused SQL0084; `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `SYSTIME`, `TGTRLS` and the listing options without effect); not yet run end to end | none | |
 | SQLRPGLE precompiler (`CRTSQLRPGI`) | partial (Phase 9) | pub400 | |
-| DRDA server (JDBC, ACS) | partial: `EXCSQLSET` runs; `CALL` with result sets; packages, LOB locators and `CALL` output values refused SQL0084 | primary, pub400 | replay `database-jdbc`, `ddm::session` |
+| DRDA server (JDBC, ACS) | partial: `EXCSQLSET`, `CALL` with result sets and output values (`SQLDTARD`), bind into packages; LOB locators refused SQL0084 | primary, pub400 | replay `database-jdbc`, `ddm::session` |
 | `SYSIBM` metadata views `SQLTABLES`, `SQLCOLUMNS`, `SQLPRIMARYKEYS`, `SQLFOREIGNKEYS`, `SQLSCHEMAS`, `SQLTABLETYPES`, `SYSTABLETYPES`, `SQLTYPEINFO`, `SQLSTATISTICS`, `SQLSPECIALCOLUMNS`, `SQLTABLEPRIVILEGES`, `TABLES`, `COLUMNS`, `VIEWS`, `SCHEMATA` | supported: the primary's columns, rows from the QSYS2 views | primary | `sysibm/SQLMETA` |
 | JDBC catalog requests (`DatabaseMetaData`) | partial: answered from the views; replies not yet byte-identical; `SQLPROCEDURES`, `SQLFUNCTIONS`, `SQLUDTS` empty | primary | replay `database-metadata` |
 | Other `SYSIBM` views (`_S` forms, `ROUTINES`, `PARAMETERS`, ...) | not present: SQL0204 | primary | `sysibm/SYSIBMLS` |
 | DRDA client | not present | primary | |
-| SQL CLI (`QSQCLI`), server mode, `QSQSRVR` | not present | primary | |
-| `*SQLPKG`, `DSPSQLPKG`, `DLTSQLPKG`; `CRTSQLCI`, `CRTSQLCBLI` | not present | none | |
+| SQL CLI (`QSQCLI`), server mode, `QSQSRVR` | not present: BLOCKED(sql), needs handles holding the caller's bound storage across calls, the job's SQL session from a bound procedure, and a `QSQSRVR` prestart role | none | |
+| `*SQLPKG` packages: made by the host server's package requests (JTOpen extended dynamic) and by DRDA bind; statements run by name; saved and restored | supported | primary | `sql::package`, replay `database-sqlpkg`, `ddm`, `saverst::sqlpkg` |
+| `DLTSQLPKG` | supported | primary | `sys-cpps` |
+| `DSPSQLPKG` | not present: no such command on V7R1M0 either (CPD0030) | primary | |
+| `CRTSQLCI`, `CRTSQLCBLI` | not present | none | |
 | `STRDBMON`, `PRTSQLINF`, `DSPSQLPKG` | not present | primary | |
 | `ADDPFTRG` (`RPLTRG`, generated names, `ALWREPCHG`, `TRGUPDCND`, `THDSAFE`, `MLTTHDACN`), `RMVPFTRG`, `CHGPFTRG`, `DSPFD TYPE(*TRG)` | supported; the `QAFDTRG` outfile not built | primary | `db::trg` |
 | Trigger buffer | supported, byte for byte as the primary's | primary | `db::trg`, `mi::trigger` |
