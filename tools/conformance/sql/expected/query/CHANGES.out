@@ -1,0 +1,65 @@
+-- captured from pub400
+> CREATE TABLE {lib}.Q3T (ID INTEGER NOT NULL, GRP CHAR(1), V DECIMAL(7,2)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.Q3T VALUES (1,'A',10.50),(2,'A',20.00),(3,'B',NULL),(4
+sqlcode 0 sqlstate 00000 msgid - count 4
+> CREATE TABLE {lib}.Q3U (ID INTEGER, W INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.Q3U VALUES (1,100),(3,300),(7,700),(NULL,0)
+sqlcode 0 sqlstate 00000 msgid - count 4
+> SELECT ID, W FROM FINAL TABLE (INSERT INTO {lib}.Q3U VALUES (8, 800), (9
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER
+# W INTEGER
+| 8 | 800 |
+| 9 | 900 |
+> SELECT ID FROM NEW TABLE (INSERT INTO {lib}.Q3U VALUES (10, 1000))
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER
+| 10 |
+> SELECT ID, W FROM FINAL TABLE (UPDATE {lib}.Q3U SET W = W + 1 WHERE ID >
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> UPDATE {lib}.Q3U SET W = 1 FROM {lib}.Q3T WHERE ID = 1
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> MERGE INTO {lib}.Q3U U USING {lib}.Q3T T JOIN {lib}.Q3U X ON T.ID = X.ID
+sqlcode 0 sqlstate 00000 msgid - count 2
+> SELECT * FROM {lib}.Q3U ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER
+# W INTEGER
+| 1 | 1 |
+| 3 | 1 |
+| 7 | 700 |
+| 8 | 800 |
+| 9 | 900 |
+| 10 | 1000 |
+| NULL | 0 |
+> DELETE FROM {lib}.Q3U U WHERE EXISTS (SELECT 1 FROM {lib}.Q3T T WHERE T.
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT * FROM {lib}.Q3T WHERE ID = 1 SKIP LOCKED DATA
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# GRP CHAR(1)
+# V DECIMAL(7,2)
+| 1 | 'A' | 10.50 |
+> SELECT * FROM {lib}.Q3T WHERE ID = 1 WITH CS
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# GRP CHAR(1)
+# V DECIMAL(7,2)
+| 1 | 'A' | 10.50 |
+> TRUNCATE TABLE {lib}.Q3U
+sqlcode 0 sqlstate 00000 msgid -
+> TRUNCATE {lib}.Q3U REUSE STORAGE IGNORE DELETE TRIGGERS CONTINUE IDENTIT
+sqlcode 0 sqlstate 00000 msgid -
+warning 100 02000 SQL0100
+> SELECT COUNT(*) FROM {lib}.Q3U
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> DROP TABLE {lib}.Q3T
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.Q3U
+sqlcode 0 sqlstate 00000 msgid -

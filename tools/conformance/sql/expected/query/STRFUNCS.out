@@ -1,0 +1,149 @@
+-- captured from pub400
+> VALUES (TRANSLATE('abcdef', 'xy', 'ab'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(6) NOT NULL
+| 'xycdef' |
+> VALUES (TRANSLATE('abcdef'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(6) NOT NULL
+| 'ABCDEF' |
+> VALUES (TRANSLATE('abcdef', 'x', 'abc', '*'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(6) NOT NULL
+| 'x**def' |
+> VALUES (OVERLAY('abcdef' PLACING 'XY' FROM 3 FOR 2))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(6) NOT NULL
+| 'abXYef' |
+> VALUES (OVERLAY('abcdef', 'XY', 3))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(7) NOT NULL
+| 'abXYdef' |
+> VALUES (OVERLAY('abcdef', 'XYZ', 2))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(8) NOT NULL
+| 'aXYZcdef' |
+> VALUES (OVERLAY('abcdef', 'XY', 7))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(8) NOT NULL
+| 'abcdefXY' |
+> VALUES (OVERLAY('abcdef', 'XY', 3, 0))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(8) NOT NULL
+| 'abXYcdef' |
+> VALUES (INSERT('abcdef', 3, 2, 'XYZ'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(7) NOT NULL
+| 'abXYZef' |
+> VALUES (INSERT('abcdef', 7, 0, 'XY'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(8) NOT NULL
+| 'abcdefXY' |
+> VALUES (REPEAT('ab', 3))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(6) NOT NULL
+| 'ababab' |
+> VALUES (SPACE(3))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(3) NOT NULL
+| '   ' |
+> VALUES (LPAD('abc', 6, 'xy'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(6) NOT NULL
+| 'xyxabc' |
+> VALUES (RPAD('abc', 6))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(6) NOT NULL
+| 'abc   ' |
+> VALUES (LPAD('abcdef', 3))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(3) NOT NULL
+| 'abc' |
+> VALUES (INSTR('abcabc', 'bc', 1, 2))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 5 |
+> VALUES (INSTR('abcabc', 'bc', -1))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 5 |
+> VALUES (LOCATE_IN_STRING('abcabc', 'bc', -1, 2))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 2 |
+> VALUES (ASCII('A'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 65 |
+> VALUES (CHR(65))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(1)
+| 'A' |
+> VALUES (SOUNDEX('Robert'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(4) NOT NULL
+| 'R163' |
+> VALUES (DIFFERENCE('Robert', 'Rupert'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 4 |
+> VALUES (STRIP('xxabcxx', B, 'x'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(7) NOT NULL
+| 'abc' |
+> VALUES (LTRIM('xxabc', 'x'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(5) NOT NULL
+| 'abc' |
+> VALUES (SUBSTRING('abcdef', 2, 3, OCTETS))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(3) NOT NULL
+| 'bcd' |
+> VALUES (GREATEST(1, 5, 3))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 5 |
+> VALUES (LEAST('b', 'a', 'c'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(1) NOT NULL
+| 'a' |
+> VALUES (GREATEST(1, NULL, 3))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| NULL |
+> VALUES (NVL(NULL, 'x'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(1) NOT NULL
+| 'x' |
+> VALUES (DIGITS(CAST(-12 AS DECIMAL(5,2))))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(5) NOT NULL
+| '01200' |
+> VALUES (CHAR(DATE('2024-03-05'), USA))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(10) NOT NULL
+| '03/05/2024' |
+> VALUES (CHAR(TIME('14:07:09'), USA))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(8) NOT NULL
+| '02:07 PM' |
+> VALUES (CHAR(12.5))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(5) NOT NULL
+| '12.5 ' |
+> VALUES (VARCHAR(12.5))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(5) NOT NULL
+| '12.5' |
+> VALUES (ZONED(12.5, 5, 2))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 NUMERIC(5,2) NOT NULL
+| 12.50 |
+> VALUES (CHARACTER_LENGTH('abc', OCTETS))
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> VALUES (POSITION('c' IN 'abcabc' USING OCTETS))
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> VALUES (INITCAP('hello world'))
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES (DECODE(2, 1, 'one', 2, 'two', 'other'))
+sqlcode -204 sqlstate 42704 msgid SQL0204

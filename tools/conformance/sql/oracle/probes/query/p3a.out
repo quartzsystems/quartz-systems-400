@@ -1,0 +1,212 @@
+# pub400 (V7R5M0) over JTOpen, 2026-11-05; statement, then SQLCODE SQLSTATE [message ID] or columns and rows. IBM's message text is left out.
+>> values timestamp_format('2024-03-05 14:07:09', 'YYYY-MM-DD HH24:MI:SS')
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 14:07:09.000000
+>> values to_date('05/03/2024', 'DD/MM/YYYY')
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 00:00:00.000000
+>> values timestamp_format('20240305', 'YYYYMMDD')
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 00:00:00.000000
+>> values timestamp_format('03-05-24 02:07:09 PM', 'MM-DD-YY HH:MI:SS AM')
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 14:07:09.000000
+>> values timestamp_format('2024-03-05 14:07:09.123456', 'YYYY-MM-DD HH24:MI:SS.FF6', 12)
+   cols | 00001 TIMESTAMP(32,12) NN
+   row | 2024-03-05 14:07:09.123456000000
+>> values timestamp_format('2024-065', 'YYYY-DDD')
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 00:00:00.000000
+>> values timestamp_format('Mar 5 2024', 'Mon DD YYYY')
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 00:00:00.000000
+>> values timestamp_format('bad', 'YYYY')
+   cols | 00001 TIMESTAMP(26,6) NN
+   fetch error -20448 22007 [SQ20448]
+>> values varchar_format(timestamp('2024-03-05-14.07.09.123456'), 'YYYY-MM-DD HH24:MI:SS.FF3')
+   cols | 00001 VARCHAR(255,0) NN
+   row | 2024-03-05 14:07:09.123
+>> values to_char(timestamp('2024-03-05-14.07.09'), 'DD.MM.YYYY HH:MI AM')
+   cols | 00001 VARCHAR(255,0) NN
+   row | 05.03.2024 02:07 PM
+>> values varchar_format(timestamp('2024-03-05-14.07.09'), 'Day, Month DD, YYYY')
+   cols | 00001 VARCHAR(255,0) NN
+   row | Tuesday, March 05, 2024
+>> values varchar_format(timestamp('2024-03-05-14.07.09'), 'DAY MONTH DY MON D DDD J Q W WW IW I IY IYYY RR CC')
+   cols | 00001 VARCHAR(255,0) NN
+   row | TUESDAY MARCH TUE MAR 3 065 2460375 1 1 10 10 4 24 2024 24 21
+>> values varchar_format(date('2024-03-05'), 'YYYYMMDD')
+   cols | 00001 VARCHAR(255,0) NN
+   row | 20240305
+>> values varchar_format(1234.5, '9,999.99')
+   cols | 00001 VARCHAR(254,0) NN
+   row |  1,234.50
+>> values varchar_format(-12.3, 'S0009.990')
+   cols | 00001 VARCHAR(254,0) NN
+   row | -0012.300
+>> values to_char(12345.678, 'L99G999D99')
+   cols | 00001 VARCHAR(254,0) NN
+   row | $ 12,345.68
+>> values varchar_format(timestamp('2024-03-05-00.07.09'), 'HH12 HH24 MI SS SSSSS NNNNNN FF1 FF9')
+   cols | 00001 VARCHAR(255,0) NN
+   row | 00 00 07 09 00429 000000 0 000000000
+>> values extract(year from date('2024-03-05')), extract(month from timestamp('2024-03-05-14.07.09.5')), extract(day from date('2024-03-05'))
+   cols | 00001 INTEGER(10,0) NN
+   row | 2024
+   row | 3
+   row | 5
+>> values extract(hour from time('14:07:09')), extract(minute from timestamp('2024-03-05-14.07.09')), extract(second from timestamp('2024-03-05-14.07.09.5'))
+   cols | 00001 DECIMAL(17,6) NN
+   row | 14.000000
+   row | 7.000000
+   row | 9.500000
+>> values extract(epoch from timestamp('2024-03-05-14.07.09')), extract(dow from date('2024-03-05')), extract(doy from date('2024-03-05')), extract(week from date('2024-03-05')), extract(quarter from date('2024-03-05'))
+   cols | 00001 BIGINT(19,0) NN
+   row | 1709647629
+   row | 3
+   row | 65
+   row | 10
+   row | 1
+>> values extract(millennium from date('2024-03-05')), extract(century from date('2024-03-05')), extract(decade from date('2024-03-05')), extract(milliseconds from timestamp('2024-03-05-14.07.09.5')), extract(microseconds from timestamp('2024-03-05-14.07.09.5'))
+   cols | 00001 INTEGER(10,0) NN
+   row | 2
+   row | 20
+   row | 202
+   row | 9500
+   row | 9500000
+>> values date_trunc('MONTH', timestamp('2024-03-05-14.07.09')), date_trunc('year', date('2024-03-05')), date_trunc('HOUR', timestamp('2024-03-05-14.07.09')), date_trunc('WEEK', timestamp('2024-03-07-14.07.09'))
+   error -204 42704 [SQL0204]
+>> values date_trunc('QUARTER', timestamp('2024-05-05-14.07.09')), date_trunc('DECADE', timestamp('2024-05-05-14.07.09')), date_trunc('MILLISECOND', timestamp('2024-05-05-14.07.09.123456'))
+   error -204 42704 [SQL0204]
+>> values timestampdiff(16, char(timestamp('2024-03-05-14.07.09') - timestamp('2024-01-01-00.00.00'))), timestampdiff_big(2, char(timestamp('2024-03-05-14.07.09') - timestamp('2024-01-01-00.00.00')))
+   cols | 00001 BIGINT(19,0) NN
+   row | 64
+   row | 5580429
+>> values timestampdiff(64, '00000201000000.000000'), timestampdiff(256, '00010000000000.000000'), timestampdiff(1, '00000000000001.000001')
+   cols | 00001 INTEGER(10,0) NN
+   row | 2
+   row | 1
+   row | 1000001
+>> values timestamp_iso(date('2024-03-05')), timestamp_iso(time('14:07:09'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 00:00:00.000000
+   row | 2026-11-05 14:07:09.000000
+>> values round_timestamp(timestamp('2024-03-05-14.37.09'), 'HH'), trunc_timestamp(timestamp('2024-03-05-14.37.09'), 'HH'), round_timestamp(timestamp('2024-03-16-14.37.09'), 'MONTH'), round_timestamp(timestamp('2024-03-05-14.37.09'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 15:00:00.000000
+   row | 2024-03-05 14:00:00.000000
+   row | 2024-04-01 00:00:00.000000
+   row | 2024-03-06 00:00:00.000000
+>> values round_timestamp(timestamp('2024-07-05-14.37.09'), 'YYYY'), trunc_timestamp(timestamp('2024-07-05-14.37.09'), 'Q'), trunc_timestamp(timestamp('2024-03-07-14.37.09'), 'IW'), trunc_timestamp(timestamp('2024-03-07-14.37.09'), 'DAY')
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2025-01-01 00:00:00.000000
+   row | 2024-07-01 00:00:00.000000
+   row | 2024-03-04 00:00:00.000000
+   row | 2024-03-03 00:00:00.000000
+>> values dayofweek_iso(date('2024-03-03')), week_iso(date('2024-12-30')), week_iso(date('2021-01-01')), week(date('2024-12-30')), dayofweek(date('2024-03-03'))
+   cols | 00001 INTEGER(10,0) NN
+   row | 7
+   row | 1
+   row | 53
+   row | 53
+   row | 1
+>> values translate('abcdef', 'xy', 'ab'), translate('abcdef'), translate('abcdef', 'x', 'abc', '*'), translate('hello', 'HE', 'he')
+   cols | 00001 VARCHAR(6,0) NN
+   row | xycdef
+   row | ABCDEF
+   row | x**def
+   row | HEllo
+>> values overlay('abcdef' placing 'XY' from 3 for 2), overlay('abcdef', 'XY', 3, 2), overlay('abcdef', 'XY', 3), overlay('abcdef' placing 'XY' from 3 for 0 using octets)
+   error -199 42601 [SQL0199]
+>> values insert('abcdef', 3, 2, 'XYZ'), insert('abcdef', 1, 0, 'XYZ'), repeat('ab', 3), space(3) || '|', length(space(0))
+   error -171 42815 [SQL0171]
+>> values lpad('abc', 6), lpad('abc', 6, 'xy'), rpad('abc', 6, '*'), lpad('abcdef', 3), rpad('abc', 0)
+   cols | 00001 VARCHAR(6,0) NN
+   row |    abc
+   row | xyxabc
+   row | abc***
+   row | abc
+   row | 
+>> values instr('abcabc', 'bc'), instr('abcabc', 'bc', 3), instr('abcabc', 'bc', 1, 2), instr('abcabc', 'bc', -1), locate_in_string('abcabc', 'bc', -1, 2)
+   cols | 00001 INTEGER(10,0) NN
+   row | 2
+   row | 5
+   row | 5
+   row | 5
+   row | 2
+>> values regexp_count('banana', 'an'), regexp_instr('banana', 'an', 1, 2), regexp_substr('banana', 'a(n)', 1, 2, 'c', 1), regexp_replace('banana', 'an', 'AN'), regexp_replace('banana', 'an', 'X', 1, 2)
+   cols | 00001 INTEGER(10,0)
+   row | 2
+   row | 4
+   row | -
+   row | -
+   row | -
+>> values regexp_like('ABC', 'abc', 'i'), regexp_instr('banana', 'an', 1, 1, 1), regexp_substr('hello world', '\w+$'), regexp_replace('a1b22c', '\d+', '#'), regexp_count('aaa', 'a*')
+   error -204 42704 [SQL0204]
+>> values hex('AB'), hex(1), hex(cast(1 as smallint)), hex(12.5), hex(x'C1C2'), hex(binary('AB')), hex(varbinary('AB', 4)), hex(binary('AB', 4))
+   cols | 00001 VARCHAR(8,0) NN
+   row | C1C2
+   row | 00000001
+   row | 0001
+   row | 125F
+   row | C1C2
+   row | C1C2
+   row | C1C2
+   row | C1C20000
+>> values bitand(12, 10), bitor(12, 10), bitxor(12, 10), bitnot(12), bitandnot(12, 10), bitand(-1, 255)
+   cols | 00001 INTEGER(10,0) NN
+   row | 8
+   row | 14
+   row | 6
+   row | -13
+   row | 4
+   row | 255
+>> values hex(bitand(cast(12 as smallint), 10)), bitnot(cast(0 as bigint))
+   cols | 00001 BIGINT(19,0) NN
+   row | 8
+   row | -1
+>> values hash_md5('abc'), hash_sha1('abc'), hash_sha256('abc'), hash_sha512('abc')
+   cols | 00001 BINARY(64,0) NN
+   row | FE4EA0D98F9CD8D1D27F102A93CB0BB0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+   row | 80ADD764A3B1057058473DC9FCC7B461DDD627490000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+   row | B58EA6D31995A4D8CE092EB718DDFA58B6CEF2288B41FAF1DCD52FF3D6D8FA010000000000000000000000000000000000000000000000000000000000000000
+   row | 1702CBC13BFAA52F139F340DD0088CBBDBCC9560C892759AFFFC0ED062C9494A9CC8D43FA79BABBE9F2C92DD0C415E4AC041EFC413B82849C65A132FD0BDD539
+>> values hash_md5(x'616263'), hash('abc', 2), hash_row('abc')
+   error -104 42601 [SQL0104]
+>> values length(generate_unique()), hex(generate_unique())
+   cols | 00001 INTEGER(10,0) NN
+   row | 13
+   row | -
+>> values greatest(1, 5, 3), least('b', 'a', 'c'), greatest(1, null, 3), nvl(null, 'x'), nvl(null, null, 3), decode(2, 1, 'one', 2, 'two', 'other'), decode(null, null, 'nul', 'x'), decode(5, 1, 'one')
+   error -204 42704 [SQL0204]
+>> values interpret(bx'00000001' as integer), interpret(x'C1C2' as char(2)), interpret(bx'0000000F' as decimal(3,0))
+   error -171 42815 [SQL0171]
+>> values character_length('aéb' using octets), character_length('aéb' using codeunits16), character_length('aéb' using codeunits32), char_length('abc'), octet_length('aéb')
+   error -199 42601 [SQL0199]
+>> values exp(1), ln(10), log10(1000), log(10), sin(1), cos(1), tan(1), asin(0.5), acos(0.5), atan(1), atan2(1, 1)
+   cols | 00001 DOUBLE(53,0) NN
+   row | 2.718281828459045
+   row | 2.302585092994046
+   row | 2.9999999999999996
+   row | 1.0
+   row | 0.8414709848078965
+   row | 0.5403023058681398
+   row | 1.5574077246549023
+   row | 0.5235987755982989
+   row | 1.0471975511965979
+   row | 0.7853981633974483
+   row | 0.7853981633974483
+>> values sinh(1), cosh(1), tanh(0.5), asinh(1), acosh(2), atanh(0.5), cot(1), sign(-3.2), sign(0), radians(180), degrees(pi()), pi()
+   error -204 42704 [SQL0204]
+>> values power(2, 10), sqrt(2), mod(-7, 3), ceiling(-1.5), floor(-1.5), round(2.5, 0), round(-2.5), trunc(2.567, 2), truncate(-2.567, 1), abs(-3)
+   cols | 00001 DOUBLE(53,0) NN
+   row | 1024.0
+   row | 1.4142135623730951
+   row | -1.0
+   row | -1.0
+   row | -2.0
+   row | 3.0
+   row | -3.0
+   row | 2.56
+   row | -2.5
+   row | 3.0

@@ -1,0 +1,48 @@
+-- captured from pub400
+> CREATE TABLE {lib}.Q3CT (ID INTEGER NOT NULL, PARENT INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.Q3CT VALUES (1, NULL), (2, 1), (3, 1), (4, 2), (5, 3)
+sqlcode 0 sqlstate 00000 msgid - count 5
+> WITH A AS (SELECT ID FROM {lib}.Q3CT), B AS (SELECT ID FROM A WHERE ID >
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 4 |
+| 5 |
+> WITH T(N) AS (SELECT 1 FROM SYSIBM.SYSDUMMY1 UNION ALL SELECT N+1 FROM T
+sqlcode 0 sqlstate 00000 msgid -
+# N INTEGER NOT NULL
+| 1 |
+| 2 |
+| 3 |
+| 4 |
+| 5 |
+> WITH RECURSIVE T(N) AS (SELECT 1 FROM SYSIBM.SYSDUMMY1 UNION ALL SELECT 
+sqlcode 0 sqlstate 00000 msgid -
+# N INTEGER NOT NULL
+| 1 |
+| 2 |
+| 3 |
+> WITH T(N) AS (SELECT 1 FROM SYSIBM.SYSDUMMY1 UNION ALL SELECT MOD(N+1,3)
+sqlcode 0 sqlstate 00000 msgid -
+# N INTEGER NOT NULL
+# CYC CHAR(1) NOT NULL
+| 1 | '0' |
+| 2 | '0' |
+| 0 | '0' |
+| 1 | '1' |
+> WITH T(ID, LVL) AS (SELECT ID, 0 FROM {lib}.Q3CT WHERE PARENT IS NULL UN
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# LVL INTEGER NOT NULL
+| 1 | 0 |
+| 2 | 1 |
+| 3 | 1 |
+| 4 | 2 |
+| 5 | 2 |
+> WITH T(N) AS (SELECT 1 FROM SYSIBM.SYSDUMMY1 UNION SELECT N+1 FROM T WHE
+sqlcode -342 sqlstate 42925 msgid SQL0342
+> WITH T(N) AS (SELECT N+1 FROM T WHERE N < 3) SELECT * FROM T
+sqlcode -346 sqlstate 42836 msgid SQL0346
+> DROP TABLE {lib}.Q3CT
+sqlcode 0 sqlstate 00000 msgid -

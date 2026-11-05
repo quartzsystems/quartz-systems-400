@@ -1,0 +1,39 @@
+-- captured from pub400
+> VALUES (REGEXP_COUNT('banana', 'an'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 2 |
+> VALUES (REGEXP_INSTR('banana', 'an', 1, 2))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 4 |
+> VALUES (REGEXP_INSTR('banana', 'an', 1, 1, 1))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 4 |
+> VALUES (REGEXP_SUBSTR('banana', 'a(n)', 1, 2, 'c', 1))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(6)
+| 'n' |
+> VALUES (REGEXP_SUBSTR('hello world', '\w+$'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(11)
+| 'world' |
+> VALUES (REGEXP_REPLACE('banana', 'an', 'AN'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(20)
+| 'bANANa' |
+> VALUES (REGEXP_REPLACE('banana', 'an', 'X', 1, 2))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(13)
+| 'banXa' |
+> VALUES (REGEXP_REPLACE('a1b22c', '\d+', '#'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(13)
+| 'a#b#c' |
+> VALUES (REGEXP_REPLACE('ABC', 'b', 'x', 1, 0, 'i'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(7)
+| 'AxC' |
+> VALUES (REGEXP_LIKE('abc', 'B', 'i'))
+sqlcode -104 sqlstate 42601 msgid SQL0104

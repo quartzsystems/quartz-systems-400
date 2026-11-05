@@ -84,8 +84,13 @@ pub fn run(c: &Case) -> Result<String, String> {
             _ if case::changes(st) && sqlca.sqlcode >= 0 => Some(u64::try_from(sqlca.sqlerrd[2]).unwrap_or(0)),
             _ => None,
         };
-        // JDBC reports warnings apart; the status line has 0 for them.
-        if sqlca.sqlcode > 0 {
+        // JDBC reports warnings apart; the status line has 0 for them. A
+        // query with no rows is no warning over JDBC.
+        let empty_query = sqlca.sqlcode == 100 && matches!(outcome, Some(Outcome::Rows(_)));
+        if empty_query {
+            out.push_str(&render::status(0, "00000", "-", count));
+            out.push('\n');
+        } else if sqlca.sqlcode > 0 {
             out.push_str(&render::status(0, "00000", "-", count));
             out.push('\n');
             let _ = writeln!(out, "warning {} {} {}", sqlca.sqlcode, sqlca.sqlstate, sqlca.msgid());

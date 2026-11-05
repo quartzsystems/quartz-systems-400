@@ -1,0 +1,68 @@
+-- captured from pub400
+> CREATE TABLE {lib}.Q3T (ID INTEGER NOT NULL, GRP CHAR(1), V DECIMAL(7,2)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.Q3T VALUES (1,'A',10.50,'2024-01-15','apple'),(2,'A',2
+sqlcode 0 sqlstate 00000 msgid - count 6
+> SELECT GRP, COUNT(*) C FROM {lib}.Q3T GROUP BY GROUPING SETS ((GRP), ())
+sqlcode 0 sqlstate 00000 msgid -
+# GRP CHAR(1)
+# C INTEGER NOT NULL
+| 'A' | 2 |
+| 'B' | 2 |
+| 'C' | 1 |
+| NULL | 1 |
+| NULL | 6 |
+> SELECT GRP, YEAR(D) Y, SUM(ID) S, GROUPING(GRP) G1, GROUPING(YEAR(D)) G2
+sqlcode 0 sqlstate 00000 msgid -
+# GRP CHAR(1)
+# Y INTEGER
+# S INTEGER
+# G1 SMALLINT
+# G2 SMALLINT
+| 'A' | 2024 | 3 | 0 | 0 |
+| 'A' | NULL | 3 | 0 | 1 |
+| 'B' | 2023 | 3 | 0 | 0 |
+| 'B' | 2024 | 4 | 0 | 0 |
+| 'B' | NULL | 7 | 0 | 1 |
+| 'C' | NULL | 5 | 0 | 0 |
+| 'C' | NULL | 5 | 0 | 1 |
+| NULL | 2024 | 6 | 0 | 0 |
+| NULL | NULL | 6 | 0 | 1 |
+| NULL | NULL | 21 | 1 | 1 |
+> SELECT GRP, YEAR(D) Y, COUNT(*) C FROM {lib}.Q3T GROUP BY CUBE (GRP, YEA
+sqlcode 0 sqlstate 00000 msgid -
+# GRP CHAR(1)
+# Y INTEGER
+# C INTEGER NOT NULL
+| 'A' | 2024 | 2 |
+| 'A' | NULL | 2 |
+| 'B' | 2023 | 1 |
+| 'B' | 2024 | 1 |
+| 'B' | NULL | 2 |
+| 'C' | NULL | 1 |
+| 'C' | NULL | 1 |
+| NULL | 2023 | 1 |
+| NULL | 2024 | 1 |
+| NULL | 2024 | 4 |
+| NULL | NULL | 1 |
+| NULL | NULL | 1 |
+| NULL | NULL | 6 |
+> SELECT GRP, S, COUNT(*) FROM {lib}.Q3T GROUP BY GROUPING SETS (GRP, S, (
+sqlcode 0 sqlstate 00000 msgid -
+# GRP CHAR(1)
+# S VARCHAR(20)
+# 00003 INTEGER NOT NULL
+| 'A' | NULL | 2 |
+| 'B' | NULL | 2 |
+| 'C' | NULL | 1 |
+| NULL | 'apple' | 1 |
+| NULL | 'banana' | 1 |
+| NULL | 'cherry' | 1 |
+| NULL | 'date' | 1 |
+| NULL | 'fig' | 1 |
+| NULL | NULL | 1 |
+| NULL | NULL | 1 |
+| NULL | NULL | 6 |
+> DROP TABLE {lib}.Q3T
+sqlcode 0 sqlstate 00000 msgid -

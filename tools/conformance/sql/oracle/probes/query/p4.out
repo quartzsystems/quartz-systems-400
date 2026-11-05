@@ -1,0 +1,442 @@
+# pub400 (V7R5M0) over JTOpen, 2026-11-05; statement, then SQLCODE SQLSTATE [message ID] or columns and rows. IBM's message text is left out.
+>> values (timestamp_format('2024-03-05 14:07:09', 'YYYY-MM-DD HH24:MI:SS'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 14:07:09.000000
+>> values (to_date('05/03/2024', 'DD/MM/YYYY'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 00:00:00.000000
+>> values (to_char(timestamp('2024-03-05-14.07.09'), 'DD.MM.YYYY HH:MI AM'))
+   cols | 00001 VARCHAR(255,0) NN
+   row | 05.03.2024 02:07 PM
+>> values (varchar_format(1234.5, '9,999.99'))
+   cols | 00001 VARCHAR(254,0) NN
+   row |  1,234.50
+>> values (varchar_format(-12.3, 'S0009.990'))
+   cols | 00001 VARCHAR(254,0) NN
+   row | -0012.300
+>> values (varchar_format(12, '999'))
+   cols | 00001 VARCHAR(254,0) NN
+   row |   12
+>> values (varchar_format(timestamp('2024-03-05-14.07.09.123456'), 'YYYY-MM-DD-HH24.MI.SS.NNNNNN'))
+   cols | 00001 VARCHAR(255,0) NN
+   row | 2024-03-05-14.07.09.123456
+>> values (extract(year from date('2024-03-05')))
+   cols | 00001 INTEGER(10,0) NN
+   row | 2024
+>> values (extract(second from timestamp('2024-03-05-14.07.09.5')))
+   cols | 00001 DECIMAL(8,6) NN
+   row | 9.500000
+>> values (extract(second from time('14:07:09')))
+   cols | 00001 DECIMAL(8,6) NN
+   row | 9.000000
+>> values (extract(epoch from timestamp('2024-03-05-14.07.09')))
+   cols | 00001 BIGINT(19,0) NN
+   row | 1709647629
+>> values (extract(dow from date('2024-03-05')))
+   cols | 00001 INTEGER(10,0) NN
+   row | 3
+>> values (timestampdiff(16, char(timestamp('2024-03-05-14.07.09') - timestamp('2024-01-01-00.00.00'))))
+   cols | 00001 INTEGER(10,0) NN
+   row | 64
+>> values (timestampdiff_big(2, char(timestamp('2024-03-05-14.07.09') - timestamp('2024-01-01-00.00.00'))))
+   cols | 00001 BIGINT(19,0) NN
+   row | 5580429
+>> values (char(timestamp('2024-03-05-14.07.09') - timestamp('2024-01-01-00.00.00')))
+   cols | 00001 CHAR(22,0) NN
+   row | 204140709.000000      
+>> values (timestamp_iso(date('2024-03-05')))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 00:00:00.000000
+>> values (round_timestamp(timestamp('2024-03-05-14.37.09'), 'HH'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 15:00:00.000000
+>> values (trunc_timestamp(timestamp('2024-03-05-14.37.09'), 'MI'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 14:37:00.000000
+>> values (round_timestamp(timestamp('2024-03-16-14.37.09'), 'MONTH'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-04-01 00:00:00.000000
+>> values (round_timestamp(timestamp('2024-03-05-14.37.09')))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-06 00:00:00.000000
+>> values (trunc_timestamp(timestamp('2024-03-07-14.37.09'), 'IW'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-04 00:00:00.000000
+>> values (trunc_timestamp(timestamp('2024-03-07-14.37.09'), 'DAY'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-03 00:00:00.000000
+>> values (trunc_timestamp(timestamp('2024-08-07-14.37.09'), 'Q'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-07-01 00:00:00.000000
+>> values (round_timestamp(timestamp('2024-07-05-14.37.09'), 'YYYY'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2025-01-01 00:00:00.000000
+>> values (round_timestamp(date('2024-03-17'), 'MONTH'))
+   cols | 00001 TIMESTAMP(19,0) NN
+   row | 2024-04-01 00:00:00
+>> values (dayofweek_iso(date('2024-03-03')))
+   cols | 00001 INTEGER(10,0) NN
+   row | 7
+>> values (week_iso(date('2021-01-01')))
+   cols | 00001 INTEGER(10,0) NN
+   row | 53
+>> values (translate('abcdef', 'xy', 'ab'))
+   cols | 00001 VARCHAR(6,0) NN
+   row | xycdef
+>> values (translate('abcdef'))
+   cols | 00001 VARCHAR(6,0) NN
+   row | ABCDEF
+>> values (translate('abcdef', 'x', 'abc', '*'))
+   cols | 00001 VARCHAR(6,0) NN
+   row | x**def
+>> values (overlay('abcdef' placing 'XY' from 3 for 2))
+   cols | 00001 VARCHAR(6,0) NN
+   row | abXYef
+>> values (overlay('abcdef', 'XY', 3))
+   cols | 00001 VARCHAR(7,0) NN
+   row | abXYdef
+>> values (insert('abcdef', 3, 2, 'XYZ'))
+   cols | 00001 VARCHAR(7,0) NN
+   row | abXYZef
+>> values (repeat('ab', 3))
+   cols | 00001 VARCHAR(6,0) NN
+   row | ababab
+>> values (space(3))
+   cols | 00001 VARCHAR(3,0) NN
+   row |    
+>> values (lpad('abc', 6, 'xy'))
+   cols | 00001 VARCHAR(6,0) NN
+   row | xyxabc
+>> values (rpad('abc', 6))
+   cols | 00001 VARCHAR(6,0) NN
+   row | abc   
+>> values (instr('abcabc', 'bc', 1, 2))
+   cols | 00001 INTEGER(10,0) NN
+   row | 5
+>> values (locate_in_string('abcabc', 'bc', -1, 2))
+   cols | 00001 INTEGER(10,0) NN
+   row | 2
+>> values (regexp_count('banana', 'an'))
+   cols | 00001 INTEGER(10,0)
+   row | 2
+>> values (regexp_instr('banana', 'an', 1, 2))
+   cols | 00001 INTEGER(10,0)
+   row | 4
+>> values (regexp_instr('banana', 'an', 1, 1, 1))
+   cols | 00001 INTEGER(10,0)
+   row | 4
+>> values (regexp_substr('banana', 'a(n)', 1, 2, 'c', 1))
+   cols | 00001 VARCHAR(6,0)
+   row | n
+>> values (regexp_substr('hello world', '\w+$'))
+   cols | 00001 VARCHAR(11,0)
+   row | world
+>> values (regexp_replace('banana', 'an', 'AN'))
+   cols | 00001 VARCHAR(20,0)
+   row | bANANa
+>> values (regexp_replace('banana', 'an', 'X', 1, 2))
+   cols | 00001 VARCHAR(13,0)
+   row | banXa
+>> values (regexp_replace('a1b22c', '\d+', '#'))
+   cols | 00001 VARCHAR(13,0)
+   row | a#b#c
+>> values (regexp_replace('ABC', 'b', 'x', 1, 0, 'i'))
+   cols | 00001 VARCHAR(7,0)
+   row | AxC
+>> values (hex('AB'))
+   cols | 00001 VARCHAR(4,0) NN
+   row | C1C2
+>> values (hex(12.5))
+   cols | 00001 CHAR(4,0) NN
+   row | 125F
+>> values (binary('AB'))
+   cols | 00001 BINARY(2,0) NN
+   row | C1C2
+>> values (varbinary('AB', 4))
+   cols | 00001 VARBINARY(4,0) NN
+   row | C1C2
+>> values (bitand(12, 10))
+   cols | 00001 INTEGER(10,0) NN
+   row | 8
+>> values (bitnot(cast(12 as smallint)))
+   cols | 00001 SMALLINT(5,0) NN
+   row | -13
+>> values (bitxor(cast(12 as bigint), 10))
+   cols | 00001 BIGINT(19,0) NN
+   row | 6
+>> values (hash_md5('abc'))
+   cols | 00001 BINARY(16,0) NN
+   row | FE4EA0D98F9CD8D1D27F102A93CB0BB0
+>> values (hash_sha256('abc'))
+   cols | 00001 BINARY(32,0) NN
+   row | B58EA6D31995A4D8CE092EB718DDFA58B6CEF2288B41FAF1DCD52FF3D6D8FA01
+>> values (hash_sha1(x'616263'))
+   cols | 00001 BINARY(20,0) NN
+   row | A9993E364706816ABA3E25717850C26C9CD0D89D
+>> values (hash('abc'))
+   cols | 00001 VARBINARY(16,0) NN
+   row | FE4EA0D98F9CD8D1D27F102A93CB0BB0
+>> values (length(generate_unique()))
+   cols | 00001 INTEGER(10,0) NN
+   row | 13
+>> values (greatest(1, 5, 3))
+   cols | 00001 INTEGER(10,0) NN
+   row | 5
+>> values (least('b', 'a', 'c'))
+   cols | 00001 VARCHAR(1,0) NN
+   row | a
+>> values (greatest(1, null, 3))
+   cols | 00001 INTEGER(10,0)
+   row | -
+>> values (nvl(null, 'x'))
+   cols | 00001 VARCHAR(1,0) NN
+   row | x
+>> values (decode(2, 1, 'one', 2, 'two', 'other'))
+   error -204 42704 [SQL0204]
+>> values (interpret(bx'00000001' as integer))
+   cols | 00001 INTEGER(10,0) NN
+   row | 1
+>> values (interpret(cast(x'C1C2' as binary(2)) as char(2)))
+   cols | 00001 CHAR(2,0) NN
+   row | AB
+>> values (character_length('abc', octets))
+   error -206 42703 [SQL0206]
+>> values (char_length('abc', codeunits32))
+   error -206 42703 [SQL0206]
+>> values (exp(1))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 2.718281828459045
+>> values (ln(10))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 2.302585092994046
+>> values (log10(1000))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 2.9999999999999996
+>> values (sinh(1))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 1.1752011936438014
+>> values (asinh(1))
+   error -204 42704 [SQL0204]
+>> values (atanh(0.5))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 0.5493061443340549
+>> values (cot(1))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 0.6420926159343308
+>> values (sign(-3.2))
+   cols | 00001 DECIMAL(2,1) NN
+   row | -1.0
+>> values (sign(cast(-3 as int)))
+   cols | 00001 INTEGER(10,0) NN
+   row | -1
+>> values (radians(180))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 3.141592653589793
+>> values (degrees(pi()))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 180.0
+>> values (pi())
+   cols | 00001 DOUBLE(53,0) NN
+   row | 3.141592653589793
+>> values (power(2, 10))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 1024.0
+>> values (sqrt(2))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 1.4142135623730951
+>> values (mod(-7, 3))
+   cols | 00001 INTEGER(10,0) NN
+   row | -1
+>> values (mod(7.5, 2))
+   cols | 00001 DECIMAL(2,1) NN
+   row | 1.5
+>> values (ceiling(-1.5))
+   cols | 00001 DECIMAL(2,0) NN
+   row | -1
+>> values (round(2.555, 2))
+   cols | 00001 DECIMAL(5,3) NN
+   row | 2.560
+>> values (truncate(-2.567, 1))
+   cols | 00001 DECIMAL(4,3) NN
+   row | -2.500
+>> values (abs(-3))
+   cols | 00001 INTEGER(10,0) NN
+   row | 3
+>> values (char(date('2024-03-05'), usa))
+   cols | 00001 CHAR(10,0) NN
+   row | 03/05/2024
+>> values (char(time('14:07:09'), usa))
+   cols | 00001 CHAR(8,0) NN
+   row | 02:07 PM
+>> values (char(time('14:07:09'), eur))
+   cols | 00001 CHAR(8,0) NN
+   row | 14.07.09
+>> values (char(12.5))
+   cols | 00001 CHAR(5,0) NN
+   row | 12.5 
+>> values (char(cast(12 as int)))
+   cols | 00001 CHAR(11,0) NN
+   row | 12         
+>> values (varchar(12.5))
+   cols | 00001 VARCHAR(5,0) NN
+   row | 12.5
+>> values (digits(cast(-12 as dec(5,2))))
+   cols | 00001 CHAR(5,0) NN
+   row | 01200
+>> values (zoned(12.5, 5, 2))
+   cols | 00001 NUMERIC(5,2) NN
+   row | 12.50
+>> values (ascii('A'))
+   cols | 00001 INTEGER(10,0) NN
+   row | 65
+>> values (chr(65))
+   cols | 00001 CHAR(1,0)
+   row | A
+>> values (soundex('Robert'))
+   cols | 00001 CHAR(4,0) NN
+   row | R163
+>> values (difference('Robert','Rupert'))
+   cols | 00001 INTEGER(10,0) NN
+   row | 4
+>> values (months_between(date('2024-03-15'), date('2024-01-01')))
+   cols | 00001 DECIMAL(31,15) NN
+   row | 2.451612903225806
+>> values (quarter(date('2024-05-05')))
+   cols | 00001 INTEGER(10,0) NN
+   row | 2
+>> values (midnight_seconds(time('01:00:01')))
+   cols | 00001 INTEGER(10,0) NN
+   row | 3601
+>> values (julian_day(date('2024-03-05')))
+   cols | 00001 INTEGER(10,0) NN
+   row | 2460375
+>> values (multiply_alt(12.34, 5.6))
+   cols | 00001 DECIMAL(6,3) NN
+   row | 69.104
+>> values (add_days(date('2024-03-05'), 3))
+   cols | 00001 DATE(10,0) NN
+   row | 24-03-08
+>> values (add_hours(timestamp('2024-03-05-14.07.09'), 3))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 17:07:09.000000
+>> values (add_years(date('2024-02-29'), 1))
+   warn 0 01506
+   cols | 00001 DATE(10,0) NN
+   row | 25-02-28
+>> values (days_between(date('2024-03-05'), date('2024-01-01')))
+   error -204 42704 [SQL0204]
+>> values (hours_between(timestamp('2024-03-05-14.07.09'), timestamp('2024-03-05-10.00.00')))
+   error -204 42704 [SQL0204]
+>> values (to_number('123.45'))
+   cols | 00001 DECFLOAT(34,0) NN
+   row | 123.45
+>> values (decfloat_format('123.45'))
+   cols | 00001 DECFLOAT(34,0) NN
+   row | 123.45
+>> values (strip('xxabcxx', b, 'x'))
+   cols | 00001 VARCHAR(7,0) NN
+   row | abc
+>> values (ltrim('xxabc', 'x'))
+   cols | 00001 VARCHAR(5,0) NN
+   row | abc
+>> values (substring('abcdef', 2, 3, octets))
+   cols | 00001 CHAR(3,0) NN
+   row | bcd
+>> values (rand(1))
+   cols | 00001 DOUBLE(53,0) NN
+   row | 0.5138706625568408
+>> values (encrypt_aes('secret', 'password1234'))
+   cols | 00001 VARCHAR () FOR BIT DATA(48,0) NN
+   row | 4C5DA3FF0111D5ADB96180506FFE4F23B96180506FFE4F23B92863DAC8CCF7CA506209558B45DD31
+>> values (hex(encrypt_aes('secret', 'password1234', 'hint')))
+   cols | 00001 VARCHAR(160,0) NN
+   row | 4C5DA3040111D5ADB96180506FFE4F23B96180506FFE4F2330644D9F157D48FBA3602EE369958AD8B92863DAC8CCF7CA506209558B45DD31
+>> values (gethint(encrypt_aes('secret', 'password1234', 'hint')))
+   cols | 00001 VARCHAR(32,0)
+   row | hint
+>> values (varchar_bit_format(x'C1C2'))
+   cols | 00001 VARBINARY(1,0) NN
+   row | AB
+>> values (varchar_format_binary(x'C1C2D3D4C1C2D3D4C1C2D3D4C1C2D3D4', 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'))
+   cols | 00001 VARCHAR(40,0) NN
+   row | c1c2d3d4-c1c2-d3d4-c1c2-d3d4c1c2d3d4
+>> values (hextoraw('C1C2'))
+   cols | 00001 VARBINARY(2,0) NN
+   row | C1C2
+>> values (monthname(date('2024-03-05')))
+   cols | 00001 VARCHAR(100,0)
+   row | March
+>> values (dayname(date('2024-03-05')))
+   cols | 00001 VARCHAR(100,0)
+   row | Tuesday
+>> values (last_day(date('2024-02-05')))
+   cols | 00001 DATE(10,0) NN
+   row | 24-02-29
+>> values (next_day(date('2024-03-05'), 'MON'))
+   cols | 00001 DATE(10,0) NN
+   row | 24-03-11
+>> values (timestamp('20240305140709'))
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-05 14:07:09.000000
+>> values (date('2024065'))
+   cols | 00001 DATE(10,0) NN
+   row | 24-03-05
+>> values (date(738950))
+   cols | 00001 DATE(10,0) NN
+   row | 24-03-05
+>> values (week(date('2024-12-30')))
+   cols | 00001 INTEGER(10,0) NN
+   row | 53
+>> values (verify_group_for_user(session_user, 'QPGMR'))
+   cols | 00001 INTEGER(10,0) NN
+   row | 0
+>> values (date('2024-03-01') - cast(101 as dec(8,0)))
+   cols | 00001 DATE(10,0) NN
+   row | 24-01-29
+>> values (date('2024-03-01') + cast(10203 as dec(8,0)))
+   cols | 00001 DATE(10,0) NN
+   row | 25-05-04
+>> values (time('10:00:00') + cast(10203 as dec(6,0)))
+   cols | 00001 TIME(8,0) NN
+   row | 11:02:03
+>> values (date('2024-03-01') + 2 weeks)
+   error -104 42601 [SQL0104]
+>> values (current server, current timezone, current path, current degree)
+   cols | 00001 VARCHAR(18,0) NN | 00002 DECIMAL(6,0) NN | 00003 VARCHAR(8843,0) NN | 00004 CHAR(5,0) NN
+   row | PUB400 | 0 | "QSYS","QSYS2","SYSPROC","SYSIBMADM","{user}1" | ANY  
+>> values (current decfloat rounding mode, current implicit xmlparse option)
+   cols | 00001 VARCHAR(128,0) NN | 00002 VARCHAR(128,0) NN
+   row | ROUND_HALF_EVEN | STRIP WHITESPACE
+>> values (current client_acctng, current client_applname, current client_programid, current client_userid, current client_wrkstnname)
+   cols | 00001 VARCHAR(255,0) NN | 00002 VARCHAR(255,0) NN | 00003 VARCHAR(255,0) NN | 00004 VARCHAR(255,0) NN | 00005 VARCHAR(255,0) NN
+   row |  |  |  |  | 
+>> values (sysibm.client_host, sysibm.client_ipaddr, sysibm.client_port)
+   cols | 00001 VARCHAR(255,0) | 00002 VARCHAR(128,0) | 00003 INTEGER(10,0)
+   row | (client host) | (client address) | (client port)
+>> values (qsys2.job_name, qsys2.process_id, qsys2.server_mode_job_name, qsys2.thread_id)
+   cols | 00001 VARCHAR(28,0) | 00002 INTEGER(10,0) | 00003 VARCHAR(28,0) | 00004 BIGINT(19,0)
+   row | 773136/QUSER/QZDASOINIT | 2539211 | - | 5219
+>> values (session_user, system_user, user, current user)
+   cols | 00001 VARCHAR(128,0) NN | 00002 VARCHAR(128,0) NN | 00003 VARCHAR(18,0) NN | 00004 VARCHAR(128,0) NN
+   row | {user} | {user} | {user} | {user}
+>> values (current schema, current sqlid)
+   cols | 00001 VARCHAR(128,0) NN | 00002 VARCHAR(128,0) NN
+   row | {user}1 | {user}1
+>> set current degree = 'ANY'
+   error -552 42502 [SQL0552]
+>> values (current degree)
+   cols | 00001 CHAR(5,0) NN
+   row | ANY  
+>> set current decfloat rounding mode = round_half_up
+   count 0
+>> values (current decfloat rounding mode)
+   cols | 00001 VARCHAR(128,0) NN
+   row | ROUND_HALF_UP
+>> set path = system path, myschema
+   count 0
+>> values (current path)
+   cols | 00001 VARCHAR(8843,0) NN
+   row | "QSYS","QSYS2","SYSPROC","SYSIBMADM","MYSCHEMA"
+>> values (job_name)
+   cols | 00001 VARCHAR(28,0)
+   row | 773136/QUSER/QZDASOINIT

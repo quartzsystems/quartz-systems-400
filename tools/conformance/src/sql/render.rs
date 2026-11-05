@@ -94,7 +94,8 @@ pub fn value(v: &Value, data_type: &str) -> String {
         },
         Value::Double(x) => java_float(*x, false),
         Value::Real(x) => java_float(f64::from(*x), true),
-        Value::DecFloat(d) => d.to_string(),
+        // JTOpen gives a DECFLOAT as Types.OTHER, which the oracle side quotes.
+        Value::DecFloat(d) => format!("'{d}'"),
         Value::Str(s) => format!("'{}'", s.replace('\'', "''")),
         Value::Bin(b) => {
             let mut h = String::from("X'");

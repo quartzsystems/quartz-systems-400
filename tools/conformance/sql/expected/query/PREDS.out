@@ -1,0 +1,97 @@
+-- captured from pub400
+> CREATE TABLE {lib}.Q3T (ID INTEGER NOT NULL, GRP CHAR(1), V DECIMAL(7,2)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.Q3T VALUES (1,'A',10.50,'2024-01-15','apple'),(2,'A',2
+sqlcode 0 sqlstate 00000 msgid - count 6
+> CREATE TABLE {lib}.Q3U (ID INTEGER, W INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.Q3U VALUES (1,100),(3,300),(7,700),(NULL,0)
+sqlcode 0 sqlstate 00000 msgid - count 4
+> SELECT ID FROM {lib}.Q3T WHERE (ID, GRP) IN (VALUES (1,'A'),(3,'B'))
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 3 |
+> SELECT ID FROM {lib}.Q3T WHERE (ID, GRP) IN (SELECT ID, 'B' FROM {lib}.Q
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 3 |
+> SELECT ID FROM {lib}.Q3T WHERE (ID, GRP) = (3, 'B')
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 3 |
+> SELECT ID FROM {lib}.Q3T WHERE (ID, GRP) > (3, 'B')
+sqlcode -115 sqlstate 42601 msgid SQL0115
+> SELECT ID FROM {lib}.Q3T WHERE (ID, GRP) <> (3, 'B')
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+| 4 |
+| 5 |
+| 6 |
+> SELECT ID FROM {lib}.Q3T WHERE GRP IS DISTINCT FROM 'A'
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 3 |
+| 4 |
+| 5 |
+| 6 |
+> SELECT ID FROM {lib}.Q3T WHERE GRP IS NOT DISTINCT FROM 'A'
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+> SELECT ID FROM {lib}.Q3T WHERE GRP IS NOT DISTINCT FROM NULL
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> SELECT ID FROM {lib}.Q3T WHERE S LIKE 'a%' ESCAPE '!'
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+> SELECT ID FROM {lib}.Q3T WHERE 'a_b' LIKE 'a!_b' ESCAPE '!'
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+| 3 |
+| 4 |
+| 5 |
+| 6 |
+> SELECT ID FROM {lib}.Q3T WHERE ID BETWEEN 1+1 AND 2*2
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 2 |
+| 3 |
+| 4 |
+> SELECT ID FROM {lib}.Q3T WHERE 3 BETWEEN ID AND ID+1
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 2 |
+| 3 |
+> SELECT ID FROM {lib}.Q3T A WHERE EXISTS (SELECT 1 FROM {lib}.Q3U B WHERE
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 3 |
+> SELECT ID FROM {lib}.Q3T WHERE ID NOT IN (SELECT ID FROM {lib}.Q3U)
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+> SELECT ID FROM {lib}.Q3T WHERE ID NOT IN (SELECT ID FROM {lib}.Q3U WHERE
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 2 |
+| 4 |
+| 5 |
+| 6 |
+> SELECT ID FROM {lib}.Q3T WHERE REGEXP_LIKE(S, 'an+')
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 2 |
+> SELECT ID FROM {lib}.Q3T WHERE S LIKE_REGEX 'an+'
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DROP TABLE {lib}.Q3T
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.Q3U
+sqlcode 0 sqlstate 00000 msgid -

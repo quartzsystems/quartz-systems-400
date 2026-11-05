@@ -1,0 +1,198 @@
+# pub400 (V7R5M0) over JTOpen, 2026-11-05; statement, then SQLCODE SQLSTATE [message ID] or columns and rows. IBM's message text is left out.
+>> create table {user}1.q3t (id int not null, grp char(1), v dec(7,2), d date, s varchar(20))
+   count 0
+>> insert into {user}1.q3t values (1,'A',10.50,'2024-01-15','apple'),(2,'A',20.00,'2024-02-29','banana'),(3,'B',null,'2023-12-31','cherry'),(4,'B',5.25,'2024-03-01',null),(5,'C',7.00,null,'date'),(6,null,1.00,'2024-01-01','fig')
+   count 6
+>> create table {user}1.q3u (id int, w int)
+   count 0
+>> insert into {user}1.q3u values (1,100),(3,300),(7,700),(null,0)
+   count 4
+>> select * from q3t a join q3u b using (id)
+   cols | ID INTEGER(10,0) NN | GRP CHAR(1,0) | V DECIMAL(7,2) | D DATE(10,0) | S VARCHAR(20,0) | W INTEGER(10,0)
+   row | 1 | A | 10.50 | 24-01-15 | apple | 100
+   row | 3 | B | - | 23-12-31 | cherry | 300
+>> select stddev(v), stddev_samp(v), stddev_pop(v), variance(v), var(v), var_samp(v), var_pop(v), variance_samp(v) from q3t
+   warn 0 01003
+   cols | 00001 DOUBLE(53,0) | 00002 DOUBLE(53,0) | 00003 DOUBLE(53,0) | 00004 DOUBLE(53,0) | 00005 DOUBLE(53,0) | 00006 DOUBLE(53,0) | 00007 DOUBLE(53,0) | 00008 DOUBLE(53,0)
+   row | 6.4031242374328485 | 7.158910531638177 | 6.4031242374328485 | 41.0 | 41.0 | 51.25 | 41.0 | 51.25
+>> select stddev(id), variance(id), var_samp(id) from q3t
+   cols | 00001 DOUBLE(53,0) | 00002 DOUBLE(53,0) | 00003 DOUBLE(53,0)
+   row | 1.707825127659933 | 2.916666666666666 | 3.5
+>> select median(v), median(id), percentile_cont(0.5) within group (order by v), percentile_disc(0.5) within group (order by v), percentile_cont(0.25) within group (order by id desc) from q3t
+   warn 0 01003
+   cols | 00001 DECFLOAT(34,0) | 00002 DECFLOAT(34,0) | 00003 DECFLOAT(34,0) | 00004 DECIMAL(7,2) | 00005 DECFLOAT(34,0)
+   row | 7.00 | 3.5 | 7.00 | 7.00 | 2.25
+>> select grp, listagg(s, ',') within group (order by s desc) from q3t group by grp order by grp
+   warn 0 01003
+   cols | GRP CHAR(1,0) | 00002 VARCHAR(4000,0)
+   row | A | banana,apple
+   row | B | cherry
+   row | C | date
+   row | - | fig
+>> select listagg(s) from q3t
+   warn 0 01003
+   cols | 00001 VARCHAR(4000,0)
+   row | applebananacherrydatefig
+>> select listagg(distinct grp, '-') within group (order by grp) from q3t
+   warn 0 01003
+   cols | 00001 VARCHAR(4000,0)
+   row | A-B-C
+>> select listagg(s, ', ') within group (order by id) from q3t
+   warn 0 01003
+   cols | 00001 VARCHAR(4000,0)
+   row | apple, banana, cherry, date, fig
+>> select listagg(cast(s as varchar(5)), ',' on overflow error) within group (order by id) from q3t
+   warn 0 01003
+   cols | 00001 VARCHAR(4000,0)
+   row | apple,banan,cherr,date,fig
+>> select listagg(s, ',' on overflow truncate '...' with count) from q3t
+   warn 0 01003
+   cols | 00001 VARCHAR(4000,0)
+   row | apple,banana,cherry,date,fig
+>> select covariance(id, v), covariance_samp(id, v), covar_pop(id,v), covar_samp(id,v), correlation(id, v), corr(id,v) from q3t
+   warn 0 01003
+   cols | 00001 DOUBLE(53,0) | 00002 DOUBLE(53,0) | 00003 DOUBLE(53,0) | 00004 DOUBLE(53,0) | 00005 DOUBLE(53,0) | 00006 DOUBLE(53,0)
+   row | -9.0 | -11.25 | -9.0 | -11.25 | -0.7578292430727833 | -0.7578292430727833
+>> select regr_slope(v, id), regr_intercept(v, id), regr_icpt(v,id), regr_count(v, id), regr_r2(v, id), regr_avgx(v, id), regr_avgy(v, id), regr_sxx(v, id), regr_syy(v, id), regr_sxy(v, id) from q3t
+   warn 0 01003
+   cols | 00001 DOUBLE(53,0) | 00002 DOUBLE(53,0) | 00003 DOUBLE(53,0) | 00004 BIGINT(19,0) | 00005 DOUBLE(53,0) | 00006 DOUBLE(53,0) | 00007 DOUBLE(53,0) | 00008 DOUBLE(53,0) | 00009 DOUBLE(53,0) | 00010 DOUBLE(53,0)
+   row | -2.616279069767442 | 18.16860465116279 | 18.16860465116279 | 5 | 0.5743051616562677 | 3.6 | 8.75 | 17.200000000000003 | 205.0 | -45.0
+>> select count(distinct grp), sum(distinct v), avg(distinct id), min(distinct v), max(all v), count_big(distinct s), stddev(distinct v) from q3t
+   warn 0 01003
+   cols | 00001 INTEGER(10,0) NN | 00002 DECIMAL(31,2) | 00003 INTEGER(10,0) | 00004 DECIMAL(7,2) | 00005 DECIMAL(7,2) | 00006 BIGINT(19,0) NN | 00007 DOUBLE(53,0)
+   row | 3 | 43.75 | 3 | 1.00 | 20.00 | 5 | 6.4031242374328485
+>> select array_agg(id) from q3t
+   error -20441 428H2 [SQ20441]
+>> select xmlagg(xmlelement(name x, id)) from q3t
+   cols | 00001 XML(2147483646,0)
+   row | <X>1</X><X>2</X><X>3</X><X>4</X><X>5</X><X>6</X>
+>> select json_arrayagg(id) from q3t
+   cols | 00001 CLOB(2147483647,0)
+   row | [1,2,3,4,5,6]
+>> select (id, grp) from q3t
+   error -199 42601 [SQL0199]
+>> select id from q3t where (id, grp) in (values (1,'A'),(3,'B'))
+   cols | ID INTEGER(10,0) NN
+   row | 1
+   row | 3
+>> select id from q3t where (id, grp) in (select id, 'B' from q3u)
+   cols | ID INTEGER(10,0) NN
+   row | 3
+>> select id from q3t where (id, grp) = (3, 'B')
+   cols | ID INTEGER(10,0) NN
+   row | 3
+>> select id from q3t where (id, grp) > (3, 'B')
+   error -115 42601 [SQL0115]
+>> select id from q3t where (id, grp) <> (3, 'B')
+   cols | ID INTEGER(10,0) NN
+   row | 1
+   row | 2
+   row | 4
+   row | 5
+   row | 6
+>> select id from q3t where grp is distinct from 'A'
+   cols | ID INTEGER(10,0) NN
+   row | 3
+   row | 4
+   row | 5
+   row | 6
+>> select id from q3t where grp is not distinct from null
+   error -206 42703 [SQL0206]
+>> select id from q3t where s like 'a%' escape '\'
+   cols | ID INTEGER(10,0) NN
+   row | 1
+>> select id from q3t where s like '%\_%' escape '\'
+   cols | ID INTEGER(10,0) NN
+>> select id from q3t where 'a_b' like 'a!_b' escape '!'
+   cols | ID INTEGER(10,0) NN
+   row | 1
+   row | 2
+   row | 3
+   row | 4
+   row | 5
+   row | 6
+>> select id from q3t where s like_regex 'an+'
+   error -104 42601 [SQL0104]
+>> select id from q3t where regexp_like(s, 'an+')
+   cols | ID INTEGER(10,0) NN
+   row | 2
+>> select id from q3t where id between 1+1 and 2*2
+   cols | ID INTEGER(10,0) NN
+   row | 2
+   row | 3
+   row | 4
+>> select id from q3t where 3 between id and id+1
+   cols | ID INTEGER(10,0) NN
+   row | 2
+   row | 3
+>> select id from q3t a where exists (select 1 from q3u b where b.id = a.id and exists (select 1 from q3t c where c.id = b.id and exists (select 1 from q3u d where d.w = b.w and a.id < 5)))
+   cols | ID INTEGER(10,0) NN
+   row | 1
+   row | 3
+>> select id from q3t where id not in (select id from q3u)
+   cols | ID INTEGER(10,0) NN
+>> select id from q3t where id not in (select id from q3u where id is not null)
+   cols | ID INTEGER(10,0) NN
+   row | 2
+   row | 4
+   row | 5
+   row | 6
+>> select id from q3t a where not exists (select * from q3u b where a.id = b.id)
+   cols | ID INTEGER(10,0) NN
+   row | 2
+   row | 4
+   row | 5
+   row | 6
+>> select date('2024-03-01') - date('2023-01-31'), date('2024-01-31') - date('2024-03-01') from sysibm.sysdummy1
+   cols | 00001 DECIMAL(8,0) NN | 00002 DECIMAL(8,0) NN
+   row | 10101 | -101
+>> select time('10:30:15') - time('08:45:50'), time('08:00:00') - time('09:30:01') from sysibm.sysdummy1
+   cols | 00001 DECIMAL(6,0) NN | 00002 DECIMAL(6,0) NN
+   row | 14425 | -13001
+>> select timestamp('2024-03-01-10.30.15.000005') - timestamp('2023-01-31-12.00.00.000010') from sysibm.sysdummy1
+   cols | 00001 DECIMAL(20,6) NN
+   row | 10100223014.999995
+>> select d + 1 day, d + 2 weeks, d - 1 month, d + 1 year + 2 months from q3t where id = 2
+   error -182 42816 [SQL0182]
+>> select timestamp('2024-01-01-00.00.00') + 1 microsecond, timestamp('2024-01-01-00.00.00') + 3 microseconds - 1 second from sysibm.sysdummy1
+   cols | 00001 TIMESTAMP(26,6) NN | 00002 TIMESTAMP(26,6) NN
+   row | 2024-01-01 00:00:00.000001 | 2023-12-31 23:59:59.000003
+>> select time('23:59:59') + 2 seconds, time('10:00:00') + 1 hour + 30 minutes from sysibm.sysdummy1
+   cols | 00001 TIME(8,0) NN | 00002 TIME(8,0) NN
+   row | 00:00:01 | 11:30:00
+>> select d + 1, d - 10 from q3t where id = 2
+   error -182 42816 [SQL0182]
+>> select date('2024-03-31') - 1 month, date('2024-02-29') + 1 year from sysibm.sysdummy1
+   warn 0 01506
+   cols | 00001 DATE(10,0) NN | 00002 DATE(10,0) NN
+   row | 24-02-29 | 25-02-28
+>> select date('2024-03-01') - 00000101, date('2024-03-01') + 10203 from sysibm.sysdummy1
+   error -182 42816 [SQL0182]
+>> select time('10:00:00') + 10203 from sysibm.sysdummy1
+   error -182 42816 [SQL0182]
+>> select timestamp('2024-01-01-10.00.00') - 1 day - 0.5 seconds from sysibm.sysdummy1
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2023-12-31 09:59:59.500000
+>> select timestamp('2024-01-01-10.00.00.123456789012', 12) + 1 microsecond from sysibm.sysdummy1
+   cols | 00001 TIMESTAMP(32,12) NN
+   row | 2024-01-01 10:00:00.123457789012
+>> select cast('2024-01-01-10.00.00.123456789' as timestamp(9)) - cast('2024-01-01-09.00.00.000000001' as timestamp(9)) from sysibm.sysdummy1
+   cols | 00001 DECIMAL(23,9) NN
+   row | 10000.123456788
+>> select date('2024-01-01') + 1 second from sysibm.sysdummy1
+   error -187 42816 [SQL0187]
+>> select time('10:00:00') + 1 day from sysibm.sysdummy1
+   error -187 42816 [SQL0187]
+>> select d + 2.7 days from q3t where id = 1
+   cols | 00001 DATE(10,0)
+   row | 24-01-17
+>> select timestamp('2024-01-01-10.00.00') + 1.5 hours from sysibm.sysdummy1
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-01-01 11:00:00.000000
+>> select days(date('2024-03-01')) - days(date('2023-01-01')) from sysibm.sysdummy1
+   cols | 00001 INTEGER(10,0) NN
+   row | 425
+>> drop table {user}1.q3t
+   count 0
+>> drop table {user}1.q3u
+   count 0

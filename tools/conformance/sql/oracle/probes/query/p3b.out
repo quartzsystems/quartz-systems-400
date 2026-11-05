@@ -1,0 +1,174 @@
+# pub400 (V7R5M0) over JTOpen, 2026-11-05; statement, then SQLCODE SQLSTATE [message ID] or columns and rows. IBM's message text is left out.
+>> values char(date('2024-03-05'), iso), char(date('2024-03-05'), usa), char(date('2024-03-05'), eur), char(date('2024-03-05'), jis), char(date('2024-03-05'), local), char(time('14:07:09'), usa), char(time('14:07:09'), eur), char(time('14:07:09'), iso), char(timestamp('2024-03-05-14.07.09'))
+   cols | 00001 CHAR(26,0) NN
+   row | 2024-03-05                
+   row | 03/05/2024                
+   row | 05.03.2024                
+   row | 2024-03-05                
+   row | 24-03-05                  
+   row | 02:07 PM                  
+   row | 14.07.09                  
+   row | 14.07.09                  
+   row | 2024-03-05-14.07.09.000000
+>> values digits(123), digits(cast(-12 as dec(5,2))), digits(cast(5 as smallint)), digits(cast(5 as bigint)), zoned(12.5), zoned(12.5, 5, 2), zoned('12.5', 4, 1)
+   cols | 00001 NUMERIC(17,2) NN
+   row | 123.00
+   row | 1200.00
+   row | 5.00
+   row | 5.00
+   row | 12.00
+   row | 12.50
+   row | 12.50
+>> values ascii('A'), chr(65), difference('Robert','Rupert'), soundex('Robert'), months_between(date('2024-03-31'), date('2024-02-29')), months_between(date('2024-03-15'), date('2024-01-01'))
+   cols | 00001 DECIMAL(31,15)
+   row | 65.000000000000000
+   row | -
+   row | 4.000000000000000
+   row | -
+   row | 1.000000000000000
+   row | 2.451612903225806
+>> values quarter(date('2024-05-05')), midnight_seconds(time('01:00:01')), julian_day(date('2024-03-05')), multiply_alt(12.34, 5.6), log(100)
+   cols | 00001 DOUBLE(53,0) NN
+   row | 2.0
+   row | 3601.0
+   row | 2460375.0
+   row | 69.104
+   row | 2.0
+>> values add_days(date('2024-03-05'), 3), add_hours(timestamp('2024-03-05-14.07.09'), 3), add_minutes(timestamp('2024-03-05-14.07.09'), 3), add_seconds(timestamp('2024-03-05-14.07.09'), 3.5), add_years(date('2024-02-29'), 1), add_months(date('2024-01-31'), 1)
+   warn 0 01506
+   cols | 00001 TIMESTAMP(26,6) NN
+   row | 2024-03-08 00:00:00.000000
+   row | 2024-03-05 17:07:09.000000
+   row | 2024-03-05 14:10:09.000000
+   row | 2024-03-05 14:07:12.500000
+   row | 2025-02-28 00:00:00.000000
+   row | 2024-02-29 00:00:00.000000
+>> values days_between(date('2024-03-05'), date('2024-01-01')), hours_between(timestamp('2024-03-05-14.07.09'), timestamp('2024-03-05-10.00.00')), minutes_between(timestamp('2024-03-05-14.07.09'), timestamp('2024-03-05-10.00.00')), seconds_between(timestamp('2024-03-05-14.07.09'), timestamp('2024-03-05-10.00.00')), years_between(date('2024-03-05'), date('2020-04-01'))
+   error -204 42704 [SQL0204]
+>> values date_part('year', date('2024-03-05')), date_part('dow', date('2024-03-05'))
+   error -204 42704 [SQL0204]
+>> values to_number('123.45'), to_number('1,234.5', '9,999.9'), decfloat_format('123.45'), to_clob('abc'), to_single_byte('abc'), to_multi_byte('abc')
+   error -204 42704 [SQL0204]
+>> values strip('  abc  '), strip('xxabcxx', b, 'x'), ltrim('xxabc', 'x'), rtrim('abcyy', 'y'), trim(leading '0' from '00120'), trim('  a  ') || '|'
+   cols | 00001 VARCHAR(7,0) NN
+   row | abc
+   row | abc
+   row | abc
+   row | abc
+   row | 120
+   row | a|
+>> values left('abcdef', 2), right('abcdef', 2), substr('abcdef', 2, 3), substring('abcdef', 2, 3), substring('abcdef' from 2 for 3), substring('abcdef', 2, 3, octets), substr('abc', 4)
+   cols | 00001 VARCHAR(6,0) NN
+   row | ab
+   row | ef
+   row | bcd
+   row | bcd
+   row | bcd
+   row | bcd
+   row | 
+>> values substr('abc', 5)
+   cols | 00001 VARCHAR(3,0) NN
+   row | 
+>> values position('c' in 'abcabc'), position('c', 'abcabc'), position('c' in 'abcabc' using octets), locate('c', 'abcabc', 4), posstr('abcabc', 'c')
+   error -199 42601 [SQL0199]
+>> values upper('abc'), lower('ABC'), ucase('a'), lcase('A'), initcap('hello world')
+   error -204 42704 [SQL0204]
+>> values rand(1), rand(), random()
+   cols | 00001 DOUBLE(53,0) NN
+   row | 0.5138706625568408
+   row | 0.36915189062166204
+   row | 0.7527085177159948
+>> values database(), nodename(), dbpartitionname(), current server
+   error -104 42601 [SQL0104]
+>> values encrypt_aes('secret', 'password1234'), length(encrypt_aes('secret', 'password1234'))
+   warn 420 01565 [SQL0420]
+   cols | 00001 INTEGER(10,0) NN
+   row | -
+   row | 40
+>> values decrypt_char(encrypt_aes('secret', 'password1234'), 'password1234')
+   cols | 00001 VARCHAR(40,0) NN
+   row | secret
+>> values decrypt_char(encrypt_rc2('secret', 'password1234'), 'password1234'), length(encrypt_tdes('secret', 'password1234'))
+   warn 420 01565 [SQL0420]
+   cols | 00001 INTEGER(10,0) NN
+   row | -
+   row | 24
+>> values gethint(encrypt_aes('secret', 'password1234', 'hint'))
+   cols | 00001 VARCHAR(32,0)
+   row | hint
+>> values varchar_bit_format(x'C1C2'), varchar_format_binary(x'C1C2', 'xxxxxxxx-xxxx'), hextoraw('C1C2'), rawtohex('AB')
+   error -204 42704 [SQL0204]
+>> values trim_array(null), cardinality(null)
+   error -104 42601 [SQL0104]
+>> values systools.split('a,b,c', ',')
+   error -390 42887 [SQL0390]
+>> select * from table(systools.split('a,b,c', ',')) x
+   cols | ORDINAL_POSITION BIGINT(19,0) | ELEMENT CLOB(1048576,0)
+   row | 1 | a
+   row | 2 | b
+   row | 3 | c
+>> values monthname(date('2024-03-05')), dayname(date('2024-03-05')), last_day(date('2024-02-05')), next_day(date('2024-03-05'), 'MON')
+   warn 180 01534 [SQL0180]
+   cols | 00001 DATE(10,0)
+   row | -
+   row | -
+   row | 24-02-29
+   row | 24-03-11
+>> values timestamp(date('2024-03-05'), time('10:00:00')), timestamp('2024-03-05'), timestamp('20240305140709'), date('2024065'), date(738950), time(timestamp('2024-03-05-14.07.09'))
+   error -415 42825 [SQL0415]
+>> values verify_group_for_user(session_user, 'QPGMR')
+   cols | 00001 INTEGER(10,0) NN
+   row | 0
+>> values wrap('abc')
+   cols | 00001 CLOB(2097152,0)
+   fetch error -104 42601 [SQL0104]
+>> values nullif(1, 1), coalesce(null, null, 2), ifnull(null, 'a'), value(null, 1), max(1,2,3), min(4,2,8)
+   cols | 00001 INTEGER(10,0)
+   row | -
+   row | 2
+   row | -
+   row | 1
+   row | 3
+   row | 2
+>> values ebcdic_str('abc'), unicode_str('abc'), ascii_str('abc'), ascii_chr(65), ebcdic_chr(193)
+   error -204 42704 [SQL0204]
+>> values bit_length('abc'), lengthb('abc'), length('abc'), len('abc')
+   error -204 42704 [SQL0204]
+>> values localtimestamp, localtime, current date, current time, current timestamp(0)
+   error -415 42825 [SQL0415]
+>> values character_length('abc' using octets), character_length('abc' using codeunits16), character_length('abc' using codeunits32), char_length('abc'), octet_length('abc')
+   error -199 42601 [SQL0199]
+>> values exp(1), ln(10), log10(1000), sin(1), cos(1), tan(1), asin(0.5), acos(0.5), atan(1), atan2(1, 1)
+   cols | 00001 DOUBLE(53,0) NN
+   row | 2.718281828459045
+   row | 2.302585092994046
+   row | 2.9999999999999996
+   row | 0.8414709848078965
+   row | 0.5403023058681398
+   row | 1.5574077246549023
+   row | 0.5235987755982989
+   row | 1.0471975511965979
+   row | 0.7853981633974483
+   row | 0.7853981633974483
+>> values sinh(1), cosh(1), tanh(0.5), asinh(1), acosh(2), atanh(0.5), cot(1), sign(-3.2), sign(0), radians(180), degrees(pi()), pi()
+   error -204 42704 [SQL0204]
+>> values power(2, 10), sqrt(2), mod(-7, 3), ceiling(-1.5), floor(-1.5), round(2.5, 0), round(-2.5), trunc(2.567, 2), truncate(-2.567, 1), abs(-3)
+   cols | 00001 DOUBLE(53,0) NN
+   row | 1024.0
+   row | 1.4142135623730951
+   row | -1.0
+   row | -1.0
+   row | -2.0
+   row | 3.0
+   row | -3.0
+   row | 2.56
+   row | -2.5
+   row | 3.0
+>> values hex(1), hex(cast(1 as smallint)), hex(12.5), hex(binary('AB')), hex(varbinary('AB', 4)), hex(binary('AB', 4))
+   cols | 00001 VARCHAR(8,0) NN
+   row | 00000001
+   row | 0001
+   row | 125F
+   row | C1C2
+   row | C1C2
+   row | C1C20000

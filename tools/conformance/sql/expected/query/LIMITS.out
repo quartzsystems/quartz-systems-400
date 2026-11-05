@@ -1,0 +1,92 @@
+-- captured from pub400
+> CREATE TABLE {lib}.Q3T (ID INTEGER NOT NULL, GRP CHAR(1), V DECIMAL(7,2)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.Q3T VALUES (1,'A',10.50,'2024-01-15','apple'),(2,'A',2
+sqlcode 0 sqlstate 00000 msgid - count 6
+> SELECT * FROM (SELECT ID FROM {lib}.Q3T ORDER BY ID DESC FETCH FIRST 2 R
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 6 |
+| 5 |
+> SELECT ID FROM {lib}.Q3T ORDER BY ID OFFSET 2 ROWS
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 3 |
+| 4 |
+| 5 |
+| 6 |
+> SELECT ID FROM {lib}.Q3T ORDER BY ID OFFSET 2 ROWS FETCH NEXT 2 ROWS ONL
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 3 |
+| 4 |
+> SELECT ID FROM {lib}.Q3T ORDER BY ID LIMIT 2 OFFSET 3
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 4 |
+| 5 |
+> SELECT ID FROM {lib}.Q3T ORDER BY ID LIMIT 3,2
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 4 |
+| 5 |
+> SELECT ID FROM {lib}.Q3T ORDER BY ID FETCH FIRST 50 PERCENT ROWS ONLY
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SELECT ID, V FROM {lib}.Q3T ORDER BY V NULLS FIRST
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> SELECT ID, V FROM {lib}.Q3T ORDER BY 2, 1
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# V DECIMAL(7,2)
+| 6 | 1.00 |
+| 4 | 5.25 |
+| 5 | 7.00 |
+| 1 | 10.50 |
+| 2 | 20.00 |
+| 3 | NULL |
+> SELECT ID, V FROM {lib}.Q3T ORDER BY 3
+sqlcode -125 sqlstate 42805 msgid SQL0125
+> SELECT ID FROM (SELECT ID, V FROM {lib}.Q3T ORDER BY V) X ORDER BY ORDER
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 6 |
+| 4 |
+| 5 |
+| 1 |
+| 2 |
+| 3 |
+> SELECT ID FROM (SELECT ID FROM {lib}.Q3T ORDER BY ID DESC) X ORDER BY OR
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 6 |
+| 5 |
+> SELECT ID FROM {lib}.Q3T ORDER BY ID OPTIMIZE FOR 2 ROWS
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+| 3 |
+| 4 |
+| 5 |
+| 6 |
+> SELECT ID FROM {lib}.Q3T ORDER BY ID FOR READ ONLY
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+| 3 |
+| 4 |
+| 5 |
+| 6 |
+> SELECT ID FROM {lib}.Q3T ORDER BY ID FOR UPDATE OF V
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+| 3 |
+| 4 |
+| 5 |
+| 6 |
+> DROP TABLE {lib}.Q3T
+sqlcode 0 sqlstate 00000 msgid -

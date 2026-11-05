@@ -23,3 +23,17 @@ integrity/CSTREF     # COUNT(*) described as VARCHAR (expression result types)
 integrity/IDENTITY   # IDENTITY_VAL_LOCAL() described as VARCHAR (expression result types)
 integrity/SEQUENCE   # NEXT/PREVIOUS VALUE described as VARCHAR; an error after the row description; a column named ORDER in a select list (SQL0104)
 integrity/AUDITCOL   # IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
+query/CTE   # SQL7905 on CREATE TABLE (no QSQJRN here)
+query/JOINS   # SQL7905; ORDER BY an unqualified USING column is SQL0203 on DB2 for i, resolved here
+query/LIMITS   # SQL7905 on CREATE TABLE
+query/OLAP   # SQL7905; the 01003 warning (SQLCODE 0) is not reported by the local runner
+query/GROUPSETS   # SQL7905 on CREATE TABLE
+query/STATAGG   # SQL7905; 01003 warnings (SQLCODE 0) not reported
+query/ORDAGG   # SQL7905; 01003; ARRAY_AGG is SQL20441 there, SQL0084 here (no array types yet)
+query/PREDS   # SQL7905; 01003 warnings not reported
+query/DATEARITH   # the 01506 warning (date adjusted to month end, SQLCODE 0) not reported
+query/DTFUNCS   # 01506 not reported; TIMESTAMP_FORMAT's SQ20448 comes at fetch there, SQL0302 at run here
+query/STRFUNCS   # DECODE is SQL0204 on pub400 but in the brief's must-have list
+query/NUMFUNCS   # ENCRYPT_AES refused: DB2 for i's encrypted layout is not published
+query/REGISTERS   # CURRENT DEGREE is pub400's system setting (ANY); NONE here
+query/CHANGES   # SQL7905 on CREATE TABLE

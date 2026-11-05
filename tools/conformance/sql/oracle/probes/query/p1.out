@@ -1,0 +1,299 @@
+# pub400 (V7R5M0) over JTOpen, 2026-11-05; statement, then SQLCODE SQLSTATE [message ID] or columns and rows. IBM's message text is left out.
+>> create table {user}1.q3t (id int not null, grp char(1), v dec(7,2), d date, s varchar(20))
+   count 0
+>> insert into {user}1.q3t values (1,'A',10.50,'2024-01-15','apple'),(2,'A',20.00,'2024-02-29','banana'),(3,'B',null,'2023-12-31','cherry'),(4,'B',5.25,'2024-03-01',null),(5,'C',7.00,null,'date'),(6,null,1.00,'2024-01-01','fig')
+   count 6
+>> create table {user}1.q3u (id int, w int)
+   count 0
+>> insert into {user}1.q3u values (1,100),(3,300),(7,700),(null,0)
+   count 4
+>> with t(n) as (select 1 from sysibm.sysdummy1 union all select n+1 from t where n < 5) select * from t
+   cols | N INTEGER(10,0) NN
+   row | 1
+   row | 2
+   row | 3
+   row | 4
+   row | 5
+>> with t(n) as (select 1 from sysibm.sysdummy1 union all select n+1 from t) select * from t fetch first 3 rows only
+   cols | N INTEGER(10,0) NN
+   row | 1
+   row | 2
+   row | 3
+>> with recursive t(n) as (select 1 from sysibm.sysdummy1 union all select n+1 from t where n < 3) select * from t
+   cols | N INTEGER(10,0) NN
+   row | 1
+   row | 2
+   row | 3
+>> with t(n) as (select 1 from sysibm.sysdummy1 union all select n+1 from t where n < 4) search depth first by n set seq select * from t
+   cols | N INTEGER(10,0) NN
+   row | 1
+   row | 2
+   row | 3
+   row | 4
+>> with t(n) as (select 1 from sysibm.sysdummy1 union all select mod(n+1,3) from t where n < 10) cycle n set cyc to '1' default '0' select * from t
+   cols | N INTEGER(10,0) NN
+   row | 1
+   row | 2
+   row | 0
+   row | 1
+>> with a as (select id from q3t), b as (select id from a where id > 3) select * from b order by id
+   cols | ID INTEGER(10,0) NN
+   row | 4
+   row | 5
+   row | 6
+>> select a.id, b.id, b.w from q3t a full outer join q3u b on a.id = b.id order by a.id, b.id
+   cols | ID INTEGER(10,0) | ID INTEGER(10,0) | W INTEGER(10,0)
+   row | 1 | 1 | 100
+   row | 2 | - | -
+   row | 3 | 3 | 300
+   row | 4 | - | -
+   row | 5 | - | -
+   row | 6 | - | -
+   row | - | 7 | 700
+   row | - | - | 0
+>> select a.id, b.w from q3t a full join q3u b on a.id = b.id and b.w > 200 order by 1,2
+   cols | ID INTEGER(10,0) | W INTEGER(10,0)
+   row | 1 | -
+   row | 2 | -
+   row | 3 | 300
+   row | 4 | -
+   row | 5 | -
+   row | 6 | -
+   row | - | 0
+   row | - | 100
+   row | - | 700
+>> select * from q3t a join q3u b using (id) order by id
+   error -203 42702 [SQL0203]
+>> select id, grp, w from q3t join q3u using (id)
+   cols | ID INTEGER(10,0) NN | GRP CHAR(1,0) | W INTEGER(10,0)
+   row | 1 | A | 100
+   row | 3 | B | 300
+>> select a.id, x.c from q3t a, lateral (select count(*) c from q3u b where b.id <= a.id) x order by a.id
+   cols | ID INTEGER(10,0) NN | C INTEGER(10,0) NN
+   row | 1 | 1
+   row | 2 | 1
+   row | 3 | 2
+   row | 4 | 2
+   row | 5 | 2
+   row | 6 | 2
+>> select a.id, x.c from q3t a, table (select count(*) c from q3u b where b.id <= a.id) x order by a.id
+   cols | ID INTEGER(10,0) NN | C INTEGER(10,0) NN
+   row | 1 | 1
+   row | 2 | 1
+   row | 3 | 2
+   row | 4 | 2
+   row | 5 | 2
+   row | 6 | 2
+>> select a.id, x.c from q3t a cross join lateral (select max(w) c from q3u b where b.id = a.id) x order by a.id
+   cols | ID INTEGER(10,0) NN | C INTEGER(10,0)
+   row | 1 | 100
+   row | 2 | -
+   row | 3 | 300
+   row | 4 | -
+   row | 5 | -
+   row | 6 | -
+>> select a.id, x.c from q3t a left join lateral (select w c from q3u b where b.id = a.id) x on 1=1 order by a.id
+   cols | ID INTEGER(10,0) NN | C INTEGER(10,0)
+   row | 1 | 100
+   row | 2 | -
+   row | 3 | 300
+   row | 4 | -
+   row | 5 | -
+   row | 6 | -
+>> select * from (select id from q3t order by id desc fetch first 2 rows only) x
+   cols | ID INTEGER(10,0) NN
+   row | 6
+   row | 5
+>> select * from q3t where id in (select id from q3u order by w fetch first 2 rows only)
+   cols | ID INTEGER(10,0) NN | GRP CHAR(1,0) | V DECIMAL(7,2) | D DATE(10,0) | S VARCHAR(20,0)
+   row | 1 | A | 10.50 | 24-01-15 | apple
+>> select id from q3t order by id offset 2 rows
+   cols | ID INTEGER(10,0) NN
+   row | 3
+   row | 4
+   row | 5
+   row | 6
+>> select id from q3t order by id offset 2 rows fetch next 2 rows only
+   cols | ID INTEGER(10,0) NN
+   row | 3
+   row | 4
+>> select id from q3t order by id limit 2 offset 3
+   cols | ID INTEGER(10,0) NN
+   row | 4
+   row | 5
+>> select id from q3t order by id limit 3,2
+   cols | ID INTEGER(10,0) NN
+   row | 4
+   row | 5
+>> select id from q3t order by id fetch first 50 percent rows only
+   error -104 42601 [SQL0104]
+>> select id, v from q3t order by v nulls first
+   error -199 42601 [SQL0199]
+>> select id, v from q3t order by v desc nulls last
+   error -199 42601 [SQL0199]
+>> select id, v from q3t order by 2, 1
+   cols | ID INTEGER(10,0) NN | V DECIMAL(7,2)
+   row | 6 | 1.00
+   row | 4 | 5.25
+   row | 5 | 7.00
+   row | 1 | 10.50
+   row | 2 | 20.00
+   row | 3 | -
+>> select id, v from q3t order by 3
+   error -125 42805 [SQL0125]
+>> select id from (select id, v from q3t order by v) x order by order of x
+   cols | ID INTEGER(10,0) NN
+   row | 6
+   row | 4
+   row | 5
+   row | 1
+   row | 2
+   row | 3
+>> select id, row_number() over (order by id desc) rn from q3t order by id
+   cols | ID INTEGER(10,0) NN | RN BIGINT(19,0) NN
+   row | 1 | 6
+   row | 2 | 5
+   row | 3 | 4
+   row | 4 | 3
+   row | 5 | 2
+   row | 6 | 1
+>> select id, grp, row_number() over (partition by grp order by id) rn, rank() over (order by grp) rk, dense_rank() over (order by grp) dr from q3t order by id
+   cols | ID INTEGER(10,0) NN | GRP CHAR(1,0) | RN BIGINT(19,0) NN | RK BIGINT(19,0) NN | DR BIGINT(19,0) NN
+   row | 1 | A | 1 | 1 | 1
+   row | 2 | A | 2 | 1 | 1
+   row | 3 | B | 1 | 3 | 2
+   row | 4 | B | 2 | 3 | 2
+   row | 5 | C | 1 | 5 | 3
+   row | 6 | - | 1 | 6 | 4
+>> select id, ntile(4) over (order by id) nt, percent_rank() over (order by id) pr, cume_dist() over (order by id) cd from q3t order by id
+   cols | ID INTEGER(10,0) NN | NT BIGINT(19,0) | PR DECFLOAT(34,0) | CD DECFLOAT(34,0) NN
+   row | 1 | 1 | 0 | 0.1666666666666666666666666666666667
+   row | 2 | 1 | 0.2 | 0.3333333333333333333333333333333333
+   row | 3 | 2 | 0.4 | 0.5
+   row | 4 | 2 | 0.6 | 0.6666666666666666666666666666666667
+   row | 5 | 3 | 0.8 | 0.8333333333333333333333333333333333
+   row | 6 | 4 | 1 | 1
+>> select id, lag(id) over (order by id) l1, lag(id, 2, -1) over (order by id) l2, lead(v) over (order by id) ld from q3t order by id
+   cols | ID INTEGER(10,0) NN | L1 INTEGER(10,0) | L2 INTEGER(10,0) | LD DECIMAL(7,2)
+   row | 1 | - | -1 | 20.00
+   row | 2 | 1 | -1 | -
+   row | 3 | 2 | 1 | 5.25
+   row | 4 | 3 | 2 | 7.00
+   row | 5 | 4 | 3 | 1.00
+   row | 6 | 5 | 4 | -
+>> select id, first_value(id) over (partition by grp order by id) fv, last_value(id) over (partition by grp order by id) lv, last_value(id) over (partition by grp order by id rows between unbounded preceding and unbounded following) lv2 from q3t order by id
+   cols | ID INTEGER(10,0) NN | FV INTEGER(10,0) | LV INTEGER(10,0) | LV2 INTEGER(10,0)
+   row | 1 | 1 | 1 | 2
+   row | 2 | 1 | 2 | 2
+   row | 3 | 3 | 3 | 4
+   row | 4 | 3 | 4 | 4
+   row | 5 | 5 | 5 | 5
+   row | 6 | 6 | 6 | 6
+>> select id, nth_value(id, 2) over (order by id rows between unbounded preceding and unbounded following) nv from q3t order by id
+   cols | ID INTEGER(10,0) NN | NV INTEGER(10,0)
+   row | 1 | 2
+   row | 2 | 2
+   row | 3 | 2
+   row | 4 | 2
+   row | 5 | 2
+   row | 6 | 2
+>> select id, sum(v) over (order by id rows between 1 preceding and 1 following) s3, avg(v) over (partition by grp) a, count(*) over () c from q3t order by id
+   warn 0 01003
+   cols | ID INTEGER(10,0) NN | S3 DECIMAL(31,2) | A DECIMAL(31,26) | C INTEGER(10,0) NN
+   row | 1 | 30.50 | 15.25000000000000000000000000 | 6
+   row | 2 | 30.50 | 15.25000000000000000000000000 | 6
+   row | 3 | 25.25 | 5.25000000000000000000000000 | 6
+   row | 4 | 12.25 | 5.25000000000000000000000000 | 6
+   row | 5 | 13.25 | 7.00000000000000000000000000 | 6
+   row | 6 | 8.00 | 1.00000000000000000000000000 | 6
+>> select id, sum(id) over (order by id range between 1 preceding and current row) r from q3t order by id
+   cols | ID INTEGER(10,0) NN | R INTEGER(10,0)
+   row | 1 | 1
+   row | 2 | 3
+   row | 3 | 5
+   row | 4 | 7
+   row | 5 | 9
+   row | 6 | 11
+>> select id, sum(id) over (order by id) cum, max(id) over (order by id rows 2 preceding) m from q3t order by id
+   cols | ID INTEGER(10,0) NN | CUM INTEGER(10,0) | M INTEGER(10,0)
+   row | 1 | 1 | 1
+   row | 2 | 3 | 2
+   row | 3 | 6 | 3
+   row | 4 | 10 | 4
+   row | 5 | 15 | 5
+   row | 6 | 21 | 6
+>> select grp, count(*) c from q3t group by grouping sets ((grp), ()) order by grp
+   cols | GRP CHAR(1,0) | C INTEGER(10,0) NN
+   row | A | 2
+   row | B | 2
+   row | C | 1
+   row | - | 1
+   row | - | 6
+>> select grp, year(d) y, sum(id) s, grouping(grp) g1, grouping(year(d)) g2 from q3t group by rollup (grp, year(d)) order by grp, y
+   cols | GRP CHAR(1,0) | Y INTEGER(10,0) | S INTEGER(10,0) | G1 SMALLINT(5,0) | G2 SMALLINT(5,0)
+   row | A | 2024 | 3 | 0 | 0
+   row | A | - | 3 | 0 | 1
+   row | B | 2023 | 3 | 0 | 0
+   row | B | 2024 | 4 | 0 | 0
+   row | B | - | 7 | 0 | 1
+   row | C | - | 5 | 0 | 0
+   row | C | - | 5 | 0 | 1
+   row | - | 2024 | 6 | 0 | 0
+   row | - | - | 6 | 0 | 1
+   row | - | - | 21 | 1 | 1
+>> select grp, year(d) y, count(*) c from q3t group by cube (grp, year(d)) order by grp, y
+   cols | GRP CHAR(1,0) | Y INTEGER(10,0) | C INTEGER(10,0) NN
+   row | A | 2024 | 2
+   row | A | - | 2
+   row | B | 2023 | 1
+   row | B | 2024 | 1
+   row | B | - | 2
+   row | C | - | 1
+   row | C | - | 1
+   row | - | 2023 | 1
+   row | - | 2024 | 1
+   row | - | 2024 | 4
+   row | - | - | 1
+   row | - | - | 6
+   row | - | - | 1
+>> select grp, s, count(*) from q3t group by grouping sets (grp, s, ()) order by 1, 2
+   cols | GRP CHAR(1,0) | S VARCHAR(20,0) | 00003 INTEGER(10,0) NN
+   row | A | - | 2
+   row | B | - | 2
+   row | C | - | 1
+   row | - | apple | 1
+   row | - | banana | 1
+   row | - | cherry | 1
+   row | - | date | 1
+   row | - | fig | 1
+   row | - | - | 1
+   row | - | - | 6
+   row | - | - | 1
+>> select lag(id, 1) respect nulls over (order by id) from q3t
+   cols | 00001 INTEGER(10,0)
+   row | -
+   row | 1
+   row | 2
+   row | 3
+   row | 4
+   row | 5
+>> select first_value(v) ignore nulls over (order by id) from q3t
+   cols | 00001 DECIMAL(7,2)
+   row | 10.50
+   row | 10.50
+   row | 10.50
+   row | 10.50
+   row | 10.50
+   row | 10.50
+>> select ratio_to_report(id) over () from q3t
+   cols | 00001 DECFLOAT(34,0)
+   row | 0.04761904761904761904761904761904762
+   row | 0.09523809523809523809523809523809524
+   row | 0.1428571428571428571428571428571429
+   row | 0.1904761904761904761904761904761905
+   row | 0.2380952380952380952380952380952381
+   row | 0.2857142857142857142857142857142857
+>> drop table {user}1.q3t
+   count 0
+>> drop table {user}1.q3u
+   count 0

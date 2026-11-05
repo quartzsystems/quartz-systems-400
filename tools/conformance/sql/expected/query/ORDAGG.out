@@ -1,0 +1,48 @@
+-- captured from pub400
+> CREATE TABLE {lib}.Q3T (ID INTEGER NOT NULL, GRP CHAR(1), V DECIMAL(7,2)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.Q3T VALUES (1,'A',10.50,'2024-01-15','apple'),(2,'A',2
+sqlcode 0 sqlstate 00000 msgid - count 6
+> SELECT MEDIAN(V), MEDIAN(ID), PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER B
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01003 -
+# 00001 DECFLOAT(34)
+# 00002 DECFLOAT(34)
+# 00003 DECFLOAT(34)
+# 00004 DECIMAL(7,2)
+# 00005 DECFLOAT(34)
+| '7.00' | '3.5' | '7.00' | 7.00 | '2.25' |
+> SELECT GRP, LISTAGG(S, ',') WITHIN GROUP (ORDER BY S DESC) FROM {lib}.Q3
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01003 -
+# GRP CHAR(1)
+# 00002 VARCHAR(4000)
+| 'A' | 'banana,apple' |
+| 'B' | 'cherry' |
+| 'C' | 'date' |
+| NULL | 'fig' |
+> SELECT LISTAGG(S) FROM {lib}.Q3T
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01003 -
+# 00001 VARCHAR(4000)
+| 'applebananacherrydatefig' |
+> SELECT LISTAGG(DISTINCT GRP, '-') WITHIN GROUP (ORDER BY GRP) FROM {lib}
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01003 -
+# 00001 VARCHAR(4000)
+| 'A-B-C' |
+> SELECT LISTAGG(S, ', ') WITHIN GROUP (ORDER BY ID) FROM {lib}.Q3T
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01003 -
+# 00001 VARCHAR(4000)
+| 'apple, banana, cherry, date, fig' |
+> SELECT LISTAGG(S, ',' ON OVERFLOW TRUNCATE '...' WITH COUNT) FROM {lib}.
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01003 -
+# 00001 VARCHAR(4000)
+| 'apple,banana,cherry,date,fig' |
+> SELECT ARRAY_AGG(ID) FROM {lib}.Q3T
+sqlcode -20441 sqlstate 428H2 msgid SQ20441
+> DROP TABLE {lib}.Q3T
+sqlcode 0 sqlstate 00000 msgid -
