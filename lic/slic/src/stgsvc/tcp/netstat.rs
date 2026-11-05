@@ -420,6 +420,26 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<PanelDa
     })
 }
 
+/// `QSYS2.NETSTAT_*`: the lists the panels show, and the port names.
+pub fn sql(system: &mut System) -> Result<sql::exec::catalog::services::host::Netstat, String> {
+    let (cfg, st) = super::with(system, |_, rt| (rt.cfg.clone(), rt.st.clone()))?;
+    let interfaces = interfaces(system, &cfg, &st);
+    let routes = routes(&cfg, &interfaces);
+    let connections = conns(system, &sockets());
+    let namer = port_namer(&cfg);
+    let mut port_names = Vec::new();
+    for c in &connections {
+        for p in [c.local.port(), c.remote.port()] {
+            if let Some(n) = namer(p, c.tcp)
+                && !port_names.iter().any(|(q, t, _)| *q == p && *t == c.tcp)
+            {
+                port_names.push((p, c.tcp, n));
+            }
+        }
+    }
+    Ok(sql::exec::catalog::services::host::Netstat { interfaces, routes, connections, port_names })
+}
+
 /// The IPv6 lists' variables have their own first letter.
 fn rename(rows: Vec<netstat::Row>, v6: bool, from: &str, to: &str) -> Vec<netstat::Row> {
     if !v6 {

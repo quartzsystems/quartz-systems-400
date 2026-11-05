@@ -171,6 +171,35 @@ impl SystemHost for Mock {
         ))
     }
 
+    fn netstat(&self) -> Option<Result<host::Netstat, String>> {
+        let lo = "127.0.0.1".parse().unwrap();
+        Some(Ok(host::Netstat {
+            interfaces: vec![nettools::netstat::Ifc {
+                addr: Some(lo),
+                prefix: 8,
+                line: "*LOOPBACK".into(),
+                line_type: "*NONE".into(),
+                status: "Active".into(),
+                mtu: 576,
+                autostart: true,
+                ..nettools::netstat::Ifc::default()
+            }],
+            routes: vec![nettools::netstat::Rte { dest: Some("127.0.0.0".parse().unwrap()), prefix: 8, mtu: 576, available: true, configured: true, ifc: Some(lo), ..nettools::netstat::Rte::default() }],
+            connections: vec![nettools::netstat::Conn {
+                tcp: true,
+                local: "0.0.0.0:21".parse().unwrap(),
+                remote: "0.0.0.0:0".parse().unwrap(),
+                state: "Listen".into(),
+                idle_ms: 311_440,
+                user: "QTCP".into(),
+                jobs: vec![("QTFTP00001".into(), "QTCP".into(), "000042".into(), "BCH".into(), "QTCP".into())],
+                counters: nettools::netstat::Counters::default(),
+                passive: true,
+            }],
+            port_names: vec![(21, true, "ftp-control".into())],
+        }))
+    }
+
     fn system_status(&self) -> Option<SystemStatus> {
         Some(SystemStatus {
             total_jobs: 40,
@@ -487,4 +516,22 @@ fn joblog_info() {
     assert_eq!(db.rows("SELECT MESSAGE_TEXT FROM TABLE(QSYS2.JOBLOG_INFO('*', MESSAGE_ORDER => 'DESCENDING', MESSAGE_LIMIT => 1)) X"), vec![row(&["WRKACTJOB"])]);
     assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.JOBLOG_INFO('000001/X/Y')) X"), -443);
     assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.JOBLOG_INFO('000001/X/Y', IGNORE_ERRORS => 'YES')) X"), vec![row(&["0"])]);
+}
+
+#[test]
+fn netstat_views() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT CONNECTION_TYPE, LOCAL_PORT, LOCAL_PORT_NAME, PROTOCOL, TCP_STATE, IDLE_TIME, BIND_USER, CONNECTION_OPEN_TYPE FROM QSYS2.NETSTAT_INFO"),
+        vec![row(&["IPV4", "21", "ftp-control", "TCP", "LISTEN", "311.440", "QTCP", "PASSIVE"])]
+    );
+    assert_eq!(db.rows("SELECT JOB_NAME, JOB_TYPE FROM QSYS2.NETSTAT_JOB_INFO"), vec![row(&["000042/QTCP/QTFTP00001", "BATCH"])]);
+    assert_eq!(
+        db.rows("SELECT INTERNET_ADDRESS, NETWORK_ADDRESS, SUBNET_MASK, LINE_DESCRIPTION, INTERFACE_LINE_TYPE, INTERFACE_STATUS FROM QSYS2.NETSTAT_INTERFACE_INFO"),
+        vec![row(&["127.0.0.1", "127.0.0.0", "255.0.0.0", "*LOOPBACK", "NONE", "ACTIVE"])]
+    );
+    assert_eq!(
+        db.rows("SELECT ROUTE_DESTINATION, SUBNET_MASK, NEXT_HOP, ROUTE_STATUS, ROUTE_TYPE, ROUTE_SOURCE, LOCAL_BINDING_LINE_DESCRIPTION FROM QSYS2.NETSTAT_ROUTE_INFO"),
+        vec![row(&["127.0.0.0", "255.0.0.0", "*DIRECT", "YES", "DIRECT", "CFG", "*LOOPBACK"])]
+    );
 }

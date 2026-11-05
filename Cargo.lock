@@ -3413,6 +3413,7 @@ dependencies = [
  "dds",
  "ile",
  "jrn",
+ "nettools",
  "qdecimal",
  "qir",
  "qsname",

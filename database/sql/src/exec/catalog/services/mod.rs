@@ -19,6 +19,7 @@ mod out;
 mod joblog;
 mod jobs;
 mod libl;
+mod netstat;
 mod objects;
 mod spool;
 mod sysval;
@@ -68,6 +69,10 @@ const VIEWS: &[View] = &[
     View { schema: "QSYS2", name: "OUTPUT_QUEUE_ENTRIES", no_value: spool::ENTRY_NO_VALUE, rows: spool::entries },
     View { schema: "QSYS2", name: "OUTPUT_QUEUE_ENTRIES_BASIC", no_value: spool::ENTRY_NO_VALUE, rows: spool::entries },
     View { schema: "QSYS2", name: "OUTPUT_QUEUE_INFO", no_value: spool::QUEUE_NO_VALUE, rows: spool::queues },
+    View { schema: "QSYS2", name: "NETSTAT_INFO", no_value: netstat::INFO_NO_VALUE, rows: netstat::info },
+    View { schema: "QSYS2", name: "NETSTAT_JOB_INFO", no_value: &[], rows: netstat::jobs },
+    View { schema: "QSYS2", name: "NETSTAT_INTERFACE_INFO", no_value: &[], rows: netstat::interfaces },
+    View { schema: "QSYS2", name: "NETSTAT_ROUTE_INFO", no_value: netstat::ROUTE_NO_VALUE, rows: netstat::routes },
 ];
 
 /// The table functions.

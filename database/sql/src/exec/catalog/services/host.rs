@@ -118,75 +118,18 @@ pub enum JobLog {
     NoSuchJob,
 }
 
-/// One TCP or UDP connection or listener (`NETSTAT *CNN`).
+/// What `NETSTAT` shows: interfaces, routes, connections, and the
+/// service names of the ports the services table names.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Connection {
-    /// `TCP` or `UDP`.
-    pub protocol: String,
-    /// IPv4 or IPv6.
-    pub ipv6: bool,
-    /// Local address and port.
-    pub local: (String, u16),
-    /// Remote address and port.
-    pub remote: (String, u16),
-    /// `LISTEN`, `ESTABLISHED` ...
-    pub state: String,
-    /// Bytes in, bytes out.
-    pub bytes_in: u64,
-    /// Bytes out.
-    pub bytes_out: u64,
-    /// The jobs that hold it: qualified job names.
-    pub jobs: Vec<String>,
-    /// When it was opened, Unix seconds; 0 when unknown.
-    pub opened: u64,
-}
-
-/// One TCP/IP interface.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Interface {
-    /// The address.
-    pub address: String,
-    /// IPv6.
-    pub ipv6: bool,
-    /// The mask or prefix length.
-    pub mask: String,
-    /// Prefix length.
-    pub prefix: u8,
-    /// The network.
-    pub network: String,
-    /// The host part's broadcast address, IPv4 only.
-    pub broadcast: String,
-    /// The line description.
-    pub line: String,
-    /// `ACTIVE`, `INACTIVE` ...
-    pub status: String,
-    /// MTU.
-    pub mtu: u32,
-    /// Automatic start.
-    pub autostart: bool,
-    /// Text.
-    pub text: String,
-}
-
-/// One route.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Route {
-    /// The destination.
-    pub destination: String,
-    /// IPv6.
-    pub ipv6: bool,
-    /// The mask or prefix.
-    pub mask: String,
-    /// The next hop.
-    pub next_hop: String,
-    /// The local interface address.
-    pub local: String,
-    /// `ACTIVE` ...
-    pub status: String,
-    /// MTU.
-    pub mtu: u32,
-    /// `*DFTROUTE`, `*DIRECT` ...
-    pub kind: String,
+pub struct Netstat {
+    /// The interfaces.
+    pub interfaces: Vec<nettools::netstat::Ifc>,
+    /// The routes.
+    pub routes: Vec<nettools::netstat::Rte>,
+    /// The connections.
+    pub connections: Vec<nettools::netstat::Conn>,
+    /// Port, TCP, service name.
+    pub port_names: Vec<(u16, bool, String)>,
 }
 
 /// An IFS object's attributes.
@@ -295,18 +238,9 @@ pub trait SystemHost {
         None
     }
 
-    /// The connections.
-    fn connections(&self) -> Option<Vec<Connection>> {
-        None
-    }
-
-    /// The interfaces.
-    fn interfaces(&self) -> Option<Vec<Interface>> {
-        None
-    }
-
-    /// The routes.
-    fn routes(&self) -> Option<Vec<Route>> {
+    /// What `NETSTAT` shows; `Err` when TCP/IP's configuration cannot
+    /// be read.
+    fn netstat(&self) -> Option<Result<Netstat, String>> {
         None
     }
 

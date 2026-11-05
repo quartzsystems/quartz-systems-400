@@ -136,4 +136,8 @@ impl SystemHost for SqlHost {
     fn job_log(&self, job: &str) -> Option<sql::exec::catalog::services::host::JobLog> {
         super::turns::job_log_of(job, self.job)
     }
+
+    fn netstat(&self) -> Option<Result<sql::exec::catalog::services::host::Netstat, String>> {
+        with_system(super::tcp::netstat::sql)
+    }
 }
