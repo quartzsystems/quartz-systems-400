@@ -320,6 +320,12 @@ impl Session {
                     Ok(p) => p,
                     Err(ca) => return vec![self.sqlcard(Some(&ca))],
                 };
+                if c.get(param::OUTEXP).and_then(|x| x.bytes().first().copied()) == Some(0xF1) {
+                    // BLOCKED(sql): a CALL's output values as SQLDTARD are not
+                    // written yet; refused before the call is made.
+                    let ca = Sqlca::error(-84, "42612", "CALL output values over DRDA (OUTEXP)");
+                    return vec![self.sqlcard(Some(&ca))];
+                }
                 let max = c.get_u16(param::MAXRSLCNT).unwrap_or(0);
                 match self.sql.execute(&section_of(&pkg), &params) {
                     Ok(ca) if ca.sqlcode == 466 && max > 0 => self.result_sets(&pkg, &ca, max),

@@ -660,4 +660,9 @@ fn a_large_result_set_continues_at_its_section() {
     assert_eq!(r.sets.iter().map(|s| s.rows.len()).collect::<Vec<_>>(), [70, 1]);
     assert_eq!(r.sets[0].rows[69][1].render(), "ANN");
     assert_eq!(r.sets[1].rows[0][0].render(), "20");
+    // Output values (OUTEXP) are refused before the call.
+    let corr = c.next_corr();
+    let cmd = ddm::wire::Object::coll(ddm::cp::cmd::EXCSQLSTT, vec![p.pkg.to_object(), ddm::wire::Object::byte(ddm::cp::param::OUTEXP, 0xF1)]);
+    let replies = c.exchange(vec![ddm::Dss::request(corr, cmd)]).unwrap();
+    assert_eq!(ddm::client::query::sqlca_of(&c, &replies).unwrap().sqlcode, -84);
 }

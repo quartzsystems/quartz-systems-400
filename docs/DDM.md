@@ -136,6 +136,8 @@ server takes any package and section, as packages hold nothing yet.
   without its SQLCA, labels the names), `QRYDSC` by early descriptors
   only, and the first block: when it holds every row, `ENDQRYRM` and the
   +100 `SQLCARD` follow, else `CNTQRY` at the set's section reads on.
+  Output values (`OUTEXP`, `SQLDTARD`) are refused (SQL0084) before the
+  call is made.
 - `RDBCMM` and `RDBRLLBCK` answer `ENDUOWRM` (`UOWDSP` 1, 2) and
   `SQLCARD`.
 
