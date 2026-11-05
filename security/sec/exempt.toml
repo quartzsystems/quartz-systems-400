@@ -96,8 +96,8 @@ reason = "library internals; lib.* checks are in ops"
 fns = ["load", "save", "lookup", "add", "remove", "list", "free_dir"]
 
 [file."storage/store/src/obj/ops.rs"]
-reason = "headers, bootstrap and attributes: internal, or checked by the caller"
-fns = ["read_header", "write_header", "bootstrap", "bootstrap_root", "find_library", "create_owned", "set_tree_root", "libraries", "all_extents", "read_attr", "write_attr"]
+reason = "headers, bootstrap and attributes: internal, or checked by the caller; a job's own SQL QTEMP root, which IBM gives every job without a check, made by the SQL engine for the job and listed only by the storage service to drop what a stopped system left"
+fns = ["read_header", "write_header", "bootstrap", "bootstrap_root", "find_library", "create_owned", "set_tree_root", "libraries", "all_extents", "read_attr", "write_attr", "create_temporary_root", "temporary_roots"]
 
 [file."storage/store/src/obj/savf.rs"]
 reason = "callers check: create through the store's create (lib.create-in); CHGSAVF savf.change; CLRSAVF savf.clear; SAVxxx savf.write and RSTxxx, DSPSAVF and the GO LICPGM list savf.read, *SAVSYS standing in as for the objects; SAVSECDTA and SAVLICPGM need *SAVSYS, RSTLICPGM and the PTF commands *ALLOBJ; DSPPTFCVR reads the system's own PTF save files; /QSYS.LIB is checked at open (*R, *W)"
@@ -196,8 +196,8 @@ reason = "ADDPFTRG calls authorize_add first (file.trigger-add, file.open-update
 fns = ["add", "remove", "set_state"]
 
 [file."database/db/src/util/cpyf/mod.rs"]
-reason = "cpyf only calls cpyf_paused, which checks"
-fns = ["cpyf"]
+reason = "cpyf only calls cpyf_paused, which only calls cpyf_firing, which checks"
+fns = ["cpyf", "cpyf_paused"]
 
 [file."database/db/src/util/impf/from.rs"]
 reason = "cpyfrmimpf only calls cpyfrmimpf_paused, which checks"

@@ -6749,6 +6749,13 @@ help = "Correct what the message names and try the request again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
+id = "CPF2972"
+sev = 40
+text = "The copy stopped: a trigger program refused a record. &1"
+help = "A trigger program of the to-file ended with an error for the record being copied. The records copied before it stay in the member; the job log has the program's message. Correct the data or the trigger and copy the rest."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
 id = "CPF2817"
 sev = 40
 text = "The member already holds &1 records; give MBROPT(*ADD) or *REPLACE."
