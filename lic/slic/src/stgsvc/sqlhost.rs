@@ -281,7 +281,7 @@ impl SystemHost for SqlHost {
         // The hardware resource service answers on its own socket.
         let t = match hwrsrc::client::table(false) {
             Ok(t) => t,
-            Err(e) => return Some(Err(format!("the hardware resource service: {e}"))),
+            Err(e) => return Some(Err(e.to_string())),
         };
         Some(Ok(t
             .resources
@@ -348,10 +348,13 @@ impl SystemHost for SqlHost {
 
     fn exit_points(&self) -> Option<Result<Vec<host::ExitPoint>, String>> {
         with_system(|system| {
-            let s = system.storage.as_mut().ok_or("the object store is not open")?;
-            let qsys = s.qsys.ok_or("the object store is not initialized")?;
-            let reg = crate::svc::db::with_txn(&mut s.store, |txn| regfac::store::load(txn, qsys).map_err(|e| e.to_string()))?;
-            Ok(reg
+            let s = system.storage.as_mut()?;
+            let qsys = s.qsys?;
+            let reg = match crate::svc::db::with_txn(&mut s.store, |txn| regfac::store::load(txn, qsys).map_err(|e| e.to_string())) {
+                Ok(r) => r,
+                Err(e) => return Some(Err(e)),
+            };
+            Some(Ok(reg
                 .points
                 .iter()
                 .map(|p| host::ExitPoint {
@@ -376,16 +379,17 @@ impl SystemHost for SqlHost {
                         })
                         .collect(),
                 })
-                .collect())
+                .collect()))
         })
+        .flatten()
     }
 
     fn environment_variables(&self) -> Option<Vec<host::EnvVar>> {
         // BLOCKED(sql): the job's own variables live in the job; the
         // service reaches the system-level ones only.
         with_system(|system| {
-            super::qsh::system_vars(system)
-                .unwrap_or_default()
+            Some(
+                super::qsh::system_vars(system)?
                 .into_iter()
                 .map(|v| host::EnvVar {
                     system: true,
@@ -393,8 +397,10 @@ impl SystemHost for SqlHost {
                     value: v.value.unwrap_or_default(),
                     ccsid: u16::try_from(v.ccsid).ok().filter(|c| *c != 0).unwrap_or(37),
                 })
-                .collect()
+                .collect(),
+            )
         })
+        .flatten()
     }
 
     fn ptf_groups(&self) -> Option<Result<Vec<host::PtfGroup>, String>> {
@@ -445,11 +451,9 @@ impl SystemHost for SqlHost {
         })
     }
 
-    fn dns_lookup(&self, name: &str, server: Option<&str>) -> Option<Result<Vec<std::net::IpAddr>, String>> {
+    fn dns_lookup(&self, name: &str, _server: Option<&str>) -> Option<Result<Vec<std::net::IpAddr>, String>> {
         use std::net::ToSocketAddrs as _;
-        if server.is_some_and(|s| !s.is_empty()) {
-            return Some(Err("DOMAIN_SERVER is not supported: the system's resolver answers".into()));
-        }
+        // DOMAIN_SERVER is refused before the host is asked.
         // BLOCKED(sql): the lookup holds the service until the resolver
         // answers; it does not yet take turns.
         Some(match (name, 0u16).to_socket_addrs() {

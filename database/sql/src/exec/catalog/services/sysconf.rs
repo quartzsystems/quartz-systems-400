@@ -234,7 +234,12 @@ pub fn tcpip_function(txn: &mut Txn<'_>, ctx: &SqlContext, _args: &Args, out: &m
 /// resolver answers no authority or authentication flags: null.
 pub fn dns(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
     let name = args.text("SEARCH_NAME").unwrap_or_default();
-    let server = args.text("DOMAIN_SERVER");
+    let server = args.text("DOMAIN_SERVER").filter(|s| !s.trim().is_empty());
+    if server.is_some() {
+        // BLOCKED(sql): the system's resolver answers; asking one server
+        // needs a DNS client of our own.
+        return Err(SqlError::Coded { code: -84, state: "42612", what: "DNS_LOOKUP DOMAIN_SERVER is not supported".into() });
+    }
     let addrs = ask(txn, ctx, "the resolver", |h| h.dns_lookup(name.trim(), server.as_deref().map(str::trim)))?.map_err(failed)?;
     for a in addrs {
         out.row();

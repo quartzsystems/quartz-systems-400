@@ -173,9 +173,10 @@ fn profiles(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<Vec<ProfileIds>, String
     Ok(rows)
 }
 
-/// The system-level environment variables, for the SQL services.
-pub fn system_vars(system: &mut System) -> Result<Vec<EnvVar>, String> {
-    let s = system.storage.as_mut().ok_or("the object store is not open")?;
-    let qsys = s.qsys.ok_or("the object store is not initialized")?;
-    crate::svc::db::with_txn(&mut s.store, |txn| load(txn, qsys))
+/// The system-level environment variables, for the SQL services;
+/// `None` without a store.
+pub fn system_vars(system: &mut System) -> Option<Vec<EnvVar>> {
+    let s = system.storage.as_mut()?;
+    let qsys = s.qsys?;
+    crate::svc::db::with_txn(&mut s.store, |txn| load(txn, qsys)).ok()
 }
