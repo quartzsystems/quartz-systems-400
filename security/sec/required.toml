@@ -150,6 +150,10 @@ ibm = "RTVDTAARA, DSPDTAARA, QWCRDTAA: *USE"
 need = ["*CHANGE"]
 ibm = "CHGDTAARA: *CHANGE"
 
+[op."sequence.use"]
+need = ["*CHANGE"]
+ibm = "NEXT VALUE, PREVIOUS VALUE: the USAGE privilege, which is *OBJOPR, *READ, *ADD, *UPD, *DLT and *EXECUTE to the sequence's data area"
+
 [op."sequence.alter"]
 need = ["*OBJALTER"]
 ibm = "ALTER SEQUENCE: the ALTER privilege, *OBJALTER to the sequence's data area"
@@ -237,8 +241,44 @@ need = ["*OBJOPR", "*OBJMGT", "*DLT"]
 ibm = "CLRPFM: *OBJOPR, *OBJMGT and *DLT"
 
 [op."file.reorganize"]
-need = ["*CHANGE", "*OBJMGT"]
-ibm = "RGZPFM: *OBJOPR, *OBJMGT, *READ, *ADD, *UPD, *DLT"
+need = ["*CHANGE", "*OBJMGT|*OBJALTER"]
+ibm = "RGZPFM: *OBJOPR, *OBJMGT or *OBJALTER, *READ, *ADD, *UPD, *DLT and *EXECUTE to the file"
+
+[op."file.copy-replace"]
+need = ["*OBJOPR", "*OBJMGT", "*ADD", "*DLT"]
+ibm = "CPYF MBROPT(*REPLACE): the to-member is cleared first, so *OBJOPR, *OBJMGT, *ADD and *DLT to the to-file"
+
+[op."file.read-based"]
+need = ["*READ"]
+ibm = "CPYF, CPYTOIMPF from a logical file: *READ to each file it is based on"
+
+[op."file.trigger-add"]
+need = ["*OBJOPR", "*READ", "*OBJALTER|*OBJMGT"]
+ibm = "ADDPFTRG: *OBJOPR, *READ and *OBJALTER or *OBJMGT to the physical file (ALWREPCHG(*YES) also *UPD: file.open-update)"
+
+[op."file.trigger-change"]
+need = ["*OBJALTER|*OBJMGT"]
+ibm = "RMVPFTRG, CHGPFTRG: *OBJALTER or *OBJMGT to the physical file"
+
+[op."pgm.trigger"]
+need = ["*EXECUTE"]
+ibm = "ADDPFTRG: *EXECUTE to the trigger program (and to its library: lib.search)"
+
+[op."file.constraint"]
+need = ["*OBJMGT|*OBJALTER"]
+ibm = "ADDPFCST, CHGPFCST, RMVPFCST: *OBJMGT or *OBJALTER to the file the constraint is on (the dependent file of a referential one)"
+
+[op."file.reference"]
+need = ["*OBJMGT|*OBJREF"]
+ibm = "ADDPFCST TYPE(*REFCST), a FOREIGN KEY: *OBJMGT or *OBJREF to the parent file"
+
+[op."file.apply-journal"]
+need = ["*OBJMGT", "*CHANGE", "*OBJEXIST"]
+ibm = "APYJRNCHG: *OBJMGT, *CHANGE and *OBJEXIST to each file whose changes are applied"
+
+[op."file.remove-journal"]
+need = ["*OBJMGT", "*CHANGE"]
+ibm = "RMVJRNCHG: *OBJMGT and *CHANGE to each file whose changes are removed"
 
 [op."file.journal"]
 need = ["*OBJMGT|*OBJALTER"]

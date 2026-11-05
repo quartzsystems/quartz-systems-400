@@ -128,8 +128,26 @@ fn physical(txn: &mut Txn<'_>, file: ObjectId, op: u8) -> Result<file::FileDesc>
     Ok(desc)
 }
 
+/// `ADDPFTRG`'s authority: to the file, to the program and its library,
+/// and `*UPD` too when the trigger may change the record. SQL's `CREATE
+/// TRIGGER` checks the table's ALTER privilege itself.
+pub fn authorize_add(txn: &mut Txn<'_>, file: ObjectId, program: ObjectId, alwrepchg: bool) -> Result<()> {
+    crate::auth::check(txn, "file.trigger-add", file)?;
+    if alwrepchg {
+        crate::auth::check(txn, "file.open-update", file)?;
+    }
+    crate::auth::check(txn, "pgm.trigger", program)?;
+    let (_, h) = store::obj::ops::read_header(txn, program)?;
+    crate::auth::check(txn, "lib.search", h.library)
+}
+
+/// `RMVPFTRG`'s and `CHGPFTRG`'s authority to the file.
+pub fn authorize_change(txn: &mut Txn<'_>, file: ObjectId) -> Result<()> {
+    crate::auth::check(txn, "file.trigger-change", file)
+}
+
 /// Add a trigger; its name. The program's existence is the caller's to
-/// check (`CPF9811`).
+/// check (`CPF9811`), and the authority ([`authorize_add`]).
 pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewTrg, now: u64) -> Result<String> {
     let desc = physical(txn, file, op::ADD)?;
     let mut trgs = list(txn, file)?;

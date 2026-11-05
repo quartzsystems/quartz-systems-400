@@ -322,6 +322,8 @@ pub fn drop_all(txn: &mut Txn<'_>, ctx: &SqlContext, file: ObjectId) -> Result<(
 pub fn label(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName, l: &crate::ast::Label) -> Result<()> {
     let (lib, found) = find(txn, ctx, name)?;
     let target = found.ok_or_else(|| SqlError::ObjectNotFound { name: name.to_string(), kind: "trigger" })?;
+    // The ALTER privilege on the subject table, as DROP TRIGGER needs.
+    db::auth::check(txn, "file.change", target.id)?;
     let lib_name = ops::read_header(txn, lib)?.1.name;
     let text = l.text.clone().unwrap_or_default();
     let mut all = db::trg::list(txn, target.id)?;

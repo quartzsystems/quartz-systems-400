@@ -174,6 +174,7 @@ fn add(system: &mut System, parms: &Parms) -> CmdReply {
             "*RUN" => MtAction::Run,
             _ => MtAction::Sysval,
         };
+        ops::authorize_add(txn, id, pgm, n.alwrepchg).map_err(|e| diag(&e, &shown, &q.0))?;
         n.definer.clone_from(&definer);
         let name = ops::add(txn, id, &n, now_unix()).map_err(|e| diag(&e, &shown, &q.0))?;
         let lib = n.library.map_or_else(|| db::file::describe(txn, id).map(|d| d.library_name.to_string()).unwrap_or_default(), |l| l.to_string());
@@ -208,6 +209,7 @@ fn remove(system: &mut System, parms: &Parms) -> CmdReply {
     let q = parms.qual("FILE");
     let shown = trg_name(&parms.text("TRG"));
     let r = with_file(system, &q, |txn, qsys, nm, id| {
+        ops::authorize_change(txn, id).map_err(|e| diag(&e, &shown, &q.0))?;
         let pick = match named(txn, qsys, nm, parms)? {
             Some(p) => p,
             None => Pick::When(time(&parms.name("TRGTIME")), event(&parms.name("TRGEVENT"))),
@@ -240,6 +242,7 @@ fn change(system: &mut System, parms: &Parms) -> CmdReply {
     let shown = trg_name(&parms.text("TRG"));
     let state = parms.name("STATE");
     let r = with_file(system, &q, |txn, qsys, nm, id| {
+        ops::authorize_change(txn, id).map_err(|e| diag(&e, &shown, &q.0))?;
         let pick = named(txn, qsys, nm, parms)?.unwrap_or(Pick::When(None, None));
         if state == "*SAME" {
             return Ok(0);
