@@ -83,25 +83,25 @@ fn trigger_answer(v: &[Value]) -> Option<(Vec<u8>, Option<Failure>)> {
     Some((buf.clone(), failure))
 }
 
+/// The calls of `MODE DB2SQL` after triggers a statement has made so
+/// far, made when it has changed every row ([`fire_deferred`]).
+pub type Deferred = Rc<RefCell<Vec<Call>>>;
+
 /// Trigger programs called through a [`MidCaller`].
 pub struct Triggers {
     mid: MidCaller,
+    later: Deferred,
 }
 
 impl Triggers {
-    /// A shared caller for an open data path's trigger mode.
+    /// A shared caller for an open data path's trigger mode; deferred
+    /// calls go to `later`.
     #[must_use]
-    pub fn shared(mid: MidCaller) -> db::trg::fire::CallerRef {
-        Rc::new(RefCell::new(Self { mid }))
+    pub fn shared(mid: MidCaller, later: Deferred) -> db::trg::fire::CallerRef {
+        Rc::new(RefCell::new(Self { mid, later }))
     }
-}
 
-fn refused(c: &Call, why: &str) -> Failure {
-    Failure { msgid: "CPF502B".into(), text: format!("trigger {} was not called: {why}", c.trigger), not_found: false }
-}
-
-impl Caller for Triggers {
-    fn call(&mut self, txn: &mut Txn<'_>, call: &mut Call) -> std::result::Result<(), Failure> {
+    fn now(&self, txn: &mut Txn<'_>, call: &mut Call) -> std::result::Result<(), Failure> {
         // What the statement wrote so far is committed and the store
         // given back: the program's own requests are others'.
         txn.commit_part().map_err(|e| refused(call, &e.to_string()))?;
@@ -124,6 +124,37 @@ impl Caller for Triggers {
     }
 }
 
+/// A statement has changed every row: the `MODE DB2SQL` after triggers it
+/// deferred, called in the order the rows changed.
+///
+/// # Errors
+///
+/// A call failed (`SQL0723`, `SQL0443`, `SQL0204`): the later ones are
+/// not made.
+pub fn fire_deferred(txn: &mut Txn<'_>, mid: Option<&MidCaller>, later: &Deferred) -> crate::error::Result<()> {
+    let calls = std::mem::take(&mut *later.borrow_mut());
+    let Some(mid) = mid else { return Ok(()) };
+    let t = Triggers { mid: Rc::clone(mid), later: Rc::default() };
+    for mut c in calls {
+        t.now(txn, &mut c).map_err(|f| crate::error::SqlError::from(db::trg::fire::failed(c.file, &c.trigger, false, f)))?;
+    }
+    Ok(())
+}
+
+fn refused(c: &Call, why: &str) -> Failure {
+    Failure { msgid: "CPF502B".into(), text: format!("trigger {} was not called: {why}", c.trigger), not_found: false }
+}
+
+impl Caller for Triggers {
+    fn call(&mut self, txn: &mut Txn<'_>, call: &mut Call) -> std::result::Result<(), Failure> {
+        if call.deferred {
+            self.later.borrow_mut().push(call.clone());
+            return Ok(());
+        }
+        self.now(txn, call)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,6 +172,7 @@ mod tests {
             file: n("TRGT"),
             library: n("QSTEST"),
             buffer: vec![0x40, 0, 0xF1],
+            deferred: false,
         };
         let p = CallPlan::decode(&trigger_plan(&c).encode()).unwrap();
         assert_eq!((p.style, p.program.as_str(), p.library.as_str(), p.routine.as_str()), (CallStyle::Trigger, "TRGPGM", "QSTEST", "T1"));

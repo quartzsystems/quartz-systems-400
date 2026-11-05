@@ -23,6 +23,7 @@ mod json;
 mod pl;
 mod query;
 mod routine;
+mod trigger;
 mod types;
 
 use crate::ast::{

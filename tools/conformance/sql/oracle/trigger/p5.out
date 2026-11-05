@@ -1,0 +1,281 @@
+> SET SCHEMA QSTEST
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/STRGV)', 0000000023.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object STRGV in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/STRG1)', 0000000023.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object STRG1 in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/STRGLOG)', 0000000025.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object STRGLOG in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/STRGSRC)', 0000000025.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object STRGSRC in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CREATE TABLE QSTEST.STRG1 (ID INT NOT NULL, NAME CHAR(10), AMT DECIMAL(7, 2), D DATE)
+  warning 7905 01567 SQL7905 [SQL7905] Table STRG1 in QSTEST created but was not journaled. Cause . . . . . :   The table STRG1 was created in QSTEST, but the table was not journaled.  Either a QDFTJRN data area indicated that journaling should not be started, the default journal did not exist, or the default journal did exist but the journaling could not be started.  The default journal may be damaged, unable to accept journal entries, or may not exist. The SQL name for the table is STRG1 and the system name for the table is STRG1. For a distributed table, journaling could not be started on all of the systems.  The default journal must exist, and be able to accept journal entries, on each of the systems in the node group. Recovery  . . . :   The table was created, but until the table is journaled, COMMIT(*CHG), COMMIT(*CS), COMMIT(*RS), COMMIT(*RR), COMMIT(*UR), and COMMIT(*ALL) will not be allowed for table STRG1. If the default journal does not exist, create the journal (CRTJRN command) and start journaling (STRJRNPF command). If the journal is in error, correct the problem to the journal If the table is distributed, correct the problems on all the systems in the node group and start journaling (STRJRNPF command).
+  sqlcode 0 count 0
+> CREATE TABLE QSTEST.STRGLOG (TXT VARCHAR(100), N INT)
+  warning 7905 01567 SQL7905 [SQL7905] Table STRGLOG in QSTEST created but was not journaled. Cause . . . . . :   The table STRGLOG was created in QSTEST, but the table was not journaled.  Either a QDFTJRN data area indicated that journaling should not be started, the default journal did not exist, or the default journal did exist but the journaling could not be started.  The default journal may be damaged, unable to accept journal entries, or may not exist. The SQL name for the table is STRGLOG and the system name for the table is STRGLOG. For a distributed table, journaling could not be started on all of the systems.  The default journal must exist, and be able to accept journal entries, on each of the systems in the node group. Recovery  . . . :   The table was created, but until the table is journaled, COMMIT(*CHG), COMMIT(*CS), COMMIT(*RS), COMMIT(*RR), COMMIT(*UR), and COMMIT(*ALL) will not be allowed for table STRGLOG. If the default journal does not exist, create the journal (CRTJRN command) and start journaling (STRJRNPF command). If the journal is in error, correct the problem to the journal If the table is distributed, correct the problems on all the systems in the node group and start journaling (STRJRNPF command).
+  sqlcode 0 count 0
+> CREATE TRIGGER QSTEST.TRB1 BEFORE INSERT ON QSTEST.STRG1 REFERENCING NEW AS N FOR EACH ROW MODE DB2ROW BEGIN ATOMIC SET N.NAME = UPPER(N.NAME); SET N.AMT = COALESCE(N.AMT, 0) + 1; END
+  sqlcode 0 count 0
+> CREATE TRIGGER QSTEST.TRIGGER_WITH_A_LONG_NAME_A1 AFTER INSERT ON QSTEST.STRG1 REFERENCING NEW AS N FOR EACH ROW MODE DB2ROW INSERT INTO QSTEST.STRGLOG VALUES ('ROW ' CONCAT N.NAME, (SELECT COUNT(*) FROM QSTEST.STRG1))
+  sqlcode 0 count 0
+> CREATE TRIGGER QSTEST.TRA2 AFTER INSERT ON QSTEST.STRG1 REFERENCING NEW AS N FOR EACH ROW INSERT INTO QSTEST.STRGLOG VALUES ('SQL ' CONCAT N.NAME, (SELECT COUNT(*) FROM QSTEST.STRG1))
+  sqlcode 0 count 0
+> CREATE TRIGGER QSTEST.TRS3 AFTER INSERT ON QSTEST.STRG1 REFERENCING NEW TABLE AS NT FOR EACH STATEMENT INSERT INTO QSTEST.STRGLOG VALUES ('STMT', (SELECT COUNT(*) FROM NT))
+  sqlcode 0 count 0
+> CREATE TRIGGER QSTEST.TRB4 BEFORE UPDATE OF AMT ON QSTEST.STRG1 REFERENCING OLD AS O NEW AS N FOR EACH ROW MODE DB2ROW WHEN (N.AMT < 0) SIGNAL SQLSTATE '75001' SET MESSAGE_TEXT = 'negative amount'
+  sqlcode 0 count 0
+> CREATE TRIGGER QSTEST.TRB5 BEFORE DELETE ON QSTEST.STRG1 REFERENCING OLD AS O FOR EACH ROW MODE DB2ROW WHEN (O.ID = 99) BEGIN DECLARE X INT; SET X = 1 / (O.ID - 99); END
+  sqlcode 0 count 0
+> SELECT TRIGGER_SCHEMA, TRIGGER_NAME, EVENT_MANIPULATION, EVENT_OBJECT_SCHEMA, EVENT_OBJECT_TABLE, ACTION_ORDER, ACTION_CONDITION, ACTION_STATEMENT, ACTION_ORIENTATION, ACTION_TIMING, ACTION_REFERENCE_OLD_TABLE, ACTION_REFERENCE_NEW_TABLE, ACTION_REFERENCE_OLD_ROW, ACTION_REFERENCE_NEW_ROW, TRIGGER_MODE, TRIGGER_PROGRAM_NAME, TRIGGER_PROGRAM_LIBRARY, OPERATIVE, ENABLED, SQL_NAMING, TRIGGER_DEFINER, TRIGGER_TEXT FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_SCHEMA = 'QSTEST' AND EVENT_OBJECT_TABLE = 'STRG1' ORDER BY ACTION_ORDER
+  sqlcode -206 42703 SQL0206 [SQL0206] Column or global variable SQL_NAMING not found. Cause . . . . . :   SQL_NAMING was not found as a column of table *N in *N and was not found as a global variable in *N. If the table is *N, SQL_NAMING is not a column of any table or view that can be referenced. Recovery  . . . :   Do one of the following and try the request again: -- Ensure that the column and table names are specified correctly in the statement. -- If this is a SELECT statement, ensure that all the required tables were named in the FROM clause. -- If the column was intended to be a correlated reference, qualify the column with the correct table designator. -- If the column was intended to be a global variable, qualify the name with the schema where the global variable exists or ensure the schema is in the path.
+> SELECT * FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_SCHEMA = 'QSTEST' AND TRIGGER_NAME = 'TRB4'
+  cols | TRIGGER_SCHEMA VARCHAR(128,0) | TRIGGER_NAME VARCHAR(128,0) NN | EVENT_MANIPULATION VARCHAR(6,0) NN | EVENT_OBJECT_SCHEMA VARCHAR(128,0) NN | EVENT_OBJECT_TABLE VARCHAR(128,0) NN | ACTION_ORDER INTEGER(10,0) NN | ACTION_CONDITION DBCLOB(2097152,0) | ACTION_STATEMENT DBCLOB(2097152,0) | ACTION_ORIENTATION VARCHAR(9,0) NN | ACTION_TIMING VARCHAR(7,0) NN | TRIGGER_MODE VARCHAR(6,0) NN | ACTION_REFERENCE_OLD_ROW VARCHAR(128,0) | ACTION_REFERENCE_NEW_ROW VARCHAR(128,0) | ACTION_REFERENCE_OLD_TABLE VARCHAR(128,0) | ACTION_REFERENCE_NEW_TABLE VARCHAR(128,0) | SQL_PATH VARCHAR(3483,0) | CREATED TIMESTAMP(26,6) NN | TRIGGER_PROGRAM_NAME VARCHAR(128,0) NN | TRIGGER_PROGRAM_LIBRARY VARCHAR(128,0) NN | OPERATIVE VARCHAR(1,0) NN | ENABLED VARCHAR(1,0) NN | THREADSAFE VARCHAR(8,0) NN | MULTITHREADED_JOB_ACTION VARCHAR(8,0) NN | ALLOW_REPEATED_CHANGE VARCHAR(8,0) NN | TRIGGER_UPDATE_CONDITION CHAR(8,0) | TRIGGER_DEFINER VARCHAR(128,0) NN | TRIGGER_TEXT NVARCHAR(50,0) | LONG_COMMENT DBCLOB(2000,0) | ROUNDING_MODE CHAR(1,0) | SYSTEM_TRIGGER_SCHEMA CHAR(10,0) NN | SYSTEM_EVENT_OBJECT_SCHEMA CHAR(10,0) NN | SYSTEM_EVENT_OBJECT_TABLE CHAR(10,0) NN
+  row | 'QSTEST' | 'TRB4' | 'UPDATE' | 'QSTEST' | 'STRG1' | '5' | '( N . AMT < 0 ) ' | 'SIGNAL SQLSTATE '75001' SET MESSAGE_TEXT = 'negative amount' ' | 'ROW' | 'BEFORE' | 'DB2ROW' | 'O' | 'N' | - | - | ' 	QSYS      QSYS2     SYSPROC   SYSIBMADM QSTEST' | '2026-11-05 01:44:01.000000' | 'TRB4' | 'QSTEST' | 'Y' | 'Y' | 'YES     ' | 'RUN     ' | 'YES     ' | 'ALWAYS  ' | '{user}' | - | - | 'E' | 'QSTEST    ' | 'QSTEST    ' | 'STRG1     '
+> SELECT PROGRAM_NAME, PROGRAM_TYPE, NUMBER_OF_PARAMETERS FROM QSYS2.SYSPROGRAMSTAT WHERE PROGRAM_SCHEMA = 'QSTEST' AND PROGRAM_NAME LIKE 'TR%' ORDER BY PROGRAM_NAME
+  sqlcode -206 42703 SQL0206 [SQL0206] Column or global variable NUMBER_OF_PARAMETERS not found. Cause . . . . . :   NUMBER_OF_PARAMETERS was not found as a column of table *N in *N and was not found as a global variable in *N. If the table is *N, NUMBER_OF_PARAMETERS is not a column of any table or view that can be referenced. Recovery  . . . :   Do one of the following and try the request again: -- Ensure that the column and table names are specified correctly in the statement. -- If this is a SELECT statement, ensure that all the required tables were named in the FROM clause. -- If the column was intended to be a correlated reference, qualify the column with the correct table designator. -- If the column was intended to be a global variable, qualify the name with the schema where the global variable exists or ensure the schema is in the path.
+> SELECT * FROM QSYS2.SYSTRIGCOL WHERE TRIGGER_SCHEMA = 'QSTEST' ORDER BY TRIGGER_NAME, TABLE_NAME, COLUMN_NAME
+  cols | TRIGGER_SCHEMA VARCHAR(128,0) NN | TRIGGER_NAME VARCHAR(128,0) NN | TABLE_SCHEMA VARCHAR(128,0) NN | TABLE_NAME VARCHAR(128,0) NN | COLUMN_NAME VARCHAR(128,0) NN | OBJECT_TYPE VARCHAR(24,0) NN | SYSTEM_TRIGGER_SCHEMA CHAR(10,0) NN | SYSTEM_TABLE_SCHEMA CHAR(10,0) | SYSTEM_TABLE_NAME CHAR(10,0)
+  row | 'QSTEST' | 'TRA2' | 'QSTEST' | 'STRGLOG' | 'N' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRGLOG   '
+  row | 'QSTEST' | 'TRA2' | 'QSTEST' | 'STRGLOG' | 'TXT' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRGLOG   '
+  row | 'QSTEST' | 'TRA2' | 'QSTEST' | 'STRG1' | 'NAME' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRG1     '
+  row | 'QSTEST' | 'TRB1' | 'QSTEST' | 'STRG1' | 'AMT' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRG1     '
+  row | 'QSTEST' | 'TRB1' | 'QSTEST' | 'STRG1' | 'NAME' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRG1     '
+  row | 'QSTEST' | 'TRB4' | 'QSTEST' | 'STRG1' | 'AMT' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRG1     '
+  row | 'QSTEST' | 'TRB5' | 'QSTEST' | 'STRG1' | 'ID' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRG1     '
+  row | 'QSTEST' | 'TRB5' | 'QSTEST' | 'STRG1' | 'ID' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRG1     '
+  row | 'QSTEST' | 'TRIGGER_WITH_A_LONG_NAME_A1' | 'QSTEST' | 'STRGLOG' | 'N' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRGLOG   '
+  row | 'QSTEST' | 'TRIGGER_WITH_A_LONG_NAME_A1' | 'QSTEST' | 'STRGLOG' | 'TXT' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRGLOG   '
+  row | 'QSTEST' | 'TRIGGER_WITH_A_LONG_NAME_A1' | 'QSTEST' | 'STRG1' | 'NAME' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRG1     '
+  row | 'QSTEST' | 'TRS3' | 'QSTEST' | 'STRGLOG' | 'N' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRGLOG   '
+  row | 'QSTEST' | 'TRS3' | 'QSTEST' | 'STRGLOG' | 'TXT' | 'TABLE' | 'QSTEST    ' | 'QSTEST    ' | 'STRGLOG   '
+> SELECT * FROM QSYS2.SYSTRIGDEP WHERE TRIGGER_SCHEMA = 'QSTEST' ORDER BY TRIGGER_NAME, OBJECT_NAME
+  cols | TRIGGER_SCHEMA VARCHAR(128,0) NN | TRIGGER_NAME VARCHAR(128,0) NN | OBJECT_SCHEMA VARCHAR(128,0) NN | OBJECT_NAME VARCHAR(128,0) NN | OBJECT_TYPE CHAR(24,0) NN | PARM_SIGNATURE LONG VARCHAR () FOR BIT DATA(10000,0) | SYSTEM_TRIGGER_SCHEMA CHAR(10,0) NN | SYSTEM_OBJECT_SCHEMA CHAR(10,0) | SYSTEM_OBJECT_NAME CHAR(10,0)
+  row | 'QSTEST' | 'TRA2' | 'QSTEST' | 'STRGLOG' | 'TABLE                   ' | - | 'QSTEST    ' | 'QSTEST    ' | 'STRGLOG   '
+  row | 'QSTEST' | 'TRA2' | 'QSTEST' | 'STRG1' | 'TABLE                   ' | - | 'QSTEST    ' | 'QSTEST    ' | 'STRG1     '
+  row | 'QSTEST' | 'TRIGGER_WITH_A_LONG_NAME_A1' | 'QSTEST' | 'STRGLOG' | 'TABLE                   ' | - | 'QSTEST    ' | 'QSTEST    ' | 'STRGLOG   '
+  row | 'QSTEST' | 'TRIGGER_WITH_A_LONG_NAME_A1' | 'QSTEST' | 'STRG1' | 'TABLE                   ' | - | 'QSTEST    ' | 'QSTEST    ' | 'STRG1     '
+  row | 'QSTEST' | 'TRS3' | 'QSTEST' | 'STRGLOG' | 'TABLE                   ' | - | 'QSTEST    ' | 'QSTEST    ' | 'STRGLOG   '
+> SELECT * FROM QSYS2.SYSTRIGUPD WHERE TRIGGER_SCHEMA = 'QSTEST' ORDER BY TRIGGER_NAME, COLUMN_NAME
+  sqlcode -206 42703 SQL0206 [SQL0206] Column or global variable COLUMN_NAME not found. Cause . . . . . :   COLUMN_NAME was not found as a column of table *N in *N and was not found as a global variable in *N. If the table is *N, COLUMN_NAME is not a column of any table or view that can be referenced. Recovery  . . . :   Do one of the following and try the request again: -- Ensure that the column and table names are specified correctly in the statement. -- If this is a SELECT statement, ensure that all the required tables were named in the FROM clause. -- If the column was intended to be a correlated reference, qualify the column with the correct table designator. -- If the column was intended to be a global variable, qualify the name with the schema where the global variable exists or ensure the schema is in the path.
+> INSERT INTO QSTEST.STRG1 VALUES (1, 'abc', 5, '2026-01-01'), (2, 'def', NULL, NULL), (3, 'ghi', 1, NULL)
+  sqlcode 0 count 3
+> SELECT ID, NAME, AMT, D FROM QSTEST.STRG1 ORDER BY ID
+  cols | ID INTEGER(10,0) NN | NAME CHAR(10,0) | AMT DECIMAL(7,2) | D DATE(10,0)
+  row | '1' | 'ABC       ' | '6.00' | '01/01/26'
+  row | '2' | 'DEF       ' | '1.00' | -
+  row | '3' | 'GHI       ' | '2.00' | -
+> SELECT TXT, N FROM QSTEST.STRGLOG
+  cols | TXT VARCHAR(100,0) | N INTEGER(10,0)
+  row | 'ROW ABC       ' | '1'
+  row | 'ROW DEF       ' | '2'
+  row | 'ROW GHI       ' | '3'
+  row | 'SQL ABC       ' | '3'
+  row | 'SQL DEF       ' | '3'
+  row | 'SQL GHI       ' | '3'
+  row | 'STMT' | '3'
+> UPDATE QSTEST.STRG1 SET AMT = -1 WHERE ID = 1
+  sqlcode -723 09000 SQL0723 [SQL0723] SQL trigger TRB4 in QSTEST failed with SQLCODE -438 SQLSTATE 75001. Cause . . . . . :   An error has occurred in a triggered SQL statement in trigger TRB4 in schema QSTEST.  The SQLCODE is -438, the SQLSTATE is 75001, and the message is negative amount. Recovery  . . . :   Refer to the joblog for more information regarding the detected error. Correct the error and try the request again.
+> -- joblog
+  msg CPF1124 type 4 sev 0 Job 009195/QUSER/QZDASOINIT started on 11/04/26 at 23:05:51 in subsystem QUSRWRK in QSYS. Job entered system on 11/04/26 at 23:05:51.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009195/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1336 type 15 sev 40 Errors on CHGJOB command for job 009195/QUSER/QZDASOINIT.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009195/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD1672 type 2 sev 0 Job changed successfully; however errors occurred.
+  msg CPIAD02 type 4 sev 0 User {user} from client {client} connected to server.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009195/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD1672 type 2 sev 0 Job changed successfully; however errors occurred.
+  msg CPF2105 type 15 sev 40 Object STRGV in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPF2105 type 15 sev 40 Object STRG1 in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPF2105 type 15 sev 40 Object STRGLOG in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPF2105 type 15 sev 40 Object STRGSRC in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg SQL7905 type 4 sev 20 Table STRG1 in QSTEST created but was not journaled.
+  msg SQL7905 type 4 sev 20 Table STRGLOG in QSTEST created but was not journaled.
+  msg CPC7301 type 1 sev 0 File QSQLSRC created in library QTEMP.
+  msg CPC7305 type 1 sev 0 Member TRB1 added to file QSQLSRC in QTEMP.
+  msg CPC7301 type 1 sev 0 File QSQLT00000 created in library QTEMP.
+  msg CPC7305 type 1 sev 0 Member TRB1 added to file QSQLT00000 in QTEMP.
+  msg CZS0607 type 1 sev 0 Module TRB1 was created in library QSTEST on 11/05/26 at 01:43:59.
+  msg CPC5D07 type 1 sev 0 Program TRB1 created in library QSTEST.
+  msg CPC2191 type 1 sev 0 Object TRB1 in QSTEST type *MODULE deleted.
+  msg CPF5813 type 2 sev 40 File QSQLSRC in library QTEMP already exists.
+  msg CPC7305 type 1 sev 0 Member TRIGG00001 added to file QSQLSRC in QTEMP.
+  msg CPC7305 type 1 sev 0 Member TRIGG00001 added to file QSQLT00000 in QTEMP.
+  msg CZS0607 type 1 sev 0 Module TRIGG00001 was created in library QSTEST on 11/05/26 at 01:44:00.
+  msg CPC5D07 type 1 sev 0 Program TRIGG00001 created in library QSTEST.
+  msg CPC2191 type 1 sev 0 Object TRIGG00001 in QSTEST type *MODULE deleted.
+  msg CPF5813 type 2 sev 40 File QSQLSRC in library QTEMP already exists.
+  msg CPC7305 type 1 sev 0 Member TRA2 added to file QSQLSRC in QTEMP.
+  msg CPC7305 type 1 sev 0 Member TRA2 added to file QSQLT00000 in QTEMP.
+  msg CZS0607 type 1 sev 0 Module TRA2 was created in library QSTEST on 11/05/26 at 01:44:00.
+  msg CPC5D07 type 1 sev 0 Program TRA2 created in library QSTEST.
+  msg CPC2191 type 1 sev 0 Object TRA2 in QSTEST type *MODULE deleted.
+  msg CPF5813 type 2 sev 40 File QSQLSRC in library QTEMP already exists.
+  msg CPC7305 type 1 sev 0 Member TRS3 added to file QSQLSRC in QTEMP.
+  msg CPC7305 type 1 sev 0 Member TRS3 added to file QSQLT00000 in QTEMP.
+  msg CZS0607 type 1 sev 0 Module TRS3 was created in library QSTEST on 11/05/26 at 01:44:00.
+  msg CPC5D07 type 1 sev 0 Program TRS3 created in library QSTEST.
+  msg CPC2191 type 1 sev 0 Object TRS3 in QSTEST type *MODULE deleted.
+  msg CPF5813 type 2 sev 40 File QSQLSRC in library QTEMP already exists.
+  msg CPC7305 type 1 sev 0 Member TRB4 added to file QSQLSRC in QTEMP.
+  msg CPC7305 type 1 sev 0 Member TRB4 added to file QSQLT00000 in QTEMP.
+  msg CZS0607 type 1 sev 0 Module TRB4 was created in library QSTEST on 11/05/26 at 01:44:01.
+  msg CPC5D07 type 1 sev 0 Program TRB4 created in library QSTEST.
+  msg CPC2191 type 1 sev 0 Object TRB4 in QSTEST type *MODULE deleted.
+  msg CPF5813 type 2 sev 40 File QSQLSRC in library QTEMP already exists.
+  msg CPC7305 type 1 sev 0 Member TRB5 added to file QSQLSRC in QTEMP.
+  msg CPC7305 type 1 sev 0 Member TRB5 added to file QSQLT00000 in QTEMP.
+  msg CZS0607 type 1 sev 0 Module TRB5 was created in library QSTEST on 11/05/26 at 01:44:01.
+  msg CPC5D07 type 1 sev 0 Program TRB5 created in library QSTEST.
+  msg CPC2191 type 1 sev 0 Object TRB5 in QSTEST type *MODULE deleted.
+  msg SQL0206 type 2 sev 30 Column or global variable SQL_NAMING not found.
+  msg SQL0206 type 2 sev 30 Column or global variable NUMBER_OF_PARAMETERS not found.
+  msg SQL0206 type 2 sev 30 Column or global variable COLUMN_NAME not found.
+  msg SQL0438 type 2 sev 30 Message negative amount returned from SIGNAL, RESIGNAL, or RAISE_ERROR.
+  msg SQL0723 type 2 sev 30 SQL trigger TRB4 in QSTEST failed with SQLCODE -438 SQLSTATE 75001.
+  msg CPF502B type 6 sev 30 Error occurred in trigger program.
+  msg CPF502B type 14 sev 30 Error occurred in trigger program.
+  msg SQL0723 type 2 sev 30 SQL trigger TRB4 in QSTEST failed with SQLCODE -438 SQLSTATE 75001.
+> UPDATE QSTEST.STRG1 SET NAME = 'X' WHERE ID = 1
+  sqlcode 0 count 1
+> INSERT INTO QSTEST.STRG1 VALUES (99, 'zz', 0, NULL)
+  sqlcode 0 count 1
+> DELETE FROM QSTEST.STRG1 WHERE ID = 99
+  sqlcode -723 09000 SQL0723 [SQL0723] SQL trigger TRB5 in QSTEST failed with SQLCODE -802 SQLSTATE 22012. Cause . . . . . :   An error has occurred in a triggered SQL statement in trigger TRB5 in schema QSTEST.  The SQLCODE is -802, the SQLSTATE is 22012, and the message is Data conversion or data mapping error.. Recovery  . . . :   Refer to the joblog for more information regarding the detected error. Correct the error and try the request again.
+> -- joblog
+  msg SQL0802 type 2 sev 30 Data conversion or data mapping error.
+  msg SQL0723 type 2 sev 30 SQL trigger TRB5 in QSTEST failed with SQLCODE -802 SQLSTATE 22012.
+  msg CPF502B type 6 sev 30 Error occurred in trigger program.
+  msg CPF502B type 14 sev 30 Error occurred in trigger program.
+  msg SQL0723 type 2 sev 30 SQL trigger TRB5 in QSTEST failed with SQLCODE -802 SQLSTATE 22012.
+> SELECT ID, NAME, AMT FROM QSTEST.STRG1 ORDER BY ID
+  cols | ID INTEGER(10,0) NN | NAME CHAR(10,0) | AMT DECIMAL(7,2)
+  row | '1' | 'X         ' | '6.00'
+  row | '2' | 'DEF       ' | '1.00'
+  row | '3' | 'GHI       ' | '2.00'
+  row | '99' | 'ZZ        ' | '1.00'
+> CREATE TABLE QSTEST.STRGSRC (ID INT NOT NULL, NAME CHAR(10), AMT DECIMAL(7, 2), D DATE)
+  warning 7905 01567 SQL7905 [SQL7905] Table STRGSRC in QSTEST created but was not journaled. Cause . . . . . :   The table STRGSRC was created in QSTEST, but the table was not journaled.  Either a QDFTJRN data area indicated that journaling should not be started, the default journal did not exist, or the default journal did exist but the journaling could not be started.  The default journal may be damaged, unable to accept journal entries, or may not exist. The SQL name for the table is STRGSRC and the system name for the table is STRGSRC. For a distributed table, journaling could not be started on all of the systems.  The default journal must exist, and be able to accept journal entries, on each of the systems in the node group. Recovery  . . . :   The table was created, but until the table is journaled, COMMIT(*CHG), COMMIT(*CS), COMMIT(*RS), COMMIT(*RR), COMMIT(*UR), and COMMIT(*ALL) will not be allowed for table STRGSRC. If the default journal does not exist, create the journal (CRTJRN command) and start journaling (STRJRNPF command). If the journal is in error, correct the problem to the journal If the table is distributed, correct the problems on all the systems in the node group and start journaling (STRJRNPF command).
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.STRGSRC VALUES (7, 'cpyf', 2, NULL)
+  sqlcode 0 count 1
+> DELETE FROM QSTEST.STRGLOG
+  sqlcode 0 count 10
+> CALL QSYS.QCMDEXC('CPYF FROMFILE(QSTEST/STRGSRC) TOFILE(QSTEST/STRG1) MBROPT(*ADD)', 0000000063.00000)
+  sqlcode 0 count 0
+> SELECT ID, NAME, AMT FROM QSTEST.STRG1 WHERE ID = 7
+  cols | ID INTEGER(10,0) NN | NAME CHAR(10,0) | AMT DECIMAL(7,2)
+  row | '7' | 'CPYF      ' | '3.00'
+> SELECT TXT, N FROM QSTEST.STRGLOG
+  cols | TXT VARCHAR(100,0) | N INTEGER(10,0)
+  row | 'ROW CPYF      ' | '5'
+  row | 'SQL CPYF      ' | '5'
+  row | 'STMT' | '1'
+> CALL QSYS.QCMDEXC('CHGPFTRG FILE(QSTEST/STRG1) TRG(TRB1) TRGLIB(QSTEST) STATE(*DISABLED)', 0000000069.00000)
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.STRG1 VALUES (8, 'off', 1, NULL)
+  sqlcode 0 count 1
+> SELECT ID, NAME, AMT FROM QSTEST.STRG1 WHERE ID = 8
+  cols | ID INTEGER(10,0) NN | NAME CHAR(10,0) | AMT DECIMAL(7,2)
+  row | '8' | 'off       ' | '1.00'
+> SELECT TRIGGER_NAME, ENABLED FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_NAME = 'TRB1'
+  cols | TRIGGER_NAME VARCHAR(128,0) NN | ENABLED VARCHAR(1,0) NN
+  row | 'TRB1' | 'N'
+> CREATE VIEW QSTEST.STRGV AS SELECT ID, NAME FROM QSTEST.STRG1 WHERE ID < 50
+  sqlcode 0 count 0
+> CREATE TRIGGER QSTEST.TRI6 INSTEAD OF INSERT ON QSTEST.STRGV REFERENCING NEW AS N FOR EACH ROW MODE DB2SQL INSERT INTO QSTEST.STRGLOG VALUES ('INSTEAD ' CONCAT N.NAME, N.ID)
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.STRGV VALUES (60, 'view')
+  sqlcode 0 count 1
+> SELECT TXT, N FROM QSTEST.STRGLOG WHERE TXT LIKE 'INSTEAD%'
+  cols | TXT VARCHAR(100,0) | N INTEGER(10,0)
+  row | 'INSTEAD view      ' | '60'
+> SELECT TRIGGER_NAME, ACTION_TIMING, EVENT_OBJECT_TABLE, TRIGGER_MODE FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_NAME = 'TRI6'
+  cols | TRIGGER_NAME VARCHAR(128,0) NN | ACTION_TIMING VARCHAR(7,0) NN | EVENT_OBJECT_TABLE VARCHAR(128,0) NN | TRIGGER_MODE VARCHAR(6,0) NN
+  row | 'TRI6' | 'INSTEAD' | 'STRGV' | 'DB2SQL'
+> CREATE TRIGGER QSTEST.TRBAD1 BEFORE INSERT ON QSTEST.STRG1 REFERENCING OLD AS O FOR EACH ROW MODE DB2ROW SET O.ID = 1
+  sqlcode -696 42898 SQL0696 [SQL0696] Correlation name or table O not valid. Cause . . . . . :   The correlation name or table O is not valid for trigger TRBAD1 in QSTEST. The reason code is 2.  One of the following reason codes indicates the error: 1 - NEW correlation name or NEW_TABLE O was specified in a DELETE trigger. 2 - OLD correlation name or OLD_TABLE O was specified in an INSERT trigger. 3 - OLD_TABLE or NEW_TABLE was specified in a BEFORE trigger or was specified with DB2ROW. Recovery  . . . :   Change the referencing clause or the type of trigger so that the statement is valid. Try the request again.
+> CREATE TRIGGER QSTEST.TRBAD2 BEFORE INSERT ON QSTEST.STRG1 REFERENCING NEW AS N FOR EACH ROW MODE DB2ROW INSERT INTO QSTEST.STRGLOG VALUES ('X', 1)
+  sqlcode -751 0W000 SQL0751 [SQL0751] SQL statement *N not allowed. Cause . . . . . :   The statement *N is not allowed in a stored procedure, user-defined function, or trigger. -- Statements not allowed in a trigger program are CONNECT, SET CONNECTION, RELEASE, DISCONNECT, and SET RESULT SETS. -- RUNSQLSTM is not allowed in a trigger program. -- COMMIT and ROLLBACK are not allowed in a trigger program if the trigger program is running in the same activation group as the triggering program.  COMMIT and ROLLBACK are not allowed in an SQL trigger. -- ALTER TABLE is not allowed in a trigger program when commitment control is active. -- COMMIT and ROLLBACK are not allowed if the procedure is defined as COMMIT ON RETURN YES or for a distributed unit of work. -- Statements not allowed in an SQL BEFORE trigger are INSERT, UPDATE, DELETE, MERGE, ALTER, COMMENT ON, CREATE, DROP, GRANT, LABEL ON, RENAME, REVOKE, REFRESH TABLE, and any subselect containing a data change reference. -- The RETURN statement is not allowed in an SQL trigger. Recovery  . . . :   Remove the statement *N from your trigger program, user-defined function, or stored procedure. Try the request again.
+> CREATE TRIGGER QSTEST.TRBAD3 BEFORE INSERT ON QSTEST.STRG1 FOR EACH STATEMENT MODE DB2SQL SET CURRENT SCHEMA = QSTEST
+  sqlcode -628 42613 SQL0628 [SQL0628] Clauses not valid in same definition. Cause . . . . . :   Clauses specified to define the attributes of a column, a sourced function, a trigger, or an index are not valid. One of the following has occurred: -- More than one of the clauses FOR BIT DATA, FOR SBCS DATA, FOR MIXED DATA, or CCSID was specified for a column definition. -- READ PERMISSION FS and WRITE PERMISSION BLOCKED were specified for a DataLink column. -- READ PERMISSION DB and WRITE PERMISSION FS were specified for a DataLink column. -- WRITE PERMISSION FS and the ON UNLINK clause were specified for a DataLink column. -- INCLUDING or EXCLUDING COLUMN DEFAULTS and USING TYPE DEFAULTS were specified for a table. -- A clause was specified that is not valid when creating a sourced function. -- A RETURNS clause was specified for ALTER FUNCTION, but the alter did not specify REPLACE. -- FOR EACH STATEMENT is specified for a BEFORE or INSTEAD OF trigger or is specified with MODE DB2ROW. -- MODE DB2SQL is specified for a BEFORE trigger and the trigger contains a reference to the trigger table. -- A WHEN clause or an UPDATE column list is specified for an INSTEAD OF trigger. -- A correlation name with OLD ROW or NEW ROW and a SET OPTION for date or time option were specified. -- For CREATE INDEX, the RCDFMT clause cannot be specified if the INCLUDE clause is specified.  The INCLUDE clause requires the ENCODED VECTOR clause. -- The option specified on SET OPTION DBGVIEW is not consistent with the value specified for the DEBUG MODE. -- The SET OPTION CONACC cannot be specified with routine option CONCURRENT ACCESS RESOLUTION. Recovery  . . . :   Change or remove a clause so that the definition is valid. Try the request again.
+> CREATE TRIGGER QSTEST.TRBAD4 AFTER INSERT ON QSTEST.STRG1 FOR EACH ROW MODE DB2ROW SET CURRENT SCHEMA = QSTEST
+  sqlcode -312 42618 SQL0312 [SQL0312] Variable QSTEST not defined or not usable. Cause . . . . . :   The variable QSTEST appears in the SQL statement, but one of the following conditions exists: -- No declaration for the variable exists or the declaration is not within the current scope. -- The attributes are not correct for the use specified. -- The host variable was specified in dynamic SQL. Host variables are not valid in dynamic SQL. -- In REXX, host variable names cannot contain embedded blanks. -- The variable name is used in the routine body of an SQL procedure or function, but the variable is not declared as an SQL variable or parameter. The scope of an SQL variable is the compound statement that contains the declaration. -- The variable is used in the routine body of an SQL trigger, but the variable is not declared as an SQL variable or the variable is an OLD transition variable and cannot be modified. -- The variable is a transition variable in an AFTER trigger and is used in statement where the variable could be modified. Modifying transition variables in AFTER triggers is not allowed. Recovery  . . . :   Do one of the following and try the request again. -- Verify that QSTEST is spelled correctly in the SQL statement. -- Verify that the program contains a declaration for that variable.  In RPG, the variable must be declared globally or in the scope where it is used. -- Verify that the attributes of the variable are compatible with its use in the statement. -- Use parameter markers in dynamic SQL instead of host variables. -- Remove embedded blanks from REXX host variable names. -- Declare the variable as an SQL variable or parameter in the SQL procedure or function. -- Declare the variable as an SQL variable or specify a NEW transition variable when the variable is modified in an SQL trigger. -- Remove the transition variable from the statement. Copying the transition variable to a local variable and then using the local variable in the statement is also acceptable.
+> CREATE TRIGGER QSTEST.TRB1 AFTER DELETE ON QSTEST.STRG1 FOR EACH ROW MODE DB2ROW SET CURRENT SCHEMA = QSTEST
+  sqlcode -312 42618 SQL0312 [SQL0312] Variable QSTEST not defined or not usable. Cause . . . . . :   The variable QSTEST appears in the SQL statement, but one of the following conditions exists: -- No declaration for the variable exists or the declaration is not within the current scope. -- The attributes are not correct for the use specified. -- The host variable was specified in dynamic SQL. Host variables are not valid in dynamic SQL. -- In REXX, host variable names cannot contain embedded blanks. -- The variable name is used in the routine body of an SQL procedure or function, but the variable is not declared as an SQL variable or parameter. The scope of an SQL variable is the compound statement that contains the declaration. -- The variable is used in the routine body of an SQL trigger, but the variable is not declared as an SQL variable or the variable is an OLD transition variable and cannot be modified. -- The variable is a transition variable in an AFTER trigger and is used in statement where the variable could be modified. Modifying transition variables in AFTER triggers is not allowed. Recovery  . . . :   Do one of the following and try the request again. -- Verify that QSTEST is spelled correctly in the SQL statement. -- Verify that the program contains a declaration for that variable.  In RPG, the variable must be declared globally or in the scope where it is used. -- Verify that the attributes of the variable are compatible with its use in the statement. -- Use parameter markers in dynamic SQL instead of host variables. -- Remove embedded blanks from REXX host variable names. -- Declare the variable as an SQL variable or parameter in the SQL procedure or function. -- Declare the variable as an SQL variable or specify a NEW transition variable when the variable is modified in an SQL trigger. -- Remove the transition variable from the statement. Copying the transition variable to a local variable and then using the local variable in the statement is also acceptable.
+> CREATE OR REPLACE TRIGGER QSTEST.TRB1 AFTER DELETE ON QSTEST.STRG1 FOR EACH ROW MODE DB2ROW SET CURRENT SCHEMA = QSTEST
+  sqlcode -312 42618 SQL0312 [SQL0312] Variable QSTEST not defined or not usable. Cause . . . . . :   The variable QSTEST appears in the SQL statement, but one of the following conditions exists: -- No declaration for the variable exists or the declaration is not within the current scope. -- The attributes are not correct for the use specified. -- The host variable was specified in dynamic SQL. Host variables are not valid in dynamic SQL. -- In REXX, host variable names cannot contain embedded blanks. -- The variable name is used in the routine body of an SQL procedure or function, but the variable is not declared as an SQL variable or parameter. The scope of an SQL variable is the compound statement that contains the declaration. -- The variable is used in the routine body of an SQL trigger, but the variable is not declared as an SQL variable or the variable is an OLD transition variable and cannot be modified. -- The variable is a transition variable in an AFTER trigger and is used in statement where the variable could be modified. Modifying transition variables in AFTER triggers is not allowed. Recovery  . . . :   Do one of the following and try the request again. -- Verify that QSTEST is spelled correctly in the SQL statement. -- Verify that the program contains a declaration for that variable.  In RPG, the variable must be declared globally or in the scope where it is used. -- Verify that the attributes of the variable are compatible with its use in the statement. -- Use parameter markers in dynamic SQL instead of host variables. -- Remove embedded blanks from REXX host variable names. -- Declare the variable as an SQL variable or parameter in the SQL procedure or function. -- Declare the variable as an SQL variable or specify a NEW transition variable when the variable is modified in an SQL trigger. -- Remove the transition variable from the statement. Copying the transition variable to a local variable and then using the local variable in the statement is also acceptable.
+> CREATE TRIGGER QSTEST.TRBAD5 INSTEAD OF INSERT ON QSTEST.STRG1 REFERENCING NEW AS N FOR EACH ROW MODE DB2SQL INSERT INTO QSTEST.STRGLOG VALUES ('X', 1)
+  sqlcode -159 42809 SQL0159 [SQL0159] STRG1 in QSTEST not correct type. Cause . . . . . :   A DROP INDEX, DROP VIEW, DROP ALIAS, COMMENT ON INDEX, COMMENT ON ALIAS, RENAME INDEX or REFRESH TABLE statement was specified but STRG1 in QSTEST is not the correct type.  DROP INDEX can only be used to drop an index.  DROP VIEW can only be used to drop a view. DROP ALIAS can only be used to drop an alias. COMMENT ON INDEX can only be used to comment on an index. COMMENT ON ALIAS can only be used to comment on an alias. RENAME INDEX can only be used to rename an index. REFRESH TABLE can only be used to refresh a materialized query table. Recovery  . . . :   Do one of the following to correct the problem and try the request again: If this is a DROP statement: -- If STRG1 is an index, use a DROP INDEX statement. -- If STRG1 is a view, use a DROP VIEW statement. -- If STRG1 is a table, use a DROP TABLE statement. -- If STRG1 is an alias, use a DROP ALIAS statement. If this is a COMMENT ON INDEX or COMMENT ON ALIAS statement and STRG1 is a table or view, use a COMMENT ON TABLE statement. If this is a RENAME INDEX statement and STRG1 is a table or view, use a RENAME TABLE statement. If this is a REFRESH TABLE statement, specify a materialized query table.
+> CREATE TRIGGER QSTEST.TRBAD6 AFTER INSERT ON QSTEST.STRG1 REFERENCING NEW AS N FOR EACH ROW MODE DB2ROW SET N.NAME = 'X'
+  sqlcode -312 42618 SQL0312 [SQL0312] Variable NAME not defined or not usable. Cause . . . . . :   The variable NAME appears in the SQL statement, but one of the following conditions exists: -- No declaration for the variable exists or the declaration is not within the current scope. -- The attributes are not correct for the use specified. -- The host variable was specified in dynamic SQL. Host variables are not valid in dynamic SQL. -- In REXX, host variable names cannot contain embedded blanks. -- The variable name is used in the routine body of an SQL procedure or function, but the variable is not declared as an SQL variable or parameter. The scope of an SQL variable is the compound statement that contains the declaration. -- The variable is used in the routine body of an SQL trigger, but the variable is not declared as an SQL variable or the variable is an OLD transition variable and cannot be modified. -- The variable is a transition variable in an AFTER trigger and is used in statement where the variable could be modified. Modifying transition variables in AFTER triggers is not allowed. Recovery  . . . :   Do one of the following and try the request again. -- Verify that NAME is spelled correctly in the SQL statement. -- Verify that the program contains a declaration for that variable.  In RPG, the variable must be declared globally or in the scope where it is used. -- Verify that the attributes of the variable are compatible with its use in the statement. -- Use parameter markers in dynamic SQL instead of host variables. -- Remove embedded blanks from REXX host variable names. -- Declare the variable as an SQL variable or parameter in the SQL procedure or function. -- Declare the variable as an SQL variable or specify a NEW transition variable when the variable is modified in an SQL trigger. -- Remove the transition variable from the statement. Copying the transition variable to a local variable and then using the local variable in the statement is also acceptable.
+> CREATE TRIGGER QSTEST.TRBAD7 AFTER INSERT ON QSTEST.STRG1 REFERENCING NEW TABLE AS NT FOR EACH ROW MODE DB2ROW SET CURRENT SCHEMA = QSTEST
+  sqlcode -696 42898 SQL0696 [SQL0696] Correlation name or table NT not valid. Cause . . . . . :   The correlation name or table NT is not valid for trigger TRBAD7 in QSTEST. The reason code is 3.  One of the following reason codes indicates the error: 1 - NEW correlation name or NEW_TABLE NT was specified in a DELETE trigger. 2 - OLD correlation name or OLD_TABLE NT was specified in an INSERT trigger. 3 - OLD_TABLE or NEW_TABLE was specified in a BEFORE trigger or was specified with DB2ROW. Recovery  . . . :   Change the referencing clause or the type of trigger so that the statement is valid. Try the request again.
+> CREATE TRIGGER QSTEST.TRBAD8 AFTER INSERT ON QSTEST.STRG1 REFERENCING NEW TABLE AS NT FOR EACH STATEMENT MODE DB2ROW SET CURRENT SCHEMA = QSTEST
+  sqlcode -628 42613 SQL0628 [SQL0628] Clauses not valid in same definition. Cause . . . . . :   Clauses specified to define the attributes of a column, a sourced function, a trigger, or an index are not valid. One of the following has occurred: -- More than one of the clauses FOR BIT DATA, FOR SBCS DATA, FOR MIXED DATA, or CCSID was specified for a column definition. -- READ PERMISSION FS and WRITE PERMISSION BLOCKED were specified for a DataLink column. -- READ PERMISSION DB and WRITE PERMISSION FS were specified for a DataLink column. -- WRITE PERMISSION FS and the ON UNLINK clause were specified for a DataLink column. -- INCLUDING or EXCLUDING COLUMN DEFAULTS and USING TYPE DEFAULTS were specified for a table. -- A clause was specified that is not valid when creating a sourced function. -- A RETURNS clause was specified for ALTER FUNCTION, but the alter did not specify REPLACE. -- FOR EACH STATEMENT is specified for a BEFORE or INSTEAD OF trigger or is specified with MODE DB2ROW. -- MODE DB2SQL is specified for a BEFORE trigger and the trigger contains a reference to the trigger table. -- A WHEN clause or an UPDATE column list is specified for an INSTEAD OF trigger. -- A correlation name with OLD ROW or NEW ROW and a SET OPTION for date or time option were specified. -- For CREATE INDEX, the RCDFMT clause cannot be specified if the INCLUDE clause is specified.  The INCLUDE clause requires the ENCODED VECTOR clause. -- The option specified on SET OPTION DBGVIEW is not consistent with the value specified for the DEBUG MODE. -- The SET OPTION CONACC cannot be specified with routine option CONCURRENT ACCESS RESOLUTION. Recovery  . . . :   Change or remove a clause so that the definition is valid. Try the request again.
+> DROP TRIGGER QSTEST.TRB5
+  sqlcode 0 count 0
+> DROP TRIGGER QSTEST.TRB5
+  sqlcode -204 42704 SQL0204 [SQL0204] TRB5 in QSTEST type *N not found. Cause . . . . . :   TRB5 in QSTEST type *N was not found. If the member name is *ALL, the table is not partitioned. If this is an ALTER TABLE statement and the type is *N, a constraint or partition was not found. If this is not an ALTER TABLE statement and the type is *N, a function, procedure, trigger or sequence object was not found. If a function was not found, TRB5 is the service program that contains the function.  The function will not be found unless the external name and usage name match exactly.  Examine the job log for a message that gives more details on which function name is being searched for and the name that did not match. Recovery  . . . :   Change the name and try the request again.  If the object is a node group, ensure that the DB2 Multisystem product is installed on your system and create a nodegroup with the CRTNODGRP CL command. If an external function was not found, be sure that the case of the EXTERNAL NAME on the CREATE FUNCTION statement exactly matches the case of the name exported by the service program.
+> SELECT TRIGGER_NAME FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_SCHEMA = 'QSTEST' ORDER BY TRIGGER_NAME
+  cols | TRIGGER_NAME VARCHAR(128,0) NN
+  row | 'TRA2'
+  row | 'TRB1'
+  row | 'TRB4'
+  row | 'TRIGGER_WITH_A_LONG_NAME_A1'
+  row | 'TRI6'
+  row | 'TRS3'
+> CALL QSYS.QCMDEXC('RMVPFTRG FILE(QSTEST/STRG1) TRG(TRB4)', 0000000037.00000)
+  sqlcode 0 count 0
+> -- joblog
+  msg SQL7905 type 4 sev 20 Table STRGSRC in QSTEST created but was not journaled.
+  msg CPF4028 type 2 sev 10 Open of member STRG1 was changed to SEQONLY(*NO).
+  msg CPC2955 type 1 sev 0 1 records copied from member STRGSRC.
+  msg CPI32E8 type 4 sev 0 Trigger was changed.
+  msg CPC32E8 type 1 sev 0 Trigger(s) changed for file STRG1.
+  msg CPF5813 type 2 sev 40 File QSQLSRC in library QTEMP already exists.
+  msg CPC7305 type 1 sev 0 Member TRI6 added to file QSQLSRC in QTEMP.
+  msg CPC7305 type 1 sev 0 Member TRI6 added to file QSQLT00000 in QTEMP.
+  msg CZS0607 type 1 sev 0 Module TRI6 was created in library QSTEST on 11/05/26 at 01:44:03.
+  msg CPC5D07 type 1 sev 0 Program TRI6 created in library QSTEST.
+  msg CPC2191 type 1 sev 0 Object TRI6 in QSTEST type *MODULE deleted.
+  msg SQL0696 type 2 sev 30 Correlation name or table O not valid.
+  msg SQL0751 type 2 sev 30 SQL statement *N not allowed.
+  msg SQL0628 type 2 sev 30 Clauses not valid in same definition.
+  msg SQL0312 type 2 sev 30 Variable QSTEST not defined or not usable.
+  msg SQL0312 type 2 sev 30 Variable QSTEST not defined or not usable.
+  msg SQL0312 type 2 sev 30 Variable QSTEST not defined or not usable.
+  msg SQL0159 type 2 sev 30 STRG1 in QSTEST not correct type.
+  msg SQL0312 type 2 sev 30 Variable NAME not defined or not usable.
+  msg SQL0696 type 2 sev 30 Correlation name or table NT not valid.
+  msg SQL0628 type 2 sev 30 Clauses not valid in same definition.
+  msg CPC2191 type 1 sev 0 Object TRB5 in QSTEST type *PGM deleted.
+  msg SQL0204 type 2 sev 30 TRB5 in QSTEST type *N not found.
+  msg CPI321B type 4 sev 0 Trigger TRB4 in library QSTEST was removed from file STRG1 in library QSTEST.
+  msg CPC2191 type 1 sev 0 Object TRB4 in QSTEST type *PGM deleted.
+  msg CPC3205 type 1 sev 0 Trigger removed from file.
+> SELECT TRIGGER_NAME FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_SCHEMA = 'QSTEST' ORDER BY TRIGGER_NAME
+  cols | TRIGGER_NAME VARCHAR(128,0) NN
+  row | 'TRA2'
+  row | 'TRB1'
+  row | 'TRIGGER_WITH_A_LONG_NAME_A1'
+  row | 'TRI6'
+  row | 'TRS3'
+> DROP TABLE QSTEST.STRGSRC
+  sqlcode 0 count 0
+> DROP VIEW QSTEST.STRGV
+  sqlcode 0 count 0
+> DROP TABLE QSTEST.STRG1
+  sqlcode 0 count 0
+> SELECT TRIGGER_NAME FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_SCHEMA = 'QSTEST' ORDER BY TRIGGER_NAME
+  cols | TRIGGER_NAME VARCHAR(128,0) NN
+> SELECT PROGRAM_NAME, PROGRAM_TYPE, NUMBER_OF_PARAMETERS FROM QSYS2.SYSPROGRAMSTAT WHERE PROGRAM_SCHEMA = 'QSTEST' AND PROGRAM_NAME LIKE 'TR%' ORDER BY PROGRAM_NAME
+  sqlcode -206 42703 SQL0206 [SQL0206] Column or global variable NUMBER_OF_PARAMETERS not found. Cause . . . . . :   NUMBER_OF_PARAMETERS was not found as a column of table *N in *N and was not found as a global variable in *N. If the table is *N, NUMBER_OF_PARAMETERS is not a column of any table or view that can be referenced. Recovery  . . . :   Do one of the following and try the request again: -- Ensure that the column and table names are specified correctly in the statement. -- If this is a SELECT statement, ensure that all the required tables were named in the FROM clause. -- If the column was intended to be a correlated reference, qualify the column with the correct table designator. -- If the column was intended to be a global variable, qualify the name with the schema where the global variable exists or ensure the schema is in the path.
+> DROP TABLE QSTEST.STRGLOG
+  sqlcode 0 count 0

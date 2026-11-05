@@ -47,6 +47,7 @@ pub mod seq;
 mod sort;
 pub mod spill;
 pub mod table;
+pub mod trigger;
 pub mod udt;
 pub mod var;
 pub mod view;
@@ -174,6 +175,8 @@ pub struct SqlContext {
     /// (`routine::midcall`); trigger programs go through it when
     /// [`Self::triggers`] is `None`.
     pub midcall: Option<routine::midcall::MidCaller>,
+    /// The `MODE DB2SQL` after trigger calls of the running statement.
+    later_triggers: routine::midcall::Deferred,
     /// The least time between two yields.
     pub yield_every: std::time::Duration,
     /// Files and members a statement that may yield holds `*SHRRD` on,
@@ -302,6 +305,7 @@ impl SqlContext {
             yielder: None,
             triggers: None,
             midcall: None,
+            later_triggers: routine::midcall::Deferred::default(),
             yield_every: YIELD_EVERY,
             held: Vec::new(),
             open: 0,
@@ -748,7 +752,7 @@ impl SqlContext {
         if let Some(c) = &self.triggers {
             o.set_trigger_mode(db::trg::Mode::Call(c.clone()));
         } else if let Some(m) = &self.midcall {
-            o.set_trigger_mode(db::trg::Mode::Call(routine::midcall::Triggers::shared(m.clone())));
+            o.set_trigger_mode(db::trg::Mode::Call(routine::midcall::Triggers::shared(m.clone(), self.later_triggers.clone())));
         }
         Ok(o)
     }
@@ -924,6 +928,10 @@ impl Prepared {
             | Statement::Open { .. } => self.dispatch(txn, ctx, params),
             _ => ctx.no_yield(|ctx| self.dispatch(txn, ctx, params)),
         };
+        // `MODE DB2SQL` after triggers fire once every row has changed.
+        let later = ctx.later_triggers.clone();
+        let r = r.and_then(|o| routine::midcall::fire_deferred(txn, ctx.midcall.as_ref(), &later).map(|()| o));
+        later.borrow_mut().clear();
         ctx.release_stmt_reads();
         r
     }
@@ -950,6 +958,8 @@ impl Prepared {
             Statement::DropVariable { name } => var::drop(txn, ctx, name).map(|()| Outcome::Done),
             Statement::SetVariables { targets, values } => var::set(txn, ctx, params, targets, values).map(|()| Outcome::Done),
             Statement::CreateType(t) => udt::create(txn, ctx, t).map(|()| Outcome::Done),
+            Statement::CreateTrigger(t) => trigger::create(txn, ctx, t).map(|()| Outcome::Done),
+            Statement::DropTrigger(name) => trigger::drop(txn, ctx, name).map(|()| Outcome::Done),
             Statement::DropType { name } => udt::drop(txn, ctx, name).map(|()| Outcome::Done),
             Statement::DropTable { name, restrict, .. } | Statement::DropView { name, restrict, .. } => {
                 drop::drop(txn, ctx, name, *restrict).map(|()| Outcome::Done)
@@ -1098,6 +1108,8 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::DropVariable { .. } => "DROP VARIABLE",
         Statement::CreateType(_) => "CREATE TYPE",
         Statement::DropType { .. } => "DROP TYPE",
+        Statement::CreateTrigger(_) => "CREATE TRIGGER",
+        Statement::DropTrigger(_) => "DROP TRIGGER",
         Statement::DropTable { .. } => "DROP TABLE",
         Statement::CreateIndex(_) => "CREATE INDEX",
         Statement::DropIndex(_) => "DROP INDEX",
@@ -1187,6 +1199,12 @@ impl From<db::DbError> for SqlError {
                 code: -204,
                 state: "42704",
                 what: failure.text.clone(),
+            },
+            // An SQL trigger's own failure.
+            D::TriggerFailed { failure, .. } if failure.msgid == "SQL0723" => Self::Coded {
+                code: -723,
+                state: "09000",
+                what: trigger::program::failure_text(&failure.text),
             },
             D::TriggerFailed { failure, .. } => Self::Coded {
                 code: -443,

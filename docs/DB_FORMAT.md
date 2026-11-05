@@ -880,6 +880,17 @@ follow the fixed 72 bytes: `name_len` bytes of the trigger name (UTF-8),
 `definer_len` bytes of the profile that added it and `text_len` bytes of
 its `LABEL ON` text (both UTF-8). Names of 10 bytes are CP037.
 
+An SQL trigger's entry goes on past the parts with its definition (an
+entry that ends after the parts has none): seven strings, each a 4-byte
+length and UTF-8 (the `OLD`, `NEW`, `OLD TABLE` and `NEW TABLE`
+correlation names, the `WHEN` condition and the triggered statement as
+the catalogs show them, and the `COMMENT ON` text); a 2-byte count of
+column uses, each 30 bytes (library, file and column, the
+`SYSTRIGCOL` rows); and a 2-byte count of the tables the statement
+names, each 20 bytes (library and file, the `SYSTRIGDEP` rows). The
+trigger's name is in its schema's name index (triggers' space) standing
+for the table, with the trigger program's name.
+
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 1 | time | 1 `*BEFORE`, 2 `*AFTER`, 3 `INSTEAD OF` |

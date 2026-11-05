@@ -6,11 +6,14 @@
 //! `SYSTRIGCOL`, `SYSTRIGDEP`, `SYSTRIGUPD`, `SYSJARCONTENTS` and
 //! `SYSJAROBJECTS`, from the `VARIABLE`, `TYPE` and `TRIGGER` entries.
 //! Columns, types and order are the primary's (V7R1M0,
-//! `tools/conformance/sql/oracle/trigger/cols.out`). The dependency views
-//! and the column lists of SQL triggers are empty until objects record
-//! them (BLOCKED(sql): SQL triggers); the Java ones are empty, as QS/400
-//! has no Java routines. IBM's LOB columns (`DEFAULT`, `ACTION_STATEMENT`,
-//! ...) are `VARGRAPHIC(2000)` here: computed views have no LOB columns
+//! `tools/conformance/sql/oracle/trigger/cols.out`). An SQL trigger's
+//! definition (`db::trg::SqlDef`) gives its condition and statement, its
+//! correlation names, the columns it uses (`SYSTRIGCOL`) and the tables
+//! it names (`SYSTRIGDEP`); `SYSTRIGUPD` is any trigger's `UPDATE OF`
+//! columns. `SYSVARIABLEDEP` is empty (BLOCKED(sql): variables record no
+//! dependencies); the Java views are empty, as QS/400 has no Java
+//! routines. IBM's LOB columns (`DEFAULT`, `ACTION_STATEMENT`, ...) are
+//! `VARGRAPHIC(2000)` here: computed views have no LOB columns
 //! (BLOCKED(sql)).
 
 use store::obj::{ObjectId, ops, types};
@@ -323,9 +326,9 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
         "SYSVARIABLEDEP" => (schema(alias, VARIABLEDEP, &nat), Vec::new()),
         "SYSTYPES" => (schema(alias, TYPES, &nat), udts(txn, ctx)?),
         "SYSTRIGGERS" => (schema(alias, TRIGGERS, &nat), triggers(txn, ctx)?),
-        "SYSTRIGCOL" => (schema(alias, TRIGCOL, &nat), Vec::new()),
-        "SYSTRIGDEP" => (schema(alias, TRIGDEP, &nat), Vec::new()),
-        "SYSTRIGUPD" => (schema(alias, TRIGUPD, &nat), Vec::new()),
+        "SYSTRIGCOL" => (schema(alias, TRIGCOL, &nat), trigger_uses(txn, ctx, false)?),
+        "SYSTRIGDEP" => (schema(alias, TRIGDEP, &nat), trigger_uses(txn, ctx, true)?),
+        "SYSTRIGUPD" => (schema(alias, TRIGUPD, &nat), trigger_updates(txn, ctx)?),
         "SYSJARCONTENTS" => (schema(alias, JARCONTENTS, &nat), Vec::new()),
         _ => (schema(alias, JAROBJECTS, &nat), Vec::new()),
     }))
@@ -423,9 +426,19 @@ fn eight(w: &str) -> Value {
     s(format!("{w:<8}"))
 }
 
-fn triggers(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
-    use db::trg::{MtAction, Threadsafe, UpdateCondition};
-    let mut rows = Vec::new();
+/// One trigger of a table: the table's schema and library, its SQL and
+/// system names, the trigger.
+struct OnTable {
+    schema: String,
+    lib: String,
+    table: String,
+    sys: String,
+    t: db::trg::Trigger,
+}
+
+/// Every trigger of every SQL table.
+fn all_triggers(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<OnTable>> {
+    let mut out = Vec::new();
     for (lib, l) in libraries(txn, ctx)? {
         let sch = crate::exec::names::schema_name(txn, l);
         let Ok(list) = ops::list(txn, l, Some(types::FILE)) else { continue };
@@ -440,56 +453,131 @@ fn triggers(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
             }
             let table = crate::exec::names::sql_name(txn, id);
             for t in trgs {
-                let tlib = t.library.to_string();
-                rows.push(vec![
-                    s(tlib.clone()),
-                    s(t.name.clone()),
-                    s(t.event.sql()),
-                    s(sch.clone()),
-                    s(table.clone()),
-                    i(i64::from(t.number)),
-                    Value::Null,
-                    Value::Null,
-                    s(if t.statement { "STATEMENT" } else { "ROW" }),
-                    s(t.time.sql()),
-                    s(if t.db2sql { "DB2SQL" } else { "DB2ROW" }),
-                    Value::Null,
-                    Value::Null,
-                    Value::Null,
-                    Value::Null,
-                    Value::Null,
-                    stamp(t.created),
-                    s(t.program.1.to_string()),
-                    s(t.program.0.to_string()),
-                    s(if t.operative { "Y" } else { "N" }),
-                    s(if t.enabled { "Y" } else { "N" }),
-                    eight(match t.threadsafe {
-                        Threadsafe::Unknown => "UNKNOWN",
-                        Threadsafe::Yes => "YES",
-                        Threadsafe::No => "NO",
-                    }),
-                    eight(match t.mt_action {
-                        MtAction::Sysval => "SYSVAL",
-                        MtAction::Msg => "MSG",
-                        MtAction::NoRun => "NORUN",
-                        MtAction::Run => "RUN",
-                    }),
-                    eight(if t.alwrepchg { "YES" } else { "NO" }),
-                    match t.update_condition {
-                        UpdateCondition::None => Value::Null,
-                        UpdateCondition::Always => eight("ALWAYS"),
-                        UpdateCondition::Change => eight("CHANGE"),
-                    },
-                    s(t.definer.clone()),
-                    if t.text.is_empty() { Value::Null } else { s(t.text.clone()) },
-                    Value::Null,
-                    Value::Null,
-                    ten(&tlib),
-                    ten(&lib),
-                    ten(&sys.name.to_string()),
-                ]);
+                out.push(OnTable { schema: sch.clone(), lib: lib.clone(), table: table.clone(), sys: sys.name.to_string(), t });
             }
         }
+    }
+    Ok(out)
+}
+
+/// A file's schema, SQL name, kind (`TABLE`, `VIEW`) and its columns'
+/// system and SQL names.
+type FileNames = (String, String, &'static str, Vec<(String, String)>);
+
+/// [`FileNames`] from the library's and the file's system names.
+fn file_names(txn: &mut Txn<'_>, ctx: &SqlContext, lib: qsname::Name, file: qsname::Name) -> Option<FileNames> {
+    let l = ops::find_library(txn, ctx.qsys, lib).ok()?;
+    let id = store::obj::library::Library::load(txn, l.id).ok()?.lookup(txn, types::FILE, file).ok()??;
+    let kind = if crate::exec::view::is_view(txn, id) { "VIEW" } else { "TABLE" };
+    let cols = db::file::describe(txn, id)
+        .ok()
+        .and_then(|d| d.formats.first().cloned())
+        .map(|f| f.format.fields.iter().map(|x| (x.name.to_string(), x.alias.clone().unwrap_or_else(|| x.name.to_string()))).collect())
+        .unwrap_or_default();
+    Some((crate::exec::names::schema_name(txn, l.id), crate::exec::names::sql_name(txn, id), kind, cols))
+}
+
+/// `SYSTRIGCOL` (`deps` false) or `SYSTRIGDEP` (true) rows.
+fn trigger_uses(txn: &mut Txn<'_>, ctx: &SqlContext, deps: bool) -> Result<Vec<Row>> {
+    let mut rows = Vec::new();
+    for o in all_triggers(txn, ctx)? {
+        let Some(def) = o.t.def.as_deref() else { continue };
+        let tlib = o.t.library.to_string();
+        let tsch = ops::find_library(txn, ctx.qsys, o.t.library).map_or_else(|_| tlib.clone(), |l| crate::exec::names::schema_name(txn, l.id));
+        if deps {
+            for (l, f) in &def.objects {
+                let Some((sch, name, kind, _)) = file_names(txn, ctx, *l, *f) else { continue };
+                rows.push(vec![s(tsch.clone()), s(o.t.name.clone()), s(sch), s(name), s(format!("{kind:<24}")), Value::Null, ten(&tlib), ten(&l.to_string()), ten(&f.to_string())]);
+            }
+            continue;
+        }
+        for (l, f, c) in &def.columns {
+            let Some((sch, name, kind, cols)) = file_names(txn, ctx, *l, *f) else { continue };
+            let col = cols.iter().find(|(sys, _)| *sys == c.to_string()).map_or_else(|| c.to_string(), |(_, n)| n.clone());
+            rows.push(vec![s(tsch.clone()), s(o.t.name.clone()), s(sch), s(name), s(col), s(kind), ten(&tlib), ten(&l.to_string()), ten(&f.to_string())]);
+        }
+    }
+    Ok(rows)
+}
+
+/// `SYSTRIGUPD`: the `UPDATE OF` columns.
+fn trigger_updates(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
+    let mut rows = Vec::new();
+    for o in all_triggers(txn, ctx)? {
+        if o.t.columns.is_empty() {
+            continue;
+        }
+        let tlib = o.t.library.to_string();
+        let tsch = ops::find_library(txn, ctx.qsys, o.t.library).map_or_else(|_| tlib.clone(), |l| crate::exec::names::schema_name(txn, l.id));
+        let lib = qsname::Name::parse(&o.lib).ok();
+        let file = qsname::Name::parse(&o.sys).ok();
+        let cols = match (lib, file) {
+            (Some(l), Some(f)) => file_names(txn, ctx, l, f).map(|x| x.3).unwrap_or_default(),
+            _ => Vec::new(),
+        };
+        for c in &o.t.columns {
+            let col = cols.iter().find(|(sys, _)| *sys == c.to_string()).map_or_else(|| c.to_string(), |(_, n)| n.clone());
+            rows.push(vec![s(tsch.clone()), s(o.t.name.clone()), s(o.schema.clone()), s(o.table.clone()), s(col), ten(&tlib), ten(&o.lib), ten(&o.sys)]);
+        }
+    }
+    Ok(rows)
+}
+
+fn triggers(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
+    use db::trg::{MtAction, Threadsafe, UpdateCondition};
+    let mut rows = Vec::new();
+    for o in all_triggers(txn, ctx)? {
+        let OnTable { schema: sch, lib, table, sys, t } = o;
+        let tlib = t.library.to_string();
+        let def = t.def.as_deref();
+        let text = |f: fn(&db::trg::SqlDef) -> &String| def.map(f).filter(|v| !v.is_empty()).map_or(Value::Null, |v| s(v.clone()));
+        rows.push(vec![
+            s(tlib.clone()),
+            s(t.name.clone()),
+            s(t.event.sql()),
+            s(sch.clone()),
+            s(table.clone()),
+            i(i64::from(t.number)),
+            text(|d| &d.condition),
+            text(|d| &d.statement),
+            s(if t.statement { "STATEMENT" } else { "ROW" }),
+            s(t.time.sql()),
+            s(if t.db2sql { "DB2SQL" } else { "DB2ROW" }),
+            text(|d| &d.old_row),
+            text(|d| &d.new_row),
+            text(|d| &d.old_table),
+            text(|d| &d.new_table),
+            Value::Null,
+            stamp(t.created),
+            s(t.program.1.to_string()),
+            s(t.program.0.to_string()),
+            s(if t.operative { "Y" } else { "N" }),
+            s(if t.enabled { "Y" } else { "N" }),
+            eight(match t.threadsafe {
+                Threadsafe::Unknown => "UNKNOWN",
+                Threadsafe::Yes => "YES",
+                Threadsafe::No => "NO",
+            }),
+            eight(match t.mt_action {
+                MtAction::Sysval => "SYSVAL",
+                MtAction::Msg => "MSG",
+                MtAction::NoRun => "NORUN",
+                MtAction::Run => "RUN",
+            }),
+            eight(if t.alwrepchg { "YES" } else { "NO" }),
+            match t.update_condition {
+                UpdateCondition::None => Value::Null,
+                UpdateCondition::Always => eight("ALWAYS"),
+                UpdateCondition::Change => eight("CHANGE"),
+            },
+            s(t.definer.clone()),
+            if t.text.is_empty() { Value::Null } else { s(t.text.clone()) },
+            text(|d| &d.comment),
+            if t.sql { s("E") } else { Value::Null },
+            ten(&tlib),
+            ten(&lib),
+            ten(&sys),
+        ]);
     }
     Ok(rows)
 }

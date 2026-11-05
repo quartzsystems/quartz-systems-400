@@ -20,6 +20,9 @@ impl Parser {
         if self.is_word("PROCEDURE") || self.is_word("FUNCTION") {
             return self.create_routine(replace, start);
         }
+        if self.is_word("TRIGGER") {
+            return self.create_trigger(replace);
+        }
         if self.is_word("TYPE") && self.toks.iter().skip(self.at).take(12).any(|t| matches!(&t.tok, Tok::Word(w) if w == "ARRAY")) {
             // BLOCKED(sql): array types and array variables in SQL PL.
             return Err(Self::unsupported("CREATE TYPE ... AS ARRAY: array types"));
@@ -382,6 +385,7 @@ impl Parser {
             "ALIAS" => Ok(Statement::DropAlias(name)),
             "SEQUENCE" => Ok(Statement::DropSequence { name }),
             "VARIABLE" => Ok(Statement::DropVariable { name }),
+            "TRIGGER" => Ok(Statement::DropTrigger(name)),
             "TYPE" => {
                 if self.eat_word("CASCADE") || self.eat_word("RESTRICT") {
                     return Err(Self::unsupported("DROP TYPE CASCADE or RESTRICT"));
@@ -415,6 +419,12 @@ impl Parser {
             } else {
                 Statement::LabelOn(l)
             });
+        }
+        if self.eat_word("TRIGGER") {
+            l.target = LabelTarget::Trigger(self.object_name()?);
+            self.expect_word("IS")?;
+            l.text = Some(self.string()?);
+            return Ok(if comment { Statement::CommentOn(l) } else { Statement::LabelOn(l) });
         }
         let is_table = self.eat_word("TABLE") || self.eat_word("VIEW");
         let is_index = !is_table && self.eat_word("INDEX");

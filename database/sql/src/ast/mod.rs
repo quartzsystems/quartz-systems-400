@@ -10,6 +10,7 @@ pub mod expr;
 pub mod grant;
 pub mod query;
 pub mod routine;
+pub mod trigger;
 pub mod visit;
 
 pub use ddl::*;
@@ -17,6 +18,7 @@ pub use expr::*;
 pub use grant::*;
 pub use query::*;
 pub use routine::*;
+pub use trigger::*;
 
 use std::fmt;
 
@@ -279,6 +281,10 @@ pub enum Statement {
     Signal(Signal),
     /// `SET RESULT SETS CURSOR c, ...` (no names: `NONE`).
     SetResultSets(Vec<Ident>),
+    /// `CREATE TRIGGER`.
+    CreateTrigger(Box<CreateTrigger>),
+    /// `DROP TRIGGER`.
+    DropTrigger(ObjectName),
 }
 
 /// `TRUNCATE`.
@@ -394,6 +400,8 @@ pub enum LabelTarget {
     Index(ObjectName),
     /// An alias.
     Alias(ObjectName),
+    /// A trigger.
+    Trigger(ObjectName),
 }
 
 /// `RENAME`.

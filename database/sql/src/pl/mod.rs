@@ -66,7 +66,25 @@ pub struct Signature {
     pub naming: Naming,
     /// `SET OPTION COMMIT`: `None` for `*NONE`.
     pub commit: Option<LckLvl>,
+    /// Parameters reached only qualified by a label (a trigger's
+    /// transition variables, `N.COL`).
+    pub groups: Vec<ParmGroup>,
 }
+
+/// Parameters named under a label.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ParmGroup {
+    /// The label (a correlation name).
+    pub label: String,
+    /// The names and the parameters they stand for.
+    pub names: Vec<(String, usize)>,
+    /// They may not be set.
+    pub read_only: bool,
+}
+
+/// The procedure a trigger's body compiles to; the program's entry
+/// calls it.
+pub const TRIGGER_BODY: &str = "TRGBODY";
 
 /// What the compiler asks of the database while it compiles.
 pub trait Catalog {

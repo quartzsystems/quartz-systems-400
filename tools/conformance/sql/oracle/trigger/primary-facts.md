@@ -85,3 +85,72 @@ are x'40'. Null map bytes are `0`/`1` (x'F0'/x'F1').
   (TRTRTM `B`/`A`, TRTREV `I`/`U`/`D`/`R`, TRTRCN blank, `A` always, `C`
   change, TRTARC `Y`/`N`, TRTTSF `U`, TRTMJA `S`, TRNAM 258, TRST `E`, TRSTAT
   `O`, TRTYP `Y`, TRORNT `R`).
+
+# SQL triggers on the primary (V7R1M0), 2026-11-05
+
+Probes `p5.sql` and `p6.sql` here, run with `TrgProbe.java`; outputs `p5.out`
+and `p6.out`.
+
+## The program
+
+- `CREATE TRIGGER` makes a `*PGM` in the trigger's schema, named as an SQL
+  procedure's: the trigger's name when it is a system name no program has,
+  else five characters and five digits (`TRIGGER_WITH_A_LONG_NAME_A1` is
+  `TRIGG00001`; `CREATE OR REPLACE TRIGGER TRC1` while `TRC1` exists makes
+  `TRC100001`). `SYSPROGRAMSTAT` shows it with `ROUTINE_TYPE` `TRIGGER`.
+- `DROP TRIGGER` deletes the program; `DROP TABLE` deletes its triggers'
+  programs. A second `DROP TRIGGER`: SQLCODE -204, 42704.
+- `CPYF` into the table fires the SQL triggers as an insert does (the
+  before trigger changed the record, both after triggers ran); the
+  statement trigger ran once for the copy.
+- `CHGPFTRG STATE(*DISABLED)` disables an SQL trigger like any other
+  (`SYSTRIGGERS.ENABLED` `N`); `RMVPFTRG TRG(name)` removes one
+  (`CPI321B`).
+
+## Firing
+
+- A `BEFORE` trigger setting `N.col` changes the row written.
+- `MODE DB2ROW` after triggers fire as each row changes (`COUNT(*)` of the
+  table 1, 2, 3 over a three-row insert); `MODE DB2SQL` ones (the default
+  for `AFTER`) once every row has changed (3, 3, 3), after the `DB2ROW`
+  ones; the statement trigger last.
+- A body ending in an error, `SIGNAL` included: SQLCODE -723, SQLSTATE
+  09000, `SQL0723` "SQL trigger TRB4 in QSTEST failed with SQLCODE -438
+  SQLSTATE 75001" (the message text is the body's: `negative amount`;
+  for `1 / 0`, -802 22012). The job log has the body's message, `SQL0723`,
+  `CPF502B` twice, `SQL0723`.
+- An after trigger failing on the third row of a four-row insert leaves
+  three rows (no commitment control).
+- `UPDATE OF NAME`: an update of another column does not fire it.
+
+## Definitions
+
+- `BEFORE` with no `MODE`: warning SQLCODE 7051, SQLSTATE 01647, made
+  `DB2ROW`. `AFTER` with no mode is `DB2SQL`; `INSTEAD OF` `DB2SQL`.
+- A name in use: -601, 42710. `CREATE OR REPLACE TRIGGER` is there on 7.1;
+  the replaced trigger keeps its `ACTION_ORDER`.
+- `REFERENCING OLD` on an insert trigger: -696, 42898 (reason 2); a
+  transition table with `BEFORE` or `DB2ROW`: -696 (reason 3).
+- `FOR EACH STATEMENT` with `BEFORE` or `MODE DB2ROW`: -628, 42613.
+- `INSERT` in a `BEFORE` trigger: -751, 0W000.
+- `SET N.col` in an `AFTER` trigger: -312, 42618, naming the column.
+- `INSTEAD OF` on a table: -159, 42809.
+- `LABEL ON TRIGGER` sets `TRIGGER_TEXT`, `COMMENT ON TRIGGER`
+  `LONG_COMMENT`.
+
+## Catalogs
+
+- `SYSTRIGGERS` (7.1 has no `SQL_NAMING`): `ACTION_CONDITION` is the `WHEN`
+  condition with its parentheses and `ACTION_STATEMENT` the statement, each
+  token one blank apart with a blank at the end (`( N . AMT < 0 ) `);
+  `ACTION_REFERENCE_OLD_ROW`/`NEW_ROW` the correlation names;
+  `TRIGGER_PROGRAM_NAME`/`LIBRARY` the program; SQL triggers are
+  `THREADSAFE` `YES`, `MULTITHREADED_JOB_ACTION` `RUN`, a `BEFORE` one
+  `ALLOW_REPEATED_CHANGE` `YES`, `ROUNDING_MODE` `E`.
+- `SYSTRIGCOL`: one row per read of a transition variable (`N.NAME` read
+  once is one row; `O.ID` in the `WHEN` and in the body is two; a `SET`
+  target is none), and every column of a table the body inserts into
+  without a column list; `OBJECT_TYPE` `TABLE`.
+- `SYSTRIGDEP`: one row per table the statement names (a subquery's
+  included), `OBJECT_TYPE` `TABLE` padded to 24.
+- `SYSTRIGUPD`: one row per `UPDATE OF` column (`TRIGGERED_UPDATE_COLUMNS`).

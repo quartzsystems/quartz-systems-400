@@ -1011,3 +1011,46 @@ id = "SQL7034"
 sev = 30
 text = "LOB locators need commitment control."
 help = "A locator lives until the end of the unit of work, so a program precompiled with COMMIT(*NONE) cannot use one. Precompile with COMMIT(*CHG) or another level."
+
+# SQL triggers.
+
+[[msg]]
+id = "SQL0159"
+sev = 30
+text = "&1 in &2 is not the type of object the statement needs."
+help = "The statement names a table where it needs a view, or a view where it needs a table: an INSTEAD OF trigger is on a view, BEFORE and AFTER triggers are on tables."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0628"
+sev = 30
+text = "Clauses that cannot go together were given."
+help = "Two clauses of the definition conflict, such as FOR EACH STATEMENT with a BEFORE trigger or with MODE DB2ROW. Remove one of them."
+
+[[msg]]
+id = "SQL0696"
+sev = 30
+text = "Correlation name or transition table &1 cannot be used in trigger &2 in &3."
+help = "An INSERT trigger has no old row and a DELETE trigger no new row; transition tables need an AFTER trigger in MODE DB2SQL. The reason code says which rule the REFERENCING clause broke."
+vars = ["*CHAR 128", "*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0723"
+sev = 30
+text = "SQL trigger &1 in &2 ended with SQLCODE &3 SQLSTATE &4."
+help = "A statement of the trigger's body failed and the trigger did not handle it, so the change that fired it fails too. The job log has the statement's own message; the trigger's message, if it set one, follows."
+vars = ["*CHAR 128", "*CHAR 128", "*CHAR 11", "*CHAR 5", "*CHAR 70"]
+
+[[msg]]
+id = "SQL0751"
+sev = 30
+text = "Statement &1 cannot run in a trigger."
+help = "COMMIT and ROLLBACK cannot run in an SQL trigger, and a BEFORE trigger cannot insert, update, delete or merge rows. Move the statement elsewhere."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL7051"
+sev = 10
+text = "BEFORE trigger &1 in &2 runs in MODE DB2ROW."
+help = "A BEFORE trigger always fires once for each row as it changes, so the trigger was made with MODE DB2ROW. Give MODE DB2ROW on BEFORE triggers to avoid this warning."
+vars = ["*CHAR 128", "*CHAR 128"]

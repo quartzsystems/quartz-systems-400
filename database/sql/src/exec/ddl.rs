@@ -863,6 +863,7 @@ pub fn label(txn: &mut Txn<'_>, ctx: &mut SqlContext, l: &crate::ast::Label) -> 
     let (name, column) = match &l.target {
         LabelTarget::Table(n) | LabelTarget::Index(n) | LabelTarget::Alias(n) => (n, None),
         LabelTarget::Column(n, c) => (n, Some(c)),
+        LabelTarget::Trigger(n) => return super::trigger::label(txn, ctx, n, l),
     };
     let id = ctx.resolve_file(txn, name)?;
     db::auth::check(txn, "file.change", id)?;

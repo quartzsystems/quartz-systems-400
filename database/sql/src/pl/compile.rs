@@ -224,7 +224,16 @@ impl Gen<'_> {
         params.push("$sname: varchar(128)".into());
         params.push("$diag: varchar(70)".into());
         params.push("$ca: bytes(136) *NOPASS".into());
-        let _ = writeln!(out, "proc {p}({}) entry {{", params.join(", "));
+        // A trigger's body is called by the program's entry, which maps the
+        // trigger buffer onto its parameters.
+        match self.sig.role {
+            Role::Trigger => {
+                let _ = writeln!(out, "proc {}({}) {{", super::TRIGGER_BODY, params.join(", "));
+            }
+            Role::Procedure => {
+                let _ = writeln!(out, "proc {p}({}) entry {{", params.join(", "));
+            }
+        }
         out.push_str("  auto $sqlca: bytes(136)\n  auto $hca: bytes(136)\n  auto $cls: char(2)\n  auto $resume: i32\n  auto $rc: i32\n");
         for a in &self.autos {
             out.push_str(a);
@@ -288,6 +297,13 @@ impl Gen<'_> {
             frame.vars.push((p.name.clone(), i));
         }
         self.frames.push(frame);
+        // A trigger's transition variables, qualified by their correlation names.
+        for g in &self.sig.groups {
+            for &(_, k) in &g.names {
+                self.vars[k].constant |= g.read_only;
+            }
+            self.frames.push(Frame { label: Some(g.label.clone()), vars: g.names.clone(), active: true, ..Frame::default() });
+        }
         self.ins("mov $sqlca, *ZEROS");
         self.ins("mov [%pca +131]:char(5), \"00000\"");
         self.ins("store $rc, 0");
@@ -351,6 +367,11 @@ impl Gen<'_> {
                 for a in assigns {
                     for t in &a.targets {
                         let k = self.var(&t.value)?;
+                        if self.vars[k].constant && self.sig.role == Role::Trigger {
+                            // A transition variable the trigger may not set.
+                            let col = t.value.rsplit('.').next().unwrap_or(&t.value);
+                            return Err(undefined(col));
+                        }
                         if self.vars[k].constant {
                             return Err(SqlError::Coded {
                                 code: -20_376,

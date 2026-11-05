@@ -216,6 +216,92 @@ pub struct Trigger {
     pub definer: String,
     /// `LABEL ON TRIGGER`.
     pub text: String,
+    /// What `CREATE TRIGGER` keeps besides; `None` for `ADDPFTRG`'s.
+    pub def: Option<Box<SqlDef>>,
+}
+
+/// An SQL trigger's definition, as the catalogs show it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SqlDef {
+    /// `REFERENCING OLD AS`.
+    pub old_row: String,
+    /// `REFERENCING NEW AS`.
+    pub new_row: String,
+    /// `REFERENCING OLD TABLE AS`.
+    pub old_table: String,
+    /// `REFERENCING NEW TABLE AS`.
+    pub new_table: String,
+    /// The `WHEN` condition (`ACTION_CONDITION`), empty for none.
+    pub condition: String,
+    /// The triggered statement (`ACTION_STATEMENT`).
+    pub statement: String,
+    /// `COMMENT ON TRIGGER`.
+    pub comment: String,
+    /// The columns the condition and statement use: library, file and
+    /// column, once per use (`SYSTRIGCOL`).
+    pub columns: Vec<(Name, Name, Name)>,
+    /// The tables and views the statement uses: library and file
+    /// (`SYSTRIGDEP`).
+    pub objects: Vec<(Name, Name)>,
+}
+
+impl SqlDef {
+    fn encode(&self, b: &mut Vec<u8>) {
+        for s in [&self.old_row, &self.new_row, &self.old_table, &self.new_table, &self.condition, &self.statement, &self.comment] {
+            b.extend_from_slice(&u32::try_from(s.len()).expect("short").to_le_bytes());
+            b.extend_from_slice(s.as_bytes());
+        }
+        b.extend_from_slice(&u16::try_from(self.columns.len()).expect("few").to_le_bytes());
+        for (l, f, c) in &self.columns {
+            b.extend_from_slice(l.as_bytes());
+            b.extend_from_slice(f.as_bytes());
+            b.extend_from_slice(c.as_bytes());
+        }
+        b.extend_from_slice(&u16::try_from(self.objects.len()).expect("few").to_le_bytes());
+        for (l, f) in &self.objects {
+            b.extend_from_slice(l.as_bytes());
+            b.extend_from_slice(f.as_bytes());
+        }
+    }
+
+    fn decode(b: &[u8]) -> Result<Self> {
+        let bad = || DbError::Corrupt { what: "trigger entry: SQL definition".into() };
+        let mut at = 0;
+        let mut take = |n: usize| -> Result<&[u8]> {
+            let s = b.get(at..at + n).ok_or_else(bad)?;
+            at += n;
+            Ok(s)
+        };
+        let mut strs = Vec::new();
+        for _ in 0..7 {
+            let n = u32::from_le_bytes(take(4)?.try_into().expect("4")) as usize;
+            strs.push(String::from_utf8(take(n)?.to_vec()).map_err(|_| bad())?);
+        }
+        let name = |s: &[u8]| Name::from_bytes(s.try_into().expect("10"));
+        let mut columns = Vec::new();
+        for _ in 0..u16::from_le_bytes(take(2)?.try_into().expect("2")) {
+            let c = take(30)?;
+            columns.push((name(&c[..10]), name(&c[10..20]), name(&c[20..])));
+        }
+        let mut objects = Vec::new();
+        for _ in 0..u16::from_le_bytes(take(2)?.try_into().expect("2")) {
+            let o = take(20)?;
+            objects.push((name(&o[..10]), name(&o[10..])));
+        }
+        let mut s = strs.into_iter();
+        let mut next = || s.next().unwrap_or_default();
+        Ok(Self {
+            old_row: next(),
+            new_row: next(),
+            old_table: next(),
+            new_table: next(),
+            condition: next(),
+            statement: next(),
+            comment: next(),
+            columns,
+            objects,
+        })
+    }
 }
 
 impl Trigger {
@@ -243,6 +329,7 @@ impl Trigger {
             columns: Vec::new(),
             definer: String::new(),
             text: String::new(),
+            def: None,
         }
     }
 
@@ -290,6 +377,9 @@ impl Trigger {
         }
         b.extend_from_slice(self.definer.as_bytes());
         b.extend_from_slice(self.text.as_bytes());
+        if let Some(d) = &self.def {
+            d.encode(&mut b);
+        }
         b
     }
 
@@ -316,6 +406,7 @@ impl Trigger {
         }
         let definer = text(take(u16_at(58))?)?;
         let label = text(take(u16_at(60))?)?;
+        let def = if at < b.len() { Some(Box::new(SqlDef::decode(&b[at..])?)) } else { None };
         Ok(Self {
             name,
             library: name10(36),
@@ -351,6 +442,7 @@ impl Trigger {
             columns,
             definer,
             text: label,
+            def,
         })
     }
 }
@@ -374,5 +466,15 @@ mod tests {
         t.text = "audit".into();
         assert_eq!(Trigger::decode(&t.encode()).unwrap(), t);
         assert!(Trigger::decode(&t.encode()[..FIXED_LEN + 3]).is_err());
+        t.def = Some(Box::new(SqlDef {
+            new_row: "N".into(),
+            condition: "( N . C1 > 0 ) ".into(),
+            statement: "SET N . C1 = 0 ".into(),
+            columns: vec![(n("QSTEST"), n("T"), n("C1"))],
+            objects: vec![(n("QSTEST"), n("LOG"))],
+            ..SqlDef::default()
+        }));
+        assert_eq!(Trigger::decode(&t.encode()).unwrap(), t);
+        assert!(Trigger::decode(&t.encode()[..t.encode().len() - 1]).is_err());
     }
 }

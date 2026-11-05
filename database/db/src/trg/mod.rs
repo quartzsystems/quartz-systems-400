@@ -19,7 +19,7 @@ pub mod model;
 pub mod ops;
 
 pub use fire::{Call, Caller, Failure, Mode};
-pub use model::{Event, MtAction, Threadsafe, Time, Trigger, UpdateCondition};
+pub use model::{Event, MtAction, SqlDef, Threadsafe, Time, Trigger, UpdateCondition};
 
 use std::sync::Arc;
 

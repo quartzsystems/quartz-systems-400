@@ -196,6 +196,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
                 role: Role::Procedure,
                 naming: ctx.naming,
                 commit,
+                groups: Vec::new(),
             };
             let mut cat = Cat { txn: &mut *txn, ctx: &mut *ctx, deps: Vec::new() };
             let qir = pl::compile(&sig, body, &mut cat)?;
@@ -244,7 +245,7 @@ fn ordinal(i: usize) -> u16 {
 /// The body as the catalog keeps it (`ROUTINE_DEFINITION`): its tokens
 /// one blank apart, its lines as written without their indentation,
 /// and a blank at the end, as IBM shows it.
-fn body_definition(text: &str) -> String {
+pub(crate) fn body_definition(text: &str) -> String {
     let Ok(toks) = crate::lex::tokenize(text) else { return text.to_string() };
     let mut out = String::new();
     let toks: Vec<_> = toks.into_iter().filter(|t| !matches!(t.tok, crate::lex::Tok::End)).collect();
@@ -257,7 +258,7 @@ fn body_definition(text: &str) -> String {
 }
 
 /// `SET OPTION COMMIT`.
-fn commit_option(opts: &[(String, String)]) -> Result<Option<db::cmt::LckLvl>> {
+pub(crate) fn commit_option(opts: &[(String, String)]) -> Result<Option<db::cmt::LckLvl>> {
     for (k, v) in opts {
         match k.as_str() {
             "COMMIT" => return Ok(crate::embed::commit_level(v)),
@@ -290,7 +291,7 @@ fn specific_name(txn: &mut Txn<'_>, lib: ObjectId, name: &str) -> Result<String>
 
 /// The program's name: the routine's when it is a system name no
 /// program has, else a generated one.
-fn program_name(txn: &mut Txn<'_>, lib: ObjectId, name: &crate::ast::Ident) -> Result<Name> {
+pub(crate) fn program_name(txn: &mut Txn<'_>, lib: ObjectId, name: &crate::ast::Ident) -> Result<Name> {
     program_name_of(txn, lib, name, types::PGM)
 }
 
@@ -346,7 +347,7 @@ fn external_object(txn: &mut Txn<'_>, ctx: &SqlContext, lib: &str, name: &str, t
 }
 
 /// The compiled module bound as a `*PGM` in `lib`.
-fn make_program(txn: &mut Txn<'_>, ctx: &SqlContext, lib: ObjectId, name: Name, qir_text: &str, text: &str) -> Result<ObjectId> {
+pub(crate) fn make_program(txn: &mut Txn<'_>, ctx: &SqlContext, lib: ObjectId, name: Name, qir_text: &str, text: &str) -> Result<ObjectId> {
     make_object(txn, ctx, lib, name, qir_text, text, PgmKind::Pgm)
 }
 
@@ -381,10 +382,10 @@ fn make_object(txn: &mut Txn<'_>, ctx: &SqlContext, lib: ObjectId, name: Name, q
 }
 
 /// The catalog the compiler asks while it compiles, over the store.
-struct Cat<'a, 't> {
-    txn: &'a mut Txn<'t>,
-    ctx: &'a mut SqlContext,
-    deps: Vec<db::sqlinf::body::Dependency>,
+pub(crate) struct Cat<'a, 't> {
+    pub(crate) txn: &'a mut Txn<'t>,
+    pub(crate) ctx: &'a mut SqlContext,
+    pub(crate) deps: Vec<db::sqlinf::body::Dependency>,
 }
 
 impl Catalog for Cat<'_, '_> {

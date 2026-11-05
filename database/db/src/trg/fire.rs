@@ -38,6 +38,9 @@ pub struct Call {
     pub library: Name,
     /// The trigger buffer; the program may change it.
     pub buffer: Vec<u8>,
+    /// An SQL `AFTER` trigger of `MODE DB2SQL`: called when the statement
+    /// has changed every row, not at once.
+    pub deferred: bool,
 }
 
 /// Why a call failed.
@@ -157,6 +160,7 @@ pub fn calls(active: &Active, member: &Member, time: Time, row: &Row<'_>, commit
             file: h.file,
             library: h.library,
             buffer: buffer::build(&h, fmt, row.old, row.new),
+            deferred: t.sql && t.db2sql && time == Time::After && !t.statement,
         })
         .collect()
 }

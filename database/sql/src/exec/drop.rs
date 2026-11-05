@@ -37,6 +37,7 @@ pub fn drop_with_dependents(txn: &mut Txn<'_>, ctx: &mut SqlContext, id: ObjectI
     if file::describe(txn, id).is_ok_and(|d| !d.attr.journal.is_none()) {
         db::journal::endjrnpf(txn, ctx.job, id, ctx.clock())?;
     }
+    super::trigger::drop_all(txn, ctx, id)?;
     file::delete_file(txn, ctx.job, id)?;
     Ok(())
 }

@@ -11,7 +11,7 @@
 //! procedure's result sets become cursors of the caller.
 
 mod call;
-mod create;
+pub(crate) mod create;
 pub mod find;
 pub mod midcall;
 pub mod udf;
