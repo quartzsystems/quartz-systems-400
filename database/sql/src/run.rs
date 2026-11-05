@@ -132,6 +132,15 @@ fn target_of(s: &crate::ast::Statement) -> Option<(Option<String>, String)> {
     Some((o.schema.as_ref().map(ToString::to_string), o.name.to_string()))
 }
 
+/// Whether the run takes `s`: what a dynamic statement may be, and no
+/// query for the commands.
+fn check(s: &crate::ast::Statement, opts: &RunOpts) -> Result<()> {
+    if opts.command && matches!(s, crate::ast::Statement::Select(_)) {
+        return Err(SqlError::Unsupported { what: "a SELECT statement in RUNSQLSTM or RUNSQL".into() });
+    }
+    crate::exec::dynamic::check_statement(s)
+}
+
 /// The severity of an SQLCODE: 30 for errors, 0 otherwise.
 fn severity(sqlca: &Sqlca) -> u8 {
     if sqlca.is_error() { 30 } else { 0 }
@@ -275,12 +284,7 @@ fn run_statements<'l>(
         let target = target_of(&p.statement);
         let mut t = begin()?;
         let yields = ctx.yields();
-        let checked = if opts.command && matches!(p.statement, crate::ast::Statement::Select(_)) {
-            Err(SqlError::Unsupported { what: "a SELECT statement in RUNSQLSTM or RUNSQL".into() })
-        } else {
-            crate::exec::dynamic::check_statement(&p.statement)
-        };
-        let (ca, outcome) = match checked {
+        let (ca, outcome) = match check(&p.statement, opts) {
             Ok(()) => p.run(&mut t, ctx, &[]),
             Err(e) => (Sqlca::from_error(&e), None),
         };
