@@ -595,8 +595,10 @@ impl Session {
                 let text = Self::dynamic_text(req);
                 let inputs: &[Value] = if req.inputs.is_empty() { &[] } else { &req.inputs[1..] };
                 self.with_txn(&req.scope, |txn, ctx, _| {
-                    if matches!(prepare(&text, naming).map(|p| p.statement), Ok(Statement::Select(_))) {
-                        return Reply::of(code(-84, "42612"));
+                    match crate::exec::dynamic::prepare_dynamic(&text, naming) {
+                        Ok(p) if matches!(p.statement, Statement::Select(_)) => return Reply::of(code(-84, "42612")),
+                        Err(e) => return Reply::of(Sqlca::from_error(&e)),
+                        Ok(_) => {}
                     }
                     exec_text(txn, ctx, &text, naming, inputs)
                 })
@@ -605,7 +607,7 @@ impl Session {
                 let text = Self::dynamic_text(req);
                 self.with_txn(&req.scope, |txn, ctx, sc| {
                     sc.prepared.remove(&d.name);
-                    let p = match prepare(&text, naming) {
+                    let p = match crate::exec::dynamic::prepare_dynamic(&text, naming) {
                         Ok(p) => p,
                         Err(e) => return Reply::of(Sqlca::from_error(&e)),
                     };

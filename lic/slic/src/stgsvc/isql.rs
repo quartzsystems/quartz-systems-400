@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 use db::cmt::LckLvl;
 use qsname::Name;
 use sql::ast::Naming;
-use sql::{Outcome, Prepared, parse};
+use sql::{Outcome, Prepared};
 use stg::proto::IsqlReply;
 use store::obj::library::Library;
 use store::obj::ops::{self, CreateParams};
@@ -66,7 +66,7 @@ pub fn start(system: &mut System, user: &str, naming: &str, commit: &str) -> Res
 /// `isql_run`: one statement, its rows cut at `max_rows`.
 pub fn run(system: &mut System, text: &str, naming: &str, check: bool, max_rows: u32) -> IsqlReply {
     let naming = naming_of(naming);
-    let statement = match parse(text, naming) {
+    let statement = match sql::prepare_dynamic(text, naming).map(|p| p.statement) {
         Ok(s) => s,
         Err(e) => {
             let ca = sql::Sqlca::from_error(&e);

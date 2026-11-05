@@ -150,7 +150,10 @@ pub fn runsqlstm_lent(
         let name = crate::exec::statement_name(&p.statement);
         let mut t = begin()?;
         let yields = ctx.yields();
-        let (ca, outcome) = p.run(&mut t, ctx, &[]);
+        let (ca, outcome) = match crate::exec::dynamic::check_statement(&p.statement) {
+            Ok(()) => p.run(&mut t, ctx, &[]),
+            Err(e) => (Sqlca::from_error(&e), None),
+        };
         ctx.release_held(&mut t);
         if ca.is_error() && ctx.yields() == yields {
             t.abort();

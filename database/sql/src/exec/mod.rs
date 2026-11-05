@@ -21,6 +21,7 @@ pub mod cursor;
 pub mod ddl;
 pub mod dml;
 pub mod drop;
+pub mod dynamic;
 pub mod eval;
 mod from;
 pub use from::ORDER_COLUMN;

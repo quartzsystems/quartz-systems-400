@@ -1,0 +1,47 @@
+-- captured from primary
+> PREPARE S1 FROM 'VALUES 1'
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> EXECUTE S1
+sqlcode -84 sqlstate 42612 msgid SQL0084
+> EXECUTE IMMEDIATE 'VALUES 1'
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DESCRIBE S1 INTO :D
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> DESCRIBE INPUT S1 INTO :D
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> DESCRIBE TABLE :T INTO :D
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> DECLARE C1 CURSOR FOR SELECT * FROM SYSIBM.SYSDUMMY1
+sqlcode -84 sqlstate 42612 msgid SQL0084
+> DECLARE S2 STATEMENT
+sqlcode -84 sqlstate 42612 msgid SQL0084
+> OPEN C1
+sqlcode -84 sqlstate 42612 msgid SQL0084
+> FETCH C1
+sqlcode -84 sqlstate 42612 msgid SQL0084
+> CLOSE C1
+sqlcode -84 sqlstate 42612 msgid SQL0084
+> FREE LOCATOR :L
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> HOLD LOCATOR :L
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> ALLOCATE C2 CURSOR FOR RESULT SET :R
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> ASSOCIATE LOCATORS (:R) WITH PROCEDURE P1
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> WHENEVER SQLERROR CONTINUE
+sqlcode -84 sqlstate 42612 msgid SQL0084
+> INCLUDE SQLCA
+sqlcode -84 sqlstate 42612 msgid SQL0084
+> BEGIN DECLARE SECTION
+sqlcode -84 sqlstate 42612 msgid SQL0084
+> SELECT 1 INTO :X FROM SYSIBM.SYSDUMMY1
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> VALUES 1 INTO :X
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> SET :X = 1
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> GET DIAGNOSTICS :N = ROW_COUNT
+sqlcode -312 sqlstate 42618 msgid SQL0312
+> DEALLOCATE PREPARE S1
+sqlcode -199 sqlstate 42601 msgid SQL0199

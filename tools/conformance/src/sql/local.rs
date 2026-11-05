@@ -14,7 +14,7 @@ use std::sync::Arc;
 use blockdev::{BlockDev, MemBlockDev};
 use qsname::Name;
 use sql::embed::{Desc, Embedded, Op, Reply, Request, Session};
-use sql::{Naming, Outcome, SqlContext, Statement, prepare};
+use sql::{Naming, Outcome, SqlContext, Statement, prepare_dynamic};
 use store::obj::ops::{self, NameContext};
 use store::obj::{CreateParams, JobHandle, types};
 use store::{FormatParams, Store, StoreConfig};
@@ -75,7 +75,7 @@ pub fn run(c: &Case) -> Result<String, String> {
     for st in &c.statements {
         let text = st.replace("{lib}", LIBRARY);
         let _ = writeln!(out, "> {}", case::first(st));
-        let prepared = prepare(&text, Naming::Sql);
+        let prepared = prepare_dynamic(&text, Naming::Sql);
         let (sqlca, outcome) = if matches!(&prepared, Ok(p) if matches!(p.statement, Statement::Call(_))) {
             // A CALL runs the procedure's program in a job, as on the system.
             let j = job.get_or_insert_with(|| new_job(&store, &session, lib));
