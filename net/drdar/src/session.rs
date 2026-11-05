@@ -421,6 +421,7 @@ impl Conn {
             Op::Nothing | Op::Called => Routed::Local,
             Op::Describe => refused("DESCRIBE of a statement for a remote server"),
             Op::Diag => refused("GET DIAGNOSTICS after a statement a remote server ran"),
+            Op::Package => refused("SQL package requests for a remote server"),
         }
     }
 }
