@@ -103,6 +103,16 @@ A subsystem takes jobs from its job queue entries in sequence order,
 each queue in priority then submission order, up to the entry's
 `MAXACT` and `MAXPTYn`, checking every 100 milliseconds.
 
+A prestart job entry keeps `INLJOBS` jobs of its program waiting, and
+starts `ADLJOBS` more when fewer than `THRESHOLD` of them wait; a
+connection reaches one through the descriptor relay (the pool named
+for the program). An entry with `STRJOBS(*NO)` starts its jobs when a
+request first waits for its pool. `QSYSWRK` ships one: `QSYS/QSQSRVR`,
+the SQL CLI's server-mode jobs (`SYSAPI.md` §13), user `QUSER`,
+`QGPL/QDFTSVR`, class `QSYS/QSYSCLS20`, `INLJOBS(5) THRESHOLD(2)
+ADLJOBS(2) MAXUSE(200)`, as pub400 has it. `WRKACTJOB` shows a waiting
+`QSQSRVR` job `PSRW` and one between its client's requests `CNDW`.
+
 ### Pools and cgroups
 
 A storage pool is a memory cgroup under `/sys/fs/cgroup/qs400`:

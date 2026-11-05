@@ -1,0 +1,14 @@
+# CLI005 V7R5M0 pub400.com
+# captured 2026-11-05 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 6 seq 000600
+diag: RNF3530 00 line 7 seq 000700
+run: ok
+spool: QSYSPRT
+  |1/1   nts-off 0
+  |1/2   nts 0 0
+  |1/3   fetch 0 An 3 [2024-01-02] 10 [Ann                 ] 20
+  |1/4   fetch 0 Bo 3 [2024-02-03] 10 [Bob                 ] 20
+  |1/5   fetch 0 Ci 3 [0001-01-01] -1 [Cid                 ] 20
+  |1/6   fetch 0 De 3 [2024-04-05] 10 [Dee                 ] 20
+  |1/7   fetch 100 ** 3 [**********] 10 [********************] 20

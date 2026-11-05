@@ -6,12 +6,12 @@
 //! `QSQCLI` exports (`SQLAllocEnv`, `SQLConnect`, `SQLPrepare`,
 //! `SQLFetch`, ...), bound as `*SYSTEM` imports like `QLEAWI`'s. A
 //! program reaches them as IBM i's do, through `QUSAPIBD` (there is no
-//! `QSQCLI` binding directory on IBM i either) or `BNDSRVPGM(QSQCLI)`.
+//! `QSQCLI` binding directory on IBM i either).
 //!
 //! [`exec::Cli`] holds a job's handles and does the work over a
 //! [`exec::Host`]; [`abi`] is the C-linkage face over the job's storage;
 //! [`server`] runs a connection's statements in a `QSQSRVR` job in
-//! server mode. `docs/SQL.md` § SQL CLI has what is supported.
+//! server mode. `docs/SYSAPI.md` §13 has what is supported.
 
 // The functions take IBM's arguments, one by one.
 #![allow(clippy::too_many_arguments, clippy::many_single_char_names, clippy::similar_names, clippy::match_same_arms)]

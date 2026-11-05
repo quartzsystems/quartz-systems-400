@@ -52,6 +52,7 @@ impl Diags {
     pub fn clear(&mut self) {
         self.recs.clear();
         self.rc = rc::SUCCESS;
+        self.row_count = 0;
     }
 
     /// Add a record.

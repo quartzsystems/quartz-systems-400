@@ -99,7 +99,7 @@ impl Cli {
         let mut out = Vec::with_capacity(s.params.len());
         for (i, p) in s.params.iter().enumerate() {
             let Some(b) = u16::try_from(i + 1).ok().and_then(|k| s.param_binds.get(&k)).copied() else {
-                return Err(Diag::cli("07001", &format!("Parameter marker {} is not bound.", i + 1)));
+                return Err(Diag { state: "07001".into(), native: -313, text: format!("Parameter marker {} is not bound.", i + 1) });
             };
             if b.io == param::OUTPUT {
                 out.push(Value::Null);
@@ -226,7 +226,7 @@ impl Cli {
             let ctype = if b.ctype == ty::DEFAULT { default_ctype(types.get(*m).copied().unwrap_or(ty::CHAR)) } else { b.ctype };
             let max = if b.max > 0 { b.max } else { b.len };
             let max = if matches!(ctype, ty::DECIMAL | ty::NUMERIC) { b.len * 256 + i32::from(b.scale) } else { max };
-            put_value(host, v, ctype, max, b.data, b.ind, nts)?;
+            put_value(host, v, (ctype, types.get(*m).copied().unwrap_or(0)), max, b.data, b.ind, nts)?;
         }
         Ok(())
     }
@@ -263,20 +263,24 @@ impl Cli {
 
     /// `SQLNumParams`.
     pub fn num_params(&mut self, host: &mut dyn Host, h: i32, out: Ptr) -> i32 {
-        if self.stmt_dbc(h).is_none() {
-            return rc::INVALID_HANDLE;
-        }
-        let n = self.handles.stmt(h).map_or(0, |s| s.params.len());
-        put_i16(host, out, i16::try_from(n).unwrap_or(i16::MAX));
-        rc::SUCCESS
+        self.count(host, h, out, |s| s.params.len())
     }
 
     /// `SQLNumResultCols`.
     pub fn num_result_cols(&mut self, host: &mut dyn Host, h: i32, out: Ptr) -> i32 {
+        self.count(host, h, out, |s| s.cols.len())
+    }
+
+    /// A count of a prepared statement's.
+    fn count(&mut self, host: &mut dyn Host, h: i32, out: Ptr, of: impl Fn(&crate::model::handles::Stmt) -> usize) -> i32 {
         if self.stmt_dbc(h).is_none() {
             return rc::INVALID_HANDLE;
         }
-        let n = self.handles.stmt(h).map_or(0, |s| s.cols.len());
+        let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
+        if s.state == StmtState::Allocated {
+            return self.fail(h, "HY010", "No statement is prepared.");
+        }
+        let n = of(s);
         put_i16(host, out, i16::try_from(n).unwrap_or(i16::MAX));
         rc::SUCCESS
     }
@@ -358,10 +362,10 @@ impl Cli {
             fetch::PRIOR => "PRIOR".into(),
             fetch::ABSOLUTE => format!("ABSOLUTE {offset}"),
             fetch::RELATIVE => format!("RELATIVE {offset}"),
-            _ => return self.fail(h, "HY106", "The fetch orientation is not valid."),
+            _ => return self.fail(h, "HY009", "The fetch orientation is not valid."),
         };
         if orient != fetch::NEXT && !s.scrollable {
-            return self.fail(h, "HY106", "The cursor is not scrollable.");
+            return self.note(h, rc::ERROR, Diag { state: "42872".into(), native: -225, text: "The cursor is not scrollable.".into() });
         }
         let cursor = s.cursor.clone();
         let scroll = s.scrollable;
@@ -389,7 +393,7 @@ impl Cli {
         for (k, b) in binds {
             let Some(v) = row.get(usize::from(k) - 1) else { continue };
             let ctype = if b.ctype == ty::DEFAULT { default_ctype(types[usize::from(k) - 1]) } else { b.ctype };
-            if let Err(d) = put_value(host, v, ctype, b.max, b.data, b.ind, nts) {
+            if let Err(d) = put_value(host, v, (ctype, types[usize::from(k) - 1]), b.max, b.data, b.ind, nts) {
                 return self.note(h, rc::ERROR, d);
             }
         }
@@ -414,11 +418,12 @@ impl Cli {
             return self.fail(h, "HY010", "Columns are retrieved in order.");
         }
         s.got.push(k);
-        let ctype = if ctype == ty::DEFAULT { default_ctype(s.cols[usize::from(k) - 1].sql_type) } else { ctype };
+        let col_type = s.cols.get(usize::from(k) - 1).map_or(0, |c| c.sql_type);
+        let ctype = if ctype == ty::DEFAULT { default_ctype(col_type) } else { ctype };
         if !convert::supported(ctype) {
             return self.note(h, rc::ERROR, convert::unsupported(ctype));
         }
-        match put_value(host, &row[usize::from(k) - 1], ctype, max, data, ind, nts) {
+        match put_value(host, &row[usize::from(k) - 1], (ctype, col_type), max, data, ind, nts) {
             Ok(()) => rc::SUCCESS,
             Err(d) => self.note(h, rc::ERROR, d),
         }
@@ -509,6 +514,8 @@ impl Cli {
             stmt_attr::FOR_FETCH_ONLY if ok_flag => s.fetch_only = flag,
             // Forward only (0) or static (1).
             stmt_attr::CURSOR_TYPE if ok_flag => s.scrollable = flag,
+            stmt_attr::ROWSET_SIZE if v == 1 => {}
+            stmt_attr::ROWSET_SIZE => return self.fail(h, "HYC00", "Fetching more than one row at a time is not supported."),
             stmt_attr::CURSOR_SCROLLABLE | stmt_attr::CURSOR_HOLD | stmt_attr::FOR_FETCH_ONLY | stmt_attr::CURSOR_TYPE => {
                 return self.fail(h, "HY024", "The attribute's value is not valid.");
             }
@@ -528,6 +535,7 @@ impl Cli {
             stmt_attr::CURSOR_SCROLLABLE | stmt_attr::CURSOR_TYPE => flag(s.scrollable),
             stmt_attr::CURSOR_HOLD => flag(s.hold),
             stmt_attr::FOR_FETCH_ONLY => flag(s.fetch_only),
+            stmt_attr::ROWSET_SIZE => 1,
             _ => return self.fail(h, "HYC00", &format!("Statement attribute {attr} is not supported.")),
         };
         put_i32(host, val, v);
@@ -537,12 +545,12 @@ impl Cli {
 }
 
 /// A value into a buffer and its length word: a null value needs the word.
-fn put_value(host: &mut dyn Host, v: &Value, ctype: i16, max: i32, data: Ptr, ind: Ptr, nts: bool) -> Result<(), Diag> {
+fn put_value(host: &mut dyn Host, v: &Value, (ctype, col_type): (i16, i16), max: i32, data: Ptr, ind: Ptr, nts: bool) -> Result<(), Diag> {
     let Image { bytes, ind: word } = if v.is_null() {
         if ind.is_none() {
             return Err(Diag { state: "22002".into(), native: -305, text: "A null value has no indicator to go to.".into() });
         }
-        Image { bytes: convert::null_image(ctype, max), ind: len::NULL_DATA }
+        Image { bytes: convert::null_image(ctype, max, col_type, nts), ind: len::NULL_DATA }
     } else {
         convert::image(v, ctype, max, nts)?
     };

@@ -49,7 +49,7 @@ impl Cli {
         }
         if !self.handles.dbc(hdbc).is_some_and(|d| d.connected) {
             put_i32(host, out, 0);
-            return self.fail(hdbc, "08003", "The connection is not connected.");
+            return self.note(hdbc, rc::ERROR, crate::model::diag::Diag { state: "08003".into(), native: -843, text: "The connection is not connected.".into() });
         }
         let n = self.handles.add(Handle::Stmt(Stmt { dbc: hdbc, row_count: -1, ..Stmt::default() }));
         put_i32(host, out, n);

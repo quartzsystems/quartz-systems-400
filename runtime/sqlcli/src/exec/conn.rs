@@ -25,14 +25,14 @@ impl Cli {
             return rc::INVALID_HANDLE;
         }
         if self.handles.dbc(hdbc).is_some_and(|d| d.connected) {
-            return self.fail(hdbc, "08002", "The connection is already connected.");
+            return self.note(hdbc, rc::ERROR, Diag { state: "08002".into(), native: -842, text: "The connection is already connected.".into() });
         }
         let name = get_str(host, dsn, i32::from(dsnl)).unwrap_or_default().trim().to_ascii_uppercase();
         let user = get_str(host, uid, i32::from(uidl)).map(|u| u.trim().to_ascii_uppercase()).filter(|u| !u.is_empty());
         let password = get_str(host, pwd, i32::from(pwdl)).map(|p| p.trim_end().to_string());
         let server_mode = self.handles.env_number().and_then(|e| self.handles.env(e)).is_some_and(|e| e.server_mode);
         if server_mode {
-            let req = ConnectReq { user, password };
+            let req = ConnectReq { user: user.clone(), password };
             match server::connect(&req) {
                 Ok(r) => {
                     if let Some(d) = self.handles.dbc(hdbc) {
@@ -41,14 +41,21 @@ impl Cli {
                 }
                 Err(d) => return self.note(hdbc, rc::ERROR, d),
             }
-        } else if user.is_some() {
-            return self.fail(hdbc, "08001", "A user can be named for a connection only in server mode.");
         }
-        if !name.is_empty() && name != "*LOCAL" && name != self.local_rdb(host, hdbc) {
+        if !name.is_empty() && name != "*LOCAL" && name != self.register(host, hdbc, "CURRENT SERVER") {
             // BLOCKED(sql): a connection to another relational database
             // needs the DRDA requester (handoff Section 6).
             self.close_server(hdbc);
-            return self.fail(hdbc, "08001", &format!("Relational database {name} is not this system; remote connections are not supported."));
+            let text = format!("Relational database {name} is not this system's; connections to other databases are not supported.");
+            return self.note(hdbc, rc::ERROR, Diag { state: "42705".into(), native: -950, text });
+        }
+        // Outside server mode a connection is the job's own user's.
+        if !server_mode
+            && let Some(u) = user
+            && u != self.register(host, hdbc, "USER")
+        {
+            let text = format!("Outside server mode a connection runs as the job's user, not {u}.");
+            return self.note(hdbc, rc::ERROR, Diag { state: "42977".into(), native: -7022, text });
         }
         if let Some(d) = self.handles.dbc(hdbc) {
             d.connected = true;
@@ -62,11 +69,11 @@ impl Cli {
         rc::SUCCESS
     }
 
-    /// The local database's name, as `CURRENT SERVER` gives it.
-    fn local_rdb(&mut self, host: &mut dyn Host, hdbc: i32) -> String {
+    /// A special register's value (`CURRENT SERVER`, `USER`), upper case.
+    fn register(&mut self, host: &mut dyn Host, hdbc: i32, reg: &str) -> String {
         let mut d = self.desc(hdbc, Op::Query);
         d.commit = None;
-        d.text = "SELECT CURRENT SERVER FROM SYSIBM.SYSDUMMY1".into();
+        d.text = format!("SELECT {reg} FROM SYSIBM.SYSDUMMY1");
         let (r, _) = self.run(host, hdbc, d, Vec::new());
         r.rows.first().and_then(|row| row.first()).map(|v| v.as_text().trim().to_ascii_uppercase()).unwrap_or_default()
     }
@@ -86,7 +93,7 @@ impl Cli {
         }
     }
 
-    /// `SQLDisconnect`: its statements are freed (a warning says so).
+    /// `SQLDisconnect`: its statements are freed with it.
     pub fn disconnect(&mut self, host: &mut dyn Host, hdbc: i32) -> i32 {
         if !self.begin(hdbc) || !self.handles.is(hdbc, htype::DBC) {
             return rc::INVALID_HANDLE;
@@ -94,9 +101,8 @@ impl Cli {
         if !self.handles.dbc(hdbc).is_some_and(|d| d.connected) {
             return self.note(hdbc, rc::ERROR, Diag { state: "08003".into(), native: -843, text: "The connection is not connected.".into() });
         }
-        let stmts = self.handles.stmts_of(hdbc);
-        for s in &stmts {
-            self.handles.remove(*s);
+        for s in self.handles.stmts_of(hdbc) {
+            self.handles.remove(s);
         }
         let d = self.desc(hdbc, Op::End);
         let _ = self.run(host, hdbc, d, Vec::new());
@@ -104,11 +110,7 @@ impl Cli {
         if let Some(d) = self.handles.dbc(hdbc) {
             d.connected = false;
         }
-        if stmts.is_empty() {
-            rc::SUCCESS
-        } else {
-            self.note(hdbc, rc::SUCCESS_WITH_INFO, Diag::cli("01002", "The connection's statements were freed."))
-        }
+        rc::SUCCESS
     }
 
     /// `SQLSetConnectAttr` (and `SQLSetConnectOption`): integers are

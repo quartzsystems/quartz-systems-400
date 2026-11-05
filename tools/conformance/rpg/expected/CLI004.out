@@ -1,0 +1,45 @@
+# CLI004 V7R5M0 pub400.com
+# captured 2026-11-05 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 6 seq 000600
+diag: RNF3530 00 line 7 seq 000700
+run: ok
+spool: QSYSPRT
+  |1/1   fetch 0 An 2 [2024-01-02] 10 0 10.500 0 10.5 0 +1.050000000000000E+001 0 1 1 Ann
+  |1/2   fetch 0 Bo 2 [2024-02-03] 10 0 .000 -1 .0 -1 +0.000000000000000E+000 -1 2 2 Bob
+  |1/3   fetch 0 Ci 2 [          ] -1 1 -7.250 0 -7.2 0 -7.250000000000000E+000 0 3 3 Cid
+  |1/4   fetch 0 De 2 [2024-04-05] 10 0 99.990 0 99.9 0 +9.998999999999999E+001 0 4 4 Dee
+  |1/5   fetch 100 ** 2 [**********] 10 0 -1.000 0 -1.0 0 -1.000000000000000E+000 0 4 4 Dee
+  |1/6   scrollable 0
+  |1/7   scroll 3 0 0 4
+  |1/8   scroll 4 0 0 3
+  |1/9   scroll 2 0 0 1
+  |1/10  scroll 5 3 0 3
+  |1/11  scroll 6 -1 0 2
+  |1/12  scroll 1 0 0 3
+  |1/13  scroll 5 9 100 -1
+  |1/14  scroll 4 0 0 4
+  |1/15  scroll 3 0 -1 -1
+  |1/16    forward-last diag 1 42872 -225
+  |1/17  scroll 9 0 -1 -1
+  |1/18    orient-9 diag 1 HY009 -99999
+  |1/19  insert-cmt -1
+  |1/20    insert-cmt diag 1 55019 -7008
+  |1/21  set-commit 0
+  |1/22  execute-unbound -1
+  |1/23    execute-unbound diag 0 07001 -313
+  |1/24  insert-nts 0
+  |1/25  insert-len 0
+  |1/26  rowcount 0 1
+  |1/27  execute-reset -1
+  |1/28    execute-reset diag 1 07001 -313
+  |1/29  update 0 4
+  |1/30  delete-none 100
+  |1/31  rowcount-none 0 0
+  |1/32  rowcount-select 0 -1
+  |1/33  row 3 Cid  -6.25
+  |1/34  row 4 Dee  100.99
+  |1/35  row 11 Nts  2.25
+  |1/36  row 12 Length  -1.00
+  |1/37  endtran 0
+  |1/38  transact 0

@@ -484,3 +484,86 @@ serial number `char(10)` at 0x6C, part number `char(12)`, the packaging
 and logical parents `char(10)` each, the location `char(79)`; 229 bytes.
 A format other than the one named is `CPF3C21`; a category or resource
 not known is `CPF9898` with Quartz text.
+
+## 13. The SQL CLI (`QSQCLI`)
+
+`runtime/sqlcli`: the call level interface IBM i's service program
+`QSQCLI` exports, as `*SYSTEM` imports (`ile::SYSTEM_SRVPGM_PROCS`
+names `QSQCLI` for each). On IBM i a program reaches `QSQCLI` through
+`QUSAPIBD` (pub400 has no `QSQCLI` binding directory,
+`tools/conformance/oracle/srvpgm/README.md`); here the binder resolves
+the names the same way. C linkage:
+integers by value, pointers by value; integer attribute values are
+passed by address, as on IBM i. The numbers (return codes, handle
+types, SQL and C types, attributes, `SQL_TXN_*`) are the system's
+header's, our own declarations in `sqlcli::consts`.
+
+Exported: `SQLAllocEnv`, `SQLAllocConnect`, `SQLAllocStmt`,
+`SQLAllocHandle`, `SQLFreeEnv`, `SQLFreeConnect`, `SQLFreeStmt`,
+`SQLFreeHandle`, `SQLSetEnvAttr`, `SQLGetEnvAttr`, `SQLSetConnectAttr`,
+`SQLGetConnectAttr`, `SQLSetConnectOption`, `SQLSetStmtAttr`,
+`SQLGetStmtAttr`, `SQLConnect`, `SQLDisconnect`, `SQLPrepare`,
+`SQLExecute`, `SQLExecDirect`, `SQLNumParams`, `SQLNumResultCols`,
+`SQLDescribeParam`, `SQLDescribeCol`, `SQLBindParam`,
+`SQLBindParameter`, `SQLBindCol`, `SQLFetch`, `SQLFetchScroll`,
+`SQLGetData`, `SQLRowCount`, `SQLCloseCursor`, `SQLError`,
+`SQLGetDiagRec`, `SQLGetDiagField`, `SQLEndTran`, `SQLTransact`,
+`SQLTables`, `SQLColumns`, `SQLPrimaryKeys`. The other 81 exports of
+IBM's `QSQCLI` (`SQLGetInfo`, `SQLMoreResults`, the `W` forms, the
+descriptor and LOB locator calls, ...) are not provided: a program that
+imports one does not bind (`CPD5D02`).
+
+What the oracle settled (pub400, batch `tools/conformance/rpg/b23cli`):
+
+- Handles: one environment per job (a second `SQLAllocEnv` gives the
+  same handle), then connections and statements numbered with it from
+  1, a freed number given out again. A connection starts with
+  autocommit off at `SQL_TXN_READ_UNCOMMITTED` (`*CHG`) and `*SQL`
+  naming; a statement not scrollable, not `WITH HOLD`, row set 1.
+- Statements run as dynamic SQL in the connection's scope (`CLI:n`):
+  `SQLPrepare` prepares and describes, `SQLExecute` opens a query's
+  cursor or runs the statement (row count from `SQLERRD(3)`; a change
+  of no rows is `SQL_NO_DATA`), `SQLExecDirect` prepares and runs (the
+  statement stays prepared). Parameters are read from their buffers at
+  each `SQLExecute`; columns written at each `SQLFetch`.
+- Buffers: `SQL_CHAR` data shorter than the buffer gets a NUL and
+  `SQL_NTS` in its length word, data that fills or overflows it fills
+  it with the buffer's length there (with `SQL_ATTR_OUTPUT_NTS` off,
+  short data is padded with blanks and the word holds the buffer's
+  length, longer data the data's whole length);
+  other types leave 0. A null value writes
+  blanks or zero and -1; with no length word it is `22002` (-305).
+  Decimals are cut, not rounded, to the buffer's scale.
+- Diagnostics: SQLSTATE and the SQLCODE as native error; what the CLI
+  finds itself has native error -99999 (`HY010` function sequence,
+  `07009` column or parameter number, `HY003` C type, `HY009`
+  orientation, `07001`/-313 an unbound marker, `08003`/-843 not
+  connected, `08002`/-842 already connected, `42705`/-950 another
+  database, `42977`/-7022 another user outside server mode, `42872`/-225
+  scrolling a cursor that is not scrollable). `SQLError` takes the
+  record it returns.
+- The catalog functions read `SYSIBM.SQLTABLES`, `SQLCOLUMNS` and
+  `SQLPRIMARYKEYS`, their results described as pub400's CLI describes
+  them.
+
+Server mode (`SQL_ATTR_SERVER_MODE`, set before any connection): each
+connection's statements run in a `QSQSRVR` prestart job of `QSYSWRK`
+(`work/qsjob/src/work/sqlsrvr.rs`). The job gives one end of a socket
+pair to the `QSQSRVR` pool through the descriptor relay with a ticket
+from the storage service (`sqlsrv_ticket`, request 1480); the server
+job proves the ticket (`sqlsrv_assume`, 1481), runs as the job's user
+or as the user `SQLConnect` names (the password checked as a sign-on:
+`08001`/-30082 when it fails), with its own SQL, locks and commitment
+control, `CALL` made in its own runtime; `QSYS2.SERVER_MODE_JOB_NAME`
+there is the client's name. At the connection's end it rolls back what
+is left and runs as `QUSER` again (`sqlsrv_end`, 1482). Without server
+mode statements run in the job, sharing its SQL with embedded SQL.
+
+Not provided: descriptor handles (`SQL_HANDLE_DESC` is `HYC00`),
+attributes other than those above (`HYC00`), C types other than
+`SQL_CHAR`, `SQL_VARCHAR`, the integers, floats, decimals, the
+datetime character forms and the binary forms (`HY003`), row sets of
+more than one row, a procedure's result sets past the first (the first
+is the statement's cursor), connections to other databases
+(BLOCKED(sql): the DRDA requester), and a CLI call made by a procedure
+the CLI called (it fails).

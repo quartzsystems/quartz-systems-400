@@ -10,10 +10,13 @@
 //! What the oracle settled for a column: character data that is
 //! shorter than the buffer is followed by a NUL and its length word
 //! says `SQL_NTS`; data that fills it or is longer fills it, without a
-//! NUL, and the word holds the buffer's length (no warning); any other
-//! type leaves 0 there. A null value writes blanks into a character
-//! buffer and zero into a number, with -1 in the word; without a word
-//! it is `22002`.
+//! NUL, and the word holds the buffer's length (no warning). With
+//! `SQL_ATTR_OUTPUT_NTS` off short data is padded with blanks to the
+//! buffer's length and the word holds that; longer data leaves the
+//! data's whole length. Any other type leaves 0 there. A null value
+//! writes blanks into a character buffer (with NTS off, a date's,
+//! time's or timestamp's default value) and zero into a number, with
+//! -1 in the word; without a word it is `22002`.
 
 use qdecimal::{Decimal, Packed, Rounding, Zoned};
 use sql::Value;
@@ -131,16 +134,18 @@ pub fn image(v: &Value, ctype: i16, max: i32, nts: bool) -> Result<Image, Diag> 
         ty::CHAR | ty::DATE | ty::TIME | ty::TIMESTAMP => {
             let mut b = super::ebcdic(&text_of(v));
             if b.len() < cap {
-                let n = b.len();
                 if nts {
                     b.push(0);
                     Image { bytes: b, ind: len::NTS }
                 } else {
-                    Image { bytes: b, ind: i32::try_from(n).unwrap_or(i32::MAX) }
+                    // Without the NUL the buffer is filled with blanks.
+                    b.resize(cap, 0x40);
+                    Image { bytes: b, ind: max }
                 }
             } else {
+                let whole = i32::try_from(b.len()).unwrap_or(i32::MAX);
                 b.truncate(cap);
-                Image { bytes: b, ind: max }
+                Image { bytes: b, ind: if nts { max } else { whole } }
             }
         }
         ty::VARCHAR | ty::VARBINARY => {
@@ -172,11 +177,23 @@ pub fn image(v: &Value, ctype: i16, max: i32, nts: bool) -> Result<Image, Diag> 
     })
 }
 
-/// The image of a null value: blanks for characters, zero for numbers.
+/// The image of a null value of a column of `col_type`: blanks for
+/// characters (without NTS, a datetime's default), zero for numbers.
 #[must_use]
-pub fn null_image(ctype: i16, max: i32) -> Vec<u8> {
+pub fn null_image(ctype: i16, max: i32, col_type: i16, nts: bool) -> Vec<u8> {
     let n = buffer_len(ctype, max);
+    let default = match col_type {
+        ty::DATE => "0001-01-01",
+        ty::TIME => "00.00.00",
+        ty::TIMESTAMP => "0001-01-01-00.00.00.000000",
+        _ => "",
+    };
     match ctype {
+        ty::CHAR | ty::DATE | ty::TIME | ty::TIMESTAMP if !nts && !default.is_empty() => {
+            let mut b = super::ebcdic(default);
+            b.resize(n, 0x40);
+            b
+        }
         ty::CHAR | ty::DATE | ty::TIME | ty::TIMESTAMP => vec![0x40; n],
         ty::DECIMAL | ty::NUMERIC => {
             let zero = Value::Num(Decimal::zero());
@@ -281,8 +298,9 @@ mod tests {
         let i = image(&num("10.50"), ty::NUMERIC, 7 * 256 + 3, true).unwrap();
         assert_eq!(i.bytes, [0xF0, 0xF0, 0xF1, 0xF0, 0xF5, 0xF0, 0xC0]);
         assert!(image(&num("123456"), ty::DECIMAL, 5 * 256 + 1, true).is_err());
-        assert_eq!(null_image(ty::DECIMAL, 9 * 256 + 2), vec![0, 0, 0, 0, 0x0C]);
-        assert_eq!(null_image(ty::CHAR, 3), vec![0x40; 3]);
+        assert_eq!(null_image(ty::DECIMAL, 9 * 256 + 2, ty::DECIMAL, true), vec![0, 0, 0, 0, 0x0C]);
+        assert_eq!(null_image(ty::CHAR, 3, ty::VARCHAR, true), vec![0x40; 3]);
+        assert_eq!(null_image(ty::CHAR, 10, ty::DATE, false), ccsid::to_ebcdic("0001-01-01").unwrap());
     }
 
     #[test]

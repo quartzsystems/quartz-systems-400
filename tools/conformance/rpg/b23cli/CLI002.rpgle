@@ -1,0 +1,190 @@
+**FREE
+//; call: CALL PGM({lib}/{name}) PARM('{lib}')
+//; with: CLIH
+//; sqlfile: CLIT
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+/copy CLIH
+// Handles, connections and diagnostics, not in server mode.
+dcl-pi *n;
+  lib char(10);
+end-pi;
+dcl-s henv int(10);
+dcl-s henv2 int(10);
+dcl-s hdbc int(10);
+dcl-s hdbc2 int(10);
+dcl-s hstmt int(10);
+dcl-s hstmt2 int(10);
+dcl-s rc int(10);
+dcl-s v int(10);
+dcl-s k int(10);
+dcl-s olen int(10);
+dcl-s dsn char(10) inz('*LOCAL');
+dcl-s bad char(10) inz('NOSUCHRDB');
+dcl-s user char(10) inz('NOSUCHUSR');
+dcl-s pwd char(10) inz('XYZZY');
+dcl-s stmt char(300);
+dcl-s c10 char(10);
+dcl-s l1 int(10);
+dcl-s n int(5);
+dcl-s state char(6);
+dcl-s native int(10);
+dcl-s msg char(300);
+dcl-s mlen int(5);
+
+rc = SQLAllocEnv(%addr(henv));
+say('allocenv ' + %char(rc) + ' ' + %char(henv));
+rc = SQLAllocEnv(%addr(henv2));
+say('allocenv2 ' + %char(rc) + ' ' + %char(henv2));
+rc = SQLAllocConnect(henv : %addr(hdbc));
+say('allocconnect ' + %char(rc) + ' ' + %char(hdbc));
+rc = SQLAllocStmt(hdbc : %addr(hstmt));
+say('allocstmt-unconnected ' + %char(rc));
+diagh('allocstmt-unconnected' : SQL_HANDLE_DBC : hdbc);
+// Connections that fail, on a handle of their own.
+rc = SQLAllocConnect(henv : %addr(hdbc2));
+rc = SQLConnect(hdbc2 : %addr(bad) : SQL_NTS : *null : 0 : *null : 0);
+say('connect-badrdb ' + %char(rc));
+diagh('connect-badrdb' : SQL_HANDLE_DBC : hdbc2);
+rc = SQLFreeConnect(hdbc2);
+rc = SQLAllocConnect(henv : %addr(hdbc2));
+rc = SQLConnect(hdbc2 : %addr(dsn) : 6 : %addr(user) : 9 : %addr(pwd) : 5);
+say('connect-user ' + %char(rc));
+diagh('connect-user' : SQL_HANDLE_DBC : hdbc2);
+rc = SQLDisconnect(hdbc2);
+rc = SQLFreeConnect(hdbc2);
+rc = SQLConnect(hdbc : %addr(dsn) : 6 : *null : 0 : *null : 0);
+say('connect ' + %char(rc));
+rc = SQLConnect(hdbc : %addr(dsn) : 6 : *null : 0 : *null : 0);
+say('connect-again ' + %char(rc));
+diagh('connect-again' : SQL_HANDLE_DBC : hdbc);
+rc = SQLFreeEnv(henv);
+say('freeenv-busy ' + %char(rc));
+diagh('freeenv-busy' : SQL_HANDLE_ENV : henv);
+rc = SQLAllocStmt(hdbc : %addr(hstmt));
+say('allocstmt ' + %char(rc) + ' ' + %char(hstmt));
+rc = SQLAllocHandle(SQL_HANDLE_STMT : hdbc : %addr(hstmt2));
+say('allochandle ' + %char(rc) + ' ' + %char(hstmt2));
+rc = SQLFreeHandle(SQL_HANDLE_STMT : hstmt2);
+say('freehandle ' + %char(rc));
+rc = SQLAllocStmt(hdbc : %addr(hstmt2));
+say('allocstmt-again ' + %char(rc) + ' ' + %char(hstmt2));
+rc = SQLNumResultCols(hstmt : %addr(n));
+say('numcols-fresh ' + %char(rc));
+diag('numcols-fresh');
+rc = SQLExecute(hstmt);
+say('execute-fresh ' + %char(rc));
+diag('execute-fresh');
+for k = 10014 to 10017;
+  v = -9;
+  rc = SQLGetStmtAttr(hstmt : k : %addr(v) : 4 : %addr(olen));
+  say('stmtattr ' + %char(k) + ' ' + %char(rc) + ' ' + %char(v));
+endfor;
+
+stmt = 'SELECT CASE WHEN QSYS2.SERVER_MODE_JOB_NAME IS NULL THEN ''none'' ELSE ''set'' END '
+     + 'FROM SYSIBM.SYSDUMMY1';
+rc = SQLExecDirect(hstmt : %addr(stmt) : %len(%trimr(stmt)));
+say('direct ' + %char(rc));
+c10 = *all'*';
+rc = SQLBindCol(hstmt : 1 : SQL_CHAR : %addr(c10) : 10 : %addr(l1));
+rc = SQLFetch(hstmt);
+say('local ' + %char(rc) + ' ' + %str(%addr(c10) : 10) + ' ' + %char(l1));
+rc = SQLFetch(hstmt);
+say('fetch-end ' + %char(rc));
+rc = SQLFetch(hstmt);
+say('fetch-end2 ' + %char(rc));
+rc = SQLCloseCursor(hstmt);
+say('close ' + %char(rc));
+rc = SQLCloseCursor(hstmt);
+say('close-again ' + %char(rc));
+diag('close-again');
+rc = SQLFetch(hstmt);
+say('fetch-closed ' + %char(rc));
+diag('fetch-closed');
+rc = SQLExecute(hstmt);
+say('execute-again ' + %char(rc));
+rc = SQLExecDirect(hstmt : %addr(stmt) : %len(%trimr(stmt)));
+say('direct-open ' + %char(rc));
+diag('direct-open');
+rc = SQLFreeStmt(hstmt : SQL_CLOSE);
+say('freestmt-close ' + %char(rc));
+rc = SQLFetch(99);
+say('bad-handle ' + %char(rc));
+
+stmt = 'SELEC ID FROM X';
+rc = SQLExecDirect(hstmt : %addr(stmt) : %len(%trimr(stmt)));
+say('syntax ' + %char(rc));
+diag('syntax');
+stmt = 'SELECT * FROM ' + %trim(lib) + '.NOSUCHT';
+rc = SQLExecDirect(hstmt : %addr(stmt) : %len(%trimr(stmt)));
+say('undefined ' + %char(rc));
+rc = SQLGetDiagField(SQL_HANDLE_STMT : hstmt : 0 : SQL_DIAG_NUMBER : %addr(v) : 4 : %addr(n));
+say('diag-number ' + %char(rc) + ' ' + %char(v));
+state = *all'*';
+rc = SQLGetDiagField(SQL_HANDLE_STMT : hstmt : 1 : SQL_DIAG_SQLSTATE : %addr(state) : 6 : %addr(n));
+say('diag-state ' + %char(rc) + ' ' + %subst(state : 1 : 5) + ' ' + %char(n));
+rc = SQLGetDiagField(SQL_HANDLE_STMT : hstmt : 1 : SQL_DIAG_NATIVE : %addr(v) : 4 : %addr(n));
+say('diag-native ' + %char(rc) + ' ' + %char(v));
+rc = SQLGetDiagField(SQL_HANDLE_STMT : hstmt : 2 : SQL_DIAG_NATIVE : %addr(v) : 4 : %addr(n));
+say('diag-native2 ' + %char(rc));
+rc = SQLError(henv : hdbc : hstmt : %addr(state) : %addr(native) : %addr(msg) : %size(msg)
+              : %addr(mlen));
+say('error ' + %char(rc) + ' ' + %subst(state : 1 : 5) + ' ' + %char(native));
+rc = SQLError(henv : hdbc : hstmt : %addr(state) : %addr(native) : %addr(msg) : %size(msg)
+              : %addr(mlen));
+say('error2 ' + %char(rc));
+
+rc = SQLDisconnect(hdbc);
+say('disconnect-stmts ' + %char(rc));
+diagh('disconnect-stmts' : SQL_HANDLE_DBC : hdbc);
+rc = SQLFreeStmt(hstmt : SQL_DROP);
+say('freestmt-gone ' + %char(rc));
+rc = SQLDisconnect(hdbc);
+say('disconnect-again ' + %char(rc));
+diagh('disconnect-again' : SQL_HANDLE_DBC : hdbc);
+rc = SQLFreeConnect(hdbc);
+say('freeconnect ' + %char(rc));
+rc = SQLFreeEnv(henv);
+say('freeenv ' + %char(rc));
+rc = SQLFreeEnv(henv);
+say('freeenv-again ' + %char(rc));
+*inlr = *on;
+
+dcl-proc diag;
+  dcl-pi *n;
+    what varchar(30) const;
+  end-pi;
+  diagh(what : SQL_HANDLE_STMT : hstmt);
+end-proc;
+
+dcl-proc diagh;
+  dcl-pi *n;
+    what varchar(30) const;
+    ht int(5) value;
+    h int(10) value;
+  end-pi;
+  dcl-s r int(10);
+  dcl-s rec int(5);
+  for rec = 1 to 2;
+    state = *all'*';
+    native = -1;
+    r = SQLGetDiagRec(ht : h : rec : %addr(state) : %addr(native)
+                      : %addr(msg) : %size(msg) : %addr(mlen));
+    if r <> 0;
+      if rec = 1;
+        say('  ' + what + ' diag ' + %char(r));
+      endif;
+      leave;
+    endif;
+    say('  ' + what + ' diag ' + %char(rec) + ' ' + %subst(state : 1 : 5) + ' ' + %char(native));
+  endfor;
+end-proc;
+
+dcl-proc say;
+  dcl-pi *n;
+    text varchar(132) const;
+  end-pi;
+  line = text;
+  write QSYSPRT line;
+end-proc;

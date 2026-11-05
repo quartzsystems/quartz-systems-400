@@ -166,6 +166,8 @@ pub mod stmt_attr {
     pub const FOR_FETCH_ONLY: i32 = 10014;
     /// A scrollable cursor.
     pub const CURSOR_SCROLLABLE: i32 = 10015;
+    /// Rows a fetch returns (only 1).
+    pub const ROWSET_SIZE: i32 = 10016;
     /// `WITH HOLD`.
     pub const CURSOR_HOLD: i32 = 10017;
     /// The cursor's sensitivity.

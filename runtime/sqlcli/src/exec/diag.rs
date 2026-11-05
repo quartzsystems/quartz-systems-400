@@ -77,6 +77,8 @@ impl Cli {
                 } else {
                     let text = if id == diag::SQLSTATE { &d.state } else { &d.text };
                     let (n, cut) = put_str(host, val, i32::from(max), text);
+                    // The oracle counts a state's NUL.
+                    let n = if id == diag::SQLSTATE { n + 1 } else { n };
                     put_i16(host, vlen, i16::try_from(n).unwrap_or(i16::MAX));
                     if cut {
                         return rc::SUCCESS_WITH_INFO;

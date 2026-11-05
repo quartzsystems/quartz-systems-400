@@ -147,16 +147,14 @@ impl Cli {
         self.catalog(host, h, &text, cols)
     }
 
-    /// `SQLPrimaryKeys`: the table is named, not a pattern.
+    /// `SQLPrimaryKeys`: the table is named, not a pattern; without one,
+    /// every key of the schema.
     #[allow(clippy::too_many_arguments)]
     pub fn primary_keys(&mut self, host: &mut dyn Host, h: i32, _cat: Ptr, _catl: i16, sch: Ptr, schl: i16, tab: Ptr, tabl: i16) -> i32 {
         if !self.handles.is(h, crate::consts::htype::STMT) || !self.begin(h) {
             return rc::INVALID_HANDLE;
         }
-        let tab = get_str(host, tab, i32::from(tabl)).filter(|t| !t.is_empty());
-        if tab.is_none() {
-            return self.fail(h, "HY009", "SQLPrimaryKeys needs a table name.");
-        }
+        let tab = get_str(host, tab, i32::from(tabl));
         let w = filter(&[("TABLE_SCHEM", get_str(host, sch, i32::from(schl)), false), ("TABLE_NAME", tab, false)]);
         let cols = keys_cols();
         let text = format!("SELECT {} FROM SYSIBM.SQLPRIMARYKEYS{w} ORDER BY TABLE_SCHEM, TABLE_NAME, KEY_SEQ", names(&cols));
