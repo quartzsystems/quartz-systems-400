@@ -47,6 +47,22 @@ fn session() -> Session {
         },
     )
     .unwrap();
+    // A program an external procedure names.
+    ops::create(
+        &mut t,
+        &CreateParams {
+            library: lib,
+            name: Name::parse("RSPGM").unwrap(),
+            type_code: types::PGM,
+            attribute: "RPGLE".into(),
+            text: String::new(),
+            owner: "QSECOFR".into(),
+            system: "QS400".into(),
+            now: NOW,
+            by_system: false,
+        },
+    )
+    .unwrap();
     t.commit().unwrap();
     let names = NameContext {
         curlib: Some(lib),
@@ -303,4 +319,63 @@ fn a_sensitive_cursor_is_refused() {
     let d = Desc { sensitive: true, ..op(Op::Open, "C1", "SELECT ID FROM QSTEST.T") };
     let r = run(&mut s, "1:P", d, vec![]);
     assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-243, "36001"));
+}
+
+#[test]
+fn a_called_procedures_result_set_describes_as_a_cursor() {
+    let mut s = session();
+    let seq = sql::exec::cursor::current_seq();
+    // What a procedure leaves: a cursor opened WITH RETURN in its scope.
+    let mut d = op(Op::Open, "C1", "SELECT ID, NAME, SAL FROM T ORDER BY ID");
+    d.returns = Some(sql::ast::ReturnTo::Client);
+    assert_eq!(run(&mut s, "9:PROC", d, vec![]).sqlca.sqlcode, 0);
+    let called = sql::exec::routine::Called { seq, max: 1, sqlstate: "00000".into(), ..Default::default() };
+    let r = run(&mut s, "Q:", op(Op::Called, "", ""), called.inputs());
+    assert_eq!((r.sqlca.sqlcode, r.rows.len()), (466, 1), "{:?}", r.sqlca);
+    assert_eq!(r.rows[0][0].as_text(), "RS#1");
+    let mut d = op(Op::Describe, "RS#1", "");
+    d.orient = "CURSOR".into();
+    let r = run(&mut s, "Q:", d.clone(), vec![]);
+    assert_eq!(entries(&r), [(496, 4, "ID".into()), (448, 20, "NAME".into()), (485, 9 * 256 + 2, "SAL".into())]);
+    let mut f = op(Op::Fetch, "RS#1", "");
+    f.rows = true;
+    let r = run(&mut s, "Q:", f, vec![Value::int(10)]);
+    assert_eq!(r.rows.len(), 2);
+    // Not open there: -501.
+    assert_eq!(run(&mut s, "R:", d, vec![]).sqlca.sqlcode, -501);
+}
+
+#[test]
+fn a_calls_markers_describe_with_their_parameters_modes() {
+    let mut s = session();
+    let r = run(
+        &mut s,
+        "1:P",
+        op(Op::Exec, "", "CREATE PROCEDURE QSTEST.RSP (IN A INT, OUT B CHAR(5), INOUT C DECIMAL(7, 2)) EXTERNAL NAME QSTEST/RSPGM PARAMETER STYLE GENERAL"),
+        vec![],
+    );
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    run(&mut s, "1:P", op(Op::Prepare, "S1", "CALL QSTEST.RSP(?, ?, ?)"), vec![]);
+    let mut d = op(Op::Describe, "S1", "");
+    d.orient = "INPUT".into();
+    let r = run(&mut s, "1:P", d, vec![]);
+    assert_eq!(entries(&r), [(497, 4, "A".into()), (453, 5, "B".into()), (485, 7 * 256 + 2, "C".into())]);
+    let modes: Vec<i64> = r.rows.iter().map(|row| row[9].as_i64().unwrap()).collect();
+    assert_eq!(modes, [1, 2, 3]);
+    // Without a requester that makes calls, CALL is refused.
+    let r = run(&mut s, "1:P", op(Op::Execute, "S1", ""), vec![Value::int(1), Value::Null, Value::int(2)]);
+    assert_eq!(r.sqlca.sqlcode, -84);
+    // With one, the plan comes back.
+    let mut d = op(Op::Execute, "S1", "");
+    d.calls = true;
+    let r = run(&mut s, "1:P", d, vec![Value::int(1), Value::Null, Value::int(2)]);
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    let plan = r.call.expect("a plan");
+    assert_eq!((plan.program.as_str(), plan.parms.len()), ("RSPGM", 3));
+    assert_eq!(plan.parms.iter().map(|p| p.marker).collect::<Vec<_>>(), [None, Some(1), Some(2)]);
+    // A program without a procedure takes no markers when prepared.
+    let r = run(&mut s, "1:P", op(Op::Prepare, "S2", "CALL QSYS.QCMDEXC(?, ?)"), vec![]);
+    assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-204, "42704"));
+    let r = run(&mut s, "1:P", op(Op::Prepare, "S3", "CALL QSTEST.RSPGM('X', 1)"), vec![]);
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
 }

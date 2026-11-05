@@ -8,7 +8,10 @@
 //! and described, its markers' format comes as a descriptor, then it is
 //! executed or opened and fetched in blocks. Replies carry what the
 //! request's operation result set (ORS) bitmap asks for. The catalog
-//! procedures the driver calls for metadata are answered here.
+//! procedures the driver calls for metadata are answered here; any
+//! other `CALL` is the engine's, made in the job: its `OUT` values come
+//! back as the execute's result data, its result sets (`RS#n`) open one
+//! after another on the statement's request parameter block.
 
 pub mod catalog;
 pub mod data;
@@ -88,6 +91,8 @@ struct Rpb {
     markers: Vec<ColType>,
     call: Option<Call>,
     results: Option<Rows>,
+    /// A `CALL`'s result sets not opened yet: their cursors (`RS#n`).
+    sets: Vec<String>,
     pos: usize,
     open: bool,
 }
@@ -407,14 +412,10 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         rpb.cols.clear();
         rpb.markers.clear();
         rpb.call = catalog::parse(&rpb.text);
+        rpb.sets.clear();
         let fail = |ca: Sqlca| (ca, Vec::new(), Vec::new());
         let (ca, cols, markers) = if !self.sql_allowed(i32::from(r.function), &rpb, &rpb.text.clone()) {
             fail(denied())
-        } else if rpb.text.len() > 5 && rpb.text[..5].eq_ignore_ascii_case("CALL ") && rpb.call.is_none() {
-            // QS/400 has no stored procedures of its own yet.
-            let mut ca = code(-204, "42704");
-            ca.sqlerrmc = format!("{} is not a procedure here.", rpb.text[5..].split('(').next().unwrap_or("").trim());
-            fail(ca)
         } else if let Some(c) = &rpb.call {
             let m = (0..c.markers())
                 .map(|i| ColType::varchar("", if i < 3 { 128 } else { 4000 }, false))
@@ -490,6 +491,27 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
                 sqlerrd: [0, 1, 0, 0, 0, 0],
                 ..Sqlca::default()
             }
+        } else if is_call(&rpb.text) {
+            let row = rows.into_iter().next().unwrap_or_default();
+            let d = Desc {
+                name: rpb.stmt.clone(),
+                ..self.desc(Op::Execute)
+            };
+            let rep = self.run(d, row);
+            let outs = self.sql.take_outs();
+            rpb.results = None;
+            rpb.sets = if rep.sqlca.sqlcode == 466 { rep.rows.iter().filter_map(|r| r.first()).map(Value::as_text).collect() } else { Vec::new() };
+            if !rep.sqlca.is_error() && rpb.markers.iter().any(ColType::is_output) {
+                // The markers' values as one row: what the call gave back.
+                let mut row = vec![Value::Null; rpb.markers.len()];
+                for (m, v) in outs {
+                    if let Some(x) = row.get_mut(m) {
+                        *x = v;
+                    }
+                }
+                extra.push(Param::new(db_reply::EXTENDED_RESULT_DATA, data::encode_rows(&rpb.markers, &[row], 1)));
+            }
+            rep.sqlca
         } else {
             let mut total = 0;
             let mut last = Sqlca::default();
@@ -520,6 +542,36 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         params.extend(extra);
         self.last = Last { function: r.function, sqlca: ca };
         Answer { of: r.function, class, code, params }
+    }
+
+    /// A `CALL`'s result set, whole: its columns as `DESCRIBE CURSOR`
+    /// gives them and its rows.
+    fn result_set(&mut self, name: &str) -> Result<Rows, Box<Sqlca>> {
+        let d = Desc {
+            name: name.to_string(),
+            orient: "CURSOR".into(),
+            ..self.desc(Op::Describe)
+        };
+        let r = self.run(d, Vec::new());
+        if r.sqlca.is_error() {
+            return Err(Box::new(r.sqlca));
+        }
+        let cols = cols_of(&r.rows);
+        let d = Desc {
+            name: name.to_string(),
+            rows: true,
+            ..self.desc(Op::Fetch)
+        };
+        let f = self.run(d, vec![Value::int(i64::from(i32::MAX))]);
+        if f.sqlca.is_error() {
+            return Err(Box::new(f.sqlca));
+        }
+        let d = Desc {
+            name: name.to_string(),
+            ..self.desc(Op::Close)
+        };
+        let _ = self.run(d, Vec::new());
+        Ok(Rows { cols, rows: f.rows })
     }
 
     /// Rows of a query the server runs for itself.
@@ -565,7 +617,15 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
     fn open(&mut self, r: &Req, params: &[Param], fetch: bool) -> Answer {
         let mut rpb = self.rpb(r);
         let mut ca = Sqlca::default();
-        if rpb.call.is_some() {
+        if !rpb.sets.is_empty() && rpb.results.is_none() {
+            // The next result set of the CALL the block last ran.
+            let name = rpb.sets.remove(0);
+            match self.result_set(&name) {
+                Ok(rows) => rpb.results = Some(rows),
+                Err(e) => ca = *e,
+            }
+            rpb.pos = 0;
+        } else if rpb.call.is_some() || is_call(&rpb.text) {
             if rpb.results.is_none() {
                 ca = code(-501, "24501");
             }
@@ -803,6 +863,11 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
     }
 }
 
+/// Whether a statement is a `CALL`.
+fn is_call(text: &str) -> bool {
+    text.trim_start().get(..5).is_some_and(|w| w.eq_ignore_ascii_case("CALL ") || w.eq_ignore_ascii_case("CALL	"))
+}
+
 /// An SQLCA with a code and state.
 fn code(sqlcode: i32, state: &str) -> Sqlca {
     Sqlca {
@@ -840,6 +905,7 @@ fn cols_of(rows: &[Vec<Value>]) -> Vec<ColType> {
             let mut c = ColType::from_describe(t, l, &name);
             // A named column (not an expression's number) came from a table.
             c.column = !name.chars().all(|ch| ch.is_ascii_digit());
+            c.mode = r.get(9).and_then(|v| v.as_i64().ok()).and_then(|m| u8::try_from(m).ok()).unwrap_or(0);
             c
         })
         .collect()

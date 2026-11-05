@@ -68,7 +68,7 @@ fn session(job: &Job, link: &Shared, start: &Start, system: &str) -> Session {
     Session::new(
         cfg,
         Box::new(JobAuth(link.clone())),
-        Box::new(JobSql::new(link.clone())),
+        Box::new(JobSql::new(link.clone(), job.clone())),
         Box::new(JobFiles::new(link.clone(), job.clone())),
     )
 }

@@ -52,6 +52,9 @@ pub struct ColType {
     pub name: String,
     /// Whether it comes from a table's column (the format's join byte).
     pub column: bool,
+    /// A `CALL`'s marker: its parameter's mode, 1 `IN`, 2 `OUT`, 3
+    /// `INOUT`; 0 for anything else.
+    pub mode: u8,
 }
 
 impl ColType {
@@ -87,6 +90,7 @@ impl ColType {
             ccsid: u16::try_from(ccsid).unwrap_or(37),
             name: name.trim_end().to_string(),
             column: false,
+            mode: 0,
         }
     }
 
@@ -103,6 +107,21 @@ impl ColType {
     /// A SMALLINT.
     pub fn smallint(name: &str, null: bool) -> Self {
         Self::from_describe(i64::from(sqltype::SMALLINT) + i64::from(null), 2, name)
+    }
+
+    /// The format's parameter type byte: 0xF1 output, 0xF2 input and
+    /// output, else 0xF0 input.
+    pub fn direction(&self) -> u8 {
+        match self.mode {
+            2 => 0xF1,
+            3 => 0xF2,
+            _ => 0xF0,
+        }
+    }
+
+    /// Whether a `CALL` gives the marker back.
+    pub fn is_output(&self) -> bool {
+        matches!(self.mode, 2 | 3)
     }
 
     /// The SQL type with its null bit.

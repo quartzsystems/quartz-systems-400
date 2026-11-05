@@ -25,7 +25,7 @@ use crate::ast::Statement;
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
-pub use call::Called;
+pub use call::{Called, check_prepare};
 
 /// What a context keeps of routines between statements.
 #[derive(Default)]

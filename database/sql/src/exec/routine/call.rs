@@ -130,6 +130,22 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value])
     Ok(Outcome::Done)
 }
 
+/// `PREPARE` of a `CALL` with markers: a procedure of the name must
+/// exist, or be one the engine runs; a program no procedure names takes
+/// no markers in a dynamic statement (SQL0204, as the primary answers).
+/// A wrong number of arguments is found as it runs (SQL0440).
+pub fn check_prepare(txn: &mut Txn<'_>, ctx: &SqlContext, c: &Call) -> Result<()> {
+    use crate::exec::catalog::services::procs;
+    if !c.args.iter().any(|a| matches!(a, Expr::Param(_))) || !find::named(txn, ctx, &c.name, 1)?.is_empty() {
+        return Ok(());
+    }
+    let schema = c.name.schema.as_ref().map(|s| s.value.as_str());
+    if matches!(schema, None | Some("QSYS2" | "SYSTOOLS")) && procs::is_procedure(schema, &c.name.name.value) {
+        return Ok(());
+    }
+    Err(SqlError::ObjectNotFound { name: c.name.to_string(), kind: "procedure" })
+}
+
 /// `CALL` of one of the procedures the engine runs itself
 /// (`QSYS2.QCMDEXC`, `IFS_WRITE` ...): qualified with its schema, or
 /// unqualified when no procedure of the name is found. Their arguments

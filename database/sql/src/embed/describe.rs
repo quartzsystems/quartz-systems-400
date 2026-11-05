@@ -534,6 +534,9 @@ pub struct Entry {
     pub label_name: String,
     /// The system column name (`USING SYSTEM NAMES`).
     pub system: String,
+    /// A `CALL`'s marker: its parameter's mode, 1 `IN`, 2 `OUT`, 3
+    /// `INOUT`; 0 for any other entry.
+    pub mode: u8,
 }
 
 impl Entry {
@@ -544,6 +547,7 @@ impl Entry {
             label: label(f),
             label_name: label_name(f),
             system: f.name.to_string(),
+            mode: 0,
         }
     }
 
@@ -554,6 +558,7 @@ impl Entry {
             label_name: name.clone(),
             system: name.clone(),
             name,
+            mode: 0,
         }
     }
 }
@@ -602,6 +607,9 @@ impl Col {
 /// markers. A statement that is not a query has no result columns.
 #[must_use]
 pub fn entries(txn: &mut Txn<'_>, ctx: &SqlContext, st: &Statement, input: bool) -> Vec<Entry> {
+    if input && let Statement::Call(c) = st {
+        return call_markers(txn, ctx, c);
+    }
     let tabs = tables_of(txn, ctx, st);
     if input {
         return markers(&tabs, st)
@@ -688,6 +696,7 @@ pub fn rows(entries: Vec<Entry>) -> Vec<Vec<Value>> {
                 Value::int(i64::from(e.col.data_flags())),
                 Value::Str(e.label_name),
                 Value::Str(e.system),
+                Value::int(i64::from(e.mode)),
             ]
         })
         .collect()
@@ -702,4 +711,55 @@ pub fn reply(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, naming: Naming
     ctx.naming = naming;
     let rows = rows(entries(txn, ctx, &p.statement, input));
     Reply { sqlca: code(0, "00000"), rows, call: None }
+}
+
+/// `DESCRIBE CURSOR`: the entries of an open cursor's columns, a
+/// procedure's result set (`RS#n`) among them. A type the parser does
+/// not take back describes as `VARCHAR`.
+#[must_use]
+pub fn cursor_rows(columns: &[crate::exec::ColumnDesc]) -> Vec<Vec<Value>> {
+    let entries = columns
+        .iter()
+        .map(|c| {
+            let mut col = match crate::pl::types::parse_type(&c.data_type) {
+                Ok(t) => {
+                    let mut x = of_type(&t.data_type);
+                    if t.bit_data {
+                        x = bits(x);
+                    }
+                    if let Some(cc) = t.ccsid {
+                        x.ccsid = cc;
+                    }
+                    x
+                }
+                Err(_) => Col::new(448, 32_740, true),
+            };
+            col.null = c.nullable;
+            Entry::expr(col, c.name.clone())
+        })
+        .collect();
+    rows(entries)
+}
+
+/// A `CALL`'s markers: each argument that is a marker takes its
+/// parameter's type and mode. A program no procedure names takes any
+/// character data (`VARCHAR`), each argument `INOUT`.
+fn call_markers(txn: &mut Txn<'_>, ctx: &SqlContext, c: &crate::ast::Call) -> Vec<Entry> {
+    let found = crate::exec::routine::find::named(txn, ctx, &c.name, 1).unwrap_or_default();
+    let routine = found.iter().find(|f| usize::from(f.routine.def.parm_count) == c.args.len());
+    let parms: Vec<_> = routine.map(|f| f.routine.parms.iter().filter(|p| p.role == 0).collect()).unwrap_or_default();
+    let mut out = Vec::new();
+    for (k, a) in c.args.iter().enumerate() {
+        let Expr::Param(_) = a else { continue };
+        let (col, mode, name) = match parms.get(k) {
+            Some(p) => {
+                let col = crate::pl::types::parse_type(&p.ty).map_or_else(|_| Col::new(448, 32_740, true), |t| of_type(&t.data_type));
+                (col, p.mode, p.name.clone())
+            }
+            None => (Col::new(448, 32_740, true), 3, String::new()),
+        };
+        let name = if name.is_empty() { format!("{:05}", out.len() + 1) } else { name };
+        out.push(Entry { mode, ..Entry::expr(col, name) });
+    }
+    out
 }

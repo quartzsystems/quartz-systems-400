@@ -51,7 +51,8 @@ pub enum Op {
     /// `GET DIAGNOSTICS`: the items, comma-separated, are the text.
     Diag,
     /// `DESCRIBE [INPUT] name INTO :sqlda`: one row per entry (type,
-    /// length, name); `orient` is `INPUT` for the markers.
+    /// length, name); `orient` is `INPUT` for the markers, `CURSOR` for
+    /// the open cursor `name`'s columns (a `CALL`'s `RS#n`).
     Describe,
     /// The end of a scope (`CLOSQLCSR(*ENDMOD)`) or, for a scope that
     /// ends in `:`, of every scope of an activation group: its cursors
@@ -380,6 +381,12 @@ impl Reply {
 pub trait Embedded {
     /// Run one statement.
     fn run(&mut self, req: &Request) -> Reply;
+
+    /// The `OUT` and `INOUT` values of the last `CALL` run, by marker,
+    /// for a requester that makes the calls it plans; none otherwise.
+    fn take_outs(&mut self) -> Vec<(usize, Value)> {
+        Vec::new()
+    }
 }
 
 /// Whoever owns the store and lends it per statement.
@@ -649,6 +656,12 @@ impl Session {
                         Ok(p) => p,
                         Err(e) => return Reply::of(Sqlca::from_error(&e)),
                     };
+                    if let Statement::Call(c) = &p.statement {
+                        ctx.naming = naming;
+                        if let Err(e) = crate::exec::routine::check_prepare(txn, ctx, c) {
+                            return Reply::of(Sqlca::from_error(&e));
+                        }
+                    }
                     // A query's tables are read: checked as they are prepared.
                     let query = matches!(p.statement, Statement::Select(_) | Statement::DeclareCursor(_));
                     for t in tables(&p.statement) {
@@ -725,6 +738,13 @@ impl Session {
     fn describe(&mut self, req: &Request) -> Reply {
         let d = &req.desc;
         let form = d.orient.split_whitespace().next().unwrap_or("");
+        if form == "CURSOR" {
+            // The columns of an open cursor: a procedure's result set.
+            return match self.scopes.get(&req.scope).and_then(|sc| sc.cursors.get(&d.name)).filter(|c| c.open) {
+                Some(c) => Reply { sqlca: code(0, "00000"), rows: describe::cursor_rows(&c.columns), call: None },
+                None => Reply::of(code(-501, "24501")),
+            };
+        }
         if form == "TABLE" {
             let text = req.inputs.first().map(|v| v.as_text().trim().to_string()).unwrap_or_default();
             return self.with_txn(&req.scope, |txn, ctx, _| {

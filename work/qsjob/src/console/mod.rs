@@ -13,6 +13,7 @@ mod debug;
 pub mod host;
 pub mod jobcmd;
 pub mod log;
+pub mod sqlcall;
 
 use std::cell::RefCell;
 use std::rc::Rc;

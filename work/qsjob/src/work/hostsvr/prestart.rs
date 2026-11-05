@@ -56,7 +56,7 @@ fn handler(server: ServerId, job: &Job, link: &Shared, start: &Start, system: &s
         ServerId::RemoteCommand => Box::new(RmtCmd::new(auth, JobCommands(job.clone()), exits)),
         ServerId::Database => Box::new(Database::new(
             auth,
-            stg::remote::RemoteSql::new(link.clone()),
+            crate::console::sqlcall::CallingSql::new(link.clone(), job.clone()),
             exits,
             DbConfig {
                 rdb: system.to_string(),

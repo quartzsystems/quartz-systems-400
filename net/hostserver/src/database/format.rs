@@ -43,7 +43,7 @@ pub fn encode(cols: &[ColType], result: bool) -> Vec<u8> {
         r.extend(c.scale.to_be_bytes());
         r.extend(c.precision.to_be_bytes());
         r.extend(c.ccsid.to_be_bytes());
-        r.push(0xF0);
+        r.push(c.direction());
         r.extend(u16::from(c.column).to_be_bytes());
         r.extend([0u8; 4 + 1 + 4 + 4 + 2]);
         // From this record's start to its name.
@@ -79,6 +79,7 @@ pub fn decode_client(b: &[u8]) -> Vec<ColType> {
             ccsid: reply::be16(r, 12),
             name: String::new(),
             column: false,
+            mode: 0,
         });
         at += ll;
     }

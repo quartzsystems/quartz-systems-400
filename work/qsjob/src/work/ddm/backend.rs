@@ -21,9 +21,10 @@ use ddm::sql::{ColType, Column, Kind, Sqlca, Value};
 use hostsvr::common::rc;
 use mi::io::{IoOp, IoRequest, IoResult, IoSource, KeyRef, OpenSpec};
 use sql::embed::{Desc, Embedded, Op, Reply, Request};
-use stg::remote::{RemoteIo, RemoteSql};
+use stg::remote::RemoteIo;
 use stg::{Client, Shared};
 
+use crate::console::sqlcall::CallingSql;
 use crate::work::hostsvr::job::Job;
 
 /// The scope the server's statements run in.
@@ -63,18 +64,19 @@ impl Authenticator for JobAuth {
     }
 }
 
-/// SQL through the job's embedded SQL session in the service.
+/// SQL through the job's embedded SQL session in the service; a
+/// `CALL` is made in the job.
 pub struct JobSql {
-    sql: RemoteSql,
+    sql: CallingSql,
     /// The columns each open cursor returns.
     cursors: HashMap<String, Vec<Column>>,
 }
 
 impl JobSql {
-    /// Over a link.
-    pub fn new(link: Shared) -> Self {
+    /// Over a link, calls made in `job`.
+    pub fn new(link: Shared, job: Job) -> Self {
         Self {
-            sql: RemoteSql::new(link),
+            sql: CallingSql::new(link, job),
             cursors: HashMap::new(),
         }
     }
