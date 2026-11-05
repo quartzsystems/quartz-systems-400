@@ -68,6 +68,15 @@ pub fn run(c: &Case) -> Result<String, String> {
     ctx.user = "QSECOFR".into();
 
     let store = Rc::new(RefCell::new(store));
+    // Trigger programs run in a job of their own, with its own session over
+    // the same store and record locks; a change calls them in its middle.
+    let mut tctx = SqlContext::with_locks(qsys, JobHandle(1), ctx.names.clone(), ctx.locks.clone());
+    tctx.now = Some(NOW);
+    tctx.current_schema = ctx.current_schema;
+    tctx.user = "QSECOFR".into();
+    let tsession = Rc::new(RefCell::new(Session::with_ctx(Box::new(Rc::clone(&store)), tctx)));
+    let tjob = Rc::new(RefCell::new(new_job(&store, &tsession, lib)));
+    ctx.midcall = Some(Rc::new(move |plan| Some(mi::io::trigger::answer_plan(&mut tjob.borrow_mut(), &plan))));
     let session = Rc::new(RefCell::new(Session::with_ctx(Box::new(Rc::clone(&store)), ctx)));
     let mut job: Option<Box<mi::Job>> = None;
 
@@ -81,8 +90,8 @@ pub fn run(c: &Case) -> Result<String, String> {
             let j = job.get_or_insert_with(|| new_job(&store, &session, lib));
             call(j, &session, &text)
         } else {
-            let mut st = store.borrow_mut();
-            let mut txn = st.begin().map_err(s)?;
+            // Lent, so a change can give the store back to a trigger program.
+            let mut txn = store::txn::Txn::lent(Box::new(|| store.borrow_mut())).map_err(s)?;
             let r = match &prepared {
                 Ok(p) => p.run(&mut txn, &mut session.borrow_mut().ctx, &[]),
                 Err(e) => (sql::Sqlca::from_error(e), None),

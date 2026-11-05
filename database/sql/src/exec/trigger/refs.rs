@@ -123,6 +123,62 @@ pub(super) fn qualified_uses(text: &str, corrs: &[&str]) -> Vec<String> {
     out
 }
 
+/// The triggered statement as the catalog keeps it: its tokens one
+/// blank apart, its lines as written, a blank at the end, and the
+/// columns of a table it inserts into without listing them listed
+/// (`cols_of` gives them from the schema, when named, and the table).
+pub(super) fn statement_text(text: &str, cols_of: &mut dyn FnMut(Option<&str>, &str) -> Vec<String>) -> String {
+    let Ok(toks) = tokenize(text) else { return text.to_string() };
+    let toks: Vec<_> = toks.into_iter().filter(|t| !matches!(t.tok, Tok::End)).collect();
+    let word = |i: usize, w: &str| matches!(toks.get(i).map(|t| &t.tok), Some(Tok::Word(x)) if x == w);
+    let ident = |i: usize| match toks.get(i).map(|t| &t.tok) {
+        Some(Tok::Word(s) | Tok::Delimited(s)) => Some(s.clone()),
+        _ => None,
+    };
+    // (token index after which, line, columns)
+    let mut adds: Vec<(usize, u32, Vec<String>)> = Vec::new();
+    for i in 0..toks.len() {
+        if !(word(i, "INSERT") && word(i + 1, "INTO")) {
+            continue;
+        }
+        let Some(first) = ident(i + 2) else { continue };
+        let qualified = matches!(toks.get(i + 3).map(|t| &t.tok), Some(Tok::Sym("." | "/")));
+        let (schema, name, last) = match (qualified, ident(i + 4)) {
+            (true, Some(n)) => (Some(first), n, i + 4),
+            _ => (None, first, i + 2),
+        };
+        let listed = matches!(toks.get(last + 1).map(|t| &t.tok), Some(Tok::Sym("("))) && !(word(last + 2, "SELECT") || word(last + 2, "VALUES") || word(last + 2, "WITH"));
+        if listed {
+            continue;
+        }
+        let cols = cols_of(schema.as_deref(), &name);
+        if !cols.is_empty() {
+            adds.push((last, toks[last].line, cols));
+        }
+    }
+    let mut seq: Vec<(Tok, u32)> = Vec::new();
+    for (i, t) in toks.iter().enumerate() {
+        seq.push((t.tok.clone(), t.line));
+        if let Some((_, line, cols)) = adds.iter().find(|(at, _, _)| *at == i) {
+            seq.push((Tok::Sym("("), *line));
+            for (k, c) in cols.iter().enumerate() {
+                if k > 0 {
+                    seq.push((Tok::Sym(","), *line));
+                }
+                seq.push((Tok::Word(c.clone()), *line));
+            }
+            seq.push((Tok::Sym(")"), *line));
+        }
+    }
+    let mut out = String::new();
+    for (i, (t, line)) in seq.iter().enumerate() {
+        crate::pl::rewrite::render(t, &mut out);
+        let next_line = seq.get(i + 1).is_some_and(|(_, l)| l > line);
+        out.push(if next_line { '\n' } else { ' ' });
+    }
+    out
+}
+
 /// A table named in `text`: its schema when qualified, its name, and
 /// for `INSERT INTO` the columns listed (`Some(empty)` for none listed).
 pub(super) struct Named {

@@ -1,0 +1,87 @@
+-- captured from primary
+> CREATE TABLE {lib}.TRG_T1 (ID INT NOT NULL, NAME CHAR(10), AMT DECIMAL(7
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.TRG_LOG (TXT VARCHAR(100), N INT)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TRIGGER {lib}.TRG_B1 BEFORE INSERT ON {lib}.TRG_T1
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TRIGGER {lib}.TRG_A1 AFTER INSERT ON {lib}.TRG_T1 REFERENCING NEW
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TRIGGER {lib}.TRG_A2 AFTER INSERT ON {lib}.TRG_T1 REFERENCING NEW
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TRIGGER {lib}.TRG_B4 BEFORE UPDATE OF AMT ON {lib}.TRG_T1 REFEREN
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TRIGGER {lib}.TRG_B5 BEFORE DELETE ON {lib}.TRG_T1
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TRIGGER {lib}.TRG_A6 AFTER UPDATE ON {lib}.TRG_T1 REFERENCING OLD
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.TRG_T1 VALUES (1, 'abc', 5, '2026-01-01'), (2, 'def', 
+sqlcode 0 sqlstate 00000 msgid - count 3
+> SELECT ID, NAME, AMT, D FROM {lib}.TRG_T1 ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# NAME CHAR(10)
+# AMT DECIMAL(7,2)
+# D DATE
+| 1 | 'ABC       ' | 6.00 | '2026-01-01' |
+| 2 | 'DEF       ' | 1.00 | NULL |
+| 3 | 'GHI       ' | 2.00 | NULL |
+> SELECT TXT, N FROM {lib}.TRG_LOG
+sqlcode 0 sqlstate 00000 msgid -
+# TXT VARCHAR(100)
+# N INTEGER
+| 'ROW ABC       ' | 1 |
+| 'ROW DEF       ' | 2 |
+| 'ROW GHI       ' | 3 |
+| 'SQL ABC       ' | 3 |
+| 'SQL DEF       ' | 3 |
+| 'SQL GHI       ' | 3 |
+> DELETE FROM {lib}.TRG_LOG
+sqlcode 0 sqlstate 00000 msgid - count 6
+> UPDATE {lib}.TRG_T1 SET AMT = -1 WHERE ID = 1
+sqlcode -723 sqlstate 09000 msgid SQL0723
+> UPDATE {lib}.TRG_T1 SET NAME = 'X' WHERE ID = 1
+sqlcode 0 sqlstate 00000 msgid - count 1
+> UPDATE {lib}.TRG_T1 SET AMT = AMT + 1
+sqlcode 0 sqlstate 00000 msgid - count 3
+> SELECT TXT, N FROM {lib}.TRG_LOG ORDER BY N
+sqlcode 0 sqlstate 00000 msgid -
+# TXT VARCHAR(100)
+# N INTEGER
+| 'ABC       >X         ' | 1 |
+| 'X         >X         ' | 1 |
+| 'DEF       >DEF       ' | 2 |
+| 'GHI       >GHI       ' | 3 |
+> INSERT INTO {lib}.TRG_T1 VALUES (99, 'zz', 0, NULL)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> DELETE FROM {lib}.TRG_T1 WHERE ID = 99
+sqlcode -723 sqlstate 09000 msgid SQL0723
+> SELECT ID, NAME, AMT FROM {lib}.TRG_T1 ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# NAME CHAR(10)
+# AMT DECIMAL(7,2)
+| 1 | 'X         ' | 7.00 |
+| 2 | 'DEF       ' | 2.00 |
+| 3 | 'GHI       ' | 3.00 |
+| 99 | 'ZZ        ' | 1.00 |
+> DROP TRIGGER {lib}.TRG_B5
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TRIGGER {lib}.TRG_B5
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DELETE FROM {lib}.TRG_T1 WHERE ID = 99
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT COUNT(*) FROM {lib}.TRG_T1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 3 |
+> DROP TABLE {lib}.TRG_T1
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_SCHEMA = '{lib}' AN
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> DROP TABLE {lib}.TRG_LOG
+sqlcode 0 sqlstate 00000 msgid -

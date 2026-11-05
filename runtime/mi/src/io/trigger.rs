@@ -155,23 +155,30 @@ pub fn sql_run(j: &mut Job, req: &sql::embed::Request) -> Option<sql::embed::Rep
     use sql::exec::routine::{CallStyle, midcall};
     let mut reply = j.sql.as_mut()?.run(req);
     while let Some(plan) = reply.call.take_if(|p| p.style == CallStyle::Trigger) {
-        let mut c = TriggerCall {
-            trigger: plan.routine.clone(),
-            lib: plan.library.clone(),
-            pgm: plan.program.clone(),
-            file: plan.specific.clone(),
-            buffer: midcall::plan_buffer(&plan),
-            ..TriggerCall::default()
-        };
-        let failed = call(j, &mut c).err().map(|f| db::trg::Failure { msgid: f.msgid, text: f.text, not_found: f.not_found });
         let answer = sql::embed::Request {
             scope: req.scope.clone(),
             desc: sql::embed::Desc { op: sql::embed::Op::Called, name: midcall::ANSWER.into(), ..sql::embed::Desc::default() },
-            inputs: midcall::trigger_inputs(&c.buffer, failed.as_ref()),
+            inputs: answer_plan(j, &plan),
         };
         reply = j.sql.as_mut()?.run(&answer);
     }
     Some(reply)
+}
+
+/// Make the trigger call a plan of style `Trigger` describes; the
+/// answer for the database (`midcall::trigger_inputs`).
+pub fn answer_plan(j: &mut Job, plan: &sql::exec::routine::CallPlan) -> Vec<sql::Value> {
+    use sql::exec::routine::midcall;
+    let mut c = TriggerCall {
+        trigger: plan.routine.clone(),
+        lib: plan.library.clone(),
+        pgm: plan.program.clone(),
+        file: plan.specific.clone(),
+        buffer: midcall::plan_buffer(plan),
+        ..TriggerCall::default()
+    };
+    let failed = call(j, &mut c).err().map(|f| db::trg::Failure { msgid: f.msgid, text: f.text, not_found: f.not_found });
+    midcall::trigger_inputs(&c.buffer, failed.as_ref())
 }
 
 impl TriggerCall {

@@ -19,7 +19,6 @@ use std::sync::Arc;
 use blockdev::{BlockDev, MemBlockDev};
 use ile::{PgmKind, ProgramObject};
 use mi::act::ObjectSource;
-use mi::io::trigger::{TriggerCall, call};
 use qsname::Name;
 use sql::embed::{Desc, Embedded, Op, Reply, Request, Session};
 use sql::exec::routine::{CallPlan, midcall};
@@ -104,15 +103,7 @@ fn env() -> Env {
     let j = Rc::clone(&job);
     let mid: midcall::MidCaller = Rc::new(move |plan: CallPlan| {
         let plan = CallPlan::decode(&plan.encode()).expect("the plan crosses");
-        let mut c = TriggerCall {
-            trigger: plan.routine.clone(),
-            lib: plan.library.clone(),
-            pgm: plan.program.clone(),
-            buffer: midcall::plan_buffer(&plan),
-            ..TriggerCall::default()
-        };
-        let failed = call(&mut j.borrow_mut(), &mut c).err().map(|f| db::trg::Failure { msgid: f.msgid, text: f.text, not_found: f.not_found });
-        Some(midcall::trigger_inputs(&c.buffer, failed.as_ref()))
+        Some(mi::io::trigger::answer_plan(&mut j.borrow_mut(), &plan))
     });
     let mut ctx = context(qsys, lib, &locks);
     ctx.midcall = Some(mid);

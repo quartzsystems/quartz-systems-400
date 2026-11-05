@@ -1054,3 +1054,10 @@ sev = 10
 text = "BEFORE trigger &1 in &2 runs in MODE DB2ROW."
 help = "A BEFORE trigger always fires once for each row as it changes, so the trigger was made with MODE DB2ROW. Give MODE DB2ROW on BEFORE triggers to avoid this warning."
 vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0156"
+sev = 30
+text = "&1 in &2 is not a table."
+help = "The statement works on tables only, and the object named is a view, an index or another kind of file. A BEFORE or AFTER trigger is on a table."
+vars = ["*CHAR 128", "*CHAR 128"]

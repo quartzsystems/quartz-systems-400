@@ -113,19 +113,19 @@ fn check_referencing(t: &CreateTrigger, db2sql: bool) -> Result<()> {
 fn subject(txn: &mut Txn<'_>, ctx: &SqlContext, t: &CreateTrigger) -> Result<TableInfo> {
     let id = ctx.resolve_file(txn, &t.table)?;
     let view = super::view::is_view(txn, id);
-    let not_type = || coded(-159, "42809", format!("{} is not of the type the trigger needs", t.table.name.value));
+    let not_type = |code| coded(code, "42809", format!("{} is not of the type the trigger needs", t.table.name.value));
     match t.time {
         TriggerTime::InsteadOf if view => {
             // BLOCKED(sql): an insert, update or delete of a view runs its
             // INSTEAD OF triggers in place of the change.
             Err(unsupported("INSTEAD OF triggers"))
         }
-        TriggerTime::InsteadOf => Err(not_type()),
-        _ if view => Err(not_type()),
+        TriggerTime::InsteadOf => Err(not_type(-159)),
+        _ if view => Err(not_type(-156)),
         _ => {
             let info = ctx.resolve_table(txn, &t.table)?;
             if info.desc.attr.kind != db::file::FileKind::Physical {
-                return Err(not_type());
+                return Err(not_type(-156));
             }
             Ok(info)
         }
@@ -202,17 +202,30 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTrigger) -> Res
     make_program(txn, ctx, lib, program, &qir, "")?;
     // What the catalogs show.
     let mut def = SqlDef {
-        old_row: old_row.unwrap_or_default(),
-        new_row: new_row.unwrap_or_default(),
+        old_row: old_row.clone().unwrap_or_default(),
+        new_row: new_row.clone().unwrap_or_default(),
         condition: if t.when.is_some() { body_definition(&format!("( {cond_text} )")) } else { String::new() },
-        statement: body_definition(&t.body_text),
         ..SqlDef::default()
     };
+    def.statement = refs::statement_text(&t.body_text, &mut |schema, table| {
+        let on = ObjectName { schema: schema.map(|s| Ident { value: s.to_string(), delimited: false }), name: Ident { value: table.to_string(), delimited: false } };
+        let Ok(id) = ctx.resolve_file(txn, &on) else { return Vec::new() };
+        let Ok(d) = db::file::describe(txn, id) else { return Vec::new() };
+        d.formats.first().map(|f| f.format.fields.iter().map(|x| x.alias.clone().unwrap_or_else(|| x.name.to_string())).collect()).unwrap_or_default()
+    });
     let file_name = info.desc.name();
     let file_lib = info.desc.library_name;
-    for u in &used {
-        if let Some(c) = cols.iter().find(|c| c.names.iter().any(|n| n == u)) {
-            def.columns.push((file_lib, file_name, Name::parse(&c.names[0]).unwrap_or(file_name)));
+    // Each column once in the condition and once in the statement, as
+    // the primary lists them.
+    for part in [cond_text.as_str(), t.body_text.as_str()] {
+        let mut seen: Vec<Name> = Vec::new();
+        for u in refs::qualified_uses(part, &both) {
+            let Some(c) = cols.iter().find(|c| c.names.contains(&u)) else { continue };
+            let n = Name::parse(&c.names[0]).unwrap_or(file_name);
+            if !seen.contains(&n) {
+                seen.push(n);
+                def.columns.push((file_lib, file_name, n));
+            }
         }
     }
     for n in refs::tables(&t.body_text) {
@@ -247,7 +260,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTrigger) -> Res
     let new = NewTrg {
         name: Some(name.clone()),
         library: Some(lib_name),
-        alwrepchg: before,
+        alwrepchg: true,
         replace: old.as_ref().is_some_and(|(f, _)| *f == info.id),
         threadsafe: Threadsafe::Yes,
         mt_action: MtAction::Run,
