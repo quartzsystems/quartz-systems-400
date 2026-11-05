@@ -50,9 +50,7 @@ pub fn check_body(s: &PlStmt) -> Result<()> {
     let all = |v: &[PlStmt]| v.iter().try_for_each(check_body);
     match &s.kind {
         PlKind::Compound(c) => {
-            if c.atomic {
-                return Err(unsupported("BEGIN ATOMIC in a function: savepoints"));
-            }
+            // ATOMIC changes nothing here: a function's body only reads.
             if !c.cursors.is_empty() || !c.handlers.is_empty() {
                 return Err(unsupported("cursors and handlers in an SQL function"));
             }

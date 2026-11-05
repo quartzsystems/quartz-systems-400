@@ -26,7 +26,6 @@ query/DTFUNCS   # 01506 not reported; TIMESTAMP_FORMAT's SQ20448 comes at fetch 
 query/STRFUNCS   # DECODE is SQL0204 on pub400 but in the brief's must-have list
 query/NUMFUNCS   # ENCRYPT_AES refused: DB2 for i's encrypted layout is not published
 query/REGISTERS   # CURRENT DEGREE is pub400's system setting (ANY); NONE here
-sqlpl/ATOMIC   # BEGIN ATOMIC and UNDO handlers refused SQL0084: no savepoints yet
 sqlpl/CATALOG   # PARM_SIGNATURE is LONG VARCHAR FOR BIT DATA at IBM (no such catalog type here)
 sqlpl/EXTERN   # an external procedure over a program not made yet refused SQL0084
 sqlpl/SETVARS   # CHAR(integer) is not blank padded to its length here

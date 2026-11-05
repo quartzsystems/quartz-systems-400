@@ -48,6 +48,7 @@ struct Cur {
 /// A handler in effect.
 #[derive(Clone, Debug)]
 struct Hand {
+    kind: HandlerKind,
     conds: Vec<HandlerCond>,
     entry: String,
     /// Statements that went to it: their numbers and where they carry on.
@@ -65,6 +66,8 @@ struct Frame {
     /// Whether this frame's handlers take conditions now (not while
     /// its own handlers run).
     active: bool,
+    /// An `ATOMIC` compound: its savepoint.
+    atomic: Option<String>,
 }
 
 /// A statement `LEAVE` and `ITERATE` reach.
@@ -72,6 +75,8 @@ struct Target {
     label: String,
     exit: String,
     iterate: Option<String>,
+    /// The frames around it: those above are left by `LEAVE`.
+    depth: usize,
 }
 
 struct Gen<'a> {
@@ -96,6 +101,8 @@ struct Gen<'a> {
     for_count: u32,
     /// The current block has `%pca`.
     pca: bool,
+    /// `ATOMIC` compounds so far.
+    atomics: u32,
 }
 
 impl Names for Gen<'_> {
@@ -139,6 +146,7 @@ pub fn compile(sig: &Signature, body: &PlStmt, cat: &mut dyn Catalog) -> Result<
         done: String::new(),
         for_count: 0,
         pca: false,
+        atomics: 0,
     };
     g.fail = g.label();
     g.done = g.label();
@@ -234,7 +242,7 @@ impl Gen<'_> {
                 let _ = writeln!(out, "proc {p}({}) entry {{", params.join(", "));
             }
         }
-        out.push_str("  auto $sqlca: bytes(136)\n  auto $hca: bytes(136)\n  auto $cls: char(2)\n  auto $resume: i32\n  auto $rc: i32\n");
+        out.push_str("  auto $sqlca: bytes(136)\n  auto $hca: bytes(136)\n  auto $uca: bytes(136)\n  auto $cls: char(2)\n  auto $resume: i32\n  auto $rc: i32\n");
         for a in &self.autos {
             out.push_str(a);
             out.push('\n');
@@ -463,7 +471,8 @@ impl Gen<'_> {
             PlKind::For { var, cursor, query, body } => self.for_loop(var, cursor.as_ref(), query, body, label)?,
             PlKind::Leave(l) => {
                 let t = self.targets.iter().rev().find(|t| t.label == l.value).ok_or_else(|| no_label(&l.value))?;
-                let exit = t.exit.clone();
+                let (exit, depth) = (t.exit.clone(), t.depth);
+                self.release_from(depth);
                 self.term(format!("br {exit}"));
             }
             PlKind::Iterate(l) => {
@@ -471,6 +480,8 @@ impl Gen<'_> {
                 let Some(it) = t.iterate.clone() else {
                     return Err(SqlError::Coded { code: -778, state: "428D5", what: format!("{} does not label a loop", l.value) });
                 };
+                let depth = t.depth;
+                self.release_from(depth);
                 self.term(format!("br {it}"));
             }
             PlKind::Goto(l) => {
@@ -490,6 +501,7 @@ impl Gen<'_> {
                     self.ins(format!("%rv = load {t}"));
                     self.ins("store $rc, %rv");
                 }
+                self.release_from(0);
                 let d = self.done.clone();
                 self.term(format!("br {d}"));
             }
@@ -550,7 +562,8 @@ impl Gen<'_> {
     fn with_target(&mut self, label: Option<String>, exit: &str, iterate: Option<&str>, f: impl FnOnce(&mut Self) -> Result<()>) -> Result<()> {
         let pushed = label.is_some();
         if let Some(l) = label {
-            self.targets.push(Target { label: l, exit: exit.to_string(), iterate: iterate.map(str::to_string) });
+            let depth = self.frames.len();
+            self.targets.push(Target { label: l, exit: exit.to_string(), iterate: iterate.map(str::to_string), depth });
         }
         let r = f(self);
         if pushed {
@@ -563,7 +576,41 @@ impl Gen<'_> {
         Desc {
             sql_naming: self.sig.naming == crate::ast::Naming::Sql,
             commit: self.sig.commit,
+            atomic: self.sig.commit.is_none() && self.frames.iter().any(|f| f.atomic.is_some()),
             ..Desc::default()
+        }
+    }
+
+    /// A statement of the compiler's own (a savepoint of an `ATOMIC`
+    /// compound): it leaves the SQLCA and the diagnostics as they were.
+    fn internal(&mut self, text: &str) {
+        let d = Desc {
+            op: Op::Exec,
+            text: text.to_string(),
+            quiet: true,
+            atomic: self.sig.commit.is_none(),
+            ..self.desc()
+        };
+        let (t, len) = self.text_const(&d.encode()).expect("savepoint statements are CCSID 37");
+        self.ins("mov $uca, $sqlca");
+        self.ins(format!("callb _QRNX_SQLRUN($sqlca, {t}, {len}, $scope, {})", self.sig.program.len()));
+        self.ins("mov $sqlca, $uca");
+    }
+
+    /// The outermost `ATOMIC` compound among the frames from `depth` up:
+    /// its savepoint released, and with it those of the compounds in it.
+    fn release_from(&mut self, depth: usize) {
+        if let Some(sp) = self.frames.get(depth..).and_then(|fs| fs.iter().find_map(|f| f.atomic.clone())) {
+            self.internal(&format!("RELEASE SAVEPOINT {sp}"));
+        }
+    }
+
+    /// An exception leaves the routine: every `ATOMIC` compound it is
+    /// in undone.
+    fn undo_all(&mut self) {
+        if let Some(sp) = self.frames.iter().find_map(|f| f.atomic.clone()) {
+            self.internal(&format!("ROLLBACK TO SAVEPOINT {sp}"));
+            self.internal(&format!("RELEASE SAVEPOINT {sp}"));
         }
     }
 
@@ -618,6 +665,10 @@ impl Gen<'_> {
     fn sql_stmt(&mut self, q: &PlSql) -> Result<()> {
         if matches!(q.stmt, Statement::CreateRoutine(_)) {
             return Err(unsupported("CREATE PROCEDURE or FUNCTION inside a routine"));
+        }
+        if matches!(q.stmt, Statement::Commit { .. } | Statement::Rollback { .. }) && self.frames.iter().any(|f| f.atomic.is_some()) {
+            let what = crate::exec::statement_name(&q.stmt);
+            return Err(SqlError::Coded { code: -775, state: "42910", what: format!("{what} in an ATOMIC compound statement") });
         }
         let r = match &q.stmt {
             Statement::Insert(i) => self.insert_text(&q.text, i)?,
@@ -852,6 +903,14 @@ impl Gen<'_> {
             self.place(&go);
             self.ins(format!("store $resume, {k}"));
             self.ins("mov $hca, $sqlca");
+            match self.frames[fi].handlers[hi].kind {
+                HandlerKind::Continue => {}
+                HandlerKind::Exit => self.release_from(fi + 1),
+                HandlerKind::Undo => {
+                    let sp = self.frames[fi].atomic.clone().expect("UNDO in an ATOMIC compound");
+                    self.internal(&format!("ROLLBACK TO SAVEPOINT {sp}"));
+                }
+            }
             let entry = self.frames[fi].handlers[hi].entry.clone();
             let rs = &mut self.frames[fi].handlers[hi].resumes;
             if !rs.iter().any(|(r, _)| *r == k) {
@@ -860,12 +919,16 @@ impl Gen<'_> {
             self.term(format!("br {entry}"));
             self.place(&next);
         }
-        // No handler: a warning or no data goes on; an exception ends the routine.
+        // No handler: a warning or no data goes on; an exception ends the
+        // routine, the ATOMIC compounds it is in undone.
         let fail = self.fail.clone();
-        let f1 = self.label();
+        let (f1, f2) = (self.label(), self.label());
         self.term(format!("brif %cw, {cont}, {f1}"));
         self.place(&f1);
-        self.term(format!("brif %cn, {cont}, {fail}"));
+        self.term(format!("brif %cn, {cont}, {f2}"));
+        self.place(&f2);
+        self.undo_all();
+        self.term(format!("br {fail}"));
     }
 
     /// A declared condition's SQLSTATE.
@@ -1012,13 +1075,16 @@ impl Gen<'_> {
 
     /// `BEGIN ... END`.
     fn compound(&mut self, c: &Compound, label: Option<String>) -> Result<()> {
-        if c.atomic {
-            // BLOCKED(sql): an atomic compound is a savepoint, and the
-            // database has no savepoints yet.
-            return Err(unsupported("BEGIN ATOMIC: savepoints"));
-        }
         let end = self.label();
         let mut frame = Frame { label: label.clone(), active: true, ..Frame::default() };
+        // An ATOMIC compound is a savepoint: released at its end, rolled
+        // back to by an UNDO handler or an exception leaving the routine.
+        if c.atomic {
+            self.atomics += 1;
+            let sp = format!("\"{}{}\"", crate::exec::ATOMIC_SAVEPOINT, self.atomics);
+            self.internal(&format!("SAVEPOINT {sp} ON ROLLBACK RETAIN CURSORS"));
+            frame.atomic = Some(sp);
+        }
         for (n, s) in &c.conditions {
             frame.conds.insert(n.value.clone(), s.clone());
         }
@@ -1065,11 +1131,11 @@ impl Gen<'_> {
         }
         // Handlers: their entries now, their bodies after the statements.
         for h in &c.handlers {
-            if h.kind == HandlerKind::Undo {
-                return Err(unsupported("UNDO handlers: savepoints"));
+            if h.kind == HandlerKind::Undo && !c.atomic {
+                return Err(SqlError::Coded { code: -780, state: "428D6", what: "an UNDO handler outside an ATOMIC compound statement".into() });
             }
             let entry = self.label();
-            self.frames.last_mut().expect("frame").handlers.push(Hand { conds: h.conds.clone(), entry, resumes: Vec::new() });
+            self.frames.last_mut().expect("frame").handlers.push(Hand { kind: h.kind, conds: h.conds.clone(), entry, resumes: Vec::new() });
         }
         let r = self.with_target(label, &end, None, |g| g.stmts(&c.body));
         r?;
@@ -1094,8 +1160,11 @@ impl Gen<'_> {
                 HandlerKind::Exit | HandlerKind::Undo => self.term(format!("br {end}")),
             }
         }
-        self.frames.pop();
+        let atomic = self.frames.pop().and_then(|f| f.atomic);
         self.place(&end);
+        if let Some(sp) = atomic {
+            self.internal(&format!("RELEASE SAVEPOINT {sp}"));
+        }
         Ok(())
     }
 }

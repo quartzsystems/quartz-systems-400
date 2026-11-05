@@ -1,0 +1,104 @@
+-- kept by hand: QS/400, as oracle/probes/sqlpl/sp2.out and sp3.out show the primary over a journaled table
+> CREATE SCHEMA QPYSCH
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TABLE QPYSCH.QPY_S (ID INTEGER NOT NULL PRIMARY KEY)
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO QPYSCH.QPY_S VALUES 100
+sqlcode 0 sqlstate 00000 msgid - count 1
+> CREATE PROCEDURE {lib}.QPY_B1 (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_B2 (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_B3 (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_B4 (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_B5 (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_B6 (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_A4 ()
+sqlcode -775 sqlstate 42910 msgid SQL0775
+> CREATE PROCEDURE {lib}.QPY_A5 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_A6 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_A8 ()
+sqlcode -780 sqlstate 428D6 msgid SQL0780
+> CREATE PROCEDURE {lib}.QPY_R (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_L (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPY_B1(1)
+sqlcode -803 sqlstate 23505 msgid SQL0803
+> CALL {lib}.QPY_B2(2)
+sqlcode -803 sqlstate 23505 msgid SQL0803
+> CALL {lib}.QPY_B3(3)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPY_B4(4)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPY_B5(5)
+sqlcode -803 sqlstate 23505 msgid SQL0803
+> CALL {lib}.QPY_B6(6)
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ID FROM QPYSCH.QPY_S ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 4 |
+| 5 |
+| 7 |
+| 53 |
+| 56 |
+| 100 |
+| 1004 |
+> CALL {lib}.QPY_A5()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPY_A6()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPY_R(800)
+sqlcode -803 sqlstate 23505 msgid SQL0803
+> CALL {lib}.QPY_R(810)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPY_L(900)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPY_L(910)
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ID FROM QPYSCH.QPY_S ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 4 |
+| 5 |
+| 7 |
+| 53 |
+| 56 |
+| 100 |
+| 501 |
+| 600 |
+| 810 |
+| 900 |
+| 902 |
+| 910 |
+| 912 |
+| 1004 |
+> DROP PROCEDURE {lib}.QPY_B1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPY_B2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPY_B3
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPY_B4
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPY_B5
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPY_B6
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPY_A5
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPY_A6
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPY_R
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPY_L
+sqlcode 0 sqlstate 00000 msgid -
+> DROP SCHEMA QPYSCH CASCADE
+sqlcode 0 sqlstate 00000 msgid -

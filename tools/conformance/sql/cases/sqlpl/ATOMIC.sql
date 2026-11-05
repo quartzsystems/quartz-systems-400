@@ -1,5 +1,4 @@
 -- oracle: primary
--- requires: savepoints (BEGIN ATOMIC, UNDO handlers)
 CREATE TABLE {lib}.QPY_T (ID INTEGER NOT NULL PRIMARY KEY);
 --#SET TERMINATOR @
 CREATE PROCEDURE {lib}.QPY_ALL_OR_NONE (IN P INTEGER)

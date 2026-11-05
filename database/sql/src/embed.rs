@@ -26,6 +26,7 @@ use crate::exec::{Outcome, SqlContext, prepare};
 use crate::sqlca::Sqlca;
 use crate::value::Value;
 
+mod atomic;
 pub mod describe;
 mod package;
 
@@ -157,6 +158,9 @@ pub struct Desc {
     /// position, comma-separated (`I0,O1`). Kept after the orientation
     /// in the text form; a program precompiled before has none.
     pub locs: String,
+    /// A statement of an `ATOMIC` compound in a routine without
+    /// commitment control: run under the routine's own definition.
+    pub atomic: bool,
     /// The statement text (the cursor's query for `OPEN`).
     pub text: String,
 }
@@ -193,6 +197,7 @@ impl Desc {
             (self.quiet, 'V'),
             (self.calls, 'L'),
             (self.sensitive, 'Y'),
+            (self.atomic, 'M'),
         ] {
             if on {
                 flags.push(c);
@@ -238,6 +243,7 @@ impl Desc {
             quiet: rest.contains('V'),
             calls: rest.contains('L'),
             sensitive: rest.contains('Y'),
+            atomic: rest.contains('M'),
             commit: if rest.contains('G') {
                 Some(LckLvl::Chg)
             } else if rest.contains('T') {
@@ -563,10 +569,15 @@ impl Session {
             Some(iso) => crate::exec::lock_level(iso),
             None => req.desc.commit,
         };
+        let own = req.desc.atomic && req.desc.commit.is_none();
+        let level = if own { Some(level.unwrap_or(LckLvl::Chg)) } else { level };
         self.ctx.no_commit = level.is_none();
         let lcklvl = level?;
         if matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag | Op::Deallocate | Op::Package) {
             return None;
+        }
+        if own {
+            return self.atomic_def(&group, lcklvl).map(Reply::of);
         }
         if let Some(def) = self.ctx.session.commit_def() {
             def.borrow_mut().set_lcklvl(lcklvl);
@@ -931,6 +942,13 @@ impl Embedded for Session {
         };
         if !r.sqlca.is_error() {
             r.call = self.ctx.routine.pending.take();
+            if req.desc.atomic
+                && req.desc.commit.is_none()
+                && req.desc.text.starts_with("RELEASE")
+                && let Some(ca) = self.atomic_released()
+            {
+                r = Reply::of(ca);
+            }
         }
         self.ctx.routine.can_call = false;
         if kept.is_some() {
