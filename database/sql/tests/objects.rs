@@ -361,3 +361,78 @@ fn index_extensions() {
     );
     assert_eq!(db.rows("SELECT COUNT(*) FROM QSI1T WHERE AMT > 2"), [row(&["3"])]);
 }
+
+/// The users of the grant test, made as `CRTUSRPRF` makes them.
+fn users(db: &mut Db, names: &[&str]) {
+    let sysval = |_: &str| String::new();
+    let mut t = db.store.begin().unwrap();
+    let qsys = db.ctx.qsys;
+    sec::profile::shipped::install(&mut t, qsys, 40, 3, 1_767_225_600).unwrap();
+    let secofr = sec::auth::principal::Principal::load(&mut t, qsys, "QSECOFR", 40).unwrap();
+    let env = sec::cmd::Env { qsys, actor: &secofr, now: 1_767_225_600, sysval: &sysval };
+    for n in names {
+        sec::cmd::usrprf::crtusrprf(&mut t, &env, &sec::cmd::Keywords::new(&[("USRPRF", n)])).unwrap();
+    }
+    t.commit().unwrap();
+}
+
+/// A user's authority bits to a table of QSTEST.
+fn bits(db: &mut Db, table: &str, user: &str) -> Option<u32> {
+    let mut t = db.store.begin().unwrap();
+    let lib = ops::find_library(&mut t, db.ctx.qsys, Name::parse("QSTEST").unwrap()).unwrap().id;
+    let id = store::obj::library::Library::load(&mut t, lib).unwrap().lookup(&mut t, types::FILE, Name::parse(table).unwrap()).unwrap().unwrap();
+    let h = sec::auth::grant::header(&mut t, id).unwrap();
+    let b = if user == "*PUBLIC" { Some(h.public_authority.0) } else { sec::auth::grant::private(&mut t, &h, user).unwrap().map(|a| a.0) };
+    t.abort();
+    b
+}
+
+#[test]
+fn grant_and_revoke_map_to_object_authorities() {
+    use store::obj::header::Authority as A;
+    let mut db = Db::new();
+    users(&mut db, &["GSEL", "GINS", "GALT", "GALL", "GOPT"]);
+    db.ok("CREATE TABLE QSG1T (ID INT NOT NULL, NAME VARCHAR(20))");
+    db.ok("CREATE VIEW QSG1V AS SELECT ID FROM QSG1T");
+    db.ok("CREATE VIEW QSG1Q AS SELECT ID + 1 AS N FROM QSG1T");
+    db.ok("GRANT SELECT ON QSG1T TO GSEL");
+    db.ok("GRANT INSERT ON TABLE QSG1T TO GINS");
+    db.ok("GRANT ALTER, INDEX ON QSG1T TO GALT");
+    db.ok("GRANT ALL PRIVILEGES ON QSG1T TO GALL");
+    db.ok("GRANT SELECT ON QSG1T TO GOPT WITH GRANT OPTION");
+    db.ok("GRANT SELECT ON QSG1T TO PUBLIC");
+    assert_eq!(bits(&mut db, "QSG1T", "GSEL"), Some(A::OBJOPR | A::READ));
+    assert_eq!(bits(&mut db, "QSG1T", "GINS"), Some(A::OBJOPR | A::ADD));
+    assert_eq!(bits(&mut db, "QSG1T", "GALT"), Some(A::OBJALTER));
+    assert_eq!(bits(&mut db, "QSG1T", "GALL"), Some(A::OBJOPR | A::OBJALTER | A::OBJREF | A::READ | A::ADD | A::UPD | A::DLT));
+    assert_eq!(bits(&mut db, "QSG1T", "GOPT"), Some(A::OBJOPR | A::OBJMGT | A::READ));
+    assert_eq!(bits(&mut db, "QSG1T", "*PUBLIC").map(|b| b & (A::OBJOPR | A::READ)), Some(A::OBJOPR | A::READ));
+    assert_eq!(
+        db.rows("SELECT GRANTEE, PRIVILEGE_TYPE, IS_GRANTABLE FROM QSYS2.SYSTABAUTH WHERE TABLE_NAME = 'QSG1T' AND GRANTEE IN ('GSEL', 'GOPT', 'GALT') ORDER BY 1, 2"),
+        [row(&["GALT", "ALTER", "NO"]), row(&["GALT", "INDEX", "NO"]), row(&["GOPT", "SELECT", "YES"]), row(&["GSEL", "SELECT", "NO"])]
+    );
+    // REVOKE takes the data authority, *OBJOPR with the last of them; a
+    // privilege not held is a warning.
+    db.ok("REVOKE INSERT ON QSG1T FROM GALL");
+    assert_eq!(bits(&mut db, "QSG1T", "GALL"), Some(A::OBJOPR | A::OBJALTER | A::OBJREF | A::READ | A::UPD | A::DLT));
+    db.ok("REVOKE SELECT ON QSG1T FROM GSEL");
+    assert_eq!(bits(&mut db, "QSG1T", "GSEL"), None);
+    let (ca, _) = db.run("REVOKE SELECT ON QSG1T FROM GINS");
+    assert_eq!((ca.sqlcode, ca.sqlstate.as_str()), (569, "01006"));
+    assert_eq!(bits(&mut db, "QSG1T", "GINS"), Some(A::OBJOPR | A::ADD));
+    db.ok("REVOKE ALL ON QSG1T FROM GALL");
+    assert_eq!(bits(&mut db, "QSG1T", "GALL"), None);
+    db.ok("REVOKE ALL ON QSG1T FROM PUBLIC");
+    assert_eq!(bits(&mut db, "QSG1T", "*PUBLIC").map(|b| b & 0x07FF), Some(0));
+    // Views, refusals.
+    db.ok("GRANT SELECT, UPDATE ON QSG1V TO GSEL");
+    assert_eq!(db.code("GRANT INDEX ON QSG1V TO GSEL"), -557);
+    assert_eq!(db.code("GRANT INSERT ON QSG1V TO GSEL"), -7027);
+    assert_eq!(db.code("GRANT UPDATE ON QSG1Q TO GSEL"), -7027);
+    assert_eq!(db.code("GRANT SELECT ON QSG1T TO NOSUCHUSR"), -204);
+    assert_eq!(db.code("GRANT SELECT ON NOSUCHTBL TO GSEL"), -204);
+    assert_eq!(db.code("GRANT UPDATE (NAME) ON QSG1T TO GSEL"), -84);
+    assert_eq!(db.code("GRANT EXECUTE ON PROCEDURE QSYS.QCMDEXC TO GSEL"), -84);
+    assert_eq!(db.code("GRANT USAGE ON SEQUENCE QSTEST.SEQ1 TO GSEL"), -84);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM QSYS2.SYSCOLAUTH"), [row(&["0"])]);
+}

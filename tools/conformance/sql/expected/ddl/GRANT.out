@@ -1,0 +1,37 @@
+-- captured from primary
+> CREATE TABLE {lib}.DDLG1T (ID INT NOT NULL, NAME VARCHAR(20))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE VIEW {lib}.DDLG1V AS SELECT ID FROM {lib}.DDLG1T
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT SELECT ON {lib}.DDLG1T TO QUSER
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT INSERT, UPDATE ON TABLE {lib}.DDLG1T TO QSYSOPR
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT ALL PRIVILEGES ON {lib}.DDLG1T TO QPGMR WITH GRANT OPTION
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT SELECT ON {lib}.DDLG1T TO PUBLIC
+sqlcode 0 sqlstate 00000 msgid -
+> REVOKE SELECT ON {lib}.DDLG1T FROM QSYSOPR
+sqlcode 0 sqlstate 00000 msgid -
+warning 569 01006 SQL0569
+> REVOKE INSERT ON {lib}.DDLG1T FROM QSYSOPR
+sqlcode 0 sqlstate 00000 msgid -
+> REVOKE ALL ON {lib}.DDLG1T FROM QPGMR
+sqlcode 0 sqlstate 00000 msgid -
+> REVOKE ALL ON {lib}.DDLG1T FROM PUBLIC
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT SELECT ON {lib}.DDLG1V TO QUSER
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT INDEX ON {lib}.DDLG1V TO QUSER
+sqlcode -557 sqlstate 42852 msgid SQL0557
+> GRANT INSERT ON {lib}.DDLG1V TO QUSER
+sqlcode -7027 sqlstate 42984 msgid SQL7027
+> GRANT SELECT ON {lib}.DDLG1T TO QNOSUCHUSR
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> GRANT SELECT ON {lib}.DDLG1NO TO QUSER
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> GRANT USAGE ON SCHEMA {lib} TO QUSER
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DROP TABLE {lib}.DDLG1T
+sqlcode 0 sqlstate 00000 msgid -

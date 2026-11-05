@@ -573,7 +573,9 @@ impl Parser {
                 self.advance();
                 Ok(Statement::Explain(Box::new(self.statement_body()?)))
             }
-            "CALL" | "GRANT" | "REVOKE" | "LOCK" | "PREPARE" | "EXECUTE" | "DESCRIBE"
+            "GRANT" => self.grant(false),
+            "REVOKE" => self.grant(true),
+            "CALL" | "LOCK" | "PREPARE" | "EXECUTE" | "DESCRIBE"
             | "CONNECT" | "DISCONNECT" | "RELEASE" | "SAVEPOINT" | "TRUNCATE" | "REFRESH" => {
                 Err(Self::unsupported(&format!("{w} statement")))
             }

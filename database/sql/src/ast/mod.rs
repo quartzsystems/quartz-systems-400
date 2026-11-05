@@ -7,10 +7,12 @@
 
 pub mod ddl;
 pub mod expr;
+pub mod grant;
 pub mod query;
 
 pub use ddl::*;
 pub use expr::*;
+pub use grant::*;
 pub use query::*;
 
 use std::fmt;
@@ -213,6 +215,10 @@ pub enum Statement {
     SetTransaction(Isolation),
     /// `EXPLAIN` (Quartz's): the plan of the statement as text.
     Explain(Box<Statement>),
+    /// `GRANT`.
+    Grant(Grant),
+    /// `REVOKE`.
+    Revoke(Grant),
 }
 
 /// `SET SCHEMA` argument.

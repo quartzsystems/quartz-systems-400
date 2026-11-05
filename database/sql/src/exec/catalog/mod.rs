@@ -6,6 +6,7 @@
 //! provider answers for its own names; [`PROVIDERS`] lists them in the
 //! order they are asked.
 
+pub mod auth;
 pub mod sys;
 
 use store::txn::Txn;
@@ -28,7 +29,10 @@ pub(crate) struct Provider {
 }
 
 /// The providers.
-const PROVIDERS: &[Provider] = &[Provider { has: sys::has, table: sys::virtual_table }];
+const PROVIDERS: &[Provider] = &[
+    Provider { has: sys::has, table: sys::virtual_table },
+    Provider { has: auth::has, table: auth::virtual_table },
+];
 
 /// Whether `name` names a computed view.
 #[must_use]

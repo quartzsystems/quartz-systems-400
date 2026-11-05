@@ -15,6 +15,7 @@ pub mod dml;
 pub mod drop;
 pub mod eval;
 pub mod func;
+pub mod grant;
 pub mod index;
 mod join;
 pub mod mem;
@@ -907,6 +908,8 @@ impl Prepared {
             }
             Statement::SetPath(_) | Statement::SetCurrentDegree => Ok(Outcome::Done),
             Statement::SetTransaction(iso) => set_transaction(ctx, *iso).map(|()| Outcome::Done),
+            Statement::Grant(g) => grant::run(txn, ctx, g, false).map(|()| Outcome::Done),
+            Statement::Revoke(g) => grant::run(txn, ctx, g, true).map(|()| Outcome::Done),
             Statement::Explain(inner) => {
                 let Statement::Select(q) = &**inner else {
                     return Err(SqlError::Unsupported {
@@ -982,6 +985,8 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::SetCurrentDegree => "SET CURRENT DEGREE",
         Statement::SetTransaction(_) => "SET TRANSACTION",
         Statement::Explain(_) => "EXPLAIN",
+        Statement::Grant(_) => "GRANT",
+        Statement::Revoke(_) => "REVOKE",
     }
 }
 

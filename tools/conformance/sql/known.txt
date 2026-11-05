@@ -7,3 +7,4 @@ ddl/TABLEAS   # COUNT(*) described as VARCHAR: expression result types
 ddl/VIEWQRY   # SUM and COUNT described as VARCHAR: expression result types
 ddl/INDEXEXT   # SEARCH_CONDITION is NCLOB at IBM, CHAR here (no LOB catalog columns)
 ddl/DGTT   # DECLARE GLOBAL TEMPORARY TABLE refused: QTEMP is in the temporary ASP
+ddl/GRANT   # the kit store has no QUSER/QSYSOPR/QPGMR profiles (SQL0204); USAGE ON SCHEMA refused SQL0084 where 7.1 says SQL0104
