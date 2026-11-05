@@ -80,7 +80,7 @@ rows the work has not reached as refused, as the code does today.
 | `CALL` from DRDA: result sets as IBM i sends them (`RSLSETRM`, `SQLRSLRD`, per set `OPNQRYRM`, `SQLCINRD`, `QRYDSC`), output values as `SQLDTARD` | supported | pub400, primary | `ddm::session` |
 | `CALL` from QAP | partial: the first result set only; OUT/INOUT refused SQL0084 | none | `qsjob qapsql` |
 | `CALL` from STRSQL | supported (no result sets shown, as STRSQL) | none | |
-| `CALL` from `RUNSQL`, `RUNSQLSTM` | refused SQL0084: BLOCKED(sql), they run in the storage service, which needs the statement-fiber call path | none | |
+| `CALL` and trigger-firing changes from `RUNSQL`, `RUNSQLSTM` | supported from a job's command line and programs; from the service console and QAP still refused SQL0084 | none | `qrpgrt::runsql` |
 | `PREPARE` of a `CALL` with markers no procedure names | SQL0204, as the primary | primary | `sql::embed` |
 | `DESCRIBE INPUT` of a `CALL` (types, names, modes) | supported | primary | `sql::embed` |
 | `CREATE FUNCTION`: SQL scalar, SQL table (`RETURNS TABLE`, through `TABLE(f(args))`), `SOURCE`, overloading, `SPECIFIC` | supported | primary | `sqlpl/FUNCS`, `sqlpl/TABFUNC` |
@@ -96,7 +96,7 @@ rows the work has not reached as refused, as the code does today.
 | `CREATE [OR REPLACE] TRIGGER` `BEFORE`/`AFTER`, `INSERT`/`UPDATE [OF]`/`DELETE`, `FOR EACH ROW`, `REFERENCING OLD/NEW [ROW]`, `WHEN`, `MODE DB2ROW/DB2SQL`, `SET OPTION`; `DROP TRIGGER`; `LABEL ON`/`COMMENT ON TRIGGER` | supported: a `*PGM` named as the primary names it, over the trigger buffer, so record I/O fires SQL triggers too; SQL7051 for a BEFORE trigger in DB2SQL mode | primary | `trigger/TRGFIRE`, `trigger/TRGDEFS` |
 | `FOR EACH STATEMENT`, `OLD/NEW TABLE`, `INSTEAD OF`, several events (`INSERT OR ...`), `SECURED` | refused SQL0084 after IBM's own checks (SQL0628, SQL0696, SQL0159, SQL0156): BLOCKED(sql) | primary | `trigger/TRGDEFS` |
 | `BEGIN ATOMIC` in a trigger body | supported | none | `qrpgrt::sqltrg` |
-| `GRANT` on variables and types | refused SQL0084 | none | |
+| `GRANT`/`REVOKE` `USAGE`/`ALTER`/`ALL` on types, `READ`/`WRITE`/`ALTER`/`ALL` on variables | supported, mapped to the authorities the primary shows | primary | `objects2/GRANTUDT` |
 | `GRANT`, `REVOKE` on tables and views (`WITH GRANT OPTION`, SQL0569, SQL0557, SQL7027) | supported, mapped to object authorities as the primary does | primary | `ddl/GRANT` |
 | `GRANT`, `REVOKE` on schemas, routines, sequences, variables, types; column privileges | refused SQL0084 | none | `sql::objects` |
 | `LOCK TABLE` | refused SQL0084 | primary | |
@@ -115,7 +115,9 @@ rows the work has not reached as refused, as the code does today.
 | `SAVEPOINT [UNIQUE] ON ROLLBACK RETAIN CURSORS [ON ROLLBACK RETAIN LOCKS]`, `RELEASE [TO] SAVEPOINT`, `ROLLBACK TO SAVEPOINT` (SQL0880, 0881, 0882) | supported; without commitment control a savepoint is named and undoes nothing, as on the primary | primary | `sqlpl/SAVEPT` |
 | `TRUNCATE` (all options) | supported; SQL0100 on an empty table; `RESTART IDENTITY` on an identity table refused SQL0084 (BLOCKED(sql), joins identity state) | pub400 | `query/CHANGES` |
 | `REFRESH TABLE` | refused SQL0084 | primary | |
-| `DECLARE GLOBAL TEMPORARY TABLE`; any SQL object in QTEMP | refused SQL0084: BLOCKED(sql), QTEMP is the temporary ASP and a statement runs in one ASP transaction | pub400 | `ddl/DGTT` |
+| `DECLARE GLOBAL TEMPORARY TABLE` (columns, `LIKE`, `AS ... WITH [NO] DATA`, `ON COMMIT DELETE/PRESERVE ROWS`, `NOT LOGGED [ON ROLLBACK ...]`, `WITH REPLACE`, `RCDFMT`) | supported in the job's SQL QTEMP (a temporary root library in ASP 1, dropped when the job ends); logged tables journaled to `QTEMP/QSQJRN`; rows cleared at SQL `COMMIT`/`ROLLBACK` only, not a CL or RPG commit; SQL0079, SQL0526, SQL0199 as IBM | pub400, primary | `ddl/DGTT`, `ddl/DGTTOPT`, `ddl/DGTTCLS`, `sql::qtemp` |
+| `CREATE TABLE/VIEW/INDEX/ALIAS` in QTEMP | supported; sequences and variables in QTEMP SQL0707; types, routines and triggers there refused SQL0084; a permanent view over a QTEMP table SQL7008 | primary | `ddl/QTEMPOBJ` |
+| CL and RPG record I/O reaching SQL's QTEMP objects (`CRTPF QTEMP/X` and SQL `QTEMP.X` are different libraries today) | not yet: BLOCKED(sql) | none | |
 
 ## 3. Queries
 
@@ -340,8 +342,9 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | Trigger buffer | supported, byte for byte as the primary's | primary | `db::trg`, `mi::trigger` |
 | `*BEFORE`/`*AFTER` x `*INSERT`/`*UPDATE`/`*DELETE` from record I/O (physical and logical files; status 01023/01024, CPF502B) | supported | primary | `mi::trigger` |
 | `*READ` triggers | partial: record I/O of a physical file; logical reads and SQL queries of the table refused SQL0084 | primary | `sql::trigger` |
-| SQL changes firing external and SQL triggers | supported for statements of programs, the host server, DRDA, QAP and STRSQL; refused SQL0084 from the service console and `RUNSQL`/`RUNSQLSTM` (BLOCKED(sql): service commands carry no call plan) | primary | `qrpgrt::sqltrg`, `trigger/TRGFIRE` |
-| Triggers from `CPYF`, DFU, FTP, the DDM server, the service console | refused (CPF502B, SQL0084) | none | |
+| SQL changes firing external and SQL triggers | supported for statements of programs, the host server, DRDA, QAP, STRSQL, RUNSQL and RUNSQLSTM; refused SQL0084 from the service console | primary | `qrpgrt::sqltrg`, `trigger/TRGFIRE` |
+| Triggers from `CPYF` (insert triggers; a failure stops the copy with CPF2972), DFU and the DDM server | supported; `CPYF MBROPT(*UPDADD)` into a file with update triggers refused CPF502B; FTP and the service console still refused | primary | `db::trg` |
+| `DLTF` of a file with SQL triggers | deletes their programs | primary | `trigger/DLTFTRG` |
 | `ALWREPCHG(*NO)` on after triggers | partial: the program's own change of the row is not refused | none | |
 | `ADDPFCST`, `RMVPFCST`, `CHGPFCST`, `DSPCPCST`, `DSPFD TYPE(*CST)` | supported, the primary's messages; not yet run end to end under QEMU | primary | `sys-cpps` |
 | `WRKPFCST`, `EDTCPCST` | supported: `QSDBCST` panels as 7.1 shows them (options 2, 4, 6; a sequence verifies a constraint in check pending again); F15, F16, F17, F22 and F11 not yet | primary (`verified/oracle71/audit/wrkpfcst`, `edtcpcst`) | `uim --test audit_panels` |
