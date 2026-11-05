@@ -2,8 +2,10 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Host-side plumbing: running tools, paths, hashing, doctor, deny, test.
+//! Host-side plumbing: running tools, paths, hashing, doctor, deny, test,
+//! bench.
 
+pub mod bench;
 pub mod cmd;
 pub mod deny;
 pub mod doctor;

@@ -7,9 +7,9 @@
 
 use super::Parser;
 use crate::ast::{
-    Expr, Ident, JoinKind, OrderItem, Query, QueryBody, Select, SelectItem, TableRef,
+    Expr, Ident, JoinKind, Literal, OrderItem, Query, QueryBody, Select, SelectItem, TableRef,
 };
-use crate::error::Result;
+use crate::error::{Result, SqlError};
 use crate::lex::Tok;
 
 impl Parser {
@@ -76,7 +76,21 @@ impl Parser {
                     return Err(self.expected("UPDATE or READ ONLY"));
                 }
             } else if self.eat_words(&["OPTIMIZE", "FOR"]) {
-                self.additive_for_limit()?;
+                // A row goal the planner weighs (`plan`); a value given
+                // when the statement runs is a hint without a number.
+                if self.eat_word("ALL") {
+                    q.optimize_for = Some(u64::MAX);
+                } else {
+                    let n = self.additive_for_limit()?;
+                    if let Expr::Literal(Literal::Num(t)) = &n {
+                        match t.parse::<u64>() {
+                            Ok(0) | Err(_) => {
+                                return Err(SqlError::Coded { code: -405, state: "42820", what: format!("OPTIMIZE FOR {t} ROWS: the number of rows must be 1 or more") });
+                            }
+                            Ok(v) => q.optimize_for = Some(v),
+                        }
+                    }
+                }
                 if !self.eat_word("ROWS") {
                     self.expect_word("ROW")?;
                 }

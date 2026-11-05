@@ -50,3 +50,4 @@ objects2/GRANTUDT   # the kit store has no QUSER/QPGMR profiles (SQL0204) and ru
 objects2/TYPES2   # SYSCOLUMNS.DATA_TYPE is CHAR(8) here, VARCHAR(8) at IBM
 objects2/TYPES3   # a distinct type compared with a quantified subquery's column of another type is not refused (SQL0401 there; BLOCKED(sql) in udt::typing::check)
 ddl/QTEMPCL   # the kit's in-memory store runs no commands (QCMDEXC); one QTEMP for CL and SQL is tested in sql tests/qtemp_job.rs and in the service
+perf/DECORR   # a scalar subquery's result column described VARCHAR(32767) here (its type is not inferred); the primary describes a statement it fails at fetch (SQL0811) before the error

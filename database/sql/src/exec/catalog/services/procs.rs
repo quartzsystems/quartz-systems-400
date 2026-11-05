@@ -34,6 +34,9 @@ const PROCEDURES: &[(&str, &str, ProcFn)] = &[
     ("QSYS2", "QSQGENSQL", super::gensql::generate_sql),
     ("QSYS2", "QSQGENSQLO", super::gensql::generate_sql_objects),
     ("QSYS2", "OVERRIDE_QAQQINI", super::qaqqini::override_qaqqini),
+    ("QSYS2", "DUMP_PC", super::plancache::dump),
+    ("QSYS2", "CLEAR_PC", super::plancache::clear),
+    ("QSYS2", "CHANGE_PC", super::plancache::change_size),
 ];
 
 /// Whether `schema.name` is one of the engine's procedures.

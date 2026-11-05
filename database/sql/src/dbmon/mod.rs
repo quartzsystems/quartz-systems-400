@@ -229,6 +229,27 @@ pub fn end(txn: &mut Txn<'_>, ctx: &mut SqlContext, scope: &Scope, job_text: &st
     Ok(picked.len())
 }
 
+/// Write `records` to a monitor file of its own, `lib/file` made or
+/// replaced (`DUMP_PLAN_CACHE`).
+pub(crate) fn dump(txn: &mut Txn<'_>, ctx: &mut SqlContext, lib: &str, file: &str, records: &[Record]) -> Result<(), MonError> {
+    let spec = StartSpec {
+        lib: lib.to_string(),
+        file: file.to_string(),
+        member: "*FIRST".into(),
+        add: false,
+        scope: Scope::All,
+        job_text: String::new(),
+        detail: Detail::Basic,
+        frcrcd: 0,
+        incsyssql: false,
+        comment: String::new(),
+        command: String::new(),
+        starter: ctx.dbmon.ident.clone().unwrap_or_default(),
+    };
+    let lib = write::prepare_file(txn, ctx, &spec)?;
+    write::write(txn, ctx, &lib, file, records)
+}
+
 /// Get ready for a statement of the context's job: when a monitor
 /// watches it, the planner's choices are kept.
 pub fn begin(ctx: &mut SqlContext) -> bool {

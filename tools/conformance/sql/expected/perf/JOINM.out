@@ -1,0 +1,71 @@
+-- captured from primary
+> CREATE TABLE {lib}.QSJMA (K INTEGER, A CHAR(3))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QSJMB (K INTEGER, B CHAR(3))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QSJMA VALUES (1, 'a1'), (2, 'a2'), (2, 'a2b'), (NULL, 
+sqlcode 0 sqlstate 00000 msgid - count 5
+> INSERT INTO {lib}.QSJMB VALUES (2, 'b2'), (1, 'b1'), (NULL, 'bn'), (3, '
+sqlcode 0 sqlstate 00000 msgid - count 5
+> SELECT A.A, B.B FROM {lib}.QSJMA A JOIN {lib}.QSJMB B ON A.K = B.K ORDER
+sqlcode 0 sqlstate 00000 msgid -
+# A CHAR(3)
+# B CHAR(3)
+| 'a1 ' | 'b1 ' |
+| 'a2 ' | 'b2 ' |
+| 'a2 ' | 'b2b' |
+| 'a2b' | 'b2 ' |
+| 'a2b' | 'b2b' |
+> SELECT A.A, B.B FROM {lib}.QSJMA A LEFT JOIN {lib}.QSJMB B ON A.K = B.K 
+sqlcode 0 sqlstate 00000 msgid -
+# A CHAR(3)
+# B CHAR(3)
+| 'an ' | NULL |
+| 'a1 ' | 'b1 ' |
+| 'a2 ' | 'b2 ' |
+| 'a2 ' | 'b2b' |
+| 'a2b' | 'b2 ' |
+| 'a2b' | 'b2b' |
+| 'a5 ' | NULL |
+> SELECT A.A, B.B FROM {lib}.QSJMA A RIGHT JOIN {lib}.QSJMB B ON A.K = B.K
+sqlcode 0 sqlstate 00000 msgid -
+# A CHAR(3)
+# B CHAR(3)
+| NULL | 'bn ' |
+| 'a1 ' | 'b1 ' |
+| 'a2 ' | 'b2 ' |
+| 'a2b' | 'b2 ' |
+| 'a2 ' | 'b2b' |
+| 'a2b' | 'b2b' |
+| NULL | 'b3 ' |
+> SELECT A.A, B.B FROM {lib}.QSJMA A FULL JOIN {lib}.QSJMB B ON A.K = B.K 
+sqlcode 0 sqlstate 00000 msgid -
+# A CHAR(3)
+# B CHAR(3)
+| 'an ' | NULL |
+| 'a1 ' | 'b1 ' |
+| 'a2 ' | 'b2 ' |
+| 'a2 ' | 'b2b' |
+| 'a2b' | 'b2 ' |
+| 'a2b' | 'b2b' |
+| 'a5 ' | NULL |
+| NULL | 'bn ' |
+| NULL | 'b3 ' |
+> SELECT A.A FROM {lib}.QSJMA A EXCEPTION JOIN {lib}.QSJMB B ON A.K = B.K 
+sqlcode 0 sqlstate 00000 msgid -
+# A CHAR(3)
+| 'an ' |
+| 'a5 ' |
+> SELECT A.A, B.B FROM {lib}.QSJMA A, {lib}.QSJMB B WHERE A.K = B.K AND B.
+sqlcode 0 sqlstate 00000 msgid -
+# A CHAR(3)
+# B CHAR(3)
+| 'a1 ' | 'b1 ' |
+| 'a2 ' | 'b2b' |
+| 'a2b' | 'b2b' |
+> DROP TABLE {lib}.QSJMA
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QSJMB
+sqlcode 0 sqlstate 00000 msgid -

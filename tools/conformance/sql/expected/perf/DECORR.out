@@ -1,0 +1,49 @@
+-- captured from primary
+> CREATE TABLE {lib}.QSDCA (G INTEGER NOT NULL, LABEL CHAR(5) NOT NULL)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QSDCB (ID INTEGER NOT NULL, G INTEGER, V INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QSDCA VALUES (1, 'one'), (2, 'two'), (3, 'three'), (4,
+sqlcode 0 sqlstate 00000 msgid - count 4
+> INSERT INTO {lib}.QSDCB VALUES (1, 1, 5), (2, 1, 7), (3, 2, 9), (4, NULL
+sqlcode 0 sqlstate 00000 msgid - count 5
+> SELECT A.G, (SELECT COUNT(*) FROM {lib}.QSDCB B WHERE B.G = A.G), (SELEC
+sqlcode 0 sqlstate 00000 msgid -
+# G INTEGER NOT NULL
+# 00002 INTEGER
+# 00003 INTEGER
+| 1 | 2 | 7 |
+| 2 | 1 | 9 |
+| 3 | 1 | NULL |
+| 4 | 0 | NULL |
+> SELECT A.G FROM {lib}.QSDCA A WHERE EXISTS (SELECT 1 FROM {lib}.QSDCB B 
+sqlcode 0 sqlstate 00000 msgid -
+# G INTEGER NOT NULL
+| 1 |
+| 2 |
+> SELECT A.G FROM {lib}.QSDCA A WHERE NOT EXISTS (SELECT 1 FROM {lib}.QSDC
+sqlcode 0 sqlstate 00000 msgid -
+# G INTEGER NOT NULL
+| 4 |
+> SELECT A.G FROM {lib}.QSDCA A WHERE 7 IN (SELECT B.V FROM {lib}.QSDCB B 
+sqlcode 0 sqlstate 00000 msgid -
+# G INTEGER NOT NULL
+| 1 |
+> SELECT A.G, (SELECT B.V FROM {lib}.QSDCB B WHERE B.G = A.G) FROM {lib}.Q
+sqlcode 0 sqlstate 00000 msgid -
+# G INTEGER NOT NULL
+# 00002 INTEGER
+| 2 | 9 |
+| 3 | NULL |
+| 4 | NULL |
+> SELECT A.G, (SELECT B.V FROM {lib}.QSDCB B WHERE B.G = A.G) FROM {lib}.Q
+sqlcode 0 sqlstate 00000 msgid -
+# G INTEGER NOT NULL
+# 00002 INTEGER
+sqlcode -811 sqlstate 21000 msgid SQL0811
+> DROP TABLE {lib}.QSDCB
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QSDCA
+sqlcode 0 sqlstate 00000 msgid -

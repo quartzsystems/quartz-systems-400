@@ -18,6 +18,12 @@ use super::super::super::eval::ColInfo;
 /// The shapes, one record per line (see [`parse`]).
 pub const TEXT: &str = include_str!("shapes.txt");
 
+/// The plan cache procedures, from pub400's `SYSPARMS`
+/// (`tools/conformance/sql/oracle/probes/perf/p2.out`); kept apart from
+/// the capture `shapes.txt` is generated from. The defaults of the
+/// optional parameters are null, as IBM documents them.
+pub const PLAN: &str = include_str!("shapes_plan.txt");
+
 /// A column, parameter or result type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Col {
@@ -209,7 +215,7 @@ fn index() -> &'static Index {
     I.get_or_init(|| {
         let mut views = HashMap::new();
         let mut routines: HashMap<String, Vec<Shape>> = HashMap::new();
-        for s in parse(TEXT) {
+        for s in parse(TEXT).into_iter().chain(parse(PLAN)) {
             let key = format!("{}.{}", s.schema, s.name);
             if s.kind == 'V' {
                 views.insert(key, s);

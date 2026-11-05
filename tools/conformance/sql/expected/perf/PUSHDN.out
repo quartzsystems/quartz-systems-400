@@ -1,0 +1,36 @@
+-- captured from primary
+> CREATE TABLE {lib}.QSPDT (ID INTEGER NOT NULL PRIMARY KEY, GRP INTEGER N
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QSPDT VALUES (1, 1, 10), (2, 1, NULL), (3, 2, 30), (4,
+sqlcode 0 sqlstate 00000 msgid - count 6
+> CREATE VIEW {lib}.QSPDV AS SELECT ID AS IDENT, GRP, V * 2 AS V2 FROM {li
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT IDENT, V2 FROM {lib}.QSPDV WHERE IDENT >= 3 AND V2 < 110 ORDER BY
+sqlcode 0 sqlstate 00000 msgid -
+# IDENT INTEGER NOT NULL
+# V2 INTEGER
+| 3 | 60 |
+| 4 | 80 |
+| 5 | 100 |
+> SELECT GRP, N FROM (SELECT GRP, COUNT(*) AS N FROM {lib}.QSPDT GROUP BY 
+sqlcode 0 sqlstate 00000 msgid -
+# GRP INTEGER NOT NULL
+# N INTEGER NOT NULL
+| 2 | 2 |
+| 3 | 2 |
+> WITH C (K, G) AS (SELECT ID, GRP FROM {lib}.QSPDT) SELECT K FROM C WHERE
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 3 |
+| 4 |
+> SELECT A.IDENT, B.ID FROM {lib}.QSPDV A, (SELECT ID, GRP FROM {lib}.QSPD
+sqlcode 0 sqlstate 00000 msgid -
+# IDENT INTEGER NOT NULL
+# ID INTEGER NOT NULL
+| 1 | 1 |
+| 1 | 2 |
+> DROP VIEW {lib}.QSPDV
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QSPDT
+sqlcode 0 sqlstate 00000 msgid -

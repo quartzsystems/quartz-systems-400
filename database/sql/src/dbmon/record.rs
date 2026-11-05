@@ -345,6 +345,29 @@ fn summary(ctx: &SqlContext, job: &JobIdent, plan: &[PlanEvent], ucnt: i64, host
     r
 }
 
+/// A `1000` record of a plan cache entry, as `DUMP_PLAN_CACHE` writes
+/// it: the statement, its number, when it was last used.
+#[must_use]
+pub fn cached(ctx: &SqlContext, text: &str, number: u64, (first, last): (Timestamp, Timestamp), sql_naming: bool) -> Record {
+    let job = JobIdent { name: "QDBSRV01".into(), user: "QSYS".into(), number: 0 };
+    let n = i64::try_from(number).unwrap_or(i64::MAX);
+    let mut r = common(ctx, &job, 1000, n);
+    r.0.retain(|(c, _)| *c != "QQTIME");
+    r.set("QQTIME", Value::Timestamp(last));
+    let op = operation(text);
+    r.n("QQSTN", n);
+    r.set("QQSTIM", Value::Timestamp(first));
+    r.s("QQC11", function(op));
+    r.s("QQC12", "D");
+    r.s("QQC21", op);
+    r.s("QQC22", "NA");
+    r.n("QQI7", i64::try_from(text.chars().count()).unwrap_or(0));
+    r.s("QQ1000", &cut(text, 1000));
+    r.s("QQ1000L", text);
+    r.s("QVC17", if sql_naming { "S" } else { "N" });
+    r
+}
+
 fn sql_info(ctx: &SqlContext, job: &JobIdent, o: &Observed<'_>, ucnt: i64, stn: u64) -> Record {
     let mut r = common(ctx, job, 1000, ucnt);
     r.n("QQSTN", i64::try_from(stn).unwrap_or(i64::MAX));

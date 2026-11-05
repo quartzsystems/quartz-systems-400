@@ -8,7 +8,7 @@
 //! decorrelated, row goals, index-only access, several indexes at once,
 //! `EXPLAIN`, the plan cache and the query options' limits.
 
-#![allow(clippy::too_many_lines)]
+#![allow(clippy::too_many_lines, dead_code)]
 
 use std::sync::Arc;
 
@@ -254,4 +254,62 @@ fn subqueries_run_once() {
     assert_eq!(db.code("SELECT (SELECT b.id FROM big b WHERE b.grp = g.grp) FROM grps g"), -811);
     // Uncorrelated: the same answer for every row.
     assert_eq!(db.rows("SELECT COUNT(*) FROM grps WHERE grp IN (SELECT v FROM big)"), [row(&["7"])]);
+}
+
+#[test]
+fn row_goals_index_only_and_several_indexes() {
+    let mut db = Db::new();
+    big(&mut db, 2000);
+    assert_eq!(db.rows("SELECT id FROM big ORDER BY id OPTIMIZE FOR ALL ROWS FETCH FIRST 1 ROW ONLY"), [row(&["1"])]);
+    assert_eq!(db.code("SELECT id FROM big OPTIMIZE FOR 0 ROWS"), -405);
+    // A key-ordered read stops at the rows asked for.
+    let first = db.rows("SELECT id, name FROM big WHERE v = 3 ORDER BY id FETCH FIRST 3 ROWS ONLY");
+    assert_eq!(first, [row(&["3", "N3"]), row(&["17", "N4"]), row(&["24", "N11"])]);
+    assert_eq!(db.rows("SELECT id FROM big WHERE id > 10 ORDER BY id OFFSET 2 ROWS FETCH FIRST 2 ROWS ONLY"), [row(&["13"]), row(&["14"])]);
+    assert_eq!(db.rows("SELECT id FROM big WHERE id > 1990 OPTIMIZE FOR 2 ROWS"), (1991..=2000).map(|i| row(&[&i.to_string()])).collect::<Vec<_>>());
+    // Only key fields: read from the path.
+    db.ok("CREATE INDEX qstest/bigname ON big (name, grp)");
+    let p = db.plan("SELECT name, grp FROM big WHERE name = 'N3' AND grp > 40");
+    assert!(p.contains("index only"), "{p}");
+    let via_keys = db.rows("SELECT name, grp FROM big WHERE name = 'N3' AND grp > 40");
+    let via_rows = db.rows("SELECT name, grp, id FROM big WHERE name = 'N3' AND grp > 40");
+    assert_eq!(via_keys, via_rows.iter().map(|r| r[..2].to_vec()).collect::<Vec<_>>());
+    assert_eq!(db.rows("SELECT COUNT(*) FROM big WHERE name = 'N3'"), [row(&["154"])]);
+    // A disjunction over two paths: their record numbers, read in arrival order.
+    db.ok("CREATE INDEX qstest/bigv ON big (v)");
+    let p = db.plan("SELECT id FROM big WHERE v = 6 OR name = 'N0'");
+    assert!(p.contains("bitmap over 2 ranges"), "{p}");
+    let bitmap = db.rows("SELECT id FROM big WHERE v = 6 OR name = 'N0'");
+    let full = db.rows("SELECT id FROM big WHERE v + 0 = 6 OR name || '' = 'N0'");
+    assert_eq!(bitmap, full);
+    let inlist = db.rows("SELECT id FROM big WHERE v IN (1, 2) AND id < 40");
+    let inlist_full = db.rows("SELECT id FROM big WHERE v + 0 IN (1, 2) AND id < 40");
+    assert_eq!(inlist, inlist_full);
+}
+
+#[test]
+fn explain_plan_cache_and_query_options() {
+    let mut db = Db::new();
+    big(&mut db, 100);
+    let r = db.rows("EXPLAIN SELECT id FROM big WHERE id = 4");
+    assert_eq!(r[0][1..], ["3001".to_string(), "I1".into(), "-".into()], "{r:?}");
+    let r = db.rows("EXPLAIN SELECT id FROM big WHERE name = 'x' ORDER BY name");
+    assert!(r.iter().any(|x| x[1] == "3000") && r.iter().any(|x| x[1] == "3003"), "{r:?}");
+    // The plan cache: statements prepared, written to a monitor file.
+    db.ok("CALL QSYS2.CLEAR_PLAN_CACHE()");
+    db.rows("SELECT COUNT(*) FROM big");
+    db.rows("SELECT COUNT(*) FROM big");
+    db.ok("CALL QSYS2.DUMP_PLAN_CACHE('QSTEST', 'PCDUMP')");
+    let d = db.rows("SELECT QQRID, QQC21, QQ1000 FROM qstest/pcdump WHERE QQ1000 LIKE 'SELECT COUNT(*) FROM big%'");
+    assert_eq!(d, [row(&["1000", "SI", "SELECT COUNT(*) FROM big"])]);
+    db.ok("CALL QSYS2.CHANGE_PLAN_CACHE_SIZE(64)");
+    assert_eq!(db.code("CALL QSYS2.DUMP_PLAN_CACHE('QSTEST', 'PCDUMP', PLAN_IDENTIFIER => 5)"), -84);
+    // The query governor: a time limit of 0 stops every query.
+    db.ok("CALL QSYS2.OVERRIDE_QAQQINI(1, '', '')");
+    db.ok("CALL QSYS2.OVERRIDE_QAQQINI(2, 'QUERY_TIME_LIMIT', '0')");
+    assert_eq!(db.code("SELECT COUNT(*) FROM big"), -666);
+    db.ok("CALL QSYS2.OVERRIDE_QAQQINI(2, 'QUERY_TIME_LIMIT', '*NOMAX')");
+    db.ok("CALL QSYS2.OVERRIDE_QAQQINI(2, 'QUERY_STORAGE_LIMIT', '0')");
+    assert_eq!(db.rows("SELECT COUNT(*) FROM big"), [row(&["100"])]);
+    db.ok("CALL QSYS2.OVERRIDE_QAQQINI(3, '', '')");
 }

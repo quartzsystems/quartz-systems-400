@@ -26,6 +26,8 @@ pub struct Query {
     pub isolation: Option<Isolation>,
     /// `SKIP LOCKED DATA`: rows another job holds locked are left out.
     pub skip_locked: bool,
+    /// `OPTIMIZE FOR n ROWS` with a number; `u64::MAX` for `ALL ROWS`.
+    pub optimize_for: Option<u64>,
 }
 
 /// The body of a query.
@@ -369,6 +371,7 @@ impl Query {
             read_only: false,
             isolation: None,
             skip_locked: false,
+            optimize_for: None,
         }
     }
 }

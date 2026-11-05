@@ -90,6 +90,13 @@ enum Command {
         #[arg(long, default_value_t = 3600)]
         secs: u64,
     },
+    /// The host-side benchmarks (no QEMU): SQL (`docs/SQL.md` §11) and
+    /// record-level access, release builds.
+    Bench {
+        /// Rows of the SQL benchmarks' large table (1,000,000 by default).
+        #[arg(long)]
+        rows: Option<u64>,
+    },
     /// Check host prerequisites.
     Doctor,
     /// Run cargo-deny plus the C-linkage lockfile check.
@@ -125,7 +132,7 @@ fn main() -> Result<()> {
 
     let cli = Cli::parse();
     let ctx = Ctx::new(cli.verbose)?;
-    if !cfg!(target_os = "linux") && !matches!(cli.command, Command::Doctor | Command::Deny | Command::Fuzz { .. } | Command::Kc) {
+    if !cfg!(target_os = "linux") && !matches!(cli.command, Command::Doctor | Command::Deny | Command::Fuzz { .. } | Command::Kc | Command::Bench { .. }) {
         tracing::warn!("the pipeline needs a Linux host; run this from WSL");
     }
 
@@ -163,6 +170,7 @@ fn main() -> Result<()> {
             pulls,
         } => host::testrun::test(&ctx, media, install, bench, pulls)?,
         Command::Soak { secs } => host::soak::soak(&ctx, secs)?,
+        Command::Bench { rows } => host::bench::bench(&ctx, rows)?,
         Command::Doctor => host::doctor::doctor(&ctx)?,
         Command::Deny => host::deny::deny(&ctx)?,
         Command::Fuzz { target, secs, jobs } => host::fuzz::fuzz(&ctx, target.as_deref(), secs, jobs)?,

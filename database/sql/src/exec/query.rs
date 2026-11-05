@@ -34,6 +34,8 @@ use crate::ast::{
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
+mod bitmap;
+
 /// Path entries a keyed scan reads per batch.
 const KEY_BATCH: usize = 256;
 
@@ -148,7 +150,33 @@ fn run_limited(
     // Views that run their query come in as derived tables.
     let expanded = super::view::expand(txn, ctx, q)?;
     let q = expanded.as_ref().unwrap_or(q);
-    let (schema, mut produced) = body(txn, ctx, params, &q.body, outer, q, explain_only)?;
+    // The statement's outermost query meets the query options' limits.
+    if !ctx.plan.governed && outer.frames.is_empty() && !explain_only {
+        ctx.plan.governed = true;
+        super::plan::govern::check(txn, ctx, q)?;
+    }
+    // The row goal: `OPTIMIZE FOR n ROWS`, else `FETCH FIRST` (with any
+    // `OFFSET`) given as numbers.
+    let literal = |e: &Option<Expr>| match e {
+        Some(Expr::Literal(Literal::Num(n))) => n.parse::<u64>().ok(),
+        Some(_) => None,
+        None => Some(0),
+    };
+    let limit = match (q.fetch_first.is_some(), literal(&q.fetch_first), literal(&q.offset)) {
+        (true, Some(f), Some(o)) => Some(f.saturating_add(o)),
+        _ => None,
+    };
+    let goal = match q.optimize_for {
+        Some(u64::MAX) => None,
+        Some(n) => Some(n),
+        None => limit,
+    };
+    let saved = (ctx.plan.goal, ctx.plan.limit);
+    ctx.plan.goal = goal;
+    ctx.plan.limit = if matches!(q.body, QueryBody::Select(_)) { limit.and_then(|l| usize::try_from(l).ok()) } else { None };
+    let r = body(txn, ctx, params, &q.body, outer, q, explain_only);
+    (ctx.plan.goal, ctx.plan.limit) = saved;
+    let (schema, mut produced) = r?;
     if !q.order_by.is_empty() && !matches!(q.body, QueryBody::Select(_)) {
         order_rows(txn, ctx, params, &schema, &mut produced, &q.order_by)?;
         if explain_only {
@@ -1070,12 +1098,25 @@ fn scan_table_in(
             _ => Ok(()),
         }
     };
+    // A row goal the statement must meet no more than: stop once it has
+    // that many rows that pass, when the order asked for is the read's.
+    let goal = ev.ctx.plan.stop.take();
+    let needed = ev.ctx.plan.columns.take();
+    let order_kept = order.is_empty() || choice.as_ref().is_some_and(|c| c.ordered.is_some());
+    let stop = Stop(goal.filter(|_| order_kept && !scan.preds.iter().any(has_subquery)));
     if let Some(ch) = choice {
         let c = &cands[ch.cand];
         ordered = ch.ordered.is_some();
+        // The query needs only key fields of a physical file's path: the
+        // keys give them, the records are not read.
+        let key_only = base_pf.is_some()
+            && needed.as_ref().is_some_and(|names| {
+                let fields: Option<Vec<String>> = names.iter().map(|n| t.field(n).map(|(_, f)| f.name.to_string())).collect();
+                fields.is_some_and(|f| super::plan::keyonly::covers(&c.fmt, &f))
+            });
         if explain_only {
             ev.ctx.explain.push(format!(
-                "SCAN {label} keyed via {} eq={} range={} {}",
+                "SCAN {label} keyed via {} eq={} range={} {}{}",
                 c.label,
                 ch.eq.len(),
                 if ch.lo.is_some() || ch.hi.is_some() {
@@ -1083,7 +1124,8 @@ fn scan_table_in(
                 } else {
                     "no"
                 },
-                if ordered { "ordered" } else { "" }
+                if ordered { "ordered" } else { "" },
+                if key_only { " index only" } else { "" }
             ));
         }
         // Key bounds from the predicate values.
@@ -1156,6 +1198,34 @@ fn scan_table_in(
                 if past {
                     break 'keys;
                 }
+                if key_only {
+                    let skip = if c.cst.is_some() { 2 } else { 0 };
+                    if let Some(vals) = super::plan::keyonly::decode(&c.fmt, &k.key[skip..]) {
+                        ev.ctx.poll_interrupt()?;
+                        let held = Some(t.member.object);
+                        if ev.ctx.skips(held, k.rrn) {
+                            continue;
+                        }
+                        lock_read(ev.ctx, held, k.rrn)?;
+                        let mut r: Row = vec![Value::Null; t.format.format.fields.len() + 1];
+                        r[0] = Value::int(i64::try_from(k.rrn).expect("fits"));
+                        for (fi, v) in vals {
+                            let name = &c.fmt.format.fields[fi].name;
+                            if let Some((ti, tf)) = t.format.format.field(name) {
+                                r[ti + 1] = Value::from_field(tf, &v)?;
+                            }
+                        }
+                        if !stop.keeps(txn, &mut ev, scan, outer, &r)? {
+                            continue;
+                        }
+                        charge.row(&r)?;
+                        rows.push(r);
+                        if stop.done(rows.len()) {
+                            break 'keys;
+                        }
+                        continue;
+                    }
+                }
                 let slots = match &base_pf {
                     Some(pf) => pf
                         .read(txn, k.rrn)?
@@ -1172,8 +1242,14 @@ fn scan_table_in(
                     }
                     lock_read(ev.ctx, held, s.rrn)?;
                     let r = row_of(txn, t, &s)?;
+                    if !stop.keeps(txn, &mut ev, scan, outer, &r)? {
+                        continue;
+                    }
                     charge.row(&r)?;
                     rows.push(r);
+                    if stop.done(rows.len()) {
+                        break 'keys;
+                    }
                 }
             }
             if ev.ctx.own_point(txn)? {
@@ -1190,9 +1266,47 @@ fn scan_table_in(
             };
         }
     } else {
+        let several = if base_pf.is_some() { bitmap::describe(&cands, &scan.preds) } else { None };
         if explain_only {
-            ev.ctx.explain.push(format!("SCAN {label} full"));
+            match several {
+                Some(d) => ev.ctx.explain.push(format!("SCAN {label} {d}")),
+                None => ev.ctx.explain.push(format!("SCAN {label} full")),
+            }
             return Ok((Vec::new(), false));
+        }
+        if several.is_some()
+            && let Some(mut pf) = base_pf.take()
+            && let Some((list, _)) = bitmap::rrns(txn, &mut ev, &cands, &scan.preds, outer)?
+        {
+            // The records by number, in arrival order, a yield between batches.
+            for chunk in list.chunks(KEY_BATCH) {
+                for &rrn in chunk {
+                    ev.ctx.poll_interrupt()?;
+                    let Some(s) = pf.read(txn, rrn)?.filter(|s| !s.deleted) else { continue };
+                    if ev.ctx.skips(Some(t.member.object), s.rrn) {
+                        continue;
+                    }
+                    lock_read(ev.ctx, Some(t.member.object), s.rrn)?;
+                    let r = row_of(txn, t, &s)?;
+                    if !stop.keeps(txn, &mut ev, scan, outer, &r)? {
+                        continue;
+                    }
+                    charge.row(&r)?;
+                    rows.push(r);
+                }
+                if stop.done(rows.len()) {
+                    break;
+                }
+                if ev.ctx.own_point(txn)?
+                    && let Some(m) = open_pf(txn)?
+                {
+                    pf = m;
+                }
+            }
+            return Ok((rows, false));
+        }
+        if base_pf.is_none() && t.desc.attr.kind != FileKind::Logical {
+            base_pf = open_pf(txn)?;
         }
         if let Some(mut pf) = base_pf {
             // In batches by RRN, a yield between them.
@@ -1209,8 +1323,14 @@ fn scan_table_in(
                     }
                     lock_read(ev.ctx, Some(t.member.object), s.rrn)?;
                     let r = row_of(txn, t, &s)?;
+                    if !stop.keeps(txn, &mut ev, scan, outer, &r)? {
+                        continue;
+                    }
                     charge.row(&r)?;
                     rows.push(r);
+                }
+                if stop.done(rows.len()) {
+                    break;
                 }
                 from = end + 1;
                 if ev.ctx.own_point(txn)?
@@ -1241,6 +1361,59 @@ fn scan_table_in(
         }
     }
     Ok((rows, ordered))
+}
+
+/// Every column `sel` and its `ORDER BY` name, when that is all they
+/// read: no `*`, no subquery.
+fn needed_columns(sel: &Select, order: &[OrderItem]) -> Option<Vec<String>> {
+    let mut exprs: Vec<&Expr> = Vec::new();
+    for i in &sel.items {
+        match i {
+            SelectItem::Expr(e, _) => exprs.push(e),
+            _ => return None,
+        }
+    }
+    exprs.extend(sel.where_clause.iter());
+    exprs.extend(sel.group_by.iter());
+    exprs.extend(sel.having.iter());
+    exprs.extend(order.iter().map(|o| &o.expr));
+    let mut names = Vec::new();
+    for e in exprs {
+        if has_subquery(e) || super::olap::has_over(e) {
+            return None;
+        }
+        // `RRN(t)` reads the record's number, which the key has too.
+        for c in columns_of(e) {
+            if !names.contains(&c.column.value) {
+                names.push(c.column.value.clone());
+            }
+        }
+    }
+    Some(names)
+}
+
+/// Where a scan with a row goal stops: rows that pass its predicates.
+struct Stop(Option<usize>);
+
+impl Stop {
+    /// Whether `r` passes (always, without a goal).
+    fn keeps(&self, txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, scan: &Scan, outer: &Env, r: &Row) -> Result<bool> {
+        if self.0.is_none() || scan.preds.is_empty() {
+            return Ok(true);
+        }
+        let env = outer.with(scan.schema.clone(), r.clone());
+        for p in &scan.preds {
+            if ev.truth(txn, p, &env)? != Some(true) {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    /// Whether `n` rows are enough.
+    fn done(&self, n: usize) -> bool {
+        self.0.is_some_and(|g| n >= g)
+    }
 }
 
 /// The physical member a record read through `m` lives in, by format;
@@ -1504,6 +1677,8 @@ fn select(
             return select(txn, ctx, params, &pushed, outer, order, explain_only);
         }
     }
+    // The rows the query takes at most: for this select only.
+    let limit = ctx.plan.limit.take();
     // The tables and what each may filter.
     let folded = fold_laterals(&sel.from);
     let from_items = folded.as_slice();
@@ -1556,8 +1731,23 @@ fn select(
     let mut items = Vec::with_capacity(from_items.len());
     let mut item_charge = ctx.charge();
     let mut ordered = false;
+    // A lone table whose rows go out as they are read stops at the limit.
+    let streams = from_items.len() == 1
+        && matches!(from_items[0], TableRef::Table { .. })
+        && rest.is_empty()
+        && sel.group_by.is_empty()
+        && sel.having.is_none()
+        && !sel.distinct
+        && !sel.items.iter().any(|i| matches!(i, SelectItem::Expr(e, _) if has_aggregate(e) || super::olap::has_over(e) || has_subquery(e)))
+        && !order.iter().any(|o| super::olap::has_over(&o.expr));
+    // The columns a lone table must give, when they can be told.
+    let needed = if from_items.len() == 1 && matches!(from_items[0], TableRef::Table { .. }) { needed_columns(sel, order) } else { None };
     for (i, t) in from_items.iter().enumerate() {
+        ctx.plan.stop = if streams { limit } else { None };
+        ctx.plan.columns.clone_from(&needed);
         let (s, r, o) = from_rows(txn, ctx, params, t, &scans, outer, order_hint, explain_only)?;
+        ctx.plan.stop = None;
+        ctx.plan.columns = None;
         for row in &r {
             item_charge.row(row)?;
         }

@@ -955,10 +955,14 @@ pub struct Prepared {
 
 /// Parse a statement.
 pub fn prepare(text: &str, naming: Naming) -> Result<Prepared> {
-    Ok(Prepared {
-        statement: parse::parse(text, naming)?,
-        naming,
-    })
+    // The plan cache keeps what was parsed before.
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
+    if let Some(statement) = plan::cache::lookup(text, naming, now) {
+        return Ok(Prepared { statement, naming });
+    }
+    let statement = parse::parse(text, naming)?;
+    plan::cache::keep(text, naming, &statement, now);
+    Ok(Prepared { statement, naming })
 }
 
 impl Prepared {
@@ -1104,13 +1108,22 @@ impl Prepared {
                 ctx.explain.clear();
                 query::explain(txn, ctx, params, q)?;
                 let lines = std::mem::take(&mut ctx.explain);
+                let col = |n: &str, t: &str, nullable: bool| ColumnDesc { name: n.into(), data_type: t.into(), nullable };
                 Ok(Outcome::Rows(ResultSet {
-                    columns: vec![ColumnDesc {
-                        name: "PLAN".into(),
-                        data_type: "VARCHAR(132)".into(),
-                        nullable: false,
-                    }],
-                    rows: lines.into_iter().map(|l| vec![Value::Str(l)]).collect(),
+                    columns: vec![
+                        col("PLAN", "VARCHAR(132)", false),
+                        col("QQRID", "INTEGER", true),
+                        col("QQRCOD", "CHAR(2)", true),
+                        col("QVC13", "CHAR(1)", true),
+                    ],
+                    rows: lines
+                        .into_iter()
+                        .map(|l| {
+                            let mut r = vec![Value::Str(l.clone())];
+                            r.extend(plan::explain::columns(&l));
+                            r
+                        })
+                        .collect(),
                 }))
             }
             Statement::Rename(r) => rename::run(txn, ctx, r).map(|()| Outcome::Done),
