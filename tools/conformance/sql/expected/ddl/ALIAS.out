@@ -1,0 +1,35 @@
+-- captured from primary
+> CREATE TABLE {lib}.DDLA1T (ID INT)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.DDLA1T VALUES (1), (2)
+sqlcode 0 sqlstate 00000 msgid - count 2
+> CREATE ALIAS {lib}.DDL_ALIAS_LONG_NAME FOR {lib}.DDLA1T
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE ALIAS {lib}.DDLA1M FOR {lib}.DDLA1T (DDLA1T)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE OR REPLACE ALIAS {lib}.DDLA1M FOR {lib}.DDLA1T (DDLA1T)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE ALIAS {lib}.DDLA1M FOR {lib}.DDLA1T
+sqlcode -601 sqlstate 42710 msgid SQL0601
+> SELECT COUNT(*) FROM {lib}.DDL_ALIAS_LONG_NAME
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 2 |
+> SELECT COUNT(*) FROM {lib}.DDLA1M
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 2 |
+> SELECT TABLE_NAME, SYSTEM_TABLE_NAME, TABLE_TYPE FROM QSYS2.SYSTABLES WH
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# SYSTEM_TABLE_NAME CHAR(10) NOT NULL
+# TABLE_TYPE CHAR(1) NOT NULL
+| 'DDL_ALIAS_LONG_NAME' | 'DDL_A00001' | 'A' |
+| 'DDLA1M' | 'DDLA1M    ' | 'A' |
+> DROP ALIAS {lib}.DDL_ALIAS_LONG_NAME
+sqlcode 0 sqlstate 00000 msgid -
+> DROP ALIAS {lib}.DDLA1M
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.DDLA1T
+sqlcode 0 sqlstate 00000 msgid -

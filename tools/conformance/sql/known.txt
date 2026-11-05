@@ -1,3 +1,9 @@
 # Cases known to differ from their oracle capture: area/NAME, one per line.
 # A new difference fails the kit; remove a line when the case agrees.
 kit/BASIC   # expression result types, SQL7905, AVG scale
+ddl/ALIAS   # COUNT(*) described as VARCHAR: expression result types (SQL-3, SQL-4)
+ddl/DROPRES   # COUNT(*) described as VARCHAR: expression result types
+ddl/TABLEAS   # COUNT(*) described as VARCHAR: expression result types
+ddl/VIEWQRY   # SUM and COUNT described as VARCHAR: expression result types
+ddl/INDEXEXT   # SEARCH_CONDITION is NCLOB at IBM, CHAR here (no LOB catalog columns)
+ddl/DGTT   # DECLARE GLOBAL TEMPORARY TABLE refused: QTEMP is in the temporary ASP

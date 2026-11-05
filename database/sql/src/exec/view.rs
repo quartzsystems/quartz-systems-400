@@ -76,7 +76,8 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, v: &CreateView) -> Result
         },
         read_only: !logical,
         sys_naming: ctx.naming == Naming::Sys,
-        query: v.query_text.clone(),
+        // IBM keeps the text with one blank after it.
+        query: format!("{} ", v.query_text),
         columns,
     };
     if v.check_option && !logical {

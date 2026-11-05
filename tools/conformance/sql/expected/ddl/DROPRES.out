@@ -1,0 +1,33 @@
+-- captured from primary
+> CREATE TABLE {lib}.DDLD1T (ID INT NOT NULL, NAME VARCHAR(20))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE VIEW {lib}.DDLD1V AS SELECT ID FROM {lib}.DDLD1T WHERE ID > 1
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.DDLD1W AS SELECT ID FROM {lib}.DDLD1V WHERE ID < 9
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.DDLD1I ON {lib}.DDLD1T (NAME)
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.DDLD1T RESTRICT
+sqlcode -616 sqlstate 42893 msgid SQL0616
+> DROP VIEW {lib}.DDLD1V RESTRICT
+sqlcode -616 sqlstate 42893 msgid SQL0616
+> DROP VIEW {lib}.DDLD1V CASCADE
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT TABLE_NAME, TABLE_TYPE FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# TABLE_TYPE CHAR(1) NOT NULL
+| 'DDLD1T' | 'T' |
+> DROP INDEX {lib}.DDLD1I RESTRICT
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DROP TABLE {lib}.DDLD1T CASCADE
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM QSYS2.SYSINDEXES WHERE INDEX_SCHEMA = '{lib}' AND I
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> DROP TABLE {lib}.DDLD1T
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP SCHEMA DDLNOSUCH1
+sqlcode -204 sqlstate 42704 msgid SQL0204

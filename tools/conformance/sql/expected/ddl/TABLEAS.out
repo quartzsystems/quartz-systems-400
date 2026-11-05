@@ -1,0 +1,83 @@
+-- captured from pub400
+> CREATE TABLE {lib}.DDLT1 (ID INT NOT NULL, CUSTOMER_NAME FOR COLUMN CUSN
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.DDLT1 VALUES (1, 'A', 1.5), (2, 'B', 2.5)
+sqlcode 0 sqlstate 00000 msgid - count 2
+> CREATE TABLE {lib}.DDLT1C AS (SELECT ID, CUSTOMER_NAME FROM {lib}.DDLT1)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.DDLT1D AS (SELECT * FROM {lib}.DDLT1) WITH NO DATA
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.DDLT1H AS (SELECT * FROM {lib}.DDLT1) DEFINITION ONLY
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.DDLT1E AS (SELECT ID, AMT + 1 FROM {lib}.DDLT1) WITH 
+sqlcode -153 sqlstate 42908 msgid SQL0153
+> CREATE TABLE {lib}.DDLT1F LIKE {lib}.DDLT1
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.DDLT1G (LIKE {lib}.DDLT1)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> SELECT TABLE_NAME, COLUMN_NAME, SYSTEM_COLUMN_NAME, IS_NULLABLE FROM QSY
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# SYSTEM_COLUMN_NAME CHAR(10) NOT NULL
+# IS_NULLABLE CHAR(1) NOT NULL
+| 'DDLT1C' | 'ID' | 'ID        ' | 'N' |
+| 'DDLT1C' | 'CUSTOMER_NAME' | 'CUSNAM    ' | 'Y' |
+| 'DDLT1D' | 'ID' | 'ID        ' | 'N' |
+| 'DDLT1D' | 'CUSTOMER_NAME' | 'CUSNAM    ' | 'Y' |
+| 'DDLT1D' | 'AMT' | 'AMT       ' | 'Y' |
+| 'DDLT1F' | 'ID' | 'ID        ' | 'N' |
+| 'DDLT1F' | 'CUSTOMER_NAME' | 'CUSNAM    ' | 'Y' |
+| 'DDLT1F' | 'AMT' | 'AMT       ' | 'Y' |
+| 'DDLT1G' | 'ID' | 'ID        ' | 'Y' |
+| 'DDLT1G' | 'CUSTOMER_NAME' | 'CUSNAM    ' | 'Y' |
+| 'DDLT1G' | 'AMT' | 'AMT       ' | 'Y' |
+| 'DDLT1H' | 'ID' | 'ID        ' | 'N' |
+| 'DDLT1H' | 'CUSTOMER_NAME' | 'CUSNAM    ' | 'Y' |
+| 'DDLT1H' | 'AMT' | 'AMT       ' | 'Y' |
+> SELECT * FROM {lib}.DDLT1C ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# CUSTOMER_NAME VARCHAR(20)
+| 1 | 'A' |
+| 2 | 'B' |
+> CREATE OR REPLACE TABLE {lib}.DDLT1R (X INT)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.DDLT1R VALUES 1
+sqlcode 0 sqlstate 00000 msgid - count 1
+> CREATE OR REPLACE TABLE {lib}.DDLT1R (X INT, Y INT) ON REPLACE PRESERVE 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> SELECT * FROM {lib}.DDLT1R
+sqlcode 0 sqlstate 00000 msgid -
+# X INTEGER
+# Y INTEGER
+| 1 | NULL |
+> CREATE OR REPLACE TABLE {lib}.DDLT1R (X INT) ON REPLACE DELETE ROWS
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> SELECT COUNT(*) FROM {lib}.DDLT1R
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> DROP TABLE {lib}.DDLT1R
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.DDLT1C
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.DDLT1D
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.DDLT1H
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.DDLT1F
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.DDLT1G
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.DDLT1
+sqlcode 0 sqlstate 00000 msgid -

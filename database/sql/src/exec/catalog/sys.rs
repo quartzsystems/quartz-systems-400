@@ -39,6 +39,12 @@ pub const TABLES: &[&str] = &[
 
 /// A column of a catalog view.
 fn col(alias: &str, name: &str, ty: DataType, len: u32, dec: u8, nullable: bool) -> ColInfo {
+    // IBM's types: names are VARCHAR(128), counts INTEGER or BIGINT.
+    let (ty, len) = match (ty, len, dec) {
+        (DataType::Packed, 0..=9, 0) => (DataType::Binary, 9),
+        (DataType::Packed, _, 0) => (DataType::Binary, 18),
+        other => (other.0, other.1),
+    };
     let mut f = FieldDef::new(
         Name::parse(&name[..name.len().min(10)])
             .unwrap_or_else(|_| Name::parse("COL").expect("valid")),
@@ -46,6 +52,10 @@ fn col(alias: &str, name: &str, ty: DataType, len: u32, dec: u8, nullable: bool)
         len,
         dec,
     );
+    f.int_range = ty == DataType::Binary;
+    if ty == DataType::Char && (len == 128 || len >= 1000) {
+        f.varlen = Some(dds::VarLen { allocated: None });
+    }
     f.allow_null = nullable;
     if name.len() > 10 {
         f.alias = Some(name.to_string());
@@ -269,6 +279,8 @@ pub fn virtual_table(
             ];
             let mut rows: Vec<Row> = all
                 .iter()
+                // IBM lists no index here.
+                .filter(|(_, d)| type_of(meta.get(&d.id), d) != "I")
                 .map(|(lib, d)| {
                     let md = m(d);
                     vec![
@@ -731,7 +743,7 @@ pub fn virtual_table(
         }
         _ => return Ok(None),
     };
-    Ok(Some((Schema { cols }, rows)))
+    Ok(Some((Schema { cols: cols.clone() }, pad_fixed(&cols, rows))))
 }
 
 /// The SQL type name of a field, as `SYSCOLUMNS.DATA_TYPE` spells it.
@@ -860,4 +872,24 @@ fn constraints(which: &str, alias: &str, all: &[(Name, FileDesc)]) -> (Vec<ColIn
         v
     };
     (cols, rows)
+}
+
+/// A fixed-length character column's values padded with blanks to its
+/// length, as IBM's catalog returns them.
+fn pad_fixed(cols: &[ColInfo], mut rows: Vec<Row>) -> Vec<Row> {
+    let widths: Vec<Option<usize>> = cols
+        .iter()
+        .map(|c| c.field.as_ref().filter(|f| f.data_type == DataType::Char && f.varlen.is_none()).map(|f| f.length as usize))
+        .collect();
+    for r in &mut rows {
+        for (v, w) in r.iter_mut().zip(&widths) {
+            if let (Value::Str(s), Some(w)) = (v, w) {
+                let n = s.chars().count();
+                if n < *w && *w <= 50 {
+                    s.extend(std::iter::repeat_n(' ', w - n));
+                }
+            }
+        }
+    }
+    rows
 }

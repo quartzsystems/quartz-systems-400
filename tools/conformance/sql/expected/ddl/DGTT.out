@@ -1,0 +1,23 @@
+-- captured from pub400
+> DECLARE GLOBAL TEMPORARY TABLE DDLTMP1 (A INT, B CHAR(5)) ON COMMIT PRES
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO SESSION.DDLTMP1 VALUES (1, 'X')
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT * FROM SESSION.DDLTMP1
+sqlcode 0 sqlstate 00000 msgid -
+# A INTEGER
+# B CHAR(5)
+| 1 | 'X    ' |
+> DECLARE GLOBAL TEMPORARY TABLE DDLTMP1 (A INT)
+sqlcode -601 sqlstate 42710 msgid SQL0601
+> DECLARE GLOBAL TEMPORARY TABLE DDLTMP1 (A INT) WITH REPLACE
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> SELECT * FROM SESSION.DDLTMP1
+sqlcode 0 sqlstate 00000 msgid -
+# A INTEGER
+> DECLARE GLOBAL TEMPORARY TABLE {lib}.DDLTMP2 (A INT)
+sqlcode -79 sqlstate 58020 msgid SQL0079
+> DROP TABLE SESSION.DDLTMP1
+sqlcode 0 sqlstate 00000 msgid -

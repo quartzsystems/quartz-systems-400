@@ -1,0 +1,35 @@
+-- captured from primary
+> CREATE TABLE {lib}.DDLV2T (ID INT NOT NULL, NAME VARCHAR(20))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE VIEW {lib}.DDLV2V AS SELECT ID, NAME FROM {lib}.DDLV2T WHERE ID >
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.DDLV2L AS SELECT ID, NAME FROM {lib}.DDLV2T WHERE ID <
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.DDLV2P AS SELECT ID, NAME FROM {lib}.DDLV2T WHERE ID <
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.DDLV2V VALUES (2, 'A')
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.DDLV2V VALUES (0, 'B')
+sqlcode -161 sqlstate 44000 msgid SQL0161
+> UPDATE {lib}.DDLV2V SET ID = 0
+sqlcode -161 sqlstate 44000 msgid SQL0161
+> INSERT INTO {lib}.DDLV2L VALUES (7, 'C')
+sqlcode -161 sqlstate 44000 msgid SQL0161
+> INSERT INTO {lib}.DDLV2P VALUES (9, 'D')
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT * FROM {lib}.DDLV2T ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# NAME VARCHAR(20)
+| 2 | 'A' |
+| 9 | 'D' |
+> SELECT TABLE_NAME, CHECK_OPTION FROM QSYS2.SYSVIEWS WHERE TABLE_SCHEMA =
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# CHECK_OPTION CHAR(1) NOT NULL
+| 'DDLV2L' | 'Y' |
+| 'DDLV2P' | 'N' |
+| 'DDLV2V' | 'C' |
+> DROP TABLE {lib}.DDLV2T
+sqlcode 0 sqlstate 00000 msgid -

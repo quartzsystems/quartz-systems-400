@@ -139,7 +139,6 @@ fn catalogs() {
     assert_eq!(
         db.rows("SELECT TABLE_NAME, TABLE_TYPE, COLUMN_COUNT, ROW_LENGTH, FILE_TYPE FROM qsys2/systables WHERE TABLE_SCHEMA = 'QSTEST' ORDER BY TABLE_NAME"),
         [
-            row(&["CUSBYNAME", "I", "5", "155", "D"]),
             row(&["CUST", "T", "5", "155", "D"]),
             row(&["ORDERS", "T", "3", "13", "D"]),
         ]
@@ -149,7 +148,7 @@ fn catalogs() {
         panic!()
     };
     assert_eq!(rs.columns[0].name, "TABLE_NAME");
-    assert_eq!(rs.columns[0].data_type, "CHAR(128)");
+    assert_eq!(rs.columns[0].data_type, "VARCHAR(128)");
     assert_eq!(rs.rows.len(), 1);
     assert_eq!(
         db.rows("SELECT COLUMN_NAME, ORDINAL_POSITION, DATA_TYPE, LENGTH, NUMERIC_SCALE, IS_NULLABLE, HAS_DEFAULT FROM qsys2/syscolumns WHERE TABLE_NAME = 'CUST' AND TABLE_SCHEMA = 'QSTEST' ORDER BY ORDINAL_POSITION"),

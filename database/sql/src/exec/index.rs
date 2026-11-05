@@ -74,7 +74,8 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) -> Resul
     let idx = IndexDef {
         where_not_null: i.where_not_null,
         encoded_vector: i.encoded_vector,
-        where_text: i.sparse.as_ref().map(|(_, t)| t.clone()).unwrap_or_default(),
+        // IBM keeps the condition with one blank after it.
+        where_text: i.sparse.as_ref().map(|(_, t)| format!("{t} ")).unwrap_or_default(),
         keys,
         includes: i.includes.clone(),
     };

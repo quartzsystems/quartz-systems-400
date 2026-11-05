@@ -1,0 +1,43 @@
+-- captured from primary
+> CREATE TABLE {lib}.DDLI1T (ID INT NOT NULL, NAME VARCHAR(20), AMT DECIMA
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.DDLI1T VALUES (1, 'A', 1.5), (2, 'B', 2.5), (3, NULL, 
+sqlcode 0 sqlstate 00000 msgid - count 4
+> CREATE INDEX {lib}.DDLI1S ON {lib}.DDLI1T (ID) WHERE AMT > 2
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE UNIQUE WHERE NOT NULL INDEX {lib}.DDLI1U ON {lib}.DDLI1T (NAME)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.DDLI1D ON {lib}.DDLI1T (AMT DESC, ID)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE ENCODED VECTOR INDEX {lib}.DDLI1V ON {lib}.DDLI1T (NAME)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.DDLI1J ON {lib}.DDLI1T (ID) INCLUDE (AMT)
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CREATE OR REPLACE INDEX {lib}.DDLI1R ON {lib}.DDLI1T (ID)
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> INSERT INTO {lib}.DDLI1T VALUES (5, 'A', 0)
+sqlcode -803 sqlstate 23505 msgid SQL0803
+> INSERT INTO {lib}.DDLI1T VALUES (5, NULL, 0)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT INDEX_NAME, IS_UNIQUE, COLUMN_COUNT, INDEX_HAS_SEARCH_CONDITION, 
+sqlcode 0 sqlstate 00000 msgid -
+# INDEX_NAME VARCHAR(128) NOT NULL
+# IS_UNIQUE CHAR(1) NOT NULL
+# COLUMN_COUNT INTEGER NOT NULL
+# INDEX_HAS_SEARCH_CONDITION CHAR(1) NOT NULL
+# SEARCH_CONDITION NCLOB(2097152)
+| 'DDLI1D' | 'D' | 2 | 'N' | NULL |
+| 'DDLI1S' | 'D' | 1 | 'Y' | 'AMT > 2 ' |
+| 'DDLI1U' | 'V' | 1 | 'N' | NULL |
+| 'DDLI1V' | 'E' | 1 | 'N' | NULL |
+> SELECT INDEX_NAME, COLUMN_NAME, ORDINAL_POSITION, ORDERING FROM QSYS2.SY
+sqlcode 0 sqlstate 00000 msgid -
+# INDEX_NAME VARCHAR(128) NOT NULL
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# ORDINAL_POSITION INTEGER NOT NULL
+# ORDERING CHAR(1) NOT NULL
+| 'DDLI1D' | 'AMT' | 1 | 'D' |
+| 'DDLI1D' | 'ID' | 2 | 'A' |
+> DROP TABLE {lib}.DDLI1T
+sqlcode 0 sqlstate 00000 msgid -

@@ -59,7 +59,8 @@ pub(crate) fn table_schema(t: &TableInfo, alias: &str) -> Schema {
     }];
     for f in &t.format.format.fields {
         cols.push(ColInfo {
-            name: f.name.to_string(),
+            // A column is named by its SQL name, as IBM describes it.
+            name: f.alias.clone().unwrap_or_else(|| f.name.to_string()),
             table: Some(alias.to_string()),
             field: Some(f.clone()),
             nullable: f.allow_null,
