@@ -1213,7 +1213,7 @@ from `QSYS2.SYSTABLES` and `QSYS2.SYSCOLUMNS` in the JDBC shapes;
 another `CALL` answers SQL0204 (QS/400 has no stored procedures of its
 own yet). LOBs are refused (`-84`).
 
-Extended dynamic packages (`*SQLPKG`, `docs/DB_FORMAT.md` ง9) are kept
+Extended dynamic packages (`*SQLPKG`, `docs/DB_FORMAT.md` ยง9) are kept
 as the primary keeps them for JTOpen (`extended dynamic=true`;
 `traces/database/sqlpkg.trace`, `net/hostserver/src/database/
 package.rs`): create package makes the package in the library the
