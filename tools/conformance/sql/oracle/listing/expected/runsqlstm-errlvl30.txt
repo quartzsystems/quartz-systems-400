@@ -1,0 +1,57 @@
+5770SS1 V7R5M0 220415               Run SQL Statements             SQL14                              26-11-05 20:29:13   PAGE   1
+Source stream file......../home/{user}/sql14.sql
+Target release............V7R5M0
+Commit....................*NONE
+Naming....................*SQL
+Generation level..........30
+Date format...............*JOB
+Date separator............*JOB
+Time format...............*HMS
+Time separator ...........*JOB
+Right margin..............80
+Default collection........*NONE
+IBM SQL flagging..........*NOFLAG
+ANS flagging..............*NONE
+Decimal point.............*JOB
+Sort sequence.............*JOB
+Language ID...............*JOB
+Printer file..............*LIBL/QSYSPRT
+Source file CCSID.........273
+Job CCSID.................273
+Statement processing......*RUN
+Allow copy of data........*OPTIMIZE
+Allow blocking............*ALLREAD
+SQL rules.................*DB2
+Decimal result options:
+  Maximum precision.......31
+  Maximum scale...........31
+  Minimum divide scale....0
+Concurrent access
+  resolution..............*DFT
+System time sensitive.....*YES
+Source member changed on 26-11-05  20:29:13
+5770SS1 V7R5M0 220415               Run SQL Statements             SQL14                              26-11-05 20:29:13   PAGE     2
+Record  *...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8   SEQNBR  Last change
+      1 CREATE TABLE {user}1.SQL14T (A INT, B CHAR(5));
+      2 INSERT INTO {user}1.SQL14T VALUES(1, 'x');
+      3 SELECT * FROM {user}1.SQL14T;
+      4 INSERT INTO {user}1.SQL14X VALUES(1);
+      5 UPDATE {user}1.SQL14T SET B = 'y'
+      6   WHERE A = 1;
+      7 DROP TABLE {user}1.SQL14T;
+                                 * * * * *  E N D  O F  S O U R C E  * * * * *
+5770SS1 V7R5M0 220415               Run SQL Statements             SQL14                              26-11-05 20:29:13   PAGE     3
+Record  *...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8   SEQNBR  Last change
+MSG ID  SEV  RECORD  TEXT
+SQL7905  20       1  Position 1 Table SQL14T in {user}1 created but was not
+                     journaled.
+SQL7956   0       2  Position 1 1 rows inserted in SQL14T in {user}1.
+SQL0084  30       3  Position 1 SQL statement not allowed.
+SQL0204  30       4  Position 1 SQL14X in {user}1 type *FILE not found.
+SQL7957   0       5  Position 1 1 rows updated in SQL14T in {user}1.
+SQL7953   0       7  Position 1 Drop of SQL14T in {user}1 complete.
+                    Message Summary
+  Total     Info   Warning      Error   Severe  Terminal
+      6        3         0          1        2         0
+30 level severity errors found in source
+                                * * * * *  E N D  O F  L I S T I N G  * * * * *

@@ -1,0 +1,39 @@
+5770SS1 V7R5M0 220415     Print SQL information          Program {user}1/SQL14P                    26-11-05 20:29:15  Page   001
+Object name...............{user}1/SQL14P
+Object type...............*PGM
+  CRTSQLCI
+      OBJ(QTEMP/SQL14P)
+      SRCFILE(QTEMP/QSQLSRC)
+      SRCMBR(SQL14P)
+      COMMIT(*NONE)
+      OPTION(*SQL *EXTIND   *SYSTIME   *PERIOD *NOCNULRQD)
+      TGTRLS(V7R5M0)
+      ALWCPYDTA(*OPTIMIZE)
+      CLOSQLCSR(*ENDMOD)
+      RDB(*LOCAL)
+      DATFMT(*YMD)
+      DATSEP('-')
+      TIMFMT(*HMS)
+      TIMSEP(':')
+      DFTRDBCOL(*NONE)
+      DYNDFTCOL(*NO)
+      SQLPKG({user}1/SQL14P)
+      MONITOR(*USER)
+      SQLCURRULE(*DB2)
+      ALWBLK(*ALLREAD)
+      DLYPRP(*YES)
+      DYNUSRPRF(*USER)
+      USRPRF(*NAMING)
+      SRTSEQ(*HEX)
+      LANGID(ENU)
+      RDBCNNMTH(*DUW)
+      TEXT('SQL PROCEDURE SQL14P                              ')
+      SQLPATH("QSYS" "QSYS2" "SYSPROC" "SYSIBMADM" "{user}")
+      DECRESULT(31 31 0)
+      DECFLTRND(*HALFEVEN)
+      CONACC(*DFT)
+      STATEMENT TEXT CCSID(273)
+SELECT COUNT ( * ) INTO : H : H FROM QSYS2 . SYSTABLES WHERE TABLE_SCHEMA =
+    'QSYS2'
+  SQL5065  Access plan not found.
+                               * * * * *  E N D  O F  L I S T I N G  * * * * *

@@ -348,12 +348,21 @@ fn syntax_report(text: &str, naming: sql::Naming) -> RunReport {
             statements: u32::try_from(s.len()).unwrap_or(u32::MAX),
             ..RunReport::default()
         },
-        Err(e) => RunReport {
-            listing: format!("{}\n", sql::Sqlca::from_error(&e).line()),
-            statements: 0,
-            errors: 1,
-            severity: 30,
-        },
+        Err(e) => {
+            let ca = sql::Sqlca::from_error(&e);
+            RunReport {
+                listing: format!("{}\n", ca.line()),
+                statements: 0,
+                errors: 1,
+                severity: 30,
+                entries: vec![sql::RunEntry {
+                    sqlcode: ca.sqlcode,
+                    msgid: ca.msgid(),
+                    text: ca.sqlerrmc,
+                    ..sql::RunEntry::default()
+                }],
+            }
+        }
     }
 }
 
@@ -449,11 +458,78 @@ fn runsqlstm_cmd(system: &mut System, parms: &Parms) -> CmdReply {
         Err(e) => return failed("RUNSQLSTM", &e),
     };
     if syntax_only(parms) {
-        return runsqlstm_reply(Ok(syntax_report(&text, opts.naming)), opts.errlvl);
+        let report = syntax_report(&text, opts.naming);
+        print_listing(system, parms, &text, &report);
+        return runsqlstm_reply(Ok(report), opts.errlvl);
     }
     let report = crate::svc::db::db(system)
         .and_then(|(store, ctx)| runsqlstm(store, ctx, &text, &opts).map_err(|e| e.to_string()));
+    if let Ok(r) = &report {
+        print_listing(system, parms, &text, r);
+    }
     runsqlstm_reply(report, opts.errlvl)
+}
+
+/// `OUTPUT(*PRINT)`: the listing spooled as a file named after the
+/// source member or stream file (`sql::listing`, pub400's layout).
+fn print_listing(system: &mut System, parms: &Parms, text: &str, report: &RunReport) {
+    if parms.name("OUTPUT") != "*PRINT" {
+        return;
+    }
+    let stmf = parms.specified("SRCSTMF").then(|| parms.text("SRCSTMF")).filter(|s| !s.is_empty());
+    let (name, source) = if let Some(path) = &stmf {
+        let stem = path.rsplit('/').next().unwrap_or(path);
+        let stem = stem.split('.').next().unwrap_or(stem).to_ascii_uppercase();
+        (stem, vec![("TXT0942", path.clone())])
+    } else {
+        let (file, lib) = parms.qual("SRCFILE");
+        let mbr = parms.name("SRCMBR");
+        let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib };
+        (mbr.clone(), vec![("TXT0943", format!("{lib}/{file}")), ("TXT0944", mbr)])
+    };
+    let value = |kwd: &str| -> String {
+        match kwd {
+            "TGTRLS" => release::RELEASE.to_string(),
+            "*SRCCCSID" | "*JOBCCSID" => "37".into(),
+            "*DECPREC" | "*DECSCALE" | "*DECDIV" => {
+                let e = parms.elems("DECRESULT");
+                let i = match kwd {
+                    "*DECPREC" => 0,
+                    "*DECSCALE" => 1,
+                    _ => 2,
+                };
+                e.get(i).copied().flatten().map_or_else(|| ["31", "31", "0"][i].to_string(), cmd::Value::source)
+            }
+            "MARGINS" => parms.elems("MARGINS").first().copied().flatten().map_or_else(|| "80".into(), cmd::Value::source),
+            "PRTFILE" => {
+                let (f, l) = parms.qual("PRTFILE");
+                format!("{}/{}", if l.is_empty() { "*LIBL" } else { &l }, if f.is_empty() { "QSYSPRT" } else { &f })
+            }
+            "ERRLVL" => parms.int("ERRLVL").unwrap_or(10).to_string(),
+            k => {
+                let v = parms.text(k);
+                if v.is_empty() { "*JOB".into() } else { v }
+            }
+        }
+    };
+    let (y, mo, d, hh, mm, ss) = crate::platform::rtc::unix_to_civil(crate::svc::db::now());
+    let l = sql::listing::Listing {
+        product: release::PRODUCT_ID,
+        release: &release::RELEASE.to_string(),
+        name: &name,
+        source,
+        value: &value,
+        stamp: (format!("{:02}-{mo:02}-{d:02}", y % 100), format!("{hh:02}:{mm:02}:{ss:02}")),
+        changed: None,
+        records: text.lines().map(str::to_string).collect(),
+    };
+    let cell = std::cell::RefCell::new(&mut *system);
+    let words = |id: &str, v: &[&str]| crate::stgsvc::msgs::text(&mut cell.borrow_mut(), id, v);
+    let lines = sql::listing::listing(&l, report, text, &words);
+    let system = cell.into_inner();
+    if let Err(e) = crate::svc::security::print_as(system, &name, &name, &lines, true) {
+        eprintln!("qsstg: RUNSQLSTM listing not spooled: {e}");
+    }
 }
 
 fn runsqlstm_reply(report: Result<RunReport, String>, errlvl: u8) -> CmdReply {
@@ -487,15 +563,28 @@ pub(super) fn runsql_long(
         Ok(v) => v,
         Err(e) => return Err(Box::new(failed(name, &e))),
     };
-    if !runsql && syntax_only(parms) {
-        let reply = runsqlstm_reply(Ok(syntax_report(&text, opts.naming)), opts.errlvl);
-        return Ok(Box::new(move |_: &super::longcmd::Work<'_>| Box::new(move |_: &mut System| reply)));
+    let parms = parms.clone();
+    if !runsql && syntax_only(&parms) {
+        let report = syntax_report(&text, opts.naming);
+        return Ok(Box::new(move |_: &super::longcmd::Work<'_>| {
+            Box::new(move |system: &mut System| {
+                print_listing(system, &parms, &text, &report);
+                runsqlstm_reply(Ok(report), opts.errlvl)
+            })
+        }));
     }
     Ok(Box::new(move |w: &super::longcmd::Work<'_>| {
         ctx.yielder = Some(w.yielder());
         let report = sql::runsqlstm_lent(w.lender(), &mut ctx, &text, &opts).map_err(|e| e.to_string());
-        let reply = if runsql { runsql_reply(report) } else { runsqlstm_reply(report, opts.errlvl) };
-        Box::new(move |_: &mut System| reply)
+        Box::new(move |system: &mut System| {
+            if runsql {
+                return runsql_reply(report);
+            }
+            if let Ok(r) = &report {
+                print_listing(system, &parms, &text, r);
+            }
+            runsqlstm_reply(report, opts.errlvl)
+        })
     }))
 }
 

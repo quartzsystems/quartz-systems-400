@@ -1,0 +1,37 @@
+-- RUNSQLSTM's listing and PRTSQLINF's report on pub400 (V7R5M0): a
+-- stream file of statements written through QSYS2.IFS_WRITE, run with
+-- OUTPUT(*PRINT) ERRLVL(30) (one statement fails: SQL0204), then with
+-- PROCESS(*SYN); an SQL procedure made, PRTSQLINF over its program,
+-- the procedure, table and file removed. The spooled files are read
+-- with SplfText (--jobs QZDASOINIT) into expected/.
+-- java SqlSteps pub400 tools/conformance/sql/oracle/listing/steps.txt
+CALL QSYS2.IFS_WRITE(PATH_NAME => '/home/{user}/sql14.sql', LINE => 'CREATE TABLE {lib}.SQL14T (A INT, B CHAR(5));', OVERWRITE => 'REPLACE', END_OF_LINE => 'LF')
+@
+CALL QSYS2.IFS_WRITE(PATH_NAME => '/home/{user}/sql14.sql', LINE => 'INSERT INTO {lib}.SQL14T VALUES(1, ''x'');', OVERWRITE => 'APPEND', END_OF_LINE => 'LF')
+@
+CALL QSYS2.IFS_WRITE(PATH_NAME => '/home/{user}/sql14.sql', LINE => 'SELECT * FROM {lib}.SQL14T;', OVERWRITE => 'APPEND', END_OF_LINE => 'LF')
+@
+CALL QSYS2.IFS_WRITE(PATH_NAME => '/home/{user}/sql14.sql', LINE => 'INSERT INTO {lib}.SQL14X VALUES(1);', OVERWRITE => 'APPEND', END_OF_LINE => 'LF')
+@
+CALL QSYS2.IFS_WRITE(PATH_NAME => '/home/{user}/sql14.sql', LINE => 'UPDATE {lib}.SQL14T SET B = ''y''', OVERWRITE => 'APPEND', END_OF_LINE => 'LF')
+@
+CALL QSYS2.IFS_WRITE(PATH_NAME => '/home/{user}/sql14.sql', LINE => '  WHERE A = 1;', OVERWRITE => 'APPEND', END_OF_LINE => 'LF')
+@
+CALL QSYS2.IFS_WRITE(PATH_NAME => '/home/{user}/sql14.sql', LINE => 'DROP TABLE {lib}.SQL14T;', OVERWRITE => 'APPEND', END_OF_LINE => 'LF')
+@
+CALL QSYS2.QCMDEXC('RUNSQLSTM SRCSTMF(''/home/{user}/sql14.sql'') COMMIT(*NONE) NAMING(*SQL) ERRLVL(30) OUTPUT(*PRINT)')
+@
+CALL QSYS2.QCMDEXC('RUNSQLSTM SRCSTMF(''/home/{user}/sql14.sql'') COMMIT(*NONE) NAMING(*SQL) PROCESS(*SYN) OUTPUT(*PRINT)')
+@
+CALL QSYS2.QCMDEXC('RUNSQLSTM SRCSTMF(''/home/{user}/sql14.sql'') COMMIT(*NONE) NAMING(*SQL) OUTPUT(*PRINT)')
+@
+CREATE PROCEDURE {lib}.SQL14P () LANGUAGE SQL BEGIN DECLARE C INT; SELECT COUNT(*) INTO C FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSYS2'; END
+@
+CALL QSYS2.QCMDEXC('PRTSQLINF OBJ({lib}/SQL14P) OBJTYPE(*PGM)')
+@
+DROP PROCEDURE {lib}.SQL14P
+@
+DROP TABLE {lib}.SQL14T
+@
+CALL QSYS2.QCMDEXC('RMVLNK OBJLNK(''/home/{user}/sql14.sql'')')
+@

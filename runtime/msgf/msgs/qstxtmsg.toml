@@ -692,3 +692,213 @@ help = "Text of the interactive SQL displays and reports (STRSQL): the second li
 id = "TXT093E"
 text = "*EXCLUDE, *USE"
 help = "Text of the interactive SQL displays and reports (STRSQL): the third line of the values the output file's authority takes."
+
+[[msg]]
+id = "TXT0940"
+text = "Run SQL Statements"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the title in each page's heading."
+
+[[msg]]
+id = "TXT0942"
+text = "Source stream file"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the stream file the statements were read from."
+
+[[msg]]
+id = "TXT0943"
+text = "Source file"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the source file the statements were read from."
+
+[[msg]]
+id = "TXT0944"
+text = "Member"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the source member the statements were read from."
+
+[[msg]]
+id = "TXT0945"
+text = "Target release"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the release the statements were checked for."
+
+[[msg]]
+id = "TXT0946"
+text = "Commit"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the commitment control level."
+
+[[msg]]
+id = "TXT0947"
+text = "Naming"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the naming convention."
+
+[[msg]]
+id = "TXT0948"
+text = "Generation level"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the severity that ends the run (ERRLVL)."
+
+[[msg]]
+id = "TXT0949"
+text = "Date format"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the date format."
+
+[[msg]]
+id = "TXT094A"
+text = "Date separator"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the date separator."
+
+[[msg]]
+id = "TXT094B"
+text = "Time format"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the time format."
+
+[[msg]]
+id = "TXT094C"
+text = "Time separator "
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the time separator (with the blank the listing prints before its leaders)."
+
+[[msg]]
+id = "TXT094D"
+text = "Right margin"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the source records' right margin."
+
+[[msg]]
+id = "TXT094E"
+text = "Default collection"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the default schema."
+
+[[msg]]
+id = "TXT094F"
+text = "IBM SQL flagging"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the SQL standard flagging."
+
+[[msg]]
+id = "TXT0950"
+text = "ANS flagging"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the ANSI standard flagging."
+
+[[msg]]
+id = "TXT0951"
+text = "Decimal point"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the decimal point."
+
+[[msg]]
+id = "TXT0952"
+text = "Sort sequence"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the sort sequence."
+
+[[msg]]
+id = "TXT0953"
+text = "Language ID"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the language identifier."
+
+[[msg]]
+id = "TXT0954"
+text = "Printer file"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the printer file the listing is printed with."
+
+[[msg]]
+id = "TXT0955"
+text = "Source file CCSID"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the source's CCSID."
+
+[[msg]]
+id = "TXT0956"
+text = "Job CCSID"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the job's CCSID."
+
+[[msg]]
+id = "TXT0957"
+text = "Statement processing"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of whether the statements are run or only checked."
+
+[[msg]]
+id = "TXT0958"
+text = "Allow copy of data"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the copy of data option."
+
+[[msg]]
+id = "TXT0959"
+text = "Allow blocking"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the blocking option."
+
+[[msg]]
+id = "TXT095A"
+text = "SQL rules"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the SQL rules."
+
+[[msg]]
+id = "TXT095B"
+text = "Decimal result options:"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the heading over the decimal result options."
+
+[[msg]]
+id = "TXT095C"
+text = "  Maximum precision"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the maximum precision of decimal results."
+
+[[msg]]
+id = "TXT095D"
+text = "  Maximum scale"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the maximum scale of decimal results."
+
+[[msg]]
+id = "TXT095E"
+text = "  Minimum divide scale"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the minimum scale of a division."
+
+[[msg]]
+id = "TXT095F"
+text = "Concurrent access"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the first line of the label of the concurrent access resolution."
+
+[[msg]]
+id = "TXT0960"
+text = "  resolution"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the second line of the label of the concurrent access resolution."
+
+[[msg]]
+id = "TXT0961"
+text = "System time sensitive"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the label of the system time sensitivity."
+
+[[msg]]
+id = "TXT0962"
+text = "Source member changed on &1  &2"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): when the source was last changed: its date and time."
+
+[[msg]]
+id = "TXT0963"
+text = "Record  *...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8   SEQNBR  Last change"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the column ruler over the source records and the messages."
+
+[[msg]]
+id = "TXT0964"
+text = "* * * * *  E N D  O F  S O U R C E  * * * * *"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the line after the last source record."
+
+[[msg]]
+id = "TXT0965"
+text = "MSG ID  SEV  RECORD  TEXT"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the heading over the statements' messages."
+
+[[msg]]
+id = "TXT0966"
+text = "Message Summary"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the heading over the counts of messages by severity."
+
+[[msg]]
+id = "TXT0967"
+text = "  Total     Info   Warning      Error   Severe  Terminal"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the headings of the counts of messages by severity."
+
+[[msg]]
+id = "TXT0968"
+text = "&1 level severity errors found in source"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): the highest severity of the statements' messages."
+
+[[msg]]
+id = "TXT0969"
+text = "No errors found in source"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): that no statement failed."
+
+[[msg]]
+id = "TXT096A"
+text = "Position &1 &2"
+help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): a statement's message: where in the statement, and the message's text."

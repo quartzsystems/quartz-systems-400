@@ -61,6 +61,72 @@ pub struct RunReport {
     pub errors: u32,
     /// The highest severity seen: 0, 30 for an error, 40 for a stop.
     pub severity: u8,
+    /// Each statement's outcome, for the printed listing.
+    pub entries: Vec<RunEntry>,
+}
+
+/// One statement's outcome.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RunEntry {
+    /// The statement's place in the script, from 0.
+    pub index: usize,
+    /// Its name (`INSERT`, `DROP TABLE`, ...).
+    pub name: String,
+    /// `SQLCODE`.
+    pub sqlcode: i32,
+    /// The message identifier of a failure.
+    pub msgid: String,
+    /// The failure's text.
+    pub text: String,
+    /// Rows changed.
+    pub count: u64,
+    /// The object a change or a `DROP` names, as written: schema (when
+    /// given) and name.
+    pub target: Option<(Option<String>, String)>,
+}
+
+/// A query's first `n` rows into the listing.
+fn show_rows(listing: &mut String, outcome: Option<&Outcome>, n: usize) {
+    if let Some(Outcome::Rows(rs)) = outcome
+        && !rs.rows.is_empty()
+        && n > 0
+    {
+        let shown = crate::exec::ResultSet {
+            columns: rs.columns.clone(),
+            rows: rs.rows.iter().take(n).cloned().collect(),
+        };
+        listing.push_str(&shown.render());
+    }
+}
+
+/// A statement's entry.
+fn entry(index: usize, name: &str, ca: &Sqlca, outcome: Option<&Outcome>, target: Option<(Option<String>, String)>) -> RunEntry {
+    let failed = ca.is_error();
+    RunEntry {
+        index,
+        name: name.to_string(),
+        sqlcode: ca.sqlcode,
+        msgid: if failed { ca.msgid() } else { String::new() },
+        text: if failed { ca.sqlerrmc.clone() } else { String::new() },
+        count: match outcome {
+            Some(Outcome::Count(c)) => *c,
+            _ => 0,
+        },
+        target,
+    }
+}
+
+/// The object a data change or a `DROP` names.
+fn target_of(s: &crate::ast::Statement) -> Option<(Option<String>, String)> {
+    use crate::ast::Statement as S;
+    let o = match s {
+        S::Insert(i) => &i.table,
+        S::Update(u) => &u.table,
+        S::Delete(d) => &d.table,
+        S::DropTable { name, .. } | S::DropView { name, .. } | S::DropIndex(name) => name,
+        _ => return None,
+    };
+    Some((o.schema.as_ref().map(ToString::to_string), o.name.to_string()))
 }
 
 /// The severity of an SQLCODE: 30 for errors, 0 otherwise.
@@ -109,6 +175,12 @@ pub fn runsqlstm_lent(
             let ca = Sqlca::from_error(&e);
             report.listing.push_str(&ca.line());
             report.listing.push('\n');
+            report.entries.push(RunEntry {
+                sqlcode: ca.sqlcode,
+                msgid: ca.msgid(),
+                text: ca.sqlerrmc,
+                ..RunEntry::default()
+            });
             report.errors = 1;
             report.severity = 40;
             return Ok(report);
@@ -148,6 +220,7 @@ pub fn runsqlstm_lent(
             naming: opts.naming,
         };
         let name = crate::exec::statement_name(&p.statement);
+        let target = target_of(&p.statement);
         let mut t = begin()?;
         let yields = ctx.yields();
         let (ca, outcome) = match crate::exec::dynamic::check_statement(&p.statement) {
@@ -161,16 +234,8 @@ pub fn runsqlstm_lent(
             t.commit()?;
         }
         let _ = writeln!(report.listing, "{name}: {}", ca.line());
-        if let Some(Outcome::Rows(rs)) = &outcome
-            && !rs.rows.is_empty()
-            && opts.show_rows > 0
-        {
-            let shown = crate::exec::ResultSet {
-                columns: rs.columns.clone(),
-                rows: rs.rows.iter().take(opts.show_rows).cloned().collect(),
-            };
-            report.listing.push_str(&shown.render());
-        }
+        report.entries.push(entry(n, name, &ca, outcome.as_ref(), target));
+        show_rows(&mut report.listing, outcome.as_ref(), opts.show_rows);
         let sev = severity(&ca);
         report.severity = report.severity.max(sev);
         if ca.is_error() {
