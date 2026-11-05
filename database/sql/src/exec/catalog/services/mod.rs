@@ -9,6 +9,9 @@
 //! oracle's that are `NOT NULL` and still have none here (`NO_VALUE`),
 //! and those are nullable in its description.
 
+// Every service's rows function has the one signature, failing or not.
+#![allow(clippy::unnecessary_wraps)]
+
 pub mod host;
 pub mod http;
 pub mod shape;
@@ -25,6 +28,7 @@ mod netstat;
 mod objects;
 pub mod procs;
 mod products;
+mod security;
 mod spool;
 mod sysval;
 mod users;
@@ -75,6 +79,11 @@ const VIEWS: &[View] = &[
     View { schema: "QSYS2", name: "OUTPUT_QUEUE_ENTRIES_BASIC", no_value: spool::ENTRY_NO_VALUE, rows: spool::entries },
     View { schema: "QSYS2", name: "OUTPUT_QUEUE_INFO", no_value: spool::QUEUE_NO_VALUE, rows: spool::queues },
     View { schema: "QSYS2", name: "JOB_DESCRIPTION_INFO", no_value: wmobj::JOBD_NO_VALUE, rows: wmobj::jobds },
+    View { schema: "QSYS2", name: "OBJECT_PRIVILEGES", no_value: &[], rows: security::privileges },
+    View { schema: "QSYS2", name: "OBJECT_OWNERSHIP", no_value: &[], rows: security::ownership },
+    View { schema: "QSYS2", name: "AUTHORIZATION_LIST_INFO", no_value: &[], rows: security::autl_objects },
+    View { schema: "QSYS2", name: "AUTHORIZATION_LIST_USER_INFO", no_value: &[], rows: security::autl_users },
+    View { schema: "QSYS2", name: "USER_STORAGE", no_value: security::STORAGE_NO_VALUE, rows: security::storage },
     View { schema: "QSYS2", name: "JOB_QUEUE_INFO", no_value: &[], rows: wmobj::jobqs },
     View { schema: "QSYS2", name: "SUBSYSTEM_INFO", no_value: wmobj::SBS_NO_VALUE, rows: wmobj::subsystems },
     View { schema: "QSYS2", name: "SUBSYSTEM_POOL_INFO", no_value: &[], rows: wmobj::subsystem_pools },

@@ -751,3 +751,14 @@ fn call_of_service_procedures() {
     assert_eq!(db.code("CALL QSYS2.IFS_WRITE_UTF8(PATH_NAME => '/home/w.txt', LINE => 'hi')"), 0);
     assert_eq!(db.code("CALL QSYS2.IFS_WRITE_UTF8(PATH_NAME => '/home/w.txt', BOGUS => 'hi')"), -440);
 }
+
+#[test]
+fn object_privileges_and_ownership() {
+    let mut db = Db::new(true);
+    let (ca, _) = db.run("CREATE TABLE QSTEST.T1 (A INT)");
+    assert!(!ca.is_error(), "{}", ca.line());
+    let rows = db.rows("SELECT AUTHORIZATION_NAME, OBJECT_AUTHORITY, DATA_READ FROM QSYS2.OBJECT_PRIVILEGES WHERE SYSTEM_OBJECT_NAME = 'T1' ORDER BY 1");
+    assert!(rows.iter().any(|r| r[0] == "*PUBLIC"), "{rows:?}");
+    assert!(rows.iter().any(|r| r[1] == "*ALL" && r[2] == "YES"), "{rows:?}");
+    assert_eq!(db.rows("SELECT OBJECT_LIBRARY, OBJECT_TYPE FROM QSYS2.OBJECT_OWNERSHIP WHERE OBJECT_NAME = 'T1'"), vec![row(&["QSTEST", "*FILE"])]);
+}
