@@ -114,7 +114,7 @@ pub(crate) struct Family {
 }
 
 /// The families, asked in order before the first set.
-const FAMILIES: &[Family] = &[Family { call: decfloat::call }];
+const FAMILIES: &[Family] = &[Family { call: decfloat::call }, Family { call: super::json::plain }];
 
 /// Call a scalar function; `args` are already evaluated.
 #[allow(clippy::too_many_lines)]

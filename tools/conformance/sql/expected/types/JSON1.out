@@ -1,0 +1,231 @@
+-- captured from pub400
+> SELECT JSON_OBJECT('a' VALUE 1, 'b' VALUE 'x') FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"a":1,"b":"x"}' |
+> SELECT JSON_OBJECT(KEY 'a' VALUE 1.50, KEY 'b' VALUE -0.5, KEY 'c' VALUE
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"a":1.50,"b":-0.5,"c":1.5E0,"d":1,"e":1.0E+3}' |
+> SELECT JSON_OBJECT('a' VALUE NULL), JSON_OBJECT('a' VALUE NULL ABSENT ON
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> SELECT JSON_OBJECT('q' VALUE 'he said "hi" \ / ' || X'25' || X'05' || 'é
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"q":"he said \"hi\" \\ / \n\té€"}' |
+> SELECT JSON_OBJECT('a' VALUE '{"x":1}' FORMAT JSON, 'b' VALUE '{"x":1}')
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"a":{"x":1},"b":"{\"x\":1}"}' |
+> SELECT JSON_OBJECT('a' VALUE JSON_ARRAY(1, 2, 'x'), 'b' VALUE JSON_OBJEC
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"a":[1,2,"x"],"b":{"c":true}}' |
+> SELECT JSON_OBJECT('d' VALUE DATE('2026-11-05'), 't' VALUE TIME('10:20:3
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+sqlcode -16402 sqlstate 22032 msgid SQ16402
+> SELECT JSON_OBJECT('a' VALUE 1, 'a' VALUE 2) FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"a":1,"a":2}' |
+> SELECT JSON_OBJECT('a' VALUE 1, 'a' VALUE 2 WITH UNIQUE KEYS) FROM SYSIB
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+sqlcode -16400 sqlstate 22030 msgid SQ16400
+> SELECT JSON_OBJECT() FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{}' |
+> SELECT JSON_OBJECT('a' VALUE 1 RETURNING VARCHAR(5)) FROM SYSIBM.SYSDUMM
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(5)
+sqlcode -802 sqlstate 22001 msgid SQL0802
+> SELECT JSON_OBJECT('a' VALUE 'abcdef' RETURNING VARCHAR(5)) FROM SYSIBM.
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(5)
+sqlcode -802 sqlstate 22001 msgid SQL0802
+> SELECT JSON_ARRAY(1, NULL, 'a'), JSON_ARRAY(1, NULL, 'a' NULL ON NULL), 
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> SELECT JSON_ARRAY(VALUES 1 UNION ALL VALUES 2) FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '[1,2]' |
+> SELECT JSON_ARRAY(1E300, -0E0, 0.1E0, CAST(0.1 AS REAL), 123456789012345
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '[1.0000000000000001E300,-0E0,1.0000000000000001E-1,1.0000000149011612E-1,12345678901234567890]' |
+> SELECT JSON_ARRAY(TRUE, FALSE, 1 = 1) FROM SYSIBM.SYSDUMMY1
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SELECT JSON_OBJECT('a' VALUE '[1,2' FORMAT JSON) FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"a":[1,2}' |
+> SELECT JSON_VALUE('{"a":{"b":[10,20,30]},"s":"xéy","n":null,"t":true,"f"
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+# 00002 CLOB(2147483647)
+# 00003 DECIMAL(5,2)
+# 00004 INTEGER
+| '20' | 'xyz' | 1.50 | 1 |
+> SELECT JSON_VALUE('{"s":"xéy"}', '$.s'), JSON_VALUE('{"n":null}', '$.n')
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+# 00002 CLOB(2147483647)
+# 00003 CLOB(2147483647)
+# 00004 CLOB(2147483647)
+# 00005 DOUBLE
+| 'xéy' | NULL | 'true' | '150' | 150.0 |
+> SELECT JSON_VALUE('{"a":1}', '$.b'), JSON_VALUE('{"a":1}', '$.b' DEFAULT
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+# 00002 CLOB(2147483647)
+# 00003 CLOB(2147483647)
+# 00004 CLOB(2147483647)
+| NULL | 'none' | '1' | '1' |
+> SELECT JSON_VALUE('{"a":1}', 'strict $.b') FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| NULL |
+> SELECT JSON_VALUE('{"a":1}', 'strict $.b' ERROR ON EMPTY) FROM SYSIBM.SY
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| NULL |
+> SELECT JSON_VALUE('{"a":1}', 'strict $.b' ERROR ON ERROR) FROM SYSIBM.SY
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+sqlcode -16410 sqlstate 2203A msgid SQ16410
+> SELECT JSON_VALUE('{"a":"x"}', '$.a' RETURNING INTEGER ERROR ON ERROR) F
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+sqlcode -406 sqlstate 22023 msgid SQL0406
+> SELECT JSON_VALUE('{"a":"x"}', '$.a' RETURNING INTEGER) FROM SYSIBM.SYSD
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| NULL |
+> SELECT JSON_VALUE('not json', '$.a') FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| NULL |
+> SELECT JSON_VALUE('not json', '$.a' ERROR ON ERROR) FROM SYSIBM.SYSDUMMY
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+sqlcode -16402 sqlstate 22032 msgid SQ16402
+> SELECT JSON_VALUE('{"a":1}', 'bad path') FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| NULL |
+> SELECT JSON_VALUE('[1,2,3]', '$[last]'), JSON_VALUE('[1,2,3]', 'lax $[5]
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+# 00002 CLOB(2147483647)
+# 00003 CLOB(2147483647)
+# 00004 CLOB(2147483647)
+# 00005 CLOB(2147483647)
+| '3' | NULL | '2' | '3' | '5' |
+> SELECT JSON_QUERY('{"a":{"b":[10,20]}}', '$.a'), JSON_QUERY('{"a":{"b":[
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+# 00002 CLOB(2147483647)
+# 00003 CLOB(2147483647)
+# 00004 CLOB(2147483647)
+# 00005 CLOB(2147483647)
+| '{"b":[10,20]}' | '[10,20]' | '10' | '[10]' | '[10,20]' |
+> SELECT JSON_QUERY('{"a":"x"}', '$.a'), JSON_QUERY('{"a":"x"}', '$.a' KEE
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+# 00002 CLOB(2147483647)
+# 00003 CLOB(2147483647)
+# 00004 CLOB(2147483647)
+# 00005 CLOB(2147483647)
+# 00006 CLOB(2147483647)
+| '"x"' | '"x"' | 'x' | NULL | '[]' | '{}' |
+> SELECT JSON_QUERY('{"a" : [ 1 , {"b" :  2} ] }', '$') FROM SYSIBM.SYSDUM
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"a":[1,{"b":2}]}' |
+> SELECT JSON_QUERY('{"a":[1,2,3]}', '$.a[0 to 1]' WITH WRAPPER), JSON_QUE
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+# 00002 CLOB(2147483647)
+| '[1,2]' | '[1,2]' |
+> SELECT JSON_EXISTS('{"a":1}', '$.a'), JSON_EXISTS('{"a":1}', '$.b'), JSO
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 BOOLEAN NOT NULL
+# 00002 BOOLEAN NOT NULL
+# 00003 BOOLEAN NOT NULL
+# 00004 BOOLEAN NOT NULL
+| 1 | 0 | 0 | 0 |
+> SELECT JSON_EXISTS('x', '$.a' ERROR ON ERROR) FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 BOOLEAN NOT NULL
+sqlcode -16402 sqlstate 22032 msgid SQ16402
+> SELECT CASE WHEN '{"a":1}' IS JSON THEN 1 ELSE 0 END, CASE WHEN 'x' IS J
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+# 00002 INTEGER NOT NULL
+# 00003 INTEGER NOT NULL
+# 00004 INTEGER NOT NULL
+# 00005 INTEGER NOT NULL
+# 00006 INTEGER NOT NULL
+# 00007 INTEGER NOT NULL
+| 1 | 0 | 0 | 1 | 1 | 0 | 1 |
+> SELECT HEX(JSON_TO_BSON('{"a":1,"b":"x","c":[true,null],"d":1.5,"e":1234
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(32740) NOT NULL
+| '3A000000106100010000000262000200000078000463000C000000083000010A310000016400000000000000F83F126500351CDCDF0200000000' |
+> SELECT BSON_TO_JSON(JSON_TO_BSON('{"a":1,"b":"x","c":[true,null],"d":1.5
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647) NOT NULL
+| '{"a":1,"b":"x","c":[true, null ],"d":1.5,"e":12345678901}' |
+> SELECT JSON_VALUE(JSON_TO_BSON('{"a":7}') FORMAT BSON, '$.a') FROM SYSIB
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '7' |
+> SELECT JSON_UPDATE('{"a":1,"b":2}', '$.a', 5), JSON_UPDATE('{"a":1}', '$
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT JSON_UPDATE('{"a":1}', '$.a', '{"z":1}' FORMAT JSON) FROM SYSIBM.
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> CREATE TABLE {lib}.QSJS1 (K INTEGER, NAME VARCHAR(10), AMT DECIMAL(5, 2)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QSJS1 VALUES (1, 'a', 1.50), (2, 'b', NULL), (3, 'c', 
+sqlcode 0 sqlstate 00000 msgid - count 3
+> SELECT JSON_ARRAYAGG(NAME ORDER BY K DESC) FROM {lib}.QSJS1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '["c","b","a"]' |
+> SELECT JSON_ARRAYAGG(AMT), JSON_ARRAYAGG(AMT NULL ON NULL) FROM {lib}.QS
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01003 -
+# 00001 CLOB(2147483647)
+# 00002 CLOB(2147483647)
+| '[1.50,-2.00]' | '[1.50,null,-2.00]' |
+> SELECT JSON_OBJECTAGG(NAME VALUE AMT), JSON_OBJECTAGG(KEY NAME VALUE AMT
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01003 -
+# 00001 CLOB(2147483647)
+# 00002 CLOB(2147483647)
+| '{"a":1.50,"b":null,"c":-2.00}' | '{"a":1.50,"c":-2.00}' |
+> SELECT JSON_OBJECT('k' VALUE K, 'n' VALUE NAME, 'a' VALUE AMT) FROM {lib
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"k":1,"n":"a","a":1.50}' |
+| '{"k":2,"n":"b","a":null}' |
+| '{"k":3,"n":"c","a":-2.00}' |
+> SELECT T.* FROM JSON_TABLE('{"r":[{"a":1,"b":"x"},{"a":2}]}', '$.r[*]' C
+sqlcode 0 sqlstate 00000 msgid -
+# A INTEGER
+# B VARCHAR(5)
+# N BIGINT
+| 1 | 'x' | 1 |
+| 2 | NULL | 2 |
+> SELECT T.* FROM JSON_TABLE('{"r":[{"a":1,"b":"x"},{"a":"q"}]}', 'lax $.r
+sqlcode 0 sqlstate 00000 msgid -
+# A INTEGER
+# B VARCHAR(5)
+# J VARCHAR(20)
+| 1 | 'x' | '{"a":1,"b":"x"}' |
+| -1 | 'none' | '{"a":"q"}' |
+> DROP TABLE {lib}.QSJS1
+sqlcode 0 sqlstate 00000 msgid -

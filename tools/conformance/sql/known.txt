@@ -12,3 +12,4 @@ types/CASTSTR   # errors the primary raises at fetch (SQL0433), 01004 truncation
 types/DECFLT1   # DECFLOAT values quoted in the oracle capture, DECFLOAT_FORMAT absent on 7.1 (SQL0204), SYSCOLUMNS column types, SQL7905
 types/DECFLT2   # errors at fetch, HEX of CCSID-tagged strings, FOR SBCS/MIXED DATA in CAST (SQL0604), DECFLOAT values quoted, CAST('abc' AS INTEGER) in WHERE (SQL0802 22023)
 types/FLOATFMT  # errors at fetch (SQL0433); the primary makes CHAR(4.9E-324) a CHAR(42)
+types/JSON1     # BOOLEAN shown as 1/0 by JTOpen, 01003 warnings, JSON_TABLE waits for TABLE(...) in FROM, a predicate as a JSON_ARRAY value (SQL0104 on 7.5), FORMAT in JSON_UPDATE (SQL0199), SQL7905

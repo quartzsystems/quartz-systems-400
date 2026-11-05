@@ -496,3 +496,41 @@ id = "SQ20365"
 sev = 30
 text = "A signaling NaN was met, or a DECFLOAT operation failed."
 help = "An expression used the DECFLOAT special value sNaN, or a DECFLOAT operation could not give a result. Remove the sNaN value or change the expression."
+
+[[msg]]
+id = "SQL0170"
+sev = 30
+text = "Function &1 is called with the wrong number of arguments."
+help = "The function takes a different number of arguments. Correct the call."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQ16400"
+sev = 30
+text = "A JSON object repeats the key &1."
+help = "The constructor or aggregate was asked for unique keys (WITH UNIQUE KEYS) but two members have the same key. Remove the duplicate or drop the clause."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQ16401"
+sev = 30
+text = "An SQL/JSON path or key is not valid."
+help = "The path is not written in the SQL/JSON path language, or a JSON object key is null. Correct the path or the key."
+
+[[msg]]
+id = "SQ16402"
+sev = 30
+text = "The data is not valid JSON."
+help = "A value used as JSON text (or BSON) could not be read as a JSON document. Correct the data or the FORMAT clause."
+
+[[msg]]
+id = "SQ16410"
+sev = 30
+text = "The SQL/JSON path finds no member or element there."
+help = "In strict mode the path names a member, index or kind the item does not have, or the path found no item where ERROR ON EMPTY was given. Correct the path or use lax mode."
+
+[[msg]]
+id = "SQ16413"
+sev = 30
+text = "The SQL/JSON path does not give a single scalar item."
+help = "JSON_VALUE needs one scalar item and JSON_QUERY without a wrapper one item; the path gave more, or an array or object. Change the path or add WITH WRAPPER."

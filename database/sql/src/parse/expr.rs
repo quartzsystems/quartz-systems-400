@@ -98,6 +98,9 @@ impl Parser {
         }
         if self.eat_word("IS") {
             let not = self.eat_word("NOT");
+            if self.is_word("JSON") {
+                return self.is_json(left, not);
+            }
             if self.eat_word("NULL") || self.eat_word("UNKNOWN") {
                 return Ok(Expr::IsNull(Box::new(left), not));
             }
@@ -446,6 +449,9 @@ impl Parser {
 
     fn call(&mut self, name: String) -> Result<Expr> {
         self.expect_sym("(")?;
+        if let Some(e) = self.json_call(&name)? {
+            return Ok(e);
+        }
         let mut f = Function {
             name,
             distinct: false,

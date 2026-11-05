@@ -335,6 +335,8 @@ pub fn mapped(ctx: &mut crate::exec::SqlContext, r: Result<Value>) -> Result<Val
         return Err(e);
     }
     let warning = match (e.sqlcode(), e.sqlstate()) {
+        // A result too long for its string type fails at fetch.
+        (-802, "22001") => return Err(e),
         (-802, "22012") => (802, "01564"),
         (-802, _) => (802, "01519"),
         (-420, _) => (420, "01565"),

@@ -168,6 +168,7 @@ pub fn has_aggregate(e: &Expr) -> bool {
     match e {
         Expr::Function(f) => {
             (AGGREGATES.contains(&f.name.as_str()) && (f.star || f.args.len() == 1))
+                || super::json::is_aggregate(f)
                 || f.args.iter().any(has_aggregate)
         }
         Expr::Neg(a)
@@ -386,7 +387,7 @@ impl Evaluator<'_> {
 
     /// A subquery's rows: the statement's kept answer when it has one
     /// (`SqlContext::answers`), else run against the outer rows.
-    fn subquery(&mut self, txn: &mut Txn<'_>, q: &Query, env: &Env) -> Result<Rc<Vec<Row>>> {
+    pub(crate) fn subquery(&mut self, txn: &mut Txn<'_>, q: &Query, env: &Env) -> Result<Rc<Vec<Row>>> {
         let Some(a) = self.ctx.answers.as_mut() else {
             return Ok(Rc::new(run_query(txn, self.ctx, self.params, q, env)?.rows));
         };
@@ -582,6 +583,9 @@ impl Evaluator<'_> {
 
     /// A function call: aggregates over the group, else a scalar.
     fn function(&mut self, txn: &mut Txn<'_>, f: &Function, env: &Env) -> Result<Value> {
+        if let Some(r) = super::json::call(self, txn, f, env) {
+            return r;
+        }
         let name = f.name.as_str();
         if AGGREGATES.contains(&name) && (f.star || f.args.len() == 1) {
             let Some(group) = env.group.clone() else {

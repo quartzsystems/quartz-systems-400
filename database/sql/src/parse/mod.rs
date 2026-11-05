@@ -11,6 +11,7 @@ mod dml;
 mod expr;
 mod objects;
 mod query;
+mod json;
 mod types;
 
 use crate::ast::{

@@ -18,6 +18,7 @@ pub mod eval;
 pub mod func;
 pub mod grant;
 pub mod index;
+pub mod json;
 mod join;
 pub mod mem;
 pub mod names;

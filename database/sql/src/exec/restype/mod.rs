@@ -58,7 +58,7 @@ impl SqlType {
 pub type FunctionType = fn(&str, &[Option<SqlType>], &[Expr]) -> Option<SqlType>;
 
 /// The families' result types, asked in order.
-pub const FUNCTION_TYPES: &[FunctionType] = &[cast_functions];
+pub const FUNCTION_TYPES: &[FunctionType] = &[cast_functions, super::json::types];
 
 /// The type of a field.
 #[must_use]
