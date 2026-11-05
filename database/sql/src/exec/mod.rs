@@ -163,6 +163,9 @@ pub struct SqlContext {
     /// writes) with the store given back, so others can use it; true
     /// ends the statement. `None` never yields.
     pub yielder: Option<Yielder>,
+    /// Calls trigger programs in the job running the statement; `None`
+    /// refuses a change a trigger fires for (`SQL0084`).
+    pub triggers: Option<db::trg::fire::CallerRef>,
     /// The least time between two yields.
     pub yield_every: std::time::Duration,
     /// Files and members a statement that may yield holds `*SHRRD` on,
@@ -288,6 +291,7 @@ impl SqlContext {
             interrupt: None,
             interrupt_ticks: 0,
             yielder: None,
+            triggers: None,
             yield_every: YIELD_EVERY,
             held: Vec::new(),
             open: 0,
@@ -731,6 +735,9 @@ impl SqlContext {
         if let Some(c) = cmt {
             o.set_commit(c);
         }
+        if let Some(c) = &self.triggers {
+            o.set_trigger_mode(db::trg::Mode::Call(c.clone()));
+        }
         Ok(o)
     }
 }
@@ -1154,6 +1161,22 @@ impl From<db::DbError> for SqlError {
             | D::IdentityExhausted { .. }
             | D::Constraint { .. } => cst::from_db(&e),
             D::Ended => Self::Cancelled,
+            // A trigger program the primary could not call: SQL0204 naming it.
+            D::TriggerFailed { failure, .. } if failure.not_found => Self::Coded {
+                code: -204,
+                state: "42704",
+                what: failure.text.clone(),
+            },
+            D::TriggerFailed { failure, .. } => Self::Coded {
+                code: -443,
+                state: "38501",
+                what: format!("{} {}", failure.msgid, failure.text),
+            },
+            // BLOCKED(sql): statements run where no trigger program can
+            // be called (the service console, a statement not on a fiber).
+            D::TriggerNotCallable { file } => Self::Unsupported {
+                what: format!("a change of {file} here: it has triggers, and trigger programs cannot be called by this statement"),
+            },
             D::NotAFile { .. } | D::MemberNotFound { .. } => Self::ObjectNotFound {
                 name: e.to_string(),
                 kind: "table",
