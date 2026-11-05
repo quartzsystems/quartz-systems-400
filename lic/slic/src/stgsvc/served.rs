@@ -607,7 +607,7 @@ pub fn sql_session<'c>(
     use sql::embed::{Reply, Session};
     let Ok((names, qsys)) = with_main(shared, |txn, qsys| Ok((ile::name_context(txn, qsys), qsys))) else {
         let e = sql::SqlError::Database { what: "the object store is not available".into(), msgid: None };
-        return Err(Box::new(Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new() }.to_wire()));
+        return Err(Box::new(Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new(), call: None }.to_wire()));
     };
     let handle = JobHandle(c.job.handle);
     let s = c.sql.get_or_insert_with(|| {
@@ -1496,7 +1496,7 @@ impl Service for Served<'_> {
         use sql::embed::{Desc, Embedded, Reply, Request, from_wire};
         let Some(desc) = Desc::decode(&desc) else {
             let e = sql::SqlError::Unsupported { what: "statement".into() };
-            return Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new() }.to_wire();
+            return Reply { sqlca: sql::Sqlca::from_error(&e), rows: Vec::new(), call: None }.to_wire();
         };
         let shared = Rc::clone(&self.system.lent);
         let locks = self.system.locks.clone();
