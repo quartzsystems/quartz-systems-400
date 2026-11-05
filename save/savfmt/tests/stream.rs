@@ -358,3 +358,23 @@ fn writer_refuses_misuse() {
     w.part(Part::SPACE, b"abc").unwrap();
     assert!(w.end_object().is_err(), "size differs");
 }
+
+#[test]
+fn a_version_1_stream_still_reads() {
+    let mut rng = Rng(0x5eed_0101);
+    let objs = corpus(&mut rng, 4);
+    let mut bytes = write(&objs, Compression::None);
+    // The media header as version 1 wrote it: the version, its CRC.
+    assert_eq!(u16::from_be_bytes([bytes[8], bytes[9]]), savfmt::header::VERSION);
+    bytes[8..10].copy_from_slice(&1u16.to_be_bytes());
+    let crc = savfmt::record::crc32c(&bytes[..124]);
+    bytes[124..128].copy_from_slice(&crc.to_be_bytes());
+    let (scans, err) = read_all(&bytes);
+    assert!(err.is_none(), "{err:?}");
+    assert_eq!(scans.len(), objs.len());
+    // A version this code does not know is refused.
+    bytes[8..10].copy_from_slice(&9u16.to_be_bytes());
+    let crc = savfmt::record::crc32c(&bytes[..124]);
+    bytes[124..128].copy_from_slice(&crc.to_be_bytes());
+    assert!(matches!(Reader::new(Cursor::new(&bytes[..])), Err(Error::Version(9))));
+}

@@ -164,6 +164,7 @@ impl crate::sqlinf::Kind {
             K::Variable => Space::Variable,
             K::Type => Space::Type,
             K::Trigger => Space::Trigger,
+            K::Schema => Space::Schema,
         }
     }
 }

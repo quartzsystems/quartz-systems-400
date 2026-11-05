@@ -14,8 +14,11 @@ use crate::spec::{Layout, field};
 pub const LEN: usize = 128;
 /// The magic.
 pub const MAGIC: &[u8; 8] = b"QS400SAV";
-/// The format version this code writes and reads.
-pub const VERSION: u16 = 1;
+/// The format version this code writes: 2 added the `sqlinf` part.
+pub const VERSION: u16 = 2;
+/// The oldest version this code reads: a version 1 stream has no
+/// `sqlinf` parts and reads unchanged.
+pub const OLDEST: u16 = 1;
 
 /// `MediaHeader`.
 pub static LAYOUT: Layout = Layout {
@@ -157,7 +160,7 @@ impl MediaHeader {
             return Err(Error::HeaderDamaged);
         }
         let version = get16(b, 8);
-        if version != VERSION {
+        if !(OLDEST..=VERSION).contains(&version) {
             return Err(Error::Version(version));
         }
         Ok(Self {

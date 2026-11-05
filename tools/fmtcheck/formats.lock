@@ -76,8 +76,8 @@ hash = "d11d8e44e79554b841497dcb1acca036480a35e2f31fbd79ee8d6734243d9264"
 
 [format.save]
 frozen_at = "V1R1M0"
-version = "1"
-hash = "cc862aa54c36f457b4c2b39a696bb6ad8c1585211eb238273d82b55e0ed7e48c"
+version = "2"
+hash = "3d66a3f27f03eeb56ff37b5de66849871bd3c352ee73e3e512b8db00a4038be7"
 
 [format.spool]
 frozen_at = "V1R1M0"
@@ -87,7 +87,7 @@ hash = "b72809bdaea4a59970f33a5ae766678dcf3d1c1064c5065e44feba85be92a714"
 [format.sql-info]
 frozen_at = "V1R2M0"
 version = "1"
-hash = "807f547832fe78b2a4faf08d921dd2cf60f7f4576f7975d074df886c5409edaf"
+hash = "479ff9537f0e6ae39c152241b77c52c0180bfe4b9a29d9760e65bb8807403df5"
 
 [format.store]
 frozen_at = "V1R1M0"

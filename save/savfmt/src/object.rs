@@ -227,6 +227,9 @@ impl Part {
     pub const IFS_META: Part = Part(9);
     /// An IFS object's data.
     pub const IFS_DATA: Part = Part(10);
+    /// The object's SQL information (`*SQLINF`): its attribute area
+    /// then its byte space (format 2).
+    pub const SQLINF: Part = Part(11);
 
     /// The tree in header slot `slot` (0..4).
     #[must_use]

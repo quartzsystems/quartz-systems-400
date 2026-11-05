@@ -70,6 +70,7 @@ version = ["database/db/src/sqlinf/entry.rs::VERSION"]
 files = [
     "database/db/src/sqlinf/entry.rs",
     "database/db/src/sqlinf/names.rs",
+    "database/db/src/sqlinf/body.rs",
 ]
 
 [[format]]

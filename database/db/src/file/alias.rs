@@ -120,7 +120,6 @@ pub fn delete_alias(txn: &mut Txn<'_>, job: JobHandle, id: ObjectId) -> Result<(
         let (_, h) = ops::read_header(txn, id)?;
         return Err(DbError::Definition { what: format!("{} is not an alias", h.name) });
     }
-    crate::sqlinf::names::forget(txn, id)?;
     ops::delete(txn, job, id)?;
     Ok(())
 }

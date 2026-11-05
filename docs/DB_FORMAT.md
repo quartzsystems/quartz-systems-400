@@ -685,7 +685,7 @@ The attribute area holds `SqlInfAttr`; the byte space holds
 |---|---|---|---|
 | 0 | 8 | magic | `QS400SQI` |
 | 8 | 2 | version | 1 |
-| 10 | 1 | kind | 1 table, 2 view, 3 index, 4 alias, 5 procedure, 6 function, 7 trigger, 8 sequence, 9 global variable, 10 user-defined type, 11 materialized query table |
+| 10 | 1 | kind | 1 table, 2 view, 3 index, 4 alias, 5 procedure, 6 function, 7 trigger, 8 sequence, 9 global variable, 10 user-defined type, 11 materialized query table, 12 schema (only in a saved library's `sqlinf` part) |
 | 11 | 1 | reserved | 0 |
 | 12 | 4 | entry_count | |
 | 16 | 8 | body_len | bytes of the byte space in use |

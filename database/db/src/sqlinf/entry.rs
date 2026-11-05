@@ -65,6 +65,9 @@ pub enum Kind {
     Type = 10,
     /// A materialized query table (`*FILE` PF).
     Mqt = 11,
+    /// A schema: only in a saved library's `sqlinf` part (a `*LIB` owns no
+    /// `*SQLINF`; its SQL name is in QSYS's name index).
+    Schema = 12,
 }
 
 impl Kind {
@@ -83,6 +86,7 @@ impl Kind {
             9 => Self::Variable,
             10 => Self::Type,
             11 => Self::Mqt,
+            12 => Self::Schema,
             _ => return None,
         })
     }

@@ -56,7 +56,7 @@ pub fn create(
         if !replace || file::alias_of(txn, found)?.is_none() {
             return Err(SqlError::Exists { name: name.name.value.clone(), kind: "*FILE" });
         }
-        file::delete_alias(txn, ctx.job, found)?;
+        file::delete_file(txn, ctx.job, found)?;
     }
     let (sys, sql) = super::names::new_object(txn, library, &name.name, None)?;
     let id = file::create_alias(
@@ -84,7 +84,7 @@ pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) -> Resul
     if file::alias_of(txn, id)?.is_none() {
         return Err(SqlError::ObjectNotFound { name: name.to_string(), kind: "alias" });
     }
-    file::delete_alias(txn, ctx.job, id)?;
+    file::delete_file(txn, ctx.job, id)?;
     Ok(())
 }
 

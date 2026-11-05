@@ -48,7 +48,7 @@ selected objects use that path and read only what they show or restore.
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | magic | `QS400SAV`, ASCII |
-| 8 | 2 | format_version | 1 |
+| 8 | 2 | format_version | 2; a reader takes 1 and 2 (version 1 has no `sqlinf` parts) |
 | 10 | 2 | flags | reserved, 0 |
 | 12 | 1 | release_v | release of the saving system |
 | 13 | 1 | release_r | |
@@ -247,6 +247,7 @@ What an object's payload is depends on its type; the engine
 | 8 | spool | the spooled files of an output queue (`SPLFDTA(*ALL)`) |
 | 9 | ifsmeta | an IFS object's metadata record (`ifs::meta` codec) |
 | 10 | ifsdata | an IFS stream file's bytes, or a symbolic link's target |
+| 11 | sqlinf | the object's SQL information (format 2): its `SqlInfAttr` then its entries (`docs/DB_FORMAT.md` §8.1); for a library, a schema entry with its SQL name. A restore gives the object a new `*SQLINF` from it and puts its SQL name back in the name index |
 | 16..31 | typed | a type's own export (a user index's entries, a profile's indexes) |
 
 A part that is empty is not written. Page numbers never leave the

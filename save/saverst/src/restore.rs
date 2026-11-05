@@ -477,6 +477,7 @@ fn library(
     };
     let id = ops::create(&mut txn, &params)?;
     image::import(&mut txn, id, &o.parts)?;
+    image::import_schema_name(&mut txn, cx.qsys, id, &o.parts)?;
     set_header(&mut txn, cx, id, &o.descriptor, &o.authorities, true, &mut Vec::new())?;
     txn.commit()?;
     st.libs.insert(saved, Some(id));
@@ -717,6 +718,7 @@ fn restore_plain(
     patch_refs(txn, cx, &HashMap::new(), id, &mut parts, staged)?;
     image::import(txn, id, &parts)?;
     set_header(txn, cx, id, d, &o.authorities, existing.is_none(), &mut staged.notes)?;
+    image::import_sqlinf(txn, cx.job, id, &parts, cx.opts.now)?;
     set_signature(txn, id, staged.signature)?;
     if existing.is_some() {
         txn.store().locks_mut().unlock(cx.job, id, LockState::Exclusive);
@@ -915,6 +917,7 @@ fn restore_file(
         }
         image::import(txn, fid, &parts)?;
         set_header(txn, cx, fid, d, &o.authorities, true, &mut staged.notes)?;
+        image::import_sqlinf(txn, cx.job, fid, &parts, cx.opts.now)?;
         for (m, mid) in saved_members.iter().zip(&mids) {
             let mut mp = m.parts.clone();
             let unresolved = patch_refs(txn, cx, &HashMap::new(), *mid, &mut mp, staged)?;

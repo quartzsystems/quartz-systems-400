@@ -848,6 +848,7 @@ pub fn delete_file(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId) -> Result<
     crate::auth::check(txn, "obj.delete", file)?;
     // `DLTF` of an alias, as of a DDM file.
     if alias_of(txn, file)?.is_some() {
+        crate::sqlinf::names::forget(txn, file)?;
         return delete_alias(txn, job, file);
     }
     let desc = describe(txn, file)?;
