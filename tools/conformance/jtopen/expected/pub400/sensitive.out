@@ -1,0 +1,21 @@
+ok   connect
+ok   table
+     sensitive type=1005
+     first 1 ONE
+     next 2 TWO*
+     next 4 FOUR
+     end
+     back to first 1 ONE*
+ok   sensitive
+     insensitive type=1004
+     first 1 ONE
+     next 2 TWO
+     next 3 THREE
+     end
+     back to first 1 ONE
+ok   insensitive
+     type=1005
+ok   sensitive order
+     type=1005
+ok   sensitive join
+ok   drop

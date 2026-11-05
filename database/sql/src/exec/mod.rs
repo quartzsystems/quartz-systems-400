@@ -1003,7 +1003,7 @@ impl Prepared {
                 };
                 cursor::open(txn, ctx, &c.value, &p)
             }
-            Statement::Fetch(f) => cursor::fetch(ctx, f, params),
+            Statement::Fetch(f) => cursor::fetch(txn, ctx, f, params),
             Statement::Close(c) => cursor::close(ctx, &c.value),
             Statement::CreateView(v) => view::create(txn, ctx, v).map(|()| Outcome::Done),
             Statement::LabelOn(l) | Statement::CommentOn(l) => {

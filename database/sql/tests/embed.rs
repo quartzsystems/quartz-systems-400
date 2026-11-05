@@ -313,10 +313,34 @@ fn a_blocked_insert_runs_once_per_row() {
     assert_eq!((r.sqlca.sqlcode < 0, r.sqlca.sqlerrd[2]), (true, 1));
 }
 
+/// What pub400 shows (`tools/conformance/jtopen/expected/pub400/sensitive.out`):
+/// after the first fetch a row is inserted, a row not yet fetched changed,
+/// another deleted, and the fetched one changed; the cursor sees each.
 #[test]
-fn a_sensitive_cursor_is_refused() {
+fn a_sensitive_cursor_sees_later_changes() {
     let mut s = session();
-    let d = Desc { sensitive: true, ..op(Op::Open, "C1", "SELECT ID FROM QSTEST.T") };
+    let x = |s: &mut Session, t: &str| assert_eq!(run(s, "1:P", op(Op::Exec, "", t), vec![]).sqlca.sqlcode, 0, "{t}");
+    x(&mut s, "INSERT INTO QSTEST.T (ID, NAME) VALUES (3, 'Cy')");
+    let d = Desc { sensitive: true, scroll: true, ..op(Op::Open, "C1", "SELECT ID, NAME FROM QSTEST.T") };
+    assert_eq!(run(&mut s, "1:P", d, vec![]).sqlca.sqlcode, 0);
+    let fetch = |s: &mut Session, orient: &str| {
+        let r = run(s, "1:P", Desc { orient: orient.into(), ..op(Op::Fetch, "C1", "") }, vec![]);
+        r.rows.first().map(|row| format!("{} {}", row[0].as_text(), row[1].as_text()))
+    };
+    assert_eq!(fetch(&mut s, "NEXT").as_deref(), Some("1 Ann"));
+    x(&mut s, "INSERT INTO QSTEST.T (ID, NAME) VALUES (4, 'Dee')");
+    x(&mut s, "UPDATE QSTEST.T SET NAME = 'Bob*' WHERE ID = 2");
+    x(&mut s, "DELETE FROM QSTEST.T WHERE ID = 3");
+    x(&mut s, "UPDATE QSTEST.T SET NAME = 'Ann*' WHERE ID = 1");
+    assert_eq!(fetch(&mut s, "NEXT").as_deref(), Some("2 Bob*"));
+    assert_eq!(fetch(&mut s, "NEXT").as_deref(), Some("4 Dee"));
+    assert_eq!(fetch(&mut s, "NEXT"), None);
+    assert_eq!(fetch(&mut s, "FIRST").as_deref(), Some("1 Ann*"));
+    // The current row deleted: the next is the row after it.
+    x(&mut s, "DELETE FROM QSTEST.T WHERE ID = 1");
+    assert_eq!(fetch(&mut s, "NEXT").as_deref(), Some("2 Bob*"));
+    // A query that does not read one table plainly cannot be sensitive.
+    let d = Desc { sensitive: true, ..op(Op::Open, "C2", "SELECT DEPT, COUNT(*) FROM QSTEST.T GROUP BY DEPT") };
     let r = run(&mut s, "1:P", d, vec![]);
     assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-243, "36001"));
 }

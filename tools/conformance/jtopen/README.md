@@ -26,6 +26,7 @@ QS/400, and its source was read only to understand the datastream.
 | `jdbc` | `Jdbc` | `jdbc:as400://`: connect, metadata, blocked fetch over `QSYS2.SYSTABLES`, a table made in `QSTEST` (`QTEMP` when `QSTEST` does not exist) and dropped, an SQL error, commit and rollback, a procedure call |
 | `callproc` | `CallProc` | an SQL procedure made in `QSTEST` with `IN`, `OUT` and `INOUT` parameters and two result sets, called through a `CallableStatement` (outputs, then each set with `getMoreResults`), a missing procedure (SQL0204 at prepare), the procedure dropped; recorded on the primary 2026-11-05 |
 | `sqlpkg` | `SqlPkg` | extended dynamic SQL with package `QSTEST/QSPKG9899`: prepares (one statement twice), the catalog's view of the package, a second connection with the package cached (statements run by their package names), `DSPSQLPKG` through the remote command server (not a command on V7R1M0), the package deleted; recorded on the primary 2026-11-05 |
+| `sensitive` | `Sensitive` | a table in `QTEMP`, a scrollable sensitive result set fetched a row at a time (no blocking) while rows are inserted, changed and deleted, the same insensitive; run on pub400 2026-11-05 directly (the recording proxy does not record pub400), output in `expected/pub400/sensitive.out` |
 | `dtaq` | `DtaQ` | `DataQueue` and `KeyedDataQueue` in `QSTEST`, deleted after |
 | `ifs` | `Ifs` | `IFSFile` and streams under `/home/QSTEST` only, removed after |
 | `splf` | `Splf` | `SpooledFileList` of the user's spooled files (list only) |

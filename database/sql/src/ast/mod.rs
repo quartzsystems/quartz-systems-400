@@ -337,6 +337,8 @@ pub struct DeclareCursor {
     pub scroll: bool,
     /// `WITH HOLD`.
     pub hold: bool,
+    /// `SENSITIVE`: rows read as they are fetched.
+    pub sensitive: bool,
     /// The query.
     pub query: Query,
 }

@@ -696,10 +696,6 @@ impl Session {
                 };
                 exec_text(txn, ctx, &text, naming, &req.inputs)
             }),
-            // BLOCKED(sql): a cursor's rows are read when it opens, so
-            // none sees later changes: SENSITIVE is refused as IBM refuses
-            // a query it cannot make sensitive.
-            Op::Open if d.sensitive => Reply::of(code(-243, "36001")),
             Op::Open => self.with_txn(&req.scope, |txn, ctx, sc| {
                 if ctx.cursors.get(&d.name).is_some_and(|c| c.open) {
                     return Reply::of(code(-502, "24502"));
@@ -713,8 +709,9 @@ impl Session {
                     }
                 };
                 let decl = format!(
-                    "DECLARE {} {}CURSOR {}FOR {query}",
+                    "DECLARE {} {}{}CURSOR {}FOR {query}",
                     d.name,
+                    if d.sensitive { "SENSITIVE " } else { "" },
                     if d.scroll { "SCROLL " } else { "" },
                     if d.hold { "WITH HOLD " } else { "" }
                 );

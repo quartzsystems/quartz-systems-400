@@ -4,6 +4,10 @@
 
 //! Cursors: declared with a query, opened into a result set, fetched
 //! in either direction, closed at `CLOSE` or `COMMIT` unless `WITH HOLD`.
+//! A `SENSITIVE` cursor reads its table again at each fetch and finds its
+//! place by the current row's record, so it sees the rows inserted,
+//! changed and deleted after it opened, as pub400 shows
+//! (`tools/conformance/jtopen/expected/pub400/sensitive.out`).
 
 use store::txn::Txn;
 
@@ -38,6 +42,10 @@ pub struct Cursor {
     pub returns: Option<crate::ast::ReturnTo>,
     /// When it was opened, in the order of every open ([`current_seq`]).
     pub seq: u64,
+    /// `SENSITIVE`: the rows are read again at each fetch.
+    pub sensitive: bool,
+    /// The values its markers had at `OPEN`, for reading again.
+    pub params: Vec<Value>,
 }
 
 impl Cursor {
@@ -83,6 +91,8 @@ pub fn declare(ctx: &mut SqlContext, d: &DeclareCursor) -> Outcome {
             pos: 0,
             returns: None,
             seq: 0,
+            sensitive: d.sensitive,
+            params: Vec::new(),
         },
     );
     Outcome::Done
@@ -138,8 +148,18 @@ pub fn open(
         });
     }
     let query = c.query.clone();
+    let sensitive = c.sensitive;
     let (rs, table, rrns) = run_cursor_query(txn, ctx, params, &query)?;
+    if sensitive && table.is_none() {
+        // Only a query of one table can be read again row by row.
+        return Err(SqlError::Coded {
+            code: -243,
+            state: "36001",
+            what: format!("cursor {name} is SENSITIVE but its query does not read one table plainly"),
+        });
+    }
     let c = get(ctx, name)?;
+    c.params = if sensitive { params.to_vec() } else { Vec::new() };
     c.columns = rs.columns;
     c.rows = rs.rows;
     c.table = table;
@@ -150,11 +170,38 @@ pub fn open(
     Ok(Outcome::Done)
 }
 
+/// A `SENSITIVE` cursor's rows read again: its place is the current
+/// row's record when that is still there; else the same position, so the
+/// next row is the one after the row that went.
+fn reread(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str) -> Result<()> {
+    let c = get(ctx, name)?;
+    if !c.sensitive || !c.open {
+        return Ok(());
+    }
+    let (query, params) = (c.query.clone(), c.params.clone());
+    let current = c.pos.checked_sub(1).and_then(|i| c.rrns.get(i).copied().flatten());
+    let (rs, _, rrns) = run_cursor_query(txn, ctx, &params, &query)?;
+    let c = get(ctx, name)?;
+    let after = c.pos > c.rows.len();
+    c.rows = rs.rows;
+    c.rrns = rrns;
+    if after {
+        c.pos = c.rows.len() + 1;
+    } else if let Some(i) = current.and_then(|r| c.rrns.iter().position(|x| *x == Some(r))) {
+        c.pos = i + 1;
+    } else if current.is_some() {
+        // The current row went: stand before the row that took its place.
+        c.pos = c.pos.saturating_sub(1).min(c.rows.len());
+    }
+    Ok(())
+}
+
 /// `FETCH`: the row fetched as a one-row result set, or an empty one
 /// past either end (the SQLCA then says `+100`).
 #[allow(clippy::many_single_char_names)]
-pub fn fetch(ctx: &mut SqlContext, f: &Fetch, params: &[Value]) -> Result<Outcome> {
+pub fn fetch(txn: &mut Txn<'_>, ctx: &mut SqlContext, f: &Fetch, params: &[Value]) -> Result<Outcome> {
     let name = f.cursor.value.as_str();
+    reread(txn, ctx, name)?;
     let offset = |e: &crate::ast::Expr| -> Result<i64> {
         match e {
             crate::ast::Expr::Literal(crate::ast::Literal::Num(n)) => {

@@ -683,15 +683,8 @@ impl Parser {
             return Err(Self::unsupported("DECLARE GLOBAL TEMPORARY TABLE: tables in QTEMP"));
         }
         let name = self.ident()?;
-        if self.is_word("SENSITIVE") {
-            // BLOCKED(sql): rows are read when the cursor opens.
-            return Err(SqlError::Coded {
-                code: -243,
-                state: "36001",
-                what: "a SENSITIVE cursor: its rows are read when it opens".into(),
-            });
-        }
-        let _ = self.eat_word("INSENSITIVE") || self.eat_word("ASENSITIVE");
+        let sensitive = self.eat_word("SENSITIVE");
+        let _ = sensitive || self.eat_word("INSENSITIVE") || self.eat_word("ASENSITIVE");
         self.eat_word("DYNAMIC");
         let scroll = self.eat_word("SCROLL");
         self.eat_words(&["NO", "SCROLL"]);
@@ -725,6 +718,7 @@ impl Parser {
             name,
             scroll,
             hold,
+            sensitive,
             query,
         }))
     }
