@@ -786,6 +786,8 @@ back reference's dependent constraint), `text_len` bytes of the check
 condition as the catalogs show it (UTF-8), and `program_len` bytes of
 the compiled condition (below).
 
+| Offset | Size | Field | Notes |
+|---|---|---|---|
 | 0 | 1 | kind | 1 `*UNQCST`, 2 `*PRIKEY`, 3 `*CHKCST`, 4 `*REFCST`, 5 dependent (the back reference on the parent) |
 | 1 | 1 | state | bit 0 disabled, bit 1 check pending |
 | 2 | 1 | delete_rule | 0 `NO ACTION`, 1 `RESTRICT`, 2 `CASCADE`, 3 `SET NULL`, 4 `SET DEFAULT` |
