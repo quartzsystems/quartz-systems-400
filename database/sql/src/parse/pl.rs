@@ -340,13 +340,7 @@ impl Parser {
             let t = &self.toks[self.at.min(self.toks.len() - 1)];
             let (line, col) = (t.line, t.col);
             self.declaration(&mut c)?;
-            let kind = if c.handlers.len() > before.1 {
-                2
-            } else if c.cursors.len() > before.0 {
-                1
-            } else {
-                0
-            };
+            let kind = if c.handlers.len() > before.1 { 2 } else { u8::from(c.cursors.len() > before.0) };
             if kind < phase {
                 return Err(SqlError::Coded {
                     code: -199,
