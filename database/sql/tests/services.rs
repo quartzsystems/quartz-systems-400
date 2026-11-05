@@ -792,3 +792,12 @@ fn spooled_file_info_and_system_status() {
     assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.SPOOLED_FILE_INFO(STATUS => '*HELD')) X"), vec![row(&["0"])]);
     assert_eq!(db.rows("SELECT ACTIVE_JOBS_IN_SYSTEM FROM TABLE(QSYS2.SYSTEM_STATUS()) X"), vec![row(&["38"])]);
 }
+
+#[test]
+fn library_info() {
+    let mut db = Db::new(true);
+    let (ca, _) = db.run("CREATE TABLE QSTEST.T1 (A INT)");
+    assert!(!ca.is_error(), "{}", ca.line());
+    assert_eq!(db.rows("SELECT OBJECT_COUNT, LIBRARY_SIZE_COMPLETE, TEXT_DESCRIPTION FROM TABLE(QSYS2.LIBRARY_INFO('QSTEST')) X"), vec![row(&["1", "YES", "Test library"])]);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.LIBRARY_INFO('NOPE')) X"), vec![row(&["0"])]);
+}

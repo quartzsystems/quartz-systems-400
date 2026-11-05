@@ -171,3 +171,45 @@ fn row(txn: &mut Txn<'_>, out: &mut Out, id: ObjectId, h: &store::obj::header::O
         out.int("LAST_SAVE_SIZE", h.save.size);
     }
 }
+
+/// `LIBRARY_INFO(LIBRARY_NAME, IGNORE_ERRORS, DETAILED_INFO)`: a
+/// library's object count and size (its objects' pages and its own).
+pub fn library_info(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
+    let name = args.word("LIBRARY_NAME").unwrap_or_default();
+    let ignore = args.word("IGNORE_ERRORS").is_none_or(|v| v == "YES");
+    let Some(lib) = super::libl::library(txn, ctx, &name) else {
+        if ignore {
+            return Ok(());
+        }
+        return Err(SqlError::Coded { code: -443, state: "38501", what: format!("library {name} not found") });
+    };
+    let (_, lh) = ops::read_header(txn, lib)?;
+    let objs = match ops::list(txn, lib, None) {
+        Ok(v) => v,
+        Err(store::StoreError::NotAuthorized { .. }) if ignore => return Ok(()),
+        Err(e) => return Err(e.into()),
+    };
+    let mut count = 0u64;
+    let mut size = (lh.size_pages + 1) * 4096;
+    let mut complete = true;
+    for (key, id) in objs {
+        if types::type_by_code(key.type_code).is_some_and(|t| matches!(t.name, "*MBR" | "*SPLF" | "*SQLINF")) {
+            continue;
+        }
+        count += 1;
+        match ops::read_header(txn, id) {
+            Ok((_, h)) => size += (h.size_pages + 1) * 4096,
+            Err(_) => complete = false,
+        }
+    }
+    out.row();
+    out.int("OBJECT_COUNT", count);
+    out.int("LIBRARY_SIZE", size);
+    out.yes("LIBRARY_SIZE_COMPLETE", complete);
+    // The library's TYPE(*PROD|*TEST) is not kept: LIBRARY_TYPE is null.
+    out.text_or_null("TEXT_DESCRIPTION", &blank_or(&lh.text));
+    out.text("IASP_NAME", "*SYSBAS");
+    out.int("IASP_NUMBER", 0);
+    out.text_or_null("OBJECT_AUDIT_CREATE", &blank_or(&lh.audit));
+    Ok(())
+}

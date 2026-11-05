@@ -107,6 +107,7 @@ const FUNCTIONS: &[Function] = &[
     Function { schema: "QSYS2", specific: "QSQACTJOB", no_value: &[], rows: jobs::active },
     Function { schema: "QSYS2", specific: "QSQJOBINFO", no_value: &[], rows: jobs::job_info },
     Function { schema: "QSYS2", specific: "QSQOBSTAT", no_value: &[], rows: objects::rows },
+    Function { schema: "QSYS2", specific: "QSQLIBINF", no_value: &[], rows: objects::library_info },
     Function { schema: "QSYS2", specific: "QSQJOBLOG", no_value: &[], rows: joblog::rows },
     Function { schema: "QSYS2", specific: "QSQHSTLOG", no_value: &[], rows: history::rows },
     Function { schema: "QSYS2", specific: "QSQIFSOBJS", no_value: &[], rows: ifs::statistics },
