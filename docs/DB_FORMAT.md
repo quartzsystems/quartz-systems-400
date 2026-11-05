@@ -871,6 +871,42 @@ the statement's transaction.
 | 88 | 16 | block_end | the last value of the block of `cache` values IBM would hold now; `SYSSEQUENCES.MAXASSIGNEDVAL` |
 | 104 | 24 | reserved2 | 0 |
 
+### `SqlTrigger` (variable)
+
+The body of a `TRIGGER` entry: one trigger of a physical file
+(`ADDPFTRG`, SQL's `CREATE TRIGGER`), kept in the order added. The parts
+follow the fixed 72 bytes: `name_len` bytes of the trigger name (UTF-8),
+`col_count` × 10 bytes of CP037 field names (SQL's `UPDATE OF`),
+`definer_len` bytes of the profile that added it and `text_len` bytes of
+its `LABEL ON` text (both UTF-8). Names of 10 bytes are CP037.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | time | 1 `*BEFORE`, 2 `*AFTER`, 3 `INSTEAD OF` |
+| 1 | 1 | event | 1 `*INSERT`, 2 `*DELETE`, 3 `*UPDATE`, 4 `*READ` (the trigger buffer's digit) |
+| 2 | 1 | flags | bit 0 disabled, bit 1 inoperative, bit 2 `ALWREPCHG(*YES)`, bit 3 an SQL trigger |
+| 3 | 1 | update_condition | 0 not an update trigger, 1 `*ALWAYS`, 2 `*CHANGE` |
+| 4 | 1 | threadsafe | 0 `*UNKNOWN`, 1 `*YES`, 2 `*NO` |
+| 5 | 1 | mt_action | 0 `*SYSVAL`, 1 `*MSG`, 2 `*NORUN`, 3 `*RUN` |
+| 6 | 1 | mode | 0 `DB2ROW`, 1 `DB2SQL` |
+| 7 | 1 | orientation | 0 `FOR EACH ROW`, 1 `FOR EACH STATEMENT` |
+| 8 | 4 | number | `ACTION_ORDER`: the file's count of triggers added when this one was |
+| 12 | 4 | issued | the count when the entry was last written; a replace (`RPLTRG(*YES)`) keeps `number` and uses a count, so the next trigger's number is one past the largest `number` or `issued` |
+| 16 | 10 | program_lib | the trigger program's library |
+| 26 | 10 | program | the trigger program |
+| 36 | 10 | trigger_lib | the library of the trigger's name (`TRGLIB`) |
+| 46 | 2 | name_len | |
+| 48 | 8 | created | Unix seconds |
+| 56 | 2 | col_count | |
+| 58 | 2 | definer_len | |
+| 60 | 2 | text_len | |
+| 62 | 10 | reserved | 0 |
+| 72 | variable | parts | as above |
+
+Integers are little-endian. Only enabled triggers fire; a member loads
+them as it opens (`db::trg::Active`), so a trigger is added, removed or
+changed only while nobody has the file open.
+
 ### `SqlRoutine` (variable)
 
 The `ROUTINE` entry: a procedure's or function's attributes. A
@@ -930,41 +966,6 @@ written, UTF-8.
 | 0 | 2 | count | |
 | 2 | 2 | reserved | 0 |
 | 4 | variable | options | |
-### `SqlTrigger` (variable)
-
-The body of a `TRIGGER` entry: one trigger of a physical file
-(`ADDPFTRG`, SQL's `CREATE TRIGGER`), kept in the order added. The parts
-follow the fixed 72 bytes: `name_len` bytes of the trigger name (UTF-8),
-`col_count` × 10 bytes of CP037 field names (SQL's `UPDATE OF`),
-`definer_len` bytes of the profile that added it and `text_len` bytes of
-its `LABEL ON` text (both UTF-8). Names of 10 bytes are CP037.
-
-| Offset | Size | Field | Notes |
-|---|---|---|---|
-| 0 | 1 | time | 1 `*BEFORE`, 2 `*AFTER`, 3 `INSTEAD OF` |
-| 1 | 1 | event | 1 `*INSERT`, 2 `*DELETE`, 3 `*UPDATE`, 4 `*READ` (the trigger buffer's digit) |
-| 2 | 1 | flags | bit 0 disabled, bit 1 inoperative, bit 2 `ALWREPCHG(*YES)`, bit 3 an SQL trigger |
-| 3 | 1 | update_condition | 0 not an update trigger, 1 `*ALWAYS`, 2 `*CHANGE` |
-| 4 | 1 | threadsafe | 0 `*UNKNOWN`, 1 `*YES`, 2 `*NO` |
-| 5 | 1 | mt_action | 0 `*SYSVAL`, 1 `*MSG`, 2 `*NORUN`, 3 `*RUN` |
-| 6 | 1 | mode | 0 `DB2ROW`, 1 `DB2SQL` |
-| 7 | 1 | orientation | 0 `FOR EACH ROW`, 1 `FOR EACH STATEMENT` |
-| 8 | 4 | number | `ACTION_ORDER`: the file's count of triggers added when this one was |
-| 12 | 4 | issued | the count when the entry was last written; a replace (`RPLTRG(*YES)`) keeps `number` and uses a count, so the next trigger's number is one past the largest `number` or `issued` |
-| 16 | 10 | program_lib | the trigger program's library |
-| 26 | 10 | program | the trigger program |
-| 36 | 10 | trigger_lib | the library of the trigger's name (`TRGLIB`) |
-| 46 | 2 | name_len | |
-| 48 | 8 | created | Unix seconds |
-| 56 | 2 | col_count | |
-| 58 | 2 | definer_len | |
-| 60 | 2 | text_len | |
-| 62 | 10 | reserved | 0 |
-| 72 | variable | parts | as above |
-
-Integers are little-endian. Only enabled triggers fire; a member loads
-them as it opens (`db::trg::Active`), so a trigger is added, removed or
-changed only while nobody has the file open.
 
 ### 8.2 The SQL name index
 
