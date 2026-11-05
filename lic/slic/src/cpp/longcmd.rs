@@ -41,6 +41,7 @@ pub struct Work<'a> {
     lender: &'a dyn StoreLend,
     yielder: sql::exec::Yielder,
     turns: RefCell<Turns>,
+    midcall: Option<sql::exec::routine::midcall::MidCaller>,
 }
 
 /// When the work last gave a turn.
@@ -61,7 +62,20 @@ impl<'a> Work<'a> {
                 last: None,
                 yields: 0,
             }),
+            midcall: None,
         }
+    }
+
+    /// Calls in the middle of the work made by the job (`run_cmd_calling`).
+    #[must_use]
+    pub fn with_midcall(mut self, m: sql::exec::routine::midcall::MidCaller) -> Self {
+        self.midcall = Some(m);
+        self
+    }
+
+    /// The job's calls in the middle of the work, when it makes them.
+    pub fn midcall(&self) -> Option<sql::exec::routine::midcall::MidCaller> {
+        self.midcall.clone()
     }
 
     /// Turns at most every `every` (5 ms by default).

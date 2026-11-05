@@ -302,7 +302,7 @@ fn long(svc: &Svc, i: usize, req: &Request) -> bool {
         Request::SqlRun { desc, .. } => Desc::decode(desc).is_some_and(|d| {
             matches!(d.op, Op::Query | Op::Open | Op::Exec | Op::ExecImm | Op::Execute)
         }),
-        Request::RunCmd { name, .. } => longcmd::NAMES.contains(&name.as_str()),
+        Request::RunCmd { name, .. } | Request::RunCmdCalling { name, .. } => longcmd::NAMES.contains(&name.as_str()),
         _ => false,
     }
 }
@@ -363,7 +363,7 @@ fn start(mut svc: Box<Svc>, id: u64, req: Request) -> Box<Svc> {
         answer(&mut svc, i, req);
         return svc;
     }
-    if matches!(req, Request::RunCmd { .. }) {
+    if matches!(req, Request::RunCmd { .. } | Request::RunCmdCalling { .. }) {
         return start_cmd(svc, id, i, req);
     }
     start_sql(svc, id, i, req)
@@ -408,7 +408,7 @@ fn start_sql(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
     let t2 = Rc::clone(&turn);
     engine.ctx.yielder = Some(yielder(Rc::clone(&turn)));
     // Trigger programs are called in the job, the statement waiting.
-    engine.ctx.midcall = Some(mid_caller(Rc::clone(&turn)));
+    engine.ctx.midcall = Some(mid_caller(Rc::clone(&turn), false));
     let req = sql::embed::Request {
         scope,
         desc,
@@ -447,7 +447,8 @@ fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
     let user = super::security::as_user(&req);
     let number = svc.conns[i].ctx.as_ref().map_or(0, |c| c.job.number);
     super::trace::request(number, &req);
-    let Request::RunCmd { name, segments, specified, typed } = req else {
+    let calls = matches!(req, Request::RunCmdCalling { .. });
+    let (Request::RunCmd { name, segments, specified, typed } | Request::RunCmdCalling { name, segments, specified, typed }) = req else {
         unreachable!("start() said a command");
     };
     let Svc { system, conns, .. } = &mut *svc;
@@ -500,10 +501,15 @@ fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
     let turn = Turn::new(&mut svc, id, entered);
     let t2 = Rc::clone(&turn);
     let y = yielder(Rc::clone(&turn));
+    // The job makes the calls the work needs in its middle.
+    let mid = calls.then(|| mid_caller(Rc::clone(&turn), true));
     let mut work = Some(work);
     let body = move || {
         let lender = MainStore::new(shared);
-        let w = longcmd::Work::new(&lender, y);
+        let mut w = longcmd::Work::new(&lender, y);
+        if let Some(m) = mid {
+            w = w.with_midcall(m);
+        }
         let finish = if user {
             sec::guard::as_job(&session, || work_once(&w, &mut work))
         } else {
@@ -603,7 +609,7 @@ fn yielder(turn: Rc<Turn>) -> sql::exec::Yielder {
 /// suspended, not taking turns, until the job's answer (or a close)
 /// lets it go on; then its job set up again. The answer, `None` when
 /// there is none.
-fn mid_caller(turn: Rc<Turn>) -> sql::exec::routine::midcall::MidCaller {
+fn mid_caller(turn: Rc<Turn>, cmd: bool) -> sql::exec::routine::midcall::MidCaller {
     Rc::new(move |plan| {
         let mut svc = PARKED.with(|p| p.borrow_mut().take())?;
         served::leave(&mut svc.system, turn.entered.get());
@@ -613,8 +619,13 @@ fn mid_caller(turn: Rc<Turn>) -> sql::exec::routine::midcall::MidCaller {
                     let who = served::charged(ctx);
                     super::security::flush(&mut svc.system, Some(who));
                 }
-                let reply = sql::embed::Reply { call: Some(Box::new(plan)), ..sql::embed::Reply::default() };
-                svc.conns[i].chan.send_raw(&ipc::encode(&reply.to_wire())).is_ok()
+                // A command's job reads a command reply (`run_cmd_calling`).
+                let bytes = if cmd {
+                    ipc::encode(&stg::proto::CmdReply { call: Some(plan.encode().into_bytes()), ..stg::proto::CmdReply::default() })
+                } else {
+                    ipc::encode(&sql::embed::Reply { call: Some(Box::new(plan)), ..sql::embed::Reply::default() }.to_wire())
+                };
+                svc.conns[i].chan.send_raw(&bytes).is_ok()
             }
             _ => false,
         };

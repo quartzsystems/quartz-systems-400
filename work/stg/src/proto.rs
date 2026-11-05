@@ -105,6 +105,11 @@ pub struct CmdReply {
     pub srcs: Vec<String>,
     /// The system values.
     pub sysvals: Option<Vec<u8>>,
+    /// A call the command needs made before it can go on (an encoded
+    /// `sql::exec::routine::CallPlan`): the job makes it, answers with an
+    /// `Op::Called` named `midcall::ANSWER`, and reads the command's
+    /// reply again. Only to `run_cmd_calling`.
+    pub call: Option<Vec<u8>>,
 }
 
 wire_struct!(CmdReply {
@@ -114,7 +119,8 @@ wire_struct!(CmdReply {
     segments,
     prompt,
     srcs,
-    sysvals
+    sysvals,
+    call
 });
 
 ipc::rpc! {
@@ -354,6 +360,10 @@ ipc::rpc! {
     /// resolved command, its parameter block and which parameters the
     /// caller gave.
     131 => fn run_cmd / RunCmd (name: String, segments: Vec<Option<Vec<u8>>>, specified: Vec<bool>, typed: String) -> CmdReply;
+    /// `run_cmd` from a job that makes the calls the command needs in
+    /// its middle (`CmdReply::call`): `RUNSQL` and `RUNSQLSTM` statements
+    /// that call procedures or fire triggers.
+    1490 => fn run_cmd_calling / RunCmdCalling (name: String, segments: Vec<Option<Vec<u8>>>, specified: Vec<bool>, typed: String) -> CmdReply;
 
     /// A display device for a TN5250E session: the one named (made
     /// under `QAUTOCFG` when missing), else a free or new virtual

@@ -1703,6 +1703,17 @@ impl Service for Served<'_> {
         r
     }
 
+    /// Run at once, not on a fiber: no call can be made in its middle.
+    fn run_cmd_calling(
+        &mut self,
+        name: String,
+        segments: Vec<Option<Vec<u8>>>,
+        specified: Vec<bool>,
+        typed: String,
+    ) -> stg::proto::CmdReply {
+        self.run_cmd(name, segments, specified, typed)
+    }
+
     fn run_cmd(
         &mut self,
         name: String,

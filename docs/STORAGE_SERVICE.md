@@ -416,10 +416,17 @@ makes its calls through its trigger mode (`db::trg::Mode`):
   engine's side runs in memory in `tests/trigger.rs` of `database/sql`
   (`SQL0443`/38501 for a refusal, `SQL0204` for a program not found, as
   the primary). The same plan and answer carry any call a statement
-  needs made in its middle (`MidCaller`); a statement run where there is
-  no fiber or no job to call (the service console, `RUNSQL` and
-  `RUNSQLSTM`, which run in the service) still refuses a change of a
-  table with triggers with `SQL0084` (BLOCKED(sql)). `MODE DB2SQL` after
+  needs made in its middle (`MidCaller`). `RUNSQL` and `RUNSQLSTM` run
+  in the service as long commands; a job sends them as
+  `run_cmd_calling`, and the command's fiber gets a mid caller that
+  answers with a `CmdReply` carrying the plan (`call`): the job
+  (`command::call_for_service`) makes the call and answers with the same
+  `Op::Called` `*MIDCALL`, then reads the command's next reply. A `CALL`
+  among their statements goes the same way, its `routine::Called` the
+  answer. A statement run where there is no fiber or no job to call
+  (the service console, QAP's commands, a command run at once) still
+  refuses a change of a table with triggers and a `CALL` with `SQL0084`
+  (BLOCKED(sql): the service console has no job runtime). `MODE DB2SQL` after
   triggers are deferred by the engine and called when the statement has
   changed every row. An SQL trigger's program (`CREATE TRIGGER`,
   `sql::exec::trigger`) is a trigger program like any other: record I/O

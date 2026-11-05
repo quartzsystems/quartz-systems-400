@@ -408,10 +408,10 @@ fn run_opts(parms: &Parms, system: &System) -> Result<RunOpts, String> {
 }
 
 /// `RUNSQL SQL('statement')`: one statement, `SQL9010` when it fails.
-/// BLOCKED(sql): a `CALL` here (and in `RUNSQLSTM`) is refused SQL0084:
-/// the command runs in the storage service, which can hand a call to
-/// its job only through the statement fiber's call path that SQL
-/// triggers bring (`stgsvc/turns.rs`); both commands take it then.
+/// Run at once like this (the console capturing lines, no fiber to be
+/// had) a `CALL` or a change a trigger fires for is refused SQL0084;
+/// taking turns from a job's `run_cmd_calling` the job makes those
+/// calls (`runsql_long`).
 fn runsql(system: &mut System, parms: &Parms) -> CmdReply {
     let text = parms.text("SQL");
     let opts = match run_opts(parms, system) {
@@ -575,6 +575,8 @@ pub(super) fn runsql_long(
     }
     Ok(Box::new(move |w: &super::longcmd::Work<'_>| {
         ctx.yielder = Some(w.yielder());
+        // CALL and trigger programs: made by the job, when it makes them.
+        ctx.midcall = w.midcall();
         let report = sql::runsqlstm_lent(w.lender(), &mut ctx, &text, &opts).map_err(|e| e.to_string());
         Box::new(move |system: &mut System| {
             if runsql {

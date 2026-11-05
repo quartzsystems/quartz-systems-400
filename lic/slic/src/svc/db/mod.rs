@@ -372,13 +372,12 @@ pub fn db(system: &mut System) -> Result<(&mut Store, &mut SqlContext), String> 
         txn.abort();
         n
     };
-    match system.svc.sql.as_mut() {
-        Some(ctx) => ctx.names = names,
-        None => {
-            let mut ctx = SqlContext::with_locks(qsys, JOB, names, system.locks.clone());
-            ctx.qtemp = system.svc.qtemp.clone();
-            system.svc.sql = Some(ctx);
-        }
+    if let Some(ctx) = system.svc.sql.as_mut() {
+        ctx.names = names;
+    } else {
+        let mut ctx = SqlContext::with_locks(qsys, JOB, names, system.locks.clone());
+        ctx.qtemp = system.svc.qtemp.clone();
+        system.svc.sql = Some(ctx);
     }
     Ok((&mut storage.store, system.svc.sql.as_mut().expect("set")))
 }

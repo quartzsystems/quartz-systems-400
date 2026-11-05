@@ -576,10 +576,15 @@ pub(crate) fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcom
             job.ovr_top = job.ovr_top.max(job.depth);
         }
     }
-    let reply: CmdReply = host
+    let mut reply: CmdReply = host
         .link
         .borrow_mut()
-        .with(|l| l.run_cmd(r.name.clone(), built.segments, specified, typed));
+        .with(|l| l.run_cmd_calling(r.name.clone(), built.segments, specified, typed));
+    // The calls the command needs in its middle (a `RUNSQL` statement's
+    // procedure or trigger program), made here and answered.
+    while let Some(plan) = reply.call.take() {
+        reply = call_for_service(job, host, &plan);
+    }
     for m in &reply.messages {
         log(job, &m.msgid, &m.data, kind_of(m.kind), None);
     }
@@ -610,6 +615,30 @@ pub(crate) fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcom
         }
         None => Ok(reply.text),
     }
+}
+
+/// Make a call a service command planned (`CmdReply::call`) in the job's
+/// runtime and answer it; the command's next reply.
+fn call_for_service(job: &mut Job, host: &Host, plan: &[u8]) -> CmdReply {
+    use sql::embed::{Desc, Op};
+    use sql::exec::routine::{CallPlan, midcall};
+    let inputs = match std::str::from_utf8(plan).ok().and_then(CallPlan::decode) {
+        Some(p) => {
+            let out = qrpgrt::sqlcall::perform(job, &p);
+            out.answer.unwrap_or_else(|| out.called.inputs())
+        }
+        // Nothing the statement can read: it ends.
+        None => Vec::new(),
+    };
+    let req = stg::Request::SqlRun {
+        scope: String::new(),
+        desc: Desc { op: Op::Called, name: midcall::ANSWER.into(), ..Desc::default() }.encode(),
+        inputs: inputs.iter().map(sql::embed::to_wire).collect(),
+    };
+    host.link.borrow_mut().with(|l| {
+        let bytes = l.call(&req)?;
+        ipc::decode::<CmdReply>(&bytes)
+    })
 }
 
 /// A user's command: its processing program called with the block.

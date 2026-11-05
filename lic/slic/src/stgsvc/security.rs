@@ -178,6 +178,7 @@ pub fn as_user(req: &Request) -> bool {
             | R::SecApi { .. }
             | R::CmdLookup { .. }
             | R::RunCmd { .. }
+            | R::RunCmdCalling { .. }
             | R::SqlRun { .. }
             | R::IsqlStart { .. }
             | R::IsqlRun { .. }

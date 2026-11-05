@@ -203,6 +203,55 @@ pub fn runsqlstm_lent(
         ctx.current_schema = qsname::Name::parse(schema).ok();
     }
     let mut stopped = false;
+    // `CALL` is planned for the requester when it makes calls mid-run.
+    let could_call = ctx.routine.can_call;
+    ctx.routine.can_call = could_call || ctx.midcall.is_some();
+    let r = run_statements(&begin, ctx, statements, opts, &mut report, &mut stopped);
+    ctx.routine.can_call = could_call;
+    r?;
+    if lcklvl.is_some() {
+        let mut t = begin()?;
+        if stopped {
+            ctx.session.rollbck(&mut t, ctx.now)?;
+            report.listing.push_str("ROLLBACK\n");
+        } else {
+            ctx.session.commit(&mut t, ctx.now)?;
+            report.listing.push_str("COMMIT\n");
+        }
+        crate::exec::cursor::end_of_unit(ctx);
+        t.commit()?;
+    }
+    Ok(report)
+}
+
+/// The outcome of a `CALL` whose program the requester made: its
+/// answer (`routine::Called`) as an SQLCA.
+fn call_made(ctx: &SqlContext, plan: &crate::exec::routine::CallPlan) -> Sqlca {
+    let Some(answer) = ctx.midcall.as_ref().and_then(|m| m(plan.clone())) else {
+        return Sqlca::from_error(&crate::error::SqlError::Cancelled);
+    };
+    let Some(c) = crate::exec::routine::Called::from_inputs(&answer) else {
+        return Sqlca::from_error(&crate::error::SqlError::Unsupported { what: format!("CALL {}: the answer was not understood", plan.routine) });
+    };
+    let mut ca = Sqlca::default();
+    if c.sqlcode != 0 && c.sqlcode != 100 {
+        ca = Sqlca { sqlcode: c.sqlcode, sqlstate: c.sqlstate, sqlerrmc: c.message, ..Sqlca::default() };
+        if c.sqlcode > 0 {
+            ca.sqlwarn[0] = 'W';
+        }
+    }
+    ca.sqlerrd[0] = c.status;
+    ca
+}
+
+fn run_statements<'l>(
+    begin: &dyn Fn() -> store::Result<Txn<'l>>,
+    ctx: &mut SqlContext,
+    statements: Vec<crate::ast::Statement>,
+    opts: &RunOpts,
+    report: &mut RunReport,
+    stopped: &mut bool,
+) -> Result<()> {
     for (n, st) in statements.into_iter().enumerate() {
         // A turn for the others between statements.
         if n > 0
@@ -211,7 +260,7 @@ pub fn runsqlstm_lent(
             let _ = writeln!(report.listing, "{}", Sqlca::from_error(&e).line());
             report.errors += 1;
             report.severity = 40;
-            stopped = true;
+            *stopped = true;
             break;
         }
         report.statements += 1;
@@ -233,6 +282,12 @@ pub fn runsqlstm_lent(
         } else {
             t.commit()?;
         }
+        // A `CALL`'s program, made by the requester through the mid-call
+        // path, the statement's outcome its answer.
+        let ca = match ctx.routine.pending.take() {
+            Some(plan) if !ca.is_error() => call_made(ctx, &plan),
+            _ => ca,
+        };
         let _ = writeln!(report.listing, "{name}: {}", ca.line());
         report.entries.push(entry(n, name, &ca, outcome.as_ref(), target));
         show_rows(&mut report.listing, outcome.as_ref(), opts.show_rows);
@@ -245,22 +300,10 @@ pub fn runsqlstm_lent(
                     .listing
                     .push_str("Run ended: the error exceeds ERRLVL\n");
                 report.severity = 40;
-                stopped = true;
+                *stopped = true;
                 break;
             }
         }
     }
-    if lcklvl.is_some() {
-        let mut t = begin()?;
-        if stopped {
-            ctx.session.rollbck(&mut t, ctx.now)?;
-            report.listing.push_str("ROLLBACK\n");
-        } else {
-            ctx.session.commit(&mut t, ctx.now)?;
-            report.listing.push_str("COMMIT\n");
-        }
-        crate::exec::cursor::end_of_unit(ctx);
-        t.commit()?;
-    }
-    Ok(report)
+    Ok(())
 }
