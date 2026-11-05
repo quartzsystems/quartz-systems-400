@@ -516,7 +516,7 @@ fn opnqryf_selects_and_orders() {
 #[test]
 fn identity_defaults_and_alter_table() {
     let mut db = Db::new();
-    db.ok("CREATE TABLE qstest/log (id INTEGER GENERATED ALWAYS AS IDENTITY (START WITH 10 INCREMENT BY 5), note CHAR(10) NOT NULL, at DATE NOT NULL DEFAULT CURRENT DATE, who CHAR(10) NOT NULL DEFAULT USER)");
+    db.ok("CREATE TABLE qstest/log (id INTEGER GENERATED ALWAYS AS IDENTITY (START WITH 10 INCREMENT BY 5), note CHAR(10) NOT NULL, at DATE NOT NULL DEFAULT CURRENT DATE, who CHAR(18) NOT NULL DEFAULT USER)");
     assert_eq!(db.count("INSERT INTO log (note) VALUES ('a'), ('b')"), 2);
     assert_eq!(
         db.count("INSERT INTO log (note, who) VALUES ('c', 'ME')"),

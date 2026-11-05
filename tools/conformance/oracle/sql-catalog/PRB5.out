@@ -1,0 +1,193 @@
+-- captured from primary
+> CREATE TABLE {lib}.P5_T (ID INTEGER NOT NULL PRIMARY KEY, NAME VARCHAR(2
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE INDEX {lib}.P5_IX ON {lib}.P5_T (NAME DESC)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.P5_IXW ON {lib}.P5_T (ID) WHERE NAME IS NOT NULL
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE UNIQUE INDEX {lib}.P5_IXU ON {lib}.P5_T (D)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.P5_V AS SELECT ID, NAME FROM {lib}.P5_T WHERE ID > 0
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.P5_VG AS SELECT NAME, COUNT(*) AS N FROM {lib}.P5_T GR
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.P5_VJ AS SELECT A.ID, B.NAME FROM {lib}.P5_T A JOIN {l
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.P5_VE AS SELECT ID, NAME CONCAT 'x' AS NX FROM {lib}.P
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE ALIAS {lib}.P5_A FOR {lib}.P5_T
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT * FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = '{lib}' AND TABLE_NAM
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# TABLE_OWNER VARCHAR(128) NOT NULL
+# TABLE_TYPE CHAR(1) NOT NULL
+# COLUMN_COUNT INTEGER NOT NULL
+# ROW_LENGTH INTEGER NOT NULL
+# TABLE_TEXT NVARCHAR(50) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+# TABLE_SCHEMA VARCHAR(128) NOT NULL
+# LAST_ALTERED_TIMESTAMP TIMESTAMP NOT NULL
+# SYSTEM_TABLE_NAME CHAR(10) NOT NULL
+# SYSTEM_TABLE_SCHEMA CHAR(10) NOT NULL
+# FILE_TYPE CHAR(1) NOT NULL
+# BASE_TABLE_CATALOG VARCHAR(18)
+# BASE_TABLE_SCHEMA VARCHAR(128)
+# BASE_TABLE_NAME VARCHAR(128)
+# BASE_TABLE_MEMBER VARCHAR(10)
+# SYSTEM_TABLE CHAR(1) NOT NULL
+# SELECT_OMIT CHAR(1) NOT NULL
+# IS_INSERTABLE_INTO VARCHAR(3) NOT NULL
+# IASP_NUMBER SMALLINT NOT NULL
+# ENABLED VARCHAR(3)
+# MAINTENANCE VARCHAR(6)
+# REFRESH VARCHAR(9)
+# REFRESH_TIME TIMESTAMP
+# MQT_DEFINITION DBCLOB(2097152)
+# ISOLATION CHAR(2)
+# PARTITION_TABLE VARCHAR(11) NOT NULL
+# TABLE_DEFINER VARCHAR(128)
+# MQT_RESTORE_DEFERRED CHAR(1)
+# ROUNDING_MODE CHAR(1)
+| 'P5_A' | '{user}' | 'A' | 0 | 0 | '' | NULL | '{lib}' | 2026-11-05-06.13.22.656000 | 'P5_A      ' | '{lib}    ' | 'D' | NULL | '{lib}' | 'P5_T' | '*FIRST    ' | 'N' | 'N' | 'NO' | 0 | NULL | NULL | NULL | NULL | NULL | NULL | 'NO' | '' | NULL | NULL |
+| 'P5_T' | '{user}' | 'T' | 3 | 36 | '' | NULL | '{lib}' | 2026-11-05-06.13.21.963000 | 'P5_T      ' | '{lib}    ' | 'D' | NULL | NULL | NULL | NULL | 'N' | 'N' | 'YES' | 0 | NULL | NULL | NULL | NULL | NULL | NULL | 'NO' | '{user}' | NULL | NULL |
+| 'P5_V' | '{user}' | 'V' | 2 | 26 | '' | NULL | '{lib}' | 2026-11-05-06.13.22.403000 | 'P5_V      ' | '{lib}    ' | 'D' | NULL | NULL | NULL | NULL | 'N' | 'N' | 'YES' | 0 | NULL | NULL | NULL | NULL | NULL | NULL | 'NO' | '{user}' | NULL | NULL |
+| 'P5_VE' | '{user}' | 'V' | 2 | 27 | '' | NULL | '{lib}' | 2026-11-05-06.13.22.600000 | 'P5_VE     ' | '{lib}    ' | 'D' | NULL | NULL | NULL | NULL | 'N' | 'N' | 'YES' | 0 | NULL | NULL | NULL | NULL | NULL | NULL | 'NO' | '{user}' | NULL | NULL |
+| 'P5_VG' | '{user}' | 'V' | 2 | 26 | '' | NULL | '{lib}' | 2026-11-05-06.13.22.465000 | 'P5_VG     ' | '{lib}    ' | 'D' | NULL | NULL | NULL | NULL | 'N' | 'N' | 'NO' | 0 | NULL | NULL | NULL | NULL | NULL | NULL | 'NO' | '{user}' | NULL | NULL |
+| 'P5_VJ' | '{user}' | 'V' | 2 | 26 | '' | NULL | '{lib}' | 2026-11-05-06.13.22.540000 | 'P5_VJ     ' | '{lib}    ' | 'D' | NULL | NULL | NULL | NULL | 'N' | 'N' | 'NO' | 0 | NULL | NULL | NULL | NULL | NULL | NULL | 'NO' | '{user}' | NULL | NULL |
+> SELECT * FROM QSYS2.SYSVIEWS WHERE TABLE_SCHEMA = '{lib}' AND TABLE_NAME
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# VIEW_OWNER VARCHAR(128) NOT NULL
+# SEQNO INTEGER NOT NULL
+# CHECK_OPTION CHAR(1) NOT NULL
+# VIEW_DEFINITION NVARCHAR(5000)
+# IS_UPDATABLE CHAR(1) NOT NULL
+# TABLE_SCHEMA VARCHAR(128) NOT NULL
+# SYSTEM_VIEW_NAME CHAR(10) NOT NULL
+# SYSTEM_VIEW_SCHEMA CHAR(10) NOT NULL
+# IS_INSERTABLE_INTO VARCHAR(3) NOT NULL
+# IASP_NUMBER SMALLINT NOT NULL
+# IS_DELETABLE CHAR(1)
+# VIEW_DEFINER VARCHAR(128)
+# ROUNDING_MODE CHAR(1)
+| 'P5_V' | '{user}' | 1 | 'N' | 'SELECT ID, NAME FROM {lib}.P5_T WHERE ID > 0 ' | 'Y' | '{lib}' | 'P5_V      ' | '{lib}    ' | 'YES' | 0 | 'Y' | '{user}' | NULL |
+| 'P5_VE' | '{user}' | 1 | 'N' | 'SELECT ID, NAME CONCAT ''x'' AS NX FROM {lib}.P5_T ' | 'Y' | '{lib}' | 'P5_VE     ' | '{lib}    ' | 'YES' | 0 | 'Y' | '{user}' | NULL |
+| 'P5_VG' | '{user}' | 1 | 'N' | 'SELECT NAME, COUNT(*) AS N FROM {lib}.P5_T GROUP BY NAME ' | 'N' | '{lib}' | 'P5_VG     ' | '{lib}    ' | 'NO' | 0 | 'N' | '{user}' | NULL |
+| 'P5_VJ' | '{user}' | 1 | 'N' | 'SELECT A.ID, B.NAME FROM {lib}.P5_T A JOIN {lib}.P5_T B ON A.ID = B.ID ' | 'N' | '{lib}' | 'P5_VJ     ' | '{lib}    ' | 'NO' | 0 | 'N' | '{user}' | NULL |
+> SELECT * FROM QSYS2.SYSINDEXES WHERE TABLE_SCHEMA = '{lib}' AND TABLE_NA
+sqlcode 0 sqlstate 00000 msgid -
+# INDEX_NAME VARCHAR(128) NOT NULL
+# INDEX_OWNER VARCHAR(128) NOT NULL
+# TABLE_NAME VARCHAR(128) NOT NULL
+# TABLE_OWNER VARCHAR(128) NOT NULL
+# TABLE_SCHEMA VARCHAR(128) NOT NULL
+# IS_UNIQUE CHAR(1) NOT NULL
+# COLUMN_COUNT INTEGER NOT NULL
+# INDEX_SCHEMA VARCHAR(128) NOT NULL
+# SYSTEM_INDEX_NAME CHAR(10) NOT NULL
+# SYSTEM_INDEX_SCHEMA CHAR(10) NOT NULL
+# SYSTEM_TABLE_NAME CHAR(10) NOT NULL
+# SYSTEM_TABLE_SCHEMA CHAR(10) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+# IASP_NUMBER SMALLINT NOT NULL
+# INDEX_TEXT NVARCHAR(50) NOT NULL
+# IS_SPANNING_INDEX VARCHAR(11)
+# INDEX_DEFINER VARCHAR(128)
+# ROUNDING_MODE CHAR(1)
+# INDEX_HAS_SEARCH_CONDITION CHAR(1) NOT NULL
+# SEARCH_CONDITION_HAS_UDF CHAR(1) NOT NULL
+# SEARCH_CONDITION NCLOB(2097152)
+# INDEX_HAS_INCLUDE_EXPRESSION CHAR(1) NOT NULL
+# INCLUDE_EXPRESSION NCLOB(2097152)
+| 'P5_IX' | '{user}' | 'P5_T' | '{user}' | '{lib}' | 'D' | 1 | '{lib}' | 'P5_IX     ' | '{lib}    ' | 'P5_T      ' | '{lib}    ' | NULL | 0 | '' | NULL | '{user}' | NULL | 'N' | 'N' | NULL | 'N' | NULL |
+| 'P5_IXU' | '{user}' | 'P5_T' | '{user}' | '{lib}' | 'U' | 1 | '{lib}' | 'P5_IXU    ' | '{lib}    ' | 'P5_T      ' | '{lib}    ' | NULL | 0 | '' | NULL | '{user}' | NULL | 'N' | 'N' | NULL | 'N' | NULL |
+| 'P5_IXW' | '{user}' | 'P5_T' | '{user}' | '{lib}' | 'D' | 1 | '{lib}' | 'P5_IXW    ' | '{lib}    ' | 'P5_T      ' | '{lib}    ' | NULL | 0 | '' | NULL | '{user}' | NULL | 'Y' | 'N' | 'NAME IS NOT NULL ' | 'N' | NULL |
+> SELECT * FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = '{lib}' AND TABLE_NA
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# TABLE_NAME VARCHAR(128) NOT NULL
+# TABLE_OWNER VARCHAR(128) NOT NULL
+# ORDINAL_POSITION INTEGER NOT NULL
+# DATA_TYPE VARCHAR(8) NOT NULL
+# LENGTH INTEGER NOT NULL
+# NUMERIC_SCALE INTEGER
+# IS_NULLABLE CHAR(1) NOT NULL
+# IS_UPDATABLE CHAR(1) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+# HAS_DEFAULT CHAR(1) NOT NULL
+# COLUMN_HEADING NVARCHAR(60)
+# STORAGE INTEGER NOT NULL
+# NUMERIC_PRECISION INTEGER
+# CCSID INTEGER
+# TABLE_SCHEMA VARCHAR(128) NOT NULL
+# COLUMN_DEFAULT NVARCHAR(2000)
+# CHARACTER_MAXIMUM_LENGTH INTEGER
+# CHARACTER_OCTET_LENGTH INTEGER
+# NUMERIC_PRECISION_RADIX INTEGER
+# DATETIME_PRECISION INTEGER
+# COLUMN_TEXT NVARCHAR(50)
+# SYSTEM_COLUMN_NAME CHAR(10) NOT NULL
+# SYSTEM_TABLE_NAME CHAR(10) NOT NULL
+# SYSTEM_TABLE_SCHEMA CHAR(10) NOT NULL
+# USER_DEFINED_TYPE_SCHEMA VARCHAR(128)
+# USER_DEFINED_TYPE_NAME VARCHAR(128)
+# IS_IDENTITY VARCHAR(3) NOT NULL
+# IDENTITY_GENERATION VARCHAR(10)
+# IDENTITY_START DECIMAL(31,0)
+# IDENTITY_INCREMENT DECIMAL(31,0)
+# IDENTITY_MINIMUM DECIMAL(31,0)
+# IDENTITY_MAXIMUM DECIMAL(31,0)
+# IDENTITY_CYCLE VARCHAR(3)
+# IDENTITY_CACHE INTEGER
+# IDENTITY_ORDER VARCHAR(3)
+# COLUMN_EXPRESSION NCLOB(2097152)
+# HIDDEN VARCHAR(1) NOT NULL
+# HAS_FLDPROC VARCHAR(1) NOT NULL
+| 'ID' | 'P5_T' | '{user}' | 1 | 'INTEGER' | 4 | 0 | 'N' | 'Y' | NULL | 'N' | 'ID' | 4 | 9 | NULL | '{lib}' | NULL | NULL | NULL | 10 | NULL | NULL | 'ID        ' | 'P5_T      ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'N' | 'N' |
+| 'NAME' | 'P5_T' | '{user}' | 2 | 'VARCHAR' | 20 | NULL | 'Y' | 'Y' | NULL | 'Y' | 'NAME' | 22 | NULL | 37 | '{lib}' | NULL | 20 | 20 | NULL | NULL | NULL | 'NAME      ' | 'P5_T      ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'N' | 'N' |
+| 'D' | 'P5_T' | '{user}' | 3 | 'DATE' | 4 | NULL | 'Y' | 'Y' | NULL | 'Y' | 'D' | 4 | NULL | 37 | '{lib}' | NULL | NULL | NULL | NULL | 0 | NULL | 'D         ' | 'P5_T      ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'N' | 'N' |
+| 'ID' | 'P5_V' | '{user}' | 1 | 'INTEGER' | 4 | 0 | 'N' | 'Y' | NULL | 'N' | 'ID' | 4 | 9 | NULL | '{lib}' | NULL | NULL | NULL | 10 | NULL | NULL | 'ID        ' | 'P5_V      ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'N' | 'N' |
+| 'NAME' | 'P5_V' | '{user}' | 2 | 'VARCHAR' | 20 | NULL | 'Y' | 'Y' | NULL | 'N' | 'NAME' | 22 | NULL | 37 | '{lib}' | NULL | 20 | 20 | NULL | NULL | NULL | 'NAME      ' | 'P5_V      ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'N' | 'N' |
+| 'ID' | 'P5_VE' | '{user}' | 1 | 'INTEGER' | 4 | 0 | 'N' | 'Y' | NULL | 'N' | 'ID' | 4 | 9 | NULL | '{lib}' | NULL | NULL | NULL | 10 | NULL | NULL | 'ID        ' | 'P5_VE     ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'N' | 'N' |
+| 'NX' | 'P5_VE' | '{user}' | 2 | 'VARCHAR' | 21 | NULL | 'Y' | 'N' | NULL | 'N' | 'NX' | 23 | NULL | 37 | '{lib}' | NULL | 21 | 21 | NULL | NULL | NULL | 'NX        ' | 'P5_VE     ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'NAME CONCAT ''x'' ' | 'N' | 'N' |
+| 'NAME' | 'P5_VG' | '{user}' | 1 | 'VARCHAR' | 20 | NULL | 'Y' | 'N' | NULL | 'N' | 'NAME' | 22 | NULL | 37 | '{lib}' | NULL | 20 | 20 | NULL | NULL | NULL | 'NAME      ' | 'P5_VG     ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'N' | 'N' |
+| 'N' | 'P5_VG' | '{user}' | 2 | 'INTEGER' | 4 | 0 | 'N' | 'N' | NULL | 'N' | 'N' | 4 | 9 | NULL | '{lib}' | NULL | NULL | NULL | 10 | NULL | NULL | 'N         ' | 'P5_VG     ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'COUNT ( * ) ' | 'N' | 'N' |
+| 'ID' | 'P5_VJ' | '{user}' | 1 | 'INTEGER' | 4 | 0 | 'N' | 'N' | NULL | 'N' | 'ID' | 4 | 9 | NULL | '{lib}' | NULL | NULL | NULL | 10 | NULL | NULL | 'ID        ' | 'P5_VJ     ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'N' | 'N' |
+| 'NAME' | 'P5_VJ' | '{user}' | 2 | 'VARCHAR' | 20 | NULL | 'Y' | 'N' | NULL | 'N' | 'NAME' | 22 | NULL | 37 | '{lib}' | NULL | 20 | 20 | NULL | NULL | NULL | 'NAME      ' | 'P5_VJ     ' | '{lib}    ' | NULL | NULL | 'NO' | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | NULL | 'N' | 'N' |
+> SELECT TABLE_NAME, TABLE_TYPE, FILE_TYPE, SYSTEM_TABLE, SELECT_OMIT, IS_
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# TABLE_TYPE CHAR(1) NOT NULL
+# FILE_TYPE CHAR(1) NOT NULL
+# SYSTEM_TABLE CHAR(1) NOT NULL
+# SELECT_OMIT CHAR(1) NOT NULL
+# IS_INSERTABLE_INTO VARCHAR(3) NOT NULL
+# PARTITION_TABLE VARCHAR(11) NOT NULL
+# TABLE_DEFINER VARCHAR(128)
+# TABLE_TEXT NVARCHAR(50) NOT NULL
+| 'QSMSGSRC' | 'P' | 'S' | 'N' | 'N' | 'YES' | 'NO' | '{user}' | '' |
+> SELECT TABLE_NAME, COLUMN_NAME, COLUMN_HEADING, COLUMN_TEXT, HAS_DEFAULT
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# COLUMN_HEADING NVARCHAR(60)
+# COLUMN_TEXT NVARCHAR(50)
+# HAS_DEFAULT CHAR(1) NOT NULL
+# COLUMN_DEFAULT NVARCHAR(2000)
+| 'QSMSGSRC' | 'SRCSEQ' | NULL | NULL | 'Y' | '0' |
+| 'QSMSGSRC' | 'SRCDAT' | NULL | NULL | 'Y' | '0' |
+| 'QSMSGSRC' | 'SRCDTA' | NULL | NULL | 'Y' | ''' ''' |
+> DROP ALIAS {lib}.P5_A
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VIEW {lib}.P5_VE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VIEW {lib}.P5_VJ
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VIEW {lib}.P5_VG
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VIEW {lib}.P5_V
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.P5_T
+sqlcode 0 sqlstate 00000 msgid -

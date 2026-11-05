@@ -1,16 +1,14 @@
 # Cases known to differ from their oracle capture: area/NAME, one per line.
 # A new difference fails the kit; remove a line when the case agrees.
-ddl/VIEWQRY   # engine: SYSVIEWS.VIEW_DEFINITION is VARCHAR here, NVARCHAR (CCSID 1200) at IBM
-ddl/INDEXEXT   # engine: SYSINDEXES.SEARCH_CONDITION is NCLOB at IBM, VARCHAR(2000) here (no LOB catalog columns)
 ddl/GRANT   # engine: GRANT USAGE ON SCHEMA refused SQL0084 where 7.1 says SQL0104
-types/CASTSTR   # engine: CAST(TIMESTAMP AS TIME) style casts SQL0171 on the primary; CAST(... FOR BIT DATA) result described as character; an extra SQL0420 warning; a predicate as a value (SQL0104 on 7.1); a hex constant into VARBINARY (SQL0301); an extra row
-types/DECFLT1   # engine: CHAR of DECFLOAT columns VARCHAR here, CHAR at IBM; SYSCOLUMNS.DATA_TYPE CHAR(8) padded here, VARCHAR(8) at IBM, NUMERIC_PRECISION of INTEGER 10 here, 9 there
-types/DECFLT2   # engine: CAST('abc' AS INTEGER) in WHERE SQL0420 here, SQL0802 22023 there; HEX of CCSID-tagged strings; CHAR of a float's length
+types/CASTSTR   # engine: no 01004 truncation warning; CAST(TIMESTAMP AS TIME) style casts SQL0171 on the primary; CAST(... FOR BIT DATA) result described as character; an extra SQL0420 warning; a predicate as a value (SQL0104 on 7.1); a hex constant into VARBINARY (SQL0301); an extra row
+types/DECFLT1   # engine: CHAR of DECFLOAT columns VARCHAR here, CHAR at IBM
+types/DECFLT2   # engine: CAST('abc' AS INTEGER) in WHERE SQL0420 here, SQL0802 22023 there; no 01004; HEX of CCSID-tagged strings; CHAR of a float's length
 types/FLOATFMT  # engine: the primary makes CHAR(4.9E-324) a CHAR(42)
-types/JSON1     # engine: a predicate as a JSON_ARRAY value (SQL0104 on 7.5); FORMAT in JSON_UPDATE (SQL0199 there, SQL0204 here)
-types/XML1      # engine: XMLPARSE describes as XML on the primary (QS/400 has no XML type); XMLELEMENT refused (SQL0084)
-types/BOOL1     # engine: predicates in a select list described nullable here; NOT of a null BOOLEAN column is true on pub400; SYSCOLUMNS.DATA_TYPE CHAR(8) here; a CHAR result VARCHAR here
-types/LOB1      # engine: function result types (LENGTH of a LOB, CAST of a DBCLOB), a LOB index key SQL0084 here, SQL0350 there; SYSCOLUMNS column types and CCSIDs; SQL7905
+types/JSON1     # engine: a predicate as a JSON_ARRAY value (SQL0104 on 7.5); FORMAT in JSON_UPDATE (SQL0199 there, SQL0204 here); a JSON_TABLE ordinality column NOT NULL here
+types/XML1      # engine: XMLPARSE describes as XML on the primary (QS/400 has no XML type); no 01004; XMLELEMENT refused (SQL0084)
+types/BOOL1   # engine: no 01004; predicates in a select list described nullable here; NOT of a null BOOLEAN column is true on pub400; a CHAR result VARCHAR here
+types/LOB1   # engine: function result types (LENGTH of a LOB, CAST of a DBCLOB); no 01004; ROWID and XML columns refused SQL0084 (the primary makes them); INLINE LENGTH accepted (SQL0104 on 7.1)
 integrity/SEQUENCE   # engine: a column named ORDER in a select list (SQL0104 here)
 integrity/AUDITCOL   # engine: IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
 query/JOINS   # engine: ORDER BY an unqualified USING column is SQL0203 on DB2 for i, resolved here
@@ -18,45 +16,33 @@ query/DTFUNCS   # engine: TIMESTAMP_FORMAT('bad') SQL0302 here, SQ20448 there
 query/STRFUNCS   # engine (by choice): DECODE is SQL0204 on pub400 but in the brief's must-have list
 query/NUMFUNCS   # engine (by choice): ENCRYPT_AES refused, DB2 for i's encrypted layout is not published
 query/REGISTERS   # oracle: CURRENT DEGREE is pub400's system setting (ANY); engine: CURRENT PATH is VARCHAR(3483) here, VARCHAR(8843) there
-sqlpl/CATALOG   # engine: PARM_SIGNATURE is LONG VARCHAR FOR BIT DATA and ROUTINE_DEFINITION DBCLOB at IBM; EXTERNAL_NAME of an SQL procedure is LIB/SPECIFIC there; SYSPARMS lengths of DATE/TIMESTAMP
+sqlpl/CATALOG   # engine: PARM_SIGNATURE is LONG VARCHAR FOR BIT DATA at IBM (QS/400 has no LONG VARCHAR); EXTERNAL_NAME of an SQL procedure is LIB/SPECIFIC there, its program's name here
 sqlpl/EXTERN   # engine: LANGUAGE JAVA procedures refused SQL0084
-sqlpl/FUNCS   # engine: catalog LOB columns (PARM_SIGNATURE, ROUTINE_DEFINITION)
+sqlpl/FUNCS   # engine: PARM_SIGNATURE is LONG VARCHAR FOR BIT DATA at IBM (QS/400 has no LONG VARCHAR)
 services/SVCCOLS   # engine: QS/400's catalogs do not list the QSYS2 services (sql tests/service_shapes.rs holds the shapes to it)
 services/SVCVALS   # oracle: pub400's own jobs, users and values; the value forms are settled in sql tests/services.rs
-sysibm/SQLMETA   # oracle: DTD identifiers are the system's own counter; engine: character set columns of a VARCHAR column null here
+sysibm/SQLMETA   # oracle: DTD identifiers are the system's own counter
 sysibm/SYSIBMLS   # engine: QSYS2.SYSTABLES and SYSROUTINES do not list the computed SYSIBM views and the SYSIBM routines
 sysibm/SYSIBMCOL   # engine: QSYS2.SYSCOLUMNS does not list the columns of computed views
 sysibm/SYSIBMPRM   # engine: QSYS2.SYSPARMS does not list the SYSIBM routines' parameters
-objects2/VARIABLE   # engine: SYSVARIABLES.DEFAULT is NCLOB at IBM, VARGRAPHIC(2000) here (no LOB catalog columns)
-objects2/TYPES   # engine: distinct types as column types, casts and their strong typing refused SQL0084 (BLOCKED(sql))
-trigger/TRGDEFS   # engine: TRIGGER_TEXT is NVARCHAR and LONG_COMMENT DBCLOB at IBM, VARGRAPHIC here
-trigger/TRGCAT   # engine: ACTION_CONDITION and ACTION_STATEMENT are DBCLOB at IBM, VARGRAPHIC(2000) here
 services/GENSQL    # engine: QTEMP/Q_GENSQL is not written (the result set is); oracle: pub400 CCSID 273; engine: generated constraint names differ
 sqlpl/ARRAYS   # engine: array parameters and array arguments in CALL refused SQL0084 (BLOCKED(sql)); ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here
 sqlpl/ARRAYERR   # engine: the primary cannot see a one-column UNNEST correlation's column (SQL0206), QS/400 can
 sqlpl/PLTYPES   # engine: HEX of CCSID-tagged strings; a character DEFAULT for a VARGRAPHIC variable is SQL0408 there, converted here; 1E400 into DECFLOAT(16) is SQL0304 there, SQL0302 here
-sqlpl/PARMDFT   # engine: SYSPARMS.DEFAULT is NCLOB at IBM, VARCHAR(2000) here (no LOB catalog columns)
 ddl/DGTTCLS   # engine: ALTER TABLE of a table with an index or view over it refused (SQL0084, BLOCKED(sql) in alter)
 trigger/DLTFTRG   # kit: the in-memory store runs no commands (QSYS.QCMDEXC is SQL0204 there); DLTF's dropping of SQL trigger programs runs in the service (svc/db/files.rs)
 objects2/GRANTUDT   # kit: the in-memory store runs no commands (DSPOBJAUT through QSYS.QCMDEXC); the authorities are checked in sql::objects grant_on_types_and_variables_as_the_primary
-objects2/TYPES2   # SYSCOLUMNS.DATA_TYPE is CHAR(8) here, VARCHAR(8) at IBM
 objects2/TYPES3   # a distinct type compared with a quantified subquery's column of another type is not refused (SQL0401 there; BLOCKED(sql) in udt::typing::check)
 ddl/QTEMPCL   # the kit's in-memory store runs no commands (QCMDEXC); one QTEMP for CL and SQL is tested in sql tests/qtemp_job.rs and in the service
 perf/DECORR   # a scalar subquery's result column described VARCHAR(32767) here (its type is not inferred); the primary describes a statement it fails at fetch (SQL0811) before the error
-ddl/SHOPORD1   # engine: SYSCOLUMNS COLUMN_HEADING null where IBM gives the column name, heading lines joined here (IBM keeps the 20-character lines), DATE LENGTH 10 here (4 there), COLUMN_DEFAULT 'CURRENT DATE' here ('CURRENT_DATE' there); SYSTABLES.TABLE_TEXT CHAR(50) padded here, NVARCHAR(50) there
-ddl/SHOPCUS1   # engine: a failed INSERT gives its identity value back here, IBM keeps it used; SYSCOLUMNS has no IDENTITY_GENERATION column (SQL0206)
-ddl/SHOPINV1   # engine: a sequence with a long name refused SQL0084 (CREATE SEQUENCE of a name over 10 characters)
-ddl/SHOPEMP1   # oracle: ALTER TABLE DROP COLUMN of a table with rows waits on an inquiry the JDBC job cancels (SQL0952); engine: SYSCOLUMNS.COLUMN_DEFAULT type
-ddl/SHOPGL1   # engine: UPDATE of a parent whose constraint's update rule is NO ACTION needs both files journaled on IBM (SQL7008), not here; DROP TABLE RESTRICT with a view over it SQL0478 here, SQL0616 there
-ddl/SHOPAP1   # engine: changes of a parent under a NO ACTION rule need journaling on IBM (SQL7008); here the rule is checked (SQL0532, SQL0531)
-ddl/SHOPSEQ1   # engine: START WITH below MINVALUE accepted on the primary, SQL0846 here
-ddl/SHOPVIEW1   # engine: SYSVIEWS.IS_INSERTABLE_INTO CHAR(3) padded here, VARCHAR(3) there; a view with expression columns is updatable (IS_UPDATABLE Y) at IBM
-ddl/SHOPLBL1   # engine: a label over 50 characters accepted here (SQL0107 there); a missing column SQL0206 here, SQL0205 there; SYSTABLES, SYSCOLUMNS and SYSINDEXES have no LONG_COMMENT column (SQL0206)
+ddl/SHOPCUS1   # engine: a failed INSERT gives its identity value back here, IBM keeps it used
+ddl/SHOPEMP1   # oracle: ALTER TABLE DROP COLUMN of a table with rows waits on an inquiry the JDBC job cancels (SQL0952)
+ddl/SHOPVIEW1   # engine: a view with expression columns is updatable (IS_UPDATABLE Y) at IBM, read only here
 ddl/SHOPGRT1   # engine: column privileges (GRANT UPDATE (col)) refused SQL0084
-ddl/SHOPALT1   # oracle: ALTER COLUMN SET DATA TYPE and SET NOT NULL of a table with rows wait on an inquiry the JDBC job cancels (SQL0952); engine: SET DATA TYPE DECIMAL(3, 1) SQL0302 here; SYSCOLUMNS.HAS_DEFAULT N for a nullable column without a default (Y there), DATE LENGTH; a missing column SQL0206 here, SQL0205 there
+ddl/SHOPALT1   # oracle: ALTER COLUMN SET DATA TYPE and SET NOT NULL of a table with rows wait on an inquiry the JDBC job cancels (SQL0952), so the rows after them differ; engine: SET DATA TYPE DECIMAL(3, 1) of a value that does not fit SQL0302 here (the oracle never reaches it)
 ddl/SHOPCPY1   # engine: SYSCOLUMNS LENGTH of a DATE 10 here, 4 there
 ddl/SHOPIDN1   # engine: SYSCOLUMNS has no IDENTITY_* columns (SQL0206)
-ddl/SHOPTMP1   # engine: DECLARE GLOBAL TEMPORARY TABLE WITH REPLACE, AS ... WITH DATA and LIKE warn SQL7905 here, nothing there
+ddl/SHOPTMP1   # oracle (release): 7.1 gives no SQL7905 for a logged declared temporary table; 7.5 does (pub400, ddl/DGTT and DGTTOPT) and QS/400 follows 7.5
 ddl/SHOPNUM1   # engine: SYSCOLUMNS has no NUMERIC_PRECISION_RADIX column (SQL0206)
 ddl/SHOPDLM1   # engine: an undelimited name of a delimited lower-case column found here; CREATE VIEW with a delimited result name refused; the system name of a delimited long name keeps its quotes ('"D4_M0001"')
 ddl/SHOPCST2   # engine: a foreign key to a column with no unique constraint SQL0538 here, SQL0573 there
@@ -64,8 +50,10 @@ ddl/SHOPLOB1   # engine: the BLOB() function refused SQL0084; SYSCOLUMNS.CCSID o
 ddl/SHOPVW2   # engine: INSERT into a grouped view SQL0204 here, SQL0150 there
 ddl/SHOPCOM1   # engine: COMMENT ON and LABEL ON a table's columns in the list form without COLUMN, LABEL ON and COMMENT ON SEQUENCE refused SQL0104; SYSSEQUENCES.SEQUENCE_TEXT null; SYSCOLUMNS and SYSTABLES have no LONG_COMMENT
 ddl/SHOPSEQ2   # engine: sequences with long names refused SQL0084
-ddl/SHOPAUD2   # engine: a VARCHAR(18) audit column GENERATED ALWAYS AS (USER) SQL0574 here (pub400 takes it); SYSCOLUMNS.GENERATED column
-query/SETOPS   # engine: UNION of INTEGER and VARCHAR converts with an SQL0420 warning and a null here; the primary fetches the rows that convert, then SQL0802 22023
+ddl/SHOPAUD2   # engine: CHANGED_BY = USER in a select list described nullable here, NOT NULL there (predicates as values, as types/BOOL1)
+query/SETOPS   # engine: EXCEPT and INTERSECT with ORDER BY refused SQL0084; a select-list count mismatch SQL0117 here, SQL0421 there; UNION of INTEGER and VARCHAR converts (SQL0420 warning) here, SQL0802 there; INTERSECT ALL SQL0084 here, SQL0104 on 7.1; ORDER BY a result name of a union SQL0206 here, SQL0208 there
+sqlpl/SHOPPRC2   # engine: GET DIAGNOSTICS RETURN_STATUS after a CALL in SQL PL is null here, the RETURN value there
+query/CASECAST   # engine: no 01004 truncation warning
 query/ISOLATE   # oracle: WITH RS on a query warns SQL0595 (escalated) on the primary; DELETE ... WITH CHG of a table not journaled SQL7008 there
 query/LOCKS   # engine: SKIP LOCKED DATA on UPDATE and DELETE, USE AND KEEP ... LOCKS, WAIT FOR OUTCOME, USE CURRENTLY COMMITTED and LOCK TABLE refused SQL0084 (pub400 runs them; WAIT FOR OUTCOME is SQL0104 there)
 query/NOFUNCS   # engine: RAND() comparisons described nullable here; an aggregate in WHERE SQL0120 here, SQL0112 (nested aggregate) first there; SYSDUMMY1.IBMREQD CHAR(1) NOT NULL here, VARCHAR(1) on pub400
@@ -77,3 +65,7 @@ query/REFUSED3   # engine (refusals): NTH_VALUE ... FROM LAST, CYCLE ... USING, 
 ddl/SHOPBOM1   # engine: DELETE from a parent under a NO ACTION rule needs both files journaled on IBM (SQL7008); here the rule is checked (SQL0532)
 ddl/SHOPDFT1   # engine: NOT NULL WITH DEFAULT on DATE, TIME and TIMESTAMP gives 0001-01-01 and midnight here, the current date and time at IBM (SYSCOLUMNS.COLUMN_DEFAULT CURRENT_DATE); a default that does not fit its column is SQL0901 here (SQL0574 there); 'CURRENT DATE' written with a blank here, CURRENT_DATE there
 ddl/SHOPCAL1   # engine: DAYNAME's result described NOT NULL here, nullable there
+ddl/SHOPTRG1   # engine: an AFTER UPDATE OF PRICE trigger fires for an UPDATE that sets only another column
+sqlpl/SHOPPRC5   # engine: in an SQL function, SET V = ROUND(P * 20, 0) / 20 (P DECIMAL(9, 2), V DECIMAL(11, 4)) gives 12.00 for 12.34 where IBM, and the same expression in a VALUES here, give 12.35; a SMALLINT parameter takes an INTEGER argument here, SQL0204 at IBM (no promotion to a shorter type)
+ddl/CATCOL1   # engine: a column the table lacks is looked for only as rows are read, so SELECT NO_SUCH FROM an empty table describes a VARCHAR(32767) column where IBM gives SQL0206
+ddl/CATCOL2   # engine: ROWID columns refused SQL0084 (the primary makes them)

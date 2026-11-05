@@ -156,8 +156,9 @@ fn catalogs() {
             row(&["CUSNO", "1", "DECIMAL", "7", "0", "N", "N"]),
             row(&["NAME", "2", "CHAR", "30", "-", "N", "N"]),
             row(&["BAL", "3", "NUMERIC", "9", "2", "N", "Y"]),
-            row(&["SINCE", "4", "DATE", "10", "-", "Y", "N"]),
-            row(&["NOTE", "5", "VARCHAR", "100", "-", "Y", "N"]),
+            // A nullable column without a default has one (null), as IBM's.
+            row(&["SINCE", "4", "DATE", "4", "-", "Y", "Y"]),
+            row(&["NOTE", "5", "VARCHAR", "100", "-", "Y", "Y"]),
         ]
     );
     assert_eq!(
@@ -212,12 +213,18 @@ fn catalogs() {
     );
     assert_eq!(
         db.rows("SELECT COLUMN_NAME, COLUMN_HEADING, COLUMN_TEXT FROM qsys2/syscolumns WHERE TABLE_NAME = 'CUST' AND (COLUMN_HEADING IS NOT NULL OR COLUMN_TEXT IS NOT NULL) ORDER BY ORDINAL_POSITION"),
+        // A column SQL made is headed with its name; a comment is apart.
         [
             row(&["CUSNO", "Customer number", "-"]),
             row(&["NAME", "Customer name", "-"]),
-            row(&["BAL", "-", "Balance owed"]),
-            row(&["NOTE", "-", "Free text"]),
+            row(&["BAL", "BAL", "-"]),
+            row(&["SINCE", "SINCE", "-"]),
+            row(&["NOTE", "NOTE", "Free text"]),
         ]
+    );
+    assert_eq!(
+        db.rows("SELECT COLUMN_NAME, LONG_COMMENT FROM qsys2/syscolumns WHERE TABLE_NAME = 'CUST' AND LONG_COMMENT IS NOT NULL"),
+        [row(&["BAL", "Balance owed"])]
     );
     // A view: a logical file with select/omit, listed with its dependency.
     db.ok("CREATE VIEW qstest/active (c, n, b) AS SELECT cusno, name, bal FROM cust WHERE bal > 0");

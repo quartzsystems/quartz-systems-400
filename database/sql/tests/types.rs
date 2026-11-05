@@ -130,6 +130,7 @@ fn floats_round_trip() {
 #[test]
 fn timestamps_to_the_picosecond() {
     let mut db = Db::new();
+    // D's default is the current timestamp, as IBM's.
     db.ok("CREATE TABLE QSTEST/TS (A TIMESTAMP(12), B TIMESTAMP(0), C TIMESTAMP, D TIMESTAMP(3) NOT NULL WITH DEFAULT)");
     db.ok(
         "INSERT INTO QSTEST/TS (A, B, C) VALUES('2026-11-02-10.20.30.123456789012', '2026-11-02 10:20:30.9', \
@@ -138,7 +139,7 @@ fn timestamps_to_the_picosecond() {
     db.ok("INSERT INTO QSTEST/TS (A, B, C) VALUES('2026-11-02-10.20.30.123456789013', CURRENT TIMESTAMP, CURRENT TIMESTAMP)");
     assert_eq!(
         db.rows("SELECT A, B, C, D FROM QSTEST/TS WHERE A < TIMESTAMP '2026-11-02 10:20:30.123456789013'"),
-        vec![vec!["2026-11-02 10:20:30.123456789012", "2026-11-02 10:20:30", "2026-11-02 10:20:30.123456", "0001-01-01 00:00:00.000"]]
+        vec![vec!["2026-11-02 10:20:30.123456789012", "2026-11-02 10:20:30", "2026-11-02 10:20:30.123456", "2026-01-01 00:00:00.000"]]
     );
     assert_eq!(db.one("SELECT COUNT(*) FROM QSTEST/TS WHERE A > '2026-11-02-10.20.30.123456789012'"), "1");
     assert_eq!(db.one("SELECT MAX(A) FROM QSTEST/TS"), "2026-11-02 10:20:30.123456789013");
@@ -151,8 +152,9 @@ fn timestamps_to_the_picosecond() {
         "2026-11-02 10:20:30.123457789012"
     );
     assert_eq!(
-        db.rows("SELECT NUMERIC_SCALE, LENGTH FROM QSYS2.SYSCOLUMNS WHERE TABLE_NAME = 'TS' ORDER BY ORDINAL_POSITION"),
-        vec![vec!["12", "32"], vec!["0", "19"], vec!["6", "26"], vec!["3", "23"]]
+        // The primary's: the precision apart, the length in bytes.
+        db.rows("SELECT DATETIME_PRECISION, LENGTH FROM QSYS2.SYSCOLUMNS WHERE TABLE_NAME = 'TS' ORDER BY ORDINAL_POSITION"),
+        vec![vec!["12", "13"], vec!["0", "7"], vec!["6", "10"], vec!["3", "9"]]
     );
     assert!(db.run_with("CREATE TABLE QSTEST/TS2 (A TIMESTAMP(13))", &[]).is_err());
 }
@@ -271,7 +273,7 @@ fn lobs() {
             "SELECT DATA_TYPE, LENGTH, CCSID FROM QSYS2.SYSCOLUMNS WHERE TABLE_NAME = 'LB' AND COLUMN_NAME <> 'K' \
              ORDER BY ORDINAL_POSITION"
         ),
-        vec![vec!["BLOB", "20971520", "65535"], vec!["CLOB", "1024", "-"], vec!["DBCLOB", "100", "1200"]]
+        vec![vec!["BLOB", "20971520", "65535"], vec!["CLOB", "1024", "37"], vec!["DBCLOB", "100", "1200"]]
     );
 }
 
@@ -354,7 +356,7 @@ fn integers_take_their_whole_range() {
             "SELECT DATA_TYPE, LENGTH, NUMERIC_PRECISION FROM QSYS2.SYSCOLUMNS WHERE TABLE_NAME = 'IN' \
              ORDER BY ORDINAL_POSITION"
         ),
-        vec![vec!["SMALLINT", "2", "5"], vec!["INTEGER", "4", "10"], vec!["BIGINT", "8", "19"]]
+        vec![vec!["SMALLINT", "2", "4"], vec!["INTEGER", "4", "9"], vec!["BIGINT", "8", "18"]]
     );
     let p = prepare("SELECT * FROM QSTEST/IN", Naming::Sys).unwrap();
     let mut t = db.store.begin().unwrap();
@@ -384,7 +386,8 @@ fn aliases() {
             "SELECT TABLE_TYPE, COLUMN_COUNT, TABLE_TEXT FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QSTEST' \
              AND TABLE_NAME = 'AB'"
         ),
-        vec![vec!["A", "2", "Base by another name"]]
+        // As the primary lists an alias: no columns of its own.
+        vec![vec!["A", "0", "Base by another name"]]
     );
     // An alias over a member: the second member's rows.
     {
@@ -701,9 +704,9 @@ fn column_ccsids() {
             ["A", "CHAR", "3", "500"],
             ["B", "VARCHAR", "5", "65535"],
             ["C", "GRAPHIC", "2", "1200"],
-            ["D", "VARGRAPHIC", "4", "1200"],
+            ["D", "VARG", "4", "1200"],
             ["E", "DBCLOB", "10", "1200"],
-            ["F", "VARGRAPHIC", "4", "13488"]
+            ["F", "VARG", "4", "13488"]
         ]
     );
 }

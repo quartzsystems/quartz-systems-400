@@ -1,0 +1,148 @@
+-- captured from primary
+> CREATE TABLE {lib}.P2_T (ID INTEGER NOT NULL, A_VERY_LONG_COLUMN_NAME_OF
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SELECT COLUMN_NAME, SYSTEM_COLUMN_NAME, DATA_TYPE, LENGTH, NUMERIC_SCALE
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# SYSTEM_COLUMN_NAME CHAR(10) NOT NULL
+# DATA_TYPE VARCHAR(8) NOT NULL
+# LENGTH INTEGER NOT NULL
+# NUMERIC_SCALE INTEGER
+# NUMERIC_PRECISION INTEGER
+# NUMERIC_PRECISION_RADIX INTEGER
+# CCSID INTEGER
+# HAS_DEFAULT CHAR(1) NOT NULL
+# COLUMN_DEFAULT NVARCHAR(2000)
+# COLUMN_HEADING NVARCHAR(60)
+# STORAGE INTEGER NOT NULL
+# CHARACTER_MAXIMUM_LENGTH INTEGER
+# CHARACTER_OCTET_LENGTH INTEGER
+# DATETIME_PRECISION INTEGER
+# IS_UPDATABLE CHAR(1) NOT NULL
+# IS_IDENTITY VARCHAR(3) NOT NULL
+> LABEL ON COLUMN {lib}.P2_T.SHORTNAME IS 'This heading is longer than six
+sqlcode -107 sqlstate 42622 msgid SQL0107
+> LABEL ON COLUMN {lib}.P2_T.SHORTNAME IS 'Exactly sixty characters in a h
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> LABEL ON COLUMN {lib}.P2_T.SHORTNAME TEXT IS 'This column text is longer
+sqlcode -107 sqlstate 42622 msgid SQL0107
+> LABEL ON COLUMN {lib}.P2_T.SHORTNAME TEXT IS 'Exactly fifty characters o
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> LABEL ON COLUMN {lib}.P2_T.D IS 'A heading with a long word abcdefghijkl
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> LABEL ON COLUMN {lib}.P2_T.T IS 'Short   Two'
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> LABEL ON COLUMN {lib}.P2_T.TS IS ''
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> LABEL ON TABLE {lib}.P2_T IS 'Exactly fifty characters of table text abc
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> LABEL ON INDEX {lib}.P2_T IS 'x'
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> LABEL ON COLUMN {lib}.P2_T (NO_SUCH IS 'x')
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> COMMENT ON COLUMN {lib}.P2_T.NO_SUCH IS 'x'
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> COMMENT ON {lib}.P2_T (NO_SUCH IS 'x')
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> COMMENT ON TABLE {lib}.P2_T IS 'A table comment'
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> COMMENT ON COLUMN {lib}.P2_T.ID IS 'An id comment'
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> COMMENT ON COLUMN {lib}.P2_T.D IS ''
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT COLUMN_NAME, COLUMN_HEADING, COLUMN_TEXT, LONG_COMMENT FROM QSYS2
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# COLUMN_HEADING NVARCHAR(60)
+# COLUMN_TEXT NVARCHAR(50)
+# LONG_COMMENT NVARCHAR(2000)
+> SELECT TABLE_NAME, TABLE_TEXT, LONG_COMMENT, LENGTH(TABLE_TEXT) FROM QSY
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# TABLE_TEXT NVARCHAR(50) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+# 00004 INTEGER NOT NULL
+> COMMENT ON TABLE {lib}.P2_T IS NULL
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> LABEL ON COLUMN {lib}.P2_T.SHORTNAME IS NULL
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> ALTER TABLE {lib}.P2_T ALTER COLUMN NO_SUCH SET DEFAULT 1
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> ALTER TABLE {lib}.P2_T ADD CONSTRAINT P2_PK PRIMARY KEY (NO_SUCH)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CREATE INDEX {lib}.P2_IX ON {lib}.P2_T (NO_SUCH)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CREATE INDEX {lib}.P2_IX ON {lib}.P2_T (BL)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CREATE INDEX {lib}.P2_IX ON {lib}.P2_T (DB)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CREATE INDEX {lib}.P2_IX ON {lib}.P2_T (ID, CL)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> ALTER TABLE {lib}.P2_T ADD CONSTRAINT P2_U UNIQUE (CL)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> ALTER TABLE {lib}.P2_T ADD CONSTRAINT P2_U UNIQUE (NO_SUCH)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES BLOB('abc')
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 BLOB(3) NOT NULL
+| X'818283' |
+> VALUES BLOB(X'0102', 10)
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 BLOB(10) NOT NULL
+| X'0102' |
+> VALUES LENGTH(BLOB('abcd', 2))
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01004 -
+# 00001 INTEGER NOT NULL
+| 2 |
+> VALUES BLOB(CAST('abc' AS CLOB(10)))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 BLOB(10) NOT NULL
+| X'818283' |
+> VALUES BLOB(12)
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> VALUES HEX(BLOB('A'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(2) NOT NULL
+| 'C1' |
+> DROP TABLE {lib}.P2_T
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CREATE TABLE {lib}."p2 Lower" ("col a" INTEGER, "COLB" INTEGER, "Col_C" 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE VIEW {lib}."p2 View" ("x y", "Z") AS SELECT "col a", COLB FROM {l
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.P2_V2 AS SELECT "col a" AS "Big One", COLB AS "lower",
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT TABLE_NAME, SYSTEM_TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SC
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# SYSTEM_TABLE_NAME CHAR(10) NOT NULL
+| 'p2 Lower' | '"p2_L0001"' |
+| 'p2 View' | '"p2_V0001"' |
+| 'P2_V2' | 'P2_V2     ' |
+> SELECT TABLE_NAME, COLUMN_NAME, SYSTEM_COLUMN_NAME, COLUMN_HEADING FROM 
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# SYSTEM_COLUMN_NAME CHAR(10) NOT NULL
+# COLUMN_HEADING NVARCHAR(60)
+| 'p2 Lower' | 'col a' | 'COL_A00001' | '"col a"' |
+| 'p2 Lower' | 'COLB' | 'COLB      ' | 'COLB' |
+| 'p2 Lower' | 'Col_C' | 'COL_C00001' | '"Col_C"' |
+| 'p2 View' | 'x y' | 'X_Y__00001' | '"x y"' |
+| 'p2 View' | 'Z' | 'Z         ' | 'Z' |
+| 'P2_V2' | 'Big One' | 'BIG_O00001' | '"Big One"' |
+| 'P2_V2' | 'lower' | 'LOWER00001' | '"lower"' |
+| 'P2_V2' | 'ABC' | 'ABC       ' | 'ABC' |
+> SELECT * FROM {lib}.P2_V2
+sqlcode 0 sqlstate 00000 msgid -
+# Big One INTEGER
+# lower INTEGER
+# ABC INTEGER
+> DROP VIEW {lib}.P2_V2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VIEW {lib}."p2 View"
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}."p2 Lower"
+sqlcode 0 sqlstate 00000 msgid -

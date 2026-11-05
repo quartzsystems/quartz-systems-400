@@ -10,7 +10,7 @@ sqlcode 0 sqlstate 00000 msgid - count 1
 sqlcode 0 sqlstate 00000 msgid - count 1
 > UPDATE {lib}.D4D_T SET C2 = DEFAULT, N2 = DEFAULT WHERE ID = 3
 sqlcode 0 sqlstate 00000 msgid - count 1
-> SELECT ID, C1, C2, N1, N2, N3, D1, T1, TS1, CASE WHEN U1 = USER THEN 'us
+> SELECT ID, C1, C2, N1, N2, N3, CASE WHEN D1 = CURRENT DATE THEN 'today' 
 sqlcode 0 sqlstate 00000 msgid -
 # ID INTEGER NOT NULL
 # C1 CHAR(5) NOT NULL
@@ -18,13 +18,13 @@ sqlcode 0 sqlstate 00000 msgid -
 # N1 DECIMAL(7,2) NOT NULL
 # N2 INTEGER
 # N3 SMALLINT
-# D1 DATE NOT NULL
-# T1 TIME NOT NULL
-# TS1 TIMESTAMP NOT NULL
+# 00007 VARCHAR(10) NOT NULL
+# 00008 VARCHAR(8) NOT NULL
+# 00009 VARCHAR(26) NOT NULL
 # 00010 VARCHAR(18)
 # 00011 VARCHAR(10)
-| 1 | '     ' | 'none' | 0.00 | -1 | NULL | '2026-11-05' | '05.42.27' | 2026-11-05-05.42.27.709077 | 'user' | 'today' |
-| 2 | '     ' | 'none' | 0.00 | -1 | NULL | '2026-11-05' | '05.42.27' | 2026-11-05-05.42.27.755506 | 'user' | 'today' |
+| 1 | '     ' | 'none' | 0.00 | -1 | NULL | 'today' | 'earlier' | 'now' | 'user' | 'today' |
+| 2 | '     ' | 'none' | 0.00 | -1 | NULL | 'today' | 'earlier' | 'now' | 'user' | 'today' |
 > SELECT ID, C1, C2, N1, N2, N3, D1, T1, TS1, U1, CD, CT, CTS FROM {lib}.D
 sqlcode 0 sqlstate 00000 msgid -
 # ID INTEGER NOT NULL

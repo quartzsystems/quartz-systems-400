@@ -264,7 +264,8 @@ fn describe_gives_sql_names_and_labels() {
     let label = "Customer            Name".to_string();
     assert_eq!(
         named(&mut s, "SELECT * FROM L"),
-        [("CUSTOMER_NAME".to_string(), label.clone()), ("ID".into(), String::new())]
+        // A column SQL made is headed with its name.
+        [("CUSTOMER_NAME".to_string(), label.clone()), ("ID".into(), "ID".into())]
     );
     // By either name, and under a new name the label stays.
     assert_eq!(

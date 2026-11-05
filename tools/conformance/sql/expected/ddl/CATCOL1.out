@@ -1,0 +1,149 @@
+-- captured from primary
+> CREATE TABLE {lib}.C1_T (ID INTEGER NOT NULL, A_VERY_LONG_COLUMN_NAME_OF
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> SELECT COLUMN_NAME, SYSTEM_COLUMN_NAME, DATA_TYPE, LENGTH, NUMERIC_SCALE
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# SYSTEM_COLUMN_NAME CHAR(10) NOT NULL
+# DATA_TYPE VARCHAR(8) NOT NULL
+# LENGTH INTEGER NOT NULL
+# NUMERIC_SCALE INTEGER
+# NUMERIC_PRECISION INTEGER
+# NUMERIC_PRECISION_RADIX INTEGER
+# CCSID INTEGER
+# HAS_DEFAULT CHAR(1) NOT NULL
+# COLUMN_DEFAULT NVARCHAR(2000)
+# COLUMN_HEADING NVARCHAR(60)
+# STORAGE INTEGER NOT NULL
+# CHARACTER_MAXIMUM_LENGTH INTEGER
+# CHARACTER_OCTET_LENGTH INTEGER
+# DATETIME_PRECISION INTEGER
+# IS_UPDATABLE CHAR(1) NOT NULL
+# IS_IDENTITY VARCHAR(3) NOT NULL
+# HIDDEN VARCHAR(1) NOT NULL
+# HAS_FLDPROC VARCHAR(1) NOT NULL
+| 'ID' | 'ID        ' | 'INTEGER' | 4 | 0 | 9 | 10 | NULL | 'N' | NULL | 'ID' | 4 | NULL | NULL | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'A_VERY_LONG_COLUMN_NAME_OF_FORTY_CHARS_XY' | 'A_VER00001' | 'CHAR' | 5 | NULL | NULL | NULL | 37 | 'Y' | NULL | 'A_VERY_LONG_COLUMN_NAME_OF_FORTY_CHARS_XY' | 5 | 5 | 5 | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'SHORTNAME' | 'SHORTNAME ' | 'CHAR' | 3 | NULL | NULL | NULL | 37 | 'Y' | NULL | 'SHORTNAME' | 3 | 3 | 3 | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'D' | 'D         ' | 'DATE' | 4 | NULL | NULL | NULL | 37 | 'Y' | 'CURRENT_DATE' | 'D' | 4 | NULL | NULL | 0 | 'Y' | 'NO' | 'N' | 'N' |
+| 'T' | 'T         ' | 'TIME' | 3 | NULL | NULL | NULL | 37 | 'Y' | 'CURRENT_TIME' | 'T' | 3 | NULL | NULL | 0 | 'Y' | 'NO' | 'N' | 'N' |
+| 'TS' | 'TS        ' | 'TIMESTMP' | 10 | NULL | NULL | NULL | 37 | 'Y' | 'CURRENT_TIMESTAMP' | 'TS' | 10 | NULL | NULL | 6 | 'Y' | 'NO' | 'N' | 'N' |
+| 'DFT1' | 'DFT1      ' | 'DECIMAL' | 5 | 2 | 5 | 10 | NULL | 'Y' | '1.5' | 'DFT1' | 3 | NULL | NULL | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'DFT2' | 'DFT2      ' | 'CHAR' | 4 | NULL | NULL | NULL | 37 | 'Y' | '''ab''''c''' | 'DFT2' | 4 | 4 | 4 | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'DFT5' | 'DFT5      ' | 'INTEGER' | 4 | 0 | 9 | 10 | NULL | 'Y' | '7' | 'DFT5' | 4 | NULL | NULL | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'DFT6' | 'DFT6      ' | 'DATE' | 4 | NULL | NULL | NULL | 37 | 'Y' | '''2026-01-02''' | 'DFT6' | 4 | NULL | NULL | 0 | 'Y' | 'NO' | 'N' | 'N' |
+| 'DFT7' | 'DFT7      ' | 'FLOAT' | 8 | NULL | 52 | 2 | NULL | 'Y' | '1.5E3' | 'DFT7' | 8 | NULL | NULL | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'RL' | 'RL        ' | 'FLOAT' | 4 | NULL | 24 | 2 | NULL | 'Y' | NULL | 'RL' | 4 | NULL | NULL | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'BG' | 'BG        ' | 'BIGINT' | 8 | 0 | 18 | 10 | NULL | 'Y' | NULL | 'BG' | 8 | NULL | NULL | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'NM' | 'NM        ' | 'NUMERIC' | 7 | 3 | 7 | 10 | NULL | 'Y' | NULL | 'NM' | 7 | NULL | NULL | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'DFT9' | 'DFT9      ' | 'SMALLINT' | 2 | 0 | 4 | 10 | NULL | 'Y' | '-3' | 'DFT9' | 2 | NULL | NULL | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'DFTA' | 'DFTA      ' | 'VARCHAR' | 18 | NULL | NULL | NULL | 37 | 'Y' | 'USER' | 'DFTA' | 20 | 18 | 18 | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'NUL' | 'NUL       ' | 'CHAR' | 2 | NULL | NULL | NULL | 37 | 'Y' | 'NULL' | 'NUL' | 2 | 2 | 2 | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'NOD' | 'NOD       ' | 'CHAR' | 2 | NULL | NULL | NULL | 37 | 'Y' | NULL | 'NOD' | 2 | 2 | 2 | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'DFTB' | 'DFTB      ' | 'DECIMAL' | 5 | 2 | 5 | 10 | NULL | 'Y' | '-0.50' | 'DFTB' | 3 | NULL | NULL | NULL | 'Y' | 'NO' | 'N' | 'N' |
+| 'DFTC' | 'DFTC      ' | 'FLOAT' | 8 | NULL | 52 | 2 | NULL | 'Y' | '0' | 'DFTC' | 8 | NULL | NULL | NULL | 'Y' | 'NO' | 'N' | 'N' |
+> LABEL ON COLUMN {lib}.C1_T.SHORTNAME IS 'Exactly sixty characters in a h
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON COLUMN {lib}.C1_T.SHORTNAME TEXT IS 'Exactly fifty characters o
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON COLUMN {lib}.C1_T.D IS 'A heading with a long word abcdefghijkl
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON COLUMN {lib}.C1_T.T IS 'Short   Two'
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON COLUMN {lib}.C1_T.TS IS ''
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON COLUMN {lib}.C1_T.DFT1 IS 'Trailing blanks     '
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON TABLE {lib}.C1_T IS 'Exactly fifty characters of table text abc
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON INDEX {lib}.C1_T IS 'x'
+sqlcode -159 sqlstate 42809 msgid SQL0159
+> LABEL ON COLUMN {lib}.C1_T (NO_SUCH IS 'x')
+sqlcode -205 sqlstate 42703 msgid SQL0205
+> COMMENT ON COLUMN {lib}.C1_T.NO_SUCH IS 'x'
+sqlcode -205 sqlstate 42703 msgid SQL0205
+> COMMENT ON {lib}.C1_T (NO_SUCH IS 'x')
+sqlcode -205 sqlstate 42703 msgid SQL0205
+> LABEL ON COLUMN {lib}.C1_T.NO_SUCH IS 'x'
+sqlcode -205 sqlstate 42703 msgid SQL0205
+> LABEL ON COLUMN {lib}.C1_T.NO_SUCH TEXT IS 'x'
+sqlcode -205 sqlstate 42703 msgid SQL0205
+> COMMENT ON TABLE {lib}.C1_T IS 'A table comment'
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON COLUMN {lib}.C1_T.ID IS 'An id comment'
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON COLUMN {lib}.C1_T.D IS ''
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON COLUMN {lib}.C1_T.T IS '   '
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COLUMN_NAME, COLUMN_HEADING, COLUMN_TEXT, LONG_COMMENT FROM QSYS2
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# COLUMN_HEADING NVARCHAR(60)
+# COLUMN_TEXT NVARCHAR(50)
+# LONG_COMMENT NVARCHAR(2000)
+| 'ID' | 'ID' | NULL | 'An id comment' |
+| 'A_VERY_LONG_COLUMN_NAME_OF_FORTY_CHARS_XY' | 'A_VERY_LONG_COLUMN_NAME_OF_FORTY_CHARS_XY' | NULL | NULL |
+| 'SHORTNAME' | 'Exactly sixty characters in a heading of three lines abcdefg' | 'Exactly fifty characters of column text abcdefghij' | NULL |
+| 'D' | 'A heading with a long word abcdefghijklmnopqrstuvwxyz' | NULL | NULL |
+| 'T' | 'Short   Two' | NULL | '   ' |
+| 'TS' | NULL | NULL | NULL |
+| 'DFT1' | 'Trailing blanks' | NULL | NULL |
+> SELECT TABLE_NAME, TABLE_TEXT, LONG_COMMENT, LENGTH(TABLE_TEXT) FROM QSY
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# TABLE_TEXT NVARCHAR(50) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+# 00004 INTEGER NOT NULL
+| 'C1_T' | 'Exactly fifty characters of table text abcdefghijk' | 'A table comment' | 50 |
+> COMMENT ON TABLE {lib}.C1_T IS ''
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT TABLE_NAME, TABLE_TEXT, LONG_COMMENT FROM QSYS2.SYSTABLES WHERE T
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# TABLE_TEXT NVARCHAR(50) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+| 'C1_T' | 'Exactly fifty characters of table text abcdefghijk' | NULL |
+> CREATE INDEX {lib}.C1_IX ON {lib}.C1_T (NO_SUCH)
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> ALTER TABLE {lib}.C1_T ADD CONSTRAINT C1_UQ UNIQUE (NO_SUCH)
+sqlcode -205 sqlstate 42703 msgid SQL0205
+> ALTER TABLE {lib}.C1_T ALTER COLUMN NO_SUCH SET DEFAULT 1
+sqlcode -205 sqlstate 42703 msgid SQL0205
+> ALTER TABLE {lib}.C1_T DROP COLUMN NO_SUCH
+sqlcode -205 sqlstate 42703 msgid SQL0205
+> ALTER TABLE {lib}.C1_T ADD CONSTRAINT C1_PK PRIMARY KEY (NO_SUCH)
+sqlcode -205 sqlstate 42703 msgid SQL0205
+> UPDATE {lib}.C1_T SET NO_SUCH = 1
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> SELECT NO_SUCH FROM {lib}.C1_T
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> CREATE INDEX {lib}.C1_IX2 ON {lib}.C1_T (ID)
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON INDEX {lib}.C1_IX2 IS 'Index comment'
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON INDEX {lib}.C1_IX2 IS 'Index label'
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT INDEX_NAME, INDEX_TEXT, LONG_COMMENT FROM QSYS2.SYSINDEXES WHERE 
+sqlcode 0 sqlstate 00000 msgid -
+# INDEX_NAME VARCHAR(128) NOT NULL
+# INDEX_TEXT NVARCHAR(50) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+| 'C1_IX2' | 'Index label' | 'Index comment' |
+> CREATE VIEW {lib}.C1_VW AS SELECT ID FROM {lib}.C1_T
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON TABLE {lib}.C1_VW IS 'View comment'
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT TABLE_NAME, TABLE_TYPE, TABLE_TEXT, LONG_COMMENT FROM QSYS2.SYSTA
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# TABLE_TYPE CHAR(1) NOT NULL
+# TABLE_TEXT NVARCHAR(50) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+| 'C1_T' | 'T' | 'Exactly fifty characters of table text abcdefghijk' | NULL |
+| 'C1_VW' | 'V' | '' | 'View comment' |
+> DROP VIEW {lib}.C1_VW
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.C1_T
+sqlcode 0 sqlstate 00000 msgid -

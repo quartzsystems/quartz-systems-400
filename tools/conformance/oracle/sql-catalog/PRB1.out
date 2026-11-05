@@ -1,0 +1,107 @@
+-- captured from primary
+> CREATE SEQUENCE {lib}.P1BAD AS INTEGER START WITH 10 MINVALUE 20
+sqlcode 0 sqlstate 00000 msgid -
+> VALUES NEXT VALUE FOR {lib}.P1BAD
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 10 |
+> VALUES NEXT VALUE FOR {lib}.P1BAD
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 11 |
+> SELECT START, MINIMUM_VALUE, MAXIMUM_VALUE, MAXASSIGNEDVAL, CYCLE_OPTION
+sqlcode 0 sqlstate 00000 msgid -
+# START DECIMAL(63,0) NOT NULL
+# MINIMUM_VALUE DECIMAL(63,0) NOT NULL
+# MAXIMUM_VALUE DECIMAL(63,0) NOT NULL
+# MAXASSIGNEDVAL DECIMAL(63,0)
+# CYCLE_OPTION VARCHAR(3) NOT NULL
+| 10 | 20 | 2147483647 | 29 | 'NO' |
+> ALTER SEQUENCE {lib}.P1BAD RESTART
+sqlcode 0 sqlstate 00000 msgid -
+> VALUES NEXT VALUE FOR {lib}.P1BAD
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 10 |
+> DROP SEQUENCE {lib}.P1BAD
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE SEQUENCE {lib}.P1BAD2 AS INTEGER START WITH 10 MINVALUE 20 MAXVAL
+sqlcode 0 sqlstate 00000 msgid -
+> VALUES NEXT VALUE FOR {lib}.P1BAD2
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 10 |
+> DROP SEQUENCE {lib}.P1BAD2
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE SEQUENCE {lib}.P1BAD3 AS INTEGER START WITH 50 MAXVALUE 20
+sqlcode -846 sqlstate 42815 msgid SQL0846
+> VALUES NEXT VALUE FOR {lib}.P1BAD3
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP SEQUENCE {lib}.P1BAD3
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CREATE SEQUENCE {lib}.P1BAD4 AS INTEGER START WITH 5 INCREMENT BY -1 MIN
+sqlcode 0 sqlstate 00000 msgid -
+> VALUES NEXT VALUE FOR {lib}.P1BAD4
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+sqlcode -359 sqlstate 23522 msgid SQL0359
+> DROP SEQUENCE {lib}.P1BAD4
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE SEQUENCE {lib}.P1BAD5 AS SMALLINT START WITH 40000
+sqlcode -405 sqlstate 42820 msgid SQL0405
+> CREATE SEQUENCE {lib}.P1BAD6 AS INTEGER MINVALUE 30 MAXVALUE 20
+sqlcode -846 sqlstate 42815 msgid SQL0846
+> CREATE SEQUENCE {lib}.P1_LONG_SEQUENCE_NAME_ONE
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE SEQUENCE {lib}.P1_LONG_SEQUENCE_NAME_TWO
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE SEQUENCE {lib}."p1 lower seq"
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT SEQUENCE_NAME, SYSTEM_SEQ_NAME FROM QSYS2.SYSSEQUENCES WHERE SEQU
+sqlcode 0 sqlstate 00000 msgid -
+# SEQUENCE_NAME VARCHAR(128) NOT NULL
+# SYSTEM_SEQ_NAME CHAR(10) NOT NULL
+| 'p1 lower seq' | '"p1_l0001"' |
+| 'P1_LONG_SEQUENCE_NAME_ONE' | 'P1_LO00001' |
+| 'P1_LONG_SEQUENCE_NAME_TWO' | 'P1_LO00002' |
+> DROP SEQUENCE {lib}.P1_LONG_SEQUENCE_NAME_ONE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP SEQUENCE {lib}.P1_LONG_SEQUENCE_NAME_TWO
+sqlcode 0 sqlstate 00000 msgid -
+> DROP SEQUENCE {lib}."p1 lower seq"
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TABLE {lib}.P1_T (A CHAR(5) DEFAULT 'abcdef', B INTEGER)
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.P1_T (A DECIMAL(3, 1) DEFAULT 123.4, B INTEGER)
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.P1_T (A DECIMAL(3, 1) DEFAULT 12.34, B INTEGER)
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.P1_T (A SMALLINT DEFAULT 99999, B INTEGER)
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.P1_T (A DATE DEFAULT 'notadate', B INTEGER)
+sqlcode -180 sqlstate 22007 msgid SQL0180
+> CREATE TABLE {lib}.P1_T (A DATE DEFAULT '2026-13-01', B INTEGER)
+sqlcode -181 sqlstate 22007 msgid SQL0181
+> CREATE TABLE {lib}.P1_T (A CHAR(2) DEFAULT 5, B INTEGER)
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.P1_T (A INTEGER DEFAULT CURRENT DATE, B INTEGER)
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.P1_T (A VARCHAR(3) DEFAULT 'abcd', B INTEGER)
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.P1_T (A CHAR(3) DEFAULT 'ab ', B INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> DROP TABLE {lib}.P1_T
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TABLE {lib}.P1_T (A CHAR(3) DEFAULT USER, B INTEGER)
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.P1_T (A VARCHAR(10) DEFAULT USER, B INTEGER)
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> DROP TABLE {lib}.P1_T
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CREATE TABLE {lib}.P1_T (A VARCHAR(17) GENERATED ALWAYS AS (USER), B INT
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CREATE TABLE {lib}.P1_T (A VARCHAR(18) GENERATED ALWAYS AS (USER), B INT
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DROP TABLE {lib}.P1_T
+sqlcode -204 sqlstate 42704 msgid SQL0204
