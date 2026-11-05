@@ -124,4 +124,16 @@ impl SystemHost for SqlHost {
         });
         Some(r.map(|r| HttpResponse { status: r.status, headers: r.headers, body: r.body }).map_err(|e| e.to_string()))
     }
+
+    fn spooled_files(&self) -> Option<Vec<wm::obj::splf::SplfAttrs>> {
+        with_system(|system| system.spool.files.values().map(|e| e.attrs.clone()).collect())
+    }
+
+    fn spooled_data(&self, id: u32) -> Option<Result<Vec<u8>, String>> {
+        with_system(|system| super::spool::data(system, id).map(|(_, d)| d))
+    }
+
+    fn job_log(&self, job: &str) -> Option<sql::exec::catalog::services::host::JobLog> {
+        super::turns::job_log_of(job, self.job)
+    }
 }

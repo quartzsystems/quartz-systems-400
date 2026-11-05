@@ -70,6 +70,22 @@ pub fn with_parked<T>(f: impl FnOnce(&mut System) -> T) -> Option<T> {
     PARKED.with(|p| p.try_borrow_mut().ok().and_then(|mut b| b.as_mut().map(|svc| f(&mut svc.system))))
 }
 
+/// The log of active job `job` (`number/user/name`, `*` for `me`) and
+/// its qualified name, read from the parked service's connections;
+/// `None` when nothing is parked.
+pub fn job_log_of(job: &str, me: u32) -> Option<sql::exec::catalog::services::host::JobLog> {
+    PARKED.with(|p| {
+        let b = p.try_borrow().ok()?;
+        let svc = b.as_ref()?;
+        let number = if job == "*" { Some(me) } else { wm::job::JobId::parse(job).map(|j| j.number) };
+        let found = number.and_then(|n| svc.conns.iter().filter_map(|c| c.ctx.as_ref()).find(|c| c.job.number == n && !c.thread));
+        Some(match found {
+            Some(c) => sql::exec::catalog::services::host::JobLog::Found(c.job.qualified(), super::joblog::entries(c)),
+            None => sql::exec::catalog::services::host::JobLog::NoSuchJob,
+        })
+    })
+}
+
 fn unpark() -> Box<Svc> {
     PARKED
         .with(|p| p.borrow_mut().take())

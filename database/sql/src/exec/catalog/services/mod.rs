@@ -16,9 +16,11 @@ pub mod shape;
 mod args;
 mod out;
 
+mod joblog;
 mod jobs;
 mod libl;
 mod objects;
+mod spool;
 mod sysval;
 mod users;
 
@@ -63,6 +65,9 @@ const VIEWS: &[View] = &[
     View { schema: "QSYS2", name: "USER_INFO", no_value: users::NO_VALUE, rows: users::info },
     View { schema: "QSYS2", name: "USER_INFO_BASIC", no_value: users::NO_VALUE, rows: users::info },
     View { schema: "QSYS2", name: "GROUP_PROFILE_ENTRIES", no_value: &[], rows: users::groups },
+    View { schema: "QSYS2", name: "OUTPUT_QUEUE_ENTRIES", no_value: spool::ENTRY_NO_VALUE, rows: spool::entries },
+    View { schema: "QSYS2", name: "OUTPUT_QUEUE_ENTRIES_BASIC", no_value: spool::ENTRY_NO_VALUE, rows: spool::entries },
+    View { schema: "QSYS2", name: "OUTPUT_QUEUE_INFO", no_value: spool::QUEUE_NO_VALUE, rows: spool::queues },
 ];
 
 /// The table functions.
@@ -70,6 +75,8 @@ const FUNCTIONS: &[Function] = &[
     Function { schema: "QSYS2", specific: "QSQACTJOB", no_value: &[], rows: jobs::active },
     Function { schema: "QSYS2", specific: "QSQJOBINFO", no_value: &[], rows: jobs::job_info },
     Function { schema: "QSYS2", specific: "QSQOBSTAT", no_value: &[], rows: objects::rows },
+    Function { schema: "QSYS2", specific: "QSQJOBLOG", no_value: &[], rows: joblog::rows },
+    Function { schema: "SYSTOOLS", specific: "SPOOL_FILE", no_value: &[], rows: spool::data },
     Function { schema: "QSYS2", specific: "HTTP_GETV", no_value: &[], rows: http::get_v },
     Function { schema: "QSYS2", specific: "HTTP_GETBV", no_value: &[], rows: http::get_bv },
     Function { schema: "QSYS2", specific: "HTTP_POSTV", no_value: &[], rows: http::post_v },
@@ -244,6 +251,8 @@ pub fn self_check(txn: &mut Txn<'_>, ctx: &SqlContext) -> Vec<String> {
                 .map(|p| {
                     let v = if matches!(p.ty.as_str(), "INTEGER" | "SMALLINT" | "BIGINT" | "DECIMAL") {
                         crate::value::Value::int(1)
+                    } else if p.name == "JOB_NAME" {
+                        crate::value::Value::Str("*".into())
                     } else if p.name.contains("TYPE") || p.name.contains("LIST") {
                         crate::value::Value::Str("*ALL".into())
                     } else if p.name.contains("SCHEMA") || p.name.contains("LIBRARY") {

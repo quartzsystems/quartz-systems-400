@@ -109,68 +109,13 @@ pub struct SystemStatus {
     pub scheduler_active: bool,
 }
 
-/// One message of a job log.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct LogMessage {
-    /// Message ID, blank for an impromptu message.
-    pub id: String,
-    /// `*INFO`, `*ESCAPE` ... as the job log has it.
-    pub kind: String,
-    /// Severity.
-    pub severity: u32,
-    /// When it was sent, Unix seconds.
-    pub sent: u64,
-    /// Microseconds past them.
-    pub micros: u32,
-    /// The message file and its library.
-    pub file: (String, String),
-    /// First-level text.
-    pub text: String,
-    /// Second-level text.
-    pub help: String,
-    /// Sending program and receiving program.
-    pub from_program: String,
-    /// Receiving program.
-    pub to_program: String,
-    /// Sending user.
-    pub from_user: String,
-    /// The message key.
-    pub key: Vec<u8>,
-}
-
-/// One spooled file.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct SpooledFile {
-    /// The output queue and its library.
-    pub outq: (String, String),
-    /// File name and number.
-    pub name: String,
-    /// File number.
-    pub number: u32,
-    /// The job: name, user, number.
-    pub job: (String, String, String),
-    /// `READY`, `HELD`, `SAVED`, `WRITING` ...
-    pub status: String,
-    /// When it was made, Unix seconds.
-    pub created: u64,
-    /// Pages, copies.
-    pub pages: u32,
-    /// Copies.
-    pub copies: u32,
-    /// User data.
-    pub user_data: String,
-    /// Form type.
-    pub form_type: String,
-    /// Output priority.
-    pub priority: u8,
-    /// The device type (`*SCS`, `*USERASCII` ...).
-    pub device_type: String,
-    /// Bytes of data.
-    pub size: u64,
-    /// The job system name.
-    pub system: String,
-    /// Lines of text, for `SPOOLED_FILE_DATA`.
-    pub lines: Option<Vec<String>>,
+/// A job log asked for.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum JobLog {
+    /// The job's qualified name and its messages, oldest first.
+    Found(String, Vec<wm::joblog::Entry>),
+    /// No active job has the name.
+    NoSuchJob,
 }
 
 /// One TCP or UDP connection or listener (`NETSTAT *CNN`).
@@ -335,14 +280,18 @@ pub trait SystemHost {
         None
     }
 
-    /// A job's log: the job's qualified name, `*` for the asking job.
-    fn job_log(&self, _job: &str) -> Option<Vec<LogMessage>> {
+    /// A job's log by its qualified name, `*` for the asking job.
+    fn job_log(&self, _job: &str) -> Option<JobLog> {
         None
     }
 
-    /// Every spooled file; with its lines when `with_lines` names it
-    /// (job, file name, number).
-    fn spooled_files(&self, _with_lines: Option<(&str, &str, u32)>) -> Option<Vec<SpooledFile>> {
+    /// Every spooled file's attributes.
+    fn spooled_files(&self) -> Option<Vec<wm::obj::splf::SplfAttrs>> {
+        None
+    }
+
+    /// A spooled file's data (SCS) by its spool identifier.
+    fn spooled_data(&self, _id: u32) -> Option<Result<Vec<u8>, String>> {
         None
     }
 

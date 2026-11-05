@@ -3420,6 +3420,7 @@ dependencies = [
  "sec",
  "sha1",
  "sha2",
+ "spool",
  "store",
  "thiserror",
  "tracing",

@@ -122,6 +122,55 @@ impl SystemHost for Mock {
         Some(Ok(host::HttpResponse { status: 200, headers: vec![("Content-Type".into(), "text/plain".into())], body: body.into_bytes() }))
     }
 
+    fn spooled_files(&self) -> Option<Vec<wm::obj::splf::SplfAttrs>> {
+        Some(vec![wm::obj::splf::SplfAttrs {
+            id: 7,
+            number: 1,
+            name: "QSYSPRT".into(),
+            job: ("QPADEV0001".into(), "CODY".into(), 9),
+            pages: 1,
+            copies: 1,
+            outpty: 5,
+            page_len: 66,
+            page_width: 132,
+            lpi: 6,
+            cpi: 10,
+            data_len: 2000,
+            created: 1_767_225_600_000_123,
+            outq: "QGPL/QPRINT".into(),
+            prtf: "QSYS/QSYSPRT".into(),
+            ..wm::obj::splf::SplfAttrs::default()
+        }])
+    }
+
+    fn spooled_data(&self, id: u32) -> Option<Result<Vec<u8>, String>> {
+        assert_eq!(id, 7);
+        let mut b = ccsid::to_ebcdic("LINE ONE").unwrap();
+        b.push(0x15);
+        b.extend(ccsid::to_ebcdic("LINE TWO").unwrap());
+        b.push(0x15);
+        Some(Ok(b))
+    }
+
+    fn job_log(&self, job: &str) -> Option<host::JobLog> {
+        if job != "*" && job != "000009/CODY/QPADEV0001" {
+            return Some(host::JobLog::NoSuchJob);
+        }
+        let e = |id: &str, kind: &str, t: u64, text: &str| wm::joblog::Entry {
+            msgid: id.into(),
+            kind: kind.into(),
+            time: t,
+            from: ("QWTPIIPP".into(), "QSYS".into()),
+            to: ("*EXT".into(), String::new()),
+            text: text.into(),
+            ..wm::joblog::Entry::default()
+        };
+        Some(host::JobLog::Found(
+            "000009/CODY/QPADEV0001".into(),
+            vec![e("CPF1124", "Information", 1_767_225_600_000_000, "Job started."), e("", "Request", 1_767_225_660_000_000, "WRKACTJOB")],
+        ))
+    }
+
     fn system_status(&self) -> Option<SystemStatus> {
         Some(SystemStatus {
             total_jobs: 40,
@@ -411,4 +460,31 @@ fn user_info_and_groups() {
     );
     assert_eq!(db.rows("SELECT GROUP_MEMBER_INDICATOR FROM QSYS2.USER_INFO_BASIC WHERE AUTHORIZATION_NAME = 'DEVS'"), vec![row(&["YES"])]);
     assert_eq!(db.rows("SELECT * FROM QSYS2.GROUP_PROFILE_ENTRIES"), vec![row(&["DEVS", "CODY", "Cody"])]);
+}
+
+#[test]
+fn output_queue_entries_and_spooled_file_data() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT OUTPUT_QUEUE_NAME, OUTPUT_QUEUE_LIBRARY_NAME, SPOOLED_FILE_NAME, STATUS, JOB_NAME, SIZE, DEVICE_FILE_NAME FROM QSYS2.OUTPUT_QUEUE_ENTRIES"),
+        vec![row(&["QPRINT", "QGPL", "QSYSPRT", "READY", "000009/CODY/QPADEV0001", "2", "QSYSPRT"])]
+    );
+    assert_eq!(db.rows("SELECT TOTAL_PAGES FROM QSYS2.OUTPUT_QUEUE_ENTRIES_BASIC"), vec![row(&["1"])]);
+    assert_eq!(
+        db.rows("SELECT ORDINAL_POSITION, SPOOLED_DATA FROM TABLE(SYSTOOLS.SPOOLED_FILE_DATA(JOB_NAME => '000009/CODY/QPADEV0001', SPOOLED_FILE_NAME => 'QSYSPRT')) X"),
+        vec![row(&["1", "LINE ONE"]), row(&["2", "LINE TWO"])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(SYSTOOLS.SPOOLED_FILE_DATA('000001/X/Y')) X"), vec![row(&["0"])]);
+}
+
+#[test]
+fn joblog_info() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT ORDINAL_POSITION, MESSAGE_ID, MESSAGE_TYPE, MESSAGE_TEXT, MESSAGE_FILE FROM TABLE(QSYS2.JOBLOG_INFO('*')) X"),
+        vec![row(&["1", "CPF1124", "INFORMATIONAL", "Job started.", "QCPFMSG"]), row(&["2", "-", "REQUEST", "WRKACTJOB", "-"])]
+    );
+    assert_eq!(db.rows("SELECT MESSAGE_TEXT FROM TABLE(QSYS2.JOBLOG_INFO('*', MESSAGE_ORDER => 'DESCENDING', MESSAGE_LIMIT => 1)) X"), vec![row(&["WRKACTJOB"])]);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.JOBLOG_INFO('000001/X/Y')) X"), -443);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.JOBLOG_INFO('000001/X/Y', IGNORE_ERRORS => 'YES')) X"), vec![row(&["0"])]);
 }
