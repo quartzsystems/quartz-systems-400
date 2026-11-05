@@ -36,7 +36,7 @@ rows the work has not reached as refused, as the code does today.
 | Library SQL name index | supported | `docs/DB_FORMAT.md` §8.2; schemas in QSYS's |
 | `*SQLUDT` object type | supported (type only) | |
 | `*SQLINF` entry bodies | draft | the `sql-info` format in `tools/fmtcheck` until the work freezes it |
-| Save and restore of `*SQLINF` | refused | not yet a save part: a restored object comes back without its SQL attributes |
+| Save and restore of `*SQLINF` | supported | save format 2, part 11; a saved library carries its schema name (`saverst/tests/sqlinfo.rs`) |
 
 ## 2. Statements
 
@@ -49,28 +49,32 @@ rows the work has not reached as refused, as the code does today.
 | `DECLARE CURSOR`, `OPEN`, `FETCH`, `CLOSE` | supported | primary | |
 | `CREATE TABLE` | partial: see §4 | primary | `kit/BASIC` |
 | `CREATE INDEX` | partial: see §4 | primary | |
-| `CREATE VIEW` | partial: views are select/omit logical files | primary | |
-| `CREATE ALIAS` | partial | primary | |
-| `CREATE SCHEMA`, `CREATE COLLECTION` | partial: library with `QSQJRN` and `QSQJRN0001`; no `AUTHORIZATION` | primary | |
-| `DROP TABLE/INDEX/VIEW/ALIAS` | supported | primary | |
-| `DROP SCHEMA` | refused SQL0084 | primary | |
+| `CREATE VIEW` | supported: any query the engine runs, kept as query text; views DDS can express stay logical files | primary | `ddl/VIEWQRY` |
+| `CREATE OR REPLACE VIEW`, `CREATE OR REPLACE ALIAS` | supported; refused SQL0084 when other views depend on the view | primary | `ddl/VIEWQRY`, `ddl/ALIAS` |
+| `CREATE OR REPLACE TABLE` (`ON REPLACE PRESERVE/DELETE ROWS`) | partial: refused SQL0084 when views or indexes depend on the table | pub400 | `ddl/TABLEAS` |
+| `CREATE OR REPLACE INDEX` | refused SQL0104, as IBM | primary | `ddl/INDEXEXT` |
+| `CREATE ALIAS` (member aliases, long names) | supported | primary | `ddl/ALIAS` |
+| `CREATE SCHEMA`, `CREATE COLLECTION` | supported: library, `QSQJRN` and `QSQJRN0001`, tables journaled, long names; no `AUTHORIZATION` | none: no library may be made on either oracle (NEEDS-CODY) | `sql::objects` |
+| `DROP TABLE/INDEX/VIEW/ALIAS` with `RESTRICT` (SQL0616) and `CASCADE` | supported | primary | `ddl/DROPRES` |
+| `DROP SCHEMA [RESTRICT|CASCADE]` | supported | primary (SQL0204 only) | `ddl/DROPRES` |
 | `ALTER TABLE` | partial | primary | |
 | `LABEL ON`, `COMMENT ON` | partial: tables, columns, indexes, aliases | primary | |
-| `RENAME` | partial | primary | |
+| `RENAME TABLE/INDEX` (`TO SYSTEM NAME`, `FOR SYSTEM NAME`) | supported; refused SQL0084 for an object other views read | primary, pub400 | `ddl/RENAME`, `ddl/SYSNAME` |
 | `COMMIT`, `ROLLBACK` | supported | primary | |
 | `SET SCHEMA`, `SET PATH`, `SET CURRENT DEGREE`, `SET TRANSACTION` | partial | primary | |
 | `EXPLAIN` | partial: a query only | none: our own plan text | |
 | `CREATE SEQUENCE`, `ALTER/DROP SEQUENCE` | refused SQL0084 | primary | |
 | `CREATE PROCEDURE`, `CREATE FUNCTION`, `CREATE TRIGGER`, `CREATE VARIABLE`, `CREATE TYPE` | refused SQL0084 | primary | |
 | `CALL` | refused SQL0084 | primary | |
-| `GRANT`, `REVOKE` | refused SQL0084 | primary | |
+| `GRANT`, `REVOKE` on tables and views (`WITH GRANT OPTION`, SQL0569, SQL0557, SQL7027) | supported, mapped to object authorities as the primary does | primary | `ddl/GRANT` |
+| `GRANT`, `REVOKE` on schemas, routines, sequences, variables, types; column privileges | refused SQL0084 | none | `sql::objects` |
 | `LOCK TABLE` | refused SQL0084 | primary | |
 | `PREPARE`, `EXECUTE`, `EXECUTE IMMEDIATE`, `DESCRIBE` (dynamic) | refused SQL0084 outside embedded SQL | primary | |
 | `CONNECT`, `DISCONNECT`, `RELEASE`, `SET CONNECTION` | refused SQL0084 | primary | |
 | `SAVEPOINT`, `RELEASE SAVEPOINT`, `ROLLBACK TO SAVEPOINT` | refused SQL0084 | primary | |
 | `TRUNCATE` | refused SQL0084 | pub400 | |
 | `REFRESH TABLE` | refused SQL0084 | primary | |
-| `DECLARE GLOBAL TEMPORARY TABLE` | partial: no `ON COMMIT` | primary | |
+| `DECLARE GLOBAL TEMPORARY TABLE`; any SQL object in QTEMP | refused SQL0084: BLOCKED(sql), QTEMP is the temporary ASP and a statement runs in one ASP transaction | pub400 | `ddl/DGTT` |
 | SQL PL compound statements | refused SQL0084 | primary | |
 
 ## 3. Queries
@@ -110,15 +114,20 @@ rows the work has not reached as refused, as the code does today.
 | Column defaults: constants, `NULL`, special registers | partial | primary | |
 | Expression defaults, generated columns, row change timestamp | refused SQL0084 | primary | |
 | Long names: columns | supported to 128 characters | primary | |
-| Long names: tables, views, indexes, schemas (`FOR SYSTEM NAME`) | refused SQL0084 without a system name | primary | |
-| `CREATE TABLE ... AS`, `CREATE TABLE ... LIKE` | refused SQL0084 | primary | |
-| `CREATE OR REPLACE` | refused SQL0084 | pub400 | |
-| Views over joins, unions, derived tables, expressions | refused SQL0084 | primary | |
-| `WITH CHECK OPTION` | refused SQL0084 | primary | |
-| Index extensions (`INCLUDE`, expression keys, `WHERE`, `UNIQUE WHERE NOT NULL`) | refused SQL0084 | primary | |
-| `CREATE ENCODED VECTOR INDEX` | refused SQL0084 | primary | |
-| `DROP ... RESTRICT/CASCADE` | partial | primary | |
-| CREATE TABLE in a library that is not a schema: `SQL7905` | not given | primary | `kit/BASIC` |
+| Long names: tables, views, indexes, aliases, schemas; IBM's generated system names; `FOR SYSTEM NAME`, `FOR COLUMN`, SQL7029 | supported | primary, pub400 | `ddl/LONGNAME`, `ddl/DELIMIT`, `ddl/SYSNAME` |
+| Result columns of `SELECT *` | named by their SQL (long) names | primary | `ddl/LONGNAME` |
+| `CREATE TABLE ... AS (query) WITH [NO] DATA`, `DEFINITION ONLY` | partial: an expression column is refused SQL0084 until expression types land | pub400 | `ddl/TABLEAS` |
+| `CREATE TABLE ... LIKE`, `(LIKE t)` | supported; `INCLUDING IDENTITY`, `EXCLUDING COLUMN DEFAULTS`, `USING TYPE DEFAULTS` refused SQL0084 | pub400 | `ddl/TABLEAS` |
+| Views over joins, unions, grouping, expressions, views | supported; expression columns show as VARCHAR(256) in the catalog until expression types land | primary | `ddl/VIEWQRY` |
+| `WITH [LOCAL|CASCADED] CHECK OPTION` (SQL0161) | partial: on views that stay logical files; refused SQL0084 on others | primary | `ddl/VIEWCHK` |
+| `CREATE INDEX ... WHERE` (sparse) | partial: conditions select/omit can express; others refused SQL0084 | primary | `ddl/INDEXEXT` |
+| `UNIQUE WHERE NOT NULL`, descending keys | supported | primary | `ddl/INDEXEXT` |
+| Expression (derived) index keys | refused SQL0084: BLOCKED(sql), access paths hold no key expressions | primary | `ddl/INDEXEXT` |
+| `INCLUDE` on an ordinary index | refused SQL0104, as IBM | primary | `ddl/INDEXEXT` |
+| `CREATE ENCODED VECTOR INDEX [INCLUDE]` | no-op as an EVI: made as an ordinary keyed index; `INCLUDE` kept for the catalog only | primary | `ddl/INDEXEXT` |
+| CREATE TABLE in a library that is not a schema: warning SQL7905 | supported | primary, pub400 | `kit/BASIC` |
+| `VOLATILE`, `IN` on CREATE TABLE; `PAGESIZE`, `UNIT` on CREATE INDEX | accepted without effect: to be refused or documented as no-ops (honesty rule) | primary | |
+| DSPFD of a view kept as query text | partial: shows a physical file without members, not IBM's view display | primary | |
 
 ## 5. Functions
 
@@ -175,7 +184,10 @@ added here as families land in `database/sql/src/exec/func/`.
 
 | View | Status | Oracle | Test |
 |---|---|---|---|
-| `QSYS2.SYSSCHEMAS`, `SYSTABLES`, `SYSCOLUMNS`, `SYSINDEXES`, `SYSKEYS`, `SYSVIEWS`, `SYSVIEWDEP`, `SYSCST`, `SYSCSTCOL`, `SYSKEYCST`, `SYSREFCST`, `SYSTABLESTAT`, `SYSCOLUMNSTAT`, `SYSPARTITIONSTAT` | partial: computed from the store | primary | |
+| `QSYS2.SYSSCHEMAS`, `SYSTABLES`, `SYSCOLUMNS`, `SYSINDEXES`, `SYSKEYS`, `SYSVIEWS`, `SYSVIEWDEP`, `SYSCST`, `SYSCSTCOL`, `SYSKEYCST`, `SYSREFCST`, `SYSTABLESTAT`, `SYSCOLUMNSTAT`, `SYSPARTITIONSTAT` | partial: computed from the store; SQL and system names; SYSVIEWS with the 7.1 columns | primary | `ddl/LONGNAME`, `ddl/VIEWQRY` |
+| `QSYS2.SYSTABAUTH` | supported | pub400 | `sql::objects` |
+| `QSYS2.SYSCOLAUTH` | present, always empty: BLOCKED(sql), the store keeps no column authorities | pub400 | `sql::objects` |
+| Catalog views in a schema (`CREATE SCHEMA`) | partial: the QSYS2 views above only | none | |
 | `SYSIBM.SYSDUMMY1` | supported | primary | |
 | Other `QSYS2` catalogs, `SYSIBM` metadata views | not present: SQL0204 | primary | |
 
