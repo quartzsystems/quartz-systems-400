@@ -28,6 +28,10 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) -> Resul
         return Err(SqlError::Unsupported { what: "an index over a view or another index".into() });
     }
     let library = ctx.library_for(txn, &i.name)?;
+    // An index over a table in `QTEMP` is in `QTEMP` (`SQL0156`).
+    if table.desc.header.library != library && ctx.qtemp_library(txn) == Some(table.desc.header.library) {
+        return Err(SqlError::Coded { code: -156, state: "42809", what: format!("{} is in QTEMP; an index over it must be too", i.table.name.value) });
+    }
     let (name, sql) = names::new_object(txn, library, &i.name.name, None)?;
     let rcdfmt = match &i.rcdfmt {
         Some(r) => SqlContext::sys_name(r)?,

@@ -57,6 +57,10 @@ fn names_of(sql: &[String]) -> Vec<Name> {
 
 /// `CREATE TABLE`, every form.
 pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable, params: &[Value]) -> Result<u64> {
+    // `SESSION` is a declared temporary table's qualifier, no schema.
+    if t.name.schema.as_ref().is_some_and(|s| s.value == super::qtemp::SESSION) {
+        return Err(SqlError::ObjectNotFound { name: super::qtemp::SESSION.into(), kind: "schema" });
+    }
     let replaced = if t.replace { replace_old(txn, ctx, t)? } else { None };
     let count = if let Some((of, all_null)) = &t.like {
         let info = ctx.resolve_table(txn, of)?;
@@ -80,6 +84,11 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable, params: 
     };
     if let Some(old) = replaced {
         restore_rows(txn, ctx, t, old)?;
+    }
+    if super::qtemp::qualifier(&t.name) == Some(false)
+        && let Ok(id) = ctx.resolve_file(txn, &t.name)
+    {
+        ctx.qtemp.plain_table(id);
     }
     Ok(count)
 }

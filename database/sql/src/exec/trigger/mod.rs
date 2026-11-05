@@ -142,6 +142,8 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTrigger) -> Res
     let db2sql = mode(ctx, t)?;
     check_referencing(t, db2sql)?;
     let info = subject(txn, ctx, t)?;
+    super::qtemp::refuse_declared(ctx, info.id, "a trigger")?;
+    super::qtemp::unsupported_in_qtemp(&t.name, "a trigger")?;
     db::auth::check(txn, "file.change", info.id)?;
     let before = t.time == TriggerTime::Before;
     refs::check(&t.body, before)?;

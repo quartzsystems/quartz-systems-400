@@ -54,6 +54,7 @@ pub fn find(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName) -> Result<Op
 /// `CREATE TYPE`.
 pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateType) -> Result<()> {
     super::cast::check_column(&c.source)?;
+    super::qtemp::unsupported_in_qtemp(&c.name, "a type")?;
     let lib = ctx.library_for(txn, &c.name)?;
     if find(txn, ctx, &c.name)?.is_some() {
         return Err(err(-601, "42710", format!("type {} exists", c.name.name.value)));

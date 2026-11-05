@@ -147,6 +147,49 @@ pub fn bootstrap_root(txn: &mut Txn<'_>, now: u64, system: &str, name: Name) -> 
     Ok(id)
 }
 
+/// A job's temporary library in this ASP (the database `QTEMP`): a
+/// root in no other library, so no listing, catalog or save sees it,
+/// flagged temporary so the next IPL deletes what a job left.
+pub fn create_temporary_root(txn: &mut Txn<'_>, name: Name, owner: &str, now: u64) -> Result<ObjectId> {
+    let asp = txn.store().asp_number();
+    let id = ObjectId {
+        asp,
+        type_code: types::LIB,
+        serial: txn.take_serial(),
+        generation: 0,
+    };
+    let page = txn.alloc()?;
+    let mut h = ObjectHeader::new(id, id, name, now);
+    h.text = text("Job temporary library")?;
+    h.owner = text(owner)?;
+    h.creator = text(owner)?;
+    h.public_authority = header::Authority::ALL;
+    h.temporary = true;
+    let mut p = Page::zeroed();
+    h.encode(p.body_mut());
+    LibAttr::new(LibType::Prod, asp)?.encode(p.body_mut());
+    txn.write(page, &mut p, PageType::ObjectHeader, id)?;
+    dir::objdir_insert(txn, id, page)?;
+    let mut lib = Library::load(txn, id)?;
+    lib.add(txn, types::LIB, name, id)?;
+    Ok(id)
+}
+
+/// The temporary roots [`create_temporary_root`] made.
+pub fn temporary_roots(txn: &mut Txn<'_>) -> Result<Vec<ObjectId>> {
+    let mut out = Vec::new();
+    for (id, _) in dir::objdir_entries(txn)? {
+        if id.type_code != types::LIB {
+            continue;
+        }
+        let (_, h) = read_header(txn, id)?;
+        if h.temporary && h.library == id {
+            out.push(id);
+        }
+    }
+    Ok(out)
+}
+
 /// The library called `name`.
 pub fn find_library(txn: &mut Txn<'_>, qsys: ObjectId, name: Name) -> Result<Found> {
     let lib = Library::load(txn, qsys)?;

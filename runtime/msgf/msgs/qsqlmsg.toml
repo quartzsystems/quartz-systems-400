@@ -1193,3 +1193,16 @@ sev = 0
 text = "&1 in &2 was dropped."
 help = "The DROP statement removed the object."
 vars = ["*CHAR 128", "*CHAR 128"]
+[[msg]]
+id = "SQL0526"
+sev = 30
+text = "The request does not apply to declared temporary table &1."
+help = "A declared temporary table has no constraints, triggers or labels. Make the table with CREATE TABLE in QTEMP or in a schema to use them."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0707"
+sev = 30
+text = "Name &1 is not valid for this kind of object."
+help = "QTEMP holds tables, views, indexes and aliases only. Make the sequence or global variable in a schema."
+vars = ["*CHAR 128"]

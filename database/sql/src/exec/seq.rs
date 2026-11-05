@@ -99,6 +99,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateSequence) -> Re
     };
     let range = super::column::type_range(&t).expect("an integer type");
     let attrs = super::column::attrs(&c.options, range, &format!("sequence {}", c.name.name.value))?;
+    super::qtemp::refuse_in_qtemp(&c.name, "sequence")?;
     let lib = ctx.library_for(txn, &c.name)?;
     let sys = match &c.system_name {
         Some(s) => SqlContext::sys_name(s)?,

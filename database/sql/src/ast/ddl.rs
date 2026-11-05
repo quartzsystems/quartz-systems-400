@@ -343,3 +343,19 @@ pub struct CreateType {
     /// `ARRAY[n]`: the largest cardinality (`ARRAY[]` the most there is).
     pub array: Option<u64>,
 }
+
+/// `DECLARE GLOBAL TEMPORARY TABLE`: a table in the job's `QTEMP`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
+pub struct DeclareTemp {
+    /// The table: its columns, `LIKE` or `AS (query)`.
+    pub table: CreateTable,
+    /// `ON COMMIT DELETE ROWS` (the default) rather than `PRESERVE`.
+    pub delete_rows: bool,
+    /// `NOT LOGGED`: changes outside commitment control.
+    pub not_logged: bool,
+    /// `NOT LOGGED ON ROLLBACK PRESERVE ROWS` rather than `DELETE`.
+    pub rollback_preserve: bool,
+    /// `WITH REPLACE`.
+    pub replace: bool,
+}

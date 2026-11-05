@@ -53,11 +53,6 @@ pub fn generate_sql_objects(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args
     let opts = Options::of(args)?;
     let table = args.word("SYSTEM_TABLE_NAME").unwrap_or_default();
     let schema = args.word("SYSTEM_TABLE_SCHEMA").unwrap_or_else(|| "QTEMP".into());
-    if schema == "QTEMP" {
-        // BLOCKED(sql): QTEMP is in the temporary ASP, out of a
-        // statement's reach.
-        return Err(SqlError::Unsupported { what: "GENERATE_SQL_OBJECTS over a table in QTEMP".into() });
-    }
     let list = objects::query(
         txn,
         ctx,

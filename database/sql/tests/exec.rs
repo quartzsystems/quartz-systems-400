@@ -710,7 +710,7 @@ fn updates_deletes_and_errors() {
     assert_eq!(db.code("SELECT cusno FROM cust WHERE name = 1"), -302);
     assert_eq!(db.code("SELECT 1 / 0 FROM cust"), -802);
     assert_eq!(db.code("SELECT NOSUCHFN(1) FROM cust"), -84);
-    assert_eq!(db.code("CREATE TABLE cust (a INT)"), -901);
+    assert_eq!(db.code("CREATE TABLE cust (a INT)"), -601);
     // A row through RPG's path and SQL's look the same to the journal.
     db.ok("CREATE TABLE qstest/jt (k INT NOT NULL PRIMARY KEY, v CHAR(5))");
     let mut t = db.store.begin().unwrap();

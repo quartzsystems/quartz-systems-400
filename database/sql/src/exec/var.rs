@@ -117,6 +117,7 @@ pub fn reference(txn: &mut Txn<'_>, ctx: &mut SqlContext, table: Option<&str>, n
 /// `CREATE [OR REPLACE] VARIABLE`.
 pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateVariable) -> Result<()> {
     super::cast::check_column(&c.data_type)?;
+    super::qtemp::refuse_in_qtemp(&c.name, "global variable")?;
     let lib = ctx.library_for(txn, &c.name)?;
     if let Some(old) = find(txn, ctx, &c.name)? {
         if !c.replace {

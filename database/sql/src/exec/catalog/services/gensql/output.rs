@@ -27,19 +27,18 @@ fn name(args: &Args, arg: &str) -> Result<Name> {
 }
 
 /// Write the records to the source member the arguments name, making
-/// the file and the member when they are missing. QTEMP is out of a
-/// statement's reach: the records go to the result set alone.
+/// the file and the member when they are missing (`QTEMP` the job's SQL
+/// `QTEMP`, `exec::qtemp`).
 pub fn keep(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, records: &[String]) -> Result<()> {
     let lib = name(args, "DATABASE_SOURCE_FILE_LIBRARY_NAME")?;
-    if lib.to_string() == "QTEMP" {
-        // BLOCKED(sql): QTEMP is in the temporary ASP and a statement
-        // runs in one ASP's transaction; the member is not written.
-        return Ok(());
-    }
     let file = name(args, "DATABASE_SOURCE_FILE_NAME")?;
     let member = name(args, "DATABASE_SOURCE_FILE_MEMBER")?;
     let append = args.word("REPLACE_OPTION").as_deref() == Some("0");
-    let library = ops::find_library(txn, ctx.qsys, lib).map_err(|_| SqlError::ObjectNotFound { name: lib.to_string(), kind: "schema" })?.id;
+    let library = if crate::exec::qtemp::is_qtemp(lib) {
+        ctx.make_qtemp(txn)?
+    } else {
+        ops::find_library(txn, ctx.qsys, lib).map_err(|_| SqlError::ObjectNotFound { name: lib.to_string(), kind: "schema" })?.id
+    };
     let found = ops::list(txn, library, Some(types::FILE))?.into_iter().find(|(k, _)| k.name == file).map(|(_, id)| id);
     let now = ctx.clock();
     let id = match found {

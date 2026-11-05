@@ -566,7 +566,7 @@ pub fn virtual_table(
                 let mut on: Vec<ObjectId> = Vec::new();
                 if let Some((_, deps)) = crate::exec::view::definition(txn, d.id) {
                     for dep in deps {
-                        if let Some(id) = crate::exec::view::dependency_object(txn, ctx.qsys, &dep) {
+                        if let Some(id) = crate::exec::view::dependency_object(txn, ctx, &dep) {
                             on.push(id);
                         }
                     }

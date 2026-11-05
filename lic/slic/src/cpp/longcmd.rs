@@ -139,6 +139,7 @@ pub fn context(system: &mut System, job: JobHandle) -> Result<SqlContext, String
     let mut ctx = SqlContext::with_locks(console.qsys, job, console.names.clone(), locks);
     ctx.naming = console.naming;
     ctx.current_schema = console.current_schema;
+    ctx.qtemp = console.qtemp.clone();
     ctx.session.set_overrides(console.session.overrides().to_vec());
     Ok(ctx)
 }

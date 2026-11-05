@@ -1321,7 +1321,8 @@ fn generate_sql_of_views_privileges_and_object_lists() {
     let g = generated(&db);
     assert!(g[0].starts_with("CREATE VIEW GS.V1"), "{g:#?}");
     assert!(g.iter().any(|l| l.starts_with("CREATE TABLE GS.T1")), "{g:#?}");
-    assert_eq!(db.code("CALL QSYS2.GENERATE_SQL_OBJECTS('OBJS')"), -84);
+    // QTEMP.OBJS: the job's QTEMP has no such table.
+    assert_eq!(db.code("CALL QSYS2.GENERATE_SQL_OBJECTS('OBJS')"), -204);
 }
 
 #[test]

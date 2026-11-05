@@ -154,6 +154,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     });
     storage::pick_up_resumes();
     system.temp = Some(storage::fresh_temp().map_err(|e| format!("temporary ASP: {e}"))?);
+    purge_sql_qtemp(system);
     let mut made = install(system).map_err(|e| format!("work management objects: {e}"))?;
     if let Ok(path) = licpart::locate()
         && let Ok(f) = fs::OpenOptions::new().read(true).write(true).open(&path)
@@ -242,6 +243,27 @@ fn ifs_line(system: &mut System) -> String {
     match ifsvol::start(system) {
         Some(served) => format!("{served}; {}", ifs::start(system)),
         None => ifs::start(system),
+    }
+}
+
+/// Drop the SQL `QTEMP` libraries the jobs of a stopped system left in
+/// ASP 1 (`sql::exec::qtemp`).
+fn purge_sql_qtemp(system: &mut System) {
+    let Some(s) = system.storage.as_mut() else { return };
+    let Some(qsys) = s.qsys else { return };
+    let Ok(mut txn) = s.store.begin() else { return };
+    match sql::exec::qtemp::purge(&mut txn, qsys, store::obj::JobHandle(0)) {
+        Ok(n) => {
+            if let Err(e) = txn.commit() {
+                eprintln!("qsstg: SQL QTEMP purge: {e}");
+            } else if n > 0 {
+                eprintln!("qsstg: dropped {n} SQL QTEMP librar{} left by ended jobs", if n == 1 { "y" } else { "ies" });
+            }
+        }
+        Err(e) => {
+            txn.abort();
+            eprintln!("qsstg: SQL QTEMP purge: {e}");
+        }
     }
 }
 

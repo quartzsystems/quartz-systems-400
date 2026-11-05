@@ -1,0 +1,68 @@
+-- captured from primary
+> CREATE TABLE {lib}.QTSRC (K INT NOT NULL, V CHAR(3))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QTSRC VALUES (1, 'a'), (2, 'b'), (3, 'c')
+sqlcode 0 sqlstate 00000 msgid - count 3
+> CREATE TABLE QTEMP.QT1 (K INT NOT NULL, V CHAR(3))
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO QTEMP.QT1 SELECT * FROM {lib}.QTSRC WHERE K > 1
+sqlcode 0 sqlstate 00000 msgid - count 2
+> CREATE INDEX QTEMP.QT1IX ON QTEMP.QT1 (V DESC)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW QTEMP.QT1V AS SELECT K * 10 AS K10, V FROM QTEMP.QT1
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT * FROM QTEMP.QT1V ORDER BY K10
+sqlcode 0 sqlstate 00000 msgid -
+# K10 INTEGER NOT NULL
+# V CHAR(3)
+| 20 | 'b  ' |
+| 30 | 'c  ' |
+> CREATE VIEW QTEMP.QTJV AS SELECT S.K, S.V FROM {lib}.QTSRC S JOIN QTEMP.
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT * FROM QTEMP.QTJV ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+# V CHAR(3)
+| 2 | 'b  ' |
+| 3 | 'c  ' |
+> CREATE VIEW {lib}.QTBAD AS SELECT * FROM QTEMP.QT1
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> CREATE INDEX {lib}.QTBADIX ON QTEMP.QT1 (K)
+sqlcode -156 sqlstate 42809 msgid SQL0156
+> CREATE ALIAS QTEMP.QT1A FOR QTEMP.QT1
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM QTEMP.QT1A
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 2 |
+> CREATE TABLE QTEMP.QT2 AS (SELECT * FROM {lib}.QTSRC) WITH DATA
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM QTEMP.QT2
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 3 |
+> CREATE TABLE QTEMP.QT1 (A INT)
+sqlcode -601 sqlstate 42710 msgid SQL0601
+> CREATE TABLE SESSION.QT3 (A INT)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> LABEL ON TABLE QTEMP.QT1 IS 'temp'
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON TABLE QTEMP.QT1 IS 'temp'
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE SEQUENCE QTEMP.QTSEQ
+sqlcode -707 sqlstate 42939 msgid SQL0707
+> CREATE VARIABLE QTEMP.QTVAR INT
+sqlcode -707 sqlstate 42939 msgid SQL0707
+> DROP VIEW QTEMP.QT1V
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE QTEMP.QT1
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT * FROM QTEMP.QTJV
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE QTEMP.QT2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP ALIAS QTEMP.QT1A
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QTSRC
+sqlcode 0 sqlstate 00000 msgid -

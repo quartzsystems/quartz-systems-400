@@ -1,0 +1,122 @@
+-- captured from pub400
+> CREATE TABLE {lib}.DGSRC (K INT NOT NULL, V VARCHAR(10), D DECIMAL(7, 2)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.DGSRC VALUES (1, 'one', 1.50), (2, 'two', 2.25), (3, N
+sqlcode 0 sqlstate 00000 msgid - count 3
+> DECLARE GLOBAL TEMPORARY TABLE DGT1 (A INT NOT NULL, B CHAR(4) DEFAULT '
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO SESSION.DGT1 (A) VALUES (7)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT * FROM QTEMP.DGT1
+sqlcode 0 sqlstate 00000 msgid -
+# A INTEGER NOT NULL
+# B CHAR(4)
+| 7 | 'x   ' |
+> SELECT * FROM DGT1
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DECLARE GLOBAL TEMPORARY TABLE SESSION.DGT2 AS (SELECT K, V FROM {lib}.D
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> SELECT * FROM SESSION.DGT2 ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+# V VARCHAR(10)
+| 1 | 'one' |
+| 2 | 'two' |
+> DECLARE GLOBAL TEMPORARY TABLE QTEMP.DGT3 AS (SELECT * FROM {lib}.DGSRC)
+sqlcode -79 sqlstate 58020 msgid SQL0079
+> SELECT COUNT(*) FROM SESSION.DGT3
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DECLARE GLOBAL TEMPORARY TABLE DGT4 LIKE {lib}.DGSRC ON COMMIT PRESERVE 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO SESSION.DGT4 SELECT * FROM {lib}.DGSRC
+sqlcode 0 sqlstate 00000 msgid - count 3
+> SELECT K, V, D FROM SESSION.DGT4 ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+# V VARCHAR(10)
+# D DECIMAL(7,2)
+| 1 | 'one' | 1.50 |
+| 2 | 'two' | 2.25 |
+| 3 | NULL | NULL |
+> INSERT INTO {lib}.DGSRC SELECT K + 10, V, D FROM SESSION.DGT4 WHERE K = 
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT COUNT(*) FROM {lib}.DGSRC
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 4 |
+> UPDATE SESSION.DGT4 SET V = 'upd' WHERE K = 2
+sqlcode 0 sqlstate 00000 msgid - count 1
+> DELETE FROM SESSION.DGT4 WHERE K = 3
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT S.K, S.V, T.V FROM {lib}.DGSRC S JOIN SESSION.DGT4 T ON S.K = T.K
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+# V VARCHAR(10)
+# V VARCHAR(10)
+| 1 | 'one' | 'one' |
+| 2 | 'two' | 'upd' |
+> DECLARE GLOBAL TEMPORARY TABLE DGT4 (Z INT) WITH REPLACE ON COMMIT PRESE
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> SELECT * FROM SESSION.DGT4
+sqlcode 0 sqlstate 00000 msgid -
+# Z INTEGER
+> DECLARE GLOBAL TEMPORARY TABLE DGT5 (A INT) ON COMMIT DELETE ROWS
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO SESSION.DGT5 VALUES (1)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT COUNT(*) FROM SESSION.DGT5
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 1 |
+> DECLARE GLOBAL TEMPORARY TABLE DGT6 (A INT) ON ROLLBACK PRESERVE ROWS
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> DECLARE GLOBAL TEMPORARY TABLE DGT7 (A INT) LOGGED
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> DECLARE GLOBAL TEMPORARY TABLE DGT8 (A INT PRIMARY KEY, B INT UNIQUE)
+sqlcode -526 sqlstate 42995 msgid SQL0526
+> INSERT INTO SESSION.DGT8 VALUES (1, 1), (1, 2)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DECLARE GLOBAL TEMPORARY TABLE DGT9 (A INT GENERATED ALWAYS AS IDENTITY,
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO SESSION.DGT9 (B) VALUES (5), (6)
+sqlcode 0 sqlstate 00000 msgid - count 2
+> SELECT * FROM SESSION.DGT9
+sqlcode 0 sqlstate 00000 msgid -
+# A INTEGER NOT NULL
+# B INTEGER
+| 1 | 5 |
+| 2 | 6 |
+> SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'QTEMP'
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> SELECT COUNT(*) FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = 'QTEMP'
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> DECLARE GLOBAL TEMPORARY TABLE MYLIB.DGTA (A INT)
+sqlcode -79 sqlstate 58020 msgid SQL0079
+> DROP TABLE SESSION.DGT1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE QTEMP.DGT2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE SESSION.DGT3
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE SESSION.DGT4
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE SESSION.DGT5
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE SESSION.DGT8
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE SESSION.DGT9
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT * FROM SESSION.DGT1
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE {lib}.DGSRC
+sqlcode 0 sqlstate 00000 msgid -

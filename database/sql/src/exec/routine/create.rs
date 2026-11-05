@@ -36,6 +36,7 @@ fn unsupported(what: &str) -> SqlError {
 #[allow(clippy::too_many_lines)] // the clauses in order
 pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Result<()> {
     sqlnames::check_length(&r.name.name)?;
+    super::super::qtemp::unsupported_in_qtemp(&r.name, "a routine")?;
     let lib = ctx.library_for(txn, &r.name)?;
     let lib_name = ops::read_header(txn, lib)?.1.name;
     let routine_type = if r.kind == RoutineKind::Procedure { 1 } else { 2 };

@@ -469,6 +469,16 @@ lookup of a serial below the counter that the directory no longer holds
 is a stale reference (MCH3402); a serial at or above it was never an
 object.
 
+A library is in QSYS's directory, or is a root: QSYS itself, the
+temporary ASP's `QTEMP`, or a job's SQL `QTEMP` in ASP 1 (`library` its
+own ID, `temporary` 1, its own entry in its directory). SQL runs a
+statement in one ASP's transaction, so the tables, views, indexes and
+aliases a job makes in `QTEMP` through SQL (and its declared temporary
+tables) are in such a root, reached only through the job's SQL context
+(`database/sql/src/exec/qtemp.rs`); the job's end deletes it, and the
+storage service deletes any temporary root a stopped system left when
+it opens the store.
+
 ### `ObjectHeader` (1024 bytes)
 
 At offset 0 of the body. Text fields are CP037, space padded.
@@ -508,7 +518,7 @@ At offset 0 of the body. Text fields are CP037, space padded.
 | 502 | 1 | domain | 0 `*SYSTEM`, 1 `*USER` |
 | 503 | 1 | state | 0 system, 1 user |
 | 504 | 1 | damaged | |
-| 505 | 1 | temporary | |
+| 505 | 1 | temporary | 1 for a job's SQL `QTEMP` (below) |
 | 506 | 1 | compression | always 0 |
 | 507 | 1 | reserved3 | 0 |
 | 508 | 256 | extents | 16 × `ExtentRef` |

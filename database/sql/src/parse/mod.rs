@@ -26,6 +26,7 @@ mod query;
 mod routine;
 mod trigger;
 mod savepoint;
+mod temp;
 mod types;
 
 use crate::ast::{
@@ -686,10 +687,8 @@ impl Parser {
 
     fn declare(&mut self) -> Result<Statement> {
         self.expect_word("DECLARE")?;
-        if self.is_words(&["GLOBAL", "TEMPORARY"]) {
-            // BLOCKED(sql): QTEMP is in the temporary ASP, and a statement
-            // runs in one ASP's transaction.
-            return Err(Self::unsupported("DECLARE GLOBAL TEMPORARY TABLE: tables in QTEMP"));
+        if self.eat_words(&["GLOBAL", "TEMPORARY"]) {
+            return self.declare_temp();
         }
         let name = self.ident()?;
         let sensitive = self.eat_word("SENSITIVE");

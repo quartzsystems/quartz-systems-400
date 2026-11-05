@@ -108,6 +108,8 @@ pub struct State {
     pub dsp_overrides: Vec<crate::stgsvc::prtf::PrtOverride>,
     /// `OVRMSGF`s in effect, oldest first.
     pub msgf_overrides: Vec<MsgfOvr>,
+    /// The job's SQL `QTEMP`, shared by its SQL contexts.
+    pub qtemp: sql::exec::qtemp::Qtemp,
 }
 
 /// One `OVRMSGF`: lookups of `file` go to `to` (library, name).
@@ -373,12 +375,9 @@ pub fn db(system: &mut System) -> Result<(&mut Store, &mut SqlContext), String> 
     match system.svc.sql.as_mut() {
         Some(ctx) => ctx.names = names,
         None => {
-            system.svc.sql = Some(SqlContext::with_locks(
-                qsys,
-                JOB,
-                names,
-                system.locks.clone(),
-            ));
+            let mut ctx = SqlContext::with_locks(qsys, JOB, names, system.locks.clone());
+            ctx.qtemp = system.svc.qtemp.clone();
+            system.svc.sql = Some(ctx);
         }
     }
     Ok((&mut storage.store, system.svc.sql.as_mut().expect("set")))

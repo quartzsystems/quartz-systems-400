@@ -137,6 +137,8 @@ pub enum Isolation {
 pub enum Statement {
     /// `CREATE TABLE`.
     CreateTable(CreateTable),
+    /// `DECLARE GLOBAL TEMPORARY TABLE`.
+    DeclareTemp(Box<DeclareTemp>),
     /// `ALTER TABLE`.
     AlterTable(AlterTable),
     /// `CREATE SEQUENCE`.

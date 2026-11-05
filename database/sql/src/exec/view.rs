@@ -39,6 +39,10 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, v: &CreateView) -> Result
     }
     let (name, sql) = names::new_object(txn, library, &v.name.name, v.system_name.as_ref())?;
     let deps = dependencies(txn, ctx, &v.query)?;
+    // Only a view in `QTEMP` may read what is in it (`SQL7008`).
+    if Some(library) != ctx.qtemp_library(txn) && deps.iter().any(|d| super::qtemp::is_qtemp(d.library)) {
+        return Err(SqlError::Coded { code: -7008, state: "55019", what: format!("{} reads a table in QTEMP; only a view in QTEMP may", v.name.name.value) });
+    }
     // A simple view stays a logical file (RPG opens it); any other runs
     // its query.
     let over_physical = match &v.query.body {
@@ -284,7 +288,7 @@ fn expand_ref(txn: &mut Txn<'_>, ctx: &SqlContext, t: &mut TableRef) -> Result<b
             let crate::ast::Statement::Select(mut query) = crate::parse::parse(&def.query, naming)? else {
                 return Err(SqlError::Database { what: format!("view {name} keeps a query that is not one"), msgid: None });
             };
-            qualify(txn, ctx.qsys, &mut query.body, &deps);
+            qualify(txn, ctx, &mut query.body, &deps);
             let cols = if columns.is_empty() { def.columns.iter().map(|c| Ident { value: c.clone(), delimited: true }).collect() } else { columns.clone() };
             let alias = alias.clone().unwrap_or_else(|| name.name.clone());
             *t = TableRef::Subquery { query: Box::new(query), alias, columns: cols };
@@ -316,13 +320,13 @@ pub fn ident_of(n: Name) -> Ident {
 
 /// Unqualified names in a view's `FROM` lists get the library they had
 /// when the view was made: the dependency of that SQL or system name.
-fn qualify(txn: &mut Txn<'_>, qsys: ObjectId, b: &mut QueryBody, deps: &[Dependency]) {
-    fn walk(txn: &mut Txn<'_>, qsys: ObjectId, t: &mut TableRef, deps: &[Dependency]) {
+fn qualify(txn: &mut Txn<'_>, ctx: &SqlContext, b: &mut QueryBody, deps: &[Dependency]) {
+    fn walk(txn: &mut Txn<'_>, ctx: &SqlContext, t: &mut TableRef, deps: &[Dependency]) {
         match t {
             TableRef::Table { name, .. } if name.schema.is_none() => {
                 for d in deps {
-                    let Ok(found) = ops::find_library(txn, qsys, d.library) else { continue };
-                    let Ok(lib) = store::obj::library::Library::load(txn, found.id) else { continue };
+                    let Some(found) = super::qtemp::find_library(txn, ctx, d.library) else { continue };
+                    let Ok(lib) = store::obj::library::Library::load(txn, found) else { continue };
                     let Ok(Some(id)) = lib.lookup(txn, d.type_code, d.name) else { continue };
                     let sql = names::sql_name(txn, id);
                     if sql == name.name.value || d.name.to_string() == name.name.value {
@@ -332,15 +336,15 @@ fn qualify(txn: &mut Txn<'_>, qsys: ObjectId, b: &mut QueryBody, deps: &[Depende
                     }
                 }
             }
-            TableRef::Subquery { query, .. } => qualify(txn, qsys, &mut query.body, deps),
+            TableRef::Subquery { query, .. } => qualify(txn, ctx, &mut query.body, deps),
             TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => {
-                walk(txn, qsys, left, deps);
-                walk(txn, qsys, right, deps);
+                walk(txn, ctx, left, deps);
+                walk(txn, ctx, right, deps);
             }
-            TableRef::Lateral(inner) => walk(txn, qsys, inner, deps),
+            TableRef::Lateral(inner) => walk(txn, ctx, inner, deps),
             TableRef::Recursive { cte, .. } => {
                 for b in cte.seed.iter_mut().chain(cte.step.iter_mut()) {
-                    qualify(txn, qsys, b, deps);
+                    qualify(txn, ctx, b, deps);
                 }
             }
             TableRef::Table { .. } | TableRef::Function { .. } | TableRef::DataChange { .. } => {}
@@ -349,14 +353,14 @@ fn qualify(txn: &mut Txn<'_>, qsys: ObjectId, b: &mut QueryBody, deps: &[Depende
     match b {
         QueryBody::Select(s) => {
             for t in &mut s.from {
-                walk(txn, qsys, t, deps);
+                walk(txn, ctx, t, deps);
             }
         }
         QueryBody::Union { left, right, .. } => {
-            qualify(txn, qsys, left, deps);
-            qualify(txn, qsys, right, deps);
+            qualify(txn, ctx, left, deps);
+            qualify(txn, ctx, right, deps);
         }
-        QueryBody::Nested(q) => qualify(txn, qsys, &mut q.body, deps),
+        QueryBody::Nested(q) => qualify(txn, ctx, &mut q.body, deps),
         QueryBody::Values(_) => {}
     }
 }
@@ -370,6 +374,7 @@ pub fn dependents(txn: &mut Txn<'_>, ctx: &SqlContext, id: ObjectId) -> Result<V
     let mut out = Vec::new();
     let mut libs: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, l)| l).collect();
     libs.push(ctx.qsys);
+    libs.extend(ctx.qtemp_library(txn));
     for lib in libs {
         let Ok(files) = ops::list(txn, lib, Some(types::FILE)) else { continue };
         for (_, f) in files {
@@ -397,9 +402,9 @@ pub fn check_option(txn: &mut Txn<'_>, t: &super::TableInfo) -> Option<String> {
 }
 
 /// The object a dependency names, when it is still there.
-pub fn dependency_object(txn: &mut Txn<'_>, qsys: ObjectId, d: &Dependency) -> Option<ObjectId> {
-    let found = ops::find_library(txn, qsys, d.library).ok()?;
-    let lib = store::obj::library::Library::load(txn, found.id).ok()?;
+pub fn dependency_object(txn: &mut Txn<'_>, ctx: &SqlContext, d: &Dependency) -> Option<ObjectId> {
+    let found = super::qtemp::find_library(txn, ctx, d.library)?;
+    let lib = store::obj::library::Library::load(txn, found).ok()?;
     lib.lookup(txn, d.type_code, d.name).ok().flatten()
 }
 

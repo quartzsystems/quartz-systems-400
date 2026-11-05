@@ -39,6 +39,7 @@ pub fn drop_with_dependents(txn: &mut Txn<'_>, ctx: &mut SqlContext, id: ObjectI
     }
     super::trigger::drop_all(txn, ctx, id)?;
     file::delete_file(txn, ctx.job, id)?;
+    super::qtemp::dropped(ctx, id);
     Ok(())
 }
 

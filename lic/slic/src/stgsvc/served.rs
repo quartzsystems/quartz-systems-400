@@ -144,6 +144,7 @@ fn thread_of(system: &System, conns: &[Conn], number: u32, pid: u32) -> Result<J
     let mut ctx = JobCtx::new(system, main.job.clone());
     ctx.session = Rc::clone(&main.session);
     ctx.qtemp = main.qtemp;
+    ctx.svc.qtemp = main.svc.qtemp.clone();
     ctx.thread = true;
     Ok(ctx)
 }
@@ -415,6 +416,20 @@ fn end_db(system: &mut System, ctx: &mut JobCtx) {
             eprintln!("qsstg: ending {}: {e}", ctx.job.name);
         }
     }
+    // The job's SQL `QTEMP` in ASP 1.
+    if !ctx.thread
+        && let Some(lib) = ctx.svc.qtemp.take()
+        && let Some(s) = system.storage.as_mut()
+        && let Some(qsys) = s.qsys
+        && let Ok(mut txn) = s.store.begin()
+    {
+        let r = sql::exec::qtemp::drop_library(&mut txn, qsys, JobHandle(ctx.job.handle), lib)
+            .map_err(|e| e.to_string())
+            .and_then(|()| txn.commit().map_err(|e| e.to_string()));
+        if let Err(e) = r {
+            eprintln!("qsstg: SQL QTEMP of {}: {e}", ctx.job.name);
+        }
+    }
     let _ = lent;
 }
 
@@ -619,6 +634,7 @@ pub fn sql_session<'c>(
     if s.ctx.dbmon.ident.is_none() {
         s.ctx.dbmon.ident = Some(sql::dbmon::JobIdent { name: c.job.name.clone(), user: c.job.user.clone(), number: c.job.number });
     }
+    s.ctx.qtemp = c.svc.qtemp.clone();
     // The job's own thread can be asked to end a statement.
     if !c.thread {
         let flag = stg::sql_cancel_path(c.job.number);

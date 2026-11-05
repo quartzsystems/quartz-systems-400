@@ -401,11 +401,10 @@ pub(crate) fn finish_table(
     shown: &str,
 ) -> Result<()> {
     super::names::record(txn, library, id, db::sqlinf::Kind::Table, sql, ctx.clock())?;
-    if !journal_in_schema(txn, ctx, library, id)? {
-        let lib = store::obj::ops::read_header(txn, library)?.1.name.to_string();
-        if lib != "QTEMP" {
-            ctx.warning = Some(crate::sqlca::Warning::not_journaled(shown, &lib));
-        }
+    // `QTEMP` is no schema: its journal is a logged declared table's.
+    let lib = store::obj::ops::read_header(txn, library)?.1.name.to_string();
+    if lib != "QTEMP" && !journal_in_schema(txn, ctx, library, id)? {
+        ctx.warning = Some(crate::sqlca::Warning::not_journaled(shown, &lib));
     }
     Ok(())
 }
@@ -866,6 +865,7 @@ pub fn label(txn: &mut Txn<'_>, ctx: &mut SqlContext, l: &crate::ast::Label) -> 
         LabelTarget::Trigger(n) => return super::trigger::label(txn, ctx, n, l),
     };
     let id = ctx.resolve_file(txn, name)?;
+    super::qtemp::refuse_declared(ctx, id, "LABEL ON or COMMENT ON")?;
     db::auth::check(txn, "file.change", id)?;
     if column.is_none() && l.columns.is_empty() {
         let text = l.text.clone().unwrap_or_default();

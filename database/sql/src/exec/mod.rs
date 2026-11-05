@@ -37,6 +37,7 @@ pub mod mem;
 pub mod names;
 pub mod opnqryf;
 mod olap;
+pub mod qtemp;
 pub mod query;
 pub mod rename;
 mod savepoint;
@@ -232,6 +233,8 @@ pub struct SqlContext {
     pub arrays: bool,
     /// The database monitor's view of the job.
     pub dbmon: crate::dbmon::JobState,
+    /// The job's SQL `QTEMP` (`qtemp`), shared by its contexts.
+    pub qtemp: qtemp::Qtemp,
 }
 
 /// See [`SqlContext::yielder`].
@@ -342,6 +345,7 @@ impl SqlContext {
             ext_functions: routine::extfunc::State::default(),
             arrays: false,
             dbmon: crate::dbmon::JobState::default(),
+            qtemp: qtemp::Qtemp::default(),
         }
     }
 
@@ -663,12 +667,12 @@ impl SqlContext {
 
     /// The library to create an object in.
     pub fn library_for(&self, txn: &mut Txn<'_>, name: &ObjectName) -> Result<ObjectId> {
+        // `SESSION` makes an index or view in `QTEMP`; a table of it is
+        // refused by `table::create`.
+        if qtemp::qualifier(name).is_some() {
+            return self.make_qtemp(txn);
+        }
         match self.lib_spec_in(txn, name)? {
-            // BLOCKED(sql): QTEMP is in the temporary ASP, and a statement
-            // runs in one ASP's transaction.
-            LibSpec::Name(n) if n.to_string() == "QTEMP" => {
-                Err(SqlError::Unsupported { what: "SQL objects in QTEMP".into() })
-            }
             LibSpec::Name(n) => ops::find_library(txn, self.qsys, n)
                 .map(|f| f.id)
                 .map_err(|_| SqlError::ObjectNotFound {
@@ -692,7 +696,16 @@ impl SqlContext {
             name: name.to_string(),
             kind: "table",
         };
+        if let Some(session) = qtemp::qualifier(name) {
+            return self.resolve_in_qtemp(txn, name, session)?.ok_or_else(not_found);
+        }
         let lib = self.lib_spec_in(txn, name).map_err(|_| not_found())?;
+        // Through the library list `QTEMP` comes first.
+        if matches!(lib, LibSpec::Libl)
+            && let Some(id) = self.resolve_in_qtemp(txn, name, false)?
+        {
+            return Ok(id);
+        }
         if let Some(n) = names::direct(&name.name) {
             return ops::resolve(txn, self.qsys, &self.names, lib, n, types::FILE)
                 .map(|f| f.id)
@@ -760,6 +773,10 @@ impl SqlContext {
     /// job has it.
     pub fn open(&mut self, txn: &mut Txn<'_>, t: &TableInfo, usage: Usage) -> Result<Odp> {
         let nc = self.no_commit || self.isolation == Some(crate::ast::Isolation::Nc);
+        let nc = nc || self.qtemp.not_logged(t.id);
+        if usage.output || usage.update || usage.delete {
+            self.qtemp.changing(t.id);
+        }
         let cmt = if nc { None } else { self.session.commit_def().cloned() };
         let opts = OpenOpts {
             member: MemberSpec::Name(t.member.name),
@@ -972,6 +989,7 @@ impl Prepared {
             Statement::Update(u) => dml::update(txn, ctx, params, u).map(Outcome::Count),
             Statement::Delete(d) => dml::delete(txn, ctx, params, d).map(Outcome::Count),
             Statement::CreateTable(t) => table::create(txn, ctx, t, params).map(|n| if n == 0 { Outcome::Done } else { Outcome::Count(n) }),
+            Statement::DeclareTemp(d) => qtemp::declare(txn, ctx, d, params).map(|n| if n == 0 { Outcome::Done } else { Outcome::Count(n) }),
             Statement::CreateIndex(i) => index::create(txn, ctx, i).map(|()| Outcome::Done),
             Statement::CreateSchema(name) => schema::create(txn, ctx, name).map(|()| Outcome::Done),
             Statement::DropSchema { name, restrict, .. } => schema::drop(txn, ctx, name, *restrict).map(|()| Outcome::Done),
@@ -994,6 +1012,7 @@ impl Prepared {
             Statement::Commit { hold } => {
                 if ctx.session.commit_def().is_some() {
                     ctx.session.commit(txn, ctx.now)?;
+                    qtemp::end_of_unit(txn, ctx, false)?;
                 }
                 ctx.unit_ended();
                 if !hold {
@@ -1004,6 +1023,7 @@ impl Prepared {
             Statement::Rollback { hold } => {
                 if ctx.session.commit_def().is_some() {
                     rollback(txn, ctx)?;
+                    qtemp::end_of_unit(txn, ctx, true)?;
                 }
                 ctx.unit_ended();
                 if !hold {
@@ -1127,6 +1147,7 @@ impl Prepared {
 pub fn statement_name(s: &Statement) -> &'static str {
     match s {
         Statement::CreateTable(_) => "CREATE TABLE",
+        Statement::DeclareTemp(_) => "DECLARE GLOBAL TEMPORARY TABLE",
         Statement::AlterTable(_) => "ALTER TABLE",
         Statement::CreateSequence(_) => "CREATE SEQUENCE",
         Statement::AlterSequence { .. } => "ALTER SEQUENCE",
@@ -1201,6 +1222,7 @@ impl From<db::DbError> for SqlError {
         use db::DbError as D;
         match &e {
             D::Store(s @ store::StoreError::NotAuthorized { .. }) => Self::NotAuthorized { what: s.to_string() },
+            D::Store(store::StoreError::AlreadyExists { name, .. }) => Self::Exists { name: name.clone(), kind: "*FILE" },
             D::DuplicateKey { .. } => Self::DuplicateKey {
                 what: e.to_string(),
             },

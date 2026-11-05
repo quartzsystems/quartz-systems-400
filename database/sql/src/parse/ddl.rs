@@ -81,7 +81,7 @@ impl Parser {
         Err(Self::unsupported("that CREATE statement"))
     }
 
-    fn create_table(&mut self, replace: bool) -> Result<Statement> {
+    pub(crate) fn create_table(&mut self, replace: bool) -> Result<Statement> {
         let name = self.object_name()?;
         let mut t = CreateTable {
             name,
@@ -162,8 +162,9 @@ impl Parser {
                     false
                 };
                 self.expect_word("ROWS")?;
-            } else if self.eat_words(&["ON", "COMMIT"]) {
-                return Err(Self::unsupported("declared temporary tables (ON COMMIT)"));
+            } else if self.is_words(&["ON", "COMMIT"]) {
+                // A declared temporary table's clause (`parse::temp`).
+                break;
             } else if self.eat_words(&["IN", "ASP"]) || self.eat_word("IN") {
                 self.ident()?;
             } else if self.eat_words(&["NOT", "VOLATILE"]) || self.eat_word("VOLATILE") {
