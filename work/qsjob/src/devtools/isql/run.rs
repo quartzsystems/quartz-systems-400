@@ -34,6 +34,10 @@ fn done(host: &Host, s: &mut Session, r: &IsqlReply) {
         "UPDATE" => note(host, h, "SQL7957", &[table, lib, &n]),
         "DELETE" => note(host, h, "SQL7955", &[table, lib, &n]),
         "SELECT" | "EXPLAIN" => note(host, h, SELECT_DONE, &[]),
+        "CONNECT" | "SET CONNECTION" => {
+            let rdb = crate::console::drda::current_rdb(&host.link);
+            note(host, h, "SQL7971", &[&rdb]);
+        }
         "COMMIT" => note(host, h, "SQL7960", &[]),
         "ROLLBACK" => note(host, h, "SQL7961", &[]),
         other => note(host, h, "SQL7977", &[&other]),
@@ -46,6 +50,7 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
     let check = s.attrs.syntax_only();
     let (text, r) = match decimal_point(host, s, &s.h.text()) {
         Err(r) => (String::new(), r),
+        Ok(text) if !check && let Some(r) = connection(host, s, &text) => (text, r),
         Ok(text) if !check && is_call(&text) => {
             let r = call(host, s, &text);
             (text, r)
@@ -134,6 +139,41 @@ fn decimal_point(host: &Host, s: &Session, text: &str) -> Result<String, IsqlRep
             ..IsqlReply::default()
         }
     })
+}
+
+/// The statements the job's connections answer (`console::drda`):
+/// `CONNECT`, `SET CONNECTION`, `RELEASE`, `DISCONNECT`, and every
+/// other while a remote server is current; `None` for the local
+/// server's. A query at a remote server is refused
+/// ([`crate::console::drda::remote_query_refused`]).
+fn connection(host: &Host, s: &Session, text: &str) -> Option<IsqlReply> {
+    let words: Vec<String> = text.split_whitespace().take(2).map(str::to_ascii_uppercase).collect();
+    let w = |i: usize| words.get(i).map_or("", String::as_str);
+    let name = match (w(0), w(1)) {
+        ("CONNECT" | "DISCONNECT", _) => w(0).to_string(),
+        ("RELEASE", second) if second != "SAVEPOINT" && second != "TO" => "RELEASE".to_string(),
+        ("SET", "CONNECTION") => "SET CONNECTION".to_string(),
+        _ if crate::console::drda::remote_current() => w(0).to_string(),
+        _ => return None,
+    };
+    let reply = |ca: sql::Sqlca, statement: String| IsqlReply {
+        sqlcode: ca.sqlcode,
+        msgid: if ca.sqlcode < 0 { ca.msgid() } else { String::new() },
+        sqlstate: ca.sqlstate,
+        text: ca.sqlerrmc,
+        statement,
+        ..IsqlReply::default()
+    };
+    if matches!(name.as_str(), "SELECT" | "WITH" | "VALUES") {
+        return Some(reply(crate::console::drda::remote_query_refused(), name));
+    }
+    let req = Request {
+        scope: "QSQISQL:".into(),
+        desc: Desc { op: Op::Exec, sql_naming: s.attrs.sql_naming(), text: text.to_string(), ..Desc::default() },
+        inputs: Vec::new(),
+    };
+    let r = crate::console::drda::route(&host.link, &req)?;
+    Some(reply(r.sqlca, name))
 }
 
 /// Whether a statement is a `CALL`.

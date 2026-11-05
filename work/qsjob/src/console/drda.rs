@@ -73,6 +73,29 @@ pub fn route(link: &Shared, req: &Request) -> Option<Reply> {
     })
 }
 
+/// Whether a server other than the local one is current: the job's
+/// statements go there.
+pub fn remote_current() -> bool {
+    SESSIONS.with(|s| matches!(s.borrow().current, drdar::Current::Remote(_)))
+}
+
+/// The current server's name: the local one's, a remote one's, or
+/// empty when none is current (after `RELEASE` or `DISCONNECT`).
+pub fn current_rdb(link: &Shared) -> String {
+    SESSIONS.with(|s| match &s.borrow().current {
+        drdar::Current::Local => JobNet { link }.local(),
+        drdar::Current::Remote(r) => r.clone(),
+        drdar::Current::None => String::new(),
+    })
+}
+
+/// STRSQL's query while a remote server is current, refused SQL0084.
+/// BLOCKED(sql): the requester's query brings no column descriptions
+/// back (`drdar::Server::query`), and Display Data shows rows by them.
+pub fn remote_query_refused() -> sql::Sqlca {
+    coded(-84, "42612", "a query at a remote server in STRSQL")
+}
+
 /// A program's embedded SQL with the job's connections in front.
 pub struct Routing<E> {
     inner: E,
