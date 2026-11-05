@@ -1,0 +1,108 @@
+== g5.sql
+> CREATE TABLE QSTEST.QSG1T (ID INT NOT NULL, NAME VARCHAR(20), AMT DECIMAL(7,2))
+  warning 7905 01567 [SQL7905] Table QSG1T in QSTEST created but was not journaled. 
+  ok count=0
+> CREATE VIEW QSTEST.QSG1V AS SELECT ID FROM QSTEST.QSG1T
+  ok count=0
+> GRANT SELECT ON QSTEST.QSG1T TO QUSER
+  ok count=0
+> GRANT INSERT ON QSTEST.QSG1T TO QSYSOPR
+  ok count=0
+> GRANT UPDATE ON TABLE QSTEST.QSG1T TO QPGMR
+  ok count=0
+> GRANT DELETE ON TABLE QSTEST.QSG1T TO QSRVBAS
+  ok count=0
+> GRANT ALTER ON QSTEST.QSG1T TO QSRV
+  ok count=0
+> GRANT INDEX ON QSTEST.QSG1T TO QBRMS
+  ok count=0
+> GRANT REFERENCES ON QSTEST.QSG1T TO QDBSHR
+  ok count=0
+> GRANT ALL ON QSTEST.QSG1T TO QTCP
+  ok count=0
+> GRANT SELECT ON QSTEST.QSG1T TO QSNADS WITH GRANT OPTION
+  ok count=0
+> GRANT UPDATE (NAME) ON QSTEST.QSG1T TO QDOC
+  ok count=0
+> GRANT REFERENCES (AMT) ON QSTEST.QSG1T TO QDFTOWN
+  ok count=0
+> GRANT SELECT ON QSTEST.QSG1T TO PUBLIC
+  ok count=0
+> !CMD DSPOBJAUT OBJ(QSTEST/QSG1T) OBJTYPE(*FILE) OUTPUT(*OUTFILE) OUTFILE(QSTEST/QSG1O)
+  cmd true
+  msg CPF9861 Output file QSG1O created in library QSTEST.
+  msg CPF9862 Member QSG1O added to output file QSG1O in library QSTEST.
+> SELECT OAUSR, OAOBJA, OAOPR, OAOMGT, OAEXS, OAALT, OAREF, OAREAD, OAADD, OAUPD, OADLT, OAEXEC FROM QSTEST.QSG1O ORDER BY OAUSR
+  cols | OAUSR CHAR(10,0) | OAOBJA CHAR(8,0) | OAOPR CHAR(1,0) | OAOMGT CHAR(1,0) | OAEXS CHAR(1,0) | OAALT CHAR(1,0) | OAREF CHAR(1,0) | OAREAD CHAR(1,0) | OAADD CHAR(1,0) | OAUPD CHAR(1,0) | OADLT CHAR(1,0) | OAEXEC CHAR(1,0)
+  row | *PUBLIC | USER DEF | X |  |  |  |  | X |  |  |  | 
+  row | QBRMS | USER DEF |  |  |  | X |  |  |  |  |  | 
+  row | QDBSHR | USER DEF |  |  |  |  | X |  |  |  |  | 
+  row | QDFTOWN | USER DEF |  |  |  |  | / |  |  |  |  | 
+  row | QDOC | USER DEF | X |  |  |  |  |  |  | / |  | 
+  row | QPGMR | USER DEF | X |  |  |  |  |  |  | X |  | 
+  row | {user} | *ALL | X | X | X | X | X | X | X | X | X | X
+  row | QSNADS | USER DEF | X | X |  |  |  | X |  |  |  | 
+  row | QSRV | USER DEF |  |  |  | X |  |  |  |  |  | 
+  row | QSRVBAS | USER DEF | X |  |  |  |  |  |  |  | X | 
+  row | QSYSOPR | USER DEF | X |  |  |  |  |  | X |  |  | 
+  row | QTCP | USER DEF | X |  |  | X | X | X | X | X | X | 
+  row | QUSER | USER DEF | X |  |  |  |  | X |  |  |  | 
+  rows=13
+> DROP TABLE QSTEST.QSG1O
+  ok count=0
+> REVOKE INSERT ON QSTEST.QSG1T FROM QTCP
+  ok count=0
+> REVOKE ALL ON QSTEST.QSG1T FROM QSNADS
+  ok count=0
+> REVOKE UPDATE (NAME) ON QSTEST.QSG1T FROM QDOC
+  ok count=0
+> REVOKE SELECT ON QSTEST.QSG1T FROM QSYSOPR
+  warning 569 01006 [SQL0569] Not all requested privileges revoked from object QSG1T in QSTEST type *FILE. 
+  ok count=0
+> REVOKE ALL ON QSTEST.QSG1T FROM PUBLIC
+  ok count=0
+> !CMD DSPOBJAUT OBJ(QSTEST/QSG1T) OBJTYPE(*FILE) OUTPUT(*OUTFILE) OUTFILE(QSTEST/QSG1O)
+  cmd true
+  msg CPF9861 Output file QSG1O created in library QSTEST.
+  msg CPF9862 Member QSG1O added to output file QSG1O in library QSTEST.
+> SELECT OAUSR, OAOBJA, OAOPR, OAOMGT, OAEXS, OAALT, OAREF, OAREAD, OAADD, OAUPD, OADLT, OAEXEC FROM QSTEST.QSG1O ORDER BY OAUSR
+  cols | OAUSR CHAR(10,0) | OAOBJA CHAR(8,0) | OAOPR CHAR(1,0) | OAOMGT CHAR(1,0) | OAEXS CHAR(1,0) | OAALT CHAR(1,0) | OAREF CHAR(1,0) | OAREAD CHAR(1,0) | OAADD CHAR(1,0) | OAUPD CHAR(1,0) | OADLT CHAR(1,0) | OAEXEC CHAR(1,0)
+  row | *PUBLIC | *EXCLUDE |  |  |  |  |  |  |  |  |  | 
+  row | QBRMS | USER DEF |  |  |  | X |  |  |  |  |  | 
+  row | QDBSHR | USER DEF |  |  |  |  | X |  |  |  |  | 
+  row | QDFTOWN | USER DEF |  |  |  |  | / |  |  |  |  | 
+  row | QPGMR | USER DEF | X |  |  |  |  |  |  | X |  | 
+  row | {user} | *ALL | X | X | X | X | X | X | X | X | X | X
+  row | QSRV | USER DEF |  |  |  | X |  |  |  |  |  | 
+  row | QSRVBAS | USER DEF | X |  |  |  |  |  |  |  | X | 
+  row | QSYSOPR | USER DEF | X |  |  |  |  |  | X |  |  | 
+  row | QTCP | USER DEF | X |  |  | X | X | X |  | X | X | 
+  row | QUSER | USER DEF | X |  |  |  |  | X |  |  |  | 
+  rows=11
+> DROP TABLE QSTEST.QSG1O
+  ok count=0
+> GRANT SELECT ON QSTEST.QSG1V TO QUSER
+  ok count=0
+> GRANT UPDATE ON QSTEST.QSG1V TO QPGMR
+  ok count=0
+> GRANT ALTER ON QSTEST.QSG1V TO QSRV
+  ok count=0
+> GRANT REFERENCES ON QSTEST.QSG1V TO QBRMS
+  ok count=0
+> !CMD DSPOBJAUT OBJ(QSTEST/QSG1V) OBJTYPE(*FILE) OUTPUT(*OUTFILE) OUTFILE(QSTEST/QSG1O)
+  cmd true
+  msg CPF9861 Output file QSG1O created in library QSTEST.
+  msg CPF9862 Member QSG1O added to output file QSG1O in library QSTEST.
+> SELECT OAUSR, OAOBJA, OAOPR, OAOMGT, OAEXS, OAALT, OAREF, OAREAD, OAADD, OAUPD, OADLT, OAEXEC FROM QSTEST.QSG1O ORDER BY OAUSR
+  cols | OAUSR CHAR(10,0) | OAOBJA CHAR(8,0) | OAOPR CHAR(1,0) | OAOMGT CHAR(1,0) | OAEXS CHAR(1,0) | OAALT CHAR(1,0) | OAREF CHAR(1,0) | OAREAD CHAR(1,0) | OAADD CHAR(1,0) | OAUPD CHAR(1,0) | OADLT CHAR(1,0) | OAEXEC CHAR(1,0)
+  row | *PUBLIC | *EXCLUDE |  |  |  |  |  |  |  |  |  | 
+  row | QBRMS | USER DEF |  |  |  |  | X |  |  |  |  | 
+  row | QPGMR | USER DEF | X |  |  |  |  |  |  | X |  | 
+  row | {user} | *ALL | X | X | X | X | X | X | X | X | X | X
+  row | QSRV | USER DEF |  |  |  | X |  |  |  |  |  | 
+  row | QUSER | USER DEF | X |  |  |  |  | X |  |  |  | 
+  rows=6
+> DROP TABLE QSTEST.QSG1O
+  ok count=0
+> DROP TABLE QSTEST.QSG1T
+  ok count=0
