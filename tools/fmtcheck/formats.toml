@@ -71,6 +71,8 @@ files = [
     "database/db/src/sqlinf/entry.rs",
     "database/db/src/sqlinf/names.rs",
     "database/db/src/sqlinf/body.rs",
+    "database/db/src/cst/model.rs",
+    "database/db/src/cst/check.rs",
 ]
 
 [[format]]

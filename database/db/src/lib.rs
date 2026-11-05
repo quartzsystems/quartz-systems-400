@@ -13,6 +13,7 @@
 pub mod auth;
 pub mod chg;
 pub mod cmt;
+pub mod cst;
 pub mod dsp;
 mod error;
 pub mod file;

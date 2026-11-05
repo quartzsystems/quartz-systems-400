@@ -148,6 +148,17 @@ pub struct Record {
     pub null_map: Vec<u8>,
 }
 
+/// A record change, for the constraints and (later) trigger programs.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RowEvent {
+    /// `WRITE`.
+    Insert,
+    /// `UPDATE`.
+    Update,
+    /// `DELETE`.
+    Delete,
+}
+
 /// Where the open data path stands.
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Pos {
@@ -301,7 +312,10 @@ impl Odp {
             }
         };
         member.jrn.job = opts.job;
-        if let Err(e) = crate::journal::member_event(txn, &member, "OP") {
+        // A logical file over a file in check pending is refused at its
+        // first change (`before_write`), not here.
+        let usable = crate::cst::enforce::usable(&member);
+        if let Err(e) = usable.and_then(|()| crate::journal::member_event(txn, &member, "OP")) {
             let locks = txn.store().locks_mut();
             locks.unlock(opts.job, member.id(), file_lock);
             locks.unlock(opts.job, file, file_lock);
@@ -412,6 +426,27 @@ impl Odp {
         }
     }
 
+    /// Before a physical record changes: the constraints. This is where
+    /// before-row trigger programs plug in (`ADDPFTRG TRGTIME(*BEFORE)`,
+    /// BLOCKED(sql): triggers are a later wave), after the constraints'
+    /// own checks as IBM orders them; after-row triggers go after the
+    /// member's change in `write`, `update` and `delete`.
+    fn before_row(
+        &mut self,
+        txn: &mut Txn<'_>,
+        event: RowEvent,
+        rrn: Option<u64>,
+        new: Option<(&[u8], &[u8])>,
+    ) -> Result<()> {
+        use crate::cst::enforce;
+        match (event, rrn, new) {
+            (RowEvent::Insert, _, Some((d, n))) => enforce::before_write(txn, &self.member, d, n),
+            (RowEvent::Update, Some(rrn), Some((d, n))) => enforce::before_update(txn, &self.member, rrn, d, n),
+            (RowEvent::Delete, Some(rrn), _) => enforce::before_delete(txn, &mut self.member, rrn, self.cmt.as_ref()),
+            _ => Ok(()),
+        }
+    }
+
     /// `begin_change` for the based-on member a logical path writes.
     fn begin_change_on(&mut self, txn: &mut Txn<'_>, m: &mut Member) -> Result<()> {
         let Some(c) = self.cmt.clone() else {
@@ -447,6 +482,7 @@ impl Odp {
     fn write_logical(&mut self, txn: &mut Txn<'_>, data: &[u8], null_map: &[u8]) -> Result<u64> {
         let (mut base, lf_fmt, log, base_fmt) = self.base_for_change(txn)?;
         let (rec, nulls) = lfwrite::to_base(&lf_fmt, &log, &base_fmt, data, null_map, None)?;
+        crate::cst::enforce::before_write(txn, &base, &rec, &nulls)?;
         self.begin_change_on(txn, &mut base)?;
         let rrn = base.write_new(txn, &rec, &nulls)?;
         self.hold_new(base.id(), rrn);
@@ -474,6 +510,7 @@ impl Odp {
             null_map,
             Some((&old.record, &old.null_map)),
         )?;
+        crate::cst::enforce::before_update(txn, &base, rrn, &rec, &nulls)?;
         self.begin_change_on(txn, &mut base)?;
         base.update(txn, rrn, &rec, &nulls)
     }
@@ -491,6 +528,7 @@ impl Odp {
         }
         let mut base = self.member.open_base(txn, fi)?;
         self.begin_change_on(txn, &mut base)?;
+        crate::cst::enforce::before_delete(txn, &mut base, rrn, self.cmt.as_ref())?;
         base.delete(txn, rrn)
     }
 
@@ -1210,6 +1248,10 @@ impl Odp {
                 }
             };
         }
+        if let Err(e) = self.before_row(txn, RowEvent::Insert, None, Some((data, null_map))) {
+            self.fb.fail(&e);
+            return Err(e);
+        }
         self.begin_change(txn)?;
         match self.member.write_new(txn, data, null_map) {
             Ok(rrn) => {
@@ -1250,8 +1292,9 @@ impl Odp {
         let result = if self.member.is_logical() {
             self.update_logical(txn, k.rrn, data, null_map)
         } else {
-            self.begin_change(txn)?;
-            self.member.update(txn, k.rrn, data, null_map)
+            self.before_row(txn, RowEvent::Update, Some(k.rrn), Some((data, null_map)))
+                .and_then(|()| self.begin_change(txn))
+                .and_then(|()| self.member.update(txn, k.rrn, data, null_map))
         };
         self.keep_or_unlock();
         self.fb.rrn = k.rrn;
@@ -1271,8 +1314,9 @@ impl Odp {
         let result = if self.member.is_logical() {
             self.delete_logical(txn, k.rrn)
         } else {
-            self.begin_change(txn)?;
-            self.member.delete(txn, k.rrn)
+            self.begin_change(txn)
+                .and_then(|()| self.before_row(txn, RowEvent::Delete, Some(k.rrn), None))
+                .and_then(|()| self.member.delete(txn, k.rrn))
         };
         self.keep_or_unlock();
         self.fb.rrn = k.rrn;

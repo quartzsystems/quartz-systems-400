@@ -858,6 +858,7 @@ pub fn delete_file(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId) -> Result<
         }
     } else {
         has_dependents(&desc, None)?;
+        crate::cst::ops::on_delete_file(txn, job, file, desc.header.changed)?;
     }
     for m in &desc.members {
         member::destroy(txn, job, m.object)?;

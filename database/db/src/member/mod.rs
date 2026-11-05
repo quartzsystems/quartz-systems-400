@@ -196,6 +196,8 @@ pub struct Member {
     pub dependents: Vec<Dependent>,
     /// Who changes it, for the journal.
     pub jrn: crate::journal::JrnCtx,
+    /// Physical member: the file's constraints.
+    pub csts: Option<std::sync::Arc<crate::cst::Active>>,
 }
 
 /// What a new physical member takes from its file.
@@ -365,6 +367,7 @@ impl Member {
             bases: Vec::new(),
             dependents: Vec::new(),
             jrn: crate::journal::JrnCtx::default(),
+            csts: None,
         };
         if file.attr.kind == file::FileKind::Logical {
             let members = m.core.base_members(txn)?;
@@ -382,6 +385,7 @@ impl Member {
             }
         } else {
             m.load_dependents(txn)?;
+            m.csts = crate::cst::Active::load(txn, file)?;
         }
         if m.core.attr.path_invalid && m.file.attr.maint == Maint::Dly {
             m.rebuild_path(txn, &mut |_, _| {})?;
@@ -793,7 +797,7 @@ impl Member {
         self.physical_only()?;
         self.refresh_dependents(txn)?;
         Space::truncate(txn, self.core.id, 0)?;
-        let slots: &[usize] = if lobs { &[attr::PATH_ROOT, attr::FREE_ROOT, lob::LOB_ROOT] } else { &[attr::PATH_ROOT, attr::FREE_ROOT] };
+        let slots: &[usize] = if lobs { &[attr::PATH_ROOT, attr::FREE_ROOT, crate::cst::CST_ROOT, lob::LOB_ROOT] } else { &[attr::PATH_ROOT, attr::FREE_ROOT, crate::cst::CST_ROOT] };
         for &slot in slots {
             if let Some(root) = self.core.roots[slot] {
                 btree::free_tree(txn, root)?;
@@ -987,11 +991,88 @@ impl Member {
             }
             planned.push((which, p, key));
         }
+        let csts = self.cst_entries(txn, rrn, record, null_map, true)?;
         for (which, mut p, key) in planned {
             let fresh = p.insert(txn, &key)?;
             self.store_target(txn, which, &p, i64::from(fresh))?;
         }
+        if let Some((mut tree, entries)) = csts {
+            for k in &entries {
+                tree.insert(txn, k)?;
+            }
+            self.core.set_root(txn, crate::cst::CST_ROOT, tree.root)?;
+        }
         Ok(())
+    }
+
+    /// The constraint tree and the entries a record makes in it, the
+    /// unique ones checked against it when `check`.
+    fn cst_entries(
+        &self,
+        txn: &mut Txn<'_>,
+        rrn: u64,
+        record: &[u8],
+        null_map: &[u8],
+        check: bool,
+    ) -> Result<Option<(Path, Vec<PathKey>)>> {
+        let Some(a) = &self.csts else {
+            return Ok(None);
+        };
+        let tree = a.tree(self.core.id, self.core.roots[crate::cst::CST_ROOT]);
+        let mut out = Vec::new();
+        for (_, k, unique) in a.entries(rrn, record, null_map)? {
+            if check && unique && tree.has_key(txn, &k.key)? {
+                return Err(DbError::DuplicateKey {
+                    file: self.file.name().to_string(),
+                    member: self.core.name.to_string(),
+                    key: hex(&k.key),
+                });
+            }
+            out.push(k);
+        }
+        Ok(Some((tree, out)))
+    }
+
+    /// Build the constraint tree from the records (a constraint added, a
+    /// file reformatted). A repeated unique key fails with the constraint's
+    /// name in `DuplicateKeys`.
+    pub fn rebuild_cst_tree(&mut self, txn: &mut Txn<'_>) -> Result<()> {
+        if let Some(root) = self.core.roots[crate::cst::CST_ROOT] {
+            btree::free_tree(txn, root)?;
+            self.core.set_root(txn, crate::cst::CST_ROOT, None)?;
+        }
+        let Some(a) = self.csts.clone() else {
+            return Ok(());
+        };
+        let mut all = Vec::new();
+        for rrn in 1..=self.core.attr.slots {
+            let Some(s) = self.core.read_slot(txn, rrn)? else { continue };
+            if s.deleted {
+                continue;
+            }
+            for (ki, k, unique) in a.entries(rrn, &s.record, &s.null_map)? {
+                all.push((k, unique, ki));
+            }
+        }
+        all.sort_by(|x, y| x.0.cmp(&y.0));
+        for w in all.windows(2) {
+            if w[0].1 && w[1].1 && w[0].0.key == w[1].0.key {
+                return Err(DbError::DuplicateKeys {
+                    file: self.file.name().to_string(),
+                    member: self.core.name.to_string(),
+                    key: a.csts[a.keys[w[0].2].index].name.clone(),
+                });
+            }
+        }
+        let mut tree = a.tree(self.core.id, None);
+        tree.load(txn, all.into_iter().map(|e| e.0).collect())?;
+        self.core.set_root(txn, crate::cst::CST_ROOT, tree.root)
+    }
+
+    /// The member's constraint tree, when the file has keyed constraints.
+    #[must_use]
+    pub fn cst_tree(&self) -> Option<Path> {
+        self.csts.as_ref().map(|a| a.tree(self.core.id, self.core.roots[crate::cst::CST_ROOT]))
     }
 
     /// Remove a record from every path.
@@ -1009,6 +1090,12 @@ impl Member {
             };
             let had = p.remove(txn, &key)?;
             self.store_target(txn, which, &p, -i64::from(had))?;
+        }
+        if let Some((mut tree, entries)) = self.cst_entries(txn, rrn, record, null_map, false)? {
+            for k in &entries {
+                tree.remove(txn, k)?;
+            }
+            self.core.set_root(txn, crate::cst::CST_ROOT, tree.root)?;
         }
         Ok(())
     }

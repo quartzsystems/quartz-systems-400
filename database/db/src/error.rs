@@ -249,6 +249,76 @@ pub enum DbError {
         what: String,
     },
 
+    /// A record breaks a check constraint.
+    #[error("check constraint {cst} of member {member} in file {file} is not met")]
+    CheckViolation {
+        /// The constraint.
+        cst: String,
+        /// File name.
+        file: String,
+        /// Member name.
+        member: String,
+    },
+
+    /// A foreign key with no parent key to match (insert or update of the
+    /// dependent, or a `SET DEFAULT` delete rule).
+    #[error("referential constraint {cst} of member {member} in file {file}: no matching parent key")]
+    RefNoParent {
+        /// The constraint.
+        cst: String,
+        /// File name.
+        file: String,
+        /// Member name.
+        member: String,
+    },
+
+    /// A parent key change or delete prevented by dependent records.
+    #[error("referential constraint {cst} of file {dependent} prevents the {} of a parent key in member {member} of file {file}", if *update { "update" } else { "delete" })]
+    RefRestricted {
+        /// The dependent file's constraint.
+        cst: String,
+        /// The dependent file.
+        dependent: String,
+        /// The parent file.
+        file: String,
+        /// Its member.
+        member: String,
+        /// An update (else a delete).
+        update: bool,
+        /// The rule is `NO ACTION` (else `RESTRICT`).
+        no_action: bool,
+    },
+
+    /// A file whose constraint is in check pending.
+    #[error("constraint {cst} of file {file} is in check pending")]
+    CheckPending {
+        /// The constraint.
+        cst: String,
+        /// File name.
+        file: String,
+    },
+
+    /// A delete rule that changes dependent records needs the files journaled.
+    #[error("file {file} must be journaled, with its dependent files, for the delete rules of its constraints")]
+    RuleNeedsJournal {
+        /// File name.
+        file: String,
+    },
+
+    /// A constraint that cannot be added, removed or changed, with IBM's
+    /// diagnostic.
+    #[error("{what}")]
+    Constraint {
+        /// The escape: `CPF32B0` add, `CPF32B1` remove, `CPF32B2` change.
+        msgid: &'static str,
+        /// Why.
+        reason: crate::cst::ops::Refusal,
+        /// The constraint.
+        cst: String,
+        /// What is wrong.
+        what: String,
+    },
+
     /// A long operation ended at one of its pauses ([`crate::Pause`]).
     #[error("the operation was ended before it finished")]
     Ended,
@@ -276,12 +346,17 @@ impl DbError {
             Self::NoLockedRecord { .. } => "CPF501B",
             Self::ShareMismatch { .. } => "CPF4123",
             Self::Copy { .. } => "CPF2817",
-            Self::CommitNeedsJournal { .. } => "CPF4328",
+            Self::CommitNeedsJournal { .. } | Self::RuleNeedsJournal { .. } => "CPF4328",
             Self::CommitOpen => "CPF4293",
             Self::CommitNotActive => "CPF8350",
             Self::CommitActive => "CPF8351",
             Self::CommitFilesOpen => "CPF8355",
             Self::Corrupt { .. } => "CPF3113",
+            Self::CheckViolation { .. } => "CPF502F",
+            Self::RefNoParent { .. } => "CPF502D",
+            Self::RefRestricted { .. } => "CPF503A",
+            Self::CheckPending { .. } => "CPF523B",
+            Self::Constraint { msgid, .. } => msgid,
             Self::MemberFull { .. }
             | Self::RecordLength { .. }
             | Self::HasDependents { .. }

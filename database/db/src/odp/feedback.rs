@@ -19,6 +19,8 @@ pub mod status {
     pub const NOT_FOUND: u16 = 12;
     /// Duplicate key on a write or update.
     pub const DUPLICATE_KEY: u16 = 1021;
+    /// A referential or check constraint refused the operation.
+    pub const CONSTRAINT: u16 = 1022;
     /// Operation on a closed file.
     pub const CLOSED: u16 = 1211;
     /// Record locked by another job.
@@ -98,6 +100,10 @@ impl IoFeedback {
     pub fn fail(&mut self, e: &DbError) {
         self.status = match e {
             DbError::DuplicateKey { .. } => status::DUPLICATE_KEY,
+            DbError::CheckViolation { .. }
+            | DbError::RefNoParent { .. }
+            | DbError::RefRestricted { .. }
+            | DbError::CheckPending { .. } => status::CONSTRAINT,
             DbError::RecordLocked { .. } => status::LOCKED,
             DbError::NoLockedRecord { .. } => status::NO_PRIOR_READ,
             DbError::FileLocked { .. } => status::ALLOCATE,

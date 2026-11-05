@@ -313,7 +313,10 @@ the attribute area, `base_count` × `ObjectId`, one per format of the
 logical file in format order (every format of a `PFILE` list uses its
 first file). Header tree roots: slot 0 the access path (§6), slot 1 the
 free-slot tree (`REUSEDLT(*YES)`): keys are RRNs of deleted slots, values
-empty; slot 2 the LOB tree of a physical member (below).
+empty; slot 2 the LOB tree of a physical member (below); slot 3 the
+constraint tree of a physical member whose file has unique, primary or
+foreign keys (§8.1, `SqlConstraint`). A member made before constraints
+has slot 3 empty, as a file without them does.
 
 **A rebuild beside the member.** A change of record format that
 converts the records (`ALTER TABLE`, `CHGPF SRCFILE`) builds each
@@ -767,6 +770,58 @@ The `DEPENDENCY` entry: one object a view depends on, by name.
 | 4 | 10 | library | CP037 |
 | 14 | 10 | name | CP037 system name |
 | 24 | 8 | reserved2 | 0 |
+The bodies of the tags SQL completion has defined so far follow; a tag
+not described here is still a draft.
+
+### `SqlConstraint` (variable)
+
+The body of a `CONSTRAINT` entry: one constraint of a physical file
+(`ADDPFCST`, SQL's `CONSTRAINT` clauses), or, on a parent file, the
+back reference of a dependent file's referential constraint (kind 5).
+The parts follow the fixed 48 bytes in this order: `name_len` bytes of
+the SQL name (UTF-8), `col_count` × 10 bytes of CP037 field names (the
+key, the foreign key, or the fields a check reads), `other_name_len`
+bytes of UTF-8 (a referential constraint's parent key constraint; a
+back reference's dependent constraint), `text_len` bytes of the check
+condition as the catalogs show it (UTF-8), and `program_len` bytes of
+the compiled condition (below).
+
+| 0 | 1 | kind | 1 `*UNQCST`, 2 `*PRIKEY`, 3 `*CHKCST`, 4 `*REFCST`, 5 dependent (the back reference on the parent) |
+| 1 | 1 | state | bit 0 disabled, bit 1 check pending |
+| 2 | 1 | delete_rule | 0 `NO ACTION`, 1 `RESTRICT`, 2 `CASCADE`, 3 `SET NULL`, 4 `SET DEFAULT` |
+| 3 | 1 | update_rule | 0 `NO ACTION`, 1 `RESTRICT` |
+| 4 | 2 | number | the constraint's number in the member's constraint tree, unique in the file; 0 for kinds 3 and 5 |
+| 6 | 2 | col_count | field names in the parts |
+| 8 | 16 | other | `ObjectId`: kind 4 the parent file, kind 5 the dependent file |
+| 24 | 2 | name_len | |
+| 26 | 2 | other_name_len | |
+| 28 | 4 | text_len | |
+| 32 | 4 | program_len | 0 unless kind 3 |
+| 36 | 12 | reserved | 0 |
+| 48 | variable | parts | as above |
+
+**The constraint tree.** A physical member's header tree root slot 3
+holds one B+tree of `PathKey`s (§6, single format) for all the file's
+unique, primary and foreign keys: each key is the constraint's
+`number`, 2 bytes big-endian, then the key fields' parts encoded as §6
+encodes them without a null-capable field's null byte, zero padded to
+the longest constraint key. A foreign key with a null part has no
+entry; a unique key with a null part has one but is never a duplicate
+(nulls are not equal). The tree is rebuilt whenever a constraint is
+added or removed or the format changes.
+
+**A check program** is a prefix tree, each node a code byte then its
+operands: 1 field (10 bytes CP037 name), 2 number (2-byte length,
+ASCII digits), 3 float (8 bytes, IEEE little-endian), 4 string (2-byte
+length, UTF-8), 5 `NULL`, 6 minus (one node), 7 arithmetic (operator 0
+`+` 1 `-` 2 `*` 3 `/`, two nodes), 8 `||` (two), 9 comparison (operator
+0 `=` 1 `<>` 2 `<` 3 `<=` 4 `>` 5 `>=`, two), 10 `AND` (two), 11 `OR`
+(two), 12 `NOT` (one), 13 `IS NULL` (negated byte, one), 14 `BETWEEN`
+(negated byte, three), 15 `IN` (negated byte, 2-byte count, the value,
+then count nodes), 16 `LIKE` (negated byte, has-escape byte, two or
+three nodes), 17 function (function byte: 0 `UPPER`, 1 `LOWER`, 2
+`LENGTH`, 3 `SUBSTR`, 4 `TRIM`, 5 `LTRIM`, 6 `RTRIM`, 7 `ABS`, 8 `MOD`, 9
+`COALESCE`; argument count byte; the arguments).
 
 ### 8.2 The SQL name index
 
