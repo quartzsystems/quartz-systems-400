@@ -40,9 +40,19 @@ fn ident(system: &System, number: u32) -> JobIdent {
     )
 }
 
+/// `JOB`'s job name: the first element of STRDBMON's (the second is
+/// the filter operator), ENDDBMON's whole value.
+fn job_of(parms: &Parms) -> Option<&Value> {
+    match parms.get("JOB") {
+        Some(Value::Elems(items)) => items.first().and_then(Option::as_ref),
+        other => other,
+    }
+}
+
 /// The `JOB` parameter: the scope and how messages name it.
 fn scope(system: &System, parms: &Parms) -> Result<(Scope, String), String> {
-    let quals: Vec<String> = match parms.get("JOB") {
+    let job = job_of(parms);
+    let quals: Vec<String> = match job {
         Some(Value::Qual(p)) => p.iter().map(|v| v.source().trim().to_ascii_uppercase()).collect(),
         Some(v) => vec![v.source().trim().to_ascii_uppercase()],
         None => vec!["*".into()],
@@ -55,9 +65,14 @@ fn scope(system: &System, parms: &Parms) -> Result<(Scope, String), String> {
         // BLOCKED(sql): a monitor watches one job or every job.
         return Err(generic_job());
     }
-    let n = super::svccmd::job_number(system, parms, "JOB")?.unwrap_or(system.current_job);
+    let n = super::svccmd::job_number_of(system, job)?.unwrap_or(system.current_job);
     let text = if part(0) == "*" || part(0).is_empty() { "*".to_string() } else { ident(system, n).qualified() };
     Ok((Scope::Job(n), text))
+}
+
+/// `kwd(value)` refused: what QS/400 does not do.
+fn not_kept<T>(kwd: &str, value: &str, why: Why) -> Result<T, String> {
+    Err(refused(kwd, value, why))
 }
 
 /// A parameter that must keep its default: what QS/400 does not do.
@@ -103,8 +118,21 @@ fn start(system: &mut System, parms: &Parms) -> Result<(String, String), String>
     for kwd in ["RUNTHLD", "STGTHLD", "FTRLCLPORT"] {
         only_default(parms, kwd, &["*NONE", "-1", ""], Why::Filter)?;
     }
+    only_default(parms, "FTRSQLCODE", &["*NONE", "-1000000", ""], Why::Filter)?;
     only_default(parms, "INCSYSSQL", &["*NO", ""], Why::SystemSql)?;
-    only_default(parms, "TYPE", &["*BASIC", "*SUMMARY", ""], Why::Detail)?;
+    only_default(parms, "HOSTVAR", &["*BASIC", ""], Why::HostVariables)?;
+    if let Some(Value::Elems(items)) = parms.get("JOB")
+        && let Some(Some(op)) = items.get(1)
+        && !op.source().trim().eq_ignore_ascii_case("*EQ")
+    {
+        return not_kept("JOB", &op.source(), Why::Filter);
+    }
+    // TYPE(*DETAIL), the default since IBM i 7.2, is refused whether
+    // given or defaulted: its 3019 records are not written.
+    let typ = parms.name("TYPE");
+    if !matches!(typ.as_str(), "*BASIC" | "*SUMMARY") {
+        return not_kept("TYPE", if typ.is_empty() { "*DETAIL" } else { &typ }, Why::Detail);
+    }
     let (file, lib) = parms.qual("OUTFILE");
     let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib.to_ascii_uppercase() };
     let file = file.to_ascii_uppercase();

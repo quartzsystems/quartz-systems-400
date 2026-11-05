@@ -6073,8 +6073,8 @@ with them.
 :PD.Type up to 10 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='ENDDBMON/COMMENT'.Monitor comment (COMMENT)
-:P.The monitor comment for this command.
+:HELP NAME='ENDDBMON/COMMENT'.Comment (COMMENT)
+:P.The comment for this command.
 :PARML.
 :PT.:PK DEF.*BLANK:EPK.
 :PD.Blanks&colon. no value.
@@ -8823,9 +8823,8 @@ when the file has none.
 :HELP NAME='STRDBMON/JOB'.Job name (JOB)
 :P.The job, by name, user and number. A job name alone is enough when
 only one job has it.
-:PARML.
-:EPARML.
-:P.Also accepted&colon. *.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Name
 :PARML.
 :PT.:PK.*ALL:EPK.
 :PD.All of them.
@@ -8834,6 +8833,7 @@ only one job has it.
 characters that end with an asterisk (*) select every name that starts
 with them.
 :EPARML.
+:P.Also accepted&colon. *.
 :P.User&colon. the name can be qualified by it.
 :PARML.
 :PT.:PK.*ALL:EPK.
@@ -8850,11 +8850,18 @@ with them.
 :PT.:PV.character-value:EPV.
 :PD.Type up to 6 characters.
 :EPARML.
+:H4.Part 2&colon. Filter operator
+:PARML.
+:PT.:PK DEF.*EQ:EPK.
+:PD.Equal to.
+:PT.:PK.*NE:EPK.
+:PD.Not equal to.
+:EPARML.
 :EHELP.
 :HELP NAME='STRDBMON/TYPE'.Type of records (TYPE)
 :P.The type of records for this command.
 :PARML.
-:PT.:PK DEF.*BASIC:EPK.
+:PT.:PK.*BASIC:EPK.
 :PD.Basic.
 :EPARML.
 :P.Also accepted&colon. *DETAIL, *SUMMARY.
@@ -8870,7 +8877,6 @@ with them.
 :EHELP.
 :HELP NAME='STRDBMON/INLNBRRCD'.Initial number of records (INLNBRRCD)
 :P.The initial number of records for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -8880,7 +8886,6 @@ with them.
 :EHELP.
 :HELP NAME='STRDBMON/RUNTHLD'.Run time threshold (RUNTHLD)
 :P.The run time threshold for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -8890,7 +8895,6 @@ with them.
 :EHELP.
 :HELP NAME='STRDBMON/STGTHLD'.Storage threshold (STGTHLD)
 :P.The storage threshold for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -8899,24 +8903,23 @@ with them.
 :EPARML.
 :EHELP.
 :HELP NAME='STRDBMON/INCSYSSQL'.Include system SQL (INCSYSSQL)
-:P.The include system SQL for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.Whether to include system SQL.
 :PARML.
 :PT.:PK DEF.*NO:EPK.
 :PD.No.
 :PT.:PK.*YES:EPK.
 :PD.Yes.
 :EPARML.
-:P.Also accepted&colon. *INI.
 :EHELP.
-:HELP NAME='STRDBMON/FTRFILE'.Filter by query file (FTRFILE)
-:P.The filter by query file for this command.
+:HELP NAME='STRDBMON/FTRFILE'.Filter by database file (FTRFILE)
+:P.The filter by database file for this command.
 :P.Up to 10 values can be given.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
 :EPARML.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. File
 :PARML.
 :PT.:PK.*ALL:EPK.
 :PD.All of them.
@@ -8930,13 +8933,20 @@ with them.
 :PT.:PV.name:EPV.
 :PD.Type a name of up to 10 characters.
 :EPARML.
+:H4.Part 2&colon. Filter operator
+:PARML.
+:PT.:PK.*EQ:EPK.
+:PD.Equal to.
+:PT.:PK.*NE:EPK.
+:PD.Not equal to.
+:EPARML.
 :EHELP.
 :HELP NAME='STRDBMON/FTRUSER'.Filter by user profile (FTRUSER)
 :P.The filter by user profile for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.Up to 10 values can be given.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. User
 :PARML.
-:PT.:PK DEF.*NONE:EPK.
-:PD.None.
 :PT.:PK.*CURRENT:EPK.
 :PD.The current one.
 :PT.:PV.generic-name:EPV.
@@ -8944,10 +8954,16 @@ with them.
 characters that end with an asterisk (*) select every name that starts
 with them.
 :EPARML.
+:H4.Part 2&colon. Filter operator
+:PARML.
+:PT.:PK DEF.*EQ:EPK.
+:PD.Equal to.
+:PT.:PK.*NE:EPK.
+:PD.Not equal to.
+:EPARML.
 :EHELP.
 :HELP NAME='STRDBMON/FTRINTNETA'.Filter by internet address (FTRINTNETA)
 :P.The filter by internet address for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -8957,9 +8973,8 @@ with them.
 :PD.Type up to 254 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='STRDBMON/FTRLCLPORT'.Filter by port number (FTRLCLPORT)
-:P.The filter by port number for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
+:HELP NAME='STRDBMON/FTRLCLPORT'.Filter by local port number (FTRLCLPORT)
+:P.The filter by local port number for this command.
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -8969,7 +8984,6 @@ with them.
 :EHELP.
 :HELP NAME='STRDBMON/FTRQRYGOVR'.Filter by query governor (FTRQRYGOVR)
 :P.The filter by query governor for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -8980,7 +8994,6 @@ with them.
 :EHELP.
 :HELP NAME='STRDBMON/FTRCLTACG'.Filter by accounting string (FTRCLTACG)
 :P.The filter by accounting string for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -8990,7 +9003,6 @@ with them.
 :EHELP.
 :HELP NAME='STRDBMON/FTRCLTAPP'.Filter by application name (FTRCLTAPP)
 :P.The filter by application name for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -9000,7 +9012,6 @@ with them.
 :EHELP.
 :HELP NAME='STRDBMON/FTRCLTPGM'.Filter by program name (FTRCLTPGM)
 :P.The filter by program name for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -9010,7 +9021,6 @@ with them.
 :EHELP.
 :HELP NAME='STRDBMON/FTRCLTUSR'.Filter by client user ID (FTRCLTUSR)
 :P.The filter by client user ID for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -9020,7 +9030,6 @@ with them.
 :EHELP.
 :HELP NAME='STRDBMON/FTRCLTWS'.Filter by work station (FTRCLTWS)
 :P.The filter by work station for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
@@ -9028,8 +9037,28 @@ with them.
 :PD.Type up to 128 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='STRDBMON/COMMENT'.Monitor comment (COMMENT)
-:P.The monitor comment for this command.
+:HELP NAME='STRDBMON/FTRSQLCODE'.Filter by SQLCODE (FTRSQLCODE)
+:P.The filter by SQLCODE for this command.
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*WARN:EPK.
+:PD.A warning message is sent.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from -99999 to 99999.
+:EPARML.
+:P.Also accepted&colon. *NONZERO, *ERROR.
+:EHELP.
+:HELP NAME='STRDBMON/HOSTVAR'.Host Variable Values (HOSTVAR)
+:P.The host Variable Values for this command.
+:PARML.
+:PT.:PK DEF.*BASIC:EPK.
+:PD.Basic.
+:EPARML.
+:P.Also accepted&colon. *CONDENSED, *SECURE.
+:EHELP.
+:HELP NAME='STRDBMON/COMMENT'.Comment (COMMENT)
+:P.The comment for this command.
 :PARML.
 :PT.:PK DEF.*BLANK:EPK.
 :PD.Blanks&colon. no value.

@@ -119,8 +119,13 @@ fn providers_text(system: &mut System) -> R {
 
 /// The job a `JOB` parameter names: its number, `None` for `*ALL`.
 pub fn job_number(system: &System, parms: &Parms, kwd: &str) -> Result<Option<u32>, String> {
+    job_number_of(system, parms.get(kwd))
+}
+
+/// [`job_number`] of a job name value already taken from its parameter.
+pub fn job_number_of(system: &System, job: Option<&Value>) -> Result<Option<u32>, String> {
     let me = system.current_job;
-    let quals: Vec<String> = match parms.get(kwd) {
+    let quals: Vec<String> = match job {
         Some(Value::Qual(p)) => p.iter().map(|v| v.source().trim().to_ascii_uppercase()).collect(),
         Some(v) => vec![v.source().trim().to_ascii_uppercase()],
         None => vec!["*".into()],

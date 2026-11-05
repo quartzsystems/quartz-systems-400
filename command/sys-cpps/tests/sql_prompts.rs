@@ -151,11 +151,7 @@ fn strsql() {
     check(&["prompt-strsql"], "?STRSQL", &[&[]]);
 }
 
-// BLOCKED(sql): the definitions of these commands come with their
-// processing (SQL-11: STRDBMON, ENDDBMON, PRTSQLINF; SQL-13:
-// DLTSQLPKG); the captures are here for them.
 #[test]
-#[ignore = "BLOCKED(sql): STRDBMON is defined with the database monitor"]
 fn strdbmon() {
     check(
         &["prompt-strdbmon-v", "prompt-strdbmon-v-2", "prompt-strdbmon-v-3", "prompt-strdbmon-v-4"],
@@ -165,19 +161,16 @@ fn strdbmon() {
 }
 
 #[test]
-#[ignore = "BLOCKED(sql): ENDDBMON is defined with the database monitor"]
 fn enddbmon() {
     check(&["prompt-enddbmon"], "?ENDDBMON", &[&[]]);
 }
 
 #[test]
-#[ignore = "BLOCKED(sql): PRTSQLINF is defined with its engine"]
 fn prtsqlinf() {
     check(&["prompt-prtsqlinf"], "?PRTSQLINF", &[&[]]);
 }
 
 #[test]
-#[ignore = "BLOCKED(sql): DLTSQLPKG is defined with *SQLPKG"]
 fn dltsqlpkg() {
     check(&["prompt-dltsqlpkg"], "?DLTSQLPKG", &[&[]]);
 }

@@ -10,7 +10,7 @@
              PARM       KWD(MONID) TYPE(*CHAR) LEN(10) SPCVAL((*ALL)) +
                           PROMPT('Monitor ID')
              PARM       KWD(COMMENT) TYPE(*CHAR) LEN(100) DFT(*BLANK) +
-                          SPCVAL((*BLANK)) PROMPT('Monitor comment')
+                          SPCVAL((*BLANK)) PROMPT('Comment')
              QJ:        QUAL       TYPE(*GENERIC) LEN(10) SPCVAL((*ALL))
                         QUAL       TYPE(*GENERIC) LEN(10) SPCVAL((*ALL)) +
                           PROMPT('User')

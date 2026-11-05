@@ -23,6 +23,8 @@ pub enum Why {
     OptionsLibrary,
     /// `DEGREE(*NBRTASKS n)`.
     Tasks,
+    /// `HOSTVAR(*CONDENSED|*SECURE)`: the values are written whole.
+    HostVariables,
 }
 
 impl Why {
@@ -35,6 +37,7 @@ impl Why {
             Self::StorageLimit => "the planner makes no storage estimate a limit could hold a query to",
             Self::OptionsLibrary => "query options are set with QSYS2.OVERRIDE_QAQQINI",
             Self::Tasks => "a number of tasks is not kept",
+            Self::HostVariables => "the 3010 record holds each host variable's value whole",
         }
     }
 }

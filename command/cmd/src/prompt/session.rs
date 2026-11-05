@@ -1028,9 +1028,14 @@ fn tok_texts(p: &Parm, t: &Tok, path: &Path, out: &mut HashMap<Path, String>) {
                 }
             }
         }
-        (ParmType::Elem { .. }, other) => {
-            out.insert(path.step(0), other.text());
-        }
+        (ParmType::Elem { .. }, other) => match p.items.first() {
+            // A single value goes into the first element, itself a group
+            // or not.
+            Some(e) if e.ty.is_group() => tok_texts(e, other, &path.step(0), out),
+            _ => {
+                out.insert(path.step(0), other.text());
+            }
+        },
         (_, other) => {
             out.insert(path.clone(), other.text());
         }
