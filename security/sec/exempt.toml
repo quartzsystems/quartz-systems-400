@@ -7,6 +7,10 @@
 reason = "commitment control acts on the job's own commitment definition; the files were checked when opened"
 fns = ["start", "begin_change", "commit", "rollback", "end"]
 
+[file."database/db/src/chg/mod.rs"]
+reason = "chgpf_srcfile only calls chgpf_srcfile_paused, which checks the file (file.change)"
+fns = ["chgpf_srcfile"]
+
 [file."database/db/src/file/change.rs"]
 reason = "called by CHGPF/CHGLF after they check the file (file.change)"
 fns = ["change_attr", "replace_formats"]
