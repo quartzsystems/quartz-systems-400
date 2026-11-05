@@ -14,7 +14,7 @@
 //! server mode. `docs/SYSAPI.md` §13 has what is supported.
 
 // The functions take IBM's arguments, one by one.
-#![allow(clippy::too_many_arguments, clippy::many_single_char_names, clippy::similar_names, clippy::match_same_arms)]
+#![allow(clippy::too_many_arguments, clippy::many_single_char_names, clippy::similar_names, clippy::match_same_arms, clippy::struct_excessive_bools)]
 
 pub mod abi;
 pub mod consts;

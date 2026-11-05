@@ -78,6 +78,7 @@ impl Cli {
         }
         if let Some(s) = self.handles.stmt(h) {
             s.cols = describe::columns(&out.rows);
+            s.query = !s.cols.is_empty() || is_query(text);
             s.params = describe::params(&inp.rows);
             s.state = StmtState::Prepared;
         }
@@ -153,7 +154,7 @@ impl Cli {
             Err(d) => return self.note(h, rc::ERROR, d),
         };
         let Some(s) = self.handles.stmt(h) else { return rc::INVALID_HANDLE };
-        let query = !s.cols.is_empty();
+        let query = s.query;
         let (scroll, hold) = (s.scrollable, s.hold);
         if query {
             let mut d = self.desc(dbc, Op::Open);
@@ -164,6 +165,17 @@ impl Cli {
             let (r, _) = self.run(host, dbc, d, inputs);
             if r.sqlca.is_error() {
                 return self.answer(h, &r.sqlca);
+            }
+            // A query whose columns could not be worked out before it ran
+            // is described from its cursor.
+            if self.handles.stmt(h).is_some_and(|s| s.cols.is_empty()) {
+                let mut d = self.desc(dbc, Op::Describe);
+                d.name = cursor_name(h);
+                d.orient = "CURSOR".into();
+                let (cols, _) = self.run(host, dbc, d, Vec::new());
+                if let Some(s) = self.handles.stmt(h) {
+                    s.cols = describe::columns(&cols.rows);
+                }
             }
             if let Some(s) = self.handles.stmt(h) {
                 s.state = StmtState::Open;
@@ -561,4 +573,11 @@ fn put_value(host: &mut dyn Host, v: &Value, (ctype, col_type): (i16, i16), max:
     }
     put_i32(host, ind, word);
     Ok(())
+}
+
+/// Whether statement text is a query by its first word.
+fn is_query(text: &str) -> bool {
+    let t = text.trim_start().trim_start_matches('(').trim_start();
+    let word: String = t.chars().take_while(char::is_ascii_alphabetic).collect::<String>().to_ascii_uppercase();
+    matches!(word.as_str(), "SELECT" | "WITH" | "VALUES")
 }

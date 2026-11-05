@@ -3448,6 +3448,7 @@ dependencies = [
 name = "sqlcli"
 version = "0.1.0"
 dependencies = [
+ "blockdev",
  "ccsid",
  "codegen",
  "db",
@@ -3455,7 +3456,9 @@ dependencies = [
  "mi",
  "qdecimal",
  "qrpgrt",
+ "qsname",
  "sql",
+ "store",
 ]
 
 [[package]]

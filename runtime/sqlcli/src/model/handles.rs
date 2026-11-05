@@ -158,6 +158,8 @@ pub struct Stmt {
     pub hold: bool,
     /// `FOR FETCH ONLY`.
     pub fetch_only: bool,
+    /// The statement is a query: it opens a cursor.
+    pub query: bool,
     /// Its diagnostics.
     pub diags: Diags,
 }
