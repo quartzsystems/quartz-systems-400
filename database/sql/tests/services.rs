@@ -666,3 +666,34 @@ fn qcmdexc_and_procedures() {
     assert!(procs::call(&mut t, &db.ctx, None, "NOT_A_PROC", &[]).is_none());
     t.abort();
 }
+
+#[test]
+fn job_description_info() {
+    let mut db = Db::new(true);
+    {
+        let mut t = db.store.begin().unwrap();
+        let lib = ops::find_library(&mut t, db.ctx.qsys, Name::parse("QGPL").unwrap()).unwrap().id;
+        let id = ops::create(
+            &mut t,
+            &CreateParams {
+                library: lib,
+                name: Name::parse("QDFTJOBD").unwrap(),
+                type_code: types::JOBD,
+                attribute: String::new(),
+                text: "Default".into(),
+                owner: "QSYS".into(),
+                system: "QS400".into(),
+                now: 1_767_225_600,
+                by_system: true,
+            },
+        )
+        .unwrap();
+        let d = wm::obj::jobd::JobD { text: "Default".into(), ..wm::obj::jobd::JobD::default() };
+        wm::obj::write(&mut t, id, &d.encode()).unwrap();
+        t.commit().unwrap();
+    }
+    assert_eq!(
+        db.rows("SELECT JOB_DESCRIPTION_LIBRARY, JOB_DESCRIPTION, AUTHORIZATION_NAME, JOB_QUEUE, LIBRARY_LIST, TEXT_DESCRIPTION FROM QSYS2.JOB_DESCRIPTION_INFO"),
+        vec![row(&["QGPL", "QDFTJOBD", "*RQD", "QBATCH", "*SYSVAL", "Default"])]
+    );
+}

@@ -28,6 +28,7 @@ mod products;
 mod spool;
 mod sysval;
 mod users;
+mod wmobj;
 
 pub use args::Args;
 pub use out::Out;
@@ -73,6 +74,7 @@ const VIEWS: &[View] = &[
     View { schema: "QSYS2", name: "OUTPUT_QUEUE_ENTRIES", no_value: spool::ENTRY_NO_VALUE, rows: spool::entries },
     View { schema: "QSYS2", name: "OUTPUT_QUEUE_ENTRIES_BASIC", no_value: spool::ENTRY_NO_VALUE, rows: spool::entries },
     View { schema: "QSYS2", name: "OUTPUT_QUEUE_INFO", no_value: spool::QUEUE_NO_VALUE, rows: spool::queues },
+    View { schema: "QSYS2", name: "JOB_DESCRIPTION_INFO", no_value: wmobj::JOBD_NO_VALUE, rows: wmobj::jobds },
     View { schema: "QSYS2", name: "SOFTWARE_PRODUCT_INFO", no_value: products::PRODUCT_NO_VALUE, rows: products::products },
     View { schema: "QSYS2", name: "PTF_INFO", no_value: &[], rows: products::ptfs },
     View { schema: "QSYS2", name: "NETSTAT_INFO", no_value: netstat::INFO_NO_VALUE, rows: netstat::info },
