@@ -70,7 +70,7 @@ ibm = "CLRSAVF: *OBJOPR and *OBJMGT"
 
 [op."obj.delete"]
 need = ["*OBJEXIST"]
-ibm = "DLTxxx: *OBJEXIST"
+ibm = "DLTxxx: *OBJEXIST; DROP of an SQL routine or trigger, and its REPLACE, to the program that goes"
 
 [op."obj.delete@*LIB"]
 need = ["*OBJEXIST", "*USE"]
@@ -262,7 +262,7 @@ ibm = "RMVPFTRG, CHGPFTRG: *OBJALTER or *OBJMGT to the physical file"
 
 [op."pgm.trigger"]
 need = ["*EXECUTE"]
-ibm = "ADDPFTRG: *EXECUTE to the trigger program (and to its library: lib.search)"
+ibm = "ADDPFTRG, and CREATE TRIGGER as it adds its own program: *EXECUTE to the trigger program (and to its library: lib.search)"
 
 [op."file.constraint"]
 need = ["*OBJMGT|*OBJALTER"]
@@ -293,6 +293,10 @@ ibm = "STRJRNPF: *OBJOPR and *OBJMGT to the journal"
 [op."jrn.read"]
 need = ["*USE"]
 ibm = "DSPJRN, APYJRNCHG, RMVJRNCHG: *USE to the journal"
+
+[op."rcv.read"]
+need = ["*USE"]
+ibm = "APYJRNCHG, RMVJRNCHG: *USE to each journal receiver whose entries the range reads"
 
 [op."jrn.change"]
 need = ["*OBJOPR", "*OBJMGT"]
@@ -352,7 +356,7 @@ ibm = "QUSEADPAUT: *USE to the list to create programs with USEADPAUT(*YES)"
 
 [op."cmd.run"]
 need = ["*USE"]
-ibm = "running a command: *OBJOPR and *USE to the *CMD"
+ibm = "running a command: *OBJOPR and *USE to the *CMD; CPYF CRTFILE(*YES) also to QSYS/CRTPF, which it runs in effect"
 
 [op."cmd.change"]
 need = ["*OBJMGT", "*USE"]

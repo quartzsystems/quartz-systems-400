@@ -300,6 +300,7 @@ pub fn apyjrnchg(
     let j = check_journal(txn, journal)?;
     let map = resolve_members(txn, &j, files)?;
     let entries = select(txn, journal, range, cmtbdy)?;
+    check_receivers(txn, &j, &entries)?;
     check_files(txn, &map, &entries, "file.apply-journal")?;
     let ctx = JrnCtx {
         job,
@@ -309,6 +310,19 @@ pub fn apyjrnchg(
         applied: true,
     };
     apply(txn, &entries, &map, ctx)
+}
+
+/// `rcv.read` on each receiver holding one of `entries`.
+fn check_receivers(txn: &mut Txn<'_>, j: &Journal, entries: &[Entry]) -> Result<()> {
+    let (Some(lo), Some(hi)) = (entries.iter().map(|e| e.seq).min(), entries.iter().map(|e| e.seq).max()) else {
+        return Ok(());
+    };
+    for r in j.chain(txn).map_err(DbError::from)? {
+        if r.attr.entry_count > 0 && r.attr.first_seq <= hi && r.attr.last_seq >= lo {
+            crate::auth::check(txn, "rcv.read", r.id)?;
+        }
+    }
+    Ok(())
 }
 
 /// `op` on each file whose changes `entries` hold.
@@ -340,6 +354,7 @@ pub fn rmvjrnchg(
     let j = check_journal(txn, journal)?;
     let map = resolve_members(txn, &j, files)?;
     let entries = select(txn, journal, range, cmtbdy)?;
+    check_receivers(txn, &j, &entries)?;
     check_files(txn, &map, &entries, "file.remove-journal")?;
     let ctx = JrnCtx {
         job,

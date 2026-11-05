@@ -57,9 +57,23 @@ fn trigger_of(txn: &mut Txn<'_>, lib: ObjectId, file: ObjectId, name: &str) -> R
 
 /// Delete program `pgm` of `lib`, when it is there.
 fn delete_program(txn: &mut Txn<'_>, ctx: &SqlContext, lib: Name, pgm: Name) -> Result<()> {
-    let Ok(l) = ops::find_library(txn, ctx.qsys, lib) else { return Ok(()) };
-    if let Some(id) = Library::load(txn, l.id)?.lookup(txn, types::PGM, pgm)? {
+    if let Some(id) = program_id(txn, ctx, lib, pgm)? {
         ops::delete(txn, ctx.job, id)?;
+    }
+    Ok(())
+}
+
+/// A trigger's program, when it is there.
+fn program_id(txn: &mut Txn<'_>, ctx: &SqlContext, lib: Name, pgm: Name) -> Result<Option<ObjectId>> {
+    let Ok(l) = ops::find_library(txn, ctx.qsys, lib) else { return Ok(None) };
+    Ok(Library::load(txn, l.id)?.lookup(txn, types::PGM, pgm)?)
+}
+
+/// `DROP TRIGGER` and `CREATE OR REPLACE TRIGGER` delete the trigger's
+/// program: `*OBJEXIST` to it (`obj.delete`), as for a routine's.
+fn check_program_delete(txn: &mut Txn<'_>, ctx: &SqlContext, t: &Trigger) -> Result<()> {
+    if let Some(id) = program_id(txn, ctx, t.program.0, t.program.1)? {
+        db::auth::check(txn, "obj.delete", id)?;
     }
     Ok(())
 }
@@ -158,6 +172,9 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTrigger) -> Res
         Some(e) => trigger_of(txn, lib, e.id, &name)?.map(|o| (e.id, o)),
         None => None,
     };
+    if let Some((_, o)) = &old {
+        check_program_delete(txn, ctx, o)?;
+    }
     let event = match &t.event {
         TriggerEvent::Insert => Event::Insert,
         TriggerEvent::Delete => Event::Delete,
@@ -201,7 +218,9 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTrigger) -> Res
     let mut qir = crate::pl::compile(&sig, &body, &mut cat)?;
     let parts = db::trg::buffer::Parts::of(info.format.format.record_len as usize, info.format.format.fields.len());
     qir.push_str(&program::entry(&pgm, (&name, &schema), &cols, &sig, &slots, parts, before));
-    make_program(txn, ctx, lib, program, &qir, "")?;
+    let made = make_program(txn, ctx, lib, program, &qir, "")?;
+    // The trigger is added as ADDPFTRG adds one: *EXECUTE to its program.
+    db::auth::check(txn, "pgm.trigger", made)?;
     // What the catalogs show.
     let mut def = SqlDef {
         old_row: old_row.clone().unwrap_or_default(),
@@ -299,6 +318,7 @@ pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) -> Resul
     let lib_name = ops::read_header(txn, lib)?.1.name;
     if let Some(t) = trigger_of(txn, lib, target.id, &name.name.value)? {
         db::auth::check(txn, "file.change", target.id)?;
+        check_program_delete(txn, ctx, &t)?;
         db::trg::ops::remove(txn, target.id, &Pick::Named(t.name.clone(), Some(lib_name)), ctx.clock())?;
         delete_program(txn, ctx, t.program.0, t.program.1)?;
     }

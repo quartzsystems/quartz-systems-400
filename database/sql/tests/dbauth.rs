@@ -283,3 +283,75 @@ fn a_package_is_found_only_in_a_usable_library() {
     fx.public(&[(lib, Auth::USE)]);
     assert_eq!(fx.as_bob(|t| db::sqlpkg::find(t, lib, n("PKG1"))).unwrap(), None);
 }
+
+#[test]
+fn drop_trigger_needs_objexist_to_its_program() {
+    let mut fx = Fx::new(
+        "CREATE TABLE QSTEST.TT (ID INT NOT NULL);
+         CREATE TABLE QSTEST.TLOG (ID INT);
+         CREATE TRIGGER QSTEST.TR1 AFTER INSERT ON QSTEST.TT REFERENCING NEW AS N FOR EACH ROW INSERT INTO QSTEST.TLOG VALUES (N.ID);",
+    );
+    let lib = fx.id("QSYS", "QSTEST", types::LIB);
+    let tt = fx.id("QSTEST", "TT", types::FILE);
+    let pgm = fx.id("QSTEST", "TR1", types::PGM);
+    fx.public(&[(lib, Auth::ALL), (tt, Auth::ALL), (pgm, Auth::CHANGE)]);
+    let (failed, l) = fx.run_as_bob("DROP TRIGGER QSTEST.TR1;");
+    assert!(failed && denied(&l), "{l}");
+    // REPLACE deletes the old program too.
+    let replace = "CREATE OR REPLACE TRIGGER QSTEST.TR1 AFTER INSERT ON QSTEST.TT FOR EACH ROW INSERT INTO QSTEST.TLOG VALUES (1);";
+    let (failed, l) = fx.run_as_bob(replace);
+    assert!(failed && denied(&l), "{l}");
+    fx.public(&[(pgm, Auth::ALL)]);
+    let (failed, l) = fx.run_as_bob("DROP TRIGGER QSTEST.TR1;");
+    assert!(!failed, "{l}");
+    // A new trigger's program is BOB's: the *EXECUTE that adding it
+    // needs (pgm.trigger) is his.
+    let (failed, l) = fx.run_as_bob("CREATE TRIGGER QSTEST.TR2 AFTER INSERT ON QSTEST.TT FOR EACH ROW INSERT INTO QSTEST.TLOG VALUES (2);");
+    assert!(!failed, "{l}");
+}
+
+#[test]
+fn apyjrnchg_and_rmvjrnchg_need_the_receivers() {
+    let mut fx = Fx::new(
+        "CREATE SCHEMA QSJRN;
+         CREATE TABLE QSJRN.J2 (ID INT NOT NULL);
+         INSERT INTO QSJRN.J2 VALUES (1);",
+    );
+    let lib = fx.id("QSYS", "QSJRN", types::LIB);
+    let file = fx.id("QSJRN", "J2", types::FILE);
+    let jrn = fx.id("QSJRN", "QSQJRN", jrn::JRN);
+    let rcv = {
+        let mut t = fx.store.begin().unwrap();
+        let j = jrn::Journal::load(&mut t, jrn).unwrap();
+        j.attr.attached
+    };
+    fx.public(&[(lib, Auth::USE), (file, Auth::ALL), (jrn, Auth::USE), (rcv, Auth::EXCLUDE)]);
+    let range = db::journal::JrnRange::default();
+    refused(fx.as_bob(|t| db::journal::rmvjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)));
+    refused(fx.as_bob(|t| db::journal::apyjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)));
+    fx.public(&[(rcv, Auth::USE)]);
+    assert!(fx.as_bob(|t| db::journal::rmvjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)).is_ok());
+    assert!(fx.as_bob(|t| db::journal::apyjrnchg(t, JobHandle(6), jrn, Some(&[file]), &range, false, NOW)).is_ok());
+}
+
+#[test]
+fn cpyf_crtfile_needs_the_crtpf_command() {
+    let mut fx = Fx::new(
+        "CREATE TABLE QSTEST.SRC (ID INT NOT NULL);
+         INSERT INTO QSTEST.SRC VALUES (1);",
+    );
+    let crtpf = {
+        let mut t = fx.store.begin().unwrap();
+        let id = create(&mut t, fx.qsys, "CRTPF", types::CMD);
+        t.commit().unwrap();
+        id
+    };
+    let lib = fx.id("QSYS", "QSTEST", types::LIB);
+    let from = fx.id("QSTEST", "SRC", types::FILE);
+    fx.public(&[(lib, Auth::ALL), (from, Auth::USE), (crtpf, Auth::EXCLUDE)]);
+    let opts = CpyfOpts { crtfile: true, now: NOW, ..CpyfOpts::default() };
+    let to = Target::Create { library: lib, name: n("DST") };
+    refused(fx.as_bob(|t| cpyf(t, JobHandle(5), from, &to, &opts)));
+    fx.public(&[(crtpf, Auth::USE)]);
+    assert!(fx.as_bob(|t| cpyf(t, JobHandle(5), from, &to, &opts)).is_ok());
+}

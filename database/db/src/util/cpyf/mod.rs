@@ -218,6 +218,7 @@ pub fn cpyf_firing(
                     what: format!("to-file {name} does not exist and CRTFILE(*NO)"),
                 });
             }
+            check_crtpf(txn, *library)?;
             let mbr = match opts.to_member {
                 ToMember::First | ToMember::FromMbr => from_entry.name,
                 ToMember::Named(n) => n,
@@ -562,4 +563,18 @@ fn order_of(from_fmt: &FormatDef, opts: &CpyfOpts) -> Result<Order> {
         from_key: prefix(&opts.fromkey)?,
         to_key: prefix(&opts.tokey)?,
     })
+}
+
+/// `CRTFILE(*YES)` makes the file as `CRTPF` would: `*USE` to the
+/// `QSYS/CRTPF` command (`cmd.run`). A store without the command (one
+/// made without the shipped commands) has nothing to check.
+fn check_crtpf(txn: &mut Txn<'_>, library: ObjectId) -> Result<()> {
+    use store::obj::library::Library;
+    use store::obj::{ops, types};
+    let qsys = ops::read_header(txn, library)?.1.library;
+    let crtpf = Name::parse("CRTPF").expect("valid");
+    if let Some(cmd) = Library::load(txn, qsys)?.lookup(txn, types::CMD, crtpf)? {
+        crate::auth::check(txn, "cmd.run", cmd)?;
+    }
+    Ok(())
 }
