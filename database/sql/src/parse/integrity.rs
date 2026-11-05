@@ -248,6 +248,11 @@ impl Parser {
 
     pub(crate) fn alter(&mut self) -> Result<Statement> {
         self.expect_word("ALTER")?;
+        if self.is_word("PROCEDURE") || self.is_word("FUNCTION") || self.is_words(&["SPECIFIC", "PROCEDURE"]) || self.is_words(&["SPECIFIC", "FUNCTION"]) {
+            // BLOCKED(sql): ALTER of a routine's attributes and body is not
+            // built; DROP and CREATE OR REPLACE are.
+            return Err(Self::unsupported("ALTER PROCEDURE and ALTER FUNCTION"));
+        }
         if self.eat_word("SEQUENCE") {
             return self.alter_sequence();
         }
