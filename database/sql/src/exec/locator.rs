@@ -86,6 +86,7 @@ impl crate::exec::SqlContext {
     pub(crate) fn unit_ended(&mut self) {
         self.isolation = None;
         self.locators.end_unit_of_work();
+        self.loose_savepoints.clear();
     }
 }
 

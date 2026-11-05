@@ -720,3 +720,85 @@ fn activation_group_scope() {
         ]
     );
 }
+
+#[test]
+fn savepoints() {
+    use db::cmt::SetSavepoint;
+    let (_d, mut store, lib) = open_new();
+    let (cust, jid) = setup(&mut store, lib, false);
+    let locks = odp::new_shared();
+    let mut s = Session::new(JobHandle(1), locks.clone());
+    let mut resolve = resolve_in(name("QSTEST"), vec![(name("CUST"), cust)]);
+    let fr = FileRef::parse("CUST").unwrap();
+    let opts = OpenOpts {
+        usage: Usage::ALL,
+        commit: true,
+        ..OpenOpts::input(JobHandle(0))
+    };
+    let mut t = store.begin().unwrap();
+    s.strcmtctl(&mut t, LckLvl::Chg, Some(jid), NOW).unwrap();
+    let o = s.open(&mut t, &fr, &mut resolve, opts).unwrap();
+    let def = std::rc::Rc::clone(s.commit_def().unwrap());
+    // A savepoint before the cycle opens marks nothing: all of it goes.
+    assert_eq!(def.borrow_mut().set_savepoint(&mut t, "A", false).unwrap(), SetSavepoint::Set);
+    o.borrow_mut().write(&mut t, &record(4, "Dave"), &[0]).unwrap();
+    assert_eq!(def.borrow_mut().set_savepoint(&mut t, "B", true).unwrap(), SetSavepoint::Set);
+    {
+        let mut o = o.borrow_mut();
+        o.chain(&mut t, &key("2"), true).unwrap();
+        o.update(&mut t, &record(2, "Bobby"), &[0]).unwrap();
+    }
+    assert_eq!(def.borrow_mut().set_savepoint(&mut t, "B", false).unwrap(), SetSavepoint::Exists);
+    assert_eq!(def.borrow_mut().set_savepoint(&mut t, "C", false).unwrap(), SetSavepoint::Set);
+    {
+        let mut o = o.borrow_mut();
+        o.chain(&mut t, &key("3"), true).unwrap();
+        o.delete(&mut t).unwrap();
+    }
+    // Back to B: Carol back, Bobby gone, Dave kept; C released, B kept.
+    let r = s.rollback_to_savepoint(&mut t, Some("B"), None, &mut db::no_pause).unwrap().unwrap();
+    assert_eq!(r.applied, 2);
+    assert!(s.rollback_to_savepoint(&mut t, Some("C"), None, &mut db::no_pause).unwrap().is_none());
+    assert_eq!(s.rollback_to_savepoint(&mut t, None, None, &mut db::no_pause).unwrap().unwrap().applied, 0);
+    // The cycle and its locks stay.
+    assert_ne!(def.borrow().cycle(), 0);
+    assert_eq!(locks.lock().unwrap().holder(o.borrow().member().id(), 4), Some(JobHandle(1)));
+    t.commit().unwrap();
+    assert_eq!(
+        names(&mut store, cust),
+        [(1, "Alice".into()), (2, "Bob".into()), (3, "Carol".into()), (4, "Dave".into())]
+    );
+    // A change after the rollback, then back to A: everything undone,
+    // the undoing too.
+    let mut t = store.begin().unwrap();
+    {
+        let mut o = o.borrow_mut();
+        o.chain(&mut t, &key("1"), true).unwrap();
+        o.update(&mut t, &record(1, "Alicia"), &[0]).unwrap();
+    }
+    s.rollback_to_savepoint(&mut t, Some("A"), None, &mut db::no_pause).unwrap().unwrap();
+    assert!(!def.borrow_mut().release_savepoint("B"));
+    assert!(def.borrow_mut().release_savepoint("A"));
+    assert!(!def.borrow().has_savepoints());
+    t.commit().unwrap();
+    assert_eq!(
+        names(&mut store, cust),
+        [(1, "Alice".into()), (2, "Bob".into()), (3, "Carol".into())]
+    );
+    // A full rollback after a rollback to a savepoint undoes the rest.
+    let mut t = store.begin().unwrap();
+    o.borrow_mut().write(&mut t, &record(5, "Erin"), &[0]).unwrap();
+    def.borrow_mut().set_savepoint(&mut t, "D", false).unwrap();
+    o.borrow_mut().write(&mut t, &record(6, "Fay"), &[0]).unwrap();
+    s.rollback_to_savepoint(&mut t, Some("D"), None, &mut db::no_pause).unwrap().unwrap();
+    s.rollbck(&mut t, None).unwrap();
+    assert!(!def.borrow().has_savepoints());
+    assert!(locks.lock().unwrap().is_empty());
+    s.close(&mut t, &o);
+    s.end(&mut t);
+    t.commit().unwrap();
+    assert_eq!(
+        names(&mut store, cust),
+        [(1, "Alice".into()), (2, "Bob".into()), (3, "Carol".into())]
+    );
+}

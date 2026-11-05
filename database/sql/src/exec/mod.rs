@@ -38,6 +38,8 @@ pub mod opnqryf;
 mod olap;
 pub mod query;
 pub mod rename;
+mod savepoint;
+pub use savepoint::ATOMIC_SAVEPOINT;
 pub mod routine;
 pub mod schema;
 pub mod registers;
@@ -221,6 +223,8 @@ pub struct SqlContext {
     /// Routines: whether the requester runs the calls `CALL` plans,
     /// and the plan the last one left.
     pub routine: routine::State,
+    /// Savepoints set without commitment control: names only.
+    pub(crate) loose_savepoints: Vec<(String, bool)>,
 }
 
 /// See [`SqlContext::yielder`].
@@ -327,6 +331,7 @@ impl SqlContext {
             skip_locked: false,
             registers: registers::Registers::default(),
             routine: routine::State::default(),
+            loose_savepoints: Vec::new(),
         }
     }
 
@@ -928,6 +933,7 @@ impl Prepared {
             | Statement::CreateIndex(_)
             | Statement::AlterTable(_)
             | Statement::Rollback { .. }
+            | Statement::Savepoint(crate::ast::SavepointStmt::RollbackTo(_))
             | Statement::Open { .. } => self.dispatch(txn, ctx, params),
             _ => ctx.no_yield(|ctx| self.dispatch(txn, ctx, params)),
         };
@@ -989,6 +995,7 @@ impl Prepared {
                 }
                 Ok(Outcome::Done)
             }
+            Statement::Savepoint(sp) => savepoint::run(txn, ctx, sp),
             Statement::DeclareCursor(d) => Ok(cursor::declare(ctx, d)),
             Statement::Open { cursor: c, using } => {
                 let mut values = Vec::with_capacity(using.len());
@@ -1136,6 +1143,7 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::Close(_) => "CLOSE",
         Statement::Commit { .. } => "COMMIT",
         Statement::Rollback { .. } => "ROLLBACK",
+        Statement::Savepoint(_) => "SAVEPOINT",
         Statement::SetSchema(_) => "SET SCHEMA",
         Statement::SetPath(_) => "SET PATH",
         Statement::SetCurrentDegree => "SET CURRENT DEGREE",

@@ -24,6 +24,7 @@ mod pl;
 mod query;
 mod routine;
 mod trigger;
+mod savepoint;
 mod types;
 
 use crate::ast::{
@@ -653,6 +654,9 @@ impl Parser {
             "ROLLBACK" => {
                 self.advance();
                 self.eat_word("WORK");
+                if self.eat_word("TO") {
+                    return self.rollback_to();
+                }
                 Ok(Statement::Rollback {
                     hold: self.eat_word("HOLD"),
                 })
@@ -667,8 +671,10 @@ impl Parser {
             "REVOKE" => self.grant(true),
             "CALL" => self.call_stmt(),
             "SIGNAL" | "RESIGNAL" => Ok(Statement::Signal(self.signal()?)),
+            "SAVEPOINT" => self.savepoint(),
+            "RELEASE" if self.is_word_at(1, "TO") || self.is_word_at(1, "SAVEPOINT") => self.release_savepoint(),
             "LOCK" | "PREPARE" | "EXECUTE" | "DESCRIBE"
-            | "CONNECT" | "DISCONNECT" | "RELEASE" | "SAVEPOINT" | "REFRESH" => {
+            | "CONNECT" | "DISCONNECT" | "RELEASE" | "REFRESH" => {
                 Err(Self::unsupported(&format!("{w} statement")))
             }
             _ => Err(self.expected("a statement")),

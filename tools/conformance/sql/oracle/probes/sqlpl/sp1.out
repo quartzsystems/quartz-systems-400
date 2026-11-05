@@ -1,0 +1,106 @@
+-- captured from primary
+-- cmd CRTJRNRCV JRNRCV({lib}/QPYRCV) ok CPC7011
+-- cmd CRTJRN JRN({lib}/QPYJRN) JRNRCV({lib}/QPYRCV) ok CPC7010
+> CREATE TABLE {lib}.QPY_S (ID INTEGER NOT NULL)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+-- cmd STRJRNPF FILE({lib}/QPY_S) JRN({lib}/QPYJRN) ok CPC7031
+> SAVEPOINT A ON ROLLBACK RETAIN CURSORS
+sqlcode 0 sqlstate 00000 msgid -
+-- autocommit off
+-- isolation chg
+> SAVEPOINT A
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SAVEPOINT A ON ROLLBACK RETAIN CURSORS
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.QPY_S VALUES 1
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SAVEPOINT B UNIQUE ON ROLLBACK RETAIN CURSORS ON ROLLBACK RETAIN LOCKS
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.QPY_S VALUES 2
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SAVEPOINT B ON ROLLBACK RETAIN CURSORS
+sqlcode -881 sqlstate 3B501 msgid SQL0881
+> SAVEPOINT A ON ROLLBACK RETAIN CURSORS
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.QPY_S VALUES 3
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT ID FROM {lib}.QPY_S ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER
+| 1 |
+| 2 |
+| 3 |
+> ROLLBACK TO SAVEPOINT B
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ID FROM {lib}.QPY_S ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER
+| 1 |
+> ROLLBACK TO SAVEPOINT A
+sqlcode -880 sqlstate 3B001 msgid SQL0880
+> ROLLBACK TO SAVEPOINT B
+sqlcode 0 sqlstate 00000 msgid -
+> ROLLBACK TO SAVEPOINT
+sqlcode 0 sqlstate 00000 msgid -
+> ROLLBACK WORK TO SAVEPOINT
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ID FROM {lib}.QPY_S ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER
+| 1 |
+> RELEASE SAVEPOINT B
+sqlcode 0 sqlstate 00000 msgid -
+> RELEASE TO SAVEPOINT B
+sqlcode -880 sqlstate 3B001 msgid SQL0880
+> ROLLBACK TO SAVEPOINT B
+sqlcode -880 sqlstate 3B001 msgid SQL0880
+> RELEASE SAVEPOINT X
+sqlcode -880 sqlstate 3B001 msgid SQL0880
+> ROLLBACK TO SAVEPOINT X
+sqlcode -880 sqlstate 3B001 msgid SQL0880
+> SAVEPOINT C ON ROLLBACK RETAIN CURSORS
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.QPY_S VALUES 4
+sqlcode 0 sqlstate 00000 msgid - count 1
+> COMMIT
+sqlcode 0 sqlstate 00000 msgid -
+> ROLLBACK TO SAVEPOINT C
+sqlcode -880 sqlstate 3B001 msgid SQL0880
+> ROLLBACK TO SAVEPOINT
+sqlcode -882 sqlstate 3B502 msgid SQL0882
+> SELECT ID FROM {lib}.QPY_S ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER
+| 1 |
+| 4 |
+> SAVEPOINT D ON ROLLBACK RETAIN CURSORS
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.QPY_S VALUES 5
+sqlcode 0 sqlstate 00000 msgid - count 1
+> ROLLBACK
+sqlcode 0 sqlstate 00000 msgid -
+> RELEASE SAVEPOINT D
+sqlcode -880 sqlstate 3B001 msgid SQL0880
+> SAVEPOINT "lower" ON ROLLBACK RETAIN CURSORS
+sqlcode 0 sqlstate 00000 msgid -
+> SAVEPOINT E ON ROLLBACK RETAIN LOCKS
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SAVEPOINT F ON ROLLBACK RETAIN CURSORS ON ROLLBACK RETAIN CURSORS
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SAVEPOINT G UNIQUE UNIQUE ON ROLLBACK RETAIN CURSORS
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> COMMIT
+sqlcode 0 sqlstate 00000 msgid -
+-- autocommit on
+-- isolation none
+> SAVEPOINT H ON ROLLBACK RETAIN CURSORS
+sqlcode 0 sqlstate 00000 msgid -
+> ROLLBACK TO SAVEPOINT H
+sqlcode -880 sqlstate 3B001 msgid SQL0880
+> RELEASE SAVEPOINT H
+sqlcode -880 sqlstate 3B001 msgid SQL0880
+> DROP TABLE {lib}.QPY_S
+sqlcode 0 sqlstate 00000 msgid -
+-- cmd DLTJRN JRN({lib}/QPYJRN) ok CPC2191
+-- cmd DLTJRNRCV JRNRCV({lib}/QPYRCV) DLTOPT(*IGNINQMSG) ok CPC2191

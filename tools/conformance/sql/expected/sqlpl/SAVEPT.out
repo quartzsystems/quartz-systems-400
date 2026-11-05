@@ -1,0 +1,30 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPV_T (ID INTEGER NOT NULL)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> SAVEPOINT A ON ROLLBACK RETAIN CURSORS
+sqlcode 0 sqlstate 00000 msgid -
+> SAVEPOINT A
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SAVEPOINT E ON ROLLBACK RETAIN LOCKS
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SAVEPOINT F ON ROLLBACK RETAIN CURSORS ON ROLLBACK RETAIN CURSORS
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SAVEPOINT G UNIQUE UNIQUE ON ROLLBACK RETAIN CURSORS
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> SAVEPOINT B UNIQUE ON ROLLBACK RETAIN CURSORS ON ROLLBACK RETAIN LOCKS
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.QPV_T VALUES 1
+sqlcode 0 sqlstate 00000 msgid - count 1
+> ROLLBACK TO SAVEPOINT B
+sqlcode 0 sqlstate 00000 msgid -
+> RELEASE SAVEPOINT B
+sqlcode 0 sqlstate 00000 msgid -
+> RELEASE TO SAVEPOINT X
+sqlcode -880 sqlstate 3B001 msgid SQL0880
+> SELECT ID FROM {lib}.QPV_T
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+> DROP TABLE {lib}.QPV_T
+sqlcode 0 sqlstate 00000 msgid -

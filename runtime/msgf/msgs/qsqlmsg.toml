@@ -941,6 +941,34 @@ help = "Declare the handler in a BEGIN ATOMIC compound statement, or make it CON
 vars = []
 
 [[msg]]
+id = "SQL0775"
+sev = 30
+text = "Statement &1 cannot be used in an ATOMIC compound statement."
+help = "COMMIT and ROLLBACK end the unit of work, which an ATOMIC compound statement keeps whole. Move the statement out of the ATOMIC compound, or use a compound statement that is NOT ATOMIC."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0880"
+sev = 30
+text = "Savepoint &1 is not set or cannot be used here."
+help = "RELEASE SAVEPOINT and ROLLBACK TO SAVEPOINT name a savepoint set earlier in the unit of work and not yet released. COMMIT and ROLLBACK release every savepoint; so does running without commitment control."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0881"
+sev = 30
+text = "Savepoint &1 is already set."
+help = "A savepoint of that name is set in the unit of work and one of the two is UNIQUE. Use another name, or release the savepoint first."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0882"
+sev = 30
+text = "No savepoint is set."
+help = "ROLLBACK TO SAVEPOINT without a name goes back to the latest savepoint of the unit of work, and none is set."
+vars = []
+
+[[msg]]
 id = "SQL0225"
 sev = 30
 text = "FETCH of cursor &1 is not valid: the cursor is not scrollable."

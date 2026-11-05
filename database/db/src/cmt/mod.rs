@@ -6,7 +6,9 @@
 //! activation group under `CMTSCOPE(*ACTGRP)` (the session keeps them
 //! apart). Changes under a definition are journaled with a commit cycle
 //! identifier, record locks stay until the cycle ends, and a rollback
-//! undoes the cycle from the journal's before images.
+//! undoes the cycle from the journal's before images. A savepoint marks
+//! each journal's next sequence number; a rollback to it undoes the
+//! cycle's entries after the marks and keeps the cycle and its locks.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -93,6 +95,26 @@ pub struct CommitDef {
     changes: u64,
     /// The definition's owner number in the record lock table.
     owner: u64,
+    /// Savepoints set in the cycle, oldest first.
+    savepoints: Vec<Savepoint>,
+}
+
+/// A savepoint of the open cycle.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct Savepoint {
+    name: String,
+    unique: bool,
+    /// Each journal of the cycle then, with its next sequence number.
+    marks: Vec<(ObjectId, u64)>,
+}
+
+/// Why a savepoint could not be set.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SetSavepoint {
+    /// Set.
+    Set,
+    /// One of that name exists and one of the two is `UNIQUE`.
+    Exists,
 }
 
 impl std::fmt::Debug for CommitDef {
@@ -129,6 +151,7 @@ impl CommitDef {
             reads: Vec::new(),
             changes: 0,
             owner: crate::odp::locks::next_owner(),
+            savepoints: Vec::new(),
         }
     }
 
@@ -281,6 +304,7 @@ impl CommitDef {
         }
         self.release_locks();
         self.touched.clear();
+        self.savepoints.clear();
         self.cycle = 0;
         self.changes = 0;
         Ok(cycle)
@@ -312,16 +336,16 @@ impl CommitDef {
             return Ok(ChangeReport::default());
         }
         let cycle = self.cycle;
-        let mut entries = Vec::new();
+        let mut each = Vec::new();
         for j in &self.journals {
             let f = Filter {
                 commit_cycle: Some(cycle),
                 codes: vec![code::RECORD],
                 ..Filter::default()
             };
-            entries.extend(dspjrn(txn, *j, &f)?);
+            each.push(dspjrn(txn, *j, &f)?);
         }
-        entries.sort_by_key(|e| (e.time, e.micros, e.seq));
+        let entries = merge(each);
         let map: MemberMap = self.touched.clone();
         let ctx = JrnCtx {
             rollback: true,
@@ -332,10 +356,122 @@ impl CommitDef {
         Ok(report)
     }
 
+    /// `SAVEPOINT name [UNIQUE]`: one of the same name not `UNIQUE` is
+    /// replaced.
+    pub fn set_savepoint(&mut self, txn: &mut Txn<'_>, name: &str, unique: bool) -> Result<SetSavepoint> {
+        if let Some(i) = self.savepoints.iter().position(|s| s.name == name) {
+            if unique || self.savepoints[i].unique {
+                return Ok(SetSavepoint::Exists);
+            }
+            self.savepoints.remove(i);
+        }
+        self.nest_savepoint(txn, name, unique)?;
+        Ok(SetSavepoint::Set)
+    }
+
+    /// A savepoint over any of the same name (an `ATOMIC` compound in a
+    /// routine that calls itself): the names find the latest.
+    pub fn nest_savepoint(&mut self, txn: &mut Txn<'_>, name: &str, unique: bool) -> Result<()> {
+        let marks = self.marks(txn)?;
+        self.savepoints.push(Savepoint { name: name.to_string(), unique, marks });
+        Ok(())
+    }
+
+    fn marks(&self, txn: &mut Txn<'_>) -> Result<Vec<(ObjectId, u64)>> {
+        let mut marks = Vec::with_capacity(self.journals.len());
+        for &j in &self.journals {
+            marks.push((j, Journal::load(txn, j)?.attr.next_seq));
+        }
+        Ok(marks)
+    }
+
+    /// Whether any savepoint is set.
+    #[must_use]
+    pub fn has_savepoints(&self) -> bool {
+        !self.savepoints.is_empty()
+    }
+
+    /// `RELEASE SAVEPOINT name`: it and every later one go; false when
+    /// there is none of that name.
+    pub fn release_savepoint(&mut self, name: &str) -> bool {
+        match self.savepoints.iter().rposition(|s| s.name == name) {
+            Some(i) => {
+                self.savepoints.truncate(i);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// `ROLLBACK TO SAVEPOINT [name]` (the latest without one): the
+    /// cycle's changes since it undone newest first, later savepoints
+    /// released; it stays, and so do the cycle and its locks. `None`
+    /// when there is no such savepoint.
+    pub fn rollback_to_savepoint(
+        &mut self,
+        txn: &mut Txn<'_>,
+        name: Option<&str>,
+        now: Option<u64>,
+        pause: crate::Pause<'_>,
+    ) -> Result<Option<ChangeReport>> {
+        let at = match name {
+            Some(n) => self.savepoints.iter().rposition(|s| s.name == n),
+            None => self.savepoints.len().checked_sub(1),
+        };
+        let Some(at) = at else { return Ok(None) };
+        self.savepoints.truncate(at + 1);
+        if self.cycle == 0 {
+            return Ok(Some(ChangeReport::default()));
+        }
+        let marks = self.savepoints[at].marks.clone();
+        let mut each = Vec::new();
+        for j in &self.journals {
+            let from = marks.iter().find(|(m, _)| m == j).map(|(_, s)| *s);
+            let f = Filter {
+                commit_cycle: Some(self.cycle),
+                codes: vec![code::RECORD],
+                from_seq: from,
+                ..Filter::default()
+            };
+            each.push(dspjrn(txn, *j, &f)?);
+        }
+        let entries = merge(each);
+        let map: MemberMap = self.touched.clone();
+        let ctx = JrnCtx {
+            rollback: true,
+            ..self.ctx(now)
+        };
+        let report = undo_paused(txn, &entries, &map, ctx, pause)?;
+        // The savepoint now marks the end of the undoing entries: a
+        // second rollback to it has nothing to undo, while one to an
+        // earlier savepoint undoes the changes and their undoing alike.
+        self.savepoints[at].marks = self.marks(txn)?;
+        Ok(Some(report))
+    }
+
     /// `ENDCMTCTL`: an open cycle is rolled back first.
     pub fn end(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<ChangeReport> {
         let r = self.rollback(txn, now)?;
         let _ = self.dft_jrn;
         Ok(r)
     }
+}
+
+/// The entries of several journals in one order: each journal's in its
+/// sequence (the undoing of a rollback to a savepoint may carry an
+/// earlier time than the changes it undid), the journals interleaved
+/// by time.
+fn merge(each: Vec<Vec<jrn::Entry>>) -> Vec<jrn::Entry> {
+    let mut lists: Vec<std::collections::VecDeque<jrn::Entry>> = each.into_iter().map(Into::into).collect();
+    let mut out = Vec::new();
+    loop {
+        let next = lists
+            .iter()
+            .enumerate()
+            .filter_map(|(i, l)| l.front().map(|e| (e.time, e.micros, i)))
+            .min();
+        let Some((_, _, i)) = next else { break };
+        out.extend(lists[i].pop_front());
+    }
+    out
 }

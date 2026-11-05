@@ -462,6 +462,15 @@ impl Session {
         Ok(r)
     }
 
+    /// `ROLLBACK TO SAVEPOINT` in the definition in effect; `None` when
+    /// it has no such savepoint.
+    pub fn rollback_to_savepoint(&mut self, txn: &mut Txn<'_>, name: Option<&str>, now: Option<u64>, pause: crate::Pause<'_>) -> Result<Option<ChangeReport>> {
+        let c = Rc::clone(self.commit_def().ok_or(DbError::CommitNotActive)?);
+        let r = c.borrow_mut().rollback_to_savepoint(txn, name, now, pause)?;
+        self.refresh_odps(txn)?;
+        Ok(r)
+    }
+
     /// `ENDCMTCTL` of the definition in effect: an open cycle is rolled
     /// back; refused while a path opened under it is open.
     pub fn endcmtctl(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<ChangeReport> {

@@ -101,6 +101,22 @@ impl fmt::Display for ObjectName {
     }
 }
 
+/// A savepoint statement.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SavepointStmt {
+    /// `SAVEPOINT name [UNIQUE] ON ROLLBACK RETAIN CURSORS [ON ROLLBACK RETAIN LOCKS]`.
+    Set {
+        /// The name.
+        name: Ident,
+        /// `UNIQUE`.
+        unique: bool,
+    },
+    /// `RELEASE [TO] SAVEPOINT name`.
+    Release(Ident),
+    /// `ROLLBACK [WORK] TO SAVEPOINT [name]`.
+    RollbackTo(Option<Ident>),
+}
+
 /// `WITH NC`, `UR`, `CS`, `RS`, `RR`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Isolation {
@@ -246,6 +262,8 @@ pub enum Statement {
         /// `HOLD`.
         hold: bool,
     },
+    /// `SAVEPOINT`, `RELEASE SAVEPOINT`, `ROLLBACK TO SAVEPOINT`.
+    Savepoint(SavepointStmt),
     /// `SET SCHEMA`.
     SetSchema(SchemaTarget),
     /// `SET PATH`.
