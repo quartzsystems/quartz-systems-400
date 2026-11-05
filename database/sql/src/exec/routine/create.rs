@@ -113,6 +113,11 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
         // A function's result follows its parameters (`ROW_TYPE` C).
         parms.push(ParmDef { ordinal: ordinal(r.parms.len()), mode: 2, role: 2, name: String::new(), ty: pl::types::type_text(t) });
     }
+    if let Some(Returns::Table(cols)) = &r.returns {
+        for (i, (n, t)) in cols.iter().enumerate() {
+            parms.push(ParmDef { ordinal: ordinal(r.parms.len() + i), mode: 2, role: 1, name: n.value.clone(), ty: pl::types::type_text(t) });
+        }
+    }
     let mut flags = 0u16;
     for (on, f) in [
         (o.deterministic == Some(true), flag::DETERMINISTIC),
@@ -141,7 +146,10 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
             RoutineBody::External => 2,
             RoutineBody::Sourced(..) => 3,
         },
-        function_type: u8::from(func),
+        function_type: match &r.returns {
+            Some(Returns::Table(_)) => 2,
+            _ => u8::from(func),
+        },
         flags,
         result_sets: o.result_sets,
         parm_count: u16::try_from(r.parms.len()).map_err(|_| unsupported("more than 65535 parameters"))?,
@@ -466,11 +474,6 @@ fn remove(txn: &mut Txn<'_>, ctx: &SqlContext, f: &Found) -> Result<()> {
 /// database runs (`udf`) and sourced functions.
 fn check_function(r: &CreateRoutine) -> Result<()> {
     match (&r.returns, &r.body) {
-        (Some(Returns::Table(_)), _) => {
-            // BLOCKED(sql): a table function is read through TABLE(...) in
-            // FROM, which the query work (SQL-3) brings.
-            Err(unsupported("CREATE FUNCTION ... RETURNS TABLE: table functions"))
-        }
         (_, RoutineBody::External) => {
             // BLOCKED(sql): an external function runs a program inside the
             // query, and programs run in the job, not the database.

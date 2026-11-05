@@ -58,7 +58,7 @@ pub fn check_body(s: &PlStmt) -> Result<()> {
             }
             all(&c.body)
         }
-        PlKind::Set(_) | PlKind::Return(_) | PlKind::Leave(_) | PlKind::Iterate(_) | PlKind::Signal(_) => Ok(()),
+        PlKind::Set(_) | PlKind::Return(_) | PlKind::ReturnQuery(_) | PlKind::Leave(_) | PlKind::Iterate(_) | PlKind::Signal(_) => Ok(()),
         PlKind::If { branches, otherwise } => {
             for (_, b) in branches {
                 all(b)?;
@@ -139,7 +139,7 @@ fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, args: &[Value]) -> R
     }
     DEPTH.with(|d| d.set(depth + 1));
     let r = (|| {
-        let mut it = Interp { txn, ctx, slots: Vec::new(), frames: Vec::new() };
+        let mut it = Interp { txn, ctx, slots: Vec::new(), frames: Vec::new(), table: None };
         let mut frame = Frame { label: Some(def.name.name.value.clone()), vars: Vec::new() };
         for (p, a) in def.parms.iter().zip(args) {
             it.slots.push((p.ty.clone(), cast(a, &p.ty)?));
@@ -217,6 +217,8 @@ struct Interp<'a, 't> {
     ctx: &'a mut SqlContext,
     slots: Vec<(TypeSpec, Value)>,
     frames: Vec<Frame>,
+    /// A table function's rows, once its `RETURN` ran.
+    table: Option<Vec<Vec<Value>>>,
 }
 
 impl Names for Interp<'_, '_> {
@@ -284,6 +286,7 @@ impl Interp<'_, '_> {
         }
     }
 
+    #[allow(clippy::too_many_lines)] // one arm per statement
     fn stmt(&mut self, s: &PlStmt) -> Result<Flow> {
         self.ctx.poll_interrupt()?;
         let flow = match &s.kind {
@@ -373,6 +376,12 @@ impl Interp<'_, '_> {
                 return Err(SqlError::Signalled { code: -438, state, what: text.chars().take(70).collect() });
             }
             PlKind::Sql(q) => self.select_into(q)?,
+            PlKind::ReturnQuery(q) => {
+                let cols = self.table_columns(&q.stmt);
+                let rows = self.rows(&q.text, &cols)?;
+                self.table = Some(rows);
+                Flow::Return(Value::Null)
+            }
             _ => return Err(unsupported("that statement in an SQL function")),
         };
         // A LEAVE of this statement's own label ends here.
@@ -536,4 +545,70 @@ pub fn result_type(name: &str, args: &[Option<crate::exec::restype::SqlType>], _
             .get(name)
             .and_then(|e| e.iter().find(|(k, _)| *k == args.len()).map(|(_, t)| crate::exec::restype::SqlType::of_data_type(&t.data_type, true)))
     })
+}
+
+/// `TABLE (f(args))` of a user table function: its columns and rows, or
+/// `None` when no table function of that name takes the arguments.
+pub fn table(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    name: &ObjectName,
+    args: &[Value],
+    alias: &str,
+) -> Option<Result<crate::exec::catalog::Table>> {
+    let found = match find::named(txn, ctx, name, 2) {
+        Ok(f) => f,
+        Err(e) => return Some(Err(e)),
+    };
+    let f = found.into_iter().find(|f| f.routine.def.function_type == 2 && usize::from(f.routine.def.parm_count) == args.len())?;
+    Some(run_table(txn, ctx, &f.routine.def.text, args, alias))
+}
+
+fn run_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, args: &[Value], alias: &str) -> Result<crate::exec::catalog::Table> {
+    use crate::exec::eval::{ColInfo, Schema};
+    let def = parsed(text)?;
+    let Some(Returns::Table(cols)) = &def.returns else {
+        return Err(unsupported("a scalar function in TABLE(...)"));
+    };
+    let RoutineBody::Sql(body) = &def.body else {
+        return Err(unsupported("external table functions"));
+    };
+    let depth = DEPTH.with(std::cell::Cell::get);
+    if depth >= MAX_DEPTH {
+        return Err(SqlError::TooComplex);
+    }
+    DEPTH.with(|d| d.set(depth + 1));
+    let r = (|| {
+        let mut it = Interp { txn, ctx, slots: Vec::new(), frames: Vec::new(), table: None };
+        let mut frame = Frame { label: Some(def.name.name.value.clone()), vars: Vec::new() };
+        for (p, a) in def.parms.iter().zip(args) {
+            it.slots.push((p.ty.clone(), cast(a, &p.ty)?));
+            frame.vars.push((p.name.as_ref().map(|n| n.value.clone()).unwrap_or_default(), it.slots.len() - 1));
+        }
+        it.frames.push(frame);
+        it.stmt(body)?;
+        it.table.take().ok_or_else(|| SqlError::Coded { code: -578, state: "2F005", what: format!("table function {} ended without a RETURN", def.name) })
+    })();
+    DEPTH.with(|d| d.set(depth));
+    let rows = r?;
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows {
+        if row.len() != cols.len() {
+            return Err(SqlError::ValueCount { what: format!("the query of {} gives {} columns for {}", def.name, row.len(), cols.len()) });
+        }
+        out.push(row.iter().zip(cols).map(|(v, (_, t))| cast(v, t)).collect::<Result<Vec<_>>>()?);
+    }
+    let schema = Schema {
+        cols: cols
+            .iter()
+            .map(|(n, t)| {
+                let mut field = crate::exec::restype::field_of(&crate::exec::restype::SqlType::of_data_type(&t.data_type, true));
+                if let Ok(fname) = qsname::Name::parse(&n.value) {
+                    field.name = fname;
+                }
+                ColInfo { name: n.value.clone(), table: Some(alias.to_string()), field: Some(field), nullable: true, hidden: false }
+            })
+            .collect(),
+    };
+    Ok((schema, out))
 }

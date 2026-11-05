@@ -229,7 +229,12 @@ pub(super) fn table_function(
             values.push(ev.eval(txn, a, outer)?);
         }
     }
-    let Some((mut schema, rows)) = super::catalog::table_function(txn, ctx, name, &values, args, &alias.value)? else {
+    let found = match super::catalog::table_function(txn, ctx, name, &values, args, &alias.value)? {
+        Some(t) => Some(t),
+        // A user table function (`routine::udf`).
+        None => super::routine::udf::table(txn, ctx, name, &values, &alias.value).transpose()?,
+    };
+    let Some((mut schema, rows)) = found else {
         return Err(SqlError::ObjectNotFound { name: name.to_string(), kind: "function" });
     };
     if !columns.is_empty() {

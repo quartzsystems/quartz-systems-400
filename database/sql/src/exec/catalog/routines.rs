@@ -196,6 +196,7 @@ fn value(txn: &mut Txn<'_>, f: &Found, col: &str) -> Value {
             s(p.join(","))
         }
         "PARM_SIGNATURE" => Value::Bin(ps.iter().flat_map(|(_, t)| model::sqltype(&t.data_type).to_be_bytes()).collect()),
+        "NUMBER_OF_RESULTS" if d.function_type == 2 => Value::int(i64::try_from(f.routine.parms.iter().filter(|p| p.role == 1).count()).unwrap_or(0)),
         "NUMBER_OF_RESULTS" => Value::int(i64::from(func)),
         "MAX_DYNAMIC_RESULT_SETS" | "RESULT_SETS" => Value::int(d.result_sets.into()),
         "IN_PARMS" => count(1),
@@ -206,7 +207,7 @@ fn value(txn: &mut Txn<'_>, f: &Found, col: &str) -> Value {
         "FUNCTION_ORIGIN" | "FUNCTION_TYPE" if !func => s(" "),
         // 7.1 shows its SQL functions as external (C service programs).
         "FUNCTION_ORIGIN" => s(if d.body == 3 { "U" } else { "E" }),
-        "FUNCTION_TYPE" => s("S"),
+        "FUNCTION_TYPE" => s(if d.function_type == 2 { "T" } else { "S" }),
         "EXTERNAL_ACTION" if func => s(if d.has(flag::NO_EXTERNAL_ACTION) { "N" } else { "E" }),
         "IS_NULL_CALL" if func => yes(!d.has(flag::NULL_INPUT)),
         "SCRATCH_PAD" if func => Value::int(d.scratchpad.into()),
@@ -308,7 +309,12 @@ fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
                 datetime.map_or(Value::Null, int),
                 s("YES"),
                 Value::Null,
-                s(if p.role == 0 { "P" } else { "C" }),
+                // P a parameter, C a scalar function's result, R a table function's column.
+                s(match p.role {
+                    0 => "P",
+                    1 => "R",
+                    _ => "C",
+                }),
                 Value::Null,
                 Value::Null,
                 s("NO"),
