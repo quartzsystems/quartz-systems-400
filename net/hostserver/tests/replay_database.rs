@@ -36,7 +36,7 @@ fn masks() -> Masks {
 
 #[test]
 fn jdbc() {
-    for s in ["jdbc", "pwdlevel", "svrmap"] {
+    for s in ["jdbc", "metadata", "pwdlevel", "svrmap"] {
         let t = trace("database", s);
         let auth = TraceAuth::of(&t);
         let cfg = DbConfig {
