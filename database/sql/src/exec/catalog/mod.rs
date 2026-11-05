@@ -12,6 +12,7 @@ pub mod routines;
 pub mod services;
 pub mod sys;
 pub mod systools;
+pub mod sysibm;
 
 use store::txn::Txn;
 
@@ -39,6 +40,7 @@ const PROVIDERS: &[Provider] = &[
     Provider { has: cst::has, table: cst::table },
     Provider { has: routines::has, table: routines::virtual_table },
     Provider { has: services::has, table: services::table },
+    Provider { has: sysibm::has, table: sysibm::virtual_table },
 ];
 
 /// Whether `name` names a computed view.

@@ -27,9 +27,9 @@ javac -d "$classes" -cp "$jar" "$root"/tools/conformance/jtopen/src/*.java
 cargo build -q -p tn5250-driver
 driver="$root/target/debug/tn5250-driver"
 
-all=(signon pwdlevel svrmap cmdcall pgmcall sysval central jdbc dtaq ifs splf splfdata)
+all=(signon pwdlevel svrmap cmdcall pgmcall sysval central jdbc metadata dtaq ifs splf splfdata)
 declare -A class=([signon]=Signon [pwdlevel]=PwdLevel [svrmap]=Svrmap [cmdcall]=CmdCall
-  [pgmcall]=PgmCall [sysval]=SysVal [central]=Central [jdbc]=Jdbc [dtaq]=DtaQ [ifs]=Ifs [splf]=Splf [splfdata]=SplfData)
+  [pgmcall]=PgmCall [sysval]=SysVal [central]=Central [jdbc]=Jdbc [metadata]=MetaData [dtaq]=DtaQ [ifs]=Ifs [splf]=Splf [splfdata]=SplfData)
 scenarios=("$@")
 [ ${#scenarios[@]} -eq 0 ] && scenarios=("${all[@]}")
 

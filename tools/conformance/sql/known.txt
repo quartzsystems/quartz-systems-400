@@ -10,6 +10,7 @@ types/DECFLT2   # errors at fetch, HEX of CCSID-tagged strings, FOR SBCS/MIXED D
 types/FLOATFMT  # errors at fetch (SQL0433); the primary makes CHAR(4.9E-324) a CHAR(42)
 types/JSON1     # BOOLEAN shown as 1/0 by JTOpen, 01003 warnings, a predicate as a JSON_ARRAY value (SQL0104 on 7.5), FORMAT in JSON_UPDATE (SQL0199)
 types/XML1      # XMLPARSE describes as XML on the primary (QS/400 has no XML type), errors at fetch, 01004 warnings, XMLELEMENT refused (SQL0084)
+<<<<<<< HEAD
 types/BOOL1     # BOOLEAN shown as 1/0 by JTOpen, NOT on a null BOOLEAN column is true on pub400, 01003 warnings, catalog and function column types
 types/LOB1      # NCLOB/NVARCHAR type names, OCTET_LENGTH of a DBCLOB, SYSCOLUMNS column types
 types/DECFLT3   # errors at fetch
@@ -33,3 +34,12 @@ sqlpl/SETVARS   # CHAR(integer) is not blank padded to its length here
 sqlpl/FUNCS   # a function's error comes at fetch at IBM (an empty result first), at run here; catalog LOB columns
 services/SVCCOLS   # a probe of pub400's catalog; QS/400's catalogs do not list the QSYS2 services (sql tests/service_shapes.rs holds the shapes to it)
 services/SVCVALS   # pub400's own jobs, users and values; the value forms are settled in sql tests/services.rs
+=======
+types/BOOL1     # BOOLEAN shown as 1/0 by JTOpen, NOT on a null BOOLEAN column is true on pub400, 01003 warnings, catalog and function column types, SQL7905
+types/LOB1      # NCLOB/NVARCHAR type names, function result types (SQL-3), OCTET_LENGTH of a DBCLOB, SYSCOLUMNS column types, SQL7905
+types/DECFLT3   # errors at fetch, SQL7905
+sysibm/SQLMETA   # the catalog name is the server's (S062B175 there, QS400 here); LABEL ON COLUMN ... TEXT IS refused (SQL0104); NVARCHAR/NCLOB described as VARGRAPHIC/DBCLOB
+sysibm/SYSIBMLS   # QSYS2.SYSTABLES and SYSROUTINES do not list the computed SYSIBM views and the SYSIBM routines
+sysibm/SYSIBMCOL   # QSYS2.SYSCOLUMNS does not list the columns of computed views
+sysibm/SYSIBMPRM   # QSYS2.SYSPARMS is not there
+>>>>>>> efa1ee60 (Add the SYSIBM metadata views over the QSYS2 catalog)

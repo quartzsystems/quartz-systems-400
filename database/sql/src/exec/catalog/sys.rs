@@ -374,7 +374,7 @@ pub fn virtual_table(
                         s(m(d).schema),
                         f.default
                             .as_ref()
-                            .map_or(Value::Null, |dft| s(format!("{dft:?}"))),
+                            .map_or(Value::Null, |dft| s(default_text(dft))),
                         f.ccsid.or((f.data_type == DataType::Hex).then_some(65535)).map_or(Value::Null, |x| n(u64::from(x))),
                         s(if f.default.is_some() { "Y" } else { "N" }),
                     ]);
@@ -783,4 +783,17 @@ fn pad_fixed(cols: &[ColInfo], mut rows: Vec<Row>) -> Vec<Row> {
         }
     }
     rows
+}
+
+/// A column default as `SYSCOLUMNS.COLUMN_DEFAULT` writes it: the SQL
+/// text of the value.
+fn default_text(d: &dds::DefaultValue) -> String {
+    use dds::DefaultValue as D;
+    match d {
+        D::Null => "NULL".into(),
+        D::Quoted(t) => format!("'{}'", t.replace('\'', "''")),
+        D::Hex(b) => format!("X'{}'", crate::value::hex(b)),
+        D::Number(n) => n.clone(),
+        D::Expr(e) => e.clone(),
+    }
 }
