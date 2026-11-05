@@ -9,7 +9,7 @@ use super::*;
 use crate::value::parse_date;
 
 fn spec(t: DataType) -> TypeSpec {
-    TypeSpec { data_type: t, ccsid: None, bit_data: false }
+    TypeSpec { data_type: t, ccsid: None, bit_data: false, udt: None }
 }
 
 #[allow(clippy::needless_pass_by_value)]
@@ -94,7 +94,7 @@ fn binary_and_datetime() {
 #[test]
 fn ccsids() {
     let with = |t: DataType, ccsid: u16| {
-        cast(&s("abc"), &TypeSpec { data_type: t, ccsid: Some(ccsid), bit_data: false }, DfRounding::HalfEven)
+        cast(&s("abc"), &TypeSpec { data_type: t, ccsid: Some(ccsid), bit_data: false, udt: None }, DfRounding::HalfEven)
             .map_or_else(|e| e.msgid(), |v| v.as_text())
     };
     assert_eq!(with(DataType::Graphic(3), 13488), "abc");

@@ -199,6 +199,7 @@ pub struct CreateTable {
 
 /// One `ALTER TABLE` action.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::large_enum_variant)] // one per action, briefly
 pub enum AlterAction {
     /// `ADD COLUMN`.
     AddColumn(ColumnDef),

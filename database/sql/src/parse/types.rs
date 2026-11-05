@@ -56,6 +56,6 @@ impl Parser {
             }
             _ => DataType::Graphic(self.length_args()?.map_or(1, |(n, _)| n)),
         };
-        Ok(crate::ast::TypeSpec { data_type, ccsid: Some(1200), bit_data: false })
+        Ok(crate::ast::TypeSpec { data_type, ccsid: Some(1200), bit_data: false, udt: None })
     }
 }

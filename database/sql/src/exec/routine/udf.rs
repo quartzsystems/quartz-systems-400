@@ -456,7 +456,7 @@ impl Interp<'_, '_> {
         let mut frame = Frame { label: Some(var.value.clone()), vars: Vec::new() };
         let base = self.slots.len();
         for (i, c) in rs.columns.iter().enumerate() {
-            let ty = crate::pl::types::parse_type(&c.data_type).unwrap_or(TypeSpec { data_type: crate::ast::DataType::Varchar(32_740), ccsid: None, bit_data: false });
+            let ty = crate::pl::types::parse_type(&c.data_type).unwrap_or(TypeSpec { data_type: crate::ast::DataType::Varchar(32_740), ccsid: None, bit_data: false, udt: None });
             self.slots.push((ty, Value::Null));
             frame.vars.push((c.name.clone(), base + i));
         }

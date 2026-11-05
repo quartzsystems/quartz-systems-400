@@ -1,0 +1,225 @@
+-- captured from primary
+> CREATE TYPE {lib}.MONEY2 AS DECIMAL(9,2)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TYPE {lib}.CODE2 AS CHAR(4)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TYPE {lib}.NAME2 AS VARCHAR(20)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TYPE {lib}.CNT2 AS INTEGER WITH COMPARISONS
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TABLE {lib}.UDT2 (M {lib}.MONEY2, C {lib}.CODE2, N {lib}.NAME2, K
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.UDT2 VALUES (1.50, 'AB', 'x', 3, 2.00)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.UDT2 VALUES ({lib}.MONEY2(4.25), {lib}.CODE2('CD'), {l
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT {lib}.CHAR(C) FROM {lib}.UDT2 ORDER BY D
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT VARCHAR(N) FROM {lib}.UDT2 ORDER BY D
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(20)
+| 'x' |
+| 'yy' |
+> SELECT {lib}.VARCHAR(N) FROM {lib}.UDT2 ORDER BY D
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(20)
+| 'x' |
+| 'yy' |
+> SELECT INTEGER(K) FROM {lib}.UDT2 ORDER BY D
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 3 |
+| 7 |
+> SELECT {lib}.INTEGER(K) FROM {lib}.UDT2 ORDER BY D
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 3 |
+| 7 |
+> SELECT DECIMAL(K) FROM {lib}.UDT2 ORDER BY D
+sqlcode -402 sqlstate 42819 msgid SQL0402
+> SELECT CHAR(M) FROM {lib}.UDT2 ORDER BY D
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT {lib}.DECIMAL(M) FROM {lib}.UDT2 ORDER BY D
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 DECIMAL(9,2)
+| 1.50 |
+| 4.25 |
+> SELECT DECIMAL(M, 5, 1) FROM {lib}.UDT2 ORDER BY D
+sqlcode -402 sqlstate 42819 msgid SQL0402
+> SELECT CAST(C AS CHAR(4)), CAST(C AS VARCHAR(10)), CAST(M AS INTEGER), C
+sqlcode -461 sqlstate 42846 msgid SQL0461
+> SELECT CAST(K AS {lib}.MONEY2) FROM {lib}.UDT2
+sqlcode -461 sqlstate 42846 msgid SQL0461
+> SELECT CAST(D AS {lib}.MONEY2), CAST('AB' AS {lib}.CODE2), CAST(1 AS {li
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 {lib}.MONEY2
+# 00002 {lib}.CODE2 NOT NULL
+# 00003 {lib}.CNT2 NOT NULL
+| 2.00 | 'AB  ' | 1 |
+| 5.00 | 'AB  ' | 1 |
+> SELECT CAST(M AS {lib}.MONEY2) FROM {lib}.UDT2 ORDER BY D
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 {lib}.MONEY2
+| 1.50 |
+| 4.25 |
+> SELECT {lib}.MONEY2(K) FROM {lib}.UDT2
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT {lib}.MONEY2('1.5') FROM {lib}.UDT2
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT D FROM {lib}.UDT2 WHERE M = D
+sqlcode -401 sqlstate 42818 msgid SQL0401
+> SELECT D FROM {lib}.UDT2 WHERE M = {lib}.MONEY2(D)
+sqlcode 0 sqlstate 00000 msgid -
+# D DECIMAL(9,2)
+> SELECT D FROM {lib}.UDT2 WHERE M = M
+sqlcode 0 sqlstate 00000 msgid -
+# D DECIMAL(9,2)
+| 2.00 |
+| 5.00 |
+> SELECT D FROM {lib}.UDT2 WHERE C = {lib}.CODE2('AB')
+sqlcode 0 sqlstate 00000 msgid -
+# D DECIMAL(9,2)
+| 2.00 |
+> SELECT D FROM {lib}.UDT2 WHERE C IN ('AB')
+sqlcode -401 sqlstate 42818 msgid SQL0401
+> SELECT D FROM {lib}.UDT2 WHERE C IN ({lib}.CODE2('AB'), {lib}.CODE2('CD'
+sqlcode 0 sqlstate 00000 msgid -
+# D DECIMAL(9,2)
+| 2.00 |
+| 5.00 |
+> SELECT D FROM {lib}.UDT2 WHERE M BETWEEN 1 AND 2
+sqlcode -401 sqlstate 42818 msgid SQL0401
+> SELECT D FROM {lib}.UDT2 WHERE C LIKE 'A%'
+sqlcode -131 sqlstate 42818 msgid SQL0131
+> SELECT D FROM {lib}.UDT2 WHERE M IS NOT NULL ORDER BY D
+sqlcode 0 sqlstate 00000 msgid -
+# D DECIMAL(9,2)
+| 2.00 |
+| 5.00 |
+> SELECT D FROM {lib}.UDT2 WHERE K > 5
+sqlcode -401 sqlstate 42818 msgid SQL0401
+> SELECT D FROM {lib}.UDT2 WHERE K > {lib}.CNT2(5)
+sqlcode 0 sqlstate 00000 msgid -
+# D DECIMAL(9,2)
+| 5.00 |
+> SELECT D FROM {lib}.UDT2 WHERE M = K
+sqlcode -401 sqlstate 42818 msgid SQL0401
+> SELECT MAX(M), MIN(C), COUNT(M), COUNT(DISTINCT K) FROM {lib}.UDT2
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT SUM(M) FROM {lib}.UDT2
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT AVG(K) FROM {lib}.UDT2
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT M FROM {lib}.UDT2 ORDER BY M DESC
+sqlcode 0 sqlstate 00000 msgid -
+# M {lib}.MONEY2
+| 4.25 |
+| 1.50 |
+> SELECT K, COUNT(*) FROM {lib}.UDT2 GROUP BY K ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K {lib}.CNT2
+# 00002 INTEGER NOT NULL
+| 3 | 1 |
+| 7 | 1 |
+> SELECT -M FROM {lib}.UDT2
+sqlcode -402 sqlstate 42819 msgid SQL0402
+> SELECT C CONCAT 'x' FROM {lib}.UDT2
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT LENGTH(N) FROM {lib}.UDT2
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT SUBSTR(C, 1, 1) FROM {lib}.UDT2
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT COALESCE(M, {lib}.MONEY2(0)) FROM {lib}.UDT2 ORDER BY D
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 {lib}.MONEY2
+| 1.50 |
+| 4.25 |
+> SELECT COALESCE(M, 0) FROM {lib}.UDT2
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT CASE WHEN D > 3 THEN M ELSE D END FROM {lib}.UDT2
+sqlcode -581 sqlstate 42804 msgid SQL0581
+> SELECT CASE WHEN D > 3 THEN M ELSE {lib}.MONEY2(0) END FROM {lib}.UDT2 O
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 {lib}.MONEY2
+| 0.00 |
+| 4.25 |
+> SELECT M FROM {lib}.UDT2 UNION SELECT D FROM {lib}.UDT2
+sqlcode -415 sqlstate 42825 msgid SQL0415
+> SELECT M FROM {lib}.UDT2 UNION ALL SELECT M FROM {lib}.UDT2 ORDER BY 1
+sqlcode 0 sqlstate 00000 msgid -
+# M {lib}.MONEY2
+| 1.50 |
+| 1.50 |
+| 4.25 |
+| 4.25 |
+> UPDATE {lib}.UDT2 SET M = D WHERE D = 2
+sqlcode 0 sqlstate 00000 msgid - count 1
+> UPDATE {lib}.UDT2 SET M = 9 WHERE D = 2
+sqlcode 0 sqlstate 00000 msgid - count 1
+> UPDATE {lib}.UDT2 SET K = K WHERE D = 2
+sqlcode 0 sqlstate 00000 msgid - count 1
+> UPDATE {lib}.UDT2 SET D = M WHERE D = 2
+sqlcode 0 sqlstate 00000 msgid - count 1
+> UPDATE {lib}.UDT2 SET M = K WHERE D = 2
+sqlcode -408 sqlstate 42821 msgid SQL0408
+> INSERT INTO {lib}.UDT2 (D) SELECT M FROM {lib}.UDT2 WHERE D = 5
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT M, D FROM {lib}.UDT2 ORDER BY D
+sqlcode 0 sqlstate 00000 msgid -
+# M {lib}.MONEY2
+# D DECIMAL(9,2)
+| NULL | 4.25 |
+| 4.25 | 5.00 |
+| 9.00 | 9.00 |
+> CREATE VIEW {lib}.UDT2V AS SELECT M, C, D FROM {lib}.UDT2
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT * FROM {lib}.UDT2V ORDER BY D
+sqlcode 0 sqlstate 00000 msgid -
+# M {lib}.MONEY2
+# C {lib}.CODE2
+# D DECIMAL(9,2)
+| NULL | NULL | 4.25 |
+| 4.25 | 'CD  ' | 5.00 |
+| 9.00 | 'AB  ' | 9.00 |
+> SELECT COLUMN_NAME, DATA_TYPE, LENGTH, NUMERIC_SCALE, USER_DEFINED_TYPE_
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# DATA_TYPE VARCHAR(8) NOT NULL
+# LENGTH INTEGER NOT NULL
+# NUMERIC_SCALE INTEGER
+# USER_DEFINED_TYPE_SCHEMA VARCHAR(128)
+# USER_DEFINED_TYPE_NAME VARCHAR(128)
+| 'M' | 'DISTINCT' | 9 | 2 | '{lib}' | 'MONEY2' |
+| 'C' | 'DISTINCT' | 4 | NULL | '{lib}' | 'CODE2' |
+| 'N' | 'DISTINCT' | 20 | NULL | '{lib}' | 'NAME2' |
+| 'K' | 'DISTINCT' | 4 | 0 | '{lib}' | 'CNT2' |
+| 'D' | 'DECIMAL' | 9 | 2 | NULL | NULL |
+| 'M' | 'DISTINCT' | 9 | 2 | '{lib}' | 'MONEY2' |
+| 'C' | 'DISTINCT' | 4 | NULL | '{lib}' | 'CODE2' |
+| 'D' | 'DECIMAL' | 9 | 2 | NULL | NULL |
+> SELECT USER_DEFINED_TYPE_NAME, SOURCE_TYPE, METATYPE FROM QSYS2.SYSTYPES
+sqlcode 0 sqlstate 00000 msgid -
+# USER_DEFINED_TYPE_NAME VARCHAR(128) NOT NULL
+# SOURCE_TYPE VARCHAR(128)
+# METATYPE CHAR(1) NOT NULL
+| 'CNT2' | 'INTEGER' | 'T' |
+| 'CODE2' | 'CHARACTER' | 'T' |
+| 'MONEY2' | 'DECIMAL' | 'T' |
+| 'NAME2' | 'VARCHAR' | 'T' |
+> DROP TYPE {lib}.CODE2
+sqlcode -478 sqlstate 42893 msgid SQL0478
+> DROP VIEW {lib}.UDT2V
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.UDT2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.MONEY2
+sqlcode -658 sqlstate 42917 msgid SQL0658
+> DROP TYPE {lib}.MONEY2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.CODE2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.NAME2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.CNT2
+sqlcode 0 sqlstate 00000 msgid -

@@ -318,6 +318,25 @@ fn eval_for(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, e: &Expr, env: &Env, f: &
     if f.data_type == dds::DataType::DecFloat { ev.eval_decfloat(txn, e, env) } else { ev.eval(txn, e, env) }
 }
 
+/// A change's distinct types before any row is read: its condition's
+/// comparisons, and each `SET` value into its column (`udt::typing`).
+fn check_types(t: &TableInfo, alias: &str, w: &Where, set: Option<&[Assignment]>) -> Result<()> {
+    let schema = super::query::table_schema(t, alias);
+    let scope = super::restype::Scope::of(&schema);
+    if let Where::Cond(c) = w {
+        super::udt::typing::check(c, &scope)?;
+    }
+    for a in set.unwrap_or_default() {
+        for (c, e) in a.columns.iter().zip(&a.values) {
+            if let Some((_, f)) = t.field(&c.value) {
+                let ty = super::restype::type_in(e, &scope)?;
+                super::udt::typing::assign(f.udt.as_deref(), ty.as_ref())?;
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Evaluate the `SET` assignments against a row: field index to value.
 fn assignments(
     txn: &mut Txn<'_>,
@@ -401,6 +420,9 @@ fn change(
 ) -> Result<u64> {
     let t = ctx.resolve_table(txn, table)?;
     let alias = alias.map_or_else(|| table.name.value.clone(), |a| a.value.clone());
+    if super::udt::registry::any() {
+        check_types(&t, &alias, w, set)?;
+    }
     let mark = ctx.yields();
     if matches!(w, Where::Cond(c) if has_subquery(c)) {
         ctx.answers = Some(Answers::recording());

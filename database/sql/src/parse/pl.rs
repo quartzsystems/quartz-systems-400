@@ -430,7 +430,7 @@ impl Parser {
                     return Err(e);
                 }
                 let name = self.object_name()?;
-                (crate::ast::TypeSpec { data_type: crate::ast::DataType::Integer, ccsid: None, bit_data: false }, Some(name))
+                (crate::ast::TypeSpec { data_type: crate::ast::DataType::Integer, ccsid: None, bit_data: false, udt: None }, Some(name))
             }
         };
         let mut v = PlVar { names, ty, array, default: None, constant: false };

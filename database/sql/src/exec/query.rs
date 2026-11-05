@@ -336,7 +336,7 @@ fn body(
             let mut cols: Vec<ColInfo> = ls.cols.iter().filter(|c| !c.hidden).cloned().collect();
             // Both sides' values in the type they have in common.
             let right_cols: Vec<&ColInfo> = rs.cols.iter().filter(|c| !c.hidden).collect();
-            let fits = super::restype::union_types(&mut cols, &right_cols);
+            let fits = super::restype::union_types(&mut cols, &right_cols)?;
             for p in &mut all_rows {
                 for (v, fit) in p.out.iter_mut().zip(&fits) {
                     if let Some(t) = fit {
@@ -1314,6 +1314,16 @@ fn select(
         collect_scans(txn, ctx, t, true, &mut scans)?;
         item_of.resize(scans.len(), i);
     }
+    // A condition's distinct types follow their rules (`udt::typing`),
+    // before a row is read.
+    if super::udt::registry::any() {
+        let joined = Schema { cols: scans.iter().flat_map(|s| s.schema.cols.iter().cloned()).collect() };
+        let mut scope = Scope::of_env(outer);
+        scope.frames.push(&joined);
+        for c in sel.where_clause.iter().chain(&sel.having) {
+            super::udt::typing::check(c, &scope)?;
+        }
+    }
     let mut rest = Vec::new();
     if let Some(w) = &sel.where_clause {
         let mut parts = Vec::new();
@@ -1777,7 +1787,7 @@ pub fn describe_table(t: &TableInfo) -> Vec<ColumnDesc> {
         .iter()
         .map(|f: &FieldDef| ColumnDesc {
             name: f.name.to_string(),
-            data_type: sql_type(f),
+            data_type: f.udt.clone().unwrap_or_else(|| sql_type(f)),
             nullable: f.allow_null,
         })
         .collect()

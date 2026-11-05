@@ -292,7 +292,7 @@ fn program_call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Val
     let mut args = Vec::new();
     for a in &c.args {
         let v = Evaluator { ctx, params }.eval(txn, a, &Env::default())?;
-        let ty = TypeSpec { data_type: own_type(a, &v), ccsid: None, bit_data: false };
+        let ty = TypeSpec { data_type: own_type(a, &v), ccsid: None, bit_data: false, udt: None };
         let mode = if matches!(a, Expr::Param(_)) { ParmMode::InOut } else { ParmMode::In };
         let mut p = argument(txn, ctx, params, ParmMode::In, &ty, &Expr::Literal(Literal::Null))?;
         p.mode = model::mode_code(mode);

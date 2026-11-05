@@ -322,13 +322,18 @@ pub fn virtual_table(
                 c("COLUMN_DEFAULT", DataType::Char, 100, 0, true),
                 c("CCSID", DataType::Packed, 5, 0, true),
                 c("HAS_DEFAULT", DataType::Char, 1, 0, false),
+                c("USER_DEFINED_TYPE_SCHEMA", DataType::Char, 128, 0, true),
+                c("USER_DEFINED_TYPE_NAME", DataType::Char, 128, 0, true),
             ];
             let mut rows = Vec::new();
             for (_, d) in &all {
                 let Some(fmt) = d.formats.first() else {
                     continue;
                 };
+                // Columns of a distinct type.
+                let typed = if crate::exec::udt::registry::any() { crate::exec::udt::column::of(txn, d.id)? } else { Vec::new() };
                 for (i, f) in fmt.format.fields.iter().enumerate() {
+                    let udt = typed.iter().find(|c| c.field == f.name);
                     let numeric = f.data_type.is_numeric();
                     let (length, scale, precision) = match f.data_type {
                         // A DECFLOAT's length is its bytes, its precision its digits.
@@ -358,7 +363,7 @@ pub fn virtual_table(
                         s(m(d).sql),
                         s(ccsid::decode_trimmed(&d.header.owner)),
                         n(i as u64 + 1),
-                        s(data_type_name(f)),
+                        s(if udt.is_some() { "DISTINCT".into() } else { data_type_name(f) }),
                         length,
                         scale,
                         precision,
@@ -377,6 +382,8 @@ pub fn virtual_table(
                             .map_or(Value::Null, |dft| s(default_text(dft))),
                         f.ccsid.or((f.data_type == DataType::Hex).then_some(65535)).map_or(Value::Null, |x| n(u64::from(x))),
                         s(if f.default.is_some() { "Y" } else { "N" }),
+                        udt.map_or(Value::Null, |c| s(c.library.to_string().trim_end().to_string())),
+                        udt.map_or(Value::Null, |c| s(c.name.clone())),
                     ]);
                 }
             }

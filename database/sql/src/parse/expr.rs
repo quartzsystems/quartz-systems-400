@@ -324,7 +324,7 @@ impl Parser {
                 self.expect_sym("(")?;
                 let e = self.expr()?;
                 self.expect_word("AS")?;
-                let t = self.type_spec()?;
+                let t = self.type_spec_or_udt()?;
                 self.expect_sym(")")?;
                 Ok(Expr::Cast(Box::new(e), t))
             }

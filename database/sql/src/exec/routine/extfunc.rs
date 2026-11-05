@@ -119,7 +119,7 @@ pub fn finish(txn: &mut Txn<'_>, ctx: &mut SqlContext) {
         if let (Some(p), Some(slot)) = (pad, plan.parms.iter_mut().find(|p| matches!(p.value, Value::Bin(_)) && p.mode == 3)) {
             slot.value = Value::Bin(p);
         }
-        let ty = crate::ast::TypeSpec { data_type: crate::ast::DataType::Integer, ccsid: None, bit_data: false };
+        let ty = crate::ast::TypeSpec { data_type: crate::ast::DataType::Integer, ccsid: None, bit_data: false, udt: None };
         let _ = make(txn, ctx, &plan, &ty);
     }
 }

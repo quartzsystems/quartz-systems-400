@@ -413,6 +413,26 @@ impl Parser {
         ))
     }
 
+    /// A data type, or the name of a distinct type (a column's, a
+    /// `CAST`'s), resolved as the statement runs (`exec::udt`).
+    pub(crate) fn type_spec_or_udt(&mut self) -> Result<TypeSpec> {
+        const BUILT_IN: &[&str] = &[
+            "CHAR", "CHARACTER", "VARCHAR", "GRAPHIC", "VARGRAPHIC", "DECIMAL", "DEC", "NUMERIC", "NUM", "SMALLINT", "INTEGER", "INT",
+            "BIGINT", "REAL", "DOUBLE", "FLOAT", "DATE", "TIME", "TIMESTAMP", "DECFLOAT", "BINARY", "VARBINARY", "BOOLEAN", "BLOB",
+            "CLOB", "DBCLOB", "NCHAR", "NVARCHAR", "NCLOB", "NATIONAL", "XML", "ROWID", "DATALINK",
+        ];
+        let built_in = matches!(self.tok(), Tok::Word(w) if BUILT_IN.contains(&w.as_str())) && !matches!(self.tok_at(1), Tok::Sym(s) if *s == ".");
+        if built_in || !matches!(self.tok(), Tok::Word(_) | Tok::Delimited(_)) {
+            return self.type_spec();
+        }
+        let n = self.object_name()?;
+        let name = match &n.schema {
+            Some(s) => format!("{}.{}", s.value, n.name.value),
+            None => n.name.value.clone(),
+        };
+        Ok(TypeSpec { data_type: DataType::Integer, ccsid: None, bit_data: false, udt: Some(name) })
+    }
+
     /// A data type with `CCSID` and `FOR BIT DATA`.
     #[allow(clippy::too_many_lines)]
     pub(crate) fn type_spec(&mut self) -> Result<TypeSpec> {
@@ -505,16 +525,17 @@ impl Parser {
             "XML" => return Err(Self::unsupported("the XML data type for a column or a CAST (XMLPARSE and XMLSERIALIZE take XML text)")),
             "ROWID" => return Err(Self::unsupported("ROWID columns (generated row identifiers)")),
             "DATALINK" => return Err(Self::unsupported("the DATALINK data type")),
-            // BLOCKED(sql): a distinct type in a column, variable or CAST
-            // needs strong typing through the engine; CREATE TYPE makes
-            // the type only.
-            _ if self.is_sym(".") => return Err(Self::unsupported("a user-defined type as a data type")),
+            // BLOCKED(sql): a distinct type is a column's or a CAST's
+            // (`type_spec_or_udt`); a variable, parameter, sequence or
+            // source type of one needs SQL PL values to carry it.
+            _ if self.is_sym(".") => return Err(Self::unsupported("a distinct type here (only columns and CAST take one)")),
             _ => return Err(self.expected("a data type")),
         };
         let mut spec = TypeSpec {
             data_type,
             ccsid: None,
             bit_data: false,
+            udt: None,
         };
         loop {
             if self.eat_word("CCSID") {

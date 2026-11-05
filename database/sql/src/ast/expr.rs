@@ -62,6 +62,9 @@ pub struct TypeSpec {
     pub ccsid: Option<u16>,
     /// `FOR BIT DATA`.
     pub bit_data: bool,
+    /// A distinct type: its name as written until the statement resolves
+    /// it (`exec::udt`), then `SCHEMA.NAME` with `data_type` its source.
+    pub udt: Option<String>,
 }
 
 /// A literal.

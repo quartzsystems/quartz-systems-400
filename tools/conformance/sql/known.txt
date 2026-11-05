@@ -35,7 +35,7 @@ sysibm/SYSIBMLS   # QSYS2.SYSTABLES and SYSROUTINES do not list the computed SYS
 sysibm/SYSIBMCOL   # QSYS2.SYSCOLUMNS does not list the columns of computed views
 sysibm/SYSIBMPRM   # QSYS2.SYSPARMS is not there
 objects2/VARIABLE   # SYSVARIABLES.DEFAULT is NCLOB at IBM, VARGRAPHIC(2000) here (no LOB catalog columns)
-objects2/TYPES   # distinct types as column types, casts and their strong typing refused SQL0084 (BLOCKED(sql))
+objects2/TYPES   # SYSCOLUMNS.DATA_TYPE is CHAR(8) here, VARCHAR(8) at IBM
 trigger/TRGDEFS   # TRIGGER_TEXT is NVARCHAR and LONG_COMMENT DBCLOB at IBM, VARGRAPHIC here (no LOB catalog columns)
 trigger/TRGCAT   # ACTION_CONDITION and ACTION_STATEMENT are DBCLOB at IBM, VARGRAPHIC(2000) here (no LOB catalog columns)
 services/GENSQL    # QTEMP/Q_GENSQL is not written (the result set is); pub400 CCSID 273; QS/400 keeps COMMENT ON as the label; generated constraint names differ
@@ -47,3 +47,6 @@ sqlpl/PARMDFT   # SYSPARMS.DEFAULT is NCLOB at IBM, VARCHAR(2000) here (no LOB c
 ddl/DGTTCLS   # ALTER TABLE of a table with an index or view over it refused (SQL0084, BLOCKED(sql) in alter)
 trigger/DLTFTRG   # the kit's in-memory store runs no commands (QSYS.QCMDEXC is SQL0204 there); DLTF's dropping of SQL trigger programs runs in the service (svc/db/files.rs)
 objects2/GRANTUDT   # the kit store has no QUSER/QPGMR profiles (SQL0204) and runs no commands (DSPOBJAUT through QSYS.QCMDEXC); the authorities are checked in sql::objects grant_on_types_and_variables_as_the_primary
+objects2/TYPES2   # SYSCOLUMNS.DATA_TYPE is CHAR(8) here, VARCHAR(8) at IBM
+objects2/TYPES3   # a distinct type compared with a quantified subquery's column of another type is not refused (SQL0401 there; BLOCKED(sql) in udt::typing::check)
+ddl/QTEMPCL   # the kit's in-memory store runs no commands (QCMDEXC); one QTEMP for CL and SQL is tested in sql tests/qtemp_job.rs and in the service

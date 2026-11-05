@@ -180,7 +180,7 @@ mod tests {
 
     fn col(t: DataType, p: &str) -> Column {
         Column::Value {
-            spec: TypeSpec { data_type: t, ccsid: None, bit_data: false },
+            spec: TypeSpec { data_type: t, ccsid: None, bit_data: false, udt: None },
             path: p.into(),
             json: false,
             empty: Fallback::Null,
@@ -203,14 +203,14 @@ mod tests {
         let doc = Value::Str(r#"{"r":[{"a":1,"b":"x"},{"a":"q"}]}"#.into());
         let cols = [
             Column::Value {
-                spec: TypeSpec { data_type: DataType::Integer, ccsid: None, bit_data: false },
+                spec: TypeSpec { data_type: DataType::Integer, ccsid: None, bit_data: false, udt: None },
                 path: "$.a".into(),
                 json: false,
                 empty: Fallback::Null,
                 error: Fallback::Default(Value::int(-1)),
             },
             Column::Value {
-                spec: TypeSpec { data_type: DataType::Varchar(20), ccsid: None, bit_data: false },
+                spec: TypeSpec { data_type: DataType::Varchar(20), ccsid: None, bit_data: false, udt: None },
                 path: "$".into(),
                 json: true,
                 empty: Fallback::Null,

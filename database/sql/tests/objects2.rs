@@ -134,8 +134,40 @@ fn distinct_types() {
     db.ok("CREATE TYPE QSTEST.MONEY AS DECIMAL(9,2)");
     db.ok("CREATE TYPE QSTEST.CODE AS CHAR(4) WITH COMPARISONS");
     assert_eq!(db.code("CREATE TYPE QSTEST.MONEY AS INTEGER"), (-601, "42710".to_string()));
-    // BLOCKED(sql): no strong typing yet, so no use of the type.
-    assert_eq!(db.code("CREATE TABLE QSTEST.UDTT (ID INTEGER, AMT QSTEST.MONEY)").0, -84);
+    // A column of each, strongly typed (objects2/TYPES, TYPES2, TYPES3).
+    db.ok("CREATE TABLE QSTEST.UDTT (ID INTEGER, AMT QSTEST.MONEY, CD QSTEST.CODE, D DECIMAL(9,2))");
+    db.ok("INSERT INTO QSTEST.UDTT VALUES (1, 12.50, 'AB', 1), (2, QSTEST.MONEY(3.25), QSTEST.CODE('CD'), 2)");
+    assert_eq!(db.rows("SELECT ID, AMT, CD FROM QSTEST.UDTT ORDER BY ID"), ["1|12.50|AB", "2|3.25|CD"]);
+    assert_eq!(db.code("SELECT ID FROM QSTEST.UDTT WHERE AMT > 5"), (-401, "42818".to_string()));
+    assert_eq!(db.rows("SELECT ID FROM QSTEST.UDTT WHERE AMT > QSTEST.MONEY(5)"), ["1"]);
+    assert_eq!(db.code("SELECT ID FROM QSTEST.UDTT WHERE CD = 'AB'"), (-401, "42818".to_string()));
+    assert_eq!(db.code("SELECT ID FROM QSTEST.UDTT WHERE CD LIKE 'A%'"), (-131, "42818".to_string()));
+    assert_eq!(db.code("SELECT AMT + 1 FROM QSTEST.UDTT"), (-402, "42819".to_string()));
+    assert_eq!(db.code("SELECT CHAR(CD) FROM QSTEST.UDTT"), (-171, "42815".to_string()));
+    assert_eq!(db.code("SELECT SUM(AMT) FROM QSTEST.UDTT"), (-171, "42815".to_string()));
+    assert_eq!(db.rows("SELECT QSTEST.DECIMAL(AMT) + 1 FROM QSTEST.UDTT ORDER BY ID"), ["13.50", "4.25"]);
+    assert_eq!(db.rows("SELECT QSTEST.CHARACTER(CD) FROM QSTEST.UDTT ORDER BY ID"), ["AB", "CD"]);
+    assert_eq!(db.code("SELECT QSTEST.CHAR(CD) FROM QSTEST.UDTT"), (-204, "42704".to_string()));
+    assert_eq!(db.rows("SELECT CAST(AMT AS DECIMAL(9,3)) FROM QSTEST.UDTT ORDER BY ID"), ["12.500", "3.250"]);
+    assert_eq!(db.code("SELECT CAST(AMT AS INTEGER) FROM QSTEST.UDTT"), (-461, "42846".to_string()));
+    assert_eq!(db.code("SELECT CAST(CD AS QSTEST.MONEY) FROM QSTEST.UDTT"), (-461, "42846".to_string()));
+    assert_eq!(db.rows("SELECT CAST(10 AS QSTEST.MONEY) FROM SYSIBM.SYSDUMMY1"), ["10.00"]);
+    assert_eq!(db.code("SELECT QSTEST.MONEY('1.5') FROM SYSIBM.SYSDUMMY1"), (-204, "42704".to_string()));
+    assert_eq!(db.code("SELECT COALESCE(AMT, 0) FROM QSTEST.UDTT"), (-171, "42815".to_string()));
+    assert_eq!(db.code("SELECT CASE WHEN ID > 1 THEN AMT ELSE D END FROM QSTEST.UDTT"), (-581, "42804".to_string()));
+    assert_eq!(db.code("SELECT AMT FROM QSTEST.UDTT UNION SELECT D FROM QSTEST.UDTT"), (-415, "42825".to_string()));
+    assert_eq!(db.code("UPDATE QSTEST.UDTT SET AMT = CD WHERE ID = 99"), (-408, "42821".to_string()));
+    db.ok("UPDATE QSTEST.UDTT SET AMT = D WHERE ID = 1");
+    db.ok("UPDATE QSTEST.UDTT SET D = AMT WHERE ID = 2");
+    db.ok("CREATE VIEW QSTEST.UDTV AS SELECT AMT, CD FROM QSTEST.UDTT WHERE ID > 0");
+    assert_eq!(
+        db.rows("SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, USER_DEFINED_TYPE_SCHEMA, USER_DEFINED_TYPE_NAME FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = 'QSTEST' AND DATA_TYPE = 'DISTINCT' ORDER BY TABLE_NAME, ORDINAL_POSITION"),
+        ["UDTT|AMT|DISTINCT|QSTEST|MONEY", "UDTT|CD|DISTINCT|QSTEST|CODE", "UDTV|AMT|DISTINCT|QSTEST|MONEY", "UDTV|CD|DISTINCT|QSTEST|CODE"]
+    );
+    assert_eq!(db.code("DROP TYPE QSTEST.MONEY"), (-478, "42893".to_string()));
+    assert_eq!(db.code("DROP FUNCTION QSTEST.MONEY"), (-658, "42917".to_string()));
+    db.ok("DROP VIEW QSTEST.UDTV");
+    db.ok("DROP TABLE QSTEST.UDTT");
     assert_eq!(
         db.rows("SELECT USER_DEFINED_TYPE_NAME, SOURCE_TYPE, LENGTH, NUMERIC_SCALE, METATYPE, SYSTEM_TYPE_NAME FROM QSYS2.SYSTYPES ORDER BY USER_DEFINED_TYPE_NAME"),
         ["CODE|CHARACTER|4|NULL|T|CODE", "MONEY|DECIMAL|9|2|T|MONEY"]

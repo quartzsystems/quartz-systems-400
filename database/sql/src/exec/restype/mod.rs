@@ -42,7 +42,7 @@ impl SqlType {
     /// A type that is never null.
     #[must_use]
     pub fn not_null(t: DataType) -> Self {
-        Self { spec: TypeSpec { data_type: t, ccsid: None, bit_data: false }, nullable: false }
+        Self { spec: TypeSpec { data_type: t, ccsid: None, bit_data: false, udt: None }, nullable: false }
     }
 
     /// The data type.
@@ -157,7 +157,7 @@ pub fn of_field(f: &FieldDef) -> SqlType {
     };
     let ccsid = f.ccsid.filter(|c| *c != 65535 || !matches!(f.data_type, D::Bytes | D::Blob));
     SqlType {
-        spec: TypeSpec { data_type: t, bit_data: ccsid == Some(65535), ccsid: ccsid.filter(|c| *c != 65535) },
+        spec: TypeSpec { data_type: t, bit_data: ccsid == Some(65535), ccsid: ccsid.filter(|c| *c != 65535), udt: f.udt.clone() },
         nullable: f.allow_null,
     }
 }
@@ -194,6 +194,7 @@ pub fn field_of(t: &SqlType) -> FieldDef {
     let mut f = FieldDef::new(name, dt, len, dec);
     f.varlen = var;
     f.allow_null = t.nullable;
+    f.udt.clone_from(&t.spec.udt);
     f.int_range = matches!(t.data_type(), DataType::SmallInt | DataType::Integer | DataType::BigInt);
     match t.data_type() {
         DataType::Real => {
@@ -270,9 +271,9 @@ pub fn type_in(e: &Expr, scope: &Scope<'_>) -> Result<Option<SqlType>> {
         },
         Expr::Cast(a, t) => {
             let inner = type_in(a, scope)?;
-            let mut spec = t.clone();
+            let mut spec = super::udt::typing::cast(inner.as_ref(), t)?;
             if let Some(i) = &inner {
-                check_cast(i, t)?;
+                check_cast(&SqlType { spec: TypeSpec { udt: None, ..i.spec.clone() }, nullable: i.nullable }, &spec)?;
                 // Binary data cast to a character type is bit data.
                 if unify::is_binary(i.data_type()) && matches!(t.data_type, DataType::Char(_) | DataType::Varchar(_)) {
                     spec.bit_data = true;
@@ -283,7 +284,11 @@ pub fn type_in(e: &Expr, scope: &Scope<'_>) -> Result<Option<SqlType>> {
             }
             Ok(Some(SqlType { spec, nullable: inner.is_none_or(|i| i.nullable) }))
         }
-        Expr::Neg(a) => Ok(type_in(a, scope)?.filter(|t| unify::is_number(t.data_type()))),
+        Expr::Neg(a) => {
+            let t = type_in(a, scope)?;
+            super::udt::typing::operator(t.as_ref(), None, false)?;
+            Ok(t.filter(|t| unify::is_number(t.data_type())))
+        }
         Expr::Duration(a, _) => type_in(a, scope),
         Expr::Binary(a, op, b) => {
             // A labeled duration takes the type of the other side.
@@ -293,7 +298,9 @@ pub fn type_in(e: &Expr, scope: &Scope<'_>) -> Result<Option<SqlType>> {
             if matches!(**a, Expr::Duration(..)) {
                 return type_in(b, scope);
             }
-            let (Some(x), Some(y)) = (type_in(a, scope)?, type_in(b, scope)?) else { return Ok(None) };
+            let (x, y) = (type_in(a, scope)?, type_in(b, scope)?);
+            super::udt::typing::operator(x.as_ref(), y.as_ref(), *op == BinOp::Concat)?;
+            let (Some(x), Some(y)) = (x, y) else { return Ok(None) };
             if let Some(t) = rules::datetime(&x, *op, &y) {
                 return Ok(Some(t));
             }
@@ -329,7 +336,7 @@ pub fn type_in(e: &Expr, scope: &Scope<'_>) -> Result<Option<SqlType>> {
         // A predicate as a value is a BOOLEAN (IBM i 7.5).
         Expr::IsNull(..) | Expr::Exists(..) => nn(DataType::Boolean),
         Expr::Compare(..) | Expr::And(..) | Expr::Or(..) | Expr::Not(_) | Expr::Between(..) | Expr::InList(..) | Expr::InSubquery(..) | Expr::Like(..) => {
-            Ok(Some(SqlType { spec: TypeSpec { data_type: DataType::Boolean, ccsid: None, bit_data: false }, nullable: true }))
+            Ok(Some(SqlType { spec: TypeSpec { data_type: DataType::Boolean, ccsid: None, bit_data: false, udt: None }, nullable: true }))
         }
         _ => Ok(None),
     }
@@ -358,6 +365,9 @@ fn function(f: &Function, scope: &Scope<'_>) -> Result<Option<SqlType>> {
             }
             a => type_in(a, scope)?,
         });
+    }
+    if let Some(t) = super::udt::typing::function(&f.name, &args, f.distinct)? {
+        return Ok(Some(t));
     }
     if super::agg::is_aggregate(f) {
         return Ok(super::agg::result_type(f, &args));
@@ -542,12 +552,19 @@ pub fn check_cast(from: &SqlType, to: &TypeSpec) -> Result<()> {
 
 /// The columns of a `UNION`: each the type both sides' columns have in
 /// common, written into `left`; the types the rows are fitted to (`None`
-/// where a side's type is not known).
-pub fn union_types(left: &mut [super::eval::ColInfo], right: &[&super::eval::ColInfo]) -> Vec<Option<SqlType>> {
+/// where a side's type is not known); `SQL0415` for a distinct type
+/// beside another type.
+pub fn union_types(left: &mut [super::eval::ColInfo], right: &[&super::eval::ColInfo]) -> Result<Vec<Option<SqlType>>> {
     let mut out = Vec::with_capacity(left.len());
     for (l, r) in left.iter_mut().zip(right) {
         let t = match (&l.field, &r.field) {
-            (Some(a), Some(b)) => unify(&of_field(a).or_null(l.nullable), &of_field(b).or_null(r.nullable)),
+            (Some(a), Some(b)) => {
+                let (x, y) = (of_field(a).or_null(l.nullable), of_field(b).or_null(r.nullable));
+                if let Some(e) = super::udt::typing::mixed(&x, &y, super::udt::typing::Mixed::Union) {
+                    return Err(e);
+                }
+                unify(&x, &y)
+            }
             _ => None,
         };
         if let Some(t) = &t {
@@ -556,7 +573,7 @@ pub fn union_types(left: &mut [super::eval::ColInfo], right: &[&super::eval::Col
         }
         out.push(t);
     }
-    out
+    Ok(out)
 }
 
 /// The columns of a `VALUES`: each the rows' common type.

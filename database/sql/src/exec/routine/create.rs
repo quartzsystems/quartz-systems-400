@@ -434,6 +434,10 @@ impl Catalog for Cat<'_, '_> {
 
 /// `DROP PROCEDURE|FUNCTION|SPECIFIC ...`.
 pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, d: &DropRoutine) -> Result<()> {
+    // A distinct type's generated function goes with the type only.
+    if !d.specific && d.kind == RoutineKind::Function && crate::exec::udt::typing::is_generated(&d.name) {
+        return Err(SqlError::Coded { code: -658, state: "42917", what: format!("{} is a function generated for a distinct type; DROP TYPE drops it", d.name) });
+    }
     let one = the_one(txn, ctx, d)?;
     remove(txn, ctx, &one)
 }

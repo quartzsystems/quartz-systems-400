@@ -658,6 +658,9 @@ pub struct FieldDef {
     pub reference: Option<Reference>,
     /// Source line index of the specification.
     pub line: usize,
+    /// An SQL column of a distinct type: the type, `SCHEMA.NAME`. SQL
+    /// sets it from the file's `*SQLINF`; the format does not store it.
+    pub udt: Option<String>,
 }
 
 impl FieldDef {
@@ -692,6 +695,7 @@ impl FieldDef {
             validity: Vec::new(),
             reference: None,
             line: 0,
+            udt: None,
         }
     }
 

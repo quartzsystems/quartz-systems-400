@@ -150,6 +150,7 @@ fn create_from_fields(
         Some(r) => SqlContext::sys_name(r)?,
         None => names::format_name(name),
     };
+    let typed = super::udt::column::typed(&fields);
     let mut rf = dds::RecordFormat::new(rcdfmt);
     rf.fields = fields;
     rf.lay_out();
@@ -171,6 +172,7 @@ fn create_from_fields(
         &CreateFileOpts { now: ctx.clock(), text: String::new(), size: file::Size::NOMAX, ..CreateFileOpts::default() },
     )?;
     super::ddl::finish_table(txn, ctx, library, id, sql.as_deref(), &t.name.name.value)?;
+    super::udt::column::record(txn, id, &typed, db::sqlinf::Kind::Table, ctx.clock())?;
     Ok(id)
 }
 

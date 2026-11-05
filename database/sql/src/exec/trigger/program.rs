@@ -73,7 +73,7 @@ fn field_type(f: &FieldDef) -> Option<TypeSpec> {
         D::Timestamp => DataType::Timestamp(D::timestamp_precision(f.length)),
         _ => return None,
     };
-    let t = TypeSpec { data_type: dt, ccsid: None, bit_data: false };
+    let t = TypeSpec { data_type: dt, ccsid: None, bit_data: false, udt: None };
     // Only where the routine's storage is the record's.
     host_type(&t).ok().filter(|h| h.size == f.byte_len).map(|_| t)
 }

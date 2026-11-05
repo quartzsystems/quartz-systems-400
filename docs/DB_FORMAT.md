@@ -721,6 +721,7 @@ The attribute area holds `SqlInfAttr`; the byte space holds
 | 13 `VIEW` | a view's attributes and query text |
 | 14 `OPTIONS` | the `SET OPTION` values a routine or trigger was made with; a program's precompile options |
 | 15 `STATEMENT` | one embedded statement of a program (kind 13 `PROGRAM`) |
+| 16 `COLTYPE` | one column of a distinct type: the field and its type (a table's or view's) |
 
 A schema keeps its SQL name only in QSYS's name index (a `*LIB` owns
 no `*SQLINF`). An object keeps a `NAME` entry only when its SQL
@@ -1013,6 +1014,24 @@ source type (an array type's element type) as SQL writes it,
 | 4 | 4 | reserved2 | 0 |
 | 8 | 8 | cardinality | an array type's largest cardinality (2147483647 for `ARRAY[]`); 0 otherwise |
 | 16 | variable | parts | the source type |
+
+### `SqlColType` (variable)
+
+The `COLTYPE` entry of a table or view (kinds 1, 2, 11): one per column
+of a distinct type, linking the field to the type's `*SQLUDT`. The
+field keeps the source type; the entry makes the column the type's
+(`SYSCOLUMNS.DATA_TYPE` `DISTINCT`, strong typing, `DROP TYPE`'s
+`SQL0478`).
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | field | the field's system name, CP037 |
+| 10 | 2 | reserved | 0 |
+| 12 | 16 | type | `ObjectId` of the type's `*SQLUDT` |
+| 28 | 10 | library | the type's library, CP037 |
+| 38 | 2 | name_len | |
+| 40 | 8 | reserved2 | 0 |
+| 48 | variable | name | the type's SQL name, UTF-8 |
 
 ### 8.2 The SQL name index
 

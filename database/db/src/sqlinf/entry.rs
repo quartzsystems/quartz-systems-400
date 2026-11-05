@@ -128,6 +128,8 @@ pub mod tag {
     pub const OPTIONS: u16 = 14;
     /// One embedded statement of a program.
     pub const STATEMENT: u16 = 15;
+    /// One column of a distinct type: the field and its type.
+    pub const COLTYPE: u16 = 16;
 }
 
 /// One tagged entry.

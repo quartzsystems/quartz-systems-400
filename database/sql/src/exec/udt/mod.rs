@@ -5,16 +5,20 @@
 //! Distinct and array types: `CREATE TYPE ... AS` a source type (`ARRAY[n]`
 //! after it for an array type, which SQL procedures use) makes a `*SQLUDT`
 //! holding the source in its `TYPE` entry (`docs/DB_FORMAT.md` §8.1,
-//! `SqlType`); `DROP TYPE` deletes it; `SYSTYPES` lists them.
-//! `GRANT`/`REVOKE` on a type are `exec::grant_obj`'s.
-//! BLOCKED(sql): using a distinct type (a column, a variable, `CAST`, the
-//! generated cast functions) is refused with `SQL0084`: values and result
-//! columns carry only their source type (`Value`, `ColInfo`), a column's
-//! link to its type needs a place in the table's `*SQLINF` (a tag no
-//! brief has assigned), and the strong typing the primary applies
-//! (`SQL0401` comparing with the source type, `SQL0402` in arithmetic,
-//! `SQL0171` for a source-type function, `SQL0478` dropping a type in
-//! use: `objects2/TYPES`) needs that type through every expression.
+//! `SqlType`); `DROP TYPE` deletes it, refused while a column is of it;
+//! `SYSTYPES` lists them. `GRANT`/`REVOKE` on a type are
+//! `exec::grant_obj`'s. A column of a distinct type keeps the source type
+//! in its field and its link to the type in a `COLTYPE` entry ([`column`]);
+//! statements see the types through [`registry`] and are typed by
+//! [`typing`]'s rules.
+//! BLOCKED(sql): a variable, routine parameter or result, sequence or
+//! `ALTER COLUMN ... SET DATA TYPE` of a distinct type is refused with
+//! `SQL0084` (SQL PL values carry only their source type); `WITH
+//! COMPARISONS` is accepted and changes nothing, as on the primary.
+
+pub mod column;
+pub mod registry;
+pub mod typing;
 
 use db::sqlinf::names::{self, Space, Target};
 use db::sqlinf::var::Udt;
@@ -101,6 +105,9 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateType) -> Result
 pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) -> Result<()> {
     let (id, _) = find(txn, ctx, name)?.ok_or_else(|| SqlError::ObjectNotFound { kind: "type", name: name.name.value.clone() })?;
     db::auth::check(txn, "obj.delete", id).map_err(SqlError::from)?;
+    if let Some(user) = column::user_of(txn, ctx.qsys, id)? {
+        return Err(SqlError::Integrity { sqlcode: -478, sqlstate: "42893", what: format!("{} has a column of type {}", user, name.name.value) });
+    }
     let lib = ctx.library_for(txn, name)?;
     names::remove(txn, lib, Space::Type, &name.name.value)?;
     ops::delete(txn, ctx.job, id)?;

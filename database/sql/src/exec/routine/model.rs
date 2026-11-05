@@ -183,5 +183,5 @@ pub fn type_of_sqltype(base: i16, len: i32) -> Option<TypeSpec> {
         408 => DataType::Clob(n),
         _ => return None,
     };
-    Some(TypeSpec { data_type: dt, ccsid: None, bit_data: false })
+    Some(TypeSpec { data_type: dt, ccsid: None, bit_data: false, udt: None })
 }

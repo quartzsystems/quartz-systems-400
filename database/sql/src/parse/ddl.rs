@@ -182,7 +182,7 @@ impl Parser {
             self.eat_word("COLUMN");
             system_name = Some(self.ident()?);
         }
-        let type_spec = self.type_spec()?;
+        let type_spec = self.type_spec_or_udt()?;
         let mut c = ColumnDef {
             name,
             system_name,

@@ -191,6 +191,7 @@ impl Library {
         }
         self.attr.dir_root = dir.root();
         self.attr.object_count += 1;
+        bump_types(type_code);
         self.save(txn)
     }
 
@@ -205,6 +206,7 @@ impl Library {
         };
         self.attr.dir_root = dir.root();
         self.attr.object_count = self.attr.object_count.saturating_sub(1);
+        bump_types(type_code);
         self.save(txn)?;
         Ok(id)
     }
@@ -233,6 +235,23 @@ impl Library {
         self.attr.dir_root = None;
         Ok(())
     }
+}
+
+/// Bumped as a library or an SQL type (`*SQLUDT`) is added to or removed
+/// from a library, in any store of the process: SQL keeps its list of
+/// distinct types while it stays the same.
+static TYPES_EPOCH: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+fn bump_types(type_code: u16) {
+    if type_code == crate::obj::types::SQLUDT || type_code == crate::obj::types::LIB {
+        TYPES_EPOCH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+/// The count [`TYPES_EPOCH`] keeps.
+#[must_use]
+pub fn types_epoch() -> u64 {
+    TYPES_EPOCH.load(std::sync::atomic::Ordering::Relaxed)
 }
 
 #[cfg(test)]

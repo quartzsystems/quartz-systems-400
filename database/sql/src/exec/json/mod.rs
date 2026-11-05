@@ -180,7 +180,7 @@ pub fn types(name: &str, args: &[Option<SqlType>], exprs: &[Expr]) -> Option<Sql
 }
 
 fn plain_spec(t: DataType) -> TypeSpec {
-    TypeSpec { data_type: t, ccsid: None, bit_data: false }
+    TypeSpec { data_type: t, ccsid: None, bit_data: false, udt: None }
 }
 
 /// A document from a context item: JSON text, or BSON in a binary

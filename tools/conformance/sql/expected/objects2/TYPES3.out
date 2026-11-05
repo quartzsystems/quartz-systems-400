@@ -1,0 +1,86 @@
+-- captured from primary
+> CREATE TYPE {lib}.CODE3 AS CHAR(4)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TYPE {lib}.AMT3 AS DECIMAL(7,2)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TABLE {lib}.UDT3 (C {lib}.CODE3, A {lib}.AMT3, V VARCHAR(10))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.UDT3 VALUES ('AB', 1.25, 'AB')
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT {lib}.CHARACTER(C) FROM {lib}.UDT3
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(4)
+| 'AB  ' |
+> SELECT CHARACTER(C) FROM {lib}.UDT3
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(4)
+| 'AB  ' |
+> SELECT {lib}.CHAR(C) FROM {lib}.UDT3
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT CAST(C AS CHAR(4)) FROM {lib}.UDT3
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(4)
+| 'AB  ' |
+> SELECT CAST(C AS CHAR(6)) FROM {lib}.UDT3
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(6)
+| 'AB    ' |
+> SELECT CAST(C AS VARCHAR(10)) FROM {lib}.UDT3
+sqlcode -461 sqlstate 42846 msgid SQL0461
+> SELECT CAST(A AS DECIMAL(7,2)) FROM {lib}.UDT3
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 DECIMAL(7,2)
+| 1.25 |
+> SELECT CAST(A AS DECIMAL(9,3)) FROM {lib}.UDT3
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 DECIMAL(9,3)
+| 1.250 |
+> SELECT CAST(A AS INTEGER) FROM {lib}.UDT3
+sqlcode -461 sqlstate 42846 msgid SQL0461
+> SELECT CAST(A AS CHAR(10)) FROM {lib}.UDT3
+sqlcode -461 sqlstate 42846 msgid SQL0461
+> SELECT CAST(V AS {lib}.CODE3) FROM {lib}.UDT3
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 {lib}.CODE3
+| 'AB  ' |
+> SELECT CAST(1.5 AS {lib}.AMT3), CAST('1.5' AS {lib}.AMT3) FROM {lib}.UDT
+sqlcode -461 sqlstate 42846 msgid SQL0461
+> SELECT {lib}.AMT3(1), {lib}.AMT3(1.5), {lib}.AMT3(1E0) FROM {lib}.UDT3
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT {lib}.AMT3(123456789) FROM {lib}.UDT3
+sqlcode 0 sqlstate 00000 msgid -
+warning 802 01519 SQL0802
+# 00001 {lib}.AMT3
+| NULL |
+> SELECT MAX(C) FROM {lib}.UDT3
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT MIN(A) FROM {lib}.UDT3
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT COUNT(C), COUNT(DISTINCT A) FROM {lib}.UDT3
+sqlcode -171 sqlstate 42815 msgid SQL0171
+> SELECT V FROM {lib}.UDT3 WHERE C IN (SELECT C FROM {lib}.UDT3)
+sqlcode 0 sqlstate 00000 msgid -
+# V VARCHAR(10)
+| 'AB' |
+> SELECT V FROM {lib}.UDT3 WHERE C = ANY (SELECT V FROM {lib}.UDT3)
+sqlcode -401 sqlstate 42818 msgid SQL0401
+> SELECT V FROM {lib}.UDT3 WHERE C IS DISTINCT FROM {lib}.CODE3('X')
+sqlcode 0 sqlstate 00000 msgid -
+# V VARCHAR(10)
+| 'AB' |
+> SELECT V FROM {lib}.UDT3 WHERE V = C
+sqlcode -401 sqlstate 42818 msgid SQL0401
+> SELECT A FROM {lib}.UDT3 WHERE A = ?
+sqlcode -432 sqlstate 42841 msgid SQL0432
+> SELECT C, A FROM {lib}.UDT3 WHERE C = {lib}.CODE3(V)
+sqlcode 0 sqlstate 00000 msgid -
+# C {lib}.CODE3
+# A {lib}.AMT3
+| 'AB  ' | 1.25 |
+> DROP TABLE {lib}.UDT3
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.CODE3
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.AMT3
+sqlcode 0 sqlstate 00000 msgid -

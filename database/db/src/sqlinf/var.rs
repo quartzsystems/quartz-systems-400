@@ -2,9 +2,10 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The bodies of `VARIABLE` (a global variable's `*SRVPGM`) and `TYPE`
-//! (a distinct type's `*SQLUDT`) entries (`docs/DB_FORMAT.md` §8.1,
-//! `SqlVariable`, `SqlType`). Types are kept as SQL writes them.
+//! The bodies of `VARIABLE` (a global variable's `*SRVPGM`), `TYPE` (a
+//! distinct type's `*SQLUDT`) and `COLTYPE` (a column of a distinct
+//! type) entries (`docs/DB_FORMAT.md` §8.1, `SqlVariable`, `SqlType`,
+//! `SqlColType`). Types are kept as SQL writes them.
 
 use crate::error::{DbError, Result};
 use crate::spec::{Field, Layout, field};
@@ -42,6 +43,67 @@ pub static TYPE_LAYOUT: Layout = Layout {
         Field { name: "parts", offset: Some(16), size: None },
     ],
 };
+
+/// Bytes of the fixed part of a `COLTYPE` body.
+pub const COLTYPE_FIXED: usize = 48;
+
+/// The `COLTYPE` body layout.
+pub static COLTYPE_LAYOUT: Layout = Layout {
+    name: "SqlColType",
+    size: None,
+    fields: &[
+        field("field", 0, 10),
+        field("reserved", 10, 2),
+        field("type", 12, 16),
+        field("library", 28, 10),
+        field("name_len", 38, 2),
+        field("reserved2", 40, 8),
+        Field { name: "name", offset: Some(48), size: None },
+    ],
+};
+
+/// A column of a distinct type: the link from a table's or view's field
+/// to the type's `*SQLUDT`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ColType {
+    /// The field's system name.
+    pub field: qsname::Name,
+    /// The type's `*SQLUDT`.
+    pub id: store::obj::ObjectId,
+    /// The type's library (its schema's system name).
+    pub library: qsname::Name,
+    /// The type's SQL name.
+    pub name: String,
+}
+
+impl ColType {
+    /// The entry body.
+    #[must_use]
+    pub fn encode(&self) -> Vec<u8> {
+        let mut b = vec![0u8; COLTYPE_FIXED];
+        b[0..10].copy_from_slice(self.field.as_bytes());
+        b[12..28].copy_from_slice(&self.id.to_bytes());
+        b[28..38].copy_from_slice(self.library.as_bytes());
+        b[38..40].copy_from_slice(&len16(self.name.len()));
+        b.extend_from_slice(self.name.as_bytes());
+        b
+    }
+
+    /// From an entry body.
+    pub fn decode(b: &[u8]) -> Result<Self> {
+        if b.len() < COLTYPE_FIXED {
+            return Err(bad("column type entry"));
+        }
+        let n = usize::from(u16::from_le_bytes([b[38], b[39]]));
+        let name = b
+            .get(COLTYPE_FIXED..COLTYPE_FIXED + n)
+            .and_then(|s| String::from_utf8(s.to_vec()).ok())
+            .ok_or_else(|| bad("column type entry"))?;
+        let field = qsname::Name::from_bytes(b[0..10].try_into().expect("10 bytes"));
+        let library = qsname::Name::from_bytes(b[28..38].try_into().expect("10 bytes"));
+        Ok(Self { field, id: store::obj::ObjectId::from_bytes(&b[12..28]), library, name })
+    }
+}
 
 /// A global variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -144,5 +206,12 @@ mod tests {
         for u in [Udt { metatype: b'T', source: "CHARACTER(4)".into(), cardinality: 0 }, Udt { metatype: b'A', source: "INTEGER".into(), cardinality: 5 }] {
             assert_eq!(Udt::decode(&u.encode()).unwrap(), u);
         }
+        let c = ColType {
+            field: qsname::Name::parse("AMT").unwrap(),
+            id: store::obj::ObjectId { asp: 1, type_code: store::obj::types::SQLUDT, serial: 9, generation: 0 },
+            library: qsname::Name::parse("QSTEST").unwrap(),
+            name: "MONEY".into(),
+        };
+        assert_eq!(ColType::decode(&c.encode()).unwrap(), c);
     }
 }

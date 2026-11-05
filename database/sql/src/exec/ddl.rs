@@ -297,6 +297,8 @@ pub fn create_table_def(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable
     let library = ctx.library_for(txn, &t.name)?;
     let (name, sql) = super::names::new_object(txn, library, &t.name.name, t.system_name.as_ref())?;
     let col_names = super::table::column_names(&t.columns)?;
+    // A distinct type's column is its source type's (`udt::column`).
+    let cols = super::udt::column::resolve(&t.columns)?;
     let rcdfmt = match &t.rcdfmt {
         Some(r) => SqlContext::sys_name(r)?,
         // IBM names the format after the table.
@@ -305,11 +307,11 @@ pub fn create_table_def(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable
     // The table is arrival sequence; its keys are constraints.
     let mut lines = Vec::new();
     lines.push(dds("R", &rcdfmt.to_string(), "", "", "", ""));
-    for (c, n) in t.columns.iter().zip(&col_names) {
+    for (c, n) in cols.iter().zip(&col_names) {
         lines.extend(column_lines_as(c, *n)?);
     }
     let mut def = compile_table(&lines)?;
-    for (f, c) in def.format.fields.iter_mut().zip(&t.columns) {
+    for (f, c) in def.format.fields.iter_mut().zip(cols.iter()) {
         finish_field(f, c)?;
     }
     def.format.lay_out();
@@ -330,6 +332,8 @@ pub fn create_table_def(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable
         },
     )?;
     finish_table(txn, ctx, library, id, sql.as_deref(), &t.name.name.value)?;
+    let typed: Vec<(Name, String)> = cols.iter().zip(&col_names).filter_map(|(c, n)| c.type_spec.udt.clone().map(|u| (*n, u))).collect();
+    super::udt::column::record(txn, id, &typed, db::sqlinf::Kind::Table, ctx.clock())?;
     super::column::create(txn, ctx, id, t)?;
     // The constraints: the columns' own, then the table's, numbered
     // in that order.
@@ -437,6 +441,10 @@ pub(super) fn compile_table(lines: &[String]) -> Result<dds::PfDefinition> {
 
 /// A column's field, compiled on its own.
 pub(super) fn field_of(c: &ColumnDef) -> Result<dds::FieldDef> {
+    if c.type_spec.udt.is_some() {
+        // BLOCKED(sql): ALTER TABLE keeps no COLTYPE entries yet.
+        return Err(SqlError::Unsupported { what: "ALTER TABLE with a column of a distinct type".into() });
+    }
     let mut lines = vec![dds("R", "ALTERED", "", "", "", "")];
     lines.extend(column_lines(c)?);
     let def = compile_table(&lines)?;

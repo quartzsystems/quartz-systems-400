@@ -95,7 +95,8 @@ impl Schema {
             .filter(|c| !c.hidden)
             .map(|c| ColumnDesc {
                 name: c.name.clone(),
-                data_type: c.field.as_ref().map_or("VARCHAR(32767)".into(), sql_type),
+                // A distinct type describes as its name.
+                data_type: c.field.as_ref().map_or("VARCHAR(32767)".into(), |f| f.udt.clone().unwrap_or_else(|| sql_type(f))),
                 nullable: c.nullable,
             })
             .collect()
@@ -610,7 +611,8 @@ impl Evaluator<'_> {
             }
             Expr::Cast(a, t) => {
                 let v = self.eval(txn, a, env)?;
-                super::cast::cast(&v, t, self.ctx.decfloat_rounding)
+                let t = super::udt::typing::resolve(t)?;
+                super::cast::cast(&v, &t, self.ctx.decfloat_rounding)
             }
             Expr::Function(f) => self.function(txn, f, env),
             Expr::Subquery(q) => {
@@ -700,6 +702,16 @@ impl Evaluator<'_> {
     fn function(&mut self, txn: &mut Txn<'_>, f: &Function, env: &Env) -> Result<Value> {
         if let Some(r) = super::json::call(self, txn, f, env) {
             return r;
+        }
+        // A distinct type's generated functions.
+        if let [arg] = f.args.as_slice()
+            && let Some(c) = super::udt::typing::call(&f.name, || super::restype::type_in(arg, &super::restype::Scope::of_env(env)).ok().flatten())
+        {
+            let v = self.eval(txn, arg, env)?;
+            return match c {
+                super::udt::typing::Call::To(t) => super::cast::cast(&v, &t, self.ctx.decfloat_rounding),
+                super::udt::typing::Call::Same => Ok(v),
+            };
         }
         let name = f.name.as_str();
         if name == "ARRAY_AGG" && !self.ctx.arrays {

@@ -447,7 +447,7 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
         }
         "REAL" => {
             arity(name, args, 1, 1)?;
-            let t = crate::ast::TypeSpec { data_type: crate::ast::DataType::Real, ccsid: None, bit_data: false };
+            let t = crate::ast::TypeSpec { data_type: crate::ast::DataType::Real, ccsid: None, bit_data: false, udt: None };
             super::eval::cast(a(0), &t)?
         }
         "DATE" => {

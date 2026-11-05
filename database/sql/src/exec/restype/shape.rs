@@ -97,7 +97,7 @@ impl SqlType {
     /// The type a data type names.
     #[must_use]
     pub fn of_data_type(t: &DataType, null: bool) -> Self {
-        Self { spec: TypeSpec { data_type: t.clone(), ccsid: None, bit_data: false }, nullable: null }
+        Self { spec: TypeSpec { data_type: t.clone(), ccsid: None, bit_data: false, udt: None }, nullable: null }
     }
 
     /// A column's type, null-capable as `null` says.

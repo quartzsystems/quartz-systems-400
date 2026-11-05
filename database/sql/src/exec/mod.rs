@@ -744,10 +744,14 @@ impl SqlContext {
                 spec = MemberSpec::Name(m);
             }
         }
-        let desc = file::describe(txn, id).map_err(|_| SqlError::ObjectNotFound {
+        let mut desc = file::describe(txn, id).map_err(|_| SqlError::ObjectNotFound {
             name: name.to_string(),
             kind: "table",
         })?;
+        // Columns of a distinct type carry it.
+        if let Some(f) = desc.formats.first_mut() {
+            udt::column::mark(txn, id, &mut f.format.fields)?;
+        }
         let member = *desc
             .member(spec)
             .ok_or_else(|| SqlError::ObjectNotFound {
@@ -954,6 +958,7 @@ impl Prepared {
     ) -> Result<Outcome> {
         ctx.naming = self.naming;
         ctx.warning = None;
+        udt::registry::enter(txn, ctx);
         // Queries, changes and the long definitions take turns at their
         // safe points; any other statement runs to its end.
         let r = match &self.statement {

@@ -76,6 +76,13 @@ help = "A number in ORDER BY names a column of the result by its place, from 1 t
 vars = ["*CHAR 10"]
 
 [[msg]]
+id = "SQL0131"
+sev = 30
+text = "Operands of LIKE are not compatible or not valid."
+help = "The value LIKE tests must be a character, graphic or binary string; a distinct type is not one, even when its source type is. Cast it to its source type first."
+vars = ["*CHAR 30"]
+
+[[msg]]
 id = "SQL0137"
 sev = 30
 text = "The result of &1 is too long."
@@ -172,6 +179,20 @@ help = "A null value was assigned to a column defined without ALWNULL."
 vars = ["*CHAR 30"]
 
 [[msg]]
+id = "SQL0415"
+sev = 30
+text = "The columns of a set operation are not compatible."
+help = "The columns in the same position on each side of UNION, EXCEPT or INTERSECT must have types that combine. A distinct type combines only with itself; cast one side."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL0432"
+sev = 30
+text = "A parameter marker cannot have the distinct type &1."
+help = "A parameter marker beside a value of a distinct type takes no type from it. Write CAST(? AS &1) so the marker has the type."
+vars = ["*CHAR 128"]
+
+[[msg]]
 id = "SQL0501"
 sev = 30
 text = "Cursor &1 is not open."
@@ -186,11 +207,25 @@ help = "OPEN, FETCH and CLOSE name a cursor that a DECLARE CURSOR statement earl
 vars = ["*CHAR 30"]
 
 [[msg]]
+id = "SQL0581"
+sev = 30
+text = "The results of a CASE expression are not compatible."
+help = "Every THEN and ELSE result of the CASE must have a type the others combine with. A distinct type combines only with itself."
+vars = ["*CHAR 30"]
+
+[[msg]]
 id = "SQL0603"
 sev = 30
 text = "Unique index &1 not created: rows of the table repeat its key."
 help = "Two or more rows have the same values in the index's key columns. Change or delete the repeated rows, then create the index or constraint again."
 vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL0658"
+sev = 30
+text = "Object &1 cannot be dropped alone."
+help = "&1 is a function the system made for a distinct type, to cast to or from it. It goes when the type is dropped with DROP TYPE."
+vars = ["*CHAR 128"]
 
 [[msg]]
 id = "SQL0798"

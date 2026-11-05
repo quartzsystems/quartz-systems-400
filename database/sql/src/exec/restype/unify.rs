@@ -116,7 +116,7 @@ pub fn arith(a: &SqlType, op: BinOp, b: &SqlType) -> Option<SqlType> {
 }
 
 fn plain(t: DataType) -> TypeSpec {
-    TypeSpec { data_type: t, ccsid: None, bit_data: false }
+    TypeSpec { data_type: t, ccsid: None, bit_data: false, udt: None }
 }
 
 /// The type of `a || b`: a string as long as both (a number counted as
@@ -154,7 +154,7 @@ pub fn concat(a: &SqlType, b: &SqlType) -> Option<SqlType> {
         DataType::Varchar(n.min(32740))
     };
     Some(SqlType {
-        spec: TypeSpec { data_type: t, ccsid: None, bit_data: a.spec.bit_data && b.spec.bit_data },
+        spec: TypeSpec { data_type: t, ccsid: None, bit_data: a.spec.bit_data && b.spec.bit_data, udt: None },
         nullable: a.nullable || b.nullable,
     })
 }
@@ -163,6 +163,13 @@ pub fn concat(a: &SqlType, b: &SqlType) -> Option<SqlType> {
 /// `None` when they have none.
 #[must_use]
 pub fn unify(a: &SqlType, b: &SqlType) -> Option<SqlType> {
+    // A distinct type goes only with itself.
+    if a.spec.udt != b.spec.udt {
+        return None;
+    }
+    if a.spec.udt.is_some() {
+        return Some(SqlType { spec: a.spec.clone(), nullable: a.nullable || b.nullable });
+    }
     let (x, y) = (a.data_type(), b.data_type());
     let nullable = a.nullable || b.nullable;
     let t = if is_number(x) && is_number(y) {
@@ -215,7 +222,7 @@ pub fn unify(a: &SqlType, b: &SqlType) -> Option<SqlType> {
         return None;
     };
     Some(SqlType {
-        spec: TypeSpec { data_type: t, ccsid: a.spec.ccsid.or(b.spec.ccsid), bit_data: a.spec.bit_data && b.spec.bit_data },
+        spec: TypeSpec { data_type: t, ccsid: a.spec.ccsid.or(b.spec.ccsid), bit_data: a.spec.bit_data && b.spec.bit_data, udt: None },
         nullable,
     })
 }
@@ -235,6 +242,7 @@ pub fn all<'a>(es: impl Iterator<Item = &'a Expr>, scope: &Scope<'_>, case: bool
             None => Some(t),
             Some(a) => match unify(&a, &t) {
                 Some(u) => Some(u),
+                None if let Some(e) = crate::exec::udt::typing::mixed(&a, &t, if case { crate::exec::udt::typing::Mixed::Case } else { crate::exec::udt::typing::Mixed::Coalesce }) => return Err(e),
                 None if case && (is_binary(a.data_type()) != is_binary(t.data_type())) => {
                     return Err(SqlError::Coded {
                         code: -171,

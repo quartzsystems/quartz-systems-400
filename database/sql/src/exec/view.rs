@@ -58,15 +58,28 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, v: &CreateView) -> Result
         _ => false,
     };
     let lf = if over_physical { super::ddl::create_view(txn, ctx, v, library, name) } else { Err(SqlError::Unsupported { what: String::new() }) };
-    let (id, columns, logical) = match lf {
+    let (id, columns, logical, typed) = match lf {
         Ok(id) => {
             let d = file::describe(txn, id)?;
-            let cols = d.formats.first().map(|f| f.format.fields.iter().map(|f| f.name.to_string()).collect()).unwrap_or_default();
-            (id, cols, true)
+            let fields: Vec<Name> = d.formats.first().map(|f| f.format.fields.iter().map(|f| f.name).collect()).unwrap_or_default();
+            let cols = fields.iter().map(ToString::to_string).collect();
+            // The columns of a distinct type keep it from the table.
+            let mut typed = Vec::new();
+            if let QueryBody::Select(s) = &v.query.body
+                && let [TableRef::Table { name: t, .. }] = s.from.as_slice()
+                && let Ok(base) = ctx.resolve_file(txn, t)
+            {
+                for c in super::udt::column::of(txn, base)? {
+                    if fields.contains(&c.field) {
+                        typed.push((c.field, super::udt::column::qualified(&c)));
+                    }
+                }
+            }
+            (id, cols, true, typed)
         }
         Err(SqlError::Unsupported { .. }) => {
-            let (id, cols) = shell(txn, ctx, v, library, name)?;
-            (id, cols, false)
+            let (id, cols, typed) = shell(txn, ctx, v, library, name)?;
+            (id, cols, false, typed)
         }
         Err(e) => return Err(e),
     };
@@ -97,8 +110,12 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, v: &CreateView) -> Result
         info.push(tag::DEPENDENCY, d.encode());
     }
     sqlinf::save(txn, id, &info, ctx.clock())?;
+    super::udt::column::record(txn, id, &typed, Kind::View, ctx.clock())?;
     Ok(())
 }
+
+/// A view's columns of a distinct type: field, `SCHEMA.NAME`.
+type Typed = Vec<(Name, String)>;
 
 /// Whether a file is an SQL view: its kind, or for one made before SQL
 /// kept kinds, its text.
@@ -138,7 +155,7 @@ fn shell(
     v: &CreateView,
     library: ObjectId,
     name: Name,
-) -> Result<(ObjectId, Vec<String>)> {
+) -> Result<(ObjectId, Vec<String>, Typed)> {
     let (cols, _) = super::query::columns_and_rows_planned(txn, ctx, &[], &v.query)?;
     // A union's column has a name only where every side names it alike.
     if v.columns.is_empty() && !union_names_agree(&v.query.body) {
@@ -192,6 +209,7 @@ fn shell(
         f.name = *n;
         f.alias = (n.to_string() != *s).then(|| s.clone());
     }
+    let typed = super::udt::column::typed(&fields);
     let mut rf = dds::RecordFormat::new(names::format_name(name));
     rf.fields = fields;
     rf.lay_out();
@@ -203,7 +221,7 @@ fn shell(
         &def,
         &CreateFileOpts { now: ctx.clock(), text: String::new(), member: MemberOpt::None, ..CreateFileOpts::default() },
     )?;
-    Ok((id, sql_names))
+    Ok((id, sql_names, typed))
 }
 
 /// Every table, view and alias the query reads in its `FROM` lists, by
