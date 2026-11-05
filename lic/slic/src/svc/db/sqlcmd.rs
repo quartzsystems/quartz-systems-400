@@ -157,6 +157,7 @@ pub fn sqlrun(system: &mut System, p: &Params) -> Result<String, String> {
         errlvl: p.num("ERRLVL")?.unwrap_or(10),
         dftrdbcol: p.kw("DFTRDBCOL").map(str::to_string),
         show_rows: 20,
+        command: false,
     };
     let (store, ctx) = db(system)?;
     let report = runsqlstm(store, ctx, &text, &opts).map_err(|e| e.to_string())?;

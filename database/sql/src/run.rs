@@ -15,7 +15,7 @@ use store::txn::Txn;
 
 use crate::ast::Naming;
 use crate::embed::StoreLend;
-use crate::error::Result;
+use crate::error::{Result, SqlError};
 use crate::exec::{Outcome, Prepared, SqlContext};
 use crate::parse::parse_all;
 use crate::sqlca::Sqlca;
@@ -48,6 +48,9 @@ pub struct RunOpts {
     pub dftrdbcol: Option<String>,
     /// Row limit for result sets shown in the listing.
     pub show_rows: usize,
+    /// The run is the `RUNSQLSTM` or `RUNSQL` command's: a query is
+    /// refused SQL0084 (severity 30), as IBM i refuses it there.
+    pub command: bool,
 }
 
 /// What a run did.
@@ -272,7 +275,12 @@ fn run_statements<'l>(
         let target = target_of(&p.statement);
         let mut t = begin()?;
         let yields = ctx.yields();
-        let (ca, outcome) = match crate::exec::dynamic::check_statement(&p.statement) {
+        let checked = if opts.command && matches!(p.statement, crate::ast::Statement::Select(_)) {
+            Err(SqlError::Unsupported { what: "a SELECT statement in RUNSQLSTM or RUNSQL".into() })
+        } else {
+            crate::exec::dynamic::check_statement(&p.statement)
+        };
+        let (ca, outcome) = match checked {
             Ok(()) => p.run(&mut t, ctx, &[]),
             Err(e) => (Sqlca::from_error(&e), None),
         };

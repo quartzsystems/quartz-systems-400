@@ -359,6 +359,27 @@ fn cursors_and_sqlca() {
     );
 }
 
+/// The RUNSQLSTM and RUNSQL commands refuse a query SQL0084 (severity
+/// 30), as pub400 does; the run goes on under ERRLVL(30).
+#[test]
+fn command_refuses_select() {
+    let mut db = Db::new();
+    let script = "
+        CREATE TABLE qstest/t9 (k INT);
+        SELECT * FROM t9;
+        INSERT INTO t9 VALUES (1);
+    ";
+    let opts = RunOpts { errlvl: 30, command: true, ..RunOpts::default() };
+    let report = runsqlstm(&mut db.store, &mut db.ctx, script, &opts).unwrap();
+    assert_eq!((report.statements, report.errors, report.severity), (3, 1, 30));
+    let e = &report.entries[1];
+    assert_eq!((e.sqlcode, e.msgid.as_str()), (-84, "SQL0084"), "{}", report.listing);
+    assert_eq!(db.rows("SELECT k FROM t9"), [row(&["1"])]);
+    // ERRLVL(10), the command's default: the query ends the run.
+    let report = runsqlstm(&mut db.store, &mut db.ctx, "SELECT * FROM t9; INSERT INTO t9 VALUES (2);", &RunOpts { errlvl: 10, command: true, ..RunOpts::default() }).unwrap();
+    assert_eq!((report.statements, report.errors, report.severity), (1, 1, 40));
+}
+
 #[test]
 fn statement_files() {
     let mut db = Db::new();

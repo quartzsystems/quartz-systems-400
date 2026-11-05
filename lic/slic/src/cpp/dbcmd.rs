@@ -404,6 +404,7 @@ fn run_opts(parms: &Parms, system: &System) -> Result<RunOpts, String> {
             .then(|| parms.name("DFTRDBCOL"))
             .filter(|c| c != "*NONE"),
         show_rows: 20,
+        command: true,
     })
 }
 
