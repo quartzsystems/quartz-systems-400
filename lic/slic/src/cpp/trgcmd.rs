@@ -84,7 +84,7 @@ fn with_file<T>(
     let job = job(system);
     let r = in_store(system, |txn, qsys, nm| {
         let id = wm::obj::find(txn, qsys, nm, &lib_or(&q.1), &q.0, types::FILE)
-            .map_err(|_| format!("CPF9812 file {} in library {} not found", q.0, lib_or(&q.1)))?;
+            .map_err(|_| format!("CPF9812 {} {}", q.0, lib_or(&q.1)))?;
         let lib = db::file::describe(txn, id).map_err(|e| e.to_string())?.library_name.to_string();
         db::odp::allocate(txn, job, id, LockState::Exclusive, &q.0).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF9898")))?;
         let r = f(txn, qsys, nm, id);
@@ -146,7 +146,7 @@ fn add(system: &mut System, parms: &Parms) -> CmdReply {
     let r = with_file(system, &q, |txn, qsys, nm, id| {
         let pgm = wm::obj::find(txn, qsys, nm, &lib_or(&p.1), &p.0, types::PGM).map_err(|_| Refused {
             diag: Some(msg("CPF9811", 5, &[(&p.0, 10), (&lib_or(&p.1), 10)])),
-            text: format!("program {} in library {} not found", p.0, lib_or(&p.1)),
+            text: format!("CPF9811 {} {}", p.0, lib_or(&p.1)),
         })?;
         let (_, h) = objops::read_header(txn, pgm).map_err(|e| e.to_string())?;
         let (_, lh) = objops::read_header(txn, h.library).map_err(|e| e.to_string())?;
@@ -181,7 +181,7 @@ fn add(system: &mut System, parms: &Parms) -> CmdReply {
     });
     match r {
         Ok(((name, tlib), flib)) => CmdReply {
-            text: format!("CPC3203 trigger {name} added to file {}\n", q.0),
+            text: crate::stgsvc::msgs::text(system, "CPC3203", &[]) + "\n",
             messages: vec![
                 msg("CPI321A", 4, &[(&name, 258), (&tlib, 10), (&q.0, 10), (&flib, 10)]),
                 msg("CPC3203", 4, &[]),
@@ -227,7 +227,8 @@ fn remove(system: &mut System, parms: &Parms) -> CmdReply {
         Ok((gone, flib)) => {
             let mut messages: Vec<CmdMsg> = gone.iter().map(|(n, l)| msg("CPI321B", 4, &[(n, 258), (l, 10), (&q.0, 10), (&flib, 10)])).collect();
             messages.push(msg("CPC3205", 4, &[]));
-            CmdReply { text: format!("CPC3205 {} trigger(s) removed from file {}\n", gone.len(), q.0), messages, ..CmdReply::default() }
+            let text = crate::stgsvc::msgs::text(system, "CPC3205", &[]) + "\n";
+            CmdReply { text, messages, ..CmdReply::default() }
         }
         Err(e) => refused(e, &(q.0.clone(), lib_or(&q.1)), op::REMOVE),
     }
@@ -249,7 +250,8 @@ fn change(system: &mut System, parms: &Parms) -> CmdReply {
         Ok((n, _)) => {
             let mut messages: Vec<CmdMsg> = (0..n).map(|_| msg("CPI32E8", 4, &[])).collect();
             messages.push(msg("CPC32E8", 4, &[(&q.0, 10)]));
-            CmdReply { text: format!("CPC32E8 {n} trigger(s) of file {} changed\n", q.0), messages, ..CmdReply::default() }
+            let text = crate::stgsvc::msgs::text(system, "CPC32E8", &[&q.0]) + "\n";
+            CmdReply { text, messages, ..CmdReply::default() }
         }
         Err(e) => refused(e, &(q.0.clone(), lib_or(&q.1)), op::CHANGE),
     }

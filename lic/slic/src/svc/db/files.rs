@@ -770,7 +770,7 @@ pub fn dspfd(system: &mut System, p: &Params) -> Result<String, String> {
         let id = file_id(txn, ctx, &qual)?;
         db::dsp::dspfd(txn, id).map_err(|e| db_err(&e))
     })?;
-    // The constraint section's labels in the job's language.
+    // The constraint and trigger labels in the job's language.
     Ok(desc.render_with(ty, &mut |id| crate::stgsvc::msgs::text(system, id, &[])))
 }
 

@@ -250,7 +250,7 @@ impl FileDescription {
             self.cst(&mut out, words);
         }
         if (ty == FdType::Trg || (ty == FdType::All && !self.triggers.is_empty())) && self.kind != FileKind::Logical {
-            self.trg(&mut out);
+            self.trg(&mut out, words);
         }
         out
     }
@@ -287,30 +287,32 @@ impl FileDescription {
         }
     }
 
-    fn trg(&self, out: &mut String) {
+    fn trg(&self, out: &mut String, words: &mut Words<'_>) {
         use crate::trg::{Event, Time, UpdateCondition};
-        out.push_str("Trigger description\n");
-        kv(out, "Number of trigger programs", self.triggers.len());
+        let mut w = |id: &str| words(id);
+        out.push_str(&w("TXT0280"));
+        out.push('\n');
+        kv(out, &w("TXT0281"), self.triggers.len());
         for t in &self.triggers {
-            kv(out, "Trigger name", &t.name);
-            kv(out, "  Trigger library", t.library);
-            kv(out, "  Trigger program", t.program.1);
-            kv(out, "    Library", t.program.0);
-            kv(out, "  Trigger time", if t.time == Time::Before { "*BEFORE" } else { "*AFTER" });
-            kv(out, "  Trigger event", match t.event {
+            kv(out, &w("TXT0282"), &t.name);
+            kv(out, &w("TXT0283"), t.library);
+            kv(out, &w("TXT0284"), t.program.1);
+            kv(out, &w("TXT0285"), t.program.0);
+            kv(out, &w("TXT0286"), if t.time == Time::Before { "*BEFORE" } else { "*AFTER" });
+            kv(out, &w("TXT0287"), match t.event {
                 Event::Insert => "*INSERT",
                 Event::Delete => "*DELETE",
                 Event::Update => "*UPDATE",
                 Event::Read => "*READ",
             });
             if t.update_condition != UpdateCondition::None {
-                kv(out, "  Trigger update condition", if t.update_condition == UpdateCondition::Change { "*CHANGE" } else { "*ALWAYS" });
+                kv(out, &w("TXT0288"), if t.update_condition == UpdateCondition::Change { "*CHANGE" } else { "*ALWAYS" });
             }
-            kv(out, "  Allow repeated change", if t.alwrepchg { "*YES" } else { "*NO" });
-            kv(out, "  Trigger state", if t.enabled { "*ENABLED" } else { "*DISABLED" });
-            kv(out, "  Trigger status", if t.operative { "*OPERATIVE" } else { "*INOPERATIVE" });
-            kv(out, "  Trigger type", if t.sql { "*SQL" } else { "*SYS" });
-            kv(out, "  Created", timestamp(t.created));
+            kv(out, &w("TXT0289"), if t.alwrepchg { "*YES" } else { "*NO" });
+            kv(out, &w("TXT028A"), if t.enabled { "*ENABLED" } else { "*DISABLED" });
+            kv(out, &w("TXT028B"), if t.operative { "*OPERATIVE" } else { "*INOPERATIVE" });
+            kv(out, &w("TXT028C"), if t.sql { "*SQL" } else { "*SYS" });
+            kv(out, &w("TXT028D"), timestamp(t.created));
         }
     }
 

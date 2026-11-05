@@ -363,3 +363,72 @@ id = "TXT0312"
 text = "Records of file &2 that keep constraint &1 in check pending, by relative record number:"
 help = "Text of the Display Check Pending Constraint display: the heading over the relative record numbers of the records that break the constraint."
 vars = ["*CHAR 258", "*CHAR 10"]
+[[msg]]
+id = "TXT0280"
+text = "Trigger description"
+help = "Text of the file description (DSPFD): the heading of the trigger part (TYPE(*TRG))."
+
+[[msg]]
+id = "TXT0281"
+text = "Number of trigger programs"
+help = "Text of the file description (DSPFD): how many triggers the file has."
+
+[[msg]]
+id = "TXT0282"
+text = "Trigger name"
+help = "Text of the file description (DSPFD): a trigger's name."
+
+[[msg]]
+id = "TXT0283"
+text = "  Trigger library"
+help = "Text of the file description (DSPFD): the library of a trigger's name (TRGLIB)."
+
+[[msg]]
+id = "TXT0284"
+text = "  Trigger program"
+help = "Text of the file description (DSPFD): the program a trigger calls."
+
+[[msg]]
+id = "TXT0285"
+text = "    Library"
+help = "Text of the file description (DSPFD): the trigger program's library."
+
+[[msg]]
+id = "TXT0286"
+text = "  Trigger time"
+help = "Text of the file description (DSPFD): *BEFORE or *AFTER."
+
+[[msg]]
+id = "TXT0287"
+text = "  Trigger event"
+help = "Text of the file description (DSPFD): *INSERT, *DELETE, *UPDATE or *READ."
+
+[[msg]]
+id = "TXT0288"
+text = "  Trigger update condition"
+help = "Text of the file description (DSPFD): *ALWAYS or *CHANGE, for an update trigger."
+
+[[msg]]
+id = "TXT0289"
+text = "  Allow repeated change"
+help = "Text of the file description (DSPFD): ALWREPCHG."
+
+[[msg]]
+id = "TXT028A"
+text = "  Trigger state"
+help = "Text of the file description (DSPFD): *ENABLED or *DISABLED."
+
+[[msg]]
+id = "TXT028B"
+text = "  Trigger status"
+help = "Text of the file description (DSPFD): *OPERATIVE or *INOPERATIVE."
+
+[[msg]]
+id = "TXT028C"
+text = "  Trigger type"
+help = "Text of the file description (DSPFD): *SYS for ADDPFTRG, *SQL for CREATE TRIGGER."
+
+[[msg]]
+id = "TXT028D"
+text = "  Created"
+help = "Text of the file description (DSPFD): when the trigger was added."

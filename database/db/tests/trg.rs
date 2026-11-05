@@ -120,7 +120,7 @@ fn adding_replacing_removing_and_disabling() {
     assert_eq!(g, "QSYS_TRIG_QSTEST_____TRGT_______000001");
     // DSPFD TYPE(*TRG).
     let text = db::dsp::dspfd(&mut t, f).unwrap().render(db::dsp::FdType::Trg);
-    assert!(text.contains("Number of trigger programs"), "{text}");
+    assert!(text.contains("TXT0281"), "{text}");
     assert!(text.contains("QSYS_TRIG_QSTEST_____TRGT_______000001"), "{text}");
     assert!(text.contains("*CHANGE"), "{text}");
     // CHGPFTRG and RMVPFTRG.
