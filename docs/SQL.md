@@ -222,7 +222,7 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `QUANTIZE`, `NORMALIZE_DECFLOAT`, `TOTALORDER`, `COMPARE_DECFLOAT`, `DECFLOAT()` | supported | primary | `types/DECFLT1` |
 | `DECFLOAT_FORMAT` | partial: elements `9 0 . , $ S MI PR` | pub400 | `types/DECFLT3` |
 | `DECFLOAT` result type mixed with other numerics | partial: right where the select list is typed statically; values carry no declared type | primary | `types/DECFLT1` |
-| `SQL_DECFLOAT_WARNINGS` | refused: the 7.1 default is fixed until QAQQINI | primary | |
+| `SQL_DECFLOAT_WARNINGS` | settable through `OVERRIDE_QAQQINI` at `*DEFAULT` only | primary | `sql::services` |
 | Casting matrix (SQL0461, 0420, 0802, 0180, 0181, 0433, 0189, 0332, 0171) | supported | primary | `types/CASTSTR`, `types/DECFLT2` |
 | Data mapping errors in the select list: NULL with warning +802/+420/+180/+20365 | supported | primary | `types/CASTSTR` |
 | Assignment errors (SQL0404, 0406, 0408, 0420) | supported | primary | `types/CASTSTR` |
@@ -294,7 +294,17 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `BASE64_ENCODE/DECODE`, `URL_ENCODE/DECODE` | supported, as pub400 answers | pub400 | `sql::services` |
 | `HTTP_GET/POST/PUT/PATCH/DELETE`, `_BLOB` and `_VERBOSE` forms | supported over `net/httpc` with TLS; a call holds the statement until it answers (at most 300 s) | none | `sql::services`, `httpc` |
 | Live-state services outside a query or execute (e.g. the service console's `sql` mode) | SQL0443: they read the system only on a statement's fiber | none | |
-| Other `QSYS2`/`SYSTOOLS` services (`MEMORY_POOL_INFO`, `SYSTEM_ACTIVITY_INFO`, `OBJECT_LOCK_INFO`, `IFS_OBJECT_PRIVILEGES`, `IFS_OBJECT_LOCK_INFO`, `FUNCTION_INFO`, `FUNCTION_USAGE`, `SECURITY_INFO`, `MESSAGE_FILE_DATA`, `GROUP_PTF_*`, `LICENSE_INFO`, `TCPIP_INFO`, `SERVER_SBS_ROUTING`, `DNS_LOOKUP`, `ASP_*`, `SYSDISKSTAT`, `MEDIA_LIBRARY_INFO`, `DISPLAY_JOURNAL`, `AUDIT_JOURNAL_*`, `SYSLIMITS`, `SYSLIMTBL`, `ENVIRONMENT_VARIABLE_INFO`, `EXIT_*_INFO`, `COLLECTION_SERVICES_INFO`, `HARDWARE_RESOURCE_INFO`, `ELECTRONIC_SERVICE_AGENT_INFO`, `SYSTOOLS.GENERATE_SPREADSHEET`, `SYSTOOLS.CHANGE_USER_PROFILE`) and procedures (`OVERRIDE_TABLE`, `SET_SERVER_SBS_ROUTING`, `SET_COLUMN_ATTRIBUTE`, `SET_PASE_SHELL_INFO`, `SYSTOOLS.LPRINTF`, `GENERATE_SQL`) | not present: SQL0204 | pub400 | |
+| `MESSAGE_FILE_DATA`, `SECURITY_INFO` | partial: creation and level columns, pending levels and service-tools lock columns null | pub400 (shape) | `sql::services` |
+| `DISPLAY_JOURNAL` | partial: `GENERATE_SYSLOG`, `EOF_DELAY` refused SQL0443; thread, remote and syslog columns null | pub400 (shape) | `sql::services` |
+| `SYSTOOLS.AUDIT_JOURNAL_xx` (47 entry types) | partial: common columns and about 20 entry-specific columns; the rest null | pub400 (shape) | `sql::services` |
+| `FUNCTION_INFO`, `FUNCTION_USAGE`, `LICENSE_INFO`, `SYSLIMTBL`, `SYSLIMITS`, `ELECTRONIC_SERVICE_AGENT_INFO`, `ASP_VARY_INFO`, `SERVER_SBS_ROUTING` | supported, no rows: QS/400 has none of these | pub400 (shape) | `sql::services` |
+| `OBJECT_LOCK_INFO`, `MEMORY_POOL_INFO`, `MEMORY_POOL`, `SYSTEM_ACTIVITY_INFO`, `ASP_INFO`, `SYSDISKSTAT`, `HARDWARE_RESOURCE_INFO`, `MEDIA_LIBRARY_INFO`, `COLLECTION_SERVICES_INFO`, `EXIT_POINT_INFO`, `EXIT_PROGRAM_INFO`, `ENVIRONMENT_VARIABLE_INFO`, `GROUP_PTF_INFO`, `SYSTOOLS.GROUP_PTF_DETAILS`, `TCPIP_INFO`, `IFS_OBJECT_PRIVILEGES`, `IFS_OBJECT_LOCK_INFO` | partial: columns QS/400 keeps no value for are null (listed per service in `services/`); `RESET_STATISTICS => 'YES'` refused SQL0443; job-level environment variables not shown | pub400 (shape) | `sql::services` |
+| `DNS_LOOKUP` | partial: the system resolver; `DOMAIN_SERVER` refused SQL0084 | pub400 (shape) | `sql::services` |
+| `SYSTOOLS.CHANGE_USER_PROFILE` | partial: preview or run; special-authority actions other than `*SAME` refused SQL0084 | pub400 (shape) | `sql::services` |
+| `OVERRIDE_TABLE` | no-op, checked: QS/400 does not block records | none | `sql::services` |
+| `GENERATE_SQL`, `GENERATE_SQL_OBJECTS` | partial: tables, views, indexes, sequences, aliases with constraints, labels, grants and the drop, replace, unformatted, unqualified and system-name forms, laid out as pub400; other object types and options refused SQL0084; no member written in QTEMP | pub400 | `services/GENSQL` |
+| `OVERRIDE_QAQQINI` | partial: tuning options kept as no-ops; options that change results or messages refused SQL0084 unless `*DEFAULT` | none | `sql::services` |
+| `SET_SERVER_SBS_ROUTING`, `SET_PASE_SHELL_INFO` (SSH always starts QSH; no per-user shell is kept), `SYSTOOLS.LPRINTF`, `SYSTOOLS.GENERATE_SPREADSHEET` | refused SQL0084 | pub400 | |
 | `STRSQL` | partial (Phase 8) | pub400 | |
 | `RUNSQLSTM`, `RUNSQL` | partial: options checked (values QS/400 cannot honour refused SQL0084; `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `SYSTIME`, `TGTRLS` and the listing options without effect); not yet run end to end | none | |
 | SQLRPGLE precompiler (`CRTSQLRPGI`) | partial (Phase 9) | pub400 | |
