@@ -8402,3 +8402,101 @@ sev = 30
 text = "A constraint of member &1 is in check pending."
 help = "The file cannot be used until the records that break the constraint are corrected or the constraint is disabled (EDTCPCST, CHGPFCST)."
 vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI321A"
+sev = 0
+text = "Trigger &1 in library &2 was added to file &3 in library &4."
+help = "The trigger program is called for the event and time given whenever a record of the file is changed or read."
+vars = ["*CHAR 258", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC3203"
+sev = 0
+text = "Trigger added to file."
+help = "The trigger is in effect from the next open of the file."
+vars = []
+
+[[msg]]
+id = "CPI321B"
+sev = 0
+text = "Trigger &1 in library &2 was removed from file &3 in library &4."
+help = "The trigger is no longer called; its program was not deleted."
+vars = ["*CHAR 258", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC3205"
+sev = 0
+text = "Trigger removed from file."
+help = "The trigger is no longer in effect from the next open of the file."
+vars = []
+
+[[msg]]
+id = "CPI32E8"
+sev = 0
+text = "Trigger was changed."
+help = "The trigger is enabled or disabled as asked from the next open of the file."
+vars = []
+
+[[msg]]
+id = "CPC32E8"
+sev = 0
+text = "Triggers of file &1 changed."
+help = "Each trigger changed has a message before this one."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD32E7"
+sev = 20
+text = "Trigger operation on trigger &1 of file &2 not done."
+help = "Adding: a trigger of that name and library is on the file already (give RPLTRG(*YES) to replace it), or the file has the most triggers it may have. Removing: the file has no trigger at the time and event given."
+vars = ["*CHAR 258", "*CHAR 10"]
+
+[[msg]]
+id = "CPD321B"
+sev = 10
+text = "Trigger &1 is not on file &2."
+help = "Give the name of a trigger of the file; DSPFD TYPE(*TRG) lists them."
+vars = ["*CHAR 258", "*CHAR 10"]
+
+[[msg]]
+id = "CPD730A"
+sev = 30
+text = "TRGTIME(*BEFORE) cannot be given with TRGEVENT(*READ)."
+help = "A read trigger is called after the record is read: give TRGTIME(*AFTER)."
+vars = []
+
+[[msg]]
+id = "CPD7308"
+sev = 30
+text = "TRGUPDCND is for TRGEVENT(*UPDATE) only."
+help = "Leave TRGUPDCND at its default for an insert, delete or read trigger."
+vars = []
+
+[[msg]]
+id = "CPD32E9"
+sev = 20
+text = "A trigger name in TRG needs its library in TRGLIB."
+help = "Give TRGLIB with a trigger name, or TRG(*ALL) for every trigger of the file."
+vars = []
+
+[[msg]]
+id = "CPF32C6"
+sev = 40
+text = "Trigger operation on file &1 in library &2 ended in error."
+help = "The operation code is &3: 1 add, 2 remove, 3 change. A message before this one says why."
+vars = ["*CHAR 10", "*CHAR 10", "*BIN 4"]
+
+[[msg]]
+id = "CPF3210"
+sev = 40
+text = "File &1 in library &2 is not of the right type."
+help = "The function needs a physical data file."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF502B"
+sev = 30
+text = "Trigger program of file &1 ended in error."
+help = "The trigger program called for the change or read of a record of the file ended with an exception, could not be called, or cannot be called by this function. Messages before this one say why; the operation was not done when the trigger was a before trigger."
+vars = ["*CHAR 10"]

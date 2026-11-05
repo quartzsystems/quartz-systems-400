@@ -1,0 +1,59 @@
+> SET SCHEMA QSTEST
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGC)', 0000000022.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGC in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CREATE TABLE QSTEST.TRGC (C1 CHAR(5) NOT NULL)
+  warning 7905 01567 SQL7905 [SQL7905] Table TRGC in QSTEST created but was not journaled. Cause . . . . . :   The table TRGC was created in QSTEST, but the table was not journaled.  Either a QDFTJRN data area indicated that journaling should not be started, the default journal did not exist, or the default journal did exist but the journaling could not be started.  The default journal may be damaged, unable to accept journal entries, or may not exist. The SQL name for the table is TRGC and the system name for the table is TRGC. For a distributed table, journaling could not be started on all of the systems.  The default journal must exist, and be able to accept journal entries, on each of the systems in the node group. Recovery  . . . :   The table was created, but until the table is journaled, COMMIT(*CHG), COMMIT(*CS), COMMIT(*RS), COMMIT(*RR), COMMIT(*UR), and COMMIT(*ALL) will not be allowed for table TRGC. If the default journal does not exist, create the journal (CRTJRN command) and start journaling (STRJRNPF command). If the journal is in error, correct the problem to the journal If the table is distributed, correct the problems on all the systems in the node group and start journaling (STRJRNPF command).
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGC) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM(QSYS/QCMD) TRG(C1)', 0000000083.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGC) TRGTIME(*AFTER) TRGEVENT(*DELETE) PGM(QSYS/QCMD) TRG(C2)', 0000000083.00000)
+  sqlcode 0 count 0
+> -- joblog
+  msg CPF1124 type 4 sev 0 Job 009195/QUSER/QZDASOINIT started on 11/04/26 at 23:05:51 in subsystem QUSRWRK in QSYS. Job entered system on 11/04/26 at 23:05:51.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009195/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1336 type 15 sev 40 Errors on CHGJOB command for job 009195/QUSER/QZDASOINIT.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009195/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD1672 type 2 sev 0 Job changed successfully; however errors occurred.
+  msg CPIAD02 type 4 sev 0 User {user} from client 10.42.30.100 connected to server.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009195/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD1672 type 2 sev 0 Job changed successfully; however errors occurred.
+  msg CPF2105 type 15 sev 40 Object TRGC in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg SQL7905 type 4 sev 20 Table TRGC in QSTEST created but was not journaled.
+  msg CPI321A type 4 sev 0 Trigger C1 in library QSTEST was added to file TRGC in library QSTEST.
+  msg CPC3203 type 1 sev 0 Trigger added to file.
+  msg CPI321A type 4 sev 0 Trigger C2 in library QSTEST was added to file TRGC in library QSTEST.
+  msg CPC3203 type 1 sev 0 Trigger added to file.
+> CALL QSYS.QCMDEXC('CHGPFTRG FILE(QSTEST/TRGC) TRG(C1) TRGLIB(QSTEST) STATE(*DISABLED)', 0000000066.00000)
+  sqlcode 0 count 0
+> -- joblog
+  msg CPI32E8 type 4 sev 0 Trigger was changed.
+  msg CPC32E8 type 1 sev 0 Trigger(s) changed for file TRGC.
+> CALL QSYS.QCMDEXC('CHGPFTRG FILE(QSTEST/TRGC) TRG(*ALL) STATE(*ENABLED)', 0000000052.00000)
+  sqlcode 0 count 0
+> -- joblog
+  msg CPI32E8 type 4 sev 0 Trigger was changed.
+  msg CPI32E8 type 4 sev 0 Trigger was changed.
+  msg CPC32E8 type 1 sev 0 Trigger(s) changed for file TRGC.
+> CALL QSYS.QCMDEXC('RMVPFTRG FILE(QSTEST/TRGC) TRG(C1)', 0000000034.00000)
+  sqlcode 0 count 0
+> -- joblog
+  msg CPI321B type 4 sev 0 Trigger C1 in library QSTEST was removed from file TRGC in library QSTEST.
+  msg CPC3205 type 1 sev 0 Trigger removed from file.
+> CALL QSYS.QCMDEXC('RMVPFTRG FILE(QSTEST/TRGC)', 0000000026.00000)
+  sqlcode 0 count 0
+> -- joblog
+  msg CPI321B type 4 sev 0 Trigger C2 in library QSTEST was removed from file TRGC in library QSTEST.
+  msg CPC3205 type 1 sev 0 Trigger removed from file.
+> CALL QSYS.QCMDEXC('RMVPFTRG FILE(QSTEST/TRGC)', 0000000026.00000)
+  sqlcode -443 38501 CPF32C6 [CPF32C6] Trigger operation not successful. Cause . . . . . :   The trigger operation for file TRGC in library QSTEST failed because of errors. The operation code was 2. Operation codes and their meanings are: 1 - Add a trigger 2 - Remove a trigger 3 - Change a trigger 4 - Create an SQL trigger program 5 - Register the trigger with Cross Reference 6 - Rename a trigger 7 - Revoke authorities Recovery  . . . :   See the error messages previously listed. Correct the errors and then try the request again.
+> -- joblog
+  msg CPD32E7 type 2 sev 20 The trigger operation failed.
+  msg CPF32C6 type 15 sev 40 Trigger operation not successful.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGC)', 0000000022.00000)
+  sqlcode 0 count 0

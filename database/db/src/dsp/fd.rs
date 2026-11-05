@@ -42,6 +42,8 @@ pub enum FdType {
     Join,
     /// `*CST`.
     Cst,
+    /// `*TRG`.
+    Trg,
 }
 
 impl FdType {
@@ -59,6 +61,7 @@ impl FdType {
             "*SELECT" => Self::Select,
             "*JOIN" => Self::Join,
             "*CST" => Self::Cst,
+            "*TRG" => Self::Trg,
             _ => return None,
         })
     }
@@ -122,6 +125,8 @@ pub struct FileDescription {
     /// Physical file: its constraints, with the parent file of each
     /// referential one as `library/file`.
     pub constraints: Vec<(crate::cst::Constraint, String)>,
+    /// Physical file: its triggers, in the order added.
+    pub triggers: Vec<crate::trg::Trigger>,
 }
 
 /// The display's words: the text of a `QSTXTMSG` identifier in the
@@ -178,6 +183,7 @@ pub fn dspfd(txn: &mut Txn<'_>, file: ObjectId) -> Result<FileDescription> {
         };
         constraints.push((c, parent));
     }
+    let triggers = if desc.attr.kind == FileKind::Logical { Vec::new() } else { crate::trg::list(txn, file)? };
     Ok(FileDescription {
         name: desc.name(),
         library: library_name(txn, desc.header.library),
@@ -191,6 +197,7 @@ pub fn dspfd(txn: &mut Txn<'_>, file: ObjectId) -> Result<FileDescription> {
         members,
         based_on,
         constraints,
+        triggers,
     })
 }
 
@@ -242,6 +249,9 @@ impl FileDescription {
         if (ty == FdType::Cst || (ty == FdType::All && !self.constraints.is_empty())) && self.kind != FileKind::Logical {
             self.cst(&mut out, words);
         }
+        if (ty == FdType::Trg || (ty == FdType::All && !self.triggers.is_empty())) && self.kind != FileKind::Logical {
+            self.trg(&mut out);
+        }
         out
     }
 
@@ -274,6 +284,33 @@ impl FileDescription {
             if c.kind == crate::cst::Kind::Check {
                 kv(out, &indented(words, "TXT0311"), &c.text);
             }
+        }
+    }
+
+    fn trg(&self, out: &mut String) {
+        use crate::trg::{Event, Time, UpdateCondition};
+        out.push_str("Trigger description\n");
+        kv(out, "Number of trigger programs", self.triggers.len());
+        for t in &self.triggers {
+            kv(out, "Trigger name", &t.name);
+            kv(out, "  Trigger library", t.library);
+            kv(out, "  Trigger program", t.program.1);
+            kv(out, "    Library", t.program.0);
+            kv(out, "  Trigger time", if t.time == Time::Before { "*BEFORE" } else { "*AFTER" });
+            kv(out, "  Trigger event", match t.event {
+                Event::Insert => "*INSERT",
+                Event::Delete => "*DELETE",
+                Event::Update => "*UPDATE",
+                Event::Read => "*READ",
+            });
+            if t.update_condition != UpdateCondition::None {
+                kv(out, "  Trigger update condition", if t.update_condition == UpdateCondition::Change { "*CHANGE" } else { "*ALWAYS" });
+            }
+            kv(out, "  Allow repeated change", if t.alwrepchg { "*YES" } else { "*NO" });
+            kv(out, "  Trigger state", if t.enabled { "*ENABLED" } else { "*DISABLED" });
+            kv(out, "  Trigger status", if t.operative { "*OPERATIVE" } else { "*INOPERATIVE" });
+            kv(out, "  Trigger type", if t.sql { "*SQL" } else { "*SYS" });
+            kv(out, "  Created", timestamp(t.created));
         }
     }
 

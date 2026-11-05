@@ -118,6 +118,11 @@ fn adding_replacing_removing_and_disabling() {
     // A generated name.
     let g = ops::add(&mut t, f, &NewTrg::new(Time::Before, Event::Delete, pgm()), 2).unwrap();
     assert_eq!(g, "QSYS_TRIG_QSTEST_____TRGT_______000001");
+    // DSPFD TYPE(*TRG).
+    let text = db::dsp::dspfd(&mut t, f).unwrap().render(db::dsp::FdType::Trg);
+    assert!(text.contains("Number of trigger programs"), "{text}");
+    assert!(text.contains("QSYS_TRIG_QSTEST_____TRGT_______000001"), "{text}");
+    assert!(text.contains("*CHANGE"), "{text}");
     // CHGPFTRG and RMVPFTRG.
     assert_eq!(ops::set_state(&mut t, f, &Pick::When(None, None), false, 4).unwrap(), 4);
     assert!(db::trg::list(&mut t, f).unwrap().iter().all(|t| !t.enabled));
@@ -128,6 +133,8 @@ fn adding_replacing_removing_and_disabling() {
     let e = ops::remove(&mut t, f, &Pick::Named("NOSUCH".into(), None), 5).unwrap_err();
     assert!(matches!(e, DbError::Trigger { op: 2, reason: Refusal::NotFound, .. }), "{e:?}");
     assert_eq!(ops::remove(&mut t, f, &Pick::When(None, None), 5).unwrap().len(), 3);
+    let e = ops::remove(&mut t, f, &Pick::When(None, None), 5).unwrap_err();
+    assert!(matches!(e, DbError::Trigger { op: 2, reason: Refusal::NoneThere, .. }), "{e:?}");
     t.commit().unwrap();
 }
 

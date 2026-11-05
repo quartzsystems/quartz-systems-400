@@ -166,6 +166,10 @@ pub const PUBLIC_EXCLUDE: &[&str] = &[
 /// The commands `lic/slic/src/cpp/direct.rs` implements on the library
 /// functions directly (kept in step with its match by hand).
 pub const DIRECT: &[&str] = &[
+    // --- physical file triggers (lic/slic/src/cpp/trgcmd.rs)
+    "ADDPFTRG",
+    "CHGPFTRG",
+    "RMVPFTRG",
     // --- physical file constraints (lic/slic/src/cpp/cstcmd.rs)
     "ADDPFCST",
     "CHGPFCST",

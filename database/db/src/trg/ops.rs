@@ -29,6 +29,8 @@ pub enum Refusal {
     NotFound,
     /// The file has [`MAX_TRIGGERS`] already (`CPD32E7`).
     TooMany,
+    /// No trigger at the time and event given (`CPD32E7`).
+    NoneThere,
 }
 
 impl Refusal {
@@ -37,7 +39,7 @@ impl Refusal {
     pub fn msgid(self) -> &'static str {
         match self {
             Self::NotPhysical => "CPF3210",
-            Self::Exists | Self::TooMany => "CPD32E7",
+            Self::Exists | Self::TooMany | Self::NoneThere => "CPD32E7",
             Self::NotFound => "CPD321B",
         }
     }
@@ -188,17 +190,17 @@ impl Pick {
     }
 }
 
-/// Remove the triggers `pick` names; their names. A name not on the file
-/// is refused; a time and event with none removes nothing.
+/// Remove the triggers `pick` names; their names. A name not on the file,
+/// or a time and event with none, is refused.
 pub fn remove(txn: &mut Txn<'_>, file: ObjectId, pick: &Pick, now: u64) -> Result<Vec<String>> {
     let desc = physical(txn, file, op::REMOVE)?;
     let trgs = list(txn, file)?;
     let (gone, kept): (Vec<Trigger>, Vec<Trigger>) = trgs.into_iter().partition(|t| pick.takes(t));
     if gone.is_empty() {
-        if let Pick::Named(n, _) = pick {
-            return Err(refuse(op::REMOVE, Refusal::NotFound, format!("trigger {n} is not on file {}", desc.name())));
-        }
-        return Ok(Vec::new());
+        return Err(match pick {
+            Pick::Named(n, _) => refuse(op::REMOVE, Refusal::NotFound, format!("trigger {n} is not on file {}", desc.name())),
+            Pick::When(..) => refuse(op::REMOVE, Refusal::NoneThere, format!("file {} has no trigger at that time and event", desc.name())),
+        });
     }
     store(txn, file, &kept, now)?;
     Ok(gone.into_iter().map(|t| t.name).collect())

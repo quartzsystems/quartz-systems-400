@@ -73,8 +73,11 @@ are x'40'. Null map bytes are `0`/`1` (x'F0'/x'F1').
 - `ACTION_ORDER` (`SYSTRIGGERS`): the file's count of triggers added, from 1;
   a failed add takes no number, `RPLTRG(*YES)` keeps the trigger's number and
   uses one (A1 1, A2 2, A1 replaced, A3 4).
-- `RMVPFTRG`: by `TRGTIME`/`TRGEVENT` (default all), or `TRG`; a name not
-  there: `CPD321B` then `CPF32C6` (operation 2).
+- `RMVPFTRG`: by `TRGTIME`/`TRGEVENT` (default all), or `TRG`; each removed
+  `CPI321B` (trigger &1 in library &2 removed from file &3 in library &4),
+  then `CPC3205`. A name not there: `CPD321B` then `CPF32C6` (operation 2);
+  none at the time and event: `CPD32E7` then `CPF32C6` (`p4.sql`).
+- `CHGPFTRG`: `CPI32E8` per trigger changed, then `CPC32E8` naming the file.
 - `CHGPFTRG TRG(*ALL) STATE(*DISABLED|*ENABLED)`; a named trigger needs
   `TRGLIB` (`CPD32E9`, `CPF0001`, `CPF0006` without it). A name not there:
   `CPF32C6`. A disabled trigger is not called; `SYSTRIGGERS.ENABLED` is `N`.
