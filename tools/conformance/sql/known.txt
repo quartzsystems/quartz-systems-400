@@ -31,3 +31,5 @@ sqlpl/CATALOG   # PARM_SIGNATURE is LONG VARCHAR FOR BIT DATA at IBM (no such ca
 sqlpl/EXTERN   # an external procedure over a program not made yet refused SQL0084
 sqlpl/SETVARS   # CHAR(integer) is not blank padded to its length here
 sqlpl/FUNCS   # a function's error comes at fetch at IBM (an empty result first), at run here; catalog LOB columns
+services/SVCCOLS   # a probe of pub400's catalog; QS/400's catalogs do not list the QSYS2 services (sql tests/service_shapes.rs holds the shapes to it)
+services/SVCVALS   # pub400's own jobs, users and values; the value forms are settled in sql tests/services.rs
