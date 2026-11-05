@@ -764,6 +764,16 @@ impl Session {
         Reply { sqlca, rows, call: None }
     }
 
+    /// A result set a `CALL` left in `scope` (`RS#1`, ...), taken whole:
+    /// its columns and the rows not fetched yet. A server streams it so
+    /// (DRDA's `OPNQRYRM` per set); embedded SQL fetches it as a cursor of
+    /// that name instead.
+    pub fn take_result_set(&mut self, scope: &str, name: &str) -> Option<crate::exec::ResultSet> {
+        let c = self.scopes.get_mut(scope)?.cursors.remove(name)?;
+        let rows = c.rows.into_iter().skip(c.pos).collect();
+        Some(crate::exec::ResultSet { columns: c.columns, rows })
+    }
+
     /// A prepared statement goes: -514 when the scope has none of
     /// that name.
     fn deallocate(&mut self, scope: &str, name: &str) -> Reply {
@@ -861,7 +871,10 @@ fn exec_text(txn: &mut store::txn::Txn<'_>, ctx: &mut SqlContext, text: &str, na
         _ => {}
     }
     match p.execute(txn, ctx, inputs) {
-        Ok(o) => Reply::of(Sqlca::from_outcome(&o)),
+        Ok(o) => {
+            let ca = Sqlca::from_outcome(&o);
+            Reply::of(ctx.warning.as_ref().map_or_else(|| ca.clone(), |w| w.apply(ca.clone())))
+        }
         Err(e) => Reply::of(Sqlca::from_error(&e)),
     }
 }

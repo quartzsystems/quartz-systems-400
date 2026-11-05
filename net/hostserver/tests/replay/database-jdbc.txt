@@ -24,17 +24,13 @@ conn 2 req 31 e004/180b corr 29 reply 1: template 20 bytes, oracle 20, differ at
 conn 2 req 31 e004/180b corr 29 reply 1: 380e 0 bytes, oracle 9285, differ at 0-9284
 conn 2 req 32 e004/180b corr 30 reply 1: template 20 bytes, oracle 20, differ at 15,19
 conn 2 req 32 e004/180b corr 30 reply 1: 380e 0 bytes, oracle 9285, differ at 0-9284
-conn 2 req 39 e004/1803 corr 37 reply 1: 3812 216 bytes, oracle 216, differ at 15,19,23,115,119
-conn 2 req 39 e004/1803 corr 37 reply 1: 3813 72 bytes, oracle 72, differ at 15,19,23,32
+conn 2 req 39 e004/1803 corr 37 reply 1: 3813 72 bytes, oracle 72, differ at 32
 conn 2 req 41 e004/180e corr 39 reply 1: template 20 bytes, oracle 20, differ at 1
-conn 2 req 41 e004/180e corr 39 reply 1: 3807 136 bytes, oracle 136, differ at 107,111
-conn 2 req 41 e004/180e corr 39 reply 1: 380e 20 bytes, oracle 3373, differ at 7,19-3372
-conn 2 req 51 e004/1806 corr 49 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 51 e004/1806 corr 49 reply 1: 3807 136 bytes, oracle 136, differ at 14-15,132-135
-conn 2 req 52 e004/1f00 corr 50 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 52 e004/1f00 corr 50 reply 1: 3807 136 bytes, oracle 136, differ at 14-15,132-135
-conn 2 req 53 e004/1f00 corr 51 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 53 e004/1f00 corr 51 reply 1: parameters [3807], oracle [3801 3802 3803 3807]
+conn 2 req 41 e004/180e corr 39 reply 1: 3807 136 bytes, oracle 136, differ at 107
+conn 2 req 41 e004/180e corr 39 reply 1: 380e 20 bytes, oracle 3373, differ at 7,20-3372
+conn 2 req 51 e004/1806 corr 49 reply 1: 3807 136 bytes, oracle 136, differ at 120
+conn 2 req 52 e004/1f00 corr 50 reply 1: 3807 136 bytes, oracle 136, differ at 120
+conn 2 req 53 e004/1f00 corr 51 reply 1: 3807 136 bytes, oracle 136, differ at 120
 conn 2 req 57 e004/1803 corr 55 reply 1: 3813 296 bytes, oracle 296, differ at 19
 conn 2 req 67 e004/180b corr 65 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
 conn 2 req 71 e004/1803 corr 69 reply 1: 3813 128 bytes, oracle 128, differ at 32,80

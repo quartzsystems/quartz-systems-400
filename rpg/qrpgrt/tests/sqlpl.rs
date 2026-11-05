@@ -303,3 +303,33 @@ fn loops_cursors_and_catalogs() {
     assert_eq!(r.sqlca.sqlcode, -204, "{:?}", r.sqlca);
     let _ = Naming::Sql;
 }
+
+#[test]
+fn sqlstate_and_sqlcode_variables() {
+    let mut e = env();
+    e.ok("CREATE TABLE QSTEST.X (ID INTEGER NOT NULL PRIMARY KEY)");
+    e.ok("CREATE TABLE QSTEST.XL (STEP INTEGER NOT NULL, ST CHAR(5), CODE INTEGER)");
+    e.ok(
+        "CREATE PROCEDURE QSTEST.STATES ()
+         LANGUAGE SQL
+         BEGIN
+           DECLARE SQLSTATE CHAR(5) DEFAULT '00000';
+           DECLARE SQLCODE INTEGER DEFAULT 0;
+           DECLARE V_ST CHAR(5);
+           DECLARE V_CODE INTEGER;
+           DECLARE V INTEGER;
+           DECLARE CONTINUE HANDLER FOR SQLEXCEPTION, SQLWARNING, NOT FOUND
+             SET (V_ST, V_CODE) = (SQLSTATE, SQLCODE);
+           INSERT INTO QSTEST.X VALUES (1);
+           INSERT INTO QSTEST.XL VALUES (1, SQLSTATE, SQLCODE);
+           INSERT INTO QSTEST.X VALUES (1);
+           INSERT INTO QSTEST.XL VALUES (2, V_ST, V_CODE);
+           SELECT ID INTO V FROM QSTEST.X WHERE ID = 99;
+           INSERT INTO QSTEST.XL VALUES (3, V_ST, V_CODE);
+         END",
+    );
+    e.ok("CALL QSTEST.STATES");
+    let rows = e.rows("SELECT STEP, ST, CODE FROM QSTEST.XL ORDER BY STEP");
+    let got: Vec<String> = rows.iter().map(|r| r.iter().map(text).collect::<Vec<_>>().join(",")).collect();
+    assert_eq!(got, ["1,00000,0", "2,23505,-803", "3,02000,100"]);
+}

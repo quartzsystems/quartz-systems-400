@@ -299,9 +299,16 @@ impl Gen<'_> {
         self.stmt(body)?;
         let done = self.done.clone();
         self.place(&done);
-        // A normal end: the return status, SQLSTATE 00000.
+        // A normal end: the return status, SQLSTATE 00000, or the warning
+        // the last statement left.
+        self.ins("str.subst $cls, [%pca +131]:char(5), 1, 2");
+        self.ins("%wn = str.cmp.eq $cls, \"01\"");
+        let (keep, clear) = (self.label(), self.label());
+        self.term(format!("brif %wn, {keep}, {clear}"));
+        self.place(&clear);
         self.ins("mov $sqlca, *ZEROS");
         self.ins("mov [%pca +131]:char(5), \"00000\"");
+        self.place(&keep);
         self.ins("%rcv = load $rc");
         self.ins("store [%pca +96]:i32, %rcv");
         let out = self.label();
@@ -540,7 +547,11 @@ impl Gen<'_> {
     }
 
     fn var(&self, name: &str) -> Result<usize> {
-        self.variable(name).ok_or_else(|| undefined(name))
+        let found = match name.split_once('.') {
+            Some((label, v)) => self.qualified(label, v),
+            None => self.variable(name),
+        };
+        found.ok_or_else(|| undefined(name))
     }
 
     fn cursor(&self, name: &str) -> Result<Cur> {
@@ -587,8 +598,13 @@ impl Gen<'_> {
         if matches!(q.stmt, Statement::CreateRoutine(_)) {
             return Err(unsupported("CREATE PROCEDURE or FUNCTION inside a routine"));
         }
-        let cols = self.columns_of(&q.stmt);
-        let r = self.rewrite(&q.text, &cols)?;
+        let r = match &q.stmt {
+            Statement::Insert(i) => self.insert_text(&q.text, i)?,
+            st => {
+                let cols = self.columns_of(st);
+                self.rewrite(&q.text, &cols)?
+            }
+        };
         let outs: Vec<usize> = q.into.iter().map(|t| self.var(&t.value)).collect::<Result<_>>()?;
         let op = if outs.is_empty() { Op::Exec } else { Op::Query };
         if op == Op::Exec && matches!(q.stmt, Statement::Select(_)) {
@@ -599,6 +615,47 @@ impl Gen<'_> {
             });
         }
         self.run_vars(op, &r.text, &r.vars, &outs, Flags::default())
+    }
+
+    /// An `INSERT`: its column list names the table's columns, but its
+    /// `VALUES` see none (a name there is a variable); a query source
+    /// sees its own tables'.
+    fn insert_text(&mut self, text: &str, ins: &crate::ast::Insert) -> Result<rewrite::Rewritten> {
+        use crate::lex::Tok;
+        let toks: Vec<Tok> = crate::lex::tokenize(text)?.into_iter().map(|t| t.tok).collect();
+        let mut depth = 0i32;
+        let split = toks.iter().position(|t| {
+            match t {
+                Tok::Sym("(") => depth += 1,
+                Tok::Sym(")") => depth -= 1,
+                _ => {}
+            }
+            depth == 0 && matches!(t, Tok::Word(w) if w == "VALUES" || w == "SELECT" || w == "WITH")
+        });
+        let Some(at) = split else {
+            let cols = self.columns_of(&Statement::Insert(ins.clone()));
+            return self.rewrite(text, &cols);
+        };
+        let render = |ts: &[Tok]| {
+            let mut s = String::new();
+            for t in ts {
+                if !s.is_empty() {
+                    s.push(' ');
+                }
+                rewrite::render(t, &mut s);
+            }
+            s
+        };
+        let target: HashSet<String> = self.cat.columns(&ins.table).into_iter().collect();
+        let head = self.rewrite(&render(&toks[..at]), &target)?;
+        let source: HashSet<String> = match &ins.source {
+            crate::ast::InsertSource::Query(q) => self.columns_of(&Statement::Select((**q).clone())),
+            _ => HashSet::new(),
+        };
+        let tail = self.rewrite(&render(&toks[at..]), &source)?;
+        let mut vars = head.vars;
+        vars.extend(tail.vars);
+        Ok(rewrite::Rewritten { text: format!("{} {}", head.text, tail.text), vars })
     }
 
     /// `targets = exprs`, one statement for all of them.
@@ -775,7 +832,10 @@ impl Gen<'_> {
             self.ins(format!("store $resume, {k}"));
             self.ins("mov $hca, $sqlca");
             let entry = self.frames[fi].handlers[hi].entry.clone();
-            self.frames[fi].handlers[hi].resumes.push((k, cont.to_string()));
+            let rs = &mut self.frames[fi].handlers[hi].resumes;
+            if !rs.iter().any(|(r, _)| *r == k) {
+                rs.push((k, cont.to_string()));
+            }
             self.term(format!("br {entry}"));
             self.place(&next);
         }
@@ -951,6 +1011,10 @@ impl Gen<'_> {
         // Variables, in order: each default sees the ones before it.
         for v in &c.vars {
             for n in &v.names {
+                // The routine's own compound may not reuse a parameter's name.
+                if self.frames.len() == 2 && self.sig.parms.iter().any(|p| p.name == n.value) {
+                    return Err(SqlError::Coded { code: -590, state: "42734".into(), what: format!("name {} is not unique in the routine", n.value) });
+                }
                 let k = self.new_var(&v.ty, v.constant)?;
                 match n.value.as_str() {
                     "SQLSTATE" => self.sqlstate_var = Some(k),
@@ -1024,7 +1088,7 @@ struct Flags {
 }
 
 fn no_label(l: &str) -> SqlError {
-    SqlError::Coded { code: -778, state: "428D5".into(), what: format!("label {l} is not found or not reachable here") }
+    SqlError::Coded { code: -779, state: "42736".into(), what: format!("label {l} is not found or not reachable here") }
 }
 
 #[allow(dead_code)]

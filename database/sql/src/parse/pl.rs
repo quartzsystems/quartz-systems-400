@@ -249,7 +249,9 @@ impl Parser {
     fn target(&mut self) -> Result<Ident> {
         let mut t = self.ident()?;
         if self.eat_sym(".") {
-            t = self.ident()?;
+            // `label.var`: kept as one name; a variable has no period.
+            let v = self.ident()?;
+            t = Ident { value: format!("{}.{}", t.value, v.value), delimited: false };
         }
         if self.is_sym("[") {
             return Err(Self::unsupported("assignment to an array element"));
@@ -330,9 +332,29 @@ impl Parser {
             handlers: Vec::new(),
             body: Vec::new(),
         };
+        // Variables and conditions first, then cursors, then handlers.
+        let mut phase = 0u8;
         while self.is_word("DECLARE") && !self.is_word_at(1, "GLOBAL") {
             self.advance();
+            let before = (c.cursors.len(), c.handlers.len());
+            let t = &self.toks[self.at.min(self.toks.len() - 1)];
+            let (line, col) = (t.line, t.col);
             self.declaration(&mut c)?;
+            let kind = if c.handlers.len() > before.1 {
+                2
+            } else if c.cursors.len() > before.0 {
+                1
+            } else {
+                0
+            };
+            if kind < phase {
+                return Err(SqlError::Coded {
+                    code: -199,
+                    state: "42601".into(),
+                    what: format!("DECLARE at line {line} column {col}: variables and conditions come before cursors, cursors before handlers"),
+                });
+            }
+            phase = phase.max(kind);
             self.expect_sym(";")?;
         }
         while !self.is_word("END") {
@@ -359,8 +381,8 @@ impl Parser {
             };
             if kind == HandlerKind::Undo && !c.atomic {
                 return Err(SqlError::Coded {
-                    code: -628,
-                    state: "42613".into(),
+                    code: -780,
+                    state: "428D6".into(),
                     what: "an UNDO handler needs an ATOMIC compound statement".into(),
                 });
             }
@@ -386,9 +408,10 @@ impl Parser {
         while self.eat_sym(",") {
             names.push(self.ident()?);
         }
-        if self.eat_word("STATEMENT") {
-            c.statements.extend(names);
-            return Ok(());
+        if self.is_word("STATEMENT") {
+            // Not in SQL PL: a variable of a type of that name (IBM's reading).
+            let _ = &c.statements;
+            return Err(SqlError::Coded { code: -204, state: "42704".into(), what: "type STATEMENT not found".into() });
         }
         let cursor_words = ["ASENSITIVE", "INSENSITIVE", "SENSITIVE", "NO", "SCROLL", "DYNAMIC", "CURSOR"];
         if names.len() == 1 && matches!(self.tok(), Tok::Word(w) if cursor_words.contains(&w.as_str())) {

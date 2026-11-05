@@ -235,7 +235,8 @@ fn describe_gives_sql_names_and_labels() {
         "LABEL ON COLUMN QSTEST.L.CUSTOMER_NAME IS 'Customer            Name'",
     ] {
         let r = run(&mut s, "1:P", sql(text), vec![]);
-        assert_eq!(r.sqlca.sqlcode, 0, "{text}: {:?}", r.sqlca);
+        // SQL7905: QSTEST is not a schema.
+        assert!(r.sqlca.sqlcode >= 0, "{text}: {:?}", r.sqlca);
     }
     let named = |s: &mut Session, text: &str| {
         let mut p = op(Op::Prepare, "S1", text);

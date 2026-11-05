@@ -672,7 +672,12 @@ impl Activator {
         let key = format!("{found_lib}/{name}");
         let debug = self.debug_programs.contains(&key);
         if let Some(p) = self.loaded.get(&key) {
-            if p.debug == debug {
+            // A program replaced since (CREATE OR REPLACE, a new compile)
+            // is loaded again.
+            let same = Arc::ptr_eq(&p.object, &object)
+                || (p.object.modules.len() == object.modules.len()
+                    && p.object.modules.iter().zip(&object.modules).all(|(a, b)| a.module.created == b.module.created && a.module.code.code == b.module.code.code));
+            if p.debug == debug && same {
                 return Ok(p.clone());
             }
             self.loaded.remove(&key);

@@ -220,7 +220,7 @@ fn signal(txn: &mut Txn<'_>, ctx: &mut SqlContext, s: &crate::ast::Signal, param
         None => return Err(SqlError::Coded { code: -1067, state: "0K000".into(), what: "RESIGNAL outside a handler".into() }),
     };
     if state.len() != 5 || state.starts_with("00") {
-        return Err(SqlError::Coded { code: -469, state: "428B3".into(), what: format!("SQLSTATE {state} is not one a SIGNAL may raise") });
+        return Err(SqlError::Coded { code: -435, state: "428B3".into(), what: format!("SQLSTATE {state} is not one a SIGNAL may raise") });
     }
     let text = match &s.message {
         Some(m) => eval(ctx, &m.expr)?.as_text().trim_end().to_string(),
