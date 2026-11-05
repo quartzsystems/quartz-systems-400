@@ -282,7 +282,7 @@ impl Parser {
                     if es.len() != targets.len() {
                         return Err(SqlError::Coded {
                             code: -117,
-                            state: "42802".into(),
+                            state: "42802",
                             what: "the number of values differs from the number of variables".into(),
                         });
                     }
@@ -344,7 +344,7 @@ impl Parser {
             if kind < phase {
                 return Err(SqlError::Coded {
                     code: -199,
-                    state: "42601".into(),
+                    state: "42601",
                     what: format!("DECLARE at line {line} column {col}: variables and conditions come before cursors, cursors before handlers"),
                 });
             }
@@ -376,7 +376,7 @@ impl Parser {
             if kind == HandlerKind::Undo && !c.atomic {
                 return Err(SqlError::Coded {
                     code: -780,
-                    state: "428D6".into(),
+                    state: "428D6",
                     what: "an UNDO handler needs an ATOMIC compound statement".into(),
                 });
             }
@@ -405,7 +405,7 @@ impl Parser {
         if self.is_word("STATEMENT") {
             // Not in SQL PL: a variable of a type of that name (IBM's reading).
             let _ = &c.statements;
-            return Err(SqlError::Coded { code: -204, state: "42704".into(), what: "type STATEMENT not found".into() });
+            return Err(SqlError::Coded { code: -204, state: "42704", what: "type STATEMENT not found".into() });
         }
         let cursor_words = ["ASENSITIVE", "INSENSITIVE", "SENSITIVE", "NO", "SCROLL", "DYNAMIC", "CURSOR"];
         if names.len() == 1 && matches!(self.tok(), Tok::Word(w) if cursor_words.contains(&w.as_str())) {

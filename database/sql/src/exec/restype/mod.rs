@@ -71,6 +71,7 @@ pub const FUNCTION_TYPES: &[FunctionType] = &[
     super::func::math::result_type,
     super::func::misc::result_type,
     rules::builtin,
+    super::routine::udf::result_type,
 ];
 
 /// The frames an expression's columns are looked up in, innermost last,

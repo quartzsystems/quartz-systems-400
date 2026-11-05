@@ -88,7 +88,7 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value])
         let Some(f) = all.iter().find(|f| usize::from(f.routine.def.parm_count) == c.args.len()) else {
             return Err(SqlError::Coded {
                 code: -440,
-                state: "42884".into(),
+                state: "42884",
                 what: format!("no procedure {} takes {} arguments", c.name, c.args.len()),
             });
         };
@@ -143,7 +143,7 @@ fn argument(txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value], mode: Par
     if mode != ParmMode::In && marker.is_none() {
         return Err(SqlError::Coded {
             code: -469,
-            state: "42886".into(),
+            state: "42886",
             what: "an OUT or INOUT argument must be a variable or a parameter marker".into(),
         });
     }

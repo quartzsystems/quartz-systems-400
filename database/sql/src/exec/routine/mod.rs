@@ -197,7 +197,7 @@ pub fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, st: &Statement, params: &[Va
             for n in names {
                 let c = ctx.cursors.get_mut(&n.value).ok_or_else(|| SqlError::Coded {
                     code: -504,
-                    state: "34000".into(),
+                    state: "34000",
                     what: format!("cursor {} is not declared", n.value),
                 })?;
                 c.returns = Some(crate::ast::ReturnTo::Caller);
@@ -216,12 +216,12 @@ fn signal(txn: &mut Txn<'_>, ctx: &mut SqlContext, s: &crate::ast::Signal, param
         Some(crate::ast::SignalValue::State(st)) => st.clone(),
         Some(crate::ast::SignalValue::Variable(e)) => eval(ctx, &e.expr)?.as_text().trim_end().to_string(),
         Some(crate::ast::SignalValue::Condition(c)) => {
-            return Err(SqlError::Coded { code: -312, state: "42618".into(), what: format!("condition {} is not declared", c.value) });
+            return Err(SqlError::Coded { code: -312, state: "42618", what: format!("condition {} is not declared", c.value) });
         }
-        None => return Err(SqlError::Coded { code: -1067, state: "0K000".into(), what: "RESIGNAL outside a handler".into() }),
+        None => return Err(SqlError::Coded { code: -1067, state: "0K000", what: "RESIGNAL outside a handler".into() }),
     };
     if state.len() != 5 || state.starts_with("00") {
-        return Err(SqlError::Coded { code: -435, state: "428B3".into(), what: format!("SQLSTATE {state} is not one a SIGNAL may raise") });
+        return Err(SqlError::Coded { code: -435, state: "428B3", what: format!("SQLSTATE {state} is not one a SIGNAL may raise") });
     }
     let text = match &s.message {
         Some(m) => eval(ctx, &m.expr)?.as_text().trim_end().to_string(),

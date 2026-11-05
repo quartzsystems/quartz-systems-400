@@ -118,6 +118,9 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, args: &[Value],
         }
     }
     let (_, f) = best?;
+    if let Ok(d) = parsed(&f.routine.def.text) {
+        remember(&d, &f.schema);
+    }
     Some(run(txn, ctx, &f.routine.def.text, args))
 }
 
@@ -154,7 +157,7 @@ fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, args: &[Value]) -> R
         match it.stmt(body)? {
             Flow::Return(v) => cast(&v, ret),
             // A function that ends without RETURN (SQL2F03F5).
-            _ => Err(SqlError::Coded { code: -578, state: "2F005".into(), what: format!("function {} ended without a RETURN", def.name) }),
+            _ => Err(SqlError::Coded { code: -578, state: "2F005", what: format!("function {} ended without a RETURN", def.name) }),
         }
     })();
     DEPTH.with(|d| d.set(depth));
@@ -232,7 +235,7 @@ impl Interp<'_, '_> {
             Some((l, v)) => self.qualified(l, v),
             None => self.variable(name),
         };
-        k.ok_or_else(|| SqlError::Coded { code: -312, state: "42618".into(), what: format!("variable {name} is not declared") })
+        k.ok_or_else(|| SqlError::Coded { code: -312, state: "42618", what: format!("variable {name} is not declared") })
     }
 
     /// The rows of a query text, its variables passed as markers.
@@ -330,7 +333,7 @@ impl Interp<'_, '_> {
                 }
                 match otherwise {
                     Some(o) => self.stmts(o)?,
-                    None => return Err(SqlError::Coded { code: -773, state: "20000".into(), what: "no WHEN of the CASE statement held".into() }),
+                    None => return Err(SqlError::Coded { code: -773, state: "20000", what: "no WHEN of the CASE statement held".into() }),
                 }
             }
             PlKind::Loop(b) => loop {
@@ -490,4 +493,47 @@ fn fit(v: &Value, t: &crate::ast::DataType, literal: bool) -> u32 {
         | (Value::Bool(_), D::Boolean) => 3,
         _ => 0,
     }
+}
+
+thread_local! {
+    /// The result types of the functions this process has made or run,
+    /// by name and by `SCHEMA.NAME`: number of parameters and type.
+    static RESULTS: RefCell<HashMap<String, Vec<(usize, TypeSpec)>>> = RefCell::new(HashMap::new());
+}
+
+/// Keep a function's result type for the type rules (`restype`).
+pub fn remember(def: &CreateRoutine, schema: &str) {
+    let Some(Returns::Scalar(t, _)) = &def.returns else { return };
+    let n = def.parms.len();
+    let name = &def.name.name.value;
+    RESULTS.with(|r| {
+        let mut r = r.borrow_mut();
+        for key in [name.clone(), format!("{schema}.{name}")] {
+            let e = r.entry(key).or_default();
+            e.retain(|(k, _)| *k != n);
+            e.push((n, t.clone()));
+        }
+    });
+}
+
+/// Forget a dropped function's result type.
+pub fn forget(name: &str, schema: &str, parms: usize) {
+    RESULTS.with(|r| {
+        let mut r = r.borrow_mut();
+        for key in [name.to_string(), format!("{schema}.{name}")] {
+            if let Some(e) = r.get_mut(&key) {
+                e.retain(|(k, _)| *k != parms);
+            }
+        }
+    });
+}
+
+/// A user function's result type, when this process knows it (a
+/// `restype` function family, asked after the built-ins).
+pub fn result_type(name: &str, args: &[Option<crate::exec::restype::SqlType>], _: &[crate::ast::Expr]) -> Option<crate::exec::restype::SqlType> {
+    RESULTS.with(|r| {
+        r.borrow()
+            .get(name)
+            .and_then(|e| e.iter().find(|(k, _)| *k == args.len()).map(|(_, t)| crate::exec::restype::SqlType::of_data_type(&t.data_type, true)))
+    })
 }

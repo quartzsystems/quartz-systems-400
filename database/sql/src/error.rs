@@ -412,8 +412,7 @@ impl SqlError {
             Self::DateTimeExpr { .. } => -182,
             Self::Duration { .. } => -187,
             Self::Database { .. } => -901,
-            Self::Coded { code, .. } | Self::Recursion { code, .. } => *code,
-            Self::Signalled { code, .. } => *code,
+            Self::Coded { code, .. } | Self::Recursion { code, .. } | Self::Signalled { code, .. } => *code,
         }
     }
 

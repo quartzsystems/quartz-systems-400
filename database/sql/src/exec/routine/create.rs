@@ -48,11 +48,11 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
         && let Some(ss) = &s.schema
         && Some(ss) != r.name.schema.as_ref()
     {
-        return Err(SqlError::Coded { code: -20_158, state: "42882".into(), what: "the specific name's schema is not the routine's".into() });
+        return Err(SqlError::Coded { code: -20_158, state: "42882", what: "the specific name's schema is not the routine's".into() });
     }
     let language = o.language.unwrap_or(if o.is_external { Language::Rpgle } else { Language::Sql });
     if o.is_external && language == Language::Sql {
-        return Err(SqlError::Coded { code: -628, state: "42613".into(), what: "LANGUAGE SQL and EXTERNAL together".into() });
+        return Err(SqlError::Coded { code: -628, state: "42613", what: "LANGUAGE SQL and EXTERNAL together".into() });
     }
     match language {
         Language::C | Language::Cobol | Language::Cobolle | Language::Pli | Language::Rpg => {
@@ -65,7 +65,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
         (_, Some(ParmStyle::Db2General | ParmStyle::Java)) => return Err(unsupported("PARAMETER STYLE DB2GENERAL and JAVA")),
         (_, Some(ParmStyle::Db2Sql)) => return Err(unsupported("PARAMETER STYLE DB2SQL")),
         (Language::Sql, Some(_)) => {
-            return Err(SqlError::Coded { code: -628, state: "42613".into(), what: "PARAMETER STYLE on an SQL routine".into() });
+            return Err(SqlError::Coded { code: -628, state: "42613", what: "PARAMETER STYLE on an SQL routine".into() });
         }
         (Language::Sql, None) => None,
         (_, s) => Some(s.unwrap_or(ParmStyle::Sql)),
@@ -81,7 +81,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
         if !r.replace {
             return Err(SqlError::Coded {
                 code: -454,
-                state: "42723".into(),
+                state: "42723",
                 what: format!("a routine {} with the same signature is already in {}", r.name.name.value, old.schema),
             });
         }
@@ -99,13 +99,13 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
     for (i, p) in r.parms.iter().enumerate() {
         let Some(n) = &p.name else {
             if language == Language::Sql {
-                return Err(SqlError::Coded { code: -104, state: "42601".into(), what: "an SQL routine's parameters need names".into() });
+                return Err(SqlError::Coded { code: -104, state: "42601", what: "an SQL routine's parameters need names".into() });
             }
             parms.push(ParmDef { ordinal: ordinal(i), mode: model::mode_code(p.mode), role: 0, name: String::new(), ty: pl::types::type_text(&p.ty) });
             continue;
         };
         if r.parms[..i].iter().any(|q| q.name.as_ref() == Some(n)) {
-            return Err(SqlError::Coded { code: -590, state: "42734".into(), what: format!("parameter {} is named twice", n.value) });
+            return Err(SqlError::Coded { code: -590, state: "42734", what: format!("parameter {} is named twice", n.value) });
         }
         parms.push(ParmDef { ordinal: ordinal(i), mode: model::mode_code(p.mode), role: 0, name: n.value.clone(), ty: pl::types::type_text(&p.ty) });
     }
@@ -198,7 +198,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
         RoutineBody::External => {
             let (plib, pname, entry) = external_name(o.external.as_deref(), &r.name)?;
             if o.program_sub && entry.is_none() {
-                return Err(SqlError::Coded { code: -20_210, state: "42904".into(), what: "PROGRAM TYPE SUB needs a service program procedure".into() });
+                return Err(SqlError::Coded { code: -20_210, state: "42904", what: "PROGRAM TYPE SUB needs a service program procedure".into() });
             }
             def.program_library.clone_from(&plib);
             def.program.clone_from(&pname);
@@ -223,6 +223,9 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
     sqlinf::save(txn, owner, &info, ctx.clock())?;
     let system = ops::read_header(txn, owner)?.1.name;
     names::put(txn, lib, Space::Specific, &specific, Target { id: owner, system })?;
+    if func {
+        super::udf::remember(r, &sqlnames::schema_name(txn, lib));
+    }
     Ok(())
 }
 
@@ -309,21 +312,21 @@ fn external_name(ext: Option<&str>, routine: &ObjectName) -> Result<(String, Str
         None => ("*LIBL".to_string(), obj.trim().to_ascii_uppercase()),
     };
     if Name::parse(&pgm).is_err() || (lib != "*LIBL" && Name::parse(&lib).is_err()) {
-        return Err(SqlError::Coded { code: -113, state: "28000".into(), what: format!("EXTERNAL NAME {text} is not valid") });
+        return Err(SqlError::Coded { code: -113, state: "28000", what: format!("EXTERNAL NAME {text} is not valid") });
     }
     Ok((lib, pgm, entry))
 }
 
 /// The external program, found now.
 fn external_object(txn: &mut Txn<'_>, ctx: &SqlContext, lib: &str, name: &str, ty: u16) -> Result<Option<ObjectId>> {
-    let n = Name::parse(name).map_err(|e| SqlError::Coded { code: -113, state: "28000".into(), what: e.to_string() })?;
+    let n = Name::parse(name).map_err(|e| SqlError::Coded { code: -113, state: "28000", what: e.to_string() })?;
     let libs: Vec<ObjectId> = if lib == "*LIBL" {
         let mut v: Vec<ObjectId> = ctx.names.curlib.into_iter().collect();
         v.extend(ctx.names.libl.iter().copied());
         v
     } else {
         let q = Library::load(txn, ctx.qsys)?;
-        let ln = Name::parse(lib).map_err(|e| SqlError::Coded { code: -113, state: "28000".into(), what: e.to_string() })?;
+        let ln = Name::parse(lib).map_err(|e| SqlError::Coded { code: -113, state: "28000", what: e.to_string() })?;
         q.lookup(txn, types::LIB, ln)?.into_iter().collect()
     };
     for l in libs {
@@ -423,7 +426,7 @@ pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, d: &DropRoutine) -> Result<
         [one] => remove(txn, ctx, one),
         _ => Err(SqlError::Coded {
             code: -476,
-            state: "42725".into(),
+            state: "42725",
             what: format!("{} names more than one routine: give the signature or the specific name", d.name),
         }),
     }
@@ -439,6 +442,9 @@ fn signature_matches(f: &Found, sig: &[TypeSpec]) -> bool {
 /// Drop a routine: an SQL routine's program goes with it; an external
 /// one's program only loses the routine's attributes.
 fn remove(txn: &mut Txn<'_>, ctx: &SqlContext, f: &Found) -> Result<()> {
+    if f.routine.def.routine_type == 2 {
+        super::udf::forget(&f.routine.def.name, &f.schema, f.routine.def.parm_count.into());
+    }
     names::remove(txn, f.lib, Space::Specific, &f.routine.def.specific)?;
     if f.routine.def.body == 1 || f.routine.def.routine_type == 2 {
         sqlinf::clear(txn, ctx.job, f.owner)?;

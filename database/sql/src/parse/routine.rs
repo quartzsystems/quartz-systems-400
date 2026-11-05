@@ -318,7 +318,7 @@ impl Parser {
         }
         let mut out = self.ident()?.value;
         if self.naming == crate::ast::Naming::Sql && self.is_sym("/") {
-            return Err(crate::error::SqlError::Coded { code: -5016, state: "42833".into(), what: format!("{out}/...: a qualified name in SQL naming takes a period") });
+            return Err(crate::error::SqlError::Coded { code: -5016, state: "42833", what: format!("{out}/...: a qualified name in SQL naming takes a period") });
         }
         if self.eat_sym("/") || self.eat_sym(".") {
             out.push('/');
@@ -395,7 +395,7 @@ impl Parser {
                 Tok::Str(s) => {
                     self.advance();
                     if s.len() != 5 || !s.bytes().all(|b| b.is_ascii_digit() || b.is_ascii_uppercase()) || s.starts_with("00") {
-                        return Err(crate::error::SqlError::Coded { code: -435, state: "428B3".into(), what: format!("SQLSTATE {s} is not one a SIGNAL may raise") });
+                        return Err(crate::error::SqlError::Coded { code: -435, state: "428B3", what: format!("SQLSTATE {s} is not one a SIGNAL may raise") });
                     }
                     Some(SignalValue::State(s))
                 }

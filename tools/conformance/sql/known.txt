@@ -28,11 +28,6 @@ query/NUMFUNCS   # ENCRYPT_AES refused: DB2 for i's encrypted layout is not publ
 query/REGISTERS   # CURRENT DEGREE is pub400's system setting (ANY); NONE here
 sqlpl/ATOMIC   # BEGIN ATOMIC and UNDO handlers refused SQL0084: no savepoints yet
 sqlpl/CATALOG   # PARM_SIGNATURE is LONG VARCHAR FOR BIT DATA at IBM (no such catalog type here)
-sqlpl/DATES   # DAYS(...) - DAYS(...) described as VARCHAR: expression result types
 sqlpl/EXTERN   # an external procedure over a program not made yet refused SQL0084
-sqlpl/GETDIAG   # a string too long for its column is SQL0802 here, SQL0404 at IBM
-sqlpl/LOOPS   # COUNT and SUM described as VARCHAR: expression result types
-sqlpl/RESULT1   # COUNT and SUM described as VARCHAR: expression result types
 sqlpl/SETVARS   # CHAR(integer) is not blank padded to its length here
-sqlpl/STRINGS   # DIGITS of a DECIMAL(7,0) is not zero padded here
-sqlpl/FUNCS   # function results described as VARCHAR: expression result types; a function's error at fetch is the statement's here; catalog LOB columns
+sqlpl/FUNCS   # a function's error comes at fetch at IBM (an empty result first), at run here; catalog LOB columns

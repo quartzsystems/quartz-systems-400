@@ -26,7 +26,7 @@ fn unsupported(what: &str) -> SqlError {
 }
 
 fn undefined(name: &str) -> SqlError {
-    SqlError::Coded { code: -312, state: "42618".into(), what: format!("variable {name} is not declared or not usable here") }
+    SqlError::Coded { code: -312, state: "42618", what: format!("variable {name} is not declared or not usable here") }
 }
 
 /// A variable or parameter.
@@ -354,7 +354,7 @@ impl Gen<'_> {
                         if self.vars[k].constant {
                             return Err(SqlError::Coded {
                                 code: -20_376,
-                                state: "428GE".into(),
+                                state: "428GE",
                                 what: format!("{} is a constant", t.value),
                             });
                         }
@@ -448,7 +448,7 @@ impl Gen<'_> {
             PlKind::Iterate(l) => {
                 let t = self.targets.iter().rev().find(|t| t.label == l.value).ok_or_else(|| no_label(&l.value))?;
                 let Some(it) = t.iterate.clone() else {
-                    return Err(SqlError::Coded { code: -778, state: "428D5".into(), what: format!("{} does not label a loop", l.value) });
+                    return Err(SqlError::Coded { code: -778, state: "428D5", what: format!("{} does not label a loop", l.value) });
                 };
                 self.term(format!("br {it}"));
             }
@@ -559,7 +559,7 @@ impl Gen<'_> {
             .iter()
             .rev()
             .find_map(|f| f.cursors.get(name).cloned())
-            .ok_or_else(|| SqlError::Coded { code: -504, state: "34000".into(), what: format!("cursor {name} is not declared") })
+            .ok_or_else(|| SqlError::Coded { code: -504, state: "34000", what: format!("cursor {name} is not declared") })
     }
 
     /// A variable in the routine's storage.
@@ -610,7 +610,7 @@ impl Gen<'_> {
         if op == Op::Exec && matches!(q.stmt, Statement::Select(_)) {
             return Err(SqlError::Coded {
                 code: -84,
-                state: "42612".into(),
+                state: "42612",
                 what: "a query in a routine needs INTO, a cursor or a FOR loop".into(),
             });
         }
@@ -892,7 +892,7 @@ impl Gen<'_> {
             Some(SignalValue::Condition(c)) => {
                 let st = self.condition(&c.value).ok_or_else(|| SqlError::Coded {
                     code: -312,
-                    state: "42618".into(),
+                    state: "42618",
                     what: format!("condition {} is not declared", c.value),
                 })?;
                 format!("'{st}'")
@@ -932,7 +932,7 @@ impl Gen<'_> {
         match &c.query {
             CursorSource::Query(q) => {
                 if !using.is_empty() {
-                    return Err(SqlError::Coded { code: -313, state: "07004".into(), what: "OPEN USING of a cursor with no markers".into() });
+                    return Err(SqlError::Coded { code: -313, state: "07004", what: "OPEN USING of a cursor with no markers".into() });
                 }
                 let cols = self.columns_of(&q.stmt);
                 let r = self.rewrite(&q.text, &cols)?;
@@ -1013,7 +1013,7 @@ impl Gen<'_> {
             for n in &v.names {
                 // The routine's own compound may not reuse a parameter's name.
                 if self.frames.len() == 2 && self.sig.parms.iter().any(|p| p.name == n.value) {
-                    return Err(SqlError::Coded { code: -590, state: "42734".into(), what: format!("name {} is not unique in the routine", n.value) });
+                    return Err(SqlError::Coded { code: -590, state: "42734", what: format!("name {} is not unique in the routine", n.value) });
                 }
                 let k = self.new_var(&v.ty, v.constant)?;
                 match n.value.as_str() {
@@ -1088,7 +1088,7 @@ struct Flags {
 }
 
 fn no_label(l: &str) -> SqlError {
-    SqlError::Coded { code: -779, state: "42736".into(), what: format!("label {l} is not found or not reachable here") }
+    SqlError::Coded { code: -779, state: "42736", what: format!("label {l} is not found or not reachable here") }
 }
 
 #[allow(dead_code)]
