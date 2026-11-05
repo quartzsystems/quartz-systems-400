@@ -813,3 +813,113 @@ sev = 30
 text = "The attributes of identity column or sequence &1 are not valid."
 help = "An identity column or sequence is an integer, or DECIMAL or NUMERIC with no scale; MINVALUE is not above MAXVALUE, and START WITH and RESTART WITH lie between them, all within the data type."
 vars = ["*CHAR 128"]
+id = "SQL0113"
+sev = 30
+text = "Name &1 is not a valid name here."
+help = "The name, such as the program of an EXTERNAL NAME clause, breaks the rules for the object it names."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0435"
+sev = 30
+text = "SQLSTATE &1 is not one a SIGNAL may raise."
+help = "A SIGNAL or RESIGNAL names five digits or upper case letters, and not a class 00 state."
+vars = ["*CHAR 5"]
+
+[[msg]]
+id = "SQL0438"
+sev = 30
+text = "&1"
+help = "A SIGNAL or RESIGNAL statement raised the condition; the text is the one it set."
+vars = ["*CHAR 70"]
+
+[[msg]]
+id = "SQL0440"
+sev = 30
+text = "No routine &1 in &2 takes the arguments given."
+help = "A routine of that name exists, but none with as many parameters as the call passes, or of the types it passes."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0443"
+sev = 30
+text = "Routine &1 in &2 failed with SQLSTATE &3."
+help = "The external program the routine names ended with an error it did not handle, or reported one through its SQLSTATE parameter."
+vars = ["*CHAR 128", "*CHAR 128", "*CHAR 5"]
+
+[[msg]]
+id = "SQL0454"
+sev = 30
+text = "Routine &1 in &2 already exists."
+help = "A procedure of that name and number of parameters, or a function of that name and parameter types, is already in the schema. Use CREATE OR REPLACE or another name."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0464"
+sev = 10
+text = "Procedure &1 returned more result sets than it may return."
+help = "The procedure left more cursors open for its caller than its DYNAMIC RESULT SETS clause allows; the later ones were closed."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0466"
+sev = 0
+text = "&1 result sets are available from procedure &2."
+help = "The procedure left cursors open for its caller; each is a result set the caller can read."
+vars = ["*BIN 4", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0469"
+sev = 30
+text = "Argument &1 of routine &2 does not fit its parameter."
+help = "An OUT or INOUT parameter needs a variable or a parameter marker to give its value back to."
+vars = ["*BIN 4", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0476"
+sev = 30
+text = "Routine &1 in &2 is not unique."
+help = "More than one routine has that name. Give its parameter types or its specific name."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0578"
+sev = 30
+text = "SQL function &1 in &2 ended without a RETURN."
+help = "The end of the function's body was reached before a RETURN statement ran."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0590"
+sev = 30
+text = "Name &1 is not unique in the routine."
+help = "Two parameters, or a parameter and a variable of the routine's own compound statement, have the same name."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0773"
+sev = 30
+text = "No WHEN of the CASE statement held."
+help = "A CASE statement without ELSE found no WHEN clause that matched."
+vars = []
+
+[[msg]]
+id = "SQL0778"
+sev = 30
+text = "Label &1 is not one that statement can name."
+help = "ITERATE names the label of a loop around it."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0779"
+sev = 30
+text = "Label &1 is not found."
+help = "LEAVE, ITERATE and GOTO name a label of a statement that encloses them, or of one in the same compound statement."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0780"
+sev = 30
+text = "An UNDO handler needs an ATOMIC compound statement."
+help = "Declare the handler in a BEGIN ATOMIC compound statement, or make it CONTINUE or EXIT."
+vars = []
