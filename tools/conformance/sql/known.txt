@@ -17,10 +17,9 @@ types/XML1      # XMLPARSE describes as XML on the primary (QS/400 has no XML ty
 types/BOOL1     # BOOLEAN shown as 1/0 by JTOpen, NOT on a null BOOLEAN column is true on pub400, 01003 warnings, catalog and function column types, SQL7905
 types/LOB1      # NCLOB/NVARCHAR type names, function result types (SQL-3), OCTET_LENGTH of a DBCLOB, SYSCOLUMNS column types, SQL7905
 types/DECFLT3   # errors at fetch, SQL7905
-integrity/CSTBASIC   # SQL7905 on CREATE TABLE outside a schema; NVARCHAR described as VARGRAPHIC; COUNT(*) typed VARCHAR
-integrity/CSTALTER   # SQL7905; NVARCHAR described as VARGRAPHIC
-integrity/CSTREF     # SQL7905; COUNT(*) typed VARCHAR
-integrity/IDENTITY   # SQL7905; IDENTITY_VAL_LOCAL() typed VARCHAR
-integrity/ROWCHG     # SQL7905; CASE result typed VARCHAR
-integrity/SEQUENCE   # NEXT/PREVIOUS VALUE typed VARCHAR; an error after the row description; a column named ORDER in a select list (SQL0104)
-integrity/AUDITCOL   # SQL7905; IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
+integrity/CSTBASIC   # NVARCHAR catalog columns described as VARGRAPHIC; COUNT(*) described as VARCHAR (expression result types)
+integrity/CSTALTER   # NVARCHAR catalog columns described as VARGRAPHIC
+integrity/CSTREF     # COUNT(*) described as VARCHAR (expression result types)
+integrity/IDENTITY   # IDENTITY_VAL_LOCAL() described as VARCHAR (expression result types)
+integrity/SEQUENCE   # NEXT/PREVIOUS VALUE described as VARCHAR; an error after the row description; a column named ORDER in a select list (SQL0104)
+integrity/AUDITCOL   # IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))

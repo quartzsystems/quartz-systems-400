@@ -316,7 +316,9 @@ free-slot tree (`REUSEDLT(*YES)`): keys are RRNs of deleted slots, values
 empty; slot 2 the LOB tree of a physical member (below); slot 3 the
 constraint tree of a physical member whose file has unique, primary or
 foreign keys (§8.1, `SqlConstraint`). A member made before constraints
-has slot 3 empty, as a file without them does.
+has slot 3 empty, as a file without them does. Draft note: slot 3 was
+unused before, and readers ignore a root slot they do not know, so
+using it needs no version bump of this format.
 
 **A rebuild beside the member.** A change of record format that
 converts the records (`ALTER TABLE`, `CHGPF SRCFILE`) builds each
