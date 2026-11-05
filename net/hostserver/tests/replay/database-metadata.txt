@@ -13,18 +13,12 @@ conn 2 req 16 e004/1806 corr 14 reply 1: 3807 136 bytes, oracle 136, differ at 1
 conn 2 req 17 e004/1f00 corr 15 reply 1: 3807 136 bytes, oracle 136, differ at 115
 conn 2 req 21 e004/1806 corr 19 reply 1: 3807 136 bytes, oracle 136, differ at 115
 conn 2 req 22 e004/1f00 corr 20 reply 1: 3807 136 bytes, oracle 136, differ at 115
-conn 2 req 26 e004/1806 corr 24 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 26 e004/1806 corr 24 reply 1: 3807 136 bytes, oracle 136, differ at 14-15,132-135
-conn 2 req 27 e004/1f00 corr 25 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 27 e004/1f00 corr 25 reply 1: 3807 136 bytes, oracle 136, differ at 14-15,132-135
-conn 2 req 28 e004/1f00 corr 26 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 28 e004/1f00 corr 26 reply 1: parameters [3807], oracle [3801 3802 3803 3807]
-conn 2 req 32 e004/1806 corr 30 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 32 e004/1806 corr 30 reply 1: 3807 136 bytes, oracle 136, differ at 14-15,132-135
-conn 2 req 33 e004/1f00 corr 31 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 33 e004/1f00 corr 31 reply 1: 3807 136 bytes, oracle 136, differ at 14-15,132-135
-conn 2 req 34 e004/1f00 corr 32 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 34 e004/1f00 corr 32 reply 1: parameters [3807], oracle [3801 3802 3803 3807]
+conn 2 req 26 e004/1806 corr 24 reply 1: 3807 136 bytes, oracle 136, differ at 120
+conn 2 req 27 e004/1f00 corr 25 reply 1: 3807 136 bytes, oracle 136, differ at 120
+conn 2 req 28 e004/1f00 corr 26 reply 1: 3807 136 bytes, oracle 136, differ at 120
+conn 2 req 32 e004/1806 corr 30 reply 1: 3807 136 bytes, oracle 136, differ at 120
+conn 2 req 33 e004/1f00 corr 31 reply 1: 3807 136 bytes, oracle 136, differ at 120
+conn 2 req 34 e004/1f00 corr 32 reply 1: 3807 136 bytes, oracle 136, differ at 120
 conn 2 req 50 e004/1803 corr 48 reply 1: 3813 296 bytes, oracle 342, differ at 55,99,103,147,151,195,199,243,247,259,264-280,283-293,296-34...
 conn 2 req 55 e004/1804 corr 53 reply 1: 3812 689 bytes, oracle 785, differ at 10,32,50-51,80,98-99,128,146-147,195,211,224,243,272,291,320...
 conn 2 req 56 e004/180b corr 54 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
@@ -47,17 +41,14 @@ conn 2 req 95 e004/180b corr 93 reply 1: template 20 bytes, oracle 20, differ at
 conn 2 req 101 e004/1803 corr 99 reply 1: 3813 408 bytes, oracle 487, differ at 14-15,55,99,103,147,151,166-169,195,199,214-217,243,247,262-...
 conn 2 req 106 e004/1804 corr 104 reply 1: 3812 954 bytes, oracle 1050, differ at 10,32,50-51,80,99,128,147,176,195,224,243,272,291,320,338-33...
 conn 2 req 107 e004/180b corr 105 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 107 e004/180b corr 105 reply 1: 380e 0 bytes, oracle 1356, differ at 0-1355
 conn 2 req 113 e004/1803 corr 111 reply 1: 3807 136 bytes, oracle 136, differ at 115
 conn 2 req 113 e004/1803 corr 111 reply 1: 3813 408 bytes, oracle 487, differ at 14-15,55,99,103,147,151,166-169,195,199,214-217,243,247,262-...
 conn 2 req 118 e004/1804 corr 116 reply 1: 3812 954 bytes, oracle 1050, differ at 10,32,50-51,80,99,128,147,176,195,224,243,272,291,320,338-33...
 conn 2 req 119 e004/180b corr 117 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 119 e004/180b corr 117 reply 1: 380e 0 bytes, oracle 1356, differ at 0-1355
 conn 2 req 125 e004/1803 corr 123 reply 1: 3807 136 bytes, oracle 136, differ at 115
 conn 2 req 125 e004/1803 corr 123 reply 1: 3813 408 bytes, oracle 487, differ at 14-15,55,99,103,147,151,166-169,195,199,214-217,243,247,262-...
 conn 2 req 130 e004/1804 corr 128 reply 1: 3812 954 bytes, oracle 1146, differ at 10,32,50-51,80,98-99,128,146-147,176,194-195,224,243,272,291...
 conn 2 req 131 e004/180b corr 129 reply 1: template 20 bytes, oracle 20, differ at 15,18-19
-conn 2 req 131 e004/180b corr 129 reply 1: 380e 0 bytes, oracle 1356, differ at 0-1355
 conn 2 req 137 e004/1803 corr 135 reply 1: 3813 352 bytes, oracle 403, differ at 14-15,55,98-99,103,147,151,163,166-169,171,173,195,199,211,2...
 conn 2 req 142 e004/1804 corr 140 reply 1: 3812 883 bytes, oracle 979, differ at 10,14-15,32,51,80,99,128,147,176,195,224,242-243,272,290-291...
 conn 2 req 143 e004/180b corr 141 reply 1: template 20 bytes, oracle 20, differ at 15,18-19

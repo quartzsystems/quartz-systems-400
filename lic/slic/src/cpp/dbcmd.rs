@@ -341,7 +341,7 @@ fn syntax_only(parms: &Parms) -> bool {
 fn syntax_report(text: &str, naming: sql::Naming) -> RunReport {
     match sql::parse_all(text, naming) {
         Ok(s) => RunReport {
-            listing: "Syntax checked; no statement was run.\n".into(),
+            listing: String::new(),
             statements: u32::try_from(s.len()).unwrap_or(u32::MAX),
             ..RunReport::default()
         },
