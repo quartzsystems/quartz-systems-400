@@ -145,9 +145,7 @@ fn rows_wanted() -> u64 {
 }
 
 fn load(b: &mut Bench, n: u64) {
-    // The key comes after the rows: a member whose records and key tree
-    // grow in turns runs out of extents near 850,000 rows (the store's
-    // extent list), with the ASP far from full.
+    // The key comes after the rows: the load keeps no path as it goes.
     b.run("CREATE TABLE QSTEST.BIG (ID INTEGER NOT NULL, GRP INTEGER NOT NULL, V INTEGER NOT NULL, NAME CHAR(12) NOT NULL)", &[]);
     let mut i = 1;
     while i <= n {

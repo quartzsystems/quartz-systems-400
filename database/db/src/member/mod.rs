@@ -697,6 +697,22 @@ impl Member {
         Ok((rrn, false))
     }
 
+    /// The bytes the record space grows to when `need` does not fit: the
+    /// `SIZE` increment, or an eighth of the slots once that is more. A
+    /// member whose records and key trees grow in turns starts a new
+    /// extent at each growth, and an object holds at most
+    /// `store::obj::space::MAX_EXTENTS`; growing by a share keeps the
+    /// count near the logarithm of the size.
+    fn grow_to(&self, need: u64) -> u64 {
+        let a = &self.core.attr;
+        let step = a.increment_slots.max(a.slots / 8);
+        let mut slots = a.slots + step;
+        if a.max_records > 0 {
+            slots = slots.min(a.max_records);
+        }
+        (slots * u64::from(a.slot_len)).max(need)
+    }
+
     /// Write a new record; returns its RRN.
     pub fn write_new(&mut self, txn: &mut Txn<'_>, record: &[u8], null_map: &[u8]) -> Result<u64> {
         self.physical_only()?;
@@ -707,9 +723,7 @@ impl Member {
         let need = rrn * slot_len;
         let (mut space, _) = Space::load(txn, self.core.id)?;
         if space.bytes() < need {
-            let grow_to =
-                ((self.core.attr.slots + self.core.attr.increment_slots) * slot_len).max(need);
-            space = Space::ensure(txn, self.core.id, grow_to, 0)?;
+            space = Space::ensure(txn, self.core.id, self.grow_to(need), 0)?;
         }
         space.write(
             txn,
@@ -766,9 +780,7 @@ impl Member {
             let need = rrn * u64::from(slot_len);
             let (mut space, _) = Space::load(txn, self.core.id)?;
             if space.bytes() < need {
-                let grow =
-                    (self.core.attr.slots + self.core.attr.increment_slots) * u64::from(slot_len);
-                space = Space::ensure(txn, self.core.id, need.max(grow), 0)?;
+                space = Space::ensure(txn, self.core.id, self.grow_to(need), 0)?;
             }
             for gap in self.core.attr.slots + 1..rrn {
                 space.write(txn, slots::offset(gap, slot_len), &[slots::STATUS_DELETED])?;
