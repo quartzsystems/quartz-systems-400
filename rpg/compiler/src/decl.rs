@@ -743,6 +743,12 @@ fn ir_name(cx: &Cx<'_>, name: &str) -> String {
 /// Declare one definition of a scope: a standalone field, constant,
 /// data structure (with subfields), or prototype.
 pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
+    // An SQL host variable type: the definitions the precompiler writes.
+    if d.kind == DefKind::Standalone
+        && let Some(k) = d.kw("SQLTYPE")
+    {
+        return crate::sql::declare_sqltype(cx, d, k);
+    }
     let mut d = check_keywords(cx, d, None);
     if matches!(d.kind, DefKind::Ds | DefKind::Pr) {
         let parent = d.clone();

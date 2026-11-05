@@ -30,5 +30,4 @@ R3021 the INFDS's *RECORD names the file's own format (CUSTR) where RPG/400 give
 SQL056 DESCRIBE gives dates and times the job's CCSID: 273 on pub400, 37 here
 SQL057 the job's CCSID (273 on pub400, 37 here) in the entries of dates and markers; IBM leaves earlier bytes in an extended entry's reserved area
 SQL058 a SENSITIVE cursor is refused with SQL0243: QS/400 reads a cursor's rows when it opens (BLOCKED(sql))
-SQL060 SQLTYPE host variables (LOBs, locators, file references, BINARY, ROWID) are not compiled yet
-SQL061 waits for a capture without COMPILEOPT: pub400 made no object for the first version
+SQL060 LOB file reference variables are refused with SQL0084: the runtime reads and writes no IFS files yet (BLOCKED(sql))

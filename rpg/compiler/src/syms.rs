@@ -229,6 +229,8 @@ pub struct Ref {
 pub struct Table {
     /// Every symbol.
     pub syms: Vec<Sym>,
+    /// `SQLTYPE` host variables: their kind (`crate::sql::sqltype_kind`).
+    pub sqltypes: HashMap<SymId, i64>,
     /// Data structures.
     pub ds: Vec<Ds>,
     /// Prototypes and interfaces.

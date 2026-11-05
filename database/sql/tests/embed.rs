@@ -256,3 +256,51 @@ fn describe_gives_sql_names_and_labels() {
         [("CUSTOMER_NAME".to_string(), label.clone()), ("WHO".into(), label), ("N".into(), String::new())]
     );
 }
+
+#[test]
+#[allow(clippy::many_single_char_names)] // handles a and b, the query q
+fn locators_stand_for_values_until_the_unit_ends() {
+    use db::cmt::LckLvl::Chg;
+    let mut s = session();
+    let q = Desc { op: Op::Query, locs: "O0".into(), ..under("SELECT NAME FROM QSTEST.T WHERE ID = 1", Some(Chg)) };
+    let r = run(&mut s, "1:P", q.clone(), vec![]);
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    let h = r.rows[0][0].clone();
+    let len = Desc { op: Op::Query, locs: "I0".into(), ..under("VALUES LENGTH(?)", Some(Chg)) };
+    let r = run(&mut s, "1:P", len.clone(), vec![h.clone()]);
+    assert_eq!((r.sqlca.sqlcode, r.rows[0][0].as_i64().unwrap()), (0, 3));
+    assert_eq!(run(&mut s, "1:P", under("FREE LOCATOR ?", Some(Chg)), vec![h.clone()]).sqlca.sqlcode, 0);
+    assert_eq!(run(&mut s, "1:P", len.clone(), vec![h.clone()]).sqlca.sqlcode, -423);
+    assert_eq!(run(&mut s, "1:P", under("FREE LOCATOR ?", Some(Chg)), vec![h]).sqlca.sqlcode, -423);
+    // Held across COMMIT; the others go.
+    let a = run(&mut s, "1:P", q.clone(), vec![]).rows[0][0].clone();
+    let b = run(&mut s, "1:P", q, vec![]).rows[0][0].clone();
+    assert_eq!(run(&mut s, "1:P", under("HOLD LOCATOR ?", Some(Chg)), vec![a.clone()]).sqlca.sqlcode, 0);
+    run(&mut s, "1:P", under("COMMIT", Some(Chg)), vec![]);
+    assert_eq!(run(&mut s, "1:P", len.clone(), vec![a]).sqlca.sqlcode, 0);
+    assert_eq!(run(&mut s, "1:P", len, vec![b]).sqlca.sqlcode, -423);
+    // Without commitment control there are none.
+    let q = Desc { op: Op::Query, locs: "O0".into(), ..under("SELECT NAME FROM QSTEST.T WHERE ID = 1", None) };
+    assert_eq!(run(&mut s, "2:P", q, vec![]).sqlca.sqlcode, -7034);
+}
+
+#[test]
+fn a_blocked_insert_runs_once_per_row() {
+    let mut s = session();
+    let d = Desc { rows: true, ..under("INSERT INTO QSTEST.T (ID, NAME) VALUES (?, ?)", None) };
+    let r = run(&mut s, "1:P", d.clone(), vec![Value::int(7), Value::Str("Kim".into()), Value::int(8), Value::Str("Lou".into()), Value::int(2)]);
+    assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlerrd[2]), (0, 2));
+    let diag = run(&mut s, "1:P", Desc { op: Op::Diag, text: "ROW_COUNT,COMMAND_FUNCTION".into(), ..Desc::default() }, vec![]);
+    assert_eq!(diag.rows[0], vec![Value::int(2), Value::Str("INSERT".into())]);
+    // A failing row stops the run; the rows before it stay.
+    let r = run(&mut s, "1:P", d, vec![Value::int(9), Value::Str("Max".into()), Value::int(10), Value::Null, Value::int(2)]);
+    assert_eq!((r.sqlca.sqlcode < 0, r.sqlca.sqlerrd[2]), (true, 1));
+}
+
+#[test]
+fn a_sensitive_cursor_is_refused() {
+    let mut s = session();
+    let d = Desc { sensitive: true, ..op(Op::Open, "C1", "SELECT ID FROM QSTEST.T") };
+    let r = run(&mut s, "1:P", d, vec![]);
+    assert_eq!((r.sqlca.sqlcode, r.sqlca.sqlstate.as_str()), (-243, "36001"));
+}

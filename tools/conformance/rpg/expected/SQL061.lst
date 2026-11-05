@@ -70,7 +70,7 @@
     14     srtseq = *hex, langid = *job, sqlcurrule = *db2, sqlpath = *libl,                                    001400
     15     rdbcnnmth = *duw, decmpt = *period,                                                                  001500
     16     decresult = (31, 31, 0), decfltrnd = *halfeven, conacc = *dft,                                       001600
-    17     compileopt = '*NONE', optlob = *yes, extind = *no,                                                   001700
+    17     optlob = *yes, extind = *no,                                                                         001700
     18     dftrdbcol = *none, dyndftcol = *no, monitor = *user, sqlca = *yes;                                   001800
     19   exec sql select HIRED into :d from EMPT where ID = 1;                                                  001900
     20   line = %char(sqlcode) + ' ' + %char(d);                                                                002000
@@ -153,18 +153,16 @@
                       statement.
 0SQL5066   0      11  Precompile option DECRESULT changed by SET OPTION
                       statement.
-0SQL5066   0      11  Precompile option COMPILEOPT changed by SET OPTION
-                      statement.
 0SQL5066   0      11  Precompile option SQLPATH changed by SET OPTION
                       statement.
 0SQL5066   0      11  Precompile option SQLCURRULE changed by SET OPTION
                       statement.
 0SQL5066   0      11  Precompile option MONITOR changed by SET OPTION
                       statement.
-1{heading} page 5
-0                                             DIAGNOSTIC MESSAGES
 0SQL5066   0      11  Precompile option DECFLTRND changed by SET OPTION
                       statement.
+1{heading} page 5
+0                                             DIAGNOSTIC MESSAGES
 0SQL5066   0      11  Precompile option EXTIND changed by SET OPTION statement.
 0SQL5066   0      11  Precompile option CONACC changed by SET OPTION statement.
 0SQL5066   0      11  Precompile option SQLCA changed by SET OPTION statement.
@@ -173,10 +171,465 @@
 -
                      Message Summary
    Total     Info   Warning      Error   Severe  Terminal
-      28       28         0          0        0         0
+      27       27         0          0        0         0
 -00 level severity errors found in source
 0   28 Source records processed
                                 * * * * *  E N D  O F  L I S T I N G  * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   SQL061
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   SQL061
+   Source File  . . . . . . . . . . :   QSQLTEMP1
+     Library  . . . . . . . . . . . :     QTEMP
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *STMT
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOB
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   V7R5M0
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                               000100
+      2 //; cmd: CRTSQLRPGI OBJ({lib}/{name}) SRCFILE({lib}/QRPGLESRC) OUTPUT(*PRINT)                                        000200
+      3 //; sqlfile: EMPT                                                                                                    000300
+      4 ctl-opt dftactgrp(*no);                                                                                              000400
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOB                         *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     5 dcl-f QSYSPRT printer(132);                                                                                          000500
+-     6 dcl-ds line len(132) end-ds;                                                                                         000600
+ ======>       aaaa
+ *RNF3530 00 a      000600  Data structure LINE has no valid subfields.
+      7 dcl-s d date;                                                                                                        000700
+      8 dcl-s t time;                                                                                                        000800
+      9 dcl-s nm varchar(20);                                                                                                000900
+     10 // SET OPTION: every option the listing shows, and their effect on the run.                                          001000
+     11        /SET CCSID(*CHAR:*JOBRUNMIX)                                                                                  001000
+     12        // SQL COMMUNICATION AREA                                                //SQL                                001000
+     13        DCL-DS SQLCA;                                                            //SQL                                001000
+     14          SQLCAID CHAR(8) INZ(X'0000000000000000');                              //SQL                                001000
+     15           SQLAID CHAR(8) OVERLAY(SQLCAID);                                      //SQL                                001000
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     16          SQLCABC INT(10);                                                       //SQL                                001000
+     17           SQLABC BINDEC(9) OVERLAY(SQLCABC);                                    //SQL                                001000
+     18          SQLCODE INT(10);                                                       //SQL                                001000
+     19           SQLCOD BINDEC(9) OVERLAY(SQLCODE);                                    //SQL                                001000
+     20          SQLERRML INT(5);                                                       //SQL                                001000
+     21           SQLERL BINDEC(4) OVERLAY(SQLERRML);                                   //SQL                                001000
+     22          SQLERRMC CHAR(70);                                                     //SQL                                001000
+     23           SQLERM CHAR(70) OVERLAY(SQLERRMC);                                    //SQL                                001000
+     24          SQLERRP CHAR(8);                                                       //SQL                                001000
+     25           SQLERP CHAR(8) OVERLAY(SQLERRP);                                      //SQL                                001000
+     26          SQLERR CHAR(24);                                                       //SQL                                001000
+     27           SQLER1 BINDEC(9) OVERLAY(SQLERR:*NEXT);                               //SQL                                001000
+     28           SQLER2 BINDEC(9) OVERLAY(SQLERR:*NEXT);                               //SQL                                001000
+     29           SQLER3 BINDEC(9) OVERLAY(SQLERR:*NEXT);                               //SQL                                001000
+     30           SQLER4 BINDEC(9) OVERLAY(SQLERR:*NEXT);                               //SQL                                001000
+     31           SQLER5 BINDEC(9) OVERLAY(SQLERR:*NEXT);                               //SQL                                001000
+     32           SQLER6 BINDEC(9) OVERLAY(SQLERR:*NEXT);                               //SQL                                001000
+     33           SQLERRD INT(10) DIM(6) OVERLAY(SQLERR);                               //SQL                                001000
+     34          SQLWRN CHAR(11);                                                       //SQL                                001000
+     35           SQLWN0 CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     36           SQLWN1 CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     37           SQLWN2 CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     38           SQLWN3 CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     39           SQLWN4 CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     40           SQLWN5 CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     41           SQLWN6 CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     42           SQLWN7 CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     43           SQLWN8 CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     44           SQLWN9 CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     45           SQLWNA CHAR(1) OVERLAY(SQLWRN:*NEXT);                                 //SQL                                001000
+     46           SQLWARN CHAR(1) DIM(11) OVERLAY(SQLWRN);                              //SQL                                001000
+     47          SQLSTATE CHAR(5);                                                      //SQL                                001000
+     48           SQLSTT CHAR(5) OVERLAY(SQLSTATE);                                     //SQL                                001000
+     49        END-DS SQLCA;                                                            //SQL                                001000
+     50        DCL-PR SQLROUTE_CALL EXTPGM(SQLROUTE);                                   //SQL                                001000
+     51          CA LIKEDS(SQLCA);                                                      //SQL                                001000
+     52          *N BINDEC(4) OPTIONS(*NOPASS);                                         //SQL                                001000
+     53          *N CHAR(1) OPTIONS(*NOPASS);                                           //SQL                                001000
+     54        END-PR SQLROUTE_CALL;                                                    //SQL                                001000
+     55        DCL-PR SQLOPEN_CALL EXTPGM(SQLOPEN);                                     //SQL                                001000
+     56          CA LIKEDS(SQLCA);                                                      //SQL                                001000
+     57          *N BINDEC(4);                                                          //SQL                                001000
+     58        END-PR SQLOPEN_CALL;                                                     //SQL                                001000
+     59        DCL-PR SQLCLSE_CALL EXTPGM(SQLCLSE);                                     //SQL                                001000
+     60          CA LIKEDS(SQLCA);                                                      //SQL                                001000
+     61          *N BINDEC(4);                                                          //SQL                                001000
+     62        END-PR SQLCLSE_CALL;                                                     //SQL                                001000
+     63        DCL-PR SQLCMIT_CALL EXTPGM(SQLCMIT);                                     //SQL                                001000
+     64          CA LIKEDS(SQLCA);                                                      //SQL                                001000
+     65          *N BINDEC(4);                                                          //SQL                                001000
+     66        END-PR SQLCMIT_CALL;                                                     //SQL                                001000
+     67        /RESTORE CCSID(*CHAR)                                                                                         001000
+     68        DCL-C SQLROUTE CONST('QSYS/QSQROUTE');                                   //SQL                                001000
+     69        DCL-C SQLOPEN CONST('QSYS/QSQROUTE');                                    //SQL                                001000
+     70        DCL-C SQLCLSE CONST('QSYS/QSQLCLSE');                                    //SQL                                001000
+     71        DCL-C SQLCMIT CONST('QSYS/QSQLCMIT');                                    //SQL                                001000
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     72        DCL-C SQFRD CONST(2);                                                    //SQL                                001000
+     73        DCL-C SQFCRT CONST(8);                                                   //SQL                                001000
+     74        DCL-C SQFOVR CONST(16);                                                  //SQL                                001000
+     75        DCL-C SQFAPP CONST(32);                                                  //SQL                                001000
+     76 **END-FREE                                                                                                           001900
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     77 D                 DS                                                       SELECT                                    001900
+     78 D  SQL_00000              1      2B 0 INZ(128)                             length of header                          001900
+     79 D  SQL_00001              3      4B 0 INZ(4)                               statement number                          001900
+     80 D  SQL_00002              5      8U 0 INZ(0)                               invocation mark                           001900
+     81 D  SQL_00003              9      9A   INZ('0') CCSID(*JOBRUNMIX)           data is okay                              001900
+     82 D  SQL_00004             10    128A   CCSID(*JOBRUNMIX)                    end of header                             001900
+     83 D  SQL_00005            129    138D   DATFMT(*ISO)                         D                                         001900
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     84 **FREE                                                                                                               001900
+     85 **END-FREE                                                                                                           002200
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     86 D                 DS                                                       VALUES                                    002200
+     87 D  SQL_00006              1      2B 0 INZ(128)                             length of header                          002200
+     88 D  SQL_00007              3      4B 0 INZ(5)                               statement number                          002200
+     89 D  SQL_00008              5      8U 0 INZ(0)                               invocation mark                           002200
+     90 D  SQL_00009              9      9A   INZ('0') CCSID(*JOBRUNMIX)           data is okay                              002200
+     91 D  SQL_00010             10    128A   CCSID(*JOBRUNMIX)                    end of header                             002200
+     92 D  SQL_00011            129    136T   TIMFMT(*ISO)                         T                                         002200
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     93 **FREE                                                                                                               002200
+     94 **END-FREE                                                                                                           002500
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     95 D                 DS                                                       SELECT                                    002500
+     96 D  SQL_00012              1      2B 0 INZ(128)                             length of header                          002500
+     97 D  SQL_00013              3      4B 0 INZ(6)                               statement number                          002500
+     98 D  SQL_00014              5      8U 0 INZ(0)                               invocation mark                           002500
+     99 D  SQL_00015              9      9A   INZ('0') CCSID(*JOBRUNMIX)           data is okay                              002500
+    100 D  SQL_00016             10    128A   CCSID(*JOBRUNMIX)                    end of header                             002500
+    101 D  SQL_00017            129    150A   VARYING CCSID(*JOBRUNMIX)            NM                                        002500
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    102 **FREE                                                                                                               002500
+    103 //*exec sql set option commit = *none, naming = *sys, datfmt = *iso, datsep = '-',                                   001100
+1{heading} page 5
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    104 //*  timfmt = *iso, timsep = '.', closqlcsr = *endmod, alwcpydta = *optimize,                                        001200
+    105 //*  alwblk = *allread, dlyprp = *no, dynusrprf = *user, usrprf = *naming,                                           001300
+    106 //*  srtseq = *hex, langid = *job, sqlcurrule = *db2, sqlpath = *libl,                                               001400
+    107 //*  rdbcnnmth = *duw, decmpt = *period,                                                                             001500
+    108 //*  decresult = (31, 31, 0), decfltrnd = *halfeven, conacc = *dft,                                                  001600
+    109 //*  optlob = *yes, extind = *no,                                                                                    001700
+    110 //*  dftrdbcol = *none, dyndftcol = *no, monitor = *user, sqlca = *yes;                                              001800
+    111 //*exec sql select HIRED into :d from EMPT where ID = 1;                                                             001900
+ *RNF2318 00      5 000500  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-   112           SQLER6 = -4;                                                          //SQL 4                              001900
+    113           SQLROUTE_CALL(                                                        //SQL                                001900
+    114                SQLCA                                                            //SQL                                001900
+    115              : SQL_00000                                                        //SQL                                001900
+    116           );                                                                    //SQL                                001900
+    117           IF SQL_00003 = '1';                                                   //SQL                B01             001900
+    118           EVAL D = SQL_00005;                                                   //SQL                 01             001900
+    119           ENDIF;                                                                //SQL                E01             001900
+    120 line = %char(sqlcode) + ' ' + %char(d);                                                                              002000
+    121 write QSYSPRT line;                                                                                                  002100
+    122 //*exec sql values current time into :t;                                                                             002200
+    123           SQLER6 = -4;                                                          //SQL 5                              002200
+    124           SQLROUTE_CALL(                                                        //SQL                                002200
+    125                SQLCA                                                            //SQL                                002200
+    126              : SQL_00006                                                        //SQL                                002200
+    127           );                                                                    //SQL                                002200
+    128           IF SQL_00009 = '1';                                                   //SQL                B01             002200
+    129           EVAL T = SQL_00011;                                                   //SQL                 01             002200
+    130           ENDIF;                                                                //SQL                E01             002200
+    131 line = %char(sqlcode);                                                                                               002300
+    132 write QSYSPRT line;                                                                                                  002400
+    133 //*exec sql select NAME into :nm from EMPT where ID = 2;                                                             002500
+    134           SQLER6 = -4;                                                          //SQL 6                              002500
+    135           SQLROUTE_CALL(                                                        //SQL                                002500
+    136                SQLCA                                                            //SQL                                002500
+    137              : SQL_00012                                                        //SQL                                002500
+    138           );                                                                    //SQL                                002500
+    139           IF SQL_00015 = '1';                                                   //SQL                B01             002500
+    140           EVAL NM = SQL_00017;                                                  //SQL                 01             002500
+    141           ENDIF;                                                                //SQL                E01             002500
+    142 line = %char(sqlcode) + ' ' + nm;                                                                                    002600
+    143 write QSYSPRT line;                                                                                                  002700
+    144 *inlr = *on;                                                                                                         002800
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+1{heading} page 6
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 5D    121     132     143
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                  144M
+          D                 D(10*ISO-)              7D    118M    120
+          LINE              DS(132)                 6D    120M    121     131M
+                                                  132     142M    143
+          NM                A(20)                   9D    140M    142
+                            VARYING(2)
+ *RNF7031 SQFAPP            CONST                  75D
+ *RNF7031 SQFCRT            CONST                  73D
+ *RNF7031 SQFOVR            CONST                  74D
+ *RNF7031 SQFRD             CONST                  72D
+          SQL_00000         B(4,0)                 78D    115
+ *RNF7031 SQL_00001         B(4,0)                 79D
+ *RNF7031 SQL_00002         U(10,0)                80D
+          SQL_00003         A(1)                   81D    117
+ *RNF7031 SQL_00004         A(119)                 82D
+          SQL_00005         D(10*ISO-)             83D    118
+          SQL_00006         B(4,0)                 87D    126
+ *RNF7031 SQL_00007         B(4,0)                 88D
+ *RNF7031 SQL_00008         U(10,0)                89D
+          SQL_00009         A(1)                   90D    128
+ *RNF7031 SQL_00010         A(119)                 91D
+          SQL_00011         T(8*ISO.)              92D    129
+          SQL_00012         B(4,0)                 96D    137
+ *RNF7031 SQL_00013         B(4,0)                 97D
+ *RNF7031 SQL_00014         U(10,0)                98D
+          SQL_00015         A(1)                   99D    139
+ *RNF7031 SQL_00016         A(119)                100D
+          SQL_00017         A(20)                 101D    140
+                            VARYING(2)
+ *RNF7031 SQLABC            B(9,0)                 17D
+ *RNF7031 SQLAID            A(8)                   15D
+          SQLCA             DS(136)                13D     51      56      60
+                                                   64     114     125     136
+          SQLCABC           I(10,0)                16D     17
+          SQLCAID           A(8)                   14D     15
+          SQLCLSE           CONST                  59      70D
+ *RNF7031 SQLCLSE_CALL      PROTOTYPE              59D
+          SQLCMIT           CONST                  63      71D
+ *RNF7031 SQLCMIT_CALL      PROTOTYPE              63D
+ *RNF7031 SQLCOD            B(9,0)                 19D
+          SQLCODE           I(10,0)                18D     19     120     131
+                                                  142
+ *RNF7031 SQLERL            B(4,0)                 21D
+ *RNF7031 SQLERM            A(70)                  23D
+ *RNF7031 SQLERP            A(8)                   25D
+          SQLERR            A(24)                  26D     27      28      29
+                                                   30      31      32      33
+1{heading} page 8
+0*RNF7031 SQLERRD(6)        I(10,0)                33D
+          SQLERRMC          A(70)                  22D     23
+          SQLERRML          I(5,0)                 20D     21
+          SQLERRP           A(8)                   24D     25
+ *RNF7031 SQLER1            B(9,0)                 27D
+ *RNF7031 SQLER2            B(9,0)                 28D
+ *RNF7031 SQLER3            B(9,0)                 29D
+ *RNF7031 SQLER4            B(9,0)                 30D
+ *RNF7031 SQLER5            B(9,0)                 31D
+          SQLER6            B(9,0)                 32D    112M    123M    134M
+          SQLOPEN           CONST                  55      69D
+ *RNF7031 SQLOPEN_CALL      PROTOTYPE              55D
+          SQLROUTE          CONST                  50      68D
+          SQLROUTE_CALL     PROTOTYPE              50D    113M    124M    135M
+          SQLSTATE          A(5)                   47D     48
+ *RNF7031 SQLSTT            A(5)                   48D
+ *RNF7031 SQLWARN(11)       A(1)                   46D
+ *RNF7031 SQLWNA            A(1)                   45D
+ *RNF7031 SQLWN0            A(1)                   35D
+ *RNF7031 SQLWN1            A(1)                   36D
+ *RNF7031 SQLWN2            A(1)                   37D
+ *RNF7031 SQLWN3            A(1)                   38D
+ *RNF7031 SQLWN4            A(1)                   39D
+ *RNF7031 SQLWN5            A(1)                   40D
+ *RNF7031 SQLWN6            A(1)                   41D
+ *RNF7031 SQLWN7            A(1)                   42D
+ *RNF7031 SQLWN8            A(1)                   43D
+ *RNF7031 SQLWN9            A(1)                   44D
+          SQLWRN            A(11)                  34D     35      36      37
+                                                   38      39      40      41
+                                                   42      43      44      45
+                                                   46
+          T                 T(8*ISO.)               8D    129M
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                      144M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00     41 The name or indicator is not referenced.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 11
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :       43
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :       43
+-  Source Totals:
+0    Records . . . . . . . . . . . . :      144
+     Specifications  . . . . . . . . :      120
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :       15
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program SQL061 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
 -
 -
 -

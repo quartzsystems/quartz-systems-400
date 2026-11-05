@@ -309,7 +309,64 @@ fn cpysrcf(system: &mut System, parms: &Parms) -> Result<String, String> {
     })
 }
 
+/// The run options `RUNSQL` and `RUNSQLSTM` take beyond commitment
+/// control, naming, `ERRLVL` and `DFTRDBCOL`: each checked against what
+/// the engine does, a value it would not honour refused (`SQL0084`).
+/// `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `LANGID` (with `SRTSEQ(*HEX)`),
+/// `SYSTIME`, `TGTRLS` and the listing options have no effect here.
+const CHECKED_OPTIONS: &[&str] = &["DATFMT", "DATSEP", "TIMFMT", "TIMSEP", "DECMPT", "SRTSEQ", "SQLCURRULE", "DECRESULT", "DECFLTRND", "CONACC"];
+
+fn check_run_options(parms: &Parms) -> Result<(), String> {
+    for name in CHECKED_OPTIONS {
+        if !parms.specified(name) {
+            continue;
+        }
+        let value = match *name {
+            "DECRESULT" | "SRTSEQ" => parms.text(name),
+            _ => parms.name(name),
+        };
+        if let sql::options::Check::Unsupported(what) = sql::options::check(name, value.trim()) {
+            return Err(format!("SQL0084 {what}"));
+        }
+    }
+    Ok(())
+}
+
+/// `PROCESS(*SYN)`: the statements are checked, none is run.
+fn syntax_only(parms: &Parms) -> bool {
+    parms.specified("PROCESS") && parms.name("PROCESS") == "*SYN"
+}
+
+/// The report of a syntax check.
+fn syntax_report(text: &str, naming: sql::Naming) -> RunReport {
+    match sql::parse_all(text, naming) {
+        Ok(s) => RunReport {
+            listing: "Syntax checked; no statement was run.\n".into(),
+            statements: u32::try_from(s.len()).unwrap_or(u32::MAX),
+            ..RunReport::default()
+        },
+        Err(e) => RunReport {
+            listing: format!("{}\n", sql::Sqlca::from_error(&e).line()),
+            statements: 0,
+            errors: 1,
+            severity: 30,
+        },
+    }
+}
+
+/// `MARGINS(n)`: each source record cut at column `n`.
+fn margins(parms: &Parms, text: String) -> String {
+    match parms.int("MARGINS") {
+        Some(n) if parms.specified("MARGINS") && n > 0 => {
+            let n = usize::try_from(n).unwrap_or(usize::MAX);
+            text.lines().map(|l| l.chars().take(n).collect::<String>()).collect::<Vec<_>>().join("\n")
+        }
+        _ => text,
+    }
+}
+
 fn run_opts(parms: &Parms, system: &System) -> Result<RunOpts, String> {
+    check_run_options(parms)?;
     Ok(RunOpts {
         commit: match parms.name("COMMIT").as_str() {
             "" | "*NONE" | "*NC" => CommitOpt::None,
@@ -367,7 +424,8 @@ fn runsqlstm_text(system: &mut System, parms: &Parms) -> Result<String, String> 
         None => in_store(system, |txn, qsys, names| {
             let id = file(txn, qsys, names, &q)?;
             db::source::srcget(txn, id, mbr).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))
-        }),
+        })
+        .map(|t| margins(parms, t)),
     }
 }
 
@@ -378,6 +436,9 @@ fn runsqlstm_cmd(system: &mut System, parms: &Parms) -> CmdReply {
         Ok(v) => v,
         Err(e) => return failed("RUNSQLSTM", &e),
     };
+    if syntax_only(parms) {
+        return runsqlstm_reply(Ok(syntax_report(&text, opts.naming)), opts.errlvl);
+    }
     let report = crate::svc::db::db(system)
         .and_then(|(store, ctx)| runsqlstm(store, ctx, &text, &opts).map_err(|e| e.to_string()));
     runsqlstm_reply(report, opts.errlvl)
@@ -414,6 +475,10 @@ pub(super) fn runsql_long(
         Ok(v) => v,
         Err(e) => return Err(Box::new(failed(name, &e))),
     };
+    if !runsql && syntax_only(parms) {
+        let reply = runsqlstm_reply(Ok(syntax_report(&text, opts.naming)), opts.errlvl);
+        return Ok(Box::new(move |_: &super::longcmd::Work<'_>| Box::new(move |_: &mut System| reply)));
+    }
     Ok(Box::new(move |w: &super::longcmd::Work<'_>| {
         ctx.yielder = Some(w.yielder());
         let report = sql::runsqlstm_lent(w.lender(), &mut ctx, &text, &opts).map_err(|e| e.to_string());

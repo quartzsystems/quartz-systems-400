@@ -146,6 +146,10 @@ pub struct Desc {
     /// The requester performs the calls a `CALL` plans
     /// ([`crate::exec::routine::CallPlan`]); without it `CALL` is refused.
     pub calls: bool,
+    /// The inputs and outputs that are LOB locators: `I` or `O` and the
+    /// position, comma-separated (`I0,O1`). Kept after the orientation
+    /// in the text form; a program precompiled before has none.
+    pub locs: String,
     /// The statement text (the cursor's query for `OPEN`).
     pub text: String,
 }
@@ -193,7 +197,8 @@ impl Desc {
             Some(LckLvl::Cs) => "T",
             Some(LckLvl::All) => "A",
         });
-        format!("{flags};{};{};{}|{}", self.name, self.stmt, self.orient, self.text)
+        let locs = if self.locs.is_empty() { String::new() } else { format!(";{}", self.locs) };
+        format!("{flags};{};{};{}{locs}|{}", self.name, self.stmt, self.orient, self.text)
     }
 
     /// From the text form.
@@ -210,6 +215,7 @@ impl Desc {
             name: parts.next()?.to_string(),
             stmt: parts.next()?.to_string(),
             orient: parts.next()?.to_string(),
+            locs: parts.next().unwrap_or("").to_string(),
             hold: rest.contains('H'),
             scroll: rest.contains('S'),
             rows: rest.contains('R'),
@@ -888,7 +894,7 @@ impl Embedded for Session {
         self.ctx.routine.pending = None;
         let mut r = match self.commitment(req) {
             Some(r) => r,
-            None => self.run_inner(req),
+            None => self.with_locators(req),
         };
         if !r.sqlca.is_error() {
             r.call = self.ctx.routine.pending.take();
@@ -900,6 +906,71 @@ impl Embedded for Session {
         if req.desc.op != Op::Diag && !req.desc.quiet {
             self.last = r.sqlca.clone();
             self.last_cmd = command_function(&req.desc);
+        }
+        r
+    }
+}
+
+/// The positions `locs` marks with `kind` (`I` inputs, `O` outputs).
+fn loc_positions(locs: &str, kind: char) -> Vec<usize> {
+    locs.split(',').filter_map(|p| p.strip_prefix(kind)).filter_map(|n| n.parse().ok()).collect()
+}
+
+impl Session {
+    /// A statement with LOB locators: `FREE LOCATOR` and `HOLD LOCATOR`
+    /// on the handles given; input locators stand for their values,
+    /// output LOBs come back as new handles (`SQL7034` without
+    /// commitment control: a locator lives to the end of the unit of
+    /// work).
+    fn with_locators(&mut self, req: &Request) -> Reply {
+        let d = &req.desc;
+        if d.op == Op::Exec {
+            let words: Vec<String> = d.text.split_whitespace().take(2).map(str::to_ascii_uppercase).collect();
+            if words.len() == 2 && words[1] == "LOCATOR" && matches!(words[0].as_str(), "FREE" | "HOLD") {
+                let free = words[0] == "FREE";
+                for v in &req.inputs {
+                    let h = v.as_i64().ok().and_then(|h| u32::try_from(h).ok()).unwrap_or(0);
+                    let r = if free { self.ctx.locators.free(h) } else { self.ctx.locators.hold(h) };
+                    if let Err(e) = r {
+                        return Reply::of(Sqlca::from_error(&e));
+                    }
+                }
+                return Reply::default();
+            }
+        }
+        if d.locs.is_empty() {
+            return self.run_inner(req);
+        }
+        let ins = loc_positions(&d.locs, 'I');
+        let outs = loc_positions(&d.locs, 'O');
+        let mut inputs = req.inputs.clone();
+        for &k in &ins {
+            let Some(v) = inputs.get_mut(k) else { continue };
+            let h = v.as_i64().ok().and_then(|h| u32::try_from(h).ok()).unwrap_or(0);
+            match self.ctx.locators.get(h) {
+                Ok(x) => *v = x.clone(),
+                Err(e) => return Reply::of(Sqlca::from_error(&e)),
+            }
+        }
+        if !outs.is_empty() && req.desc.commit.is_none() && self.ctx.isolation.is_none() {
+            return Reply::of(code(-7034, "42926"));
+        }
+        let sub = Request {
+            scope: req.scope.clone(),
+            desc: req.desc.clone(),
+            inputs,
+        };
+        let mut r = self.run_inner(&sub);
+        if !r.sqlca.is_error() {
+            for row in &mut r.rows {
+                for &k in &outs {
+                    if let Some(v) = row.get_mut(k)
+                        && !v.is_null()
+                    {
+                        *v = Value::int(i64::from(self.ctx.locators.assign(std::mem::replace(v, Value::Null))));
+                    }
+                }
+            }
         }
         r
     }

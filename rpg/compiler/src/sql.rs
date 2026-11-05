@@ -57,6 +57,10 @@ dcl-ds SQLCA;
   SQLSTATE char(5);
   SQLSTT char(5) overlay(SQLSTATE);
 end-ds;
+dcl-c SQFRD 2;
+dcl-c SQFCRT 8;
+dcl-c SQFOVR 16;
+dcl-c SQFAPP 32;
 ";
 
 /// The SQLDA of `INCLUDE SQLDA`, with IBM's names and layout: the
@@ -176,8 +180,15 @@ impl Env for HostEnv<'_> {
                 _ => 0,
             },
             dim,
+            sqltype: 0,
         };
         match sub {
+            // A LOB or file reference structure stands for one value.
+            None if self.t.sqltypes.contains_key(&id) => Some(HostInfo {
+                fields: 0,
+                dim: s.dim,
+                sqltype: self.t.sqltypes[&id],
+            }),
             None => Some(info(&s.ty, s.dim)),
             Some(f) => {
                 let Ty::Ds(di) = s.ty else { return None };
@@ -312,4 +323,102 @@ pub fn precompile_listing(c: &crate::Compiled, p: &Precompiled, opts: &crate::Op
             .collect(),
     };
     rpgsqlpre::listing::listing(p, &h, &records, &xref, &record_of)
+}
+
+/// The definitions IBM's precompiler writes for `SQLTYPE(type[: n])`
+/// (settled on pub400, `tools/conformance/rpg/b11sql/SQL060`), as
+/// free-form source; `None` for a type it does not know.
+#[must_use]
+pub fn sqltype_source(name: &str, ty: &str, len: Option<&str>) -> Option<String> {
+    let n = len.unwrap_or("");
+    let ds = |fields: &[String]| {
+        let mut s = format!("**FREE\ndcl-ds {name};\n");
+        for f in fields {
+            s.push_str("  ");
+            s.push_str(f);
+            s.push('\n');
+        }
+        s.push_str("end-ds;\n");
+        s
+    };
+    let lob = |data: &str| ds(&[format!("{name}_LEN uns(10);"), format!("{name}_DATA {data};")]);
+    let file = || ds(&[format!("{name}_NL uns(10);"), format!("{name}_DL uns(10);"), format!("{name}_FO uns(10);"), format!("{name}_NAME char(255);")]);
+    let one = |t: &str| format!("**FREE\ndcl-s {name} {t};\n");
+    Some(match ty {
+        "CLOB" | "XML_CLOB" if !n.is_empty() => lob(&format!("char({n})")),
+        "BLOB" | "XML_BLOB" if !n.is_empty() => lob(&format!("char({n}) ccsid(*hex)")),
+        "DBCLOB" | "XML_DBCLOB" if !n.is_empty() => lob(&format!("graph({n})")),
+        "CLOB_LOCATOR" | "BLOB_LOCATOR" | "DBCLOB_LOCATOR" | "XML_LOCATOR" => one("uns(10)"),
+        "CLOB_FILE" | "BLOB_FILE" | "DBCLOB_FILE" | "XML_CLOB_FILE" | "XML_BLOB_FILE" | "XML_DBCLOB_FILE" => file(),
+        "BINARY" if !n.is_empty() => one(&format!("char({n}) ccsid(*hex)")),
+        "VARBINARY" if !n.is_empty() => one(&format!("varchar({n}) ccsid(*hex)")),
+        "ROWID" => one("varchar(40) ccsid(*hex)"),
+        "RESULT_SET_LOCATOR" => one("int(20)"),
+        _ => return None,
+    })
+}
+
+/// What kind of SQL value an `SQLTYPE` host variable holds, for the
+/// runtime: 1 a large object, 2 a locator, 3 a file reference; with the
+/// large object's kind (1 character, 2 binary, 3 double-byte) above.
+#[must_use]
+pub fn sqltype_kind(ty: &str) -> i64 {
+    let of = |t: &str| {
+        if t.contains("DBCLOB") {
+            3
+        } else if t.contains("BLOB") {
+            2
+        } else {
+            1
+        }
+    };
+    if ty.ends_with("_LOCATOR") && ty != "RESULT_SET_LOCATOR" {
+        2 | (of(ty) << 4)
+    } else if ty.ends_with("_FILE") {
+        3 | (of(ty) << 4)
+    } else if ty.contains("LOB") {
+        1 | (of(ty) << 4)
+    } else {
+        0
+    }
+}
+
+/// Declare an `SQLTYPE` definition as the definitions it stands for;
+/// its other keywords (`DIM`, `INZ`, ...) go with the first.
+pub fn declare_sqltype(cx: &mut Cx<'_>, d: &rpgfront::ast::Def, k: &rpgfront::ast::Keyword) -> Option<crate::syms::SymId> {
+    let text = |i: usize| k.arg(i).map(|a| a.toks.iter().map(rpgfront::lex::Tok::text).collect::<String>().to_ascii_uppercase());
+    let (ty, len) = (text(0).unwrap_or_default(), text(1));
+    let name = d.name.to_ascii_uppercase();
+    let Some(src) = sqltype_source(&name, ty.trim(), len.as_deref().map(str::trim)) else {
+        let mut g = Diag::new(crate::diag::ids::BAD_KEYWORD_VALUE, 30, k.at);
+        g.args.push(format!("SQLTYPE({ty})"));
+        cx.diags.push(g);
+        return None;
+    };
+    let m = Member::from_text("QTEMP", "QSQLSRC", &name, &src);
+    let (_, module, _) = rpgfront::front(m, &mut MemIncludes::default(), &ReadOptions::default());
+    let mut last = None;
+    for (i, g) in module.defs.iter().enumerate() {
+        let mut g = g.clone();
+        place(&mut g, d.at);
+        if i == 0 {
+            g.kws.extend(d.kws.iter().filter(|x| x.name != "SQLTYPE").cloned());
+        }
+        last = decl::declare(cx, &g);
+    }
+    if let Some(id) = last {
+        let kind = sqltype_kind(ty.trim());
+        if kind != 0 {
+            cx.t.sqltypes.insert(id, kind);
+        }
+    }
+    last
+}
+
+/// Generated definitions take the line of the definition they replace.
+fn place(d: &mut rpgfront::ast::Def, at: Pos) {
+    d.at = at;
+    for c in &mut d.children {
+        place(c, at);
+    }
 }

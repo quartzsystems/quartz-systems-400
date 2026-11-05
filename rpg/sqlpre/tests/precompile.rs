@@ -14,9 +14,9 @@ impl Env for Kit {
     fn host(&self, _scope: usize, name: &str) -> Option<HostInfo> {
         match name {
             "N" | "NM" | "IND" | "ID" | "REC.ID" => Some(HostInfo::default()),
-            "REC" => Some(HostInfo { fields: 3, dim: 0 }),
-            "ROWS" => Some(HostInfo { fields: 2, dim: 10 }),
-            "INDS" => Some(HostInfo { fields: 0, dim: 3 }),
+            "REC" => Some(HostInfo { fields: 3, dim: 0, sqltype: 0 }),
+            "ROWS" => Some(HostInfo { fields: 2, dim: 10, sqltype: 0 }),
+            "INDS" => Some(HostInfo { fields: 0, dim: 3, sqltype: 0 }),
             _ => None,
         }
     }

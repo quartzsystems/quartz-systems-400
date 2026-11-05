@@ -49,6 +49,10 @@ pub struct HostInfo {
     pub fields: u32,
     /// Elements, for an array; 0 otherwise.
     pub dim: u32,
+    /// An `SQLTYPE` host variable: 1 a LOB, 2 a locator, 3 a file
+    /// reference, the kind of data above (`rpgc::sql::sqltype_kind`); 0
+    /// for any other.
+    pub sqltype: i64,
 }
 
 /// The compiler's side of a precompile.
@@ -227,6 +231,7 @@ pub fn precompile(srcs: &[Source], env: &mut dyn Env, opts: &Options) -> Precomp
         if let Some(mut x) = st.statement(s) {
             x.n_in = count(st.env, x.scope, &x.inputs);
             x.n_out = count(st.env, x.scope, &x.outputs);
+            x.desc.locs = locators(st.env, &x);
             stmts.push(x);
         }
         // SET OPTION statements may follow one another at the start.
@@ -263,4 +268,25 @@ fn count(env: &dyn Env, scope: usize, hosts: &[HostRef]) -> u32 {
             v + i
         })
         .sum()
+}
+
+/// The inputs and outputs of a statement that are LOB locators, by
+/// their position among the values (a structure's subfields one each).
+fn locators(env: &dyn Env, s: &Stmt) -> String {
+    // FREE and HOLD LOCATOR take the handles themselves.
+    if s.desc.op == Op::Exec && matches!(s.verb.as_str(), "FREE" | "HOLD") {
+        return String::new();
+    }
+    let mut out = Vec::new();
+    for (kind, hosts) in [('I', &s.inputs), ('O', &s.outputs)] {
+        let mut at = 0;
+        for h in hosts {
+            let info = env.host(s.scope, &h.name).unwrap_or_default();
+            if info.sqltype & 0xF == 2 {
+                out.push(format!("{kind}{at}"));
+            }
+            at += info.fields.max(1) as usize;
+        }
+    }
+    out.join(",")
 }

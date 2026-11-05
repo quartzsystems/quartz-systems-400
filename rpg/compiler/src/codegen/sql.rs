@@ -27,6 +27,10 @@ struct Host {
     ind: Option<String>,
 }
 
+/// The runtime's mark on an `SQLTYPE` host variable's extra word; the
+/// kind (`crate::sql::sqltype_kind`) below it.
+pub const SQLTYPE_EXTRA: i64 = 1 << 40;
+
 /// A date or time host variable's format for the runtime: the format's
 /// code in the low byte, the separator above it.
 fn extra_of(ty: &Ty) -> i64 {
@@ -77,31 +81,50 @@ impl Gen<'_> {
         let Some(v) = self.host_ref(&h.name, modify, at) else { return Vec::new() };
         let mut out = Vec::new();
         let base = if v.dim > 0 { format!("{}[0]", v.op) } else { v.op.clone() };
-        match v.ty {
-            Ty::Ds(di) => {
-                for sid in self.t.ds[di].subfields.clone() {
-                    let s = self.t.syms[sid].clone();
-                    if s.name.is_empty() || s.name == "*N" {
-                        continue;
+        // A LOB or file reference structure is one value: the runtime
+        // reads and writes its length and data (or the file's name).
+        let sqltype = self
+            .t
+            .find(self.scope, h.name.split('.').next().unwrap_or(""))
+            .and_then(|id| self.t.sqltypes.get(&id).copied())
+            .filter(|k| matches!(k & 0xF, 1 | 3));
+        if let Some(kind) = sqltype
+            && !h.name.contains('.')
+        {
+            let fv = V::place(v.ty.clone(), base.clone());
+            out.push(Host {
+                desc: self.desc_of(&fv),
+                extra: SQLTYPE_EXTRA | kind,
+                place: base,
+                ind: None,
+            });
+        } else {
+            match v.ty {
+                Ty::Ds(di) => {
+                    for sid in self.t.ds[di].subfields.clone() {
+                        let s = self.t.syms[sid].clone();
+                        if s.name.is_empty() || s.name == "*N" {
+                            continue;
+                        }
+                        let place = format!("{base}.{}", mangle(&s.name));
+                        let fv = V::place(s.ty.clone(), place.clone());
+                        out.push(Host {
+                            desc: self.desc_of(&fv),
+                            extra: extra_of(&s.ty),
+                            place,
+                            ind: None,
+                        });
                     }
-                    let place = format!("{base}.{}", mangle(&s.name));
-                    let fv = V::place(s.ty.clone(), place.clone());
+                }
+                _ => {
+                    let fv = V::place(v.ty.clone(), base.clone());
                     out.push(Host {
                         desc: self.desc_of(&fv),
-                        extra: extra_of(&s.ty),
-                        place,
+                        extra: extra_of(&v.ty),
+                        place: base,
                         ind: None,
                     });
                 }
-            }
-            _ => {
-                let fv = V::place(v.ty.clone(), base.clone());
-                out.push(Host {
-                    desc: self.desc_of(&fv),
-                    extra: extra_of(&v.ty),
-                    place: base,
-                    ind: None,
-                });
             }
         }
         if let Some(ind) = &h.ind

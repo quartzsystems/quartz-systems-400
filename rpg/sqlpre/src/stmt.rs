@@ -238,6 +238,7 @@ impl State<'_> {
             }
             "DESCRIBE" => Some(self.describe(&cx)),
             "INSERT" => Some(self.insert(&cx)),
+            "FREE" | "HOLD" if w1 == "LOCATOR" => Some(self.locator(&cx, &w0)),
             "INCLUDE" | "BEGIN" | "END" => None,
             _ => Some(self.exec(&cx, &w0)),
         }
@@ -807,6 +808,20 @@ impl State<'_> {
         s.desc.text = flat(&text);
         s.desc.rows = true;
         s.rows = Some(count);
+        s
+    }
+
+    /// `FREE LOCATOR :a, ...` and `HOLD LOCATOR :a, ...`: the handles
+    /// are the inputs.
+    fn locator(&mut self, cx: &Cx<'_>, verb: &str) -> Stmt {
+        let mut s = self.base(cx, verb, Op::Exec);
+        let hosts = self.host_into(cx, 2, cx.toks.len());
+        if hosts.is_empty() {
+            self.bad(cx, 2);
+        }
+        s.inputs = hosts.iter().map(|h| cx.host_ref(h)).collect();
+        self.check_hosts(cx.src.scope, &s.inputs);
+        s.desc.text = format!("{verb} LOCATOR {}", vec!["?"; s.inputs.len()].join(", "));
         s
     }
 

@@ -45,6 +45,9 @@ struct Pending {
     rows_in: Vec<Out>,
     /// The SQLDA a `DESCRIBE` or `PREPARE INTO` fills.
     da: Option<u64>,
+    /// A file reference variable is named: BLOCKED(sql), the runtime has
+    /// no IFS of its own to read or write the file with.
+    file_ref: bool,
 }
 
 thread_local! {
@@ -82,8 +85,56 @@ fn time_fmt(extra: i64) -> (TimeFmt, Option<char>) {
     (f, char::from_u32(u32::try_from(extra >> 8).unwrap_or(0)).filter(|c| *c != '\0'))
 }
 
+/// The mark the compiler puts on an `SQLTYPE` host variable's extra
+/// word (`rpgc::codegen::sql::SQLTYPE_EXTRA`); the kind is below it: 1
+/// a LOB, 3 a file reference, the data (1 character, 2 binary, 3
+/// double-byte) in the next four bits.
+const SQLTYPE_EXTRA: i64 = 1 << 40;
+
+/// The `SQLTYPE` kind of a host variable, when it has one.
+fn sqltype(extra: i64) -> Option<i64> {
+    (extra & SQLTYPE_EXTRA != 0).then_some(extra & 0xFF)
+}
+
+fn be32(addr: u64) -> u32 {
+    let b = bytes(addr, 4);
+    u32::from_be_bytes([b[0], b[1], b[2], b[3]])
+}
+
+/// A LOB host variable's value: its length, then its data.
+fn read_lob(addr: u64, d: &Desc, kind: i64) -> Value {
+    let cap = d.size().saturating_sub(4);
+    // A DBCLOB's length counts its double-byte characters.
+    let unit = if kind >> 4 == 3 { 2 } else { 1 };
+    let n = (usize::try_from(be32(addr)).unwrap_or(0) * unit).min(cap);
+    let data = bytes(addr + 4, n);
+    match kind >> 4 {
+        2 => Value::Bin(data.to_vec()),
+        3 => Value::Str(String::from_utf16_lossy(&data.chunks(2).map(|c| u16::from_be_bytes([c[0], c.get(1).copied().unwrap_or(0)])).collect::<Vec<_>>())),
+        _ => Value::Str(ccsid::from_ebcdic(data)),
+    }
+}
+
+/// A value as a LOB host variable holds it.
+fn lob_image(v: &Value, d: &Desc, kind: i64) -> (Vec<u8>, Put) {
+    let cap = d.size().saturating_sub(4);
+    let data: Vec<u8> = match (v, kind >> 4) {
+        (Value::Bin(b), _) => b.clone(),
+        (v, 3) => v.as_text().encode_utf16().flat_map(u16::to_be_bytes).collect(),
+        (v, _) => ebcdic(&v.as_text()),
+    };
+    let put = if data.len() > cap { Put::Truncated(data.len()) } else { Put::Ok };
+    let unit = if kind >> 4 == 3 { 2 } else { 1 };
+    let mut out = u32::try_from(data.len().min(cap) / unit).unwrap_or(0).to_be_bytes().to_vec();
+    out.extend_from_slice(&data[..data.len().min(cap)]);
+    (out, put)
+}
+
 /// A host variable's value.
 fn read_value(addr: u64, d: &Desc, extra: i64) -> Value {
+    if let Some(k) = sqltype(extra) {
+        return read_lob(addr, d, k);
+    }
     match d.kind {
         Kind::Char => Value::Str(text_of(addr, d.size())),
         Kind::VarChar => Value::Str(ccsid::from_ebcdic(d.var_data(bytes(addr, d.size())))),
@@ -114,6 +165,9 @@ fn write_ind(addr: u64, v: i16) {
 
 /// `_QRNX_SQLIN(var, desc, extra, ind, has_ind)`: an input host variable.
 pub extern "sysv64" fn sql_in(_env: *mut Env, _argc: i64, _od: i64, var: i64, desc: i64, extra: i64, ind: i64, has: i64) {
+    if sqltype(extra).is_some_and(|k| k & 0xF == 3) {
+        PENDING.with(|p| p.borrow_mut().file_ref = true);
+    }
     let d = Desc::of(desc);
     let v = if has != 0 && read_ind(ind.cast_unsigned()) < 0 {
         Value::Null
@@ -131,6 +185,9 @@ pub extern "sysv64" fn sql_in(_env: *mut Env, _argc: i64, _od: i64, var: i64, de
 /// `_QRNX_SQLOUT(var, desc, extra, ind, has_ind, stride)`: an output
 /// host variable; `stride` is a structure array's element size.
 pub extern "sysv64" fn sql_out(_env: *mut Env, _argc: i64, _od: i64, var: i64, desc: i64, extra: i64, ind: i64, has: i64, stride: i64) {
+    if sqltype(extra).is_some_and(|k| k & 0xF == 3) {
+        PENDING.with(|p| p.borrow_mut().file_ref = true);
+    }
     let o = Out {
         addr: var.cast_unsigned(),
         desc: Desc::of(desc),
@@ -367,6 +424,9 @@ enum Put {
 /// The bytes a value takes in a host variable, or the SQLCODE that
 /// stops the assignment.
 fn image(v: &Value, d: &Desc, extra: i64) -> Result<(Vec<u8>, Put), (i32, &'static str)> {
+    if let Some(k) = sqltype(extra) {
+        return Ok(lob_image(v, d, k));
+    }
     let n = d.size();
     match d.kind {
         Kind::Char | Kind::Ind | Kind::VarChar => {
@@ -479,6 +539,9 @@ fn num_image(v: &Decimal, d: &Desc) -> Option<Vec<u8>> {
 
 /// A host variable's empty value: what a null leaves in it.
 fn empty(d: &Desc, extra: i64) -> Vec<u8> {
+    if sqltype(extra).is_some() {
+        return vec![0; 4];
+    }
     match d.kind {
         Kind::Char | Kind::Ind => vec![BLANK; d.size()],
         Kind::VarChar => vec![0; d.prefix()],
@@ -589,6 +652,11 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
     };
     // This runtime makes the calls a CALL plans.
     desc.calls = true;
+    if pending.file_ref {
+        let e = sql::SqlError::Unsupported { what: "LOB file reference variables".into() };
+        write_sqlca(ca.cast_unsigned(), &Sqlca::from_error(&e));
+        return;
+    }
     let job = mi::storage::job_of(env);
     // A module's statements belong to it in its activation group.
     let end = desc.op == sql::embed::Op::End;

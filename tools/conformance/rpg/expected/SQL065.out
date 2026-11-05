@@ -1,0 +1,17 @@
+# SQL065 VARCHAR(40) pub400.com
+# captured 2026-11-05 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 5 seq 000500
+diag: RNF3530 00 line 6 seq 000600
+run: ok
+spool: QSYSPRT
+  |1/1   locator 0 1
+  |1/2   length 0 9
+  |1/3   substr 0 text
+  |1/4   value 0 9 clob text
+  |1/5   hold 0
+  |1/6   free 0
+  |1/7   freed -423 0F001
+  |1/8   held 0 C1C2C3
+  |1/9   twice -423 0F001
+  |1/10  after commit -423 0F001

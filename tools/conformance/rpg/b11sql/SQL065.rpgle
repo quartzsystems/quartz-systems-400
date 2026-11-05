@@ -1,0 +1,52 @@
+**FREE
+//; cmd: CRTSQLRPGI OBJ({lib}/{name}) SRCFILE({lib}/QRPGLESRC) COMMIT(*CHG) OUTPUT(*PRINT)
+//; sqlfile: DATYP
+ctl-opt dftactgrp(*no) actgrp(*new);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s cloc sqltype(clob_locator);
+dcl-s bloc sqltype(blob_locator);
+dcl-s cl sqltype(clob: 100);
+dcl-s n int(10);
+dcl-s c varchar(40);
+// LOB locators under commitment control: assigned, used, freed, held across COMMIT.
+exec sql select CL into :cloc from DALOB where ID = 1;
+n = 0;
+if cloc <> 0;
+  n = 1;
+endif;
+line = 'locator ' + %char(sqlcode) + ' ' + %char(n);
+write QSYSPRT line;
+exec sql values length(:cloc) into :n;
+line = 'length ' + %char(sqlcode) + ' ' + %char(n);
+write QSYSPRT line;
+exec sql values substr(:cloc, 6, 4) into :c;
+line = 'substr ' + %char(sqlcode) + ' ' + c;
+write QSYSPRT line;
+exec sql values :cloc into :cl;
+line = 'value ' + %char(sqlcode) + ' ' + %char(cl_len) + ' ' + %subst(cl_data: 1: cl_len);
+write QSYSPRT line;
+exec sql select BL into :bloc from DALOB where ID = 1;
+exec sql hold locator :bloc;
+line = 'hold ' + %char(sqlcode);
+write QSYSPRT line;
+exec sql free locator :cloc;
+line = 'free ' + %char(sqlcode);
+write QSYSPRT line;
+exec sql values length(:cloc) into :n;
+line = 'freed ' + %char(sqlcode) + ' ' + sqlstate;
+write QSYSPRT line;
+exec sql commit;
+exec sql values hex(:bloc) into :c;
+line = 'held ' + %char(sqlcode) + ' ' + c;
+write QSYSPRT line;
+exec sql free locator :bloc;
+exec sql free locator :bloc;
+line = 'twice ' + %char(sqlcode) + ' ' + sqlstate;
+write QSYSPRT line;
+exec sql select CL into :cloc from DALOB where ID = 1;
+exec sql commit;
+exec sql values length(:cloc) into :n;
+line = 'after commit ' + %char(sqlcode) + ' ' + sqlstate;
+write QSYSPRT line;
+*inlr = *on;

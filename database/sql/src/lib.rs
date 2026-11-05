@@ -14,6 +14,7 @@ pub mod ast;
 pub mod embed;
 pub mod exec;
 pub mod lex;
+pub mod options;
 pub mod parse;
 pub mod pl;
 pub mod rla;
