@@ -1022,7 +1022,7 @@ impl Session {
             Op::Fetch => ("FE", format!("FETCH {}", d.name), &[], false),
             Op::Close => ("CL", format!("CLOSE {}", d.name), &[], false),
             Op::Describe => ("DE", format!("DESCRIBE {}", d.name), &[], false),
-            Op::Diag | Op::End | Op::Nothing | Op::Deallocate | Op::Called => {
+            Op::Diag | Op::End | Op::Nothing | Op::Deallocate | Op::Called | Op::Package => {
                 self.ctx.dbmon.trace = None;
                 return;
             }
