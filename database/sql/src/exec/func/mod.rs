@@ -2,7 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Scalar functions, the first set.
+//! Scalar functions. The first set is here; later sets are families in
+//! their own modules, each listed in [`FAMILIES`] and asked first.
 
 use std::fmt::Write as _;
 
@@ -14,7 +15,7 @@ use super::eval::{add_months, date_from_days, days_of};
 use crate::error::{Result, SqlError};
 use crate::value::{Timestamp, Value};
 
-fn arity(name: &str, args: &[Value], min: usize, max: usize) -> Result<()> {
+pub(super) fn arity(name: &str, args: &[Value], min: usize, max: usize) -> Result<()> {
     if args.len() < min || args.len() > max {
         return Err(SqlError::Unsupported {
             what: format!("{name} with {} arguments", args.len()),
@@ -23,26 +24,26 @@ fn arity(name: &str, args: &[Value], min: usize, max: usize) -> Result<()> {
     Ok(())
 }
 
-fn overflow(e: impl std::fmt::Display) -> SqlError {
+pub(super) fn overflow(e: impl std::fmt::Display) -> SqlError {
     SqlError::Overflow {
         what: e.to_string(),
     }
 }
 
-fn num(d: Decimal) -> Value {
+pub(super) fn num(d: Decimal) -> Value {
     Value::Num(d)
 }
 
-fn int(n: i64) -> Value {
+pub(super) fn int(n: i64) -> Value {
     Value::int(n)
 }
 
-fn text(s: impl Into<String>) -> Value {
+pub(super) fn text(s: impl Into<String>) -> Value {
     Value::Str(s.into())
 }
 
 /// A decimal's integer digits as text, zero filled (`DIGITS`).
-fn digits(d: &Decimal) -> String {
+pub(super) fn digits(d: &Decimal) -> String {
     let mag: Vec<u8> = d.digits_le().iter().rev().copied().collect();
     let mut s: String = mag.iter().map(|x| char::from(b'0' + x)).collect();
     if s.is_empty() {
@@ -51,7 +52,7 @@ fn digits(d: &Decimal) -> String {
     s
 }
 
-fn f64_of(v: &Value) -> Result<f64> {
+pub(super) fn f64_of(v: &Value) -> Result<f64> {
     v.as_decimal()?
         .to_string()
         .parse::<f64>()
@@ -60,7 +61,7 @@ fn f64_of(v: &Value) -> Result<f64> {
         })
 }
 
-fn from_f64(x: f64) -> Result<Value> {
+pub(super) fn from_f64(x: f64) -> Result<Value> {
     if !x.is_finite() {
         return Err(SqlError::Overflow {
             what: "the result is not finite".into(),
@@ -98,14 +99,29 @@ const MONTHNAMES: [&str; 12] = [
 ];
 
 /// Day of the week, 1 Sunday to 7 Saturday.
-fn day_of_week(d: Date) -> i64 {
+pub(super) fn day_of_week(d: Date) -> i64 {
     // 0001-01-01 was a Monday.
     (days_of(d) % 7 + 7) % 7 + 1
 }
 
+/// A family of scalar functions in its own module.
+pub(crate) struct Family {
+    /// Calls `name` when the family has it, `None` when it does not. The
+    /// family handles null arguments itself.
+    pub call: fn(&str, &[Value], &SqlContext) -> Option<Result<Value>>,
+}
+
+/// The families, asked in order before the first set.
+const FAMILIES: &[Family] = &[];
+
 /// Call a scalar function; `args` are already evaluated.
 #[allow(clippy::too_many_lines)]
 pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
+    for f in FAMILIES {
+        if let Some(r) = (f.call)(name, args, ctx) {
+            return r;
+        }
+    }
     // Null in gives null out, except where a function is about nulls.
     if !matches!(
         name,
