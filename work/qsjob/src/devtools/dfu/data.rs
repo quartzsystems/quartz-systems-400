@@ -12,6 +12,8 @@ use mi::io::{FileInfo, IoFail, IoOp, IoRequest, IoResult, IoSource, KeyRef, Open
 use stg::Client;
 use stg::remote::RemoteIo;
 
+use mi::Job;
+
 use crate::console::host::Host;
 
 /// A record format: name, record length and fields.
@@ -163,9 +165,8 @@ impl Open {
     pub fn new(host: &Host, f: &DataFile, member: Option<String>, read_only: bool) -> Result<Self, IoFail> {
         let mut io = RemoteIo::new(host.link.clone());
         let spec = OpenSpec {
-            // BLOCKED(sql): no trigger programs called here; a file with
-            // triggers refuses the change.
-            triggers: false,
+            // Trigger programs are called in the job (`op`).
+            triggers: true,
             file: f.name.clone(),
             lib: f.lib.clone(),
             usage: if read_only {
@@ -183,9 +184,11 @@ impl Open {
         Ok(Self { io, handle, info })
     }
 
-    fn op(&mut self, op: IoOp, key: KeyRef<'_>, record: Option<&[u8]>, format: Option<&str>, nolock: bool) -> IoResult {
-        self.io.io(
-            self.handle,
+    fn op(&mut self, job: &mut Job, op: IoOp, key: KeyRef<'_>, record: Option<&[u8]>, format: Option<&str>, nolock: bool) -> IoResult {
+        let handle = self.handle;
+        let io = &mut self.io;
+        mi::io::trigger::run(
+            job,
             &IoRequest {
                 op,
                 record,
@@ -195,18 +198,20 @@ impl Open {
                 nulls: None,
                 resume: None,
             },
+            &mut |_, r| io.io(handle, r),
         )
     }
 
     /// The record at a key (or record number), locked for update unless
     /// `nolock`.
-    pub fn chain(&mut self, key: KeyRef<'_>, nolock: bool) -> IoResult {
-        self.op(IoOp::Chain, key, None, None, nolock)
+    pub fn chain(&mut self, job: &mut Job, key: KeyRef<'_>, nolock: bool) -> IoResult {
+        self.op(job, IoOp::Chain, key, None, None, nolock)
     }
 
     /// Read on from the last record, forward or back.
-    pub fn step(&mut self, back: bool, nolock: bool) -> IoResult {
+    pub fn step(&mut self, job: &mut Job, back: bool, nolock: bool) -> IoResult {
         self.op(
+            job,
             if back { IoOp::ReadP } else { IoOp::Read },
             KeyRef::None,
             None,
@@ -216,8 +221,9 @@ impl Open {
     }
 
     /// Position before a key or record number.
-    pub fn position(&mut self, key: KeyRef<'_>, after: bool) -> IoResult {
+    pub fn position(&mut self, job: &mut Job, key: KeyRef<'_>, after: bool) -> IoResult {
         self.op(
+            job,
             if after { IoOp::SetGT } else { IoOp::SetLL },
             key,
             None,
@@ -227,23 +233,23 @@ impl Open {
     }
 
     /// Write a new record of a format.
-    pub fn write(&mut self, rec: &[u8], format: &str) -> IoResult {
-        self.op(IoOp::Write, KeyRef::None, Some(rec), Some(format), false)
+    pub fn write(&mut self, job: &mut Job, rec: &[u8], format: &str) -> IoResult {
+        self.op(job, IoOp::Write, KeyRef::None, Some(rec), Some(format), false)
     }
 
     /// Update the record last read.
-    pub fn update(&mut self, rec: &[u8], format: &str) -> IoResult {
-        self.op(IoOp::Update, KeyRef::None, Some(rec), Some(format), false)
+    pub fn update(&mut self, job: &mut Job, rec: &[u8], format: &str) -> IoResult {
+        self.op(job, IoOp::Update, KeyRef::None, Some(rec), Some(format), false)
     }
 
     /// Delete the record last read.
-    pub fn delete(&mut self) -> IoResult {
-        self.op(IoOp::Delete, KeyRef::None, None, None, false)
+    pub fn delete(&mut self, job: &mut Job) -> IoResult {
+        self.op(job, IoOp::Delete, KeyRef::None, None, None, false)
     }
 
     /// Release the record lock.
     pub fn unlock(&mut self) {
-        let _ = self.op(IoOp::Unlock, KeyRef::None, None, None, false);
+        let _ = self.io.io(self.handle, &IoRequest { op: IoOp::Unlock, record: None, key: KeyRef::None, format: None, nolock: false, nulls: None, resume: None });
     }
 }
 

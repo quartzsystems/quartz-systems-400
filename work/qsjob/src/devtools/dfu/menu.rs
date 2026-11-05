@@ -92,7 +92,7 @@ pub fn strdfu(job: &mut Job, host: &Host, surface: &mut Surface, option: &str, m
             "2" => create(host, surface, &mut v, &mut message, false),
             "3" => create(host, surface, &mut v, &mut message, true),
             "4" => delete(host, surface, &mut v, &mut message),
-            "5" => temporary(host, surface, &mut v, &mut message),
+            "5" => temporary(job, host, surface, &mut v, &mut message),
             n if n.parse::<u32>().is_ok() => {
                 message = Some(crate::display::msgline::say(host, "CPD6A64", &[&n]));
                 continue;
@@ -168,7 +168,7 @@ fn run_menu(job: &mut Job, host: &Host, surface: &mut Surface, v: &mut Values, m
                 Left::Back => break,
                 Left::Enter => {}
             }
-            match run_program(host, surface, v, display) {
+            match run_program(job, host, surface, v, display) {
                 Ok(()) => {
                     *msg = None;
                     break;
@@ -179,7 +179,7 @@ fn run_menu(job: &mut Job, host: &Host, surface: &mut Surface, v: &mut Values, m
     }
 }
 
-fn run_program(host: &Host, surface: &mut Surface, v: &Values, display: bool) -> Result<(), String> {
+fn run_program(job: &mut Job, host: &Host, surface: &mut Surface, v: &Values, display: bool) -> Result<(), String> {
     let name = v.get("PGM");
     if name.is_empty() {
         return Err("Type the name of a DFU program.".into());
@@ -196,7 +196,7 @@ fn run_program(host: &Host, surface: &mut Surface, v: &Values, display: bool) ->
     let f = data::file(host, &flib, &file)
         .ok_or_else(|| format!("Data file {file} in library {flib} not found."))?;
     let mbr = Some(v.get("MBR")).filter(|m| !m.is_empty() && m != "*FIRST");
-    temp::run(host, surface, &f, mbr, Some(&p), display)
+    temp::run(job, host, surface, &f, mbr, Some(&p), display)
 }
 
 /// Create (or change) a DFU program: the entry panel, then Define
@@ -312,7 +312,7 @@ fn delete(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<S
 }
 
 /// Update Data Using Temporary Program.
-fn temporary(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<String>) -> Left {
+fn temporary(job: &mut Job, host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Option<String>) -> Left {
     let mut m: Option<String> = None;
     loop {
         match entry(surface, &prompt::TEMP, v, m.take().as_deref()) {
@@ -326,7 +326,7 @@ fn temporary(host: &Host, surface: &mut Surface, v: &mut Values, msg: &mut Optio
             continue;
         };
         let mbr = Some(v.get("MBR")).filter(|x| !x.is_empty() && x != "*FIRST");
-        match temp::run(host, surface, &f, mbr, None, false) {
+        match temp::run(job, host, surface, &f, mbr, None, false) {
             Ok(()) => {
                 *msg = None;
                 return Left::Back;

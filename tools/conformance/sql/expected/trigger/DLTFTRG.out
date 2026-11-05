@@ -1,0 +1,23 @@
+-- captured from primary
+> CREATE TABLE {lib}.DTT1 (A INT)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.DTTLOG (A INT)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TRIGGER {lib}.DTTRG1 AFTER INSERT ON {lib}.DTT1 REFERENCING NEW A
+sqlcode 0 sqlstate 00000 msgid -
+> CALL QSYS.QCMDEXC('CHKOBJ OBJ({lib}/DTTRG1) OBJTYPE(*PGM)  ', 0000000040
+sqlcode 0 sqlstate 00000 msgid -
+> CALL QSYS.QCMDEXC('DLTF FILE({lib}/DTT1)                   ', 0000000040
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_SCHEMA = '{lib}' AN
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> CALL QSYS.QCMDEXC('CHKOBJ OBJ({lib}/DTTRG1) OBJTYPE(*PGM)  ', 0000000040
+sqlcode -443 sqlstate 38501 msgid CPF9801
+> CALL QSYS.QCMDEXC('DLTPGM PGM({lib}/DTTRG1)                ', 0000000040
+sqlcode -443 sqlstate 38501 msgid CPF2105
+> DROP TABLE {lib}.DTTLOG
+sqlcode 0 sqlstate 00000 msgid -

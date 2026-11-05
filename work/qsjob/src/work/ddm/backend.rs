@@ -366,10 +366,14 @@ impl JobFiles {
         })
     }
 
+    /// One operation, its trigger programs called in the job's runtime.
     fn op(&mut self, h: u32, req: &IoRequest<'_>) -> Result<IoResult, FileError> {
         let handle = self.handle(h)?;
-        let r = self.io.io(handle, req);
-        Ok(r)
+        let io = &mut self.io;
+        let mut console = self.job.borrow_mut();
+        console.job();
+        console.swapped();
+        Ok(mi::io::trigger::run(console.job(), req, &mut |_, r| io.io(handle, r)))
     }
 }
 
@@ -428,9 +432,8 @@ impl FileBackend for JobFiles {
         let lib = if req.library.trim().is_empty() { "*LIBL".to_string() } else { req.library.trim().to_string() };
         let member = req.member.trim();
         let spec = OpenSpec {
-            // BLOCKED(sql): no trigger programs called here; a file with
-            // triggers refuses the change.
-            triggers: false,
+            // Trigger programs are called in the job (`op`).
+            triggers: true,
             file: req.file.trim().to_string(),
             lib,
             usage,

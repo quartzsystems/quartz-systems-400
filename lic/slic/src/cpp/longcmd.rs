@@ -189,7 +189,14 @@ fn bridged(system: &mut System, name: &str, parms: &Parms, typed: &str, job: Job
     let reply = move |r: Result<String, String>| -> Finish { Box::new(move |_: &mut System| bridged_reply(e, &owned, r)) };
     let parms_at_end = parms.clone();
     Ok(match word.as_str() {
-        "cpyf" => Box::new(move |w: &Work<'_>| reply(w.txn(|t, pause| files::cpyf_in(t, &ctx, job, &p, pause)))),
+        "cpyf" => {
+            let mut ctx = ctx;
+            Box::new(move |w: &Work<'_>| {
+                // Trigger programs of the to-file, made by the job.
+                ctx.midcall = w.midcall();
+                reply(w.txn(|t, pause| files::cpyf_in(t, &ctx, job, &p, pause)))
+            })
+        }
         "rgzpfm" => Box::new(move |w: &Work<'_>| reply(w.txn(|t, pause| files::rgzpfm_in(t, &ctx, job, &p, pause)))),
         "crtlf" => Box::new(move |w: &Work<'_>| reply(w.txn(|t, pause| files::crtlf_in(t, &ctx, job, &p, pause)))),
         "cpyfrmimpf" => {

@@ -15,6 +15,7 @@ use dfu::field::{blank_record, key_bytes};
 use dfu::screen::work::{Row, View};
 use dfu::session::Step;
 use dfu::{Mode, Program, Session};
+use mi::Job;
 use mi::io::KeyRef;
 
 use super::data::{DataFile, Format, Open};
@@ -30,6 +31,8 @@ struct Shown {
 
 /// One data session.
 struct Run<'a> {
+    /// The job trigger programs run in.
+    job: &'a mut Job,
     file: &'a DataFile,
     open: Open,
     s: Session,
@@ -48,6 +51,7 @@ struct Run<'a> {
 /// Work with a file's data until End Data Entry; `None` when the file
 /// cannot be opened, else the message for the caller's message line.
 pub fn run(
+    job: &mut Job,
     host: &Host,
     surface: &mut Surface,
     file: &DataFile,
@@ -59,6 +63,7 @@ pub fn run(
         .map_err(|e| format!("{} the file {} could not be opened.", e.msgid, file.name))?;
     let member = open.info.member.clone();
     let mut r = Run {
+        job,
         file,
         open,
         s: Session::new(display_only),
@@ -286,7 +291,7 @@ impl Run<'_> {
             return true;
         }
         let fmt = self.fmt().name.clone();
-        let r = self.open.update(&rec, &fmt);
+        let r = self.open.update(self.job, &rec, &fmt);
         if r.status >= 1000 {
             self.message = Some(failed(&self.host, r.msgid.as_deref(), "CPD9BEC"));
             return false;
@@ -315,14 +320,14 @@ impl Run<'_> {
                 }
             }
             let key = key_bytes(&fmt.fields, &fmt.keys, &rec);
-            self.open.chain(KeyRef::Fields(&key), nolock)
+            self.open.chain(self.job, KeyRef::Fields(&key), nolock)
         } else {
             let t = typed.get("*RECNBR").map_or("", |s| s.trim());
             let Ok(n) = t.parse::<u64>() else {
                 self.message = Some(crate::display::msgline::say(&self.host, "CPD9BE8", &[]));
                 return;
             };
-            self.open.chain(KeyRef::Rrn(n), nolock)
+            self.open.chain(self.job, KeyRef::Rrn(n), nolock)
         };
         self.typed.clear();
         match r.record {
@@ -350,11 +355,11 @@ impl Run<'_> {
                 self.message = Some(crate::display::msgline::say(&self.host, "CPD9BEB", &[]));
                 return;
             }
-            let _ = self.open.position(KeyRef::None, false);
+            let _ = self.open.position(self.job, KeyRef::None, false);
         } else {
             self.open.unlock();
         }
-        let r = self.open.step(back, nolock);
+        let r = self.open.step(self.job, back, nolock);
         self.typed.clear();
         self.page = 0;
         match r.record {
@@ -379,7 +384,7 @@ impl Run<'_> {
                 return;
             }
         };
-        let r = self.open.write(&rec, &fmt.name);
+        let r = self.open.write(self.job, &rec, &fmt.name);
         if r.status >= 1000 {
             self.message = Some(failed(&self.host, r.msgid.as_deref(), "CPD9BED"));
             return;
@@ -391,7 +396,7 @@ impl Run<'_> {
     }
 
     fn delete(&mut self) {
-        let r = self.open.delete();
+        let r = self.open.delete(self.job);
         if r.status >= 1000 {
             self.message = Some(failed(&self.host, r.msgid.as_deref(), "CPD9BEE"));
             return;

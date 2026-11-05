@@ -270,3 +270,49 @@ fn deferred_refused_and_through_a_logical_file() {
     o.close(&mut t);
     t.commit().unwrap();
 }
+
+#[test]
+fn cpyf_fires_insert_triggers_and_stops_at_a_refusal() {
+    let (_d, mut store, lib) = open_new();
+    let locks = odp::new_shared();
+    let mut t = store.begin().unwrap();
+    let from = trgt(&mut t, lib);
+    let p = pf(&[
+        rec("TRGT", ""),
+        fld("C1", "3", "A", "", ""),
+        fld("N1", "5", "P", "2", "ALWNULL"),
+        fld("V1", "10", "A", "", "VARLEN ALWNULL"),
+        fld("I1", "9", "B", "0", "ALWNULL"),
+    ]);
+    let to = file::create_pf(&mut t, lib, name("TRGTO"), &p, &CreateFileOpts { now: 1, ..CreateFileOpts::default() }).unwrap();
+    let mut o = open(&mut t, &locks, from);
+    for c in ["AAA", "RRR", "XXX", "BBB"] {
+        let (r, n) = trgt_rec(c);
+        o.write(&mut t, &r, &n).unwrap();
+    }
+    o.close(&mut t);
+    let nt = NewTrg { name: Some("CPYBEF".into()), alwrepchg: true, ..NewTrg::new(Time::Before, Event::Insert, pgm()) };
+    ops::add(&mut t, to, &nt, 2).unwrap();
+    t.commit().unwrap();
+    let opts = db::util::CpyfOpts { mbropt: db::util::MbrOpt::Add, ..db::util::CpyfOpts::default() };
+    // A path that cannot call programs refuses the copy before a record.
+    let mut t = store.begin().unwrap();
+    let e = db::util::cpyf(&mut t, JobHandle(1), from, &db::util::Target::File(to), &opts).unwrap_err();
+    assert!(matches!(e, DbError::TriggerNotCallable { .. }), "{e:?}");
+    t.abort();
+    // Called: R becomes Z (ALWREPCHG), X is refused and the copy stops.
+    let dump = Rc::new(RefCell::new(Dump::default()));
+    let mut t = store.begin().unwrap();
+    let e = db::util::cpyf_firing(&mut t, JobHandle(1), from, &db::util::Target::File(to), &opts, &mut db::no_pause, Mode::Call(dump.clone()))
+        .unwrap_err();
+    assert!(matches!(&e, DbError::TriggerFailed { before: true, .. }), "{e:?}");
+    assert_eq!(dump.borrow().seen.len(), 3);
+    let mut o = open(&mut t, &locks, to);
+    let first = o.chain(&mut t, &db::KeyArg::Rrn(1), false).unwrap().unwrap();
+    assert_eq!(first.data[0], 0xC1);
+    let second = o.chain(&mut t, &db::KeyArg::Rrn(2), false).unwrap().unwrap();
+    assert_eq!(second.data[0], 0xE9);
+    assert!(o.chain(&mut t, &db::KeyArg::Rrn(3), false).unwrap().is_none());
+    o.close(&mut t);
+    t.abort();
+}

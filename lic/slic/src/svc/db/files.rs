@@ -309,6 +309,11 @@ pub fn dltf(system: &mut System, p: &Params) -> Result<String, String> {
     let (store, ctx) = db(system)?;
     with_txn(store, |txn| {
         let id = file_id(txn, ctx, &qual)?;
+        // An SQL trigger's program goes with its table, as on the primary
+        // (`tools/conformance/sql/cases/trigger/DLTFTRG`).
+        if file::describe(txn, id).is_ok_and(|d| d.attr.kind == file::FileKind::Physical) {
+            sql::exec::trigger::drop_all(txn, ctx, id).map_err(|e| e.to_string())?;
+        }
         file::delete_file(txn, super::JOB, id).map_err(|e| db_err(&e))?;
         Ok(format!("File {qual} deleted."))
     })
@@ -520,7 +525,20 @@ pub fn cpyf_in(
             },
             Err(e) => return Err(e.to_string()),
         };
-        let r = util::cpyf_paused(txn, job, from_id, &target, &opts, pause).map_err(|e| db_err(&e))?;
+        // The to-file's triggers: called in the job when it makes calls
+        // (`run_cmd_calling`), else refused (`CPF502B`).
+        let later = sql::exec::routine::midcall::Deferred::default();
+        let mode = ctx.midcall.as_ref().map_or(db::trg::Mode::Refuse, |m| {
+            db::trg::Mode::Call(sql::exec::routine::midcall::Triggers::shared(m.clone(), later.clone()))
+        });
+        let r = util::cpyf_firing(txn, job, from_id, &target, &opts, pause, mode)
+            .map_err(|e| match &e {
+                // As the primary: the program's failure stops the copy,
+                // the records before it copied.
+                db::DbError::TriggerFailed { .. } => format!("CPF2972 {e}"),
+                _ => db_err(&e),
+            })?;
+        sql::exec::routine::midcall::fire_deferred(txn, ctx.midcall.as_ref(), &later).map_err(|e| format!("CPF2972 {e}"))?;
         Ok(format!(
             "{} records copied to member {}, {} excluded, {} not copied{}.",
             r.copied,

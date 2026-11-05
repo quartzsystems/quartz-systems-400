@@ -22,6 +22,8 @@ use crate::format::FormatDef;
 use crate::member::{Member, lob};
 use crate::path;
 use crate::record::{self, Value};
+use crate::trg::Event;
+use crate::trg::fire::Row;
 
 /// `MBROPT`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -174,6 +176,20 @@ pub fn cpyf_paused(
     opts: &CpyfOpts,
     pause: crate::Pause<'_>,
 ) -> Result<CpyfReport> {
+    cpyf_firing(txn, job, from, to, opts, pause, crate::trg::Mode::Refuse)
+}
+
+/// [`cpyf_paused`] with the to-file's insert triggers fired through `mode`
+/// (`Mode::Refuse` refuses a copy to a file with any, `CPF502B`).
+pub fn cpyf_firing(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    from: ObjectId,
+    to: &Target,
+    opts: &CpyfOpts,
+    pause: crate::Pause<'_>,
+    mode: crate::trg::Mode,
+) -> Result<CpyfReport> {
     crate::auth::check(txn, "file.open-input", from)?;
     if opts.fromkey.is_some() && opts.fromrcd.is_some()
         || opts.tokey.is_some() && opts.torcd.is_some()
@@ -259,7 +275,9 @@ pub fn cpyf_paused(
     )?;
     let result = Member::open(txn, &to_desc, &to_entry).and_then(|mut to_m| {
         to_m.jrn.job = job;
-        run(txn, &mut from_m, &mut to_m, opts, pause)
+        let mut trg = crate::odp::trigger::TrgState::default();
+        trg.mode = mode;
+        run(txn, &mut from_m, &mut to_m, opts, pause, &mut trg)
     });
     hold.release(txn);
     let (copied, excluded, errors) = result?;
@@ -331,6 +349,7 @@ fn run(
     to_m: &mut Member,
     opts: &CpyfOpts,
     pause: crate::Pause<'_>,
+    trg: &mut crate::odp::trigger::TrgState,
 ) -> Result<(u64, u64, u64)> {
     match opts.mbropt {
         MbrOpt::None if to_m.attr().record_count > 0 => {
@@ -386,7 +405,7 @@ fn run(
         let outcome = plan
             .apply(&from_fmt, &to_fmt, &slot, seq, &mut record, &mut nulls)
             .and_then(|()| copy_lobs(txn, &lobs, &to_fmt, &mut record, (from_owner, to_owner), &mut lob_copies))
-            .and_then(|()| put(txn, to_m, &to_fmt, &record, &nulls, updadd));
+            .and_then(|()| put(txn, to_m, &to_fmt, (&record, &nulls), updadd, trg));
         // A record not copied leaves no LOB copies behind.
         if outcome.is_err() {
             for r in &lob_copies {
@@ -473,9 +492,9 @@ fn put(
     txn: &mut Txn<'_>,
     to_m: &mut Member,
     to_fmt: &FormatDef,
-    record: &[u8],
-    nulls: &[u8],
+    (record, nulls): (&[u8], &[u8]),
     updadd: bool,
+    trg: &mut crate::odp::trigger::TrgState,
 ) -> Result<()> {
     if updadd {
         let key = path::record_key(to_fmt, record, nulls)?;
@@ -490,10 +509,21 @@ fn put(
             .into_iter()
             .next();
         if let Some(k) = hit {
+            if to_m.trgs.as_ref().is_some_and(|a| a.any(Event::Update)) {
+                // BLOCKED(sql): an update by *UPDADD does not fire update
+                // triggers yet; refused rather than not fired.
+                return Err(DbError::TriggerNotCallable { file: to_m.file.name().to_string() });
+            }
             return to_m.update(txn, k.rrn, record, nulls);
         }
     }
-    to_m.write_new(txn, record, nulls).map(|_| ())
+    // The insert triggers, as a record write fires them.
+    let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((record, nulls)) };
+    let replaced = trg.before(txn, to_m, &row, 0)?;
+    let (record, nulls) = replaced.as_ref().map_or((record, nulls), |(r, n)| (r.as_slice(), n.as_slice()));
+    let rrn = to_m.write_new(txn, record, nulls)?;
+    let row = Row { event: Event::Insert, rrn, old: None, new: Some((record, nulls)) };
+    trg.after(txn, to_m, &row, 0)
 }
 
 /// Errors `ERRLVL` counts rather than stops on.

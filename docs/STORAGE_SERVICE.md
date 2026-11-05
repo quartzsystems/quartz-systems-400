@@ -378,9 +378,15 @@ makes its calls through its trigger mode (`db::trg::Mode`):
 
 - `Refuse` (a new path's): a change or read any trigger of the file fires
   for is refused before anything changes (`CPF502B`; SQL `SQL0084`).
-  Functions that run wholly in the service use it: the console, `CPYF`,
-  `DFU`, `FTP`, the DDM server, a statement not on a fiber (all
-  BLOCKED(sql) until each can reach its job).
+  Functions that run wholly in the service use it: the service console,
+  `FTP`, `CPYF` and a statement not on a fiber or from a job that does
+  not make calls (QAP) (BLOCKED(sql) until each can reach its job). DFU
+  and the DDM server's record operations open with `triggers` and call
+  the programs in the job as record I/O does; `CPYF` taking turns from a
+  job's `run_cmd_calling` fires the to-file's insert triggers through the
+  mid caller (a failure stops it with `CPF2972`, the records before it
+  copied, as on the primary). `DLTF` of a table deletes its SQL
+  triggers' programs, as the primary does.
 - `Defer`, record I/O (`mi::io::trigger`): the job's open says it calls
   triggers (`OpenSpec.triggers`). An operation with before triggers
   answers status `TRIGGERS_DUE` with their buffers and changes nothing;

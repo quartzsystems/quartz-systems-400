@@ -49,7 +49,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
             let file = file.ok_or_else(|| Fail::new("CPD0071", "A data file is needed."))?;
             let lib = lib.unwrap_or_else(|| "*LIBL".into());
             let f = data::file(host, &lib, &file).ok_or_else(|| not_found(&file, &lib))?;
-            temp::run(host, &mut surface, &f, member(r), None, false)
+            temp::run(job, host, &mut surface, &f, member(r), None, false)
                 .map_err(|m| Fail::new("CPF4101", m))?;
             Ok(String::new())
         }
@@ -71,7 +71,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 Some(f) => (f.to_string(), lib.unwrap_or_else(|| "*LIBL".into())),
             };
             let f = data::file(host, &lib, &file).ok_or_else(|| not_found(&file, &lib))?;
-            temp::run(host, &mut surface, &f, member(r), Some(&p), r.name == "DSPDTA")
+            temp::run(job, host, &mut surface, &f, member(r), Some(&p), r.name == "DSPDTA")
                 .map_err(|m| Fail::new("CPF4101", m))?;
             Ok(String::new())
         }
