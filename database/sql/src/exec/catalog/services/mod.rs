@@ -23,6 +23,7 @@ mod joblog;
 mod history;
 mod ifs;
 mod jobs;
+mod journals;
 mod libl;
 mod netstat;
 mod objects;
@@ -79,6 +80,9 @@ const VIEWS: &[View] = &[
     View { schema: "QSYS2", name: "OUTPUT_QUEUE_ENTRIES_BASIC", no_value: spool::ENTRY_NO_VALUE, rows: spool::entries },
     View { schema: "QSYS2", name: "OUTPUT_QUEUE_INFO", no_value: spool::QUEUE_NO_VALUE, rows: spool::queues },
     View { schema: "QSYS2", name: "JOB_DESCRIPTION_INFO", no_value: wmobj::JOBD_NO_VALUE, rows: wmobj::jobds },
+    View { schema: "QSYS2", name: "JOURNAL_INFO", no_value: journals::JOURNAL_NO_VALUE, rows: journals::journals },
+    View { schema: "QSYS2", name: "JOURNAL_RECEIVER_INFO", no_value: &[], rows: journals::receivers },
+    View { schema: "QSYS2", name: "JOURNALED_OBJECTS", no_value: &[], rows: journals::objects },
     View { schema: "QSYS2", name: "OBJECT_PRIVILEGES", no_value: &[], rows: security::privileges },
     View { schema: "QSYS2", name: "OBJECT_OWNERSHIP", no_value: &[], rows: security::ownership },
     View { schema: "QSYS2", name: "AUTHORIZATION_LIST_INFO", no_value: &[], rows: security::autl_objects },

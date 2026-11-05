@@ -762,3 +762,21 @@ fn object_privileges_and_ownership() {
     assert!(rows.iter().any(|r| r[1] == "*ALL" && r[2] == "YES"), "{rows:?}");
     assert_eq!(db.rows("SELECT OBJECT_LIBRARY, OBJECT_TYPE FROM QSYS2.OBJECT_OWNERSHIP WHERE OBJECT_NAME = 'T1'"), vec![row(&["QSTEST", "*FILE"])]);
 }
+
+#[test]
+fn journal_views() {
+    let mut db = Db::new(true);
+    for st in ["CREATE SCHEMA JSCH", "CREATE TABLE JSCH.T1 (A INT)"] {
+        let (ca, _) = db.run(st);
+        assert!(!ca.is_error(), "{st}: {}", ca.line());
+    }
+    assert_eq!(
+        db.rows("SELECT JOURNAL_NAME, JOURNAL_LIBRARY, NUMBER_JOURNAL_RECEIVERS, JOURNALED_FILES FROM QSYS2.JOURNAL_INFO"),
+        vec![row(&["QSQJRN", "JSCH", "1", "1"])]
+    );
+    assert_eq!(db.rows("SELECT JOURNAL_NAME, STATUS FROM QSYS2.JOURNAL_RECEIVER_INFO"), vec![row(&["QSQJRN", "ATTACHED"])]);
+    assert_eq!(
+        db.rows("SELECT OBJECT_TYPE, OBJECT_LIBRARY, OBJECT_NAME, FILE_TYPE FROM QSYS2.JOURNALED_OBJECTS"),
+        vec![row(&["*FILE", "JSCH", "T1", "PHYSICAL"])]
+    );
+}
