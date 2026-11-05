@@ -10,7 +10,9 @@
 //! again after. Elsewhere (a statement not taking turns) the host
 //! cannot reach the system and the service says so (SQL0443).
 
-use sql::exec::catalog::services::host::{ActiveJob, HttpRequest, HttpResponse, SysValue, SystemHost, SystemStatus};
+use sql::exec::catalog::services::host::{self, ActiveJob, HttpRequest, HttpResponse, SysValue, SystemHost, SystemStatus};
+
+use licpgm::ProductStore as _;
 
 use crate::ipl::system::System;
 use crate::svc::ile;
@@ -139,5 +141,72 @@ impl SystemHost for SqlHost {
 
     fn netstat(&self) -> Option<Result<sql::exec::catalog::services::host::Netstat, String>> {
         with_system(super::tcp::netstat::sql)
+    }
+
+    fn products(&self) -> Option<Result<Vec<host::Product>, String>> {
+        with_system(|system| {
+            super::licpgm::with(system, |p, _, _| {
+                let loads = p.loads();
+                Ok(licpgm::directory::software_resources(p)
+                    .into_iter()
+                    .map(|r| {
+                        let library = loads
+                            .iter()
+                            .find(|(_, l)| l.key.product == r.product && l.key.option == r.option && l.key.load_id == r.feature)
+                            .and_then(|(_, l)| l.principal().map(|e| e.installed.clone()))
+                            .unwrap_or_default();
+                        host::Product {
+                            id: r.product.to_string(),
+                            option: r.option.to_string(),
+                            load_id: r.feature.to_string(),
+                            code: r.load_type == licpgm::id::LoadType::Code,
+                            release: r.release.to_string(),
+                            library,
+                            text: r.text,
+                        }
+                    })
+                    .collect())
+            })
+        })
+    }
+
+    fn ptfs(&self) -> Option<Result<Vec<host::Ptf>, String>> {
+        use ptf::status::{Action, Status};
+        with_system(|system| {
+            let db = crate::cpp::ptfcmd::load_db(system)?;
+            Ok(db
+                .ptfs
+                .values()
+                .map(|r| host::Ptf {
+                    id: r.ptf.clone(),
+                    product: r.product.clone(),
+                    option: r.option.clone(),
+                    release: r.release.clone(),
+                    status: match r.status {
+                        Status::NotLoaded => "NOT LOADED",
+                        Status::Loaded | Status::TempRemoved => "LOADED",
+                        Status::TempApplied => "APPLIED",
+                        Status::PermApplied => "PERMANENTLY APPLIED",
+                        Status::PermRemoved => "PERMANENTLY REMOVED",
+                        Status::Superseded => "SUPERSEDED",
+                        Status::Damaged => "DAMAGED",
+                        Status::OnOrder => "ON ORDER",
+                        Status::SaveFileOnly => "SAVE FILE ONLY",
+                        Status::CoverLetterOnly => "COVER LETTER ONLY",
+                    }
+                    .into(),
+                    ipl_action: match r.action {
+                        Action::ApplyAtIpl => "TEMPORARY APPLY",
+                        Action::RemoveAtIpl => "TEMPORARY REMOVE",
+                        Action::None => "NONE",
+                    }
+                    .into(),
+                    delayed: r.delayed,
+                    savf: !r.savf.is_empty(),
+                    superseded_by: r.superseded_by.clone(),
+                    changed: r.changed,
+                })
+                .collect())
+        })
     }
 }

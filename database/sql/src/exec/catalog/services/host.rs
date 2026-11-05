@@ -132,6 +132,50 @@ pub struct Netstat {
     pub port_names: Vec<(u16, bool, String)>,
 }
 
+/// An installed product load (`DSPSFWRSC`).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Product {
+    /// `5770SS1`, `QS00SS1` ...
+    pub id: String,
+    /// `*BASE` or the option number.
+    pub option: String,
+    /// The load: `5050` for code, the language feature.
+    pub load_id: String,
+    /// A code load rather than a language one.
+    pub code: bool,
+    /// `VxRyMz`.
+    pub release: String,
+    /// The product library.
+    pub library: String,
+    /// Our description.
+    pub text: String,
+}
+
+/// A PTF as the PTF database has it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Ptf {
+    /// `QSnnnnn`.
+    pub id: String,
+    /// The product.
+    pub product: String,
+    /// Its option.
+    pub option: String,
+    /// The product's release.
+    pub release: String,
+    /// `LOADED`, `APPLIED` ... as `PTF_INFO` names it.
+    pub status: String,
+    /// The next IPL's action as `PTF_INFO` names it.
+    pub ipl_action: String,
+    /// Applied at an IPL rather than at once.
+    pub delayed: bool,
+    /// Its save file is on the system.
+    pub savf: bool,
+    /// The PTF superseding it.
+    pub superseded_by: String,
+    /// The last status change, Unix seconds.
+    pub changed: u64,
+}
+
 /// An IFS object's attributes.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct IfsObject {
@@ -241,6 +285,16 @@ pub trait SystemHost {
     /// What `NETSTAT` shows; `Err` when TCP/IP's configuration cannot
     /// be read.
     fn netstat(&self) -> Option<Result<Netstat, String>> {
+        None
+    }
+
+    /// The installed product loads.
+    fn products(&self) -> Option<Result<Vec<Product>, String>> {
+        None
+    }
+
+    /// The PTFs.
+    fn ptfs(&self) -> Option<Result<Vec<Ptf>, String>> {
         None
     }
 

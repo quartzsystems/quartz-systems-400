@@ -200,6 +200,31 @@ impl SystemHost for Mock {
         }))
     }
 
+    fn products(&self) -> Option<Result<Vec<host::Product>, String>> {
+        Some(Ok(vec![host::Product {
+            id: "QS00SS1".into(),
+            option: "*BASE".into(),
+            load_id: "5050".into(),
+            code: true,
+            release: "V1R1M0".into(),
+            library: "QSYS".into(),
+            text: "QS/400".into(),
+        }]))
+    }
+
+    fn ptfs(&self) -> Option<Result<Vec<host::Ptf>, String>> {
+        Some(Ok(vec![host::Ptf {
+            id: "QS00001".into(),
+            product: "QS00SS1".into(),
+            option: "*BASE".into(),
+            release: "V1R1M0".into(),
+            status: "APPLIED".into(),
+            ipl_action: "NONE".into(),
+            changed: 1_767_225_600,
+            ..host::Ptf::default()
+        }]))
+    }
+
     fn system_status(&self) -> Option<SystemStatus> {
         Some(SystemStatus {
             total_jobs: 40,
@@ -533,5 +558,18 @@ fn netstat_views() {
     assert_eq!(
         db.rows("SELECT ROUTE_DESTINATION, SUBNET_MASK, NEXT_HOP, ROUTE_STATUS, ROUTE_TYPE, ROUTE_SOURCE, LOCAL_BINDING_LINE_DESCRIPTION FROM QSYS2.NETSTAT_ROUTE_INFO"),
         vec![row(&["127.0.0.0", "255.0.0.0", "*DIRECT", "YES", "DIRECT", "CFG", "*LOOPBACK"])]
+    );
+}
+
+#[test]
+fn products_and_ptfs() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT PRODUCT_ID, PRODUCT_OPTION, LOAD_TYPE, RELEASE_LEVEL, SYMBOLIC_LOAD_STATE, PRODUCT_LIBRARIES FROM QSYS2.SOFTWARE_PRODUCT_INFO"),
+        vec![row(&["QS00SS1", "*BASE", "CODE", "V1R1M0", "INSTALLED", "QSYS"])]
+    );
+    assert_eq!(
+        db.rows("SELECT PTF_IDENTIFIER, PTF_PRODUCT_ID, PTF_LOADED_STATUS, PTF_IPL_ACTION, PTF_ACTION_PENDING FROM QSYS2.PTF_INFO"),
+        vec![row(&["QS00001", "QS00SS1", "APPLIED", "NONE", "NO"])]
     );
 }
