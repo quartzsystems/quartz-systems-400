@@ -406,7 +406,9 @@ makes its calls through its trigger mode (`db::trg::Mode`):
   answers. The job's connection is read again meanwhile, so the
   program's own requests are served, its statements on fibers of their
   own. The job (`mi::io::trigger::sql_run`, which every embedded
-  statement of the runtime goes through) calls the program and sends
+  statement of the runtime goes through, and `console/sqlcall.rs` of
+  `qsjob` for the host server, DDM, QAP and `STRSQL`) calls the program
+  and sends
   `Op::Called` named `*MIDCALL` with the buffer back, or the failure;
   that resumes the latest statement of the job waiting for an answer,
   the member is read again, and the statement goes on. A job that goes
@@ -415,9 +417,13 @@ makes its calls through its trigger mode (`db::trg::Mode`):
   (`SQL0443`/38501 for a refusal, `SQL0204` for a program not found, as
   the primary). The same plan and answer carry any call a statement
   needs made in its middle (`MidCaller`); a statement run where there is
-  no fiber or no job to call (the service console, `STRSQL`'s and the
-  servers' statements run in the service) still refuses a change of a
-  table with triggers with `SQL0084` (BLOCKED(sql)).
+  no fiber or no job to call (the service console, `RUNSQL` and
+  `RUNSQLSTM`, which run in the service) still refuses a change of a
+  table with triggers with `SQL0084` (BLOCKED(sql)). `MODE DB2SQL` after
+  triggers are deferred by the engine and called when the statement has
+  changed every row. An SQL trigger's program (`CREATE TRIGGER`,
+  `sql::exec::trigger`) is a trigger program like any other: record I/O
+  calls it as above.
 
 Read triggers fire for record I/O of a physical file; a query of a table
 with read triggers and a read through a logical file over one are
