@@ -234,3 +234,54 @@ mod tests {
         assert_eq!(timestamp_minus(&a, &b).to_string(), "10000.123456788");
     }
 }
+
+/// What an unlabeled duration of a decimal type stands for.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DurationKind {
+    /// `DECIMAL(8,0)`: `yyyymmdd`.
+    Date,
+    /// `DECIMAL(6,0)`: `hhmmss`.
+    Time,
+    /// `DECIMAL(14+s,s)`: `yyyymmddhhmmss.f`.
+    Timestamp,
+}
+
+/// `v + d` or `v - d` with `d` a date, time or timestamp duration: the
+/// parts added largest first, or taken away smallest first.
+pub fn with_duration(v: &Value, d: &Decimal, sub: bool, kind: DurationKind) -> Result<Value> {
+    let neg = d.is_negative() != sub;
+    let a = d.abs();
+    let whole = a.rescale(0, qdecimal::Rounding::Truncate).map_err(|e| SqlError::Overflow { what: e.to_string() })?;
+    let n = whole.to_i128().and_then(|x| i64::try_from(x).ok()).ok_or_else(|| SqlError::Overflow { what: "the duration is too large".into() })?;
+    let frac = a.sub_exact(&whole).map_err(|e| SqlError::Overflow { what: e.to_string() })?;
+    let s = |x: i64| if neg { -x } else { x };
+    let (y, mo, dd, h, mi, se) = match kind {
+        DurationKind::Date => (n / 10_000, n / 100 % 100, n % 100, 0, 0, 0),
+        DurationKind::Time => (0, 0, 0, n / 10_000, n / 100 % 100, n % 100),
+        DurationKind::Timestamp => (n / 10_000_000_000, n / 100_000_000 % 100, n / 1_000_000 % 100, n / 10_000 % 100, n / 100 % 100, n % 100),
+    };
+    let mut parts = vec![
+        (y, DurationUnit::Years),
+        (mo, DurationUnit::Months),
+        (dd, DurationUnit::Days),
+        (h, DurationUnit::Hours),
+        (mi, DurationUnit::Minutes),
+        (se, DurationUnit::Seconds),
+    ];
+    if neg {
+        parts.reverse();
+    }
+    let mut out = v.clone();
+    if neg && !frac.is_zero() {
+        out = labeled(&out, &Value::Num(frac.clone()), true, DurationUnit::Seconds)?;
+    }
+    for (x, u) in parts {
+        if x != 0 {
+            out = add_duration(&out, s(x), u)?;
+        }
+    }
+    if !neg && !frac.is_zero() {
+        out = labeled(&out, &Value::Num(frac), false, DurationUnit::Seconds)?;
+    }
+    Ok(out)
+}

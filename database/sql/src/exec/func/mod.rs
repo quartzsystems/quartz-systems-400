@@ -7,8 +7,10 @@
 
 mod decfloat;
 pub(crate) mod datetime;
+mod format;
 pub(crate) mod math;
 pub(crate) mod misc;
+mod regexp;
 pub(crate) mod string;
 
 use std::fmt::Write as _;

@@ -394,15 +394,11 @@ fn naming_modes() {
 
 #[test]
 fn errors() {
+    // A reserved word out of place is SQL0199, as on DB2 for i.
     let e = parse("SELECT FROM", Naming::Sys).unwrap_err();
-    let SqlError::Syntax {
-        line, col, found, ..
-    } = &e
-    else {
-        panic!("{e}")
-    };
-    assert_eq!((*line, *col, found.as_str()), (1, 8, "FROM"));
-    assert_eq!(e.sqlcode(), -104);
+    let SqlError::Keyword { line, col, word } = &e else { panic!("{e}") };
+    assert_eq!((*line, *col, word.as_str()), (1, 8, "FROM"));
+    assert_eq!(e.sqlcode(), -199);
     let e = parse("SELECT * FROM t WHERE a = 1 extra", Naming::Sys).unwrap_err();
     assert!(
         matches!(&e, SqlError::Syntax { found, expected, .. } if found == "EXTRA" && expected == "end of statement")

@@ -136,18 +136,18 @@ fn leaves(b: &QueryBody, out: &mut Vec<QueryBody>) -> bool {
 
 fn split(name: &Ident, columns: &[Ident], q: &Query, search: Option<Search>, cycle: Option<Cycle>) -> Result<RecursiveCte> {
     if !q.order_by.is_empty() || q.fetch_first.is_some() || q.offset.is_some() {
-        return Err(SqlError::Unsupported { what: "ORDER BY or a row limit in a recursive common table expression".into() });
+        return Err(SqlError::Recursion { name: name.value.clone(), what: "ORDER BY or a row limit".into(), code: -342 });
     }
     let mut sides = Vec::new();
     if !leaves(&q.body, &mut sides) {
-        return Err(SqlError::Unsupported { what: format!("recursive {} without UNION ALL", name.value) });
+        return Err(SqlError::Recursion { name: name.value.clone(), what: "UNION without ALL".into(), code: -342 });
     }
     let (step, seed): (Vec<QueryBody>, Vec<QueryBody>) = sides.into_iter().partition(|b| names_body(b, name));
     if seed.is_empty() {
-        return Err(SqlError::Unsupported { what: format!("recursive {} without initial rows", name.value) });
+        return Err(SqlError::Recursion { name: name.value.clone(), what: "no initial rows: it names only itself".into(), code: -346 });
     }
     if columns.is_empty() {
-        return Err(SqlError::Unsupported { what: format!("recursive {} without a column list", name.value) });
+        return Err(SqlError::Recursion { name: name.value.clone(), what: "no column list".into(), code: -343 });
     }
     Ok(RecursiveCte { name: name.clone(), columns: columns.to_vec(), seed, step, search, cycle })
 }

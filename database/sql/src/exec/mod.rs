@@ -192,11 +192,8 @@ pub struct SqlContext {
     /// The rows a recursive common table expression's name stands for
     /// while its step runs, innermost last.
     pub(crate) ctes: Vec<cte::Binding>,
-    /// The records a change wrote (or replaced, with `capture_old`), for
-    /// a data-change table reference: RRN, record, null map.
+    /// The records an `INSERT` wrote, for a data-change table reference.
     pub(crate) captured: Option<Vec<change::Captured>>,
-    /// [`SqlContext::captured`] keeps the rows as they were.
-    pub(crate) capture_old: bool,
     /// The query being run has `SKIP LOCKED DATA`.
     pub(crate) skip_locked: bool,
     /// Special registers and built-in global variables.
@@ -298,7 +295,6 @@ impl SqlContext {
             windows: std::collections::HashMap::new(),
             ctes: Vec::new(),
             captured: None,
-            capture_old: false,
             skip_locked: false,
             registers: registers::Registers::default(),
         }
@@ -1009,7 +1005,8 @@ impl Prepared {
                 }))
             }
             Statement::Rename(r) => rename::run(txn, ctx, r).map(|()| Outcome::Done),
-            Statement::Truncate(t) => change::truncate(txn, ctx, params, t).map(|()| Outcome::Done),
+            // The count is not reported, only SQL0100 when there was nothing.
+            Statement::Truncate(t) => change::truncate(txn, ctx, params, t).map(|n| if n == 0 { Outcome::Count(0) } else { Outcome::Done }),
             Statement::SetRegister { name, value } => {
                 let v = eval::Evaluator { ctx, params }.eval(txn, value, &eval::Env::default())?;
                 ctx.registers.set(name, &v)?;

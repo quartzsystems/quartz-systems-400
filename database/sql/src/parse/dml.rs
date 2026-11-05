@@ -195,29 +195,7 @@ impl Parser {
     }
 
     fn merge_source(&mut self) -> Result<crate::ast::TableRef> {
-        if self.is_sym("(") {
-            self.advance();
-            let q = self.query()?;
-            self.expect_sym(")")?;
-            self.eat_word("AS");
-            let alias = self.ident()?;
-            let columns = if self.is_sym("(") {
-                self.ident_list()?
-            } else {
-                Vec::new()
-            };
-            return Ok(crate::ast::TableRef::Subquery {
-                query: Box::new(q),
-                alias,
-                columns,
-            });
-        }
-        let name = self.object_name()?;
-        let alias = self.alias()?;
-        Ok(crate::ast::TableRef::Table {
-            name,
-            alias,
-            columns: Vec::new(),
-        })
+        // A table, a derived table, or a joined table.
+        self.table_ref()
     }
 }

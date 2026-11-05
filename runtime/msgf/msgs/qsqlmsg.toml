@@ -89,6 +89,27 @@ text = "A date, time or timestamp expression is not valid."
 help = "A date, time or timestamp can be added to or subtracted from only a duration: a labeled duration such as 3 DAYS, or for subtraction a value of the same type. Correct the expression."
 
 [[msg]]
+id = "SQL0342"
+sev = 30
+text = "The recursive common table expression &1 holds a clause it may not."
+help = "A recursive common table expression joins its initial rows and its step with UNION ALL, and has no ORDER BY or row limit of its own. Correct the expression."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0343"
+sev = 30
+text = "The recursive common table expression &1 needs a column list."
+help = "Name the columns of a recursive common table expression after its name: WITH name (col, ...) AS (...)."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0346"
+sev = 30
+text = "The common table expression &1 names itself without initial rows."
+help = "A common table expression that refers to itself is recursive and needs a fullselect that does not, joined to the recursive one with UNION ALL."
+vars = ["*CHAR 128"]
+
+[[msg]]
 id = "SQL0187"
 sev = 30
 text = "The use of a labeled duration is not valid."

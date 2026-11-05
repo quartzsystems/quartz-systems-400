@@ -435,7 +435,7 @@ pub struct Scope<'a> {
 }
 
 impl Scope<'_> {
-    fn column(&self, table: Option<&str>, name: &str) -> Option<SqlType> {
+    pub(crate) fn column(&self, table: Option<&str>, name: &str) -> Option<SqlType> {
         for s in self.frames.iter().rev() {
             if let Ok(Some(i)) = s.find(table, name) {
                 let c = &s.cols[i];
@@ -490,7 +490,8 @@ pub fn infer(e: &Expr, scope: &Scope<'_>) -> SqlType {
             Register::Time => SqlType::time(false),
             Register::Timestamp(p) => SqlType::timestamp(*p, false),
             Register::Timezone => SqlType::decimal(6, 0, false),
-            Register::User | Register::Schema | Register::Server => SqlType::varchar(128, false),
+            Register::User | Register::Schema => SqlType::varchar(128, false),
+            Register::Server => SqlType::varchar(18, false),
             Register::Path => SqlType::varchar(8843, false),
             Register::Named(n) => super::registers::result_type(n),
             Register::DecfloatRounding => SqlType::varchar(128, false),
@@ -553,7 +554,17 @@ pub fn infer(e: &Expr, scope: &Scope<'_>) -> SqlType {
 
 #[allow(clippy::too_many_lines)]
 fn function(f: &Function, scope: &Scope<'_>) -> SqlType {
-    let args: Vec<SqlType> = f.args.iter().map(|a| infer(a, scope)).collect();
+    // A name that is no column is a keyword argument (EXTRACT's part,
+    // CHAR's format, STRIP's end); the type CAST names for INTERPRET.
+    let args: Vec<SqlType> = f
+        .args
+        .iter()
+        .map(|a| match a {
+            Expr::Column(c) if c.table.is_none() && scope.column(None, &c.column.value).is_none() => SqlType::varchar(10, false),
+            Expr::Cast(x, t) if matches!(**x, Expr::Literal(Literal::Null)) && f.name == "INTERPRET" => SqlType::of_data_type(&t.data_type, false),
+            a => infer(a, scope),
+        })
+        .collect();
     let null = args.iter().any(|a| a.null);
     if let Some(t) = super::agg::result_type(f, &args) {
         return t;
@@ -566,11 +577,14 @@ fn function(f: &Function, scope: &Scope<'_>) -> SqlType {
     let first = args.first().copied();
     match f.name.as_str() {
         "COALESCE" | "VALUE" | "IFNULL" | "NVL" => {
-            let mut t = first.unwrap_or_else(SqlType::unknown);
-            for a in &args[1.min(args.len())..] {
+            // The null constants take the others' type.
+            let typed: Vec<SqlType> =
+                args.iter().zip(&f.args).filter(|(_, e)| !matches!(e, Expr::Literal(Literal::Null))).map(|(t, _)| *t).collect();
+            let mut t = typed.first().copied().unwrap_or_else(SqlType::unknown);
+            for a in typed.iter().skip(1) {
                 t = unify(t, *a);
             }
-            t.nullable(args.iter().all(|a| a.null))
+            t.nullable(typed.iter().all(|a| a.null) || typed.is_empty())
         }
         "NULLIF" => first.unwrap_or_else(SqlType::unknown).nullable(true),
         "MAX" | "MIN" | "GREATEST" | "LEAST" => {
@@ -642,11 +656,13 @@ fn function(f: &Function, scope: &Scope<'_>) -> SqlType {
             };
             SqlType::new(kind, n, 0, null)
         }
-        "DIGITS" => SqlType::char(first.and_then(|t| t.digits()).map_or(15, |(p, _)| p), null),
+        "DIGITS" => SqlType::char(first.and_then(|t| t.digits()).map_or(15, |(p, _)| if p == 11 { 10 } else { p }), null),
         "SUBSTR" | "SUBSTRING" | "LEFT" | "RIGHT" | "TRIM" | "LTRIM" | "RTRIM" | "STRIP" | "UPPER" | "UCASE" | "LOWER"
         | "LCASE" => {
-            let t = args.iter().rev().find(|a| a.is_char() || matches!(a.kind, Kind::Binary | Kind::Varbinary)).copied();
-            let t = t.or(first).unwrap_or_else(SqlType::unknown);
+            // The source: last after TRIM's end word, else first.
+            let moded = matches!(f.args.first(), Some(Expr::Literal(Literal::Str(m))) if matches!(m.as_str(), "BOTH" | "LEADING" | "TRAILING" | "B" | "L" | "T"));
+            let t = if moded { args.last().copied() } else { first };
+            let t = t.unwrap_or_else(SqlType::unknown);
             let kind = match t.kind {
                 Kind::Char if matches!(f.name.as_str(), "UPPER" | "UCASE" | "LOWER" | "LCASE") => Kind::Char,
                 Kind::Binary | Kind::Varbinary => Kind::Varbinary,
@@ -669,7 +685,11 @@ fn function(f: &Function, scope: &Scope<'_>) -> SqlType {
             t.nullable(null)
         }
         "RRN" => SqlType::int(false),
-        "GROUPING" => SqlType::smallint(false),
+        "GROUPING" => SqlType::smallint(true),
+        "INTERPRET" => match f.args.get(1) {
+            Some(Expr::Cast(_, t)) => SqlType::of_data_type(&t.data_type, null),
+            _ => SqlType::unknown(),
+        },
         "*DISTINCT" | "*NOTDISTINCT" => SqlType::new(Kind::Boolean, 1, 0, false),
         "ADD_MONTHS" | "LAST_DAY" | "NEXT_DAY" => first.unwrap_or_else(|| SqlType::date(null)).nullable(null),
         "DAYNAME" | "MONTHNAME" => SqlType::varchar(100, null),

@@ -484,6 +484,19 @@ impl Parser {
         if let Some(e) = self.json_call(&name)? {
             return Ok(e);
         }
+        // INTERPRET(e AS type): the type as a CAST of null.
+        if name == "INTERPRET" {
+            let e = self.expr()?;
+            self.expect_word("AS")?;
+            let t = self.type_spec()?;
+            self.expect_sym(")")?;
+            return Ok(Expr::Function(Function {
+                name,
+                distinct: false,
+                star: false,
+                args: vec![e, Expr::Cast(Box::new(Expr::Literal(Literal::Null)), t)],
+            }));
+        }
         let mut f = Function {
             name,
             distinct: false,
@@ -537,6 +550,10 @@ impl Parser {
             if self.eat_word("FOR") {
                 f.args.push(self.expr()?);
             }
+        }
+        // DB2 for i takes no USING OCTETS or CODEUNITS here.
+        if self.is_word("USING") {
+            return Err(self.keyword());
         }
         let overflow = self.listagg_overflow(&f.name)?;
         self.expect_sym(")")?;

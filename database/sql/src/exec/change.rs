@@ -10,14 +10,16 @@ use store::txn::Txn;
 
 use super::dml;
 use super::eval::{Row, Schema};
-use super::query::{row_of, table_schema};
+use super::eval::Env;
+use super::query::{row_of, run_query, table_schema};
 use super::SqlContext;
-use crate::ast::{ChangeRows, Delete, Statement, Truncate, Where};
+use crate::ast::{ChangeRows, Delete, Query, QueryBody, Select, SelectItem, Statement, TableRef, Truncate, Where};
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
-/// Run the change, keeping the records it wrote (or, for `OLD TABLE`,
-/// the ones it replaced), and give them as rows of the table.
+/// Run the `INSERT`, keeping the records it wrote, and give them as
+/// rows of the table: `FINAL TABLE` and `NEW TABLE` (no trigger here
+/// changes them between the two).
 pub(crate) fn data_change_rows(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
@@ -27,37 +29,18 @@ pub(crate) fn data_change_rows(
     alias: &str,
     explain_only: bool,
 ) -> Result<(Schema, Vec<Row>)> {
-    let name = match statement {
-        Statement::Insert(i) => &i.table,
-        Statement::Update(u) => &u.table,
-        Statement::Delete(d) => &d.table,
-        _ => return Err(SqlError::Unsupported { what: "a data-change table reference of that statement".into() }),
+    let Statement::Insert(ins) = statement else {
+        return Err(SqlError::Unsupported { what: "a data-change table reference of a statement other than INSERT".into() });
     };
-    // DB2 for i: no OLD TABLE of an INSERT, no FINAL or NEW TABLE of a
-    // DELETE.
-    let allowed = !matches!(
-        (kind, statement),
-        (ChangeRows::Old, Statement::Insert(_)) | (ChangeRows::Final | ChangeRows::New, Statement::Delete(_))
-    );
-    if !allowed {
-        return Err(SqlError::Misplaced { what: "that data-change table reference for the statement".into() });
-    }
-    let t = ctx.resolve_table(txn, name)?;
+    let t = ctx.resolve_table(txn, &ins.table)?;
     let schema = table_schema(&t, alias);
     if explain_only {
         ctx.explain.push(format!("DATA CHANGE {kind:?} ({alias})"));
         return Ok((schema, Vec::new()));
     }
-    let saved = (ctx.captured.replace(Vec::new()), ctx.capture_old);
-    ctx.capture_old = kind == ChangeRows::Old;
-    let r = match statement {
-        Statement::Insert(i) => dml::insert(txn, ctx, params, i),
-        Statement::Update(u) => dml::update(txn, ctx, params, u),
-        Statement::Delete(d) => dml::delete(txn, ctx, params, d),
-        _ => unreachable!("checked"),
-    };
-    let captured = std::mem::replace(&mut ctx.captured, saved.0).unwrap_or_default();
-    ctx.capture_old = saved.1;
+    let saved = ctx.captured.replace(Vec::new());
+    let r = dml::insert(txn, ctx, params, ins);
+    let captured = std::mem::replace(&mut ctx.captured, saved).unwrap_or_default();
     r?;
     let mut rows = Vec::with_capacity(captured.len());
     for (rrn, record, null_map) in captured {
@@ -68,16 +51,69 @@ pub(crate) fn data_change_rows(
 
 /// `TRUNCATE`: every row deleted as `DELETE` without `WHERE` deletes
 /// them, the count not reported.
-pub(crate) fn truncate(txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value], t: &Truncate) -> Result<()> {
+pub(crate) fn truncate(txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value], t: &Truncate) -> Result<u64> {
     let info = ctx.resolve_table(txn, &t.table)?;
     if t.restart_identity && info.format.format.fields.iter().any(|f| f.identity.is_some()) {
         // BLOCKED(sql): restarting an identity column needs SQL-2's identity state.
         return Err(SqlError::Unsupported { what: "TRUNCATE ... RESTART IDENTITY of a table with an identity column".into() });
     }
     let d = Delete { table: t.table.clone(), alias: None, where_clause: Where::All, isolation: None };
-    dml::delete(txn, ctx, params, &d)?;
-    Ok(())
+    // No row to delete is the warning SQL0100.
+    dml::delete(txn, ctx, params, &d)
 }
 
 /// A record a change kept: its RRN, the record and its null map.
 pub(crate) type Captured = (u64, Vec<u8>, Vec<u8>);
+
+/// For a joined `MERGE` source, the correlation name of each column of
+/// `SELECT *` over it, in order; `None` for any other source.
+pub(crate) fn source_tables(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    source: &TableRef,
+) -> Result<Option<Vec<String>>> {
+    fn leaves<'a>(t: &'a TableRef, out: &mut Vec<&'a TableRef>) -> Result<()> {
+        match t {
+            TableRef::Join { left, right, .. } => {
+                leaves(left, out)?;
+                leaves(right, out)
+            }
+            TableRef::JoinUsing { .. } | TableRef::Lateral(_) => {
+                Err(SqlError::Unsupported { what: "a LATERAL or USING join in a MERGE source".into() })
+            }
+            t => {
+                out.push(t);
+                Ok(())
+            }
+        }
+    }
+    if !matches!(source, TableRef::Join { .. }) {
+        return Ok(None);
+    }
+    let mut parts = Vec::new();
+    leaves(source, &mut parts)?;
+    let mut names = Vec::new();
+    for leaf in parts {
+        let alias = match leaf {
+            TableRef::Table { name, alias, .. } => alias.as_ref().map_or_else(|| name.name.value.clone(), |a| a.value.clone()),
+            TableRef::Subquery { alias, .. }
+            | TableRef::Function { alias, .. }
+            | TableRef::Recursive { alias, .. }
+            | TableRef::DataChange { alias, .. } => alias.value.clone(),
+            _ => String::new(),
+        };
+        let mut q = Query::of(QueryBody::Select(Box::new(Select {
+            distinct: false,
+            items: vec![SelectItem::Star],
+            from: vec![leaf.clone()],
+            where_clause: None,
+            group_by: Vec::new(),
+            having: None,
+        })));
+        q.fetch_first = Some(crate::ast::Expr::num("0"));
+        let rs = run_query(txn, ctx, params, &q, &Env::default())?;
+        names.extend(std::iter::repeat_n(alias, rs.columns.len()));
+    }
+    Ok(Some(names))
+}

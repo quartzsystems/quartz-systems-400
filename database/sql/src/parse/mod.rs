@@ -82,6 +82,19 @@ pub(crate) const RESERVED: &[&str] = &[
     "WITH",
 ];
 
+/// DB2 for i's reserved words: one where it cannot be is `SQL0199`, not
+/// `SQL0104`.
+const KEYWORDS: &[&str] = &[
+    "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "AS", "BEGIN", "BETWEEN", "BY", "CALL", "CASE", "CAST", "CHECK", "CLOSE",
+    "COLUMN", "COMMIT", "CONNECT", "CONSTRAINT", "CREATE", "CROSS", "CURRENT", "CURSOR", "DECLARE", "DEFAULT", "DELETE",
+    "DESCRIBE", "DISTINCT", "DROP", "ELSE", "END", "ESCAPE", "EXCEPT", "EXCEPTION", "EXECUTE", "EXISTS", "FETCH", "FOR",
+    "FOREIGN", "FROM", "FULL", "FUNCTION", "GRANT", "GROUP", "HAVING", "IN", "INDEX", "INNER", "INSERT", "INTERSECT",
+    "INTO", "IS", "JOIN", "KEY", "LEFT", "LIKE", "LOCK", "MERGE", "NOT", "NULL", "NULLS", "OF", "OFFSET", "ON", "OPEN",
+    "OR", "ORDER", "OUTER", "PREPARE", "PRIMARY", "PROCEDURE", "REFERENCES", "RENAME", "REVOKE", "RIGHT", "ROLLBACK",
+    "SELECT", "SET", "SOME", "TABLE", "THEN", "UNION", "UNIQUE", "UPDATE", "USING", "VALUES", "VIEW", "WHEN", "WHERE",
+    "WITH",
+];
+
 /// How deeply expressions and subqueries may nest.
 pub const MAX_DEPTH: u16 = 64;
 
@@ -142,6 +155,12 @@ impl Parser {
     /// The error for the current token.
     fn expected(&self, what: &str) -> SqlError {
         let t = &self.toks[self.at.min(self.toks.len() - 1)];
+        // A reserved word where it cannot be is SQL0199, as on DB2 for i.
+        if let Tok::Word(w) = &t.tok
+            && KEYWORDS.contains(&w.as_str())
+        {
+            return SqlError::Keyword { word: t.tok.describe(), line: t.line, col: t.col };
+        }
         SqlError::Syntax {
             line: t.line,
             col: t.col,

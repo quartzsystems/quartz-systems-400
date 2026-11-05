@@ -427,6 +427,17 @@ impl Evaluator<'_> {
                 let rows = self.subquery(txn, q, env)?;
                 Ok(Some(rows.is_empty() == *not))
             }
+            // REGEXP_LIKE is a predicate only.
+            Expr::Function(f) if f.name == "REGEXP_LIKE" => {
+                let mut args = Vec::with_capacity(f.args.len());
+                for a in &f.args {
+                    args.push(self.eval(txn, a, env)?);
+                }
+                Ok(match func::call(&f.name, &args, self.ctx)? {
+                    Value::Bool(b) => Some(b),
+                    _ => None,
+                })
+            }
             other => {
                 let v = self.eval(txn, other, env)?;
                 Ok(match v {
@@ -497,6 +508,13 @@ impl Evaluator<'_> {
                         break;
                     }
                 }
+                // Not a column: a built-in global variable of the path's QSYS2.
+                if table.is_none()
+                    && !c.column.delimited
+                    && let Some(n) = super::registers::global(Some("QSYS2"), name)
+                {
+                    return Ok(self.ctx.registers.value(n));
+                }
                 Err(SqlError::ColumnNotFound {
                     name: match table {
                         Some(t) => format!("{t}.{name}"),
@@ -546,6 +564,12 @@ impl Evaluator<'_> {
                 }
                 let x = self.eval(txn, a, env)?;
                 let y = self.eval(txn, b, env)?;
+                // A date, time or timestamp duration: a decimal of its shape.
+                if matches!(op, BinOp::Add | BinOp::Sub)
+                    && let Some(r) = self.unlabeled(&x, *op, &y, a, b, env)
+                {
+                    return r;
+                }
                 super::cast::arith::binary(&x, *op, &y, self.ctx.decfloat_rounding)
             }
             Expr::Duration(a, unit) => {
@@ -661,6 +685,7 @@ impl Evaluator<'_> {
     }
 
     /// A function call: aggregates over the group, else a scalar.
+    #[allow(clippy::too_many_lines)]
     fn function(&mut self, txn: &mut Txn<'_>, f: &Function, env: &Env) -> Result<Value> {
         if let Some(r) = super::json::call(self, txn, f, env) {
             return r;
@@ -673,6 +698,20 @@ impl Evaluator<'_> {
                 });
             };
             return self.aggregate_call(txn, f, &[], None, env, &group);
+        }
+        if name == "REGEXP_LIKE" {
+            return Err(SqlError::Syntax {
+                line: 0,
+                col: 0,
+                found: "REGEXP_LIKE".into(),
+                expected: "REGEXP_LIKE as a predicate, not a value".into(),
+            });
+        }
+        if name == "INTERPRET"
+            && let [e, Expr::Cast(_, spec)] = f.args.as_slice()
+        {
+            let v = self.eval(txn, e, env)?;
+            return super::func::misc::interpret(&v, spec);
         }
         if (name == "*DISTINCT" || name == "*NOTDISTINCT") && f.args.len() == 2 {
             let a = self.eval(txn, &f.args[0], env)?;
@@ -722,6 +761,18 @@ impl Evaluator<'_> {
                 args.push(Value::Str(c.column.value.clone()));
                 continue;
             }
+            // EXTRACT(YEAR FROM x), STRIP(s, B, c), SUBSTRING(s, n, m, OCTETS):
+            // the word is a keyword.
+            if let Expr::Column(c) = a
+                && c.table.is_none()
+                && !c.column.delimited
+                && ((i == 0 && name == "EXTRACT")
+                    || (i == 1 && name == "STRIP" && matches!(c.column.value.as_str(), "B" | "L" | "T" | "BOTH" | "LEADING" | "TRAILING"))
+                    || (i == 3 && matches!(name, "SUBSTRING" | "SUBSTR") && matches!(c.column.value.as_str(), "OCTETS" | "CODEUNITS16" | "CODEUNITS32")))
+            {
+                args.push(Value::Str(c.column.value.clone()));
+                continue;
+            }
             if i == 0 && matches!(name, "DECFLOAT" | "NORMALIZE_DECFLOAT") {
                 args.push(self.eval_decfloat(txn, a, env)?);
                 continue;
@@ -736,6 +787,17 @@ impl Evaluator<'_> {
             && let Value::Str(s) = &v
         {
             return Ok(Value::Str(format!("{s:0>len$}")));
+        }
+        // DIGITS of an expression fills to its type's precision.
+        if name == "DIGITS"
+            && let Some(a) = f.args.first()
+            && let Value::Str(s) = &v
+        {
+            let scope = super::rtype::Scope { frames: env.frames.iter().map(|(s, _)| s.as_ref()).collect() };
+            if let Some((p, _)) = super::rtype::infer(a, &scope).digits() {
+                let len = usize::try_from(if p == 11 { 10 } else { p }).expect("small");
+                return Ok(Value::Str(format!("{s:0>len$}")));
+            }
         }
         Ok(v)
     }
@@ -1102,6 +1164,34 @@ pub fn like(text: &str, pattern: &str, escape: Option<char>) -> bool {
 /// `CAST`.
 pub fn cast(v: &Value, t: &TypeSpec) -> Result<Value> {
     super::cast::cast(v, t, qdecimal::DfRounding::HalfEven)
+}
+
+
+impl Evaluator<'_> {
+    /// `date ± DECIMAL(8,0)`, `time ± DECIMAL(6,0)`, `timestamp ±
+    /// DECIMAL(14+s,s)` (and the duration first for `+`); `None` when the
+    /// operands are not such a pair.
+    #[allow(clippy::many_single_char_names, clippy::unused_self)]
+    fn unlabeled(&self, x: &Value, op: BinOp, y: &Value, a: &Expr, b: &Expr, env: &Env) -> Option<Result<Value>> {
+        use super::datetime::DurationKind as K;
+        let (v, d, de, sub) = match (x, y) {
+            (Value::Date(_) | Value::Time(_) | Value::Timestamp(_), Value::Num(d)) => (x, d, b, op == BinOp::Sub),
+            (Value::Num(d), Value::Date(_) | Value::Time(_) | Value::Timestamp(_)) if op == BinOp::Add => (y, d, a, false),
+            _ => return None,
+        };
+        let scope = super::rtype::Scope { frames: env.frames.iter().map(|(s, _)| s.as_ref()).collect() };
+        let t = super::rtype::infer(de, &scope);
+        if !matches!(t.kind, super::rtype::Kind::Decimal | super::rtype::Kind::Numeric) {
+            return None;
+        }
+        let kind = match (v, t.len, t.scale) {
+            (Value::Date(_) | Value::Timestamp(_), 8, 0) => K::Date,
+            (Value::Time(_) | Value::Timestamp(_), 6, 0) => K::Time,
+            (Value::Timestamp(_), p, s) if p == 14 + u32::from(s) => K::Timestamp,
+            _ => return None,
+        };
+        Some(super::datetime::with_duration(v, d, sub, kind))
+    }
 }
 
 #[cfg(test)]

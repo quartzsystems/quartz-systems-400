@@ -262,7 +262,7 @@ impl Parser {
     }
 
     /// A table reference with any joins hanging off it.
-    fn table_ref(&mut self) -> Result<TableRef> {
+    pub(crate) fn table_ref(&mut self) -> Result<TableRef> {
         let mut left = self.table_primary()?;
         loop {
             let kind = if self.eat_words(&["CROSS", "JOIN"]) {

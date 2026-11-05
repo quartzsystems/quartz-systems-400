@@ -111,7 +111,7 @@ pub(crate) fn run(
             .cols
             .iter()
             .zip(&cte.columns)
-            .map(|(c, n)| ColInfo { name: n.value.clone(), table: Some(cte.name.value.clone()), nullable: true, hidden: false, ..c.clone() })
+            .map(|(c, n)| ColInfo { name: n.value.clone(), table: Some(cte.name.value.clone()), hidden: false, ..c.clone() })
             .collect(),
     });
     let width = named.cols.len();

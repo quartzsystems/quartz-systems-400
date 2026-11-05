@@ -18,23 +18,23 @@ impl Parser {
 
     /// One of the keyword table references, or `None`.
     pub(crate) fn special_table(&mut self) -> Result<Option<TableRef>> {
-        for (word, kind) in [("FINAL", ChangeRows::Final), ("NEW", ChangeRows::New), ("OLD", ChangeRows::Old)] {
+        // DB2 for i 7.5 has FINAL and NEW TABLE of an INSERT only.
+        for (word, kind) in [("FINAL", ChangeRows::Final), ("NEW", ChangeRows::New)] {
             if self.is_word(word) && self.is_word_at(1, "TABLE") && self.is_sym_at(2, "(") {
                 self.advance();
                 self.advance();
                 self.advance();
                 let statement = match self.tok() {
-                    crate::lex::Tok::Word(w) if matches!(w.as_str(), "INSERT" | "UPDATE" | "DELETE" | "MERGE") => self.statement_body()?,
-                    _ => return Err(self.expected("INSERT, UPDATE, DELETE or MERGE")),
+                    crate::lex::Tok::Word(w) if w == "INSERT" => self.statement_body()?,
+                    crate::lex::Tok::Word(_) => return Err(self.keyword()),
+                    _ => return Err(self.expected("INSERT")),
                 };
                 self.expect_sym(")")?;
                 let (alias, columns) = self.correlation()?;
                 let alias = match (alias, &statement) {
                     (Some(a), _) => a,
                     (None, Statement::Insert(i)) => i.table.name.clone(),
-                    (None, Statement::Update(u)) => u.alias.clone().unwrap_or_else(|| u.table.name.clone()),
-                    (None, Statement::Delete(d)) => d.alias.clone().unwrap_or_else(|| d.table.name.clone()),
-                    (None, _) => Ident::new("MERGE"),
+                    (None, _) => Ident::new("INSERT"),
                 };
                 return Ok(Some(TableRef::DataChange { kind, statement: Box::new(statement), alias, columns }));
             }

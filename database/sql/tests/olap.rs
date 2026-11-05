@@ -312,7 +312,7 @@ fn grouping_sets() {
     assert_eq!(db.rows("select grp, s, count(*) from q3t group by grouping sets (grp, s, ())").len(), 11);
     assert_eq!(
         db.types("select grp, grouping(grp), count(*) from q3t group by rollup(grp)"),
-        v(&["CHAR(1)", "SMALLINT NN", "INTEGER NN"])
+        v(&["CHAR(1)", "SMALLINT", "INTEGER NN"])
     );
 }
 
@@ -437,13 +437,17 @@ fn data_changes_as_tables() {
         db.rows("select id, w from final table (insert into q3u values (8, 800), (9, 900))"),
         v(&["8|800", "9|900"])
     );
-    assert_eq!(
-        db.rows("select id, w from final table (update q3u set w = w + 1 where id >= 8)"),
-        v(&["8|801", "9|901"])
-    );
-    assert_eq!(db.rows("select id, w from old table (update q3u set w = 0 where id = 8)"), v(&["8|801"]));
-    assert_eq!(db.rows("select id from old table (delete from q3u where id >= 8)"), v(&["8", "9"]));
-    assert_eq!(db.code("select id from final table (delete from q3u where id = 1)"), -120);
+    assert_eq!(db.rows("select id from new table (insert into q3u values (10, 1000))"), v(&["10"]));
+    // DB2 for i 7.5: FINAL and NEW TABLE of an INSERT only (pub400).
+    assert_eq!(db.code("select id, w from final table (update q3u set w = w + 1 where id >= 8)"), -199);
+    assert_eq!(db.code("select id from final table (delete from q3u where id = 1)"), -199);
+    assert_eq!(db.code("select id from old table (delete from q3u where id >= 8)"), -199);
+    // MERGE from a joined source.
+    db.ok("merge into q3u u using q3t t join q3u x on t.id = x.id on u.id = t.id when matched then update set w = 1");
+    assert_eq!(db.rows("select id, w from q3u where id in (1, 3) order by id"), v(&["1|1", "3|1"]));
+    assert_eq!(db.code("with t(n) as (select 1 from sysibm.sysdummy1 union select n+1 from t where n < 3) select * from t"), -342);
+    assert_eq!(db.code("with t(n) as (select n+1 from t where n < 3) select * from t"), -346);
+    assert_eq!(db.code("update q3u set w = q3t.id from q3t where q3u.id = q3t.id"), -199);
     db.ok("truncate table q3u");
     assert_eq!(db.rows("select count(*) from q3u"), v(&["0"]));
     db.ok("truncate q3u reuse storage ignore delete triggers continue identity immediate");

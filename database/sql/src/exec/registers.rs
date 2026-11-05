@@ -173,13 +173,12 @@ impl Registers {
 pub fn result_type(name: &str) -> SqlType {
     match name {
         "CURRENT DEGREE" => SqlType::char(5, false),
-        "CURRENT DECFLOAT ROUNDING MODE" => SqlType::varchar(128, false),
-        "CURRENT IMPLICIT XMLPARSE OPTION" => SqlType::varchar(19, false),
+        "CURRENT DECFLOAT ROUNDING MODE" | "CURRENT IMPLICIT XMLPARSE OPTION" => SqlType::varchar(128, false),
         "CURRENT CLIENT_ACCTNG" | "CURRENT CLIENT_APPLNAME" | "CURRENT CLIENT_USERID" | "CURRENT CLIENT_PROGRAMID"
         | "CURRENT CLIENT_WRKSTNNAME" => SqlType::varchar(255, false),
         "QSYS2.JOB_NAME" | "QSYS2.SERVER_MODE_JOB_NAME" => SqlType::varchar(28, true),
-        "QSYS2.PROCESS_ID" | "QSYS2.THREAD_ID" => SqlType::bigint(true),
-        "SYSIBM.CLIENT_PORT" => SqlType::int(true),
+        "QSYS2.PROCESS_ID" | "SYSIBM.CLIENT_PORT" => SqlType::int(true),
+        "QSYS2.THREAD_ID" => SqlType::bigint(true),
         "SYSIBM.CLIENT_IPADDR" => SqlType::varchar(128, true),
         _ => SqlType::varchar(255, true),
     }

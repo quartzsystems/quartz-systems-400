@@ -517,12 +517,6 @@ fn change_rows(
             o.unlock();
             continue;
         }
-        // OLD TABLE: the row as it was.
-        if ev.ctx.capture_old
-            && let Some(c) = ev.ctx.captured.as_mut()
-        {
-            c.push((rrn, current.data.clone(), current.null_map.clone()));
-        }
         match set {
             None => {
                 o.delete(txn)?;
@@ -547,11 +541,6 @@ fn change_rows(
                     build_record(txn, t, &per_field, Some((&current.data, &current.null_map)))?;
                 o.update(txn, &rec, &nulls)?;
                 release_lobs(txn, t, &current.data, Some(&rec))?;
-                if !ev.ctx.capture_old
-                    && let Some(c) = ev.ctx.captured.as_mut()
-                {
-                    c.push((rrn, rec, nulls));
-                }
             }
         }
         n += 1;
@@ -679,12 +668,15 @@ fn merge_plan(
         | crate::ast::TableRef::Function { alias, .. }
         | crate::ast::TableRef::Recursive { alias, .. }
         | crate::ast::TableRef::DataChange { alias, .. } => alias.value.clone(),
-        crate::ast::TableRef::Lateral(_) | crate::ast::TableRef::JoinUsing { .. } | crate::ast::TableRef::Join { .. } => {
+        // A joined source: each column keeps its own table's name.
+        crate::ast::TableRef::Join { .. } => String::new(),
+        crate::ast::TableRef::Lateral(_) | crate::ast::TableRef::JoinUsing { .. } => {
             return Err(SqlError::Unsupported {
-                what: "a join as the MERGE source".into(),
+                what: "a LATERAL or USING join as the MERGE source".into(),
             });
         }
     };
+    let src_tables = super::change::source_tables(txn, ctx, params, &m.source)?;
     let src_query = Query::of(QueryBody::Select(Box::new(Select {
         distinct: false,
         items: vec![SelectItem::Star],
@@ -698,9 +690,10 @@ fn merge_plan(
         cols: src
             .columns
             .iter()
-            .map(|c| super::eval::ColInfo {
+            .enumerate()
+            .map(|(i, c)| super::eval::ColInfo {
                 name: c.name.clone(),
-                table: Some(src_alias.clone()),
+                table: Some(src_tables.as_ref().and_then(|t| t.get(i).cloned()).unwrap_or_else(|| src_alias.clone())),
                 field: None,
                 nullable: c.nullable,
                 hidden: false,

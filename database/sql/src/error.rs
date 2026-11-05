@@ -332,6 +332,19 @@ pub enum SqlError {
         what: String,
     },
 
+    /// A recursive common table expression of a form DB2 for i does not
+    /// allow: `UNION` without `ALL`, an ordering or limit (`SQL0342`), no
+    /// column list (`SQL0343`), no initial rows (`SQL0346`).
+    #[error("recursive common table expression {name}: {what}")]
+    Recursion {
+        /// The expression.
+        name: String,
+        /// What is wrong.
+        what: String,
+        /// The SQLCODE.
+        code: i32,
+    },
+
     /// The database failed in a way SQL has no code for.
     #[error("database error: {what}")]
     Database {
@@ -386,6 +399,7 @@ impl SqlError {
             Self::RowComparison { .. } => -115,
             Self::DateTimeExpr { .. } => -182,
             Self::Duration { .. } => -187,
+            Self::Recursion { code, .. } => *code,
             Self::Database { .. } => -901,
             Self::Coded { code, .. } => *code,
         }
@@ -431,6 +445,9 @@ impl SqlError {
             Self::Misplaced { .. } => "42903",
             Self::OrderByNumber { .. } => "42805",
             Self::DateTimeExpr { .. } | Self::Duration { .. } => "42816",
+            Self::Recursion { code: -343, .. } => "42908",
+            Self::Recursion { code: -346, .. } => "42836",
+            Self::Recursion { .. } => "42925",
             Self::Database { .. } => "58004",
             Self::Coded { state, .. } => state,
         }

@@ -15,6 +15,9 @@ qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 qsname = { path = "../../storage/qsname", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
+regex = "1.11.0"
+sha1 = "0.11.0"
+sha2.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 
