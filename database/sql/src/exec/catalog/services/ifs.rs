@@ -187,19 +187,6 @@ pub fn read_binary(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut O
     read(txn, ctx, args, out, true)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn line_breaks() {
-        let l = |d: &[u8], e| lines(d, e, usize::MAX, b'\n');
-        assert_eq!(l(b"a\r\nb\nc", Eol::Any), vec![b"a".to_vec(), b"b".to_vec(), b"c".to_vec()]);
-        assert_eq!(l(b"a\r\nb", Eol::Lf), vec![b"a\r".to_vec(), b"b".to_vec()]);
-        assert_eq!(l(b"ab\ncd", Eol::None), vec![b"ab\ncd".to_vec()]);
-        assert_eq!(lines(b"abcde", Eol::None, 2, b'\n'), vec![b"ab".to_vec(), b"cd".to_vec(), b"e".to_vec()]);
-    }
-}
 
 /// `IFS_OBJECT_PRIVILEGES(PATH_NAME, IGNORE_ERRORS)`: one row for
 /// `*PUBLIC`, the owner, the primary group and each private authority,
@@ -287,4 +274,18 @@ pub fn locks(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) ->
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn line_breaks() {
+        let l = |d: &[u8], e| lines(d, e, usize::MAX, b'\n');
+        assert_eq!(l(b"a\r\nb\nc", Eol::Any), vec![b"a".to_vec(), b"b".to_vec(), b"c".to_vec()]);
+        assert_eq!(l(b"a\r\nb", Eol::Lf), vec![b"a\r".to_vec(), b"b".to_vec()]);
+        assert_eq!(l(b"ab\ncd", Eol::None), vec![b"ab\ncd".to_vec()]);
+        assert_eq!(lines(b"abcde", Eol::None, 2, b'\n'), vec![b"ab".to_vec(), b"cd".to_vec(), b"e".to_vec()]);
+    }
 }
