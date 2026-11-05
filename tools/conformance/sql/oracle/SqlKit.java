@@ -59,7 +59,10 @@ public final class SqlKit {
         if (host == null || user == null || pass == null) {
             throw new IllegalStateException("no " + pre + "* credentials");
         }
-        String lib = a[0].equals("pub400") ? user.toUpperCase() : "QSTEST";
+        // pub400's writable library is the user name plus 1 unless QS_PUB400_LIB says otherwise.
+        String lib = a[0].equals("pub400")
+            ? e.getOrDefault("QS_PUB400_LIB", user.toUpperCase() + "1").toUpperCase()
+            : "QSTEST";
         Class.forName("com.ibm.as400.access.AS400JDBCDriver");
         String port = "1".equals(e.get("QS_SQL_DIRECT")) ? ":8471" : "";
         String url = "jdbc:as400://" + host + port + ";naming=sql;prompt=false;errors=full"

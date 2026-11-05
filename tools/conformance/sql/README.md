@@ -16,7 +16,7 @@ behind each row of the feature matrix.
   changes the terminator (SQL PL bodies) until the next
   `--#SET TERMINATOR ;`.
 - `{lib}` is the library a case may write in: `QSTEST` on the primary,
-  the user's library on pub400, `QSTEST` in a fresh store here. A case
+  the user's library on pub400 (the user name plus `1`, or `QS_PUB400_LIB`), `QSTEST` in a fresh store here. A case
   cleans up after itself.
 
 Statements run in order on one connection: `*SQL` naming, autocommit,
