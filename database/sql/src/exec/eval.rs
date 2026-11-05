@@ -460,7 +460,8 @@ impl Evaluator<'_> {
     /// (`SqlContext::answers`), else run against the outer rows.
     pub(crate) fn subquery(&mut self, txn: &mut Txn<'_>, q: &Query, env: &Env) -> Result<Rc<Vec<Row>>> {
         let Some(a) = self.ctx.answers.as_mut() else {
-            return Ok(Rc::new(run_query(txn, self.ctx, self.params, q, env)?.rows));
+            // Answers kept for the statement, or found by key.
+            return super::plan::subq::answer(self, txn, q, env);
         };
         if let Some(rows) = a.lookup(q) {
             return Ok(rows);
@@ -503,6 +504,7 @@ impl Evaluator<'_> {
                         if let Some(a) = self.ctx.answers.as_mut() {
                             a.touch(fi);
                         }
+                        self.ctx.plan.subq.touch(fi);
                         return Ok(row[i].clone());
                     }
                     if table.is_some_and(|t| schema.has_table(t)) {
@@ -773,6 +775,7 @@ impl Evaluator<'_> {
                     if let Some(a) = self.ctx.answers.as_mut() {
                         a.touch(fi);
                     }
+                    self.ctx.plan.subq.touch(fi);
                     return Ok(row[i].clone());
                 }
             }

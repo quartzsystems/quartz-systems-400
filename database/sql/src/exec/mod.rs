@@ -34,6 +34,7 @@ pub mod json;
 pub mod locator;
 mod grouping;
 mod join;
+pub(crate) mod plan;
 pub mod mem;
 pub mod names;
 pub mod opnqryf;
@@ -237,6 +238,8 @@ pub struct SqlContext {
     pub dbmon: crate::dbmon::JobState,
     /// The job's SQL `QTEMP` (`qtemp`), shared by its contexts.
     pub qtemp: qtemp::Qtemp,
+    /// The planner's state for the statement running.
+    pub(crate) plan: plan::State,
 }
 
 /// See [`SqlContext::yielder`].
@@ -348,6 +351,7 @@ impl SqlContext {
             arrays: false,
             dbmon: crate::dbmon::JobState::default(),
             qtemp: qtemp::Qtemp::default(),
+            plan: plan::State::default(),
         }
     }
 
@@ -968,6 +972,7 @@ impl Prepared {
         ctx.naming = self.naming;
         ctx.warning = None;
         udt::registry::enter(txn, ctx);
+        ctx.plan.start();
         // Queries, changes and the long definitions take turns at their
         // safe points; any other statement runs to its end.
         let r = match &self.statement {

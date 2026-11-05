@@ -337,7 +337,9 @@ fn summary(ctx: &SqlContext, job: &JobIdent, plan: &[PlanEvent], ucnt: i64, host
     r.s("QQC102", "*N");
     r.s("QQC103", "QAQQINI");
     r.s("QVC11", if ordered_by_index { "I" } else if sorted.is_some() { "S" } else { " " });
-    r.s("QVC13", if tables > 1 { "N" } else { " " });
+    // The join method: `N` nested loop, `H` hash, `M` sort-merge.
+    let method = ctx.plan.join_code().unwrap_or('N').to_string();
+    r.s("QVC13", if tables > 1 { &method } else { " " });
     r.yn("QVC14", sorted == Some("F4"));
     r.yn("QVC15", false);
     r

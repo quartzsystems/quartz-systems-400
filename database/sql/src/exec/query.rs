@@ -440,6 +440,60 @@ fn aliases_of(e: &Expr, scans: &[Scan]) -> Option<HashSet<String>> {
     Some(out)
 }
 
+/// A subquery without its correlating equalities, and each of them as
+/// (inner expression, outer expression).
+pub(crate) type Correlated = (Select, Vec<(Expr, Expr)>);
+
+/// A subquery's `WHERE` split for decorrelation: the select without
+/// its correlating equalities, and each as (inner expression, outer
+/// expression). `None` when its `FROM` has more than tables and joins,
+/// or no conjunct is an equality of an expression of its own columns and
+/// one of only outer columns.
+pub(crate) fn correlation(txn: &mut Txn<'_>, ctx: &SqlContext, sel: &Select) -> Result<Option<Correlated>> {
+    let Some(w) = &sel.where_clause else { return Ok(None) };
+    if sel.from.is_empty() || sel.from.iter().any(has_derived) {
+        return Ok(None);
+    }
+    let mut scans = Vec::new();
+    for t in &sel.from {
+        collect_scans(txn, ctx, t, true, &mut scans)?;
+    }
+    // A column none of the subquery's tables has.
+    let outer_only = |e: &Expr| {
+        let cols = columns_of(e);
+        !cols.is_empty()
+            && !has_subquery(e)
+            && cols.iter().all(|c| match &c.table {
+                Some(t) => !scans.iter().any(|s| s.alias == t.value),
+                None => !scans.iter().any(|s| s.schema.cols.iter().any(|col| !col.hidden && col.name == c.column.value)),
+            })
+    };
+    let inner_only = |e: &Expr| aliases_of(e, &scans).is_some_and(|a| !a.is_empty());
+    let mut parts = Vec::new();
+    conjuncts(w, &mut parts);
+    let mut kept = Vec::new();
+    let mut pairs = Vec::new();
+    for p in parts {
+        if let Expr::Compare(a, CmpOp::Eq, b, None) = &p {
+            if inner_only(a) && outer_only(b) {
+                pairs.push(((**a).clone(), (**b).clone()));
+                continue;
+            }
+            if inner_only(b) && outer_only(a) {
+                pairs.push(((**b).clone(), (**a).clone()));
+                continue;
+            }
+        }
+        kept.push(p);
+    }
+    if pairs.is_empty() {
+        return Ok(None);
+    }
+    let mut out = sel.clone();
+    out.where_clause = kept.into_iter().reduce(|a, b| Expr::And(Box::new(a), Box::new(b)));
+    Ok(Some((out, pairs)))
+}
+
 /// Whether a FROM item holds a derived table.
 fn has_derived(t: &TableRef) -> bool {
     match t {
@@ -746,29 +800,64 @@ struct Choice {
     score: u32,
 }
 
-fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str) -> Option<Choice> {
-    let mut best: Option<Choice> = None;
+/// What the choice of a path weighs beside the predicates.
+struct Weigh {
+    /// Rows in the table's member.
+    rows: u64,
+    /// The member whose column statistics apply; `None` for a logical
+    /// file, which has none.
+    member: Option<ObjectId>,
+    /// The query's row goal.
+    goal: Option<u64>,
+}
+
+/// Tables smaller than this read alike by any plan: the key is used
+/// whenever it serves.
+const SCAN_FLOOR: u64 = 10_000;
+/// A keyed read expected to bring back more than this share of a large
+/// table reads the table in arrival order instead.
+const SCAN_SHARE: f64 = 0.2;
+/// A row goal at most this small takes the path that gives the order.
+const SMALL_GOAL: u64 = 1_000;
+
+/// The simple predicates of `preds`: `col op value`, and `BETWEEN` as
+/// two.
+fn simple_predicates(preds: &[Expr]) -> Vec<(String, CmpOp, Expr)> {
+    let mut simple: Vec<(String, CmpOp, Expr)> = Vec::new();
+    for p in preds {
+        if let Some(s) = simple_predicate(p) {
+            simple.push(s);
+        } else if let Expr::Between(a, l, h, false) = p
+            && let Expr::Column(col) = &**a
+            && columns_of(l).is_empty()
+            && columns_of(h).is_empty()
+        {
+            simple.push((col.column.value.clone(), CmpOp::Ge, (**l).clone()));
+            simple.push((col.column.value.clone(), CmpOp::Le, (**h).clone()));
+        }
+    }
+    simple
+}
+
+fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str, w: &Weigh) -> Option<Choice> {
+    let mut all: Vec<(Choice, u64, bool)> = Vec::new();
+    let simple = simple_predicates(preds);
     for (ci, c) in cands.iter().enumerate() {
         let mut eq = Vec::new();
         let (mut lo, mut hi) = (None, None);
-        let mut simple: Vec<(String, CmpOp, Expr)> = Vec::new();
-        for p in preds {
-            if let Some(s) = simple_predicate(p) {
-                simple.push(s);
-            } else if let Expr::Between(a, l, h, false) = p
-                && let Expr::Column(col) = &**a
-                && columns_of(l).is_empty()
-                && columns_of(h).is_empty()
-            {
-                simple.push((col.column.value.clone(), CmpOp::Ge, (**l).clone()));
-                simple.push((col.column.value.clone(), CmpOp::Le, (**h).clone()));
-            }
-        }
+        let (mut lo_op, mut hi_op) = (CmpOp::Ge, CmpOp::Le);
+        // The share of rows the positioned keys select.
+        let mut share = 1.0;
+        let mut known = false;
+        let stats_of = |name: &str| w.member.and_then(|m| super::plan::stats::get(m, name));
         for (name, descend) in &c.keys {
             if let Some((_, _, v)) = simple
                 .iter()
                 .find(|(n, op, _)| n == name && *op == CmpOp::Eq)
             {
+                let st = stats_of(name);
+                known |= st.is_some();
+                share *= super::plan::estimate::compare(st.as_ref(), CmpOp::Eq, super::plan::estimate::constant(v).as_ref());
                 eq.push(v.clone());
                 continue;
             }
@@ -778,10 +867,26 @@ fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str)
                         continue;
                     }
                     match op {
-                        CmpOp::Gt | CmpOp::Ge if lo.is_none() => lo = Some(v.clone()),
-                        CmpOp::Lt | CmpOp::Le if hi.is_none() => hi = Some(v.clone()),
+                        CmpOp::Gt | CmpOp::Ge if lo.is_none() => {
+                            lo = Some(v.clone());
+                            lo_op = *op;
+                        }
+                        CmpOp::Lt | CmpOp::Le if hi.is_none() => {
+                            hi = Some(v.clone());
+                            hi_op = *op;
+                        }
                         _ => {}
                     }
+                }
+                if lo.is_some() || hi.is_some() {
+                    let st = stats_of(name);
+                    known |= st.is_some();
+                    let (lv, hv) = (lo.as_ref().map(super::plan::estimate::constant), hi.as_ref().map(super::plan::estimate::constant));
+                    share *= super::plan::estimate::range(
+                        st.as_ref(),
+                        lv.as_ref().map(|v| (v.as_ref(), lo_op == CmpOp::Ge)),
+                        hv.as_ref().map(|v| (v.as_ref(), hi_op == CmpOp::Le)),
+                    );
                 }
             }
             break;
@@ -790,18 +895,36 @@ fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str)
         let score = u32::try_from(eq.len()).expect("few") * 10
             + u32::from(lo.is_some() || hi.is_some()) * 5
             + u32::from(ordered.is_some()) * 3;
-        if score > 0 && best.as_ref().is_none_or(|b| score > b.score) {
-            best = Some(Choice {
-                cand: ci,
-                eq,
-                lo,
-                hi,
-                ordered,
-                score,
-            });
+        if score > 0 {
+            let est = super::plan::estimate::rows(w.rows, share);
+            all.push((Choice { cand: ci, eq, lo, hi, ordered, score }, est, known));
         }
     }
-    best
+    // The best score, then the fewest rows expected; a small row goal
+    // first takes a path that gives the order asked for.
+    let small_goal = w.goal.is_some_and(|g| g <= SMALL_GOAL);
+    let mut best: Option<(Choice, u64, bool)> = None;
+    for c in all {
+        let better = match &best {
+            None => true,
+            Some(b) => {
+                let (co, bo) = (small_goal && c.0.ordered.is_some(), small_goal && b.0.ordered.is_some());
+                (co, c.0.score, std::cmp::Reverse(c.1)) > (bo, b.0.score, std::cmp::Reverse(b.1))
+            }
+        };
+        if better {
+            best = Some(c);
+        }
+    }
+    let (choice, est, known) = best?;
+    // Statistics say the key would read much of a large table, and its
+    // order is not needed: read the table in arrival order.
+    #[allow(clippy::cast_precision_loss)]
+    let wide = known && w.rows >= SCAN_FLOOR && est as f64 > w.rows as f64 * SCAN_SHARE;
+    if wide && choice.ordered.is_none() {
+        return None;
+    }
+    Some(choice)
 }
 
 /// Whether `ORDER BY` is the candidate's key order; `Some(desc)`.
@@ -900,7 +1023,20 @@ fn scan_table_in(
         return Ok((all, false));
     };
     let cands = candidates(txn, t);
-    let choice = choose(&cands, &scan.preds, order, &scan.alias);
+    let rows_now = Member::open(txn, &t.desc, &t.member).map_or(0, |m| m.attr().record_count);
+    let physical = t.desc.attr.kind != FileKind::Logical;
+    let weigh = Weigh { rows: rows_now, member: physical.then_some(t.member.object), goal: ev.ctx.plan.goal };
+    if physical && rows_now >= super::plan::stats::ASK_FLOOR {
+        // Columns the planner would weigh: ask the collection job for them.
+        for (name, _, _) in simple_predicates(&scan.preds) {
+            if let Some((_, f)) = t.field(&name)
+                && super::plan::stats::get(t.member.object, &f.name.to_string()).is_none()
+            {
+                super::plan::stats::request(t.id, t.member.object, &f.name.to_string());
+            }
+        }
+    }
+    let choice = choose(&cands, &scan.preds, order, &scan.alias, &weigh);
     let label = format!("{}/{} ({})", t.desc.library_name, t.desc.name(), scan.alias);
     // Reading a table needs what a read open needs: `*OBJOPR` and `*READ`.
     db::auth::check_open(txn, t.id, db::Usage::INPUT)?;
@@ -1260,7 +1396,21 @@ pub(super) fn from_rows(
             }
             let schema = Rc::new(Schema { cols });
             if explain_only {
-                ctx.explain.push(format!("JOIN {kind:?} nested loop"));
+                let (l, r) = (estimated(txn, ctx, left, scans), estimated(txn, ctx, right, scans));
+                let mut parts = Vec::new();
+                if let Some(e) = on {
+                    conjuncts(e, &mut parts);
+                }
+                let inputs = join::method::Inputs {
+                    left: l,
+                    right: r,
+                    equality: join::equality_in(&parts, &ls, &rs),
+                    hash_bytes: r.saturating_mul(48),
+                    room: u64::try_from(ctx.charge().room()).unwrap_or(u64::MAX),
+                    goal: ctx.plan.goal,
+                    ..join::method::Inputs::default()
+                };
+                ctx.explain.push(format!("JOIN {kind:?} {} (est. {l} x {r} rows)", join::method::choose(&inputs).name()));
                 return Ok((schema, Vec::new(), lord));
             }
             let mut ev = Evaluator { ctx, params };
@@ -1288,6 +1438,36 @@ pub(super) fn from_rows(
     }
 }
 
+/// Rows a `FROM` item is expected to give, for a plan made without
+/// reading: a table's rows at the share its pushed predicates keep.
+fn estimated(txn: &mut Txn<'_>, ctx: &SqlContext, t: &TableRef, scans: &[Scan]) -> u64 {
+    use super::plan::{estimate, stats};
+    match t {
+        TableRef::Table { name, alias, .. } => {
+            let alias = alias.as_ref().map_or_else(|| name.name.value.clone(), |a| a.value.clone());
+            let Some(scan) = scans.iter().find(|s| s.alias == alias) else { return 1 };
+            let Some(info) = &scan.info else {
+                return scan.rows.as_ref().map_or(1, |r| r.len() as u64);
+            };
+            let rows = Member::open(txn, &info.desc, &info.member).map_or(0, |m| m.attr().record_count);
+            let mut share = 1.0;
+            for (col, op, v) in simple_predicates(&scan.preds) {
+                let st = info.field(&col).and_then(|(_, f)| stats::get(info.member.object, &f.name.to_string()));
+                share *= estimate::compare(st.as_ref(), op, estimate::constant(&v).as_ref());
+            }
+            let others = scan.preds.len().saturating_sub(simple_predicates(&scan.preds).len());
+            share *= estimate::OTHER.powi(i32::try_from(others).unwrap_or(i32::MAX));
+            let _ = ctx;
+            estimate::rows(rows, share)
+        }
+        TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => {
+            estimated(txn, ctx, left, scans).max(estimated(txn, ctx, right, scans))
+        }
+        TableRef::Lateral(inner) => estimated(txn, ctx, inner, scans),
+        _ => 1000,
+    }
+}
+
 /// The name of a select-list item.
 fn item_name(e: &Expr, alias: Option<&crate::ast::Ident>, n: usize) -> String {
     if let Some(a) = alias {
@@ -1310,6 +1490,20 @@ fn select(
     order: &[OrderItem],
     explain_only: bool,
 ) -> Result<(Rc<Schema>, Vec<Produced>)> {
+    // Conjuncts only a derived table needs go into it.
+    if sel.where_clause.is_some() && sel.from.iter().any(|t| matches!(t, TableRef::Subquery { .. })) {
+        let mut probe = Vec::new();
+        for t in &sel.from {
+            collect_scans(txn, ctx, t, true, &mut probe)?;
+        }
+        let elsewhere = |n: &str| probe.iter().any(|s| s.schema.cols.iter().any(|c| !c.hidden && c.name == n));
+        if let Some(pushed) = super::plan::pushdown::push(sel, &elsewhere) {
+            if explain_only {
+                ctx.explain.push("PREDICATES pushed into derived tables".into());
+            }
+            return select(txn, ctx, params, &pushed, outer, order, explain_only);
+        }
+    }
     // The tables and what each may filter.
     let folded = fold_laterals(&sel.from);
     let from_items = folded.as_slice();

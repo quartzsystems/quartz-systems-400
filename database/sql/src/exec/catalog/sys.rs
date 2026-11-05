@@ -703,14 +703,70 @@ pub fn virtual_table(
             (cols, rows)
         }
         "SYSCOLUMNSTAT" => {
+            // IBM's columns, a row per column of each member: a column
+            // with statistics collected (`plan::stats`, a single-column
+            // statistic each) shows them; the others are null where IBM
+            // lists no row.
+            let int = |nm: &str, digits: u32, nullable: bool| c(nm, DataType::Binary, digits, 0, nullable);
+            let mut dbl = c("AVGDISTINCTPERPAGE", DataType::Float, 8, 0, true);
+            if let Some(f) = dbl.field.as_mut() {
+                f.precision = dds::FloatPrecision::Double;
+            }
+            let mut ratio = dbl.clone();
+            ratio.name = "PAGEVARIANCERATIO".into();
+            let mut id = c("INTERNAL_STATISTICS_ID", DataType::Bytes, 16, 0, true);
+            if let Some(f) = id.field.as_mut() {
+                f.varlen = Some(dds::VarLen { allocated: None });
+            }
             let cols = vec![
                 c("TABLE_SCHEMA", DataType::Char, 128, 0, false),
                 c("TABLE_NAME", DataType::Char, 128, 0, false),
-                c("COLUMN_NAME", DataType::Char, 128, 0, false),
                 c("TABLE_PARTITION", DataType::Char, 128, 0, false),
-                c("NUMBER_DISTINCT_VALUES", DataType::Packed, 20, 0, true),
+                c("PARTITION_TYPE", DataType::Char, 1, 0, false),
+                int("PARTITION_NUMBER", 9, true),
+                int("NUMBER_DISTRIBUTED_PARTITIONS", 9, true),
+                int("NUMBER_COLUMN_NAMES", 9, false),
+                c("COLUMN_NAME", DataType::Char, 1280, 0, false),
+                int("NUMBER_DISTINCT_VALUES", 18, true),
+                c("HIGH2KEY", DataType::Char, 1000, 0, true),
+                c("LOW2KEY", DataType::Char, 1000, 0, true),
+                int("AVERAGE_COLUMN_LENGTH", 9, true),
+                int("MAXIMUM_COLUMN_LENGTH", 9, true),
+                int("LENGTH_AT_90TH_PERCENTILE", 9, true),
+                int("OVERFLOW_ROWS", 18, true),
+                int("NUMBER_NULLS", 18, true),
+                int("SUB_COUNT", 4, true),
+                int("SUB_DELIM_LENGTH", 4, true),
+                int("NUMBER_HISTOGRAM_RANGES", 9, true),
+                int("NUMBER_MOST_FREQUENT_VALUES", 9, true),
+                dbl,
+                ratio,
+                c("STATISTICS_NAME", DataType::Char, 128, 0, true),
+                id,
+                c("STATISTIC_CREATED", DataType::Timestamp, 26, 0, true),
+                c("STATISTIC_CREATOR", DataType::Char, 128, 0, true),
+                c("STATISTIC_LAST_UPDATED", DataType::Timestamp, 26, 0, true),
+                c("STATISTIC_UPDATER", DataType::Char, 128, 0, true),
+                int("STATISTICS_SIZE", 18, true),
+                c("AGING_MODE", DataType::Char, 128, 0, true),
+                c("AGING_STATUS", DataType::Char, 1, 0, true),
+                c("BLOCK_OPTION", DataType::Char, 1, 0, true),
+                c("CURRENT_LAST_CHANGE", DataType::Timestamp, 26, 0, true),
+                int("CURRENT_ROWS", 18, true),
+                int("CURRENT_DELETED_ROWS", 18, true),
+                int("CURRENT_DATA_CHANGES", 18, true),
+                int("STATISTICS_ROWS", 18, true),
+                int("STATISTICS_DELETED_ROWS", 18, true),
+                int("STATISTICS_DATA_CHANGES", 18, true),
+                c("TRANSLATION_ATTRIBUTES", DataType::Char, 128, 0, true),
+                c("TRANSLATION_TABLES", DataType::Char, 1000, 0, true),
+                c("SYSTEM_TABLE_SCHEMA", DataType::Char, 10, 0, false),
+                c("SYSTEM_TABLE_NAME", DataType::Char, 10, 0, false),
+                c("SYSTEM_TABLE_MEMBER", DataType::Char, 10, 0, false),
+                c("SYSTEM_COLUMN_NAME", DataType::Char, 1000, 0, false),
             ];
             let mut rows = Vec::new();
+            let i = |v: u64| Value::int(i64::try_from(v).unwrap_or(i64::MAX));
             for (lib, d) in &all {
                 if d.attr.kind == FileKind::Logical {
                     continue;
@@ -718,14 +774,63 @@ pub fn virtual_table(
                 let Some(fmt) = d.formats.first() else {
                     continue;
                 };
+                let tl = ops::read_header(txn, d.id).map_or(d.id, |(_, h)| h.library);
+                let schema = crate::exec::names::schema_name(txn, tl);
+                let table = crate::exec::names::sql_name(txn, d.id);
                 for m in &d.members {
+                    let now = db::member::Member::open(txn, d, m).ok().map(|x| x.attr().clone());
+                    let (rc, dc, sl) = now.as_ref().map_or((0, 0, 0), |a| (a.record_count, a.deleted_count, a.slots));
                     for f in &fmt.format.fields {
+                        let column = f.alias.clone().unwrap_or_else(|| f.name.to_string());
+                        let st = crate::exec::plan::stats::get(m.object, &f.name.to_string());
+                        let g = |pick: &dyn Fn(&crate::exec::plan::stats::ColumnStats) -> Value| st.as_ref().map_or(Value::Null, pick);
+                        let changes = st.as_ref().map(|st| rc.abs_diff(st.rows) + dc.abs_diff(st.deleted) + sl.abs_diff(st.slots));
                         rows.push(vec![
+                            s(schema.clone()),
+                            s(table.clone()),
+                            s(m.name.to_string()),
+                            s(" "),
+                            Value::int(1),
+                            Value::Null,
+                            Value::int(1),
+                            s(column),
+                            g(&|st| i(st.distinct)),
+                            g(&|_| s("")),
+                            g(&|_| s("")),
+                            g(&|st| i(u64::from(st.avg_len))),
+                            g(&|st| i(u64::from(st.max_len))),
+                            Value::Null,
+                            Value::Null,
+                            g(&|st| i(st.nulls)),
+                            g(&|_| Value::int(-1)),
+                            g(&|_| Value::int(-1)),
+                            g(&|st| i(st.bounds.len() as u64)),
+                            g(&|st| i(st.frequent.len() as u64)),
+                            Value::Null,
+                            Value::Null,
+                            g(&|st| s(st.name(m.object))),
+                            g(&|st| Value::Bin(st.internal_id(m.object).to_vec())),
+                            g(&|st| stamp(st.created)),
+                            g(&|_| s("*SYS")),
+                            g(&|st| stamp(st.updated)),
+                            g(&|_| s("*SYS")),
+                            g(&|_| i(4096)),
+                            g(&|_| s("*SYS")),
+                            g(&|_| s("1")),
+                            g(&|_| s("0")),
+                            Value::Null,
+                            i(rc),
+                            i(dc),
+                            changes.map_or(Value::Null, i),
+                            g(&|st| i(st.rows)),
+                            g(&|st| i(st.deleted)),
+                            g(&|_| Value::int(0)),
+                            Value::Null,
+                            g(&|_| s("")),
                             s(lib.to_string()),
                             s(d.name().to_string()),
-                            s(f.name.to_string()),
                             s(m.name.to_string()),
-                            Value::Null,
+                            s(f.name.to_string()),
                         ]);
                     }
                 }

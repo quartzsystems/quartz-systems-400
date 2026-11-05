@@ -85,6 +85,10 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) -> Resul
     };
     info.set(tag::INDEX, idx.encode());
     sqlinf::save(txn, id, &info, ctx.clock())?;
+    // The key columns' statistics: now for a table of modest size, else
+    // by the collection job.
+    let columns: Vec<String> = i.columns.iter().filter_map(|(c, _)| table.field(&c.value).map(|(_, f)| f.name.to_string())).collect();
+    super::plan::stats::on_index(txn, &table, &columns, ctx.clock())?;
     Ok(())
 }
 

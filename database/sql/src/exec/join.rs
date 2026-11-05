@@ -7,10 +7,14 @@
 //! walked depth first, each `WHERE` conjunct tested as soon as the
 //! items it names are bound. Neither builds the cross product. Where a
 //! conjunct is an equality between a column of the rows so far and a
-//! column of the next item, that item's rows are found by key (a hash
-//! of the column's values) instead of tried one by one; every condition
+//! column of the next item, that item's rows may be found by key (a hash
+//! of the column's values, or a sort-merge of both sides) instead of
+//! tried one by one, whichever costs least (`method`); every condition
 //! is still evaluated on the rows found, so the answer and its order are
 //! the nested loop's.
+
+mod merge;
+pub mod method;
 
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -22,6 +26,7 @@ use super::mem::Charge;
 use crate::ast::{CmpOp, Expr, JoinKind};
 use crate::error::Result;
 use crate::value::Value;
+pub use method::Method;
 
 /// Rows of the next item by the key of one column.
 struct Probe {
@@ -60,6 +65,98 @@ fn column(schema: &Schema, e: &Expr) -> Option<usize> {
         .flatten()
 }
 
+/// The equalities of `preds` between a column of `ls` only and a
+/// column of `rs` only: (left column, right column).
+fn equalities(preds: &[&Expr], ls: &Schema, rs: &Schema) -> Vec<(usize, usize)> {
+    let mut out = Vec::new();
+    for p in preds {
+        let Expr::Compare(x, CmpOp::Eq, y, None) = p else {
+            continue;
+        };
+        let at = |e: &Expr| (column(ls, e), column(rs, e));
+        if let ((Some(left), None), (None, Some(col))) | ((None, Some(col)), (Some(left), None)) = (at(x), at(y)) {
+            out.push((left, col));
+        }
+    }
+    out
+}
+
+/// Whether `preds` hold an equality of a column of `ls` and one of `rs`.
+pub(super) fn equality_in(preds: &[Expr], ls: &Schema, rs: &Schema) -> bool {
+    let refs: Vec<&Expr> = preds.iter().collect();
+    !equalities(&refs, ls, rs).is_empty()
+}
+
+/// What a hash table over `n` right rows holds, near enough.
+fn hash_bytes(n: usize) -> u64 {
+    u64::try_from(n).unwrap_or(u64::MAX).saturating_mul(48)
+}
+
+/// How the rows a left row may match are found.
+enum Finder {
+    /// Every right row.
+    All,
+    Hash(Probe),
+    Merge(merge::Runs),
+}
+
+impl Finder {
+    /// Choose by cost and build. `left_sorted`/`right_sorted` are
+    /// worked out only when a merge could win.
+    #[allow(clippy::too_many_arguments)]
+    fn build(
+        ev: &mut Evaluator<'_>,
+        preds: &[&Expr],
+        ls: &Schema,
+        rs: &Schema,
+        left: &[Row],
+        right: &[Row],
+        goal: Option<u64>,
+    ) -> Result<(Method, Self)> {
+        let eqs = equalities(preds, ls, rs);
+        let n = |x: usize| u64::try_from(x).unwrap_or(u64::MAX);
+        let room = n(ev.ctx.charge().room());
+        let mut inputs = method::Inputs {
+            left: n(left.len()),
+            right: n(right.len()),
+            equality: !eqs.is_empty(),
+            hash_bytes: hash_bytes(right.len()),
+            room,
+            goal,
+            ..method::Inputs::default()
+        };
+        if let Some(&(lc, rc)) = eqs.first()
+            && method::choose(&inputs) != Method::NestedLoop
+        {
+            inputs.left_sorted = merge::in_order(left.iter().map(|r| &r[lc]));
+            inputs.right_sorted = merge::in_order(right.iter().map(|r| &r[rc]));
+        }
+        let m = method::choose(&inputs);
+        match m {
+            Method::NestedLoop => Ok((m, Self::All)),
+            Method::Hash => match Probe::build(ev.ctx.charge(), preds, ls, rs, right)? {
+                Some(p) => Ok((m, Self::Hash(p))),
+                None => Ok((Method::NestedLoop, Self::All)),
+            },
+            Method::Merge => {
+                let (lc, rc) = eqs[0];
+                match merge::Runs::build(ev.ctx.charge(), left, lc, inputs.left_sorted, right, rc, inputs.right_sorted)? {
+                    Some(r) => Ok((m, Self::Merge(r))),
+                    None => Ok((Method::NestedLoop, Self::All)),
+                }
+            }
+        }
+    }
+
+    fn lookup(&self, li: usize, l: &Row) -> Option<&[usize]> {
+        match self {
+            Self::All => None,
+            Self::Hash(p) => p.lookup(l),
+            Self::Merge(r) => r.lookup(li),
+        }
+    }
+}
+
 impl Probe {
     /// From the first equality of `preds` between a column of `ls` only
     /// and a column of `rs` only whose right values hash alike.
@@ -71,16 +168,7 @@ impl Probe {
         right: &[Row],
     ) -> Result<Option<Self>> {
         let mut charge = charge;
-        for p in preds {
-            let Expr::Compare(x, CmpOp::Eq, y, None) = p else {
-                continue;
-            };
-            let at = |e: &Expr| (column(ls, e), column(rs, e));
-            let (((Some(left), None), (None, Some(col))) | ((None, Some(col)), (Some(left), None))) =
-                (at(x), at(y))
-            else {
-                continue;
-            };
+        for (left, col) in equalities(preds, ls, rs) {
             let mut rows: HashMap<String, Vec<usize>> = HashMap::new();
             let mut kind = None;
             let mut usable = true;
@@ -180,7 +268,9 @@ pub(super) fn join(
     if let Some(e) = on {
         conjuncts(e, &mut parts);
     }
-    let probe = Probe::build(ev.ctx.charge(), &parts, ls, rs, right_rows)?;
+    let goal = ev.ctx.plan.goal;
+    let (method, finder) = Finder::build(ev, &parts, ls, rs, left_rows, right_rows, goal)?;
+    ev.ctx.plan.joined(method);
     let mut charge = ev.ctx.charge();
     let rnull = vec![Value::Null; rs.cols.len()];
     let keeps_match = matches!(
@@ -194,9 +284,9 @@ pub(super) fn join(
     // Rows already read: nothing held from the store, a yield between
     // any two pairs.
     let mut out = Vec::new();
-    for l in left_rows {
+    for (li, l) in left_rows.iter().enumerate() {
         let mut matched = false;
-        let cands = probe.as_ref().and_then(|p| p.lookup(l)).unwrap_or(&all);
+        let cands = finder.lookup(li, l).unwrap_or(&all);
         for &ri in cands {
             ev.ctx.tick(txn)?;
             let mut combined = l.clone();
@@ -276,13 +366,27 @@ pub(super) fn product(
     let mut probes = vec![None];
     for k in 1..items.len() {
         let refs: Vec<&Expr> = preds[k].iter().collect();
-        probes.push(Probe::build(
-            ev.ctx.charge(),
-            &refs,
-            &schemas[k - 1],
-            &items[k].schema,
-            &items[k].rows,
-        )?);
+        // The rows bound so far are made as the walk goes: the largest
+        // item before stands for them. A merge needs them all at once,
+        // so the walk weighs the loop against the hash join only.
+        let n = |x: usize| u64::try_from(x).unwrap_or(u64::MAX);
+        let before = items[..k].iter().map(|it| it.rows.len()).max().unwrap_or(0);
+        let inputs = method::Inputs {
+            left: n(before),
+            right: n(items[k].rows.len()),
+            equality: !equalities(&refs, &schemas[k - 1], &items[k].schema).is_empty(),
+            hash_bytes: hash_bytes(items[k].rows.len()),
+            room: n(ev.ctx.charge().room()),
+            goal: ev.ctx.plan.goal,
+            ..method::Inputs::default()
+        };
+        let probe = if method::choose(&inputs) == Method::NestedLoop {
+            None
+        } else {
+            Probe::build(ev.ctx.charge(), &refs, &schemas[k - 1], &items[k].schema, &items[k].rows)?
+        };
+        ev.ctx.plan.joined(if probe.is_some() { Method::Hash } else { Method::NestedLoop });
+        probes.push(probe);
     }
     let first = std::mem::take(&mut items[0].rows);
     let walk = Walk {

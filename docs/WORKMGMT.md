@@ -44,7 +44,7 @@ say hello; from then on everything it does to objects is a request
 
 | Role | Jobs | Runs |
 |---|---|---|
-| `SYSTEM` | `QSYSARB`-`QSYSARB5`, `QLUS`, `QDBSRV01`-`05`, `QSPLMAINT`, `QALERT`, `QSYSCOMM1` | its system task, or waits to be ended |
+| `SYSTEM` | `QSYSARB`-`QSYSARB5`, `QLUS`, `QDBSRV01`-`05`, `QDBFSTCCOL`, `QSPLMAINT`, `QALERT`, `QSYSCOMM1` | its system task, or waits to be ended |
 | `MONITOR` | one per active subsystem, type `SBS` | the subsystem: pools, autostart jobs, job queues, ending |
 | `BATCH` | routed jobs: autostart, from job queues, writers | the routing entry's program (below) |
 | `INTER` | the console display's signed-on job | `QCMD`'s Command Entry |
@@ -964,9 +964,10 @@ After the storage service starts, `slic` (job `SCPF`) starts what the
 machine runs before anyone signs on, in order:
 
 1. The system jobs, type `SYS`, in pool `*MACHINE`: `QSYSARB` to
-   `QSYSARB5`, `QLUS`, `QDBSRV01` to `QDBSRV05`, `QSPLMAINT`, `QALERT`,
+   `QSYSARB5`, `QLUS`, `QDBSRV01` to `QDBSRV05`, `QDBFSTCCOL`, `QSPLMAINT`, `QALERT`,
    `QSYSCOMM1` (`C6001030`). `QSPLMAINT` deletes spooled files past
-   their `EXPDATE` every minute; the others wait for work that later
+   their `EXPDATE` every minute; `QDBFSTCCOL` collects the column statistics
+   the SQL planner asked for, and those gone stale, every minute; the others wait for work that later
    phases bring.
 2. `QSYSWRK`, whose autostart job `QSYSSCD` runs the job schedule.
 3. The controlling subsystem `QCTLSBSD` names (`C6001040`). Its

@@ -57,6 +57,12 @@ impl Charge {
         Ok(())
     }
 
+    /// Bytes the statement may still take.
+    #[must_use]
+    pub fn room(&self) -> usize {
+        self.limit.saturating_sub(self.meter.get())
+    }
+
     /// Everything given back.
     pub fn clear(&mut self) {
         self.meter.set(self.meter.get().saturating_sub(self.bytes));

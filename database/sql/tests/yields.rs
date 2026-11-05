@@ -318,12 +318,14 @@ fn an_aggregate_over_exists_never_holds_others_up() {
     let f = fixture();
     // The one row's subquery reads 300 rows of K, each with a subquery
     // reading all of K (no path over NAME): the grouping step's input
-    // is long to make, all of it inside one outer row.
+    // is long to make, all of it inside one outer row. The inner
+    // subquery's range on the outer row keeps it from being decorrelated
+    // (`plan::subq`), which would make it short.
     let (gap, total, yields, r) = longest_wait(
         &f,
         Op::Query,
         "SELECT COUNT(*) FROM QSTEST.T A WHERE A.ID <= 1 AND EXISTS (SELECT 1 FROM QSTEST.K B WHERE B.ID <= 300 \
-         AND EXISTS (SELECT 1 FROM QSTEST.K C WHERE C.NAME = B.NAME AND C.ID = -A.ID))",
+         AND EXISTS (SELECT 1 FROM QSTEST.K C WHERE C.NAME = B.NAME AND C.ID <= -A.ID))",
     );
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     assert_eq!(r.rows[0][0].as_i64().unwrap(), 0);
