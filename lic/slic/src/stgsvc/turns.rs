@@ -86,6 +86,17 @@ pub fn job_log_of(job: &str, me: u32) -> Option<sql::exec::catalog::services::ho
     })
 }
 
+/// The security principal of job `number`'s connection, from the
+/// parked service; `None` when nothing is parked or no such job.
+pub fn principal_of(number: u32) -> Option<sec::auth::principal::Principal> {
+    PARKED.with(|p| {
+        let b = p.try_borrow().ok()?;
+        let svc = b.as_ref()?;
+        let c = svc.conns.iter().filter_map(|c| c.ctx.as_ref()).find(|c| c.job.number == number && !c.thread)?;
+        Some(c.session.borrow().principal.clone())
+    })
+}
+
 fn unpark() -> Box<Svc> {
     PARKED
         .with(|p| p.borrow_mut().take())

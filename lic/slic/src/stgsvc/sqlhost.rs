@@ -209,4 +209,83 @@ impl SystemHost for SqlHost {
                 .collect())
         })
     }
+
+    fn ifs_objects(&self, path: &str, subtree: bool) -> Option<Result<host::IfsWalk, String>> {
+        self.with_ifs(|c| {
+            let start = c.stat(path, false).map_err(|e| e.to_string())?;
+            let mut out = vec![(path.to_string(), Ok(object(c, path, &start)))];
+            if subtree && start.objtype == "*DIR" {
+                let walk = c.walk(path, ifs::ops::WalkOpts::default(), usize::MAX).map_err(|e| e.to_string())?;
+                for w in walk.into_iter().filter(|w| w.path != path) {
+                    let o = w.stat.as_ref().map(|s| object(c, &w.path, s)).map_err(ToString::to_string);
+                    out.push((w.path, o));
+                }
+            }
+            Ok(out)
+        })
+    }
+
+    fn ifs_read(&self, path: &str) -> Option<Result<(Vec<u8>, u16), String>> {
+        self.with_ifs(|c| {
+            let st = c.stat(path, true).map_err(|e| e.to_string())?;
+            let fd = c.open(path, ifs::ops::OpenArgs::new(ifs::ops::flags::O_RDONLY)).map_err(|e| e.to_string())?;
+            let data = ifs::client::read_all(c, fd);
+            let _ = c.close(fd);
+            Ok((data.map_err(|e| e.to_string())?, st.ccsid))
+        })
+    }
+
+    fn ifs_write(&self, path: &str, data: &[u8], append: bool, ccsid: u16) -> Option<Result<(), String>> {
+        use ifs::ops::flags::{O_APPEND, O_CCSID, O_CREAT, O_TRUNC, O_WRONLY};
+        self.with_ifs(|c| {
+            // A new file is tagged with `ccsid`; the bytes go as given.
+            let flags = O_WRONLY | O_CREAT | O_CCSID | if append { O_APPEND } else { O_TRUNC };
+            let args = ifs::ops::OpenArgs::new(flags).mode(0o644).conv(u32::from(ccsid));
+            let fd = c.open(path, args).map_err(|e| e.to_string())?;
+            let w = ifs::client::write_all(c, fd, data);
+            let closed = c.close(fd);
+            w.and(closed).map_err(|e| e.to_string())
+        })
+    }
+}
+
+impl SqlHost {
+    /// Run `f` against the IFS as the asking job.
+    fn with_ifs<T>(&self, f: impl FnOnce(&dyn ifs::client::IfsClient) -> Result<T, String>) -> Option<Result<T, String>> {
+        let principal = super::turns::principal_of(self.job)?;
+        let job = self.job;
+        with_system(|system| {
+            let handle = system.jobs.get(job).map_or(u64::from(job), |j| j.handle);
+            let ccsid = super::ifs::job_ccsid(system, job);
+            super::ifs::with_client(system, handle, super::ifs::owner_of(handle), &principal, ccsid, f)
+        })
+    }
+}
+
+/// Nanoseconds since the epoch as whole seconds.
+fn secs(ns: i64) -> u64 {
+    u64::try_from(ns.div_euclid(1_000_000_000)).unwrap_or(0)
+}
+
+/// An IFS object as the services describe it.
+fn object(c: &dyn ifs::client::IfsClient, path: &str, s: &ifs::ops::Stat) -> host::IfsObject {
+    host::IfsObject {
+        path: path.to_string(),
+        kind: s.objtype.clone(),
+        owner: s.owner.clone(),
+        group: s.group.clone().unwrap_or_default(),
+        size: s.size,
+        allocated: s.allocsize,
+        created: secs(s.crtime),
+        changed: secs(s.ctime),
+        accessed: secs(s.atime),
+        data_changed: secs(s.mtime),
+        ccsid: s.ccsid,
+        links: s.nlink,
+        file_id: s.ino,
+        mode: s.mode,
+        link_target: if s.objtype == "*SYMLNK" { c.readlink(path).unwrap_or_default() } else { String::new() },
+        text: String::new(),
+        autl: String::new(),
+    }
 }

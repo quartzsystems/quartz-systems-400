@@ -225,6 +225,27 @@ impl SystemHost for Mock {
         }]))
     }
 
+    fn ifs_objects(&self, path: &str, subtree: bool) -> Option<Result<host::IfsWalk, String>> {
+        if path != "/home" {
+            return Some(Err("ENOENT".into()));
+        }
+        let o = |p: &str, kind: &str, size: u64| host::IfsObject { path: p.into(), kind: kind.into(), owner: "CODY".into(), size, mode: 0o755, links: 1, ..host::IfsObject::default() };
+        let mut v = vec![("/home".to_string(), Ok(o("/home", "*DIR", 0)))];
+        if subtree {
+            v.push(("/home/a.txt".to_string(), Ok(o("/home/a.txt", "*STMF", 12))));
+            v.push(("/home/secret".to_string(), Err("EACCES".into())));
+        }
+        Some(Ok(v))
+    }
+
+    fn ifs_read(&self, path: &str) -> Option<Result<(Vec<u8>, u16), String>> {
+        match path {
+            "/home/a.txt" => Some(Ok((b"one\r\ntwo\nthree".to_vec(), 1208))),
+            "/home/e.txt" => Some(Ok((vec![0xC1, 0x15, 0xC2], 37))),
+            _ => Some(Err("ENOENT".into())),
+        }
+    }
+
     fn system_status(&self) -> Option<SystemStatus> {
         Some(SystemStatus {
             total_jobs: 40,
@@ -591,4 +612,24 @@ fn history_log_info() {
     );
     assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.HISTORY_LOG_INFO(TIMESTAMP('2025-01-01-00.00.00'))) X"), vec![row(&["2"])]);
     assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.HISTORY_LOG_INFO(EOF_DELAY => 5)) X"), -443);
+}
+
+#[test]
+fn ifs_services() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT PATH_NAME, OBJECT_TYPE, DATA_SIZE, OBJECT_OWNER FROM TABLE(QSYS2.IFS_OBJECT_STATISTICS('/home')) X"),
+        vec![row(&["/home", "*DIR", "0", "CODY"]), row(&["/home/a.txt", "*STMF", "12", "CODY"])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.IFS_OBJECT_STATISTICS('/home', SUBTREE_DIRECTORIES => 'NO')) X"), vec![row(&["1"])]);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.IFS_OBJECT_STATISTICS('/home', OBJECT_TYPE_LIST => '*STMF')) X"), vec![row(&["1"])]);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.IFS_OBJECT_STATISTICS('/home', IGNORE_ERRORS => 'NO')) X"), -443);
+    assert_eq!(
+        db.rows("SELECT LINE_NUMBER, LINE FROM TABLE(QSYS2.IFS_READ('/home/a.txt')) X"),
+        vec![row(&["1", "one"]), row(&["2", "two"]), row(&["3", "three"])]
+    );
+    assert_eq!(db.rows("SELECT LINE FROM TABLE(QSYS2.IFS_READ_UTF8(PATH_NAME => '/home/e.txt')) X"), vec![row(&["A"]), row(&["B"])]);
+    assert_eq!(db.rows("SELECT HEX(LINE) FROM TABLE(QSYS2.IFS_READ_BINARY('/home/e.txt')) X"), vec![row(&["C115C2"])]);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.IFS_READ('/nope')) X"), vec![row(&["0"])]);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.IFS_READ('/nope', IGNORE_ERRORS => 'NO')) X"), -443);
 }

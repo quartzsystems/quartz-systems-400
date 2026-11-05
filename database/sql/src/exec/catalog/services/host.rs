@@ -176,6 +176,10 @@ pub struct Ptf {
     pub changed: u64,
 }
 
+/// The objects a walk found: each path with its attributes or why
+/// they could not be read.
+pub type IfsWalk = Vec<(String, Result<IfsObject, String>)>;
+
 /// An IFS object's attributes.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct IfsObject {
@@ -298,14 +302,15 @@ pub trait SystemHost {
         None
     }
 
-    /// An IFS object and, to `depth` levels below a directory, what it
-    /// holds; `Err` with the errno text when it cannot be read.
-    fn ifs_objects(&self, _path: &str, _depth: u32) -> Option<Result<Vec<IfsObject>, String>> {
+    /// An IFS object and, when `subtree`, everything below it as a
+    /// walk finds it: each path with its attributes or why they could
+    /// not be read; `Err` with the errno text when the start cannot be.
+    fn ifs_objects(&self, _path: &str, _subtree: bool) -> Option<Result<IfsWalk, String>> {
         None
     }
 
-    /// A stream file's bytes.
-    fn ifs_read(&self, _path: &str) -> Option<Result<Vec<u8>, String>> {
+    /// A stream file's bytes and its CCSID.
+    fn ifs_read(&self, _path: &str) -> Option<Result<(Vec<u8>, u16), String>> {
         None
     }
 
