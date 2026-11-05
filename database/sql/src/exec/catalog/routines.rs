@@ -270,6 +270,8 @@ fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
         col(alias, "AS_LOCATOR", T::Varchar(3), false),
         col(alias, "IASP_NUMBER", T::Small, false),
         col(alias, "NORMALIZE_DATA", T::Varchar(3), true),
+        // 7.2 and later: a parameter's DEFAULT as written.
+        col(alias, "DEFAULT", T::Varchar(2000), true),
     ];
     let mut rows: Vec<Row> = Vec::new();
     for f in all {
@@ -320,6 +322,7 @@ fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
                 s("NO"),
                 int(0),
                 s("NO"),
+                p.default.clone().map_or(Value::Null, s),
             ]);
         }
     }

@@ -53,6 +53,8 @@ pub static PARM_LAYOUT: Layout = Layout {
         field("type_len", 6, 2),
         Field { name: "name", offset: Some(8), size: None },
         Field { name: "type", offset: None, size: None },
+        Field { name: "default_len", offset: None, size: Some(2) },
+        Field { name: "default", offset: None, size: None },
     ],
 };
 
@@ -270,6 +272,8 @@ pub struct ParmDef {
     pub name: String,
     /// Its type as SQL writes it (`DECIMAL(9, 2)`).
     pub ty: String,
+    /// `DEFAULT expr`: the expression as written.
+    pub default: Option<String>,
 }
 
 impl ParmDef {
@@ -284,6 +288,10 @@ impl ParmDef {
         out.extend_from_slice(&short(&self.ty).to_le_bytes());
         out.extend_from_slice(self.name.as_bytes());
         out.extend_from_slice(self.ty.as_bytes());
+        if let Some(d) = &self.default {
+            out.extend_from_slice(&short(d).to_le_bytes());
+            out.extend_from_slice(d.as_bytes());
+        }
         out
     }
 
@@ -295,7 +303,14 @@ impl ParmDef {
         let mut at = 8;
         let name = text(b, &mut at, u16_of(b, 4).into(), "parameter name")?;
         let ty = text(b, &mut at, u16_of(b, 6).into(), "parameter type")?;
-        Ok(Self { ordinal: u16_of(b, 0), mode: b[2], role: b[3], name, ty })
+        let default = if b.len() >= at + 2 {
+            let n = u16_of(b, at).into();
+            at += 2;
+            Some(text(b, &mut at, n, "parameter default")?)
+        } else {
+            None
+        };
+        Ok(Self { ordinal: u16_of(b, 0), mode: b[2], role: b[3], name, ty, default })
     }
 }
 
@@ -431,7 +446,10 @@ mod tests {
                 body_text: "BEGIN END".into(),
                 ..RoutineDef::default()
             },
-            parms: vec![ParmDef { ordinal: 1, mode: 3, role: 0, name: "ID".into(), ty: "INTEGER".into() }],
+            parms: vec![
+                ParmDef { ordinal: 1, mode: 3, role: 0, name: "ID".into(), ty: "INTEGER".into(), default: None },
+                ParmDef { ordinal: 2, mode: 1, role: 0, name: "D".into(), ty: "DATE".into(), default: Some("CURRENT DATE".into()) },
+            ],
             options: vec![("COMMIT".into(), "*NONE".into())],
         };
         let mut info = super::super::SqlInfo::new(super::super::Kind::Procedure);

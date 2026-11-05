@@ -10,7 +10,7 @@ use crate::ast::{
     Call, CreateRoutine, DropRoutine, Ident, Language, Parm, ParmMode, ParmStyle, Returns,
     RoutineBody, RoutineKind, RoutineOptions, Signal, SignalValue, SqlAccess, Statement,
 };
-use crate::error::Result;
+use crate::error::{Result, SqlError};
 use crate::lex::Tok;
 
 impl Parser {
@@ -120,10 +120,17 @@ impl Parser {
             if self.eat_words(&["AS", "LOCATOR"]) {
                 return Err(Self::unsupported("parameters AS LOCATOR"));
             }
-            if self.is_word("DEFAULT") {
-                return Err(Self::unsupported("parameter defaults"));
-            }
-            out.push(Parm { mode, name, ty });
+            let default = if self.eat_word("DEFAULT") {
+                if mode == ParmMode::Out {
+                    return Err(SqlError::Coded { code: -469, state: "42886", what: "an OUT parameter has no default".into() });
+                }
+                let m = self.mark();
+                self.expr()?;
+                Some(self.text_from(m))
+            } else {
+                None
+            };
+            out.push(Parm { mode, name, ty, default });
             if self.eat_sym(")") {
                 return Ok(out);
             }

@@ -101,21 +101,21 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
             if language == Language::Sql {
                 return Err(SqlError::Coded { code: -104, state: "42601", what: "an SQL routine's parameters need names".into() });
             }
-            parms.push(ParmDef { ordinal: ordinal(i), mode: model::mode_code(p.mode), role: 0, name: String::new(), ty: pl::types::type_text(&p.ty) });
+            parms.push(ParmDef { ordinal: ordinal(i), mode: model::mode_code(p.mode), role: 0, name: String::new(), ty: pl::types::type_text(&p.ty), default: p.default.clone() });
             continue;
         };
         if r.parms[..i].iter().any(|q| q.name.as_ref() == Some(n)) {
             return Err(SqlError::Coded { code: -590, state: "42734", what: format!("parameter {} is named twice", n.value) });
         }
-        parms.push(ParmDef { ordinal: ordinal(i), mode: model::mode_code(p.mode), role: 0, name: n.value.clone(), ty: pl::types::type_text(&p.ty) });
+        parms.push(ParmDef { ordinal: ordinal(i), mode: model::mode_code(p.mode), role: 0, name: n.value.clone(), ty: pl::types::type_text(&p.ty), default: p.default.clone() });
     }
     if let Some(Returns::Scalar(t, _)) = &r.returns {
         // A function's result follows its parameters (`ROW_TYPE` C).
-        parms.push(ParmDef { ordinal: ordinal(r.parms.len()), mode: 2, role: 2, name: String::new(), ty: pl::types::type_text(t) });
+        parms.push(ParmDef { ordinal: ordinal(r.parms.len()), mode: 2, role: 2, name: String::new(), ty: pl::types::type_text(t), default: None });
     }
     if let Some(Returns::Table(cols)) = &r.returns {
         for (i, (n, t)) in cols.iter().enumerate() {
-            parms.push(ParmDef { ordinal: ordinal(r.parms.len() + i), mode: 2, role: 1, name: n.value.clone(), ty: pl::types::type_text(t) });
+            parms.push(ParmDef { ordinal: ordinal(r.parms.len() + i), mode: 2, role: 1, name: n.value.clone(), ty: pl::types::type_text(t), default: None });
         }
     }
     let mut flags = 0u16;

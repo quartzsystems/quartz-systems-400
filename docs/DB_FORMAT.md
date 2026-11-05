@@ -965,6 +965,8 @@ scalar function's result.
 | 6 | 2 | type_len | |
 | 8 | variable | name | UTF-8 |
 | — | variable | type | the type as SQL writes it, UTF-8 (`DECIMAL(9, 2)`) |
+| — | 2 | default_len | present only for a parameter with `DEFAULT` |
+| — | variable | default | the default's expression as written, UTF-8 |
 
 ### `SqlOptions` (variable)
 

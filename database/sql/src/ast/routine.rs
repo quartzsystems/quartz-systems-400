@@ -39,6 +39,8 @@ pub struct Parm {
     pub name: Option<Ident>,
     /// Its type.
     pub ty: TypeSpec,
+    /// `DEFAULT expr`: the expression's text.
+    pub default: Option<String>,
 }
 
 /// Procedure or function.

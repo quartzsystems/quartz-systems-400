@@ -98,7 +98,16 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value])
     let plan = if all.is_empty() {
         program_call(txn, ctx, c, params)?
     } else {
-        let Some(f) = all.iter().find(|f| usize::from(f.routine.def.parm_count) == c.args.len()) else {
+        // The procedure the arguments fit: by position, then by name,
+        // the parameters left out taking their defaults.
+        let mut bound = None;
+        for f in &all {
+            if let Some(b) = bind(f, &c.args)? {
+                bound = Some((f, b));
+                break;
+            }
+        }
+        let Some((f, chosen)) = bound else {
             return Err(SqlError::Coded {
                 code: -440,
                 state: "42884",
@@ -113,8 +122,20 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value])
             _ => CallStyle::Sql,
         };
         let mut args = Vec::new();
-        for (p, a) in f.routine.parms.iter().filter(|p| p.role == 0).zip(&c.args) {
+        for (p, a) in f.routine.parms.iter().filter(|p| p.role == 0).zip(&chosen) {
             let ty = parse_type(&p.ty)?;
+            let default;
+            let a = match a {
+                Some(a) if !matches!(a, Expr::Default) => *a,
+                // DEFAULT, or left out: the parameter's default, else null.
+                _ => {
+                    default = match &p.default {
+                        Some(t) => crate::parse::Parser::new(t, ctx.naming)?.expr()?,
+                        None => Expr::Literal(Literal::Null),
+                    };
+                    &default
+                }
+            };
             args.push(argument(txn, ctx, params, model::mode_of(p.mode), &ty, a)?);
         }
         CallPlan {
@@ -138,6 +159,38 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value])
     }
     ctx.routine.pending = Some(Box::new(plan));
     Ok(Outcome::Done)
+}
+
+/// The arguments of a procedure's parameters in order (`None` for one
+/// left out, which has a default), or `None` when they do not fit it.
+/// A name no parameter has is `SQ20483`.
+fn bind<'a>(f: &find::Found, args: &'a [Expr]) -> Result<Option<Vec<Option<&'a Expr>>>> {
+    let parms: Vec<_> = f.routine.parms.iter().filter(|p| p.role == 0).collect();
+    let mut out: Vec<Option<&Expr>> = vec![None; parms.len()];
+    let mut at = 0;
+    for a in args {
+        match a {
+            Expr::Function(n) if n.name.starts_with("=>") && n.args.len() == 1 => {
+                let name = &n.name[2..];
+                let Some(k) = parms.iter().position(|p| p.name == name) else {
+                    return Err(SqlError::Coded { code: -20_483, state: "4274K", what: format!("procedure {} has no parameter {name}", f.routine.def.name) });
+                };
+                if out[k].is_some() {
+                    return Ok(None);
+                }
+                out[k] = Some(&n.args[0]);
+            }
+            e => {
+                if at >= parms.len() {
+                    return Ok(None);
+                }
+                out[at] = Some(e);
+                at += 1;
+            }
+        }
+    }
+    let fits = parms.iter().zip(&out).all(|(p, a)| a.is_some() || p.default.is_some());
+    Ok(fits.then_some(out))
 }
 
 /// `PREPARE` of a `CALL` with markers: a procedure of the name must

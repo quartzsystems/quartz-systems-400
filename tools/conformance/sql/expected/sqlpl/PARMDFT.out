@@ -1,0 +1,58 @@
+-- captured from pub400
+> CREATE TABLE {lib}.QPD_OUT (A INTEGER, B VARCHAR(10), C INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPD_P1 (IN A INTEGER, IN B VARCHAR(10) DEFAULT 'd
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPD_P2 (IN A INTEGER DEFAULT 1, OUT B INTEGER DEF
+sqlcode -469 sqlstate 42886 msgid SQL0469
+> CREATE PROCEDURE {lib}.QPD_P3 (IN A INTEGER DEFAULT NULL, IN D DATE DEFA
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPD_P1(1)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPD_P1(2, 'x')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPD_P1(3, 'y', 9)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPD_P1(4, C => 5)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPD_P1(C => 6, A => 5)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPD_P1(6, DEFAULT, 8)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPD_P1()
+sqlcode -440 sqlstate 42884 msgid SQL0440
+> CALL {lib}.QPD_P1(7, D => 1)
+sqlcode -20483 sqlstate 4274K msgid SQ20483
+> CALL {lib}.QPD_P1(8, 'z', 9, 10)
+sqlcode -440 sqlstate 42884 msgid SQL0440
+> CALL {lib}.QPD_P3()
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT A, B, C FROM {lib}.QPD_OUT ORDER BY A
+sqlcode 0 sqlstate 00000 msgid -
+# A INTEGER
+# B VARCHAR(10)
+# C INTEGER
+| 1 | 'dft' | 7 |
+| 2 | 'x' | 7 |
+| 3 | 'y' | 9 |
+| 4 | 'dft' | 5 |
+| 5 | 'dft' | 6 |
+| 6 | 'dft' | 8 |
+| NULL | 'today' | NULL |
+> SELECT ORDINAL_POSITION, PARAMETER_NAME, DEFAULT FROM QSYS2.SYSPARMS WHE
+sqlcode 0 sqlstate 00000 msgid -
+# ORDINAL_POSITION INTEGER NOT NULL
+# PARAMETER_NAME VARCHAR(128)
+# DEFAULT NCLOB(65536)
+| 1 | 'A' | NULL |
+| 2 | 'B' | '''dft''' |
+| 3 | 'C' | '7' |
+> DROP PROCEDURE {lib}.QPD_P1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPD_P2
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP PROCEDURE {lib}.QPD_P3
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPD_OUT
+sqlcode 0 sqlstate 00000 msgid -
