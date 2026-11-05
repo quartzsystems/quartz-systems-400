@@ -11,7 +11,7 @@
 #![allow(clippy::result_large_err)]
 
 use crate::sec::Proof;
-use crate::sql::{Column, Sqlca, Value};
+use crate::sql::{ColType, Column, Sqlca, Value};
 
 /// An outcome or the SQLCA of the failure.
 pub type SqlResult<T> = Result<T, Sqlca>;
@@ -56,6 +56,13 @@ pub trait SqlBackend {
     fn open_result_set(&mut self, section: &Section, index: usize) -> SqlResult<Vec<Column>> {
         let _ = (section, index);
         Err(Sqlca::error(-501, "24501", "no result set"))
+    }
+    /// The parameters of the `CALL` last run at `section`, for
+    /// `OUTEXP`: each one's type and its value after the call (null for
+    /// an input-only one). Refused by default.
+    fn call_outputs(&mut self, section: &Section) -> SqlResult<Vec<(ColType, Value)>> {
+        let _ = section;
+        Err(Sqlca::error(-84, "42612", "CALL output values over DRDA (OUTEXP)"))
     }
     /// Commit.
     fn commit(&mut self) -> SqlResult<()>;

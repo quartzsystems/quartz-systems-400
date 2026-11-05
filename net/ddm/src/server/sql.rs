@@ -19,10 +19,11 @@ use super::{Section, Session};
 use crate::cp::{cmd, obj, param, rm, svrcod};
 use crate::fdoca::desc::{self, Field};
 use crate::fdoca::sqlda::{self, Sqldard};
+use crate::fdoca::types::drda;
 use crate::fdoca::{Reader, Writer, rows, sqlca};
 use crate::msg::sqlcmd::sqlstt_bytes;
 use crate::msg::{Pkgnamcsn, reply};
-use crate::sql::{Sqlca, Value};
+use crate::sql::{ColType, Sqlca, Value};
 use crate::wire::{DssType, Object};
 
 /// Limited block query protocol.
@@ -73,6 +74,56 @@ impl Session {
         (
             DssType::Object,
             Object::data(obj::SQLCARD, sqlca::sqlcard(ca.as_ref(), crate::fdoca::Repr::default(), self.sqlam)),
+        )
+    }
+
+    /// A `CALL`'s output values as the primary answers `OUTEXP`
+    /// (`tools/conformance/ddm/outexp-primary.txt`): every parameter by
+    /// its early descriptor, nullable, the SQLCA (null when clean), then
+    /// the row, an input-only parameter null.
+    fn sqldtard(&self, ca: &Sqlca, outs: &[(ColType, Value)]) -> (DssType, Object) {
+        let fields: Vec<Field> = outs
+            .iter()
+            .map(|(t, _)| {
+                let mut t = *t;
+                t.nullable = true;
+                let mut f = Field::of(&t);
+                // A varying character value goes as a long one (0x35).
+                if u16::from(f.drda & !1) == drda::VARCHAR {
+                    f.drda = u8::try_from(drda::LONG).unwrap_or(f.drda) | 1;
+                }
+                f
+            })
+            .collect();
+        let mut w = Writer::new(crate::fdoca::Repr::default());
+        let mut ca = ca.clone();
+        if ca.rdbname.is_empty() {
+            ca.rdbname.clone_from(&self.cfg.rdb);
+        }
+        let clean = ca.sqlcode == 0 && ca.sqlwarn.iter().all(|c| *c == b' ');
+        sqlca::write(&mut w, (!clean).then_some(&ca), self.sqlam);
+        w.u8(rows::PRESENT);
+        for (f, (_, v)) in fields.iter().zip(outs) {
+            let mut one = Writer::new(crate::fdoca::Repr::default());
+            if let Err(e) = rows::write_value(&mut one, f, v) {
+                let bad = Sqlca::error(-30_000, "58008", &e.to_string());
+                return self.sqlcard(Some(&bad));
+            }
+            // A positive packed value is signed F, as the primary sends it.
+            if u16::from(f.drda & !1) == drda::DECIMAL
+                && let Some(last) = one.out.last_mut()
+                && *last & 0x0F == 0x0C
+            {
+                *last |= 0x0F;
+            }
+            w.bytes(&one.out);
+        }
+        (
+            DssType::Object,
+            Object::coll(
+                obj::SQLDTARD,
+                vec![Object::data(obj::FDODSC, desc::qrydsc_early(&fields)), Object::data(obj::FDODTA, w.out)],
+            ),
         )
     }
 
@@ -320,14 +371,24 @@ impl Session {
                     Ok(p) => p,
                     Err(ca) => return vec![self.sqlcard(Some(&ca))],
                 };
-                if c.get(param::OUTEXP).and_then(|x| x.bytes().first().copied()) == Some(0xF1) {
-                    // BLOCKED(sql): a CALL's output values as SQLDTARD are not
-                    // written yet; refused before the call is made.
-                    let ca = Sqlca::error(-84, "42612", "CALL output values over DRDA (OUTEXP)");
-                    return vec![self.sqlcard(Some(&ca))];
-                }
+                let outexp = c.get(param::OUTEXP).and_then(|x| x.bytes().first().copied()) == Some(0xF1);
                 let max = c.get_u16(param::MAXRSLCNT).unwrap_or(0);
-                match self.sql.execute(&section_of(&pkg), &params) {
+                let sec = section_of(&pkg);
+                match self.sql.execute(&sec, &params) {
+                    Ok(ca) if outexp => {
+                        let card = match self.sql.call_outputs(&sec) {
+                            Ok(outs) => self.sqldtard(&ca, &outs),
+                            Err(e) => return vec![self.sqlcard(Some(&e))],
+                        };
+                        if ca.sqlcode == 466 && max > 0 {
+                            let mut out = self.result_sets(&pkg, &ca, max);
+                            // The output values stand in for the SQLCARD.
+                            out[1] = card;
+                            out
+                        } else {
+                            vec![card]
+                        }
+                    }
                     Ok(ca) if ca.sqlcode == 466 && max > 0 => self.result_sets(&pkg, &ca, max),
                     Ok(ca) => vec![self.sqlcard(Some(&ca).filter(|c| c.sqlcode != 0 || c.sqlerrd[2] != 0))],
                     Err(ca) => vec![self.sqlcard(Some(&ca))],

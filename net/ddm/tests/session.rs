@@ -534,16 +534,22 @@ fn sql_and_record_access() {
 struct CallSide {
     first: usize,
     open: HashMap<Section, VecDeque<Vec<Value>>>,
+    /// `QSOUTP` was prepared: the call leaves no result sets.
+    outp: bool,
 }
 
 impl SqlBackend for CallSide {
-    fn prepare(&mut self, _: &Section, _: &str) -> SqlResult<Vec<Column>> {
+    fn prepare(&mut self, _: &Section, text: &str) -> SqlResult<Vec<Column>> {
+        self.outp = text.contains("QSOUTP");
         Ok(Vec::new())
     }
     fn describe(&mut self, _: &Section) -> SqlResult<Vec<Column>> {
         Ok(Vec::new())
     }
     fn execute(&mut self, _: &Section, _: &[Value]) -> SqlResult<Sqlca> {
+        if self.outp {
+            return Ok(Sqlca::default());
+        }
         let mut ca = Sqlca::error(466, "0100C", "");
         ca.sqlerrd[1] = 2;
         Ok(ca)
@@ -571,6 +577,14 @@ impl SqlBackend for CallSide {
     fn result_sets(&mut self) -> (String, Vec<String>) {
         ("QSTEST.QSDRSP".into(), vec!["C1".into(), "C2".into()])
     }
+    fn call_outputs(&mut self, _: &Section) -> SqlResult<Vec<(ColType, Value)>> {
+        // QSOUTP(IN N INTEGER, OUT W VARCHAR(10), INOUT A DECIMAL(7, 2)).
+        Ok(vec![
+            (ColType::new(Kind::Integer, 0, 10, 0, false), Value::Null),
+            (ColType::new(Kind::VarChar, 10, 0, 0, true), Value::Text("DONE".into())),
+            (ColType::new(Kind::Decimal, 0, 7, 2, true), Value::Dec("36.75".parse().unwrap())),
+        ])
+    }
     fn open_result_set(&mut self, s: &Section, index: usize) -> SqlResult<Vec<Column>> {
         let col = |name: &str, ty: ColType| Column { name: name.into(), ty, label: None };
         let (cols, rows): (Vec<Column>, Vec<Vec<Value>>) = if index == 0 {
@@ -592,7 +606,7 @@ fn call_pipe(first: usize) -> Pipe {
     let session = Session::new(
         Config::new("QS400", "QS400"),
         Box::new(Passwords),
-        Box::new(CallSide { first, open: HashMap::new() }),
+        Box::new(CallSide { first, open: HashMap::new(), outp: false }),
         Box::new(FileSide(e)),
     );
     Pipe {
@@ -660,9 +674,36 @@ fn a_large_result_set_continues_at_its_section() {
     assert_eq!(r.sets.iter().map(|s| s.rows.len()).collect::<Vec<_>>(), [70, 1]);
     assert_eq!(r.sets[0].rows[69][1].render(), "ANN");
     assert_eq!(r.sets[1].rows[0][0].render(), "20");
-    // Output values (OUTEXP) are refused before the call.
+}
+
+/// The `SQLDTARD` of `tools/conformance/ddm/outexp-primary.txt`.
+fn oracle_outexp() -> Vec<u8> {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/ddm/outexp-primary.txt");
+    let text = std::fs::read_to_string(path).unwrap();
+    let mut b = Vec::new();
+    for line in text.lines().filter(|l| l.starts_with("  ")) {
+        for h in line.split_whitespace().skip(1) {
+            b.push(u8::from_str_radix(h, 16).unwrap());
+        }
+    }
+    b
+}
+
+#[test]
+fn a_calls_output_values_come_as_the_primary_sends_them() {
+    let mut o = ConnectOpts::new("QS400", USER, PASSWORD);
+    o.mechanisms = vec![Mechanism::EUsrIdPwd];
+    let mut c = Connection::connect(call_pipe(0), &o).unwrap();
+    let p = c.prepare("CALL QSTEST.QSOUTP(?, ?, ?)").unwrap();
     let corr = c.next_corr();
     let cmd = ddm::wire::Object::coll(ddm::cp::cmd::EXCSQLSTT, vec![p.pkg.to_object(), ddm::wire::Object::byte(ddm::cp::param::OUTEXP, 0xF1)]);
     let replies = c.exchange(vec![ddm::Dss::request(corr, cmd)]).unwrap();
-    assert_eq!(ddm::client::query::sqlca_of(&c, &replies).unwrap().sqlcode, -84);
+    let objs: Vec<&ddm::wire::Object> = replies.iter().filter_map(|d| d.first()).collect();
+    assert_eq!(objs.len(), 1, "{objs:?}");
+    assert_eq!(objs[0].cp, ddm::cp::obj::SQLDTARD);
+    let mut ours = Vec::new();
+    for x in objs[0].items() {
+        ours.extend(x.encode());
+    }
+    assert_eq!(ours, oracle_outexp());
 }

@@ -136,8 +136,14 @@ server takes any package and section, as packages hold nothing yet.
   without its SQLCA, labels the names), `QRYDSC` by early descriptors
   only, and the first block: when it holds every row, `ENDQRYRM` and the
   +100 `SQLCARD` follow, else `CNTQRY` at the set's section reads on.
-  Output values (`OUTEXP`, `SQLDTARD`) are refused (SQL0084) before the
-  call is made.
+  With `OUTEXP` the call's parameters come back in an `SQLDTARD` that
+  stands in for the `SQLCARD`, as the primary answers
+  (`tools/conformance/ddm/outexp-primary.txt`): an `FDODSC` of early
+  descriptors only, every parameter nullable (a `VARCHAR` as the long
+  form 0x35), the rows `0xE0` and `0xF0`; an `FDODTA` with the SQLCA
+  (null when the call was clean), the group, then each parameter, an
+  input-only one null and a positive packed value signed `F`. A `CHAR`
+  output keeps its own type (the primary was not asked about it).
 - `RDBCMM` and `RDBRLLBCK` answer `ENDUOWRM` (`UOWDSP` 1, 2) and
   `SQLCARD`.
 

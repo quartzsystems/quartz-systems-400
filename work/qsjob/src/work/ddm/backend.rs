@@ -76,6 +76,8 @@ pub struct JobSql {
     /// The result sets opened as a section's query: the section's
     /// cursor name and the set's.
     sets: HashMap<String, String>,
+    /// The last `CALL`'s `OUT` and `INOUT` values by marker.
+    outs: Vec<(usize, sql::Value)>,
 }
 
 impl JobSql {
@@ -86,6 +88,7 @@ impl JobSql {
             cursors: HashMap::new(),
             called: (String::new(), Vec::new()),
             sets: HashMap::new(),
+            outs: Vec::new(),
         }
     }
 
@@ -208,6 +211,7 @@ impl SqlBackend for JobSql {
 
     fn execute(&mut self, s: &Section, params: &[Value]) -> SqlResult<Sqlca> {
         let r = self.checked(desc(Op::Execute, stmt(s)), params.iter().map(from_wire).collect())?;
+        self.outs = self.sql.take_outs();
         self.called = (String::new(), Vec::new());
         if r.sqlca.sqlcode == 466 {
             let text = |row: &[sql::Value], i: usize| row.get(i).map(sql::Value::as_text).unwrap_or_default();
@@ -215,6 +219,26 @@ impl SqlBackend for JobSql {
             self.called = (routine, r.rows.iter().map(|row| (text(row, 0), text(row, 1))).collect());
         }
         Ok(ca_of(&r.sqlca))
+    }
+
+    fn call_outputs(&mut self, s: &Section) -> SqlResult<Vec<(ColType, Value)>> {
+        let outs = std::mem::take(&mut self.outs);
+        let d = Desc {
+            orient: "INPUT".into(),
+            ..desc(Op::Describe, stmt(s))
+        };
+        let markers = self.checked(d, Vec::new())?.rows;
+        Ok(markers
+            .iter()
+            .enumerate()
+            .map(|(i, row)| {
+                let ty = column(i, row).ty;
+                // Mode 1 is IN: the reply has no value for it.
+                let input = row.get(9).and_then(|v| v.as_i64().ok()).unwrap_or(1) == 1;
+                let v = if input { None } else { outs.iter().find(|(m, _)| *m == i).map(|(_, v)| to_wire(v, Some(&ty))) };
+                (ty, v.unwrap_or(Value::Null))
+            })
+            .collect())
     }
 
     fn result_sets(&mut self) -> (String, Vec<String>) {

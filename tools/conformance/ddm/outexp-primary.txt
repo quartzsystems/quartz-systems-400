@@ -1,0 +1,14 @@
+# EXCSQLSTT with OUTEXP on the primary (V7R1M0), 2026-11-05
+# tools/conformance/tests/ddm_outexp.rs: package QSTEST/QSDDMOUT bound with two
+# dynamic sections; CREATE OR REPLACE PROCEDURE QSTEST.QSOUTP (IN N INTEGER,
+# OUT W VARCHAR(10), INOUT A DECIMAL(7, 2)) LANGUAGE SQL BEGIN SET W = 'DONE';
+# SET A = A * N; END; PRPSQLSTT of CALL QSTEST.QSOUTP(?, ?, ?); EXCSQLSTT with
+# OUTEXP X'F1' and SQLDTA (3, null, 12.25). The only reply object is SQLDTARD
+# (no SQLCARD): FDODSC with early descriptors only (nullable INTEGER 0x03,
+# VARCHAR 0x35, DECIMAL 0x0F 7,2), RLO E0 and F0; FDODTA with a null SQLCA,
+# the group, the IN parameter null, 'DONE', 36.75.
+reply 2413 (50 bytes)
+  0000  00 1f 00 10 0c 76 d0 03 00 04 35 00 0a 0f 07 02
+  0010  09 71 e0 54 00 01 d0 00 01 06 71 f0 e0 00 00 00
+  0020  13 14 7a ff 00 ff 00 00 04 c4 d6 d5 c5 00 00 03
+  0030  67 5f

@@ -583,6 +583,7 @@ pub fn is_collection(cp: u16) -> bool {
         || contains(s38::ALL, cp)
         || cp == obj::TYPDEFOVR
         || cp == obj::SQLDTA
+        || cp == obj::SQLDTARD
         || cp == param::PKGSNLST
 }
 
