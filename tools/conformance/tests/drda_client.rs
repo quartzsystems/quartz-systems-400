@@ -4,10 +4,10 @@
 
 //! The job's SQL connections (`net/drdar`) against the primary oracle
 //! (V7R1M0) as the remote server: `CONNECT TO` its RDB, queries and a
-//! cursor on a QSTEST table it reads, `CURRENT SERVER`, `COMMIT`,
-//! `SET CONNECTION` back to the local server, `DISCONNECT`. Read only:
-//! the package the server asks for is bound in QSTEST and dropped at the
-//! end. Ignored: it needs the oracle (`tools/conformance/oracle/.env`).
+//! cursor on a QSTEST table made for the run, `CURRENT SERVER`, `COMMIT`,
+//! `SET CONNECTION` back to the local server, `DISCONNECT`. The table
+//! and the package the server asks for are made in QSTEST and dropped at
+//! the end. Ignored: it needs the oracle (`tools/conformance/oracle/.env`).
 //!
 //! `cargo test -p conformance --test drda_client -- --ignored --nocapture`
 
@@ -70,6 +70,13 @@ fn connect_to_the_primary_and_read_qstest() {
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     assert_eq!(s.current, Current::Remote(RDB.into()));
 
+    let _ = s.route(&mut net, &req(Op::Exec, "DROP TABLE QSTEST.DBM1", vec![]));
+    for stmt in ["CREATE TABLE QSTEST.DBM1 (K INT NOT NULL PRIMARY KEY, V VARCHAR(20))", "INSERT INTO QSTEST.DBM1 VALUES (1, 'one'), (2, 'two'), (3, 'three')", "COMMIT"] {
+        if let Routed::Done(r) = s.route(&mut net, &req(Op::Exec, stmt, vec![])) {
+            assert!(!r.sqlca.is_error(), "{stmt}: {:?}", r.sqlca);
+        }
+    }
+
     let r = done(s.route(&mut net, &req(Op::Query, "VALUES CURRENT SERVER", vec![])));
     println!("CURRENT SERVER: {:?}", r.rows);
     assert_eq!(r.rows, vec![vec![Value::Str(RDB.into())]]);
@@ -97,6 +104,7 @@ fn connect_to_the_primary_and_read_qstest() {
     let r = done(s.route(&mut net, &req(Op::Query, "SELECT * FROM QSTEST.NOSUCH", vec![])));
     assert_eq!(r.sqlca.sqlcode, -204, "{:?}", r.sqlca);
 
+    assert!(!done(s.route(&mut net, &req(Op::Exec, "DROP TABLE QSTEST.DBM1", vec![]))).sqlca.is_error());
     assert!(matches!(s.route(&mut net, &req(Op::Exec, "COMMIT", vec![])), Routed::Local));
     assert!(matches!(s.route(&mut net, &req(Op::Exec, "SET CONNECTION QS400", vec![])), Routed::Done(_)));
     assert_eq!(s.current, Current::Local);
