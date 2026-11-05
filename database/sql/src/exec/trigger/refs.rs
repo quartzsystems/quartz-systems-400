@@ -51,6 +51,10 @@ pub(super) fn not_atomic(s: &mut PlStmt) {
             c.atomic = false;
             all(&mut c.body);
             for h in &mut c.handlers {
+                // Nothing to undo: an UNDO handler only leaves the compound.
+                if h.kind == crate::ast::HandlerKind::Undo {
+                    h.kind = crate::ast::HandlerKind::Exit;
+                }
                 not_atomic(&mut h.body);
             }
         }

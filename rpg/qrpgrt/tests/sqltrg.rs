@@ -305,3 +305,19 @@ fn a_record_write_fires_an_sql_trigger() {
     assert_eq!(e.rows("SELECT ID, NAME FROM QSTEST.RT"), ["7|RPG"]);
     assert_eq!(e.rows("SELECT TXT FROM QSTEST.RLOG"), ["after RPG"]);
 }
+
+#[test]
+fn an_after_trigger_compound_is_atomic() {
+    let mut e = env();
+    // The tables journaled (a schema's), the trigger programs in QSTEST.
+    e.ok("CREATE SCHEMA TRGSCH");
+    e.ok("CREATE TABLE TRGSCH.T (ID INT NOT NULL)");
+    e.ok("CREATE TABLE TRGSCH.LOG (K INT NOT NULL PRIMARY KEY)");
+    e.ok("CREATE TRIGGER QSTEST.TA AFTER INSERT ON TRGSCH.T REFERENCING NEW AS N FOR EACH ROW MODE DB2ROW BEGIN ATOMIC INSERT INTO TRGSCH.LOG VALUES (N.ID * 10); INSERT INTO TRGSCH.LOG VALUES (N.ID); END");
+    e.ok("CREATE TRIGGER QSTEST.TB BEFORE INSERT ON TRGSCH.T REFERENCING NEW AS N FOR EACH ROW MODE DB2ROW BEGIN ATOMIC DECLARE UNDO HANDLER FOR SQLEXCEPTION BEGIN END; SET N.ID = N.ID; END");
+    e.ok("INSERT INTO TRGSCH.T VALUES (1)");
+    // Its second insert fails: the first one is undone with it.
+    let r = e.run("INSERT INTO TRGSCH.T VALUES (10)");
+    assert_eq!(r.sqlca.sqlcode, -723, "{:?}", r.sqlca);
+    assert_eq!(e.rows("SELECT K FROM TRGSCH.LOG ORDER BY K"), ["1", "10"]);
+}
