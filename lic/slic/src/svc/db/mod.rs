@@ -15,6 +15,7 @@ mod journal;
 pub(crate) mod prtf;
 mod rla;
 mod sqlcmd;
+mod trgout;
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -235,6 +236,7 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
         "cpyf" => files::cpyf(system, &p),
         "cpytoimpf" => files::cpytoimpf(system, &p),
         "cpyfrmimpf" => files::cpyfrmimpf(system, &p),
+        "dspfd" if p.upper("OUTPUT").as_deref() == Some("*OUTFILE") => trgout::outfile(system, &p),
         "dspfd" => {
             let qual = p.pos_or(0, "FILE").unwrap_or_default();
             prtf::dspfd(system, &qual)

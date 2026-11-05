@@ -182,7 +182,7 @@ fn read_triggers_fire_for_the_rows_a_scan_keeps() {
     db.add("RDT", &trg("RD1", Time::After, Event::Read, false));
     let probe = Rc::new(RefCell::new(Probe::default()));
     db.ctx.triggers = Some(probe.clone());
-    let mut fired = |db: &mut Db, sql: &str| {
+    let fired = |db: &mut Db, sql: &str| {
         probe.borrow_mut().calls.clear();
         db.ok(sql);
         let calls = probe.borrow().calls.clone();

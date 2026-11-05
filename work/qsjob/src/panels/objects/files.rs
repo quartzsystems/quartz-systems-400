@@ -38,6 +38,10 @@ fn text_form(host: &Host, r: &Resolved) -> Result<String, Fail> {
 /// file view, with Control (`T`, `B`, `+n`, `-n`) and Find.
 pub fn splf(host: &Host, surface: &mut Surface, r: &Resolved, file: &str) -> Result<String, Fail> {
     let text = text_form(host, r)?;
+    // An outfile is written, not shown.
+    if parm(r, "OUTPUT").as_deref() == Some("*OUTFILE") {
+        return Ok(text);
+    }
     let lines: Vec<String> = text
         .lines()
         .map(|l| l.chars().take(78).collect())

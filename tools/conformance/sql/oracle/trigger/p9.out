@@ -1,0 +1,91 @@
+Note: tools\conformance\sql\oracle\trigger\TrgProbe.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+> SET SCHEMA QSTEST
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGRC)', 0000000023.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGRC in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTPGM PGM(QSTEST/TRGUPD)', 0000000025.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGUPD in QSTEST type *PGM not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/QTRGSRC)', 0000000025.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object QTRGSRC in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('CRTSRCPF FILE(QSTEST/QTRGSRC) RCDLEN(92)', 0000000040.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFM FILE(QSTEST/QTRGSRC) MBR(TRGUPD) SRCTYPE(CLLE)', 0000000053.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFM FILE(QSTEST/QTRGSRC) MBR(UPD) SRCTYPE(SQL)', 0000000049.00000)
+  sqlcode 0 count 0
+> CREATE ALIAS QSTEST.TRGSRCM FOR QSTEST.QTRGSRC(TRGUPD)
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.TRGSRCM VALUES  (1, 0, '             PGM        PARM(&BUF &LEN)'),  (2, 0, '             DCL        VAR(&BUF) TYPE(*CHAR) LEN(3000)'),  (3, 0, '             DCL        VAR(&LEN) TYPE(*CHAR) LEN(4)'),  (4, 0, '             RUNSQLSTM  SRCFILE(QSTEST/QTRGSRC) SRCMBR(UPD) +'),  (5, 0, '                          COMMIT(*NONE) NAMING(*SQL)'),  (6, 0, '             ENDPGM')
+  sqlcode 0 count 6
+> DROP ALIAS QSTEST.TRGSRCM
+  sqlcode 0 count 0
+> CREATE ALIAS QSTEST.TRGSRCU FOR QSTEST.QTRGSRC(UPD)
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.TRGSRCU VALUES (1, 0, 'UPDATE QSTEST.TRGRC SET V = ''chg'' WHERE K = 1;')
+  sqlcode 0 count 1
+> DROP ALIAS QSTEST.TRGSRCU
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('CRTBNDCL PGM(QSTEST/TRGUPD) SRCFILE(QSTEST/QTRGSRC) SRCMBR(TRGUPD)', 0000000066.00000)
+  sqlcode 0 count 0
+> CREATE TABLE QSTEST.TRGRC (K INT NOT NULL, V CHAR(5))
+  warning 7905 01567 SQL7905 [SQL7905] Table TRGRC in QSTEST created but was not journaled. Cause . . . . . :   The table TRGRC was created in QSTEST, but the table was not journaled.  Either a QDFTJRN data area indicated that journaling should not be started, the default journal did not exist, or the default journal did exist but the journaling could not be started.  The default journal may be damaged, unable to accept journal entries, or may not exist. The SQL name for the table is TRGRC and the system name for the table is TRGRC. For a distributed table, journaling could not be started on all of the systems.  The default journal must exist, and be able to accept journal entries, on each of the systems in the node group. Recovery  . . . :   The table was created, but until the table is journaled, COMMIT(*CHG), COMMIT(*CS), COMMIT(*RS), COMMIT(*RR), COMMIT(*UR), and COMMIT(*ALL) will not be allowed for table TRGRC. If the default journal does not exist, create the journal (CRTJRN command) and start journaling (STRJRNPF command). If the journal is in error, correct the problem to the journal If the table is distributed, correct the problems on all the systems in the node group and start journaling (STRJRNPF command).
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGRC) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM(QSTEST/TRGUPD) TRG(NOREP) ALWREPCHG(*NO)', 0000000106.00000)
+  sqlcode 0 count 0
+> -- joblog
+  msg CPF1124 type 4 sev 0 Job 009229/QUSER/QZDASOINIT started on 11/05/26 at 02:00:12 in subsystem QUSRWRK in QSYS. Job entered system on 11/05/26 at 02:00:12.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009229/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1336 type 15 sev 40 Errors on CHGJOB command for job 009229/QUSER/QZDASOINIT.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009229/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD1672 type 2 sev 0 Job changed successfully; however errors occurred.
+  msg CPIAD02 type 4 sev 0 User {user} from client 10.42.30.100 connected to server.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009229/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD1672 type 2 sev 0 Job changed successfully; however errors occurred.
+  msg CPF2105 type 15 sev 40 Object TRGRC in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPF2105 type 15 sev 40 Object TRGUPD in QSTEST type *PGM not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPF2105 type 15 sev 40 Object QTRGSRC in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPC7301 type 1 sev 0 File QTRGSRC created in library QSTEST.
+  msg CPC7305 type 1 sev 0 Member TRGUPD added to file QTRGSRC in QSTEST.
+  msg CPC7305 type 1 sev 0 Member UPD added to file QTRGSRC in QSTEST.
+  msg CPD4090 type 2 sev 10 Printer device PRT01 not found. Output queue changed to QPRINT in library QGPL.
+  msg CPC0815 type 1 sev 0 Program TRGUPD created in library QSTEST.
+  msg SQL7905 type 4 sev 20 Table TRGRC in QSTEST created but was not journaled.
+  msg CPI321A type 4 sev 0 Trigger NOREP in library QSTEST was added to file TRGRC in library QSTEST.
+  msg CPC3203 type 1 sev 0 Trigger added to file.
+> INSERT INTO QSTEST.TRGRC VALUES (1, 'new')
+  sqlcode 0 count 1
+> -- joblog
+  msg CPD4090 type 2 sev 10 Printer device PRT01 not found. Output queue changed to QPRINT in library QGPL.
+> SELECT K, V FROM QSTEST.TRGRC
+  cols | K INTEGER(10,0) NN | V CHAR(5,0)
+  row | '1' | 'chg  '
+> CALL QSYS.QCMDEXC('RMVPFTRG FILE(QSTEST/TRGRC)', 0000000027.00000)
+  sqlcode 0 count 0
+> DELETE FROM QSTEST.TRGRC
+  sqlcode 0 count 1
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGRC) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM(QSTEST/TRGUPD) TRG(YESREP) ALWREPCHG(*YES)', 0000000108.00000)
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.TRGRC VALUES (1, 'new')
+  sqlcode 0 count 1
+> -- joblog
+  msg CPI321B type 4 sev 0 Trigger NOREP in library QSTEST was removed from file TRGRC in library QSTEST.
+  msg CPC3205 type 1 sev 0 Trigger removed from file.
+  msg CPI321A type 4 sev 0 Trigger YESREP in library QSTEST was added to file TRGRC in library QSTEST.
+  msg CPC3203 type 1 sev 0 Trigger added to file.
+  msg CPD4090 type 2 sev 10 Printer device PRT01 not found. Output queue changed to QPRINT in library QGPL.
+> SELECT K, V FROM QSTEST.TRGRC
+  cols | K INTEGER(10,0) NN | V CHAR(5,0)
+  row | '1' | 'chg  '
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGRC)', 0000000023.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTPGM PGM(QSTEST/TRGUPD)', 0000000025.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/QTRGSRC)', 0000000025.00000)
+  sqlcode 0 count 0

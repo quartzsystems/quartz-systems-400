@@ -193,3 +193,11 @@ Probe `p8.sql`, output `p8.out`: `QAFDTRG`'s fields (`DSPFFD`, positions
   `DSPFD` with `OUTMBR(*FIRST *ADD)` adds its records (8).
 - A before `MODE DB2SQL` trigger is made `DB2ROW` with warning `SQL7051`.
 
+
+# ALWREPCHG on after triggers on the primary (V7R1M0), 2026-11-05
+
+Probe `p9.sql`, output `p9.out`: an after insert trigger whose CL program runs
+`RUNSQLSTM` with an `UPDATE` of the row that fired it. With `ALWREPCHG(*NO)`
+and with `*YES` alike the insert succeeds and the row shows the program's
+change: `ALWREPCHG(*NO)` does not refuse a program's own later change of the
+record (it governs the trigger buffer's new record, a before trigger's).
