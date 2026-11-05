@@ -55,6 +55,7 @@ pub fn before_update(
 ) -> Result<()> {
     let Some(a) = m.csts.clone() else { return Ok(()) };
     usable(m)?;
+    rules_journaled(txn, m, &a)?;
     let old = m.read(txn, rrn)?.ok_or(DbError::RecordNotFound { rrn })?;
     checks(m, &a, record, nulls)?;
     foreign_keys(txn, m, &a, record, nulls, Some((&old.record, &old.null_map)))?;
@@ -88,6 +89,7 @@ pub fn before_update(
 pub fn before_delete(txn: &mut Txn<'_>, m: &mut Member, rrn: u64, cmt: Option<&CommitRef>) -> Result<()> {
     let Some(a) = m.csts.clone() else { return Ok(()) };
     usable(m)?;
+    rules_journaled(txn, m, &a)?;
     let mut changed = false;
     let old = m.read(txn, rrn)?.ok_or(DbError::RecordNotFound { rrn })?;
     for d in a.csts.iter().filter(|c| c.kind == Kind::Dependent) {
@@ -177,6 +179,24 @@ fn before_update_excluding(
     let old = m.read(txn, rrn)?.ok_or(DbError::RecordNotFound { rrn })?;
     checks(m, &a, record, nulls)?;
     foreign_keys_excluding(txn, m, &a, record, nulls, Some((&old.record, &old.null_map)), Some(gone))
+}
+
+/// A parent file whose dependents' delete rules change them is updated
+/// and deleted from only while it and those dependents are journaled, as
+/// IBM refuses at once whatever the rows (`SQL7008` reason 3, `CPF4328`).
+fn rules_journaled(txn: &mut Txn<'_>, m: &Member, a: &Active) -> Result<()> {
+    for d in a.csts.iter().filter(|c| c.kind == Kind::Dependent) {
+        let child = if d.other == m.file.id { a.csts.clone() } else { super::list(txn, d.other).unwrap_or_default() };
+        let Some(ri) = child.iter().find(|c| c.kind == Kind::Referential && c.name == d.other_name) else { continue };
+        if !ri.delete_rule.changes_dependents() || !ri.enabled {
+            continue;
+        }
+        let child_jrn = if d.other == m.file.id { m.file.attr.journal } else { crate::file::describe(txn, d.other)?.attr.journal };
+        if m.file.attr.journal.is_none() || child_jrn.is_none() {
+            return Err(DbError::RuleNeedsJournal { file: m.file.name().to_string() });
+        }
+    }
+    Ok(())
 }
 
 fn checks(m: &Member, a: &Active, record: &[u8], nulls: &[u8]) -> Result<()> {

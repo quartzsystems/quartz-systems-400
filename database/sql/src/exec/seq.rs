@@ -125,7 +125,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateSequence) -> Re
     let mut info = SqlInfo::new(Kind::Sequence);
     info.set(tag::NAME, c.name.name.value.as_bytes().to_vec());
     sqlinf::save(txn, id, &info, now)?;
-    save(txn, id, &Sequence { data_type: code, precision: p, attrs, next: attrs.start, exhausted: false }, now)?;
+    save(txn, id, &Sequence { data_type: code, precision: p, attrs, next: attrs.start, exhausted: false, block_end: None }, now)?;
     names::put(txn, lib, Space::Sequence, &c.name.name.value, Target { id, system: sys })?;
     Ok(())
 }
@@ -134,10 +134,24 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateSequence) -> Re
 pub fn alter(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName, o: &Identity) -> Result<()> {
     let (id, mut s) = resolve(txn, ctx, name)?;
     db::auth::check(txn, "obj.change", id).map_err(SqlError::from)?;
-    s.attrs = merge(&s.attrs, o, super::column::type_range(&sql_type(s.data_type, s.precision)).expect("integer"), &name.name.value)?;
+    s.attrs = merge(&s.attrs, o, super::column::type_range(&sql_type(s.data_type, s.precision)).expect("integer"), &format!("sequence {}", name.name.value))?;
+    // Values IBM had cached are passed over; an exhausted sequence goes on
+    // from its last value under the new attributes.
+    if let Some(be) = s.block_end.take() {
+        match s.attrs.after(be) {
+            Some(n) => s.next = n,
+            None => s.exhausted = true,
+        }
+    } else if s.exhausted {
+        if let Some(n) = s.attrs.after(s.next) {
+            s.next = n;
+            s.exhausted = false;
+        }
+    }
     if let Some(r) = o.restart {
         s.next = r.unwrap_or(s.attrs.start);
         s.exhausted = false;
+        s.block_end = None;
         if !s.attrs.holds(s.next) {
             return Err(err(-846, "42815", format!("RESTART WITH {} is outside the range of sequence {}", s.next, name.name.value)));
         }
@@ -201,6 +215,11 @@ pub fn next_value(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) ->
         return Err(err(-359, "23522", format!("sequence {} has no more values", name.name.value)));
     }
     let v = s.next;
+    // The block of values IBM would cache: kept so an ALTER goes on after it.
+    let end = *s.block_end.get_or_insert_with(|| s.attrs.block_end(v));
+    if v == end {
+        s.block_end = None;
+    }
     match s.attrs.after(v) {
         Some(n) => s.next = n,
         None => s.exhausted = true,

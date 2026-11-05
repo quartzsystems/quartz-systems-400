@@ -201,6 +201,8 @@ pub struct Member {
     /// Physical member: the identity column's full attributes, when SQL
     /// keeps them (`COLUMN` entry).
     pub identity: Option<crate::sqlinf::seq::SeqAttrs>,
+    /// Its cache block's end (`SqlColumn.block_end`).
+    pub identity_block: Option<i128>,
 }
 
 /// What a new physical member takes from its file.
@@ -372,6 +374,7 @@ impl Member {
             jrn: crate::journal::JrnCtx::default(),
             csts: None,
             identity: None,
+            identity_block: None,
         };
         if file.attr.kind == file::FileKind::Logical {
             let members = m.core.base_members(txn)?;
@@ -391,10 +394,13 @@ impl Member {
             m.load_dependents(txn)?;
             m.csts = crate::cst::Active::load(txn, file)?;
             if !file.header.sql.is_none() {
-                m.identity = crate::sqlinf::seq::columns(txn, file.id)?.into_iter().find_map(|c| match c.kind {
-                    crate::sqlinf::seq::ColumnKind::Identity(a) => Some(a),
+                if let Some((a, be)) = crate::sqlinf::seq::columns(txn, file.id)?.into_iter().find_map(|c| match c.kind {
+                    crate::sqlinf::seq::ColumnKind::Identity(a) => Some((a, c.block_end)),
                     _ => None,
-                });
+                }) {
+                    m.identity = Some(a);
+                    m.identity_block = be;
+                }
             }
         }
         if m.core.attr.path_invalid && m.file.attr.maint == Maint::Dly {
@@ -604,6 +610,17 @@ impl Member {
             v = if attrs.increment > 0 { attrs.min } else { attrs.max };
         }
         // Past the range, the next value is kept just outside it.
+        if self.identity.is_some() {
+            // The block of values IBM would cache, kept for an ALTER.
+            let before = self.identity_block;
+            let end = *self.identity_block.get_or_insert_with(|| attrs.block_end(v));
+            if v == end {
+                self.identity_block = None;
+            }
+            if self.identity_block != before {
+                self.save_identity_block(txn)?;
+            }
+        }
         let next = attrs.after(v).unwrap_or(if attrs.increment > 0 {
             attrs.max.saturating_add(1)
         } else {
@@ -613,6 +630,16 @@ impl Member {
         self.core.attr.identity_next = clamp(next);
         self.core.save(txn)?;
         Ok(Some(clamp(v)))
+    }
+
+    fn save_identity_block(&self, txn: &mut Txn<'_>) -> Result<()> {
+        let mut cols = crate::sqlinf::seq::columns(txn, self.file.id)?;
+        for c in &mut cols {
+            if matches!(c.kind, crate::sqlinf::seq::ColumnKind::Identity(_)) {
+                c.block_end = self.identity_block;
+            }
+        }
+        crate::sqlinf::seq::store_columns(txn, self.file.id, &cols, self.file.header.changed)
     }
 
     /// The slot at `rrn` of a physical member.

@@ -1,0 +1,70 @@
+-- captured from primary
+> CREATE TABLE {lib}.IRPAR (ID INTEGER NOT NULL PRIMARY KEY, AMT DECIMAL(7
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.IRCH1 (CID INTEGER NOT NULL, PID INTEGER, CONSTRAINT 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.IRCH2 (CID INTEGER NOT NULL, PID INTEGER, CONSTRAINT 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.IRCH3 (CID INTEGER NOT NULL, PID INTEGER NOT NULL DEF
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.IRCH4 (CID INTEGER NOT NULL, PID INTEGER NOT NULL, CO
+sqlcode -629 sqlstate 42834 msgid SQL0629
+> CREATE TABLE {lib}.IRCH5 (CID INTEGER NOT NULL, PID INTEGER, CONSTRAINT 
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CREATE TABLE {lib}.IRCH6 (CID INTEGER NOT NULL, PID INTEGER, CONSTRAINT 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.IRCH7 (CID INTEGER NOT NULL, PID CHAR(4), CONSTRAINT 
+sqlcode -538 sqlstate 42830 msgid SQL0538
+> CREATE TABLE {lib}.IRCH8 (CID INTEGER NOT NULL, PID INTEGER, CONSTRAINT 
+sqlcode -538 sqlstate 42830 msgid SQL0538
+> CREATE TABLE {lib}.IRCH9 (CID INTEGER NOT NULL, PID INTEGER, CONSTRAINT 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.IRPAR VALUES (0, 0), (1, 1), (2, 2)
+sqlcode 0 sqlstate 00000 msgid - count 3
+> INSERT INTO {lib}.IRCH1 VALUES (10, 1)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.IRCH6 VALUES (60, 2)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.IRCH9 VALUES (90, 0)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> DELETE FROM {lib}.IRPAR WHERE ID = 1
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> DELETE FROM {lib}.IRPAR WHERE ID = 2
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> UPDATE {lib}.IRPAR SET ID = 3 WHERE ID = 2
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> DELETE FROM {lib}.IRPAR WHERE ID = 0
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> SELECT CONSTRAINT_NAME, UNIQUE_CONSTRAINT_NAME, UPDATE_RULE, DELETE_RULE
+sqlcode 0 sqlstate 00000 msgid -
+# CONSTRAINT_NAME VARCHAR(128) NOT NULL
+# UNIQUE_CONSTRAINT_NAME VARCHAR(128)
+# UPDATE_RULE VARCHAR(11) NOT NULL
+# DELETE_RULE VARCHAR(11) NOT NULL
+| 'IRCH1_FK' | 'Q_{lib}_IRPAR_ID_00001' | 'NO ACTION' | 'CASCADE' |
+| 'IRCH2_FK' | 'Q_{lib}_IRPAR_ID_00001' | 'RESTRICT' | 'SET NULL' |
+| 'IRCH3_FK' | 'Q_{lib}_IRPAR_ID_00001' | 'NO ACTION' | 'SET DEFAULT' |
+| 'IRCH6_FK' | 'Q_{lib}_IRPAR_ID_00001' | 'NO ACTION' | 'NO ACTION' |
+| 'IRCH9_FK' | 'Q_{lib}_IRPAR_ID_00001' | 'NO ACTION' | 'RESTRICT' |
+> DROP TABLE {lib}.IRPAR
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM QSYS2.SYSREFCST WHERE CONSTRAINT_SCHEMA = '{lib}' A
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> DROP TABLE {lib}.IRCH1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.IRCH2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.IRCH3
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.IRCH6
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.IRCH9
+sqlcode 0 sqlstate 00000 msgid -

@@ -327,7 +327,23 @@ pub fn table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, alias: &str
         }
         _ => return Ok(None),
     };
-    Ok(Some((Schema { cols }, rows)))
+    Ok(Some(padded(cols, rows)))
+}
+
+/// CHAR columns' values blank padded to their length, as the catalogs give them.
+fn padded(cols: Vec<ColInfo>, mut rows: Vec<Row>) -> Table {
+    for (i, c) in cols.iter().enumerate() {
+        let Some(f) = c.field.as_ref().filter(|f| f.data_type == DataType::Char && f.varlen.is_none()) else { continue };
+        let n = f.length as usize;
+        for r in &mut rows {
+            if let Some(Value::Str(s)) = r.get_mut(i) {
+                while s.chars().count() < n {
+                    s.push(' ');
+                }
+            }
+        }
+    }
+    (Schema { cols }, rows)
 }
 
 /// `SYSSEQUENCES`: the sequences of every library.
@@ -351,7 +367,9 @@ fn sequences(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<Table> 
             };
             let d = |v: i128| Value::Num(qdecimal::Decimal::new(v, 0).expect("fits"));
             // The highest value given: none before the first.
-            let assigned = if q.exhausted {
+            let assigned = if let Some(be) = q.block_end {
+                d(be)
+            } else if q.exhausted {
                 d(q.next)
             } else if q.next == q.attrs.start {
                 Value::Null
@@ -424,5 +442,5 @@ fn sequences(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<Table> 
         c("IASP_NUMBER", T::Small, false),
     ];
     let _ = T::Big;
-    Ok((Schema { cols }, rows))
+    Ok(padded(cols, rows))
 }

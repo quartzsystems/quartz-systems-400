@@ -43,8 +43,13 @@ pub fn type_range(t: &DataType) -> Option<(i128, i128)> {
 pub fn attrs(id: &ast::Identity, range: (i128, i128), what: &str) -> Result<SeqAttrs> {
     let increment = id.increment.unwrap_or(1);
     let up = increment > 0;
-    let min = id.min.flatten().unwrap_or(if up { 1 } else { range.0 });
-    let max = id.max.flatten().unwrap_or(if up { range.1 } else { -1 });
+    // A sequence's NO MINVALUE (ascending) and NO MAXVALUE (descending) are
+    // its START WITH, else 1 and -1; an identity's are 1 and -1 (the
+    // primary restarts one below its START WITH).
+    let sequence = what.starts_with("sequence");
+    let first = if sequence { id.start } else { None };
+    let min = id.min.flatten().unwrap_or(if up { first.unwrap_or(1) } else { range.0 });
+    let max = id.max.flatten().unwrap_or(if up { range.1 } else { first.unwrap_or(-1) });
     let start = id.start.unwrap_or(if up { min } else { max });
     for v in [min, max, start] {
         if v < range.0 || v > range.1 {
@@ -58,7 +63,7 @@ pub fn attrs(id: &ast::Identity, range: (i128, i128), what: &str) -> Result<SeqA
         return Err(err(-846, "42815", format!("START WITH {start} is outside MINVALUE and MAXVALUE of {what}")));
     }
     // The counter is eight bytes: a DECIMAL identity past them waits.
-    if i64::try_from(min).is_err() || i64::try_from(max).is_err() {
+    if !sequence && (i64::try_from(min).is_err() || i64::try_from(max).is_err()) {
         return Err(SqlError::Unsupported {
             what: format!("an identity or sequence range past 19 digits ({what}); BLOCKED(sql): an 8-byte counter"),
         });
@@ -120,7 +125,7 @@ pub fn entry_of(c: &ast::ColumnDef, f: &FieldDef) -> Result<Option<SqlColumn>> {
             Some(Generated::Expr(_)) | None => return Ok(None),
         }
     };
-    Ok(Some(SqlColumn { field: f.name, kind, hidden: c.hidden }))
+    Ok(Some(SqlColumn { field: f.name, kind, hidden: c.hidden, block_end: None }))
 }
 
 /// `CREATE TABLE`: the `COLUMN` entries of `t`'s columns.

@@ -265,7 +265,9 @@ pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> 
     if let Some(ccsid) = ccsid.filter(|_| !sql_only) {
         kws.push(format!("CCSID({ccsid})"));
     }
-    if !c.not_null {
+    // An identity column and a row change timestamp are NOT NULL as IBM makes them.
+    let generated_not_null = c.identity.is_some() || matches!(c.generated, Some(crate::ast::Generated::RowChangeTimestamp { .. }));
+    if !c.not_null && !generated_not_null {
         kws.push("ALWNULL".into());
     }
     match &c.default {

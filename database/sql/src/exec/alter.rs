@@ -167,10 +167,14 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
                 };
                 let mut attrs = super::seq::merge(&base, options, range, &format!("identity column {}", column.value))?;
                 attrs.always = f.identity.as_ref().is_some_and(|x| x.always);
+                let block = at.and_then(|k| cols[k].block_end);
                 if let Some(r) = options.restart {
                     restart = Some(r.unwrap_or(attrs.start));
+                } else if let Some(be) = block {
+                    // Values IBM had cached are passed over.
+                    restart = attrs.after(be).or(Some(be));
                 }
-                let entry = seq::SqlColumn { field: fname, kind: ColumnKind::Identity(attrs), hidden: false };
+                let entry = seq::SqlColumn { field: fname, kind: ColumnKind::Identity(attrs), hidden: false, block_end: None };
                 match at {
                     Some(k) => cols[k] = entry,
                     None => cols.push(entry),

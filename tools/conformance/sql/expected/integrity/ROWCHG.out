@@ -1,0 +1,25 @@
+-- captured from primary
+> CREATE TABLE {lib}.IRCT (K INT, TS TIMESTAMP NOT NULL GENERATED ALWAYS F
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.IRCT (K) VALUES (1)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT K, CASE WHEN TS IS NULL THEN 0 ELSE 1 END FROM {lib}.IRCT
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER
+# 00002 INTEGER NOT NULL
+| 1 | 1 |
+> UPDATE {lib}.IRCT SET TS = CURRENT TIMESTAMP
+sqlcode -798 sqlstate 428C9 msgid SQL0798
+> UPDATE {lib}.IRCT SET K = 2
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT K FROM {lib}.IRCT
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER
+| 2 |
+> CREATE TABLE {lib}.IRCT2 (K INT, TS DATE GENERATED ALWAYS FOR EACH ROW O
+sqlcode -683 sqlstate 42842 msgid SQL0683
+> CREATE TABLE {lib}.IRCT3 (K INT, A INT GENERATED ALWAYS AS (K + 1))
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DROP TABLE {lib}.IRCT
+sqlcode 0 sqlstate 00000 msgid -

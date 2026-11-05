@@ -32,7 +32,8 @@ pub static COLUMN_LAYOUT: Layout = Layout {
         field("min", 48, 16),
         field("max", 64, 16),
         field("text_len", 80, 2),
-        field("reserved", 82, 46),
+        field("block_end", 82, 16),
+        field("reserved", 98, 30),
         Field { name: "text", offset: Some(128), size: None },
     ],
 };
@@ -52,7 +53,8 @@ pub static SEQUENCE_LAYOUT: Layout = Layout {
         field("min", 40, 16),
         field("max", 56, 16),
         field("next", 72, 16),
-        field("reserved2", 88, 40),
+        field("block_end", 88, 16),
+        field("reserved2", 104, 24),
     ],
 };
 
@@ -79,6 +81,19 @@ pub struct SeqAttrs {
 }
 
 impl SeqAttrs {
+    /// The last value of the cache block that starts at `v`: `cache` values
+    /// (one for `NO CACHE`) or up to the end of the range.
+    #[must_use]
+    pub fn block_end(&self, v: i128) -> i128 {
+        let n = i128::from(self.cache.max(1) - 1);
+        if self.increment == 0 {
+            return v;
+        }
+        // The steps left before the range ends.
+        let room = if self.increment > 0 { (self.max - v) / self.increment } else { (self.min - v) / self.increment };
+        v + n.min(room.max(0)) * self.increment
+    }
+
     /// The value after `v`, or `None` when the range is used up and the
     /// attributes do not cycle (`SQL0359`).
     #[must_use]
@@ -148,6 +163,9 @@ pub struct SqlColumn {
     pub kind: ColumnKind,
     /// `IMPLICITLY HIDDEN`.
     pub hidden: bool,
+    /// An identity column: the end of the block of values IBM would cache
+    /// now (as for a sequence).
+    pub block_end: Option<i128>,
 }
 
 impl SqlColumn {
@@ -178,6 +196,10 @@ impl SqlColumn {
         if self.hidden {
             b[11] |= 8;
         }
+        if let Some(be) = self.block_end {
+            b[11] |= 16;
+            b[82..98].copy_from_slice(&be.to_le_bytes());
+        }
         b[80..82].copy_from_slice(&u16::try_from(text.len()).expect("short").to_le_bytes());
         b.extend_from_slice(text.as_bytes());
         b
@@ -200,7 +222,8 @@ impl SqlColumn {
             4 => ColumnKind::Audit(flags & 1 != 0, text),
             _ => return Err(bad()),
         };
-        Ok(Self { field: Name::from_bytes(b[..10].try_into().expect("10")), kind, hidden: flags & 8 != 0 })
+        let block_end = (flags & 16 != 0).then(|| i128::from_le_bytes(b[82..98].try_into().expect("16")));
+        Ok(Self { field: Name::from_bytes(b[..10].try_into().expect("10")), kind, hidden: flags & 8 != 0, block_end })
     }
 }
 
@@ -217,6 +240,9 @@ pub struct Sequence {
     pub next: i128,
     /// The range is used up: the next `NEXT VALUE` fails.
     pub exhausted: bool,
+    /// The last value of the block of `cache` values IBM would hold now;
+    /// an `ALTER` without `RESTART` goes on after it, as IBM's does.
+    pub block_end: Option<i128>,
 }
 
 impl Sequence {
@@ -225,11 +251,12 @@ impl Sequence {
     pub fn encode(&self) -> Vec<u8> {
         let mut b = vec![0u8; SEQUENCE_LEN];
         b[0] = self.data_type;
-        b[1] = self.attrs.flags() | u8::from(self.exhausted) << 3;
+        b[1] = self.attrs.flags() | u8::from(self.exhausted) << 3 | u8::from(self.block_end.is_some()) << 4;
         b[2] = self.precision;
         b[4..8].copy_from_slice(&self.attrs.cache.to_le_bytes());
         self.attrs.put(&mut b[8..72]);
         b[72..88].copy_from_slice(&self.next.to_le_bytes());
+        b[88..104].copy_from_slice(&self.block_end.unwrap_or(0).to_le_bytes());
         b
     }
 
@@ -244,6 +271,7 @@ impl Sequence {
             attrs: SeqAttrs::get(&b[8..72], b[1], u32::from_le_bytes(b[4..8].try_into().expect("4"))),
             next: i128::from_le_bytes(b[72..88].try_into().expect("16")),
             exhausted: b[1] & 8 != 0,
+            block_end: (b[1] & 16 != 0).then(|| i128::from_le_bytes(b[88..104].try_into().expect("16"))),
         })
     }
 }
@@ -288,11 +316,11 @@ mod tests {
     #[test]
     fn bodies_round_trip() {
         let a = SeqAttrs { start: -5, increment: -2, min: i128::from(i64::MIN), max: -1, cycle: true, cache: 20, order: false, always: true };
-        let c = SqlColumn { field: Name::parse("ID").unwrap(), kind: ColumnKind::Identity(a), hidden: true };
+        let c = SqlColumn { field: Name::parse("ID").unwrap(), kind: ColumnKind::Identity(a), hidden: true, block_end: Some(4) };
         assert_eq!(SqlColumn::decode(&c.encode()).unwrap(), c);
-        let e = SqlColumn { field: Name::parse("TS").unwrap(), kind: ColumnKind::Audit(true, "SESSION_USER".into()), hidden: false };
+        let e = SqlColumn { field: Name::parse("TS").unwrap(), kind: ColumnKind::Audit(true, "SESSION_USER".into()), hidden: false, block_end: None };
         assert_eq!(SqlColumn::decode(&e.encode()).unwrap(), e);
-        let s = Sequence { data_type: 3, precision: 0, attrs: a, next: -7, exhausted: true };
+        let s = Sequence { data_type: 3, precision: 0, attrs: a, next: -7, exhausted: true, block_end: Some(-9) };
         assert_eq!(Sequence::decode(&s.encode()).unwrap(), s);
         assert_eq!(a.after(-1), Some(-3));
         assert_eq!(a.after(i128::from(i64::MIN)), Some(-1));

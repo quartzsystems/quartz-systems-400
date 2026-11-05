@@ -159,9 +159,6 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
         if c.kind.keyed() && (f.data_type.is_lob() || c.columns[..i].contains(col)) {
             return Err(refuse(ADD, Refusal::BadColumns, &name, format!("field {col} cannot be a key of constraint {name}")));
         }
-        if c.kind == Kind::PrimaryKey && f.allow_null {
-            return Err(refuse(ADD, Refusal::Nullable, &name, format!("primary key field {col} allows nulls")));
-        }
     }
     if c.kind.unique() {
         if c.kind == Kind::PrimaryKey && csts.iter().any(|x| x.kind == Kind::PrimaryKey) {
@@ -169,6 +166,11 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
         }
         if csts.iter().any(|x| x.kind.unique() && x.columns == c.columns) {
             return Err(refuse(ADD, Refusal::SameKey, &name, format!("a unique key over the same fields exists for {}", desc.name())));
+        }
+        if c.kind == Kind::PrimaryKey
+            && let Some(col) = c.columns.iter().find(|col| fmt.format.field(col).is_some_and(|(_, f)| f.allow_null))
+        {
+            return Err(refuse(ADD, Refusal::Nullable, &name, format!("primary key field {col} allows nulls")));
         }
     }
     let mut report = Report::default();
