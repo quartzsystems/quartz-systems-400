@@ -24,6 +24,7 @@ QS/400, and its source was read only to understand the datastream.
 | `sysval` | `SysVal` | `SystemValue` |
 | `central` | `Central` | Central server: the job CCSID and conversion table downloads |
 | `jdbc` | `Jdbc` | `jdbc:as400://`: connect, metadata, blocked fetch over `QSYS2.SYSTABLES`, a table made in `QSTEST` (`QTEMP` when `QSTEST` does not exist) and dropped, an SQL error, commit and rollback, a procedure call |
+| `callproc` | `CallProc` | an SQL procedure made in `QSTEST` with `IN`, `OUT` and `INOUT` parameters and two result sets, called through a `CallableStatement` (outputs, then each set with `getMoreResults`), a missing procedure (SQL0204 at prepare), the procedure dropped; recorded on the primary 2026-11-05 |
 | `dtaq` | `DtaQ` | `DataQueue` and `KeyedDataQueue` in `QSTEST`, deleted after |
 | `ifs` | `Ifs` | `IFSFile` and streams under `/home/QSTEST` only, removed after |
 | `splf` | `Splf` | `SpooledFileList` of the user's spooled files (list only) |

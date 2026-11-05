@@ -163,6 +163,22 @@ pub fn session() -> Session {
         },
     )
     .unwrap();
+    // The program a stand-in procedure names.
+    ops::create(
+        &mut t,
+        &CreateParams {
+            library: lib,
+            name: Name::parse("RSPGM").unwrap(),
+            type_code: types::PGM,
+            attribute: "RPGLE".into(),
+            text: String::new(),
+            owner: "QSECOFR".into(),
+            system: "S062B175".into(),
+            now: NOW,
+            by_system: false,
+        },
+    )
+    .unwrap();
     t.commit().unwrap();
     let names = NameContext {
         curlib: Some(lib),

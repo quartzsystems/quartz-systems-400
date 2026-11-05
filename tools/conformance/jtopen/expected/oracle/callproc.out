@@ -1,0 +1,16 @@
+ok   connect
+ok   create
+     result set first=true word=DONE amt=24.50
+     set 1
+     cols ID:INTEGER NAME:VARCHAR
+     row |1 |ANN
+     row |2 |BOB
+     rows=2
+     set 2
+     cols TEN:INTEGER
+     row |20
+     rows=1
+     sets=2
+ok   call
+fail missing: AS400JDBCSQLSyntaxErrorException state=42704 code=-204: [SQL0204] HSNOPROC in QSTEST type *N not found.
+ok   drop

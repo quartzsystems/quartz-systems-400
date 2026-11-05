@@ -27,7 +27,14 @@ pub fn encode(cols: &[ColType], result: bool) -> Vec<u8> {
     let names: Vec<Vec<u8>> = cols
         .iter()
         .map(|c| {
-            let (ccsid, name) = if result { (37u16, text::ebcdic(&c.name)) } else { (0, Vec::new()) };
+            // A CALL's markers carry their parameters' names, without a CCSID.
+            let (ccsid, name) = if result {
+                (37u16, text::ebcdic(&c.name))
+            } else if c.mode != 0 {
+                (0, text::ebcdic(&c.name))
+            } else {
+                (0, Vec::new())
+            };
             let mut item = reply::len32(8 + name.len()).to_be_bytes().to_vec();
             item.extend(0x3840u16.to_be_bytes());
             item.extend(ccsid.to_be_bytes());

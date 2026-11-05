@@ -48,6 +48,76 @@ fn jdbc() {
     }
 }
 
+/// The engine with a job that makes the calls it plans: `HSPROC1`, the
+/// SQL procedure of the `callproc` trace, stands in as an external
+/// procedure that gives `WORD` = `DONE`, doubles `AMT` and returns
+/// its two result sets.
+struct Calling {
+    s: sql::embed::Session,
+    outs: Vec<(usize, sql::value::Value)>,
+    made: bool,
+}
+
+impl sql::embed::Embedded for Calling {
+    fn run(&mut self, req: &sql::embed::Request) -> sql::embed::Reply {
+        use sql::embed::{Desc, Op, Request};
+        use sql::value::Value;
+        let scope = |s: &str| s.to_string();
+        if !self.made {
+            self.made = true;
+            let ddl = "CREATE PROCEDURE QSTEST.HSPROC1 (IN N INTEGER, OUT WORD VARCHAR(10), INOUT AMT DECIMAL(7, 2))                 DYNAMIC RESULT SETS 2 EXTERNAL NAME QSTEST.RSPGM PARAMETER STYLE GENERAL";
+            let d = Desc { op: Op::Exec, sql_naming: true, text: ddl.into(), ..Desc::default() };
+            assert_eq!(self.s.run(&Request { scope: scope("MAKE:"), desc: d, inputs: Vec::new() }).sqlca.sqlcode, 0);
+        }
+        if req.desc.op == Op::ExecImm && req.inputs.first().is_some_and(|t| t.as_text().contains("PROCEDURE QSTEST.HSPROC1 (")) {
+            // The SQL body is the stand-in made above.
+            return sql::embed::Reply::default();
+        }
+        let mut req = req.clone();
+        req.desc.calls = true;
+        let r = self.s.run(&req);
+        let Some(plan) = r.call else { return r };
+        let n = plan.parms[0].value.as_text();
+        let amt = plan.parms[2].value.as_text().parse::<f64>().unwrap_or(0.0) * 2.0;
+        self.outs = vec![(1, Value::Str("DONE".into())), (2, Value::Num(qdecimal::Decimal::parse(&format!("{amt:.2}")).unwrap()))];
+        for (c, q) in [
+            ("C1", format!("SELECT ID, NAME FROM (VALUES (1, 'ANN'), (2, 'BOB'), (3, 'CY')) AS T (ID, NAME) WHERE ID <= {n} ORDER BY ID")),
+            ("C2", format!("SELECT {n} * 10 AS TEN FROM SYSIBM.SYSDUMMY1")),
+        ] {
+            let d = Desc { op: Op::Open, name: c.into(), sql_naming: true, text: q, returns: Some(sql::ast::ReturnTo::Caller), ..Desc::default() };
+            let o = self.s.run(&Request { scope: scope("9:HSPROC1"), desc: d, inputs: Vec::new() });
+            assert_eq!(o.sqlca.sqlcode, 0, "{:?}", o.sqlca);
+        }
+        let called = sql::exec::routine::Called {
+            seq: plan.seq,
+            max: plan.max_results,
+            sqlstate: "00000".into(),
+            routine: plan.routine.clone(),
+            ..Default::default()
+        };
+        self.s.run(&Request { scope: req.scope, desc: Desc { op: Op::Called, ..Desc::default() }, inputs: called.inputs() })
+    }
+
+    fn take_outs(&mut self) -> Vec<(usize, sql::value::Value)> {
+        std::mem::take(&mut self.outs)
+    }
+}
+
+#[test]
+fn callproc() {
+    let t = trace("database", "callproc");
+    let auth = TraceAuth::of(&t);
+    let cfg = DbConfig {
+        rdb: "S062B175".into(),
+        job: ("QZDASOINIT".into(), "QUSER".into(), "007839".into()),
+    };
+    let diffs = replay(&t, &masks(), &mut || {
+        let e = Calling { s: session(), outs: Vec::new(), made: false };
+        Box::new(Database::new(auth.clone(), e, NoExits, cfg.clone())) as Box<dyn Handler>
+    });
+    accept("database-callproc", &diffs);
+}
+
 #[test]
 #[ignore = "prints how the engine takes the trace's statements"]
 fn probe_statements() {
