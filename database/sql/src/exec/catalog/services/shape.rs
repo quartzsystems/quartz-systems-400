@@ -161,8 +161,10 @@ pub fn parse(text: &str) -> Vec<Shape> {
             }
             Some("p") if w.len() >= 9 => {
                 if let Some(s) = out.last_mut() {
+                    // An unnamed parameter is known by its position.
+                    let name = if w[2].is_empty() { format!("#{}", s.parms.len() + 1) } else { w[2].to_string() };
                     s.parms.push(Col {
-                        name: w[2].into(),
+                        name,
                         system: String::new(),
                         ty: w[3].into(),
                         len: num(4),

@@ -247,6 +247,26 @@ impl SystemHost for SqlHost {
             w.and(closed).map_err(|e| e.to_string())
         })
     }
+
+    fn command(&self, cmd: &str) -> Option<Result<(), (String, String)>> {
+        // BLOCKED(sql): commands whose processing program runs in the
+        // job (CALL, the job's own commands) need the job and are
+        // refused CPF0006 here; the reply's messages do not reach the
+        // job log.
+        let job = self.job;
+        with_system(|system| {
+            let prev = std::mem::replace(&mut system.current_job, job);
+            let r = crate::cpp::opacmd::run_cl(system, cmd);
+            system.current_job = prev;
+            match r.escape {
+                None => Ok(()),
+                Some(e) => {
+                    let text = r.text.lines().rfind(|l| !l.trim().is_empty()).unwrap_or("").trim().to_string();
+                    Err((e.msgid, text))
+                }
+            }
+        })
+    }
 }
 
 impl SqlHost {

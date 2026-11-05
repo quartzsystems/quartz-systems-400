@@ -23,6 +23,7 @@ mod jobs;
 mod libl;
 mod netstat;
 mod objects;
+pub mod procs;
 mod products;
 mod spool;
 mod sysval;

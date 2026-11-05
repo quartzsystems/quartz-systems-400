@@ -14,7 +14,7 @@ use std::sync::Arc;
 use blockdev::{BlockDev, MemBlockDev};
 use qsname::Name;
 use sql::exec::catalog::services::host::{ActiveJob, SysValue, SystemHost, SystemStatus};
-use sql::exec::catalog::services::{self, host};
+use sql::exec::catalog::services::{self, host, procs};
 use sql::{Naming, Outcome, SqlContext, Value, prepare};
 use store::obj::ops::{self, NameContext};
 use store::obj::{CreateParams, JobHandle, types};
@@ -244,6 +244,15 @@ impl SystemHost for Mock {
             "/home/e.txt" => Some(Ok((vec![0xC1, 0x15, 0xC2], 37))),
             _ => Some(Err("ENOENT".into())),
         }
+    }
+
+    fn command(&self, cmd: &str) -> Option<Result<(), (String, String)>> {
+        Some(if cmd.starts_with("CRTLIB") { Ok(()) } else { Err(("CPF0006".into(), "Errors occurred in command.".into())) })
+    }
+
+    fn ifs_write(&self, path: &str, data: &[u8], append: bool, ccsid: u16) -> Option<Result<(), String>> {
+        assert_eq!((path, data, append, ccsid), ("/home/w.txt", &b"hi\r\n"[..], true, 1208));
+        Some(Ok(()))
     }
 
     fn system_status(&self) -> Option<SystemStatus> {
@@ -632,4 +641,28 @@ fn ifs_services() {
     assert_eq!(db.rows("SELECT HEX(LINE) FROM TABLE(QSYS2.IFS_READ_BINARY('/home/e.txt')) X"), vec![row(&["C115C2"])]);
     assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.IFS_READ('/nope')) X"), vec![row(&["0"])]);
     assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.IFS_READ('/nope', IGNORE_ERRORS => 'NO')) X"), -443);
+}
+
+#[test]
+fn qcmdexc_and_procedures() {
+    let mut db = Db::new(true);
+    assert_eq!(db.rows("SELECT QSYS2.QCMDEXC('CRTLIB X'), QCMDEXC('DLTLIB X') FROM SYSIBM.SYSDUMMY1"), vec![row(&["1", "-1"])]);
+    assert_eq!(db.code("SELECT QSYS2.QCMDEXC('CRTLIB X', 'PRINT') FROM SYSIBM.SYSDUMMY1"), -171);
+    let mut t = db.store.begin().unwrap();
+    assert!(procs::is_procedure(Some("QSYS2"), "QCMDEXC"));
+    let ok = procs::call(&mut t, &db.ctx, Some("QSYS2"), "QCMDEXC", &[(None, Value::Str("CRTLIB X".into()))]).unwrap();
+    assert!(ok.is_ok());
+    let bad = procs::call(&mut t, &db.ctx, Some("QSYS2"), "QCMDEXC", &[(None, Value::Str("DLTLIB X".into())), (None, Value::int(8))]).unwrap();
+    assert_eq!(bad.unwrap_err().sqlcode(), -443);
+    let w = procs::call(
+        &mut t,
+        &db.ctx,
+        Some("QSYS2"),
+        "IFS_WRITE_UTF8",
+        &[(Some("PATH_NAME".into()), Value::Str("/home/w.txt".into())), (Some("LINE".into()), Value::Str("hi".into()))],
+    )
+    .unwrap();
+    assert!(w.is_ok(), "{w:?}");
+    assert!(procs::call(&mut t, &db.ctx, None, "NOT_A_PROC", &[]).is_none());
+    t.abort();
 }

@@ -35,6 +35,9 @@ pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Resul
     if let Some(r) = super::super::catalog::services::http::scalar(name, args, ctx) {
         return Some(r);
     }
+    if let Some(r) = super::super::catalog::services::procs::qcmdexc_scalar(name, args, ctx) {
+        return Some(r);
+    }
     let bare = ours(name)?;
     Some(run(bare, args))
 }
@@ -168,6 +171,9 @@ pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], _exprs: &[crate
     let bare = name.strip_prefix("QSYS2.").unwrap_or(name);
     if let Some(t) = super::super::catalog::services::http::result_type(bare) {
         return Some(t);
+    }
+    if bare == "QCMDEXC" {
+        return Some(SqlType::new(Kind::Integer, 4, 0, true));
     }
     if ours(name)? == "BASE64_DECODE" {
         return Some(SqlType::new(Kind::Blob, 1_610_612_736, 0, true));
