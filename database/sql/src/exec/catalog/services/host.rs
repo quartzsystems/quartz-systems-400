@@ -249,6 +249,210 @@ pub struct HttpResponse {
     pub body: Vec<u8>,
 }
 
+/// A storage pool as `WRKSYSSTS` shows it, the elapsed figures over the
+/// host's interval.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct MemoryPool {
+    /// The system pool number.
+    pub number: u16,
+    /// `*MACHINE`, `*BASE`, `*SHRPOOLn`, or `SBS/n` for a private pool.
+    pub name: String,
+    /// The subsystem of a private pool: library, name.
+    pub subsystem: Option<(String, String)>,
+    /// Size, kilobytes.
+    pub size_kb: u64,
+    /// Reserved for the system, kilobytes.
+    pub reserved_kb: u64,
+    /// Maximum active threads.
+    pub max_active: u32,
+    /// Threads active now.
+    pub active: u32,
+    /// Threads ineligible now.
+    pub ineligible: u32,
+    /// The interval, milliseconds.
+    pub elapsed_ms: u64,
+    /// Database faults per second.
+    pub db_faults: f64,
+    /// Non-database faults per second.
+    pub ndb_faults: f64,
+    /// Database pages read per second.
+    pub db_pages: f64,
+    /// Non-database pages read per second.
+    pub ndb_pages: f64,
+    /// Transitions per minute: active to wait, wait to ineligible,
+    /// active to ineligible.
+    pub transitions: [f64; 3],
+}
+
+/// A disk unit as `WRKDSKSTS` shows it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DiskUnit {
+    /// The unit number, from 1.
+    pub unit: u16,
+    /// `SSD`, `HDD`, `NVME` ...
+    pub type_code: String,
+    /// The device's model.
+    pub model: String,
+    /// Serial number.
+    pub serial: String,
+    /// `Active`, `Suspended` ...
+    pub status: String,
+    /// `None`, `Mirrored (A)` ...
+    pub protection: String,
+    /// Capacity, bytes.
+    pub capacity: u64,
+    /// Free, bytes.
+    pub free: u64,
+    /// Reads, writes, sectors read, sectors written, busy milliseconds
+    /// since the IPL.
+    pub totals: [u64; 5],
+    /// The same over the interval.
+    pub elapsed: [u64; 5],
+    /// The interval, milliseconds.
+    pub elapsed_ms: u64,
+}
+
+/// A hardware resource (`WRKHDWRSC`).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct HardwareResource {
+    /// `CMB01`, `LIN01`, `DD001` ...
+    pub name: String,
+    /// `PROCESSOR`, `COMM`, `STORAGE`, `LOCAL WORK`, `PACKAGING` ...
+    pub category: String,
+    /// Operational rather than not detected.
+    pub operational: bool,
+    /// Type and model.
+    pub type_model: (String, String),
+    /// Serial number, empty when unknown.
+    pub serial: String,
+    /// Description.
+    pub text: String,
+    /// Location (PCI address or device).
+    pub location: String,
+    /// The resource it sits in, empty at the top.
+    pub parent: String,
+    /// A LAN port's MAC address, 12 hexadecimal digits.
+    pub mac: String,
+}
+
+/// A tape media library device (`WRKMLBSTS`).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct MediaLibrary {
+    /// The device description.
+    pub device: String,
+    /// `VARIED ON`, `VARIED OFF` ...
+    pub status: String,
+    /// Type and model.
+    pub type_model: (String, String),
+    /// Its resource.
+    pub resource: String,
+    /// Device text.
+    pub text: String,
+}
+
+/// Collection Services' configuration (`CFGPFRCOL`) and the active
+/// collection.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CollectionServices {
+    /// Active collection: library, name, profile, start (Unix seconds).
+    pub active: Option<(String, String, String, u64)>,
+    /// `CFGPFRCOL LIB`.
+    pub library: String,
+    /// The default profile.
+    pub profile: String,
+    /// Interval, seconds.
+    pub interval: u32,
+    /// `*MGTCOL` retention, hours; `None` for permanent.
+    pub retention_hours: Option<u32>,
+    /// Cycle time (hour of the day) and interval (hours).
+    pub cycle: (u32, u32),
+    /// `CRTDBF(*YES)`.
+    pub create_files: bool,
+    /// Categories collected.
+    pub categories: Vec<String>,
+}
+
+/// A registered exit point with its programs (`WRKREGINF`).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ExitPoint {
+    /// Name.
+    pub name: String,
+    /// Format.
+    pub format: String,
+    /// Registered rather than made by adding a program.
+    pub registered: bool,
+    /// It may be deregistered.
+    pub allow_deregistration: bool,
+    /// Its information may be changed.
+    pub allow_change: bool,
+    /// Maximum programs; `None` for no limit.
+    pub max_programs: Option<i32>,
+    /// Text.
+    pub text: String,
+    /// Its programs.
+    pub programs: Vec<ExitProgram>,
+}
+
+/// An exit program.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ExitProgram {
+    /// The program number.
+    pub number: i32,
+    /// Library.
+    pub library: String,
+    /// Name.
+    pub name: String,
+    /// Its text.
+    pub text: String,
+    /// The exit program data.
+    pub data: String,
+    /// `*YES`, `*NO`, `*UNKNOWN`.
+    pub threadsafe: String,
+    /// `*SYSVAL`, `*RUN`, `*MSG`, `*NORUN`.
+    pub action: String,
+}
+
+/// An environment variable, system level or the asking job's.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct EnvVar {
+    /// System level rather than the job's.
+    pub system: bool,
+    /// Name.
+    pub name: String,
+    /// Value.
+    pub value: String,
+    /// CCSID.
+    pub ccsid: u16,
+}
+
+/// A PTF group (`WRKPTFGRP`).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PtfGroup {
+    /// Name.
+    pub name: String,
+    /// Description.
+    pub text: String,
+    /// Level.
+    pub level: u32,
+    /// Target release.
+    pub release: String,
+    /// `INSTALLED`, `NOT INSTALLED` ...
+    pub status: String,
+    /// Its PTFs: identifier, product, status.
+    pub ptfs: Vec<(String, String, String)>,
+}
+
+/// The asking job's connection, as `TCPIP_INFO` shows it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Connection {
+    /// The host name.
+    pub host_name: String,
+    /// The client's address and port, when the job has a connection.
+    pub client: Option<std::net::SocketAddr>,
+    /// The server's side of it.
+    pub server: Option<std::net::SocketAddr>,
+}
+
 /// The system outside the store, as the storage service reaches it.
 pub trait SystemHost {
     /// The asking job's library list.
@@ -327,6 +531,56 @@ pub trait SystemHost {
     /// Run a CL command as the asking job: `Err` with the escape
     /// message's ID and text.
     fn command(&self, _cmd: &str) -> Option<Result<(), (String, String)>> {
+        None
+    }
+
+    /// The storage pools.
+    fn memory_pools(&self) -> Option<Vec<MemoryPool>> {
+        None
+    }
+
+    /// The disk units of ASP 1.
+    fn disk_units(&self) -> Option<Vec<DiskUnit>> {
+        None
+    }
+
+    /// The hardware resources.
+    fn hardware(&self) -> Option<Result<Vec<HardwareResource>, String>> {
+        None
+    }
+
+    /// The tape media libraries.
+    fn media_libraries(&self) -> Option<Vec<MediaLibrary>> {
+        None
+    }
+
+    /// Collection Services.
+    fn collection_services(&self) -> Option<CollectionServices> {
+        None
+    }
+
+    /// The exit points and their programs.
+    fn exit_points(&self) -> Option<Result<Vec<ExitPoint>, String>> {
+        None
+    }
+
+    /// The system's and the asking job's environment variables.
+    fn environment_variables(&self) -> Option<Vec<EnvVar>> {
+        None
+    }
+
+    /// The PTF groups.
+    fn ptf_groups(&self) -> Option<Result<Vec<PtfGroup>, String>> {
+        None
+    }
+
+    /// The asking job's connection and the host name.
+    fn connection(&self) -> Option<Connection> {
+        None
+    }
+
+    /// Resolve a host name, through `server` when given.
+    fn dns_lookup(&self, _name: &str, _server: Option<&str>) -> Option<Result<Vec<std::net::IpAddr>, String>> {
         None
     }
 }

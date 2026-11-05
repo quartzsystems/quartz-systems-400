@@ -85,7 +85,13 @@ impl Called {
 
 /// `CALL`.
 pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value]) -> Result<Outcome> {
-    let all = find::named(txn, ctx, &c.name, 1)?;
+    // `SYSTOOLS` need not exist as a library for its procedures.
+    let engine = c.name.schema.as_ref().is_some_and(|s| matches!(s.value.as_str(), "QSYS2" | "SYSTOOLS"))
+        && crate::exec::catalog::services::procs::is_procedure(c.name.schema.as_ref().map(|s| s.value.as_str()), &c.name.name.value);
+    let all = match find::named(txn, ctx, &c.name, 1) {
+        Err(_) if engine => Vec::new(),
+        r => r?,
+    };
     if let Some(done) = service_call(txn, ctx, c, params, all.is_empty())? {
         return Ok(done);
     }

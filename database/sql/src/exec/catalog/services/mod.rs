@@ -20,10 +20,14 @@ mod args;
 mod out;
 
 mod absent;
+mod admin;
 mod joblog;
 mod jrnent;
+mod locks;
 mod msgfdata;
 mod secinfo;
+mod sysconf;
+mod sysres;
 mod history;
 mod ifs;
 mod jobs;
@@ -112,6 +116,21 @@ const VIEWS: &[View] = &[
     View { schema: "QSYS2", name: "SYSLIMTBL", no_value: &[], rows: absent::view },
     View { schema: "QSYS2", name: "SYSLIMITS", no_value: &[], rows: absent::view },
     View { schema: "QSYS2", name: "ELECTRONIC_SERVICE_AGENT_INFO", no_value: &[], rows: absent::view },
+    View { schema: "QSYS2", name: "ASP_VARY_INFO", no_value: &[], rows: absent::view },
+    View { schema: "QSYS2", name: "SERVER_SBS_ROUTING", no_value: &[], rows: absent::view },
+    View { schema: "QSYS2", name: "OBJECT_LOCK_INFO", no_value: &[], rows: locks::view },
+    View { schema: "QSYS2", name: "MEMORY_POOL_INFO", no_value: &[], rows: sysres::pools },
+    View { schema: "QSYS2", name: "ASP_INFO", no_value: sysres::ASP_NO_VALUE, rows: sysres::asp },
+    View { schema: "QSYS2", name: "SYSDISKSTAT", no_value: sysres::DISK_NO_VALUE, rows: sysres::disks },
+    View { schema: "QSYS2", name: "HARDWARE_RESOURCE_INFO", no_value: sysres::HW_NO_VALUE, rows: sysres::hardware },
+    View { schema: "QSYS2", name: "MEDIA_LIBRARY_INFO", no_value: sysconf::MLB_NO_VALUE, rows: sysconf::media_libraries },
+    View { schema: "QSYS2", name: "COLLECTION_SERVICES_INFO", no_value: sysconf::CS_NO_VALUE, rows: sysconf::collection_services },
+    View { schema: "QSYS2", name: "EXIT_POINT_INFO", no_value: &[], rows: sysconf::exit_points },
+    View { schema: "QSYS2", name: "EXIT_PROGRAM_INFO", no_value: sysconf::PGM_NO_VALUE, rows: sysconf::exit_programs },
+    View { schema: "QSYS2", name: "ENVIRONMENT_VARIABLE_INFO", no_value: &[], rows: sysconf::environment },
+    View { schema: "QSYS2", name: "GROUP_PTF_INFO", no_value: &[], rows: sysconf::ptf_groups },
+    View { schema: "SYSTOOLS", name: "GROUP_PTF_DETAILS", no_value: sysconf::DETAIL_NO_VALUE, rows: sysconf::ptf_details },
+    View { schema: "QSYS2", name: "TCPIP_INFO", no_value: &[], rows: sysconf::tcpip },
 ];
 
 /// The table functions.
@@ -143,6 +162,20 @@ const FUNCTIONS: &[Function] = &[
     Function { schema: "QSYS2", specific: "QSQSECINF", no_value: &[], rows: secinfo::function },
     Function { schema: "QSYS2", specific: "QSQSACONN", no_value: &[], rows: absent::function },
     Function { schema: "QSYS2", specific: "QJOJRNTF", no_value: &[], rows: jrnent::display },
+    Function { schema: "QSYS2", specific: "VARYINFO", no_value: &[], rows: absent::function },
+    Function { schema: "QSYS2", specific: "QSYSVRSBSR", no_value: &[], rows: absent::function },
+    Function { schema: "QSYS2", specific: "OBJECT_LOCK_INFO", no_value: &[], rows: locks::function },
+    Function { schema: "QSYS2", specific: "QSQPOOL2", no_value: &[], rows: sysres::pool_function },
+    Function { schema: "QSYS2", specific: "QSQSYSACTI", no_value: &[], rows: sysres::activity },
+    Function { schema: "QSYS2", specific: "QSQASPINFO", no_value: &[], rows: sysres::asp_function },
+    Function { schema: "QSYS2", specific: "SYSDSKSTAT", no_value: &[], rows: sysres::disk_function },
+    Function { schema: "QSYS2", specific: "QSQHDWRSC", no_value: &[], rows: sysres::hardware_function },
+    Function { schema: "QSYS2", specific: "QYPSCSINFO", no_value: &[], rows: sysconf::collection_services_function },
+    Function { schema: "QSYS2", specific: "GROUP_PTF_INFO", no_value: &[], rows: sysconf::ptf_groups_function },
+    Function { schema: "SYSTOOLS", specific: "GROUP00001", no_value: &[], rows: sysconf::ptf_details_function },
+    Function { schema: "QSYS2", specific: "TCPIP_INFO_FUNC", no_value: &[], rows: sysconf::tcpip_function },
+    Function { schema: "QSYS2", specific: "QSQDNSLKUP", no_value: &[], rows: sysconf::dns },
+    Function { schema: "SYSTOOLS", specific: "CHGUSRPRF", no_value: &[], rows: admin::change_user_profile },
     Function { schema: "SYSTOOLS", specific: "AUDIT_AD", no_value: &[], rows: jrnent::audit::<b'A', b'D'> },
     Function { schema: "SYSTOOLS", specific: "AUDIT_AF", no_value: &[], rows: jrnent::audit::<b'A', b'F'> },
     Function { schema: "SYSTOOLS", specific: "AUDIT_AP", no_value: &[], rows: jrnent::audit::<b'A', b'P'> },
@@ -354,6 +387,8 @@ pub fn self_check(txn: &mut Txn<'_>, ctx: &SqlContext) -> Vec<String> {
                 .map(|p| {
                     let v = if matches!(p.ty.as_str(), "INTEGER" | "SMALLINT" | "BIGINT" | "DECIMAL") {
                         crate::value::Value::int(1)
+                    } else if p.name == "SEARCH_NAME" {
+                        crate::value::Value::Str("localhost".into())
                     } else if p.name == "JOURNAL_NAME" {
                         crate::value::Value::Str("QAUDJRN".into())
                     } else if p.name == "JOB_NAME" {

@@ -1309,3 +1309,69 @@ pub fn sql_status(system: &mut System) -> sql::exec::catalog::services::host::Sy
         scheduler_active: jobs.iter().any(|j| j.name == "QEJSCHED"),
     }
 }
+
+/// The storage pools as `MEMORY_POOL_INFO` shows them, over the
+/// `WRKSYSSTS` interval.
+#[allow(clippy::cast_precision_loss)] // counters far below 2^52
+pub fn sql_pools(system: &mut System) -> Vec<sql::exec::catalog::services::host::MemoryPool> {
+    let (now, base) = interval(system, |s| &mut s.syssts, false);
+    let d = Delta { now: &now, base: &base };
+    let per_min = |n: u64| n as f64 * 60.0 / d.secs();
+    system
+        .pools
+        .info()
+        .into_iter()
+        .map(|p| {
+            let (db, ndb) = d.faults(&p.name);
+            let (aw, wi, ai) = d.counters(&p.name);
+            let subsystem = p.name.split_once('/').map(|(sbs, _)| {
+                (system.sbs.get(sbs).map_or_else(String::new, |a| a.lib.clone()), sbs.to_string())
+            });
+            sql::exec::catalog::services::host::MemoryPool {
+                number: p.number,
+                name: p.name.clone(),
+                subsystem,
+                size_kb: p.size_kb,
+                reserved_kb: p.reserved_kb,
+                max_active: p.actlvl,
+                active: p.active,
+                ineligible: p.ineligible,
+                elapsed_ms: d.whole_secs() * 1000,
+                db_faults: db,
+                ndb_faults: ndb,
+                // As WRKSYSSTS shows them: a fault is a page read.
+                db_pages: db,
+                ndb_pages: ndb,
+                transitions: [per_min(aw), per_min(wi), per_min(ai)],
+            }
+        })
+        .collect()
+}
+
+/// The disk units as `SYSDISKSTAT` shows them, over the `WRKDSKSTS`
+/// interval.
+pub fn sql_disks(system: &mut System) -> Vec<sql::exec::catalog::services::host::DiskUnit> {
+    let (now, base) = interval(system, |s| &mut s.dsksts, false);
+    let ms = u64::try_from(now.at.duration_since(base.at).as_millis()).unwrap_or(u64::MAX);
+    super::units::views(system)
+        .iter()
+        .enumerate()
+        .map(|(i, u)| {
+            let t = now.disks.get(i).copied().unwrap_or_default();
+            let x = t.since(&base.disks.get(i).copied().unwrap_or_default());
+            sql::exec::catalog::services::host::DiskUnit {
+                unit: u.unit + 1,
+                type_code: u.type_code.clone(),
+                model: u.model.clone(),
+                serial: u.serial.clone(),
+                status: u.status.clone(),
+                protection: u.protection.clone(),
+                capacity: u.usable * 4096,
+                free: u.usable.saturating_sub(u.used) * 4096,
+                totals: [t.reads, t.writes, t.read_sectors, t.write_sectors, t.busy_ms],
+                elapsed: [x.reads, x.writes, x.read_sectors, x.write_sectors, x.busy_ms],
+                elapsed_ms: ms,
+            }
+        })
+        .collect()
+}

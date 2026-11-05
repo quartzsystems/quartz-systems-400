@@ -280,6 +280,109 @@ impl SystemHost for Mock {
         Some(Ok(()))
     }
 
+    fn memory_pools(&self) -> Option<Vec<host::MemoryPool>> {
+        Some(vec![
+            host::MemoryPool { number: 1, name: "*MACHINE".into(), size_kb: 524_288, reserved_kb: 102_400, max_active: 32_767, elapsed_ms: 5000, ..host::MemoryPool::default() },
+            host::MemoryPool {
+                number: 3,
+                name: "QINTER/2".into(),
+                subsystem: Some(("QSYS".into(), "QINTER".into())),
+                size_kb: 20_480,
+                max_active: 10,
+                active: 2,
+                elapsed_ms: 5000,
+                db_faults: 1.25,
+                ..host::MemoryPool::default()
+            },
+        ])
+    }
+
+    fn disk_units(&self) -> Option<Vec<host::DiskUnit>> {
+        Some(vec![host::DiskUnit {
+            unit: 1,
+            type_code: "SSD".into(),
+            model: "QEMU".into(),
+            serial: "QM00001".into(),
+            status: "Active".into(),
+            protection: "None".into(),
+            capacity: 20_000_000_000,
+            free: 15_000_000_000,
+            totals: [100, 50, 800, 400, 20],
+            elapsed: [10, 5, 80, 40, 500],
+            elapsed_ms: 5000,
+        }])
+    }
+
+    fn hardware(&self) -> Option<Result<Vec<host::HardwareResource>, String>> {
+        let r = |name: &str, cat: &str, parent: &str| host::HardwareResource {
+            name: name.into(),
+            category: cat.into(),
+            operational: true,
+            type_model: ("QN00".into(), "001".into()),
+            serial: "0123456789ABC".into(),
+            text: "Thing".into(),
+            parent: parent.into(),
+            ..host::HardwareResource::default()
+        };
+        Some(Ok(vec![r("CMB01", "PACKAGING", ""), r("LIN01", "COMM", "CMB01")]))
+    }
+
+    fn media_libraries(&self) -> Option<Vec<host::MediaLibrary>> {
+        Some(vec![host::MediaLibrary { device: "TAPMLB01".into(), status: "VARIED ON".into(), type_model: ("63B0".into(), "001".into()), resource: "TAPMLB01".into(), text: "Virtual".into() }])
+    }
+
+    fn collection_services(&self) -> Option<host::CollectionServices> {
+        Some(host::CollectionServices {
+            active: Some(("QPFRDATA".into(), "Q001000002".into(), "*STANDARDP".into(), 1_767_225_600)),
+            library: "QPFRDATA".into(),
+            profile: "*STANDARDP".into(),
+            interval: 900,
+            retention_hours: Some(24),
+            cycle: (0, 24),
+            create_files: true,
+            categories: vec!["*SYSBUS".into(), "*POOL".into()],
+        })
+    }
+
+    fn exit_points(&self) -> Option<Result<Vec<host::ExitPoint>, String>> {
+        Some(Ok(vec![host::ExitPoint {
+            name: "QIBM_QTF_TRANSFER".into(),
+            format: "TRAN0100".into(),
+            registered: true,
+            allow_deregistration: true,
+            allow_change: true,
+            max_programs: Some(1),
+            text: "FTP transfer".into(),
+            programs: vec![host::ExitProgram { number: 1, library: "QGPL".into(), name: "FTPEXIT".into(), threadsafe: "*UNKNOWN".into(), action: "*SYSVAL".into(), ..host::ExitProgram::default() }],
+        }]))
+    }
+
+    fn environment_variables(&self) -> Option<Vec<host::EnvVar>> {
+        Some(vec![
+            host::EnvVar { system: true, name: "QIBM_CCSID".into(), value: "1208".into(), ccsid: 37 },
+            host::EnvVar { system: false, name: "HOME".into(), value: "/home/CODY".into(), ccsid: 37 },
+        ])
+    }
+
+    fn ptf_groups(&self) -> Option<Result<Vec<host::PtfGroup>, String>> {
+        Some(Ok(vec![host::PtfGroup {
+            name: "QS00CUM".into(),
+            text: "Cumulative".into(),
+            level: 3,
+            release: "V1R1M0".into(),
+            status: "INSTALLED".into(),
+            ptfs: vec![("QS00001".into(), "QS00SS1".into(), "APPLIED".into())],
+        }]))
+    }
+
+    fn connection(&self) -> Option<host::Connection> {
+        Some(host::Connection { host_name: "qs400.example".into(), client: Some("10.0.0.9:50001".parse().unwrap()), server: Some("10.0.0.1:8471".parse().unwrap()) })
+    }
+
+    fn dns_lookup(&self, name: &str, _server: Option<&str>) -> Option<Result<Vec<std::net::IpAddr>, String>> {
+        Some(if name == "localhost" { Ok(vec!["127.0.0.1".parse().unwrap(), "::1".parse().unwrap()]) } else { Err("no such host".into()) })
+    }
+
     fn system_status(&self) -> Option<SystemStatus> {
         Some(SystemStatus {
             total_jobs: 40,
@@ -921,4 +1024,108 @@ fn services_qs400_does_not_have_answer_no_rows() {
     for v in ["FUNCTION_INFO", "FUNCTION_USAGE", "LICENSE_INFO", "SYSLIMTBL", "SYSLIMITS", "ELECTRONIC_SERVICE_AGENT_INFO"] {
         assert_eq!(db.rows(&format!("SELECT COUNT(*) FROM QSYS2.{v}")), vec![row(&["0"])], "{v}");
     }
+}
+
+#[test]
+fn pools_activity_asp_and_disks() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT SYSTEM_POOL_ID, POOL_NAME, CURRENT_SIZE, CURRENT_THREADS, SUBSYSTEM_NAME, ELAPSED_DATABASE_FAULTS, PAGING_OPTION FROM QSYS2.MEMORY_POOL_INFO"),
+        vec![row(&["1", "*MACHINE", "512.00", "0", "-", "0.0", "*FIXED"]), row(&["3", "2", "20.00", "2", "QINTER", "1.2", "*FIXED"])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.MEMORY_POOL()) X"), vec![row(&["2"])]);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.MEMORY_POOL(RESET_STATISTICS => 'YES')) X"), -443);
+    assert_eq!(db.rows("SELECT AVERAGE_CPU_UTILIZATION, MAXIMUM_CPU_UTILIZATION FROM TABLE(QSYS2.SYSTEM_ACTIVITY_INFO()) X"), vec![row(&["3.25", "-"])]);
+    assert_eq!(
+        db.rows("SELECT ASP_NUMBER, NUMBER_OF_DISK_UNITS, TOTAL_CAPACITY, TOTAL_CAPACITY_AVAILABLE, ASP_TYPE FROM QSYS2.ASP_INFO"),
+        vec![row(&["1", "1", "19073", "14305", "-"])]
+    );
+    assert_eq!(
+        db.rows("SELECT UNIT_NUMBER, DISK_TYPE, UNIT_TYPE, PERCENT_USED, TOTAL_READ_REQUESTS, ELAPSED_IO_REQUESTS, ELAPSED_PERCENT_BUSY FROM QSYS2.SYSDISKSTAT"),
+        vec![row(&["1", "SSD", "1", "25.000", "100", "3.0", "10.0"])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM QSYS2.ASP_VARY_INFO"), vec![row(&["0"])]);
+}
+
+#[test]
+fn hardware_media_and_collection_services() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT ID, PARENT_ID, RESOURCE_CATEGORY, RESOURCE_NAME, STATUS, SERIAL_NUMBER_SHORT FROM QSYS2.HARDWARE_RESOURCE_INFO"),
+        vec![row(&["1", "-", "PACKAGING", "CMB01", "OPERATIONAL", "3456789ABC"]), row(&["2", "1", "COMM", "LIN01", "OPERATIONAL", "3456789ABC"])]
+    );
+    assert_eq!(db.rows("SELECT RESOURCE_NAME FROM TABLE(QSYS2.HARDWARE_RESOURCE_INFO('*CMN')) X"), vec![row(&["LIN01"])]);
+    assert_eq!(db.rows("SELECT DEVICE_NAME, DEVICE_STATUS, RESOURCE_ALLOCATION_PRIORITY FROM QSYS2.MEDIA_LIBRARY_INFO"), vec![row(&["TAPMLB01", "VARIED ON", "-"])]);
+    assert_eq!(
+        db.rows("SELECT ACTIVE_COLLECTION_NAME, COLLECTION_LIBRARY, DEFAULT_COLLECTION_INTERVAL, CATEGORY_LIST_COUNT, CATEGORY_LIST FROM QSYS2.COLLECTION_SERVICES_INFO"),
+        vec![row(&["Q001000002", "QPFRDATA", "900", "2", "*SYSBUS *POOL"])]
+    );
+}
+
+#[test]
+fn exits_environment_ptf_groups_and_network() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT EXIT_POINT_NAME, EXIT_POINT_FORMAT, REGISTERED, EXIT_PROGRAMS, MAXIMUM_EXIT_PROGRAMS FROM QSYS2.EXIT_POINT_INFO"),
+        vec![row(&["QIBM_QTF_TRANSFER", "TRAN0100", "YES", "1", "1"])]
+    );
+    assert_eq!(
+        db.rows("SELECT EXIT_PROGRAM_NUMBER, EXIT_PROGRAM_LIBRARY, EXIT_PROGRAM, THREADSAFE, MULTITHREADED_JOB_ACTION FROM QSYS2.EXIT_PROGRAM_INFO"),
+        vec![row(&["1", "QGPL", "FTPEXIT", "UNK", "SYSVAL"])]
+    );
+    assert_eq!(
+        db.rows("SELECT ENVIRONMENT_VARIABLE_TYPE, ENVIRONMENT_VARIABLE_NAME, ENVIRONMENT_VARIABLE_VALUE, HEX(ENVIRONMENT_VARIABLE_BINARY_NAME) FROM QSYS2.ENVIRONMENT_VARIABLE_INFO"),
+        vec![row(&["JOB", "HOME", "/home/CODY", "C8D6D4C5"]), row(&["SYSTEM", "QIBM_CCSID", "1208", "D8C9C2D46DC3C3E2C9C4"])]
+    );
+    assert_eq!(db.rows("SELECT PTF_GROUP_NAME, PTF_GROUP_LEVEL, PTF_GROUP_STATUS FROM QSYS2.GROUP_PTF_INFO"), vec![row(&["QS00CUM", "3", "INSTALLED"])]);
+    assert_eq!(db.rows("SELECT PTF_IDENTIFIER, PTF_STATUS FROM TABLE(SYSTOOLS.GROUP_PTF_DETAILS('QS00CUM')) X"), vec![row(&["QS00001", "APPLIED"])]);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(SYSTOOLS.GROUP_PTF_DETAILS('OTHER')) X"), vec![row(&["0"])]);
+    assert_eq!(
+        db.rows("SELECT LOCAL_HOST_NAME, CLIENT_IP_ADDRESS_TYPE, CLIENT_IP_ADDRESS, SERVER_PORT_NUMBER FROM QSYS2.TCPIP_INFO"),
+        vec![row(&["qs400.example", "IPV4", "10.0.0.9", "8471"])]
+    );
+    assert_eq!(db.rows("SELECT ADDRESS_SPACE_TYPE, IP_ADDRESS FROM TABLE(QSYS2.DNS_LOOKUP('localhost')) X"), vec![row(&["IPV4", "127.0.0.1"]), row(&["IPV6", "::1"])]);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.DNS_LOOKUP('nowhere')) X"), -443);
+}
+
+#[test]
+fn object_lock_info() {
+    let mut db = Db::new(true);
+    let (ca, _) = db.run("CREATE TABLE QSTEST.LK (A INT)");
+    assert!(!ca.is_error(), "{}", ca.line());
+    {
+        let mut t = db.store.begin().unwrap();
+        let lib = ops::find_library(&mut t, db.ctx.qsys, Name::parse("QSTEST").unwrap()).unwrap().id;
+        let (_, id) = ops::list(&mut t, lib, Some(types::FILE)).unwrap().into_iter().find(|(k, _)| k.name.to_string() == "LK").unwrap();
+        t.abort();
+        db.store.locks_mut().lock(JobHandle(9), id, store::obj::lock::LockState::SharedRead).unwrap();
+    }
+    assert_eq!(
+        db.rows("SELECT SYSTEM_OBJECT_SCHEMA, SYSTEM_OBJECT_NAME, OBJECT_TYPE, LOCK_STATE, LOCK_STATUS, LOCK_COUNT FROM QSYS2.OBJECT_LOCK_INFO WHERE SYSTEM_OBJECT_NAME = 'LK'"),
+        vec![row(&["QSTEST", "LK", "*FILE", "*SHRRD", "HELD", "1"])]
+    );
+    assert_eq!(db.rows("SELECT LOCK_STATE FROM TABLE(QSYS2.OBJECT_LOCK_INFO('QSTEST', 'LK', '*FILE', 1)) X"), vec![row(&["*SHRRD"])]);
+}
+
+#[test]
+fn change_user_profile_and_refused_procedures() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT USER_NAME, CHANGE_ATTEMPTED, CHGUSRPRF_COMMAND FROM TABLE(SYSTOOLS.CHANGE_USER_PROFILE(P_USER_NAME => 'BOB', P_STATUS => '*DISABLED', P_TEXT => 'Bob''s')) X"),
+        vec![row(&["BOB", "NO", "CHGUSRPRF USRPRF(BOB) STATUS(*DISABLED) TEXT('Bob''s')"])]
+    );
+    assert_eq!(
+        db.rows("SELECT CHANGE_ATTEMPTED, CHANGE_SUCCESSFUL, FAILURE_MESSAGE_ID FROM TABLE(SYSTOOLS.CHANGE_USER_PROFILE('BOB', P_STATUS => '*DISABLED', PREVIEW => 'NO')) X"),
+        vec![row(&["YES", "NO", "CPF0006"])]
+    );
+    assert_eq!(db.code("SELECT * FROM TABLE(SYSTOOLS.CHANGE_USER_PROFILE('BOB', P_SPECIAL_AUTHORITY_ACTION => '*ADD', P_SPECIAL_AUTHORITY => '*JOBCTL')) X"), -84);
+    assert_eq!(db.code("CALL QSYS2.SET_SERVER_SBS_ROUTING('BOB', 'QZDASOINIT', 'QSERVER')"), -84);
+    assert_eq!(db.code("CALL QSYS2.SET_PASE_SHELL_INFO('BOB', '/QOpenSys/pkgs/bin/bash')"), -84);
+    assert_eq!(db.code("CALL SYSTOOLS.LPRINTF('hello')"), -84);
+    assert_eq!(db.code("VALUES SYSTOOLS.GENERATE_SPREADSHEET('/home/x', 'SELECT 1 FROM SYSIBM.SYSDUMMY1')"), -84);
+    let (ca, _) = db.run("CREATE TABLE QSTEST.OT (A INT)");
+    assert!(!ca.is_error(), "{}", ca.line());
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_TABLE('QSTEST', 'OT', '*BUF256KB')"), 0);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_TABLE('QSTEST', 'OT', 'LOTS')"), -171);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_TABLE('QSTEST', 'NOPE', '*DEFAULT')"), -204);
 }

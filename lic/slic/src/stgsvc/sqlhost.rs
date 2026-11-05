@@ -267,6 +267,204 @@ impl SystemHost for SqlHost {
             }
         })
     }
+
+    fn memory_pools(&self) -> Option<Vec<host::MemoryPool>> {
+        with_system(super::stats::sql_pools)
+    }
+
+    fn disk_units(&self) -> Option<Vec<host::DiskUnit>> {
+        with_system(super::stats::sql_disks)
+    }
+
+    fn hardware(&self) -> Option<Result<Vec<host::HardwareResource>, String>> {
+        use hwrsrc::table::Kind;
+        // The hardware resource service answers on its own socket.
+        let t = match hwrsrc::client::table(false) {
+            Ok(t) => t,
+            Err(e) => return Some(Err(format!("the hardware resource service: {e}"))),
+        };
+        Some(Ok(t
+            .resources
+            .iter()
+            .map(|r| host::HardwareResource {
+                name: r.name.clone(),
+                category: match r.kind {
+                    Kind::Processor | Kind::Memory => "PROCESSOR",
+                    Kind::Lan | Kind::Port | Kind::Comm | Kind::Channel => "COMM",
+                    Kind::Keyboard => "LWS",
+                    Kind::Storage | Kind::Disk | Kind::Optical | Kind::Tape | Kind::TapeLibrary => "STORAGE",
+                    Kind::Bridge => "PACKAGING",
+                    Kind::Other => "OTHER",
+                }
+                .into(),
+                operational: r.operational(),
+                type_model: r.type_model(),
+                serial: r.serial.clone(),
+                text: r.description.clone(),
+                location: r.location.clone(),
+                parent: r.parent.clone(),
+                mac: r.port.as_ref().map_or_else(String::new, |p| p.mac.replace(':', "").to_ascii_uppercase()),
+            })
+            .collect()))
+    }
+
+    fn media_libraries(&self) -> Option<Vec<host::MediaLibrary>> {
+        use wm::obj::devmed::MediaKind;
+        with_system(|system| {
+            super::media::devices::all(system)
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|(_, d)| d.media_kind() == Some(MediaKind::TapeLibrary))
+                .map(|(n, d)| host::MediaLibrary {
+                    device: n,
+                    status: d.status.text().to_ascii_uppercase(),
+                    type_model: (d.devtype.clone(), d.model.clone()),
+                    resource: d.media.as_ref().map_or_else(String::new, |m| m.rsrcname.clone()),
+                    text: d.text.clone(),
+                })
+                .collect()
+        })
+    }
+
+    fn collection_services(&self) -> Option<host::CollectionServices> {
+        with_system(|system| {
+            let c = super::perfcol::config(system);
+            let active = system.stats.perf.active.as_ref().map(|a| {
+                (a.library.clone(), a.name.clone(), a.header.profile.clone(), a.header.started)
+            });
+            let cats = perf::profile::categories(&c.profile, &c.custom).unwrap_or_default();
+            host::CollectionServices {
+                active,
+                library: c.library.clone(),
+                profile: c.profile.clone(),
+                interval: c.interval,
+                retention_hours: c.retention.map(|(n, days)| u32::from(n) * if days { 24 } else { 1 }),
+                cycle: (c.cycle_time.get(..2).and_then(|h| h.parse().ok()).unwrap_or(0), u32::from(c.cycle_hours)),
+                create_files: c.create_files,
+                categories: cats.iter().map(|k| k.name().to_string()).collect(),
+            }
+        })
+    }
+
+    fn exit_points(&self) -> Option<Result<Vec<host::ExitPoint>, String>> {
+        with_system(|system| {
+            let s = system.storage.as_mut().ok_or("the object store is not open")?;
+            let qsys = s.qsys.ok_or("the object store is not initialized")?;
+            let reg = crate::svc::db::with_txn(&mut s.store, |txn| regfac::store::load(txn, qsys).map_err(|e| e.to_string()))?;
+            Ok(reg
+                .points
+                .iter()
+                .map(|p| host::ExitPoint {
+                    name: p.name.clone(),
+                    format: p.format.clone(),
+                    registered: p.registered,
+                    allow_deregistration: p.allow_dereg,
+                    allow_change: p.allow_change,
+                    max_programs: p.max.and_then(|m| i32::try_from(m).ok()),
+                    text: p.desc.as_text().to_string(),
+                    programs: p
+                        .programs
+                        .iter()
+                        .map(|g| host::ExitProgram {
+                            number: g.number,
+                            library: g.lib.clone(),
+                            name: g.pgm.clone(),
+                            text: g.desc.as_text().to_string(),
+                            data: ccsid::decode_trimmed(&g.data),
+                            threadsafe: g.threadsafe.special().into(),
+                            action: g.mt_action.special().into(),
+                        })
+                        .collect(),
+                })
+                .collect())
+        })
+    }
+
+    fn environment_variables(&self) -> Option<Vec<host::EnvVar>> {
+        // BLOCKED(sql): the job's own variables live in the job; the
+        // service reaches the system-level ones only.
+        with_system(|system| {
+            super::qsh::system_vars(system)
+                .unwrap_or_default()
+                .into_iter()
+                .map(|v| host::EnvVar {
+                    system: true,
+                    name: v.name,
+                    value: v.value.unwrap_or_default(),
+                    ccsid: u16::try_from(v.ccsid).ok().filter(|c| *c != 0).unwrap_or(37),
+                })
+                .collect()
+        })
+    }
+
+    fn ptf_groups(&self) -> Option<Result<Vec<host::PtfGroup>, String>> {
+        with_system(|system| {
+            let db = crate::cpp::ptfcmd::load_db(system)?;
+            let groups = crate::cpp::ptfcmd::load_groups(system)?;
+            let keys = crate::cpp::trusted_keys();
+            let release = release::RELEASE.to_string();
+            Ok(groups
+                .rows(&db, &keys)
+                .into_iter()
+                .map(|r| {
+                    let ptfs = groups
+                        .groups
+                        .get(&r.name)
+                        .and_then(|k| k.group(&keys))
+                        .map(|(g, _)| g.ptfs)
+                        .unwrap_or_default()
+                        .into_iter()
+                        .map(|id| {
+                            let (product, status) = db.ptfs.values().find(|p| p.ptf == id).map_or_else(
+                                || (String::new(), "NOT INSTALLED".to_string()),
+                                |p| (p.product.clone(), format!("{:?}", p.status).to_ascii_uppercase()),
+                            );
+                            (id, product, status)
+                        })
+                        .collect();
+                    host::PtfGroup {
+                        name: r.name,
+                        text: r.text,
+                        level: r.level,
+                        release: release.clone(),
+                        status: r.status.display().to_ascii_uppercase(),
+                        ptfs,
+                    }
+                })
+                .collect())
+        })
+    }
+
+    fn connection(&self) -> Option<host::Connection> {
+        // The service does not know a job's socket: the addresses are
+        // null.
+        Some(host::Connection {
+            host_name: std::fs::read_to_string("/proc/sys/kernel/hostname").map(|h| h.trim().to_string()).unwrap_or_default(),
+            client: None,
+            server: None,
+        })
+    }
+
+    fn dns_lookup(&self, name: &str, server: Option<&str>) -> Option<Result<Vec<std::net::IpAddr>, String>> {
+        use std::net::ToSocketAddrs as _;
+        if server.is_some_and(|s| !s.is_empty()) {
+            return Some(Err("DOMAIN_SERVER is not supported: the system's resolver answers".into()));
+        }
+        // BLOCKED(sql): the lookup holds the service until the resolver
+        // answers; it does not yet take turns.
+        Some(match (name, 0u16).to_socket_addrs() {
+            Ok(addrs) => {
+                let mut v: Vec<std::net::IpAddr> = Vec::new();
+                for a in addrs {
+                    if !v.contains(&a.ip()) {
+                        v.push(a.ip());
+                    }
+                }
+                Ok(v)
+            }
+            Err(e) => Err(format!("{name}: {e}")),
+        })
+    }
 }
 
 impl SqlHost {

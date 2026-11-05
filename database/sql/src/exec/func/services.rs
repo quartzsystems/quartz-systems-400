@@ -38,6 +38,14 @@ pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Resul
     if let Some(r) = super::super::catalog::services::procs::qcmdexc_scalar(name, args, ctx) {
         return Some(r);
     }
+    if matches!(name, "GENERATE_SPREADSHEET" | "SYSTOOLS.GENERATE_SPREADSHEET") {
+        // IBM's runs the Access Client Solutions Java program.
+        return Some(Err(SqlError::Coded {
+            code: -84,
+            state: "42612",
+            what: "SYSTOOLS.GENERATE_SPREADSHEET: spreadsheets are not supported; IFS_WRITE writes a CSV file".into(),
+        }));
+    }
     let bare = ours(name)?;
     Some(run(bare, args))
 }
@@ -172,7 +180,7 @@ pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], _exprs: &[crate
     if let Some(t) = super::super::catalog::services::http::result_type(bare) {
         return Some(t);
     }
-    if bare == "QCMDEXC" {
+    if bare == "QCMDEXC" || name.ends_with("GENERATE_SPREADSHEET") {
         return Some(SqlType::new(Kind::Integer, 4, 0, true));
     }
     if ours(name)? == "BASE64_DECODE" {

@@ -27,6 +27,10 @@ const PROCEDURES: &[(&str, &str, ProcFn)] = &[
     ("QSYS2", "QSQIFSWRITE", ifs_write),
     ("QSYS2", "QSQIFSWRITEUTF8", ifs_write_utf8),
     ("QSYS2", "QSQIFSWRITEBINARY", ifs_write_binary),
+    ("QSYS2", "OVERRIDET", super::admin::override_table),
+    ("QSYS2", "SET_SERVER_SBS_ROUTING", super::admin::set_server_sbs_routing),
+    ("QSYS2", "SET_PASE_SHELL_INFO", super::admin::set_pase_shell_info),
+    ("SYSTOOLS", "LPRINTF", super::admin::lprintf),
 ];
 
 /// Whether `schema.name` is one of the engine's procedures.
