@@ -39,11 +39,9 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
     let lib = ctx.library_for(txn, &r.name)?;
     let lib_name = ops::read_header(txn, lib)?.1.name;
     let routine_type = if r.kind == RoutineKind::Procedure { 1 } else { 2 };
-    if r.kind == RoutineKind::Function {
-        // BLOCKED(sql): a function runs inside the statement that names
-        // it, in the database; calling a program from there waits on
-        // routines the database itself can run.
-        return Err(unsupported("CREATE FUNCTION: user-defined functions"));
+    let func = r.kind == RoutineKind::Function;
+    if func {
+        check_function(r)?;
     }
     let o = &r.options;
     if let Some(s) = &o.specific
@@ -77,7 +75,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
     let same: Vec<&Found> = existing
         .iter()
         .filter(|f| f.routine.def.routine_type == routine_type && f.routine.def.name == r.name.name.value)
-        .filter(|f| usize::from(f.routine.def.parm_count) == r.parms.len())
+        .filter(|f| if func { same_types(f, &r.parms) } else { usize::from(f.routine.def.parm_count) == r.parms.len() })
         .collect();
     if let Some(old) = same.first() {
         if !r.replace {
@@ -112,7 +110,8 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
         parms.push(ParmDef { ordinal: ordinal(i), mode: model::mode_code(p.mode), role: 0, name: n.value.clone(), ty: pl::types::type_text(&p.ty) });
     }
     if let Some(Returns::Scalar(t, _)) = &r.returns {
-        parms.push(ParmDef { ordinal: 1, mode: 2, role: 2, name: String::new(), ty: pl::types::type_text(t) });
+        // A function's result follows its parameters (`ROW_TYPE` C).
+        parms.push(ParmDef { ordinal: ordinal(r.parms.len()), mode: 2, role: 2, name: String::new(), ty: pl::types::type_text(t) });
     }
     let mut flags = 0u16;
     for (on, f) in [
@@ -136,13 +135,13 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
         routine_type,
         language: model::language_code(language),
         style: style.map_or(0, model::style_code),
-        access: model::access_code(o.access.unwrap_or(SqlAccess::Modifies)),
+        access: model::access_code(o.access.unwrap_or(if func { SqlAccess::Reads } else { SqlAccess::Modifies })),
         body: match r.body {
             RoutineBody::Sql(_) => 1,
             RoutineBody::External => 2,
             RoutineBody::Sourced(..) => 3,
         },
-        function_type: 0,
+        function_type: u8::from(func),
         flags,
         result_sets: o.result_sets,
         parm_count: u16::try_from(r.parms.len()).map_err(|_| unsupported("more than 65535 parameters"))?,
@@ -156,6 +155,20 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
     };
     let routine_options = o.set_options.clone();
     let (owner, deps) = match &r.body {
+        _ if func => {
+            let program = program_name_of(txn, lib, &r.name.name, types::SRVPGM)?;
+            def.program_library = lib_name.to_string();
+            def.program = program.to_string();
+            // IBM's procedure in the service program: NAME_1, or NAME for a
+            // sourced function.
+            def.entry = format!("{}_1", r.name.name.value);
+            if let RoutineBody::Sourced(src, _) = &r.body {
+                def.sourced = src.to_string();
+                def.entry.clone_from(&r.name.name.value);
+                def.body_text.clear();
+            }
+            (holder(txn, ctx, lib, program, &r.text)?, Vec::new())
+        }
         RoutineBody::Sql(body) => {
             if r.parms.iter().any(|p| p.ty.ccsid.is_some() || p.ty.bit_data) {
                 return Err(unsupported("SQL routine parameters with a CCSID or FOR BIT DATA"));
@@ -218,27 +231,18 @@ fn ordinal(i: usize) -> u16 {
 }
 
 /// The body as the catalog keeps it (`ROUTINE_DEFINITION`): its tokens
-/// one blank apart, a statement to a line, as IBM shows it.
+/// one blank apart, its lines as written without their indentation,
+/// and a blank at the end, as IBM shows it.
 fn body_definition(text: &str) -> String {
     let Ok(toks) = crate::lex::tokenize(text) else { return text.to_string() };
     let mut out = String::new();
-    let mut depth = 0i32;
-    for t in toks.iter().map(|t| &t.tok) {
-        if matches!(t, crate::lex::Tok::End) {
-            break;
-        }
-        crate::pl::rewrite::render(t, &mut out);
-        match t {
-            crate::lex::Tok::Sym(";") => out.push('\n'),
-            crate::lex::Tok::Word(w) if w == "BEGIN" && depth == 0 => {
-                depth += 1;
-                out.push('\n');
-            }
-            _ => out.push(' '),
-        }
+    let toks: Vec<_> = toks.into_iter().filter(|t| !matches!(t.tok, crate::lex::Tok::End)).collect();
+    for (i, t) in toks.iter().enumerate() {
+        crate::pl::rewrite::render(&t.tok, &mut out);
+        let next_line = toks.get(i + 1).is_some_and(|n| n.line > t.line);
+        out.push(if next_line { '\n' } else { ' ' });
     }
-    // An empty body reads `BEGIN END `.
-    out.replace("BEGIN\nEND ", "BEGIN END ")
+    out
 }
 
 /// `SET OPTION COMMIT`.
@@ -276,13 +280,18 @@ fn specific_name(txn: &mut Txn<'_>, lib: ObjectId, name: &str) -> Result<String>
 /// The program's name: the routine's when it is a system name no
 /// program has, else a generated one.
 fn program_name(txn: &mut Txn<'_>, lib: ObjectId, name: &crate::ast::Ident) -> Result<Name> {
+    program_name_of(txn, lib, name, types::PGM)
+}
+
+/// The name of a new object of `ty` for a routine.
+fn program_name_of(txn: &mut Txn<'_>, lib: ObjectId, name: &crate::ast::Ident, ty: u16) -> Result<Name> {
     let l = Library::load(txn, lib)?;
     if let Some(n) = sqlnames::direct(name)
-        && l.lookup(txn, types::PGM, n)?.is_none()
+        && l.lookup(txn, ty, n)?.is_none()
     {
         return Ok(n);
     }
-    sqlnames::generate(txn, lib, types::PGM, &name.value, &|_| false)
+    sqlnames::generate(txn, lib, ty, &name.value, &|_| false)
 }
 
 /// `EXTERNAL NAME`: library, program and service program procedure.
@@ -327,6 +336,11 @@ fn external_object(txn: &mut Txn<'_>, ctx: &SqlContext, lib: &str, name: &str, t
 
 /// The compiled module bound as a `*PGM` in `lib`.
 fn make_program(txn: &mut Txn<'_>, ctx: &SqlContext, lib: ObjectId, name: Name, qir_text: &str, text: &str) -> Result<ObjectId> {
+    make_object(txn, ctx, lib, name, qir_text, text, PgmKind::Pgm)
+}
+
+/// A module bound as a program or service program in `lib`.
+fn make_object(txn: &mut Txn<'_>, ctx: &SqlContext, lib: ObjectId, name: Name, qir_text: &str, text: &str, kind: PgmKind) -> Result<ObjectId> {
     let fail = |e: &dyn std::fmt::Display| SqlError::Database { what: format!("the routine's program was not made: {e}"), msgid: Some("CPF5D12".into()) };
     let module = qir::parse(qir_text).map_err(|e| fail(&e))?;
     qir::verify(&module).map_err(|e| fail(&e))?;
@@ -346,7 +360,7 @@ fn make_program(txn: &mut Txn<'_>, ctx: &SqlContext, lib: ObjectId, name: Name, 
         ops::delete(txn, JobHandle(0), old)?;
     }
     let m = ile::store::crtmod(txn, &c, lib, name, &object, "").map_err(|e| fail(&e))?;
-    let mut options = BindOptions::new(&name.to_string(), PgmKind::Pgm);
+    let mut options = BindOptions::new(&name.to_string(), kind);
     options.attr.actgrp = ActGrpAttr::Caller;
     let lib_name = ops::read_header(txn, lib)?.1.name;
     let spec = ObjSpec { lib: LibSpec::Name(lib_name), name };
@@ -426,7 +440,7 @@ fn signature_matches(f: &Found, sig: &[TypeSpec]) -> bool {
 /// one's program only loses the routine's attributes.
 fn remove(txn: &mut Txn<'_>, ctx: &SqlContext, f: &Found) -> Result<()> {
     names::remove(txn, f.lib, Space::Specific, &f.routine.def.specific)?;
-    if f.routine.def.body == 1 {
+    if f.routine.def.body == 1 || f.routine.def.routine_type == 2 {
         sqlinf::clear(txn, ctx.job, f.owner)?;
         ops::delete(txn, ctx.job, f.owner)?;
         return Ok(());
@@ -441,3 +455,40 @@ fn remove(txn: &mut Txn<'_>, ctx: &SqlContext, f: &Found) -> Result<()> {
     Ok(())
 }
 
+
+/// What `CREATE FUNCTION` takes: SQL scalar functions whose bodies the
+/// database runs (`udf`) and sourced functions.
+fn check_function(r: &CreateRoutine) -> Result<()> {
+    match (&r.returns, &r.body) {
+        (Some(Returns::Table(_)), _) => {
+            // BLOCKED(sql): a table function is read through TABLE(...) in
+            // FROM, which the query work (SQL-3) brings.
+            Err(unsupported("CREATE FUNCTION ... RETURNS TABLE: table functions"))
+        }
+        (_, RoutineBody::External) => {
+            // BLOCKED(sql): an external function runs a program inside the
+            // query, and programs run in the job, not the database.
+            Err(unsupported("external functions"))
+        }
+        (_, RoutineBody::Sql(b)) => super::udf::check_body(b),
+        _ => Ok(()),
+    }
+}
+
+/// Whether a function's parameters are of the same types (lengths
+/// aside), its signature.
+fn same_types(f: &Found, parms: &[crate::ast::Parm]) -> bool {
+    let mine: Vec<&ParmDef> = f.routine.parms.iter().filter(|p| p.role == 0).collect();
+    mine.len() == parms.len()
+        && mine.iter().zip(parms).all(|(p, q)| {
+            pl::types::parse_type(&p.ty).is_ok_and(|t| std::mem::discriminant(&t.data_type) == std::mem::discriminant(&q.ty.data_type))
+        })
+}
+
+/// The service program that holds a function's definition: its one
+/// procedure does nothing, as the database runs the body itself.
+fn holder(txn: &mut Txn<'_>, ctx: &SqlContext, lib: ObjectId, name: Name, text: &str) -> Result<ObjectId> {
+    let n = name.to_string();
+    let qir = format!("module {n} lang(QIR) ccsid(37) actgrp(*CALLER) nomain\nproc {n}() export {{\nL0:\n  ret\n}}\n");
+    make_object(txn, ctx, lib, name, &qir, text, PgmKind::SrvPgm)
+}

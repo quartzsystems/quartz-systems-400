@@ -13,6 +13,7 @@
 mod call;
 mod create;
 pub mod find;
+pub mod udf;
 pub mod model;
 
 use std::fmt::Write as _;

@@ -456,6 +456,10 @@ impl Parser {
         if self.eat_sym(".") {
             // T.C; T.* is handled by the select list.
             let column = self.ident()?;
+            // SCHEMA.FUNC(...): a qualified function's name keeps its schema.
+            if self.is_sym("(") && !column.delimited && !first.delimited {
+                return self.call(format!("{}.{}", first.value, column.value));
+            }
             // A built-in global variable: QSYS2.JOB_NAME and the like.
             if !first.delimited
                 && !column.delimited

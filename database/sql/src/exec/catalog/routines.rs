@@ -185,9 +185,10 @@ fn value(txn: &mut Txn<'_>, f: &Found, col: &str) -> Value {
                 s(format!("{}/{}({})", d.program_library, d.program, d.entry))
             }
         }
-        "EXTERNAL_LANGUAGE" if !sql => s(model::language_word(d.language)),
-        "PARAMETER_STYLE" if !sql => s(model::style_word(d.style)),
-        "IS_DETERMINISTIC" => yes(d.has(flag::DETERMINISTIC)),
+        "EXTERNAL_LANGUAGE" if d.body == 2 => s(model::language_word(d.language)),
+        "PARAMETER_STYLE" if d.body == 2 => s(model::style_word(d.style)),
+        // A sourced function is as deterministic as its source (the built-ins are).
+        "IS_DETERMINISTIC" => yes(d.has(flag::DETERMINISTIC) || d.body == 3),
         "SQL_DATA_ACCESS" => s(model::access_word(d.access)),
         "SQL_PATH" => {
             let mut p: Vec<String> = ["QSYS", "QSYS2", "SYSPROC", "SYSIBMADM"].iter().map(|x| format!("\"{x}\"")).collect();
@@ -203,6 +204,19 @@ fn value(txn: &mut Txn<'_>, f: &Found, col: &str) -> Value {
         "PARSE_TREE" | "PARM_ARRAY" => Value::Bin(Vec::new()),
         "ROUTINE_DEFINITION" if sql => s(d.body_text.clone()),
         "FUNCTION_ORIGIN" | "FUNCTION_TYPE" if !func => s(" "),
+        // 7.1 shows its SQL functions as external (C service programs).
+        "FUNCTION_ORIGIN" => s(if d.body == 3 { "U" } else { "E" }),
+        "FUNCTION_TYPE" => s("S"),
+        "EXTERNAL_ACTION" if func => s(if d.has(flag::NO_EXTERNAL_ACTION) { "N" } else { "E" }),
+        "IS_NULL_CALL" if func => yes(!d.has(flag::NULL_INPUT)),
+        "SCRATCH_PAD" if func => Value::int(d.scratchpad.into()),
+        "FINAL_CALL" if func => yes(d.has(flag::FINAL_CALL)),
+        "PARALLELIZABLE" if func => yes(d.has(flag::PARALLEL)),
+        "SOURCE_SPECIFIC_SCHEMA" if d.body == 3 => s(d.sourced.rsplit_once('.').map_or(String::new(), |(a, _)| a.to_string())),
+        "SOURCE_SPECIFIC_NAME" if d.body == 3 => s(d.sourced.rsplit_once('.').map_or(d.sourced.clone(), |(_, b)| b.to_string())),
+        "IS_USER_DEFINED_CAST" if func => s("NO"),
+        "FENCED" if func => yes(!d.has(flag::NOT_FENCED)),
+        "INLINE" if func => yes(d.body_text.starts_with("RETURN")),
         "DBINFO" => yes(d.has(flag::DBINFO)),
         "COMMIT_ON_RETURN" => yes(d.has(flag::COMMIT_ON_RETURN)),
         "IASP_NUMBER" => Value::int(0),
@@ -294,11 +308,7 @@ fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
                 datetime.map_or(Value::Null, int),
                 s("YES"),
                 Value::Null,
-                s(match p.role {
-                    1 => "C",
-                    2 => "R",
-                    _ => "P",
-                }),
+                s(if p.role == 0 { "P" } else { "C" }),
                 Value::Null,
                 Value::Null,
                 s("NO"),

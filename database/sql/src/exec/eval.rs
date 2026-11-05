@@ -779,7 +779,19 @@ impl Evaluator<'_> {
             }
             args.push(self.eval(txn, a, env)?);
         }
-        let v = func::call(name, &args, self.ctx)?;
+        let v = match func::call(name, &args, self.ctx) {
+            // Not built in: a user-defined function, when there is one.
+            Err(SqlError::Unsupported { what }) if what == format!("function {name}") => {
+                let literal: Vec<bool> = f.args.iter().map(|a| matches!(a, Expr::Literal(crate::ast::Literal::Str(_)))).collect();
+                match super::routine::udf::call(txn, self.ctx, name, &args, &literal) {
+                    Some(r) => r?,
+                    // A schema's function that is not there.
+                    None if name.contains('.') => return Err(SqlError::ObjectNotFound { name: name.to_string(), kind: "function" }),
+                    None => return Err(SqlError::Unsupported { what }),
+                }
+            }
+            r => r?,
+        };
         // DIGITS of a column fills to the column's precision.
         if name == "DIGITS"
             && let Some(Expr::Column(c)) = f.args.first()

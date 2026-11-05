@@ -1,0 +1,169 @@
+-- captured from primary
+> CREATE TABLE {lib}.QF1_PRICE (ITEM CHAR(4) NOT NULL, NET DECIMAL(9,2) NO
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QF1_PRICE VALUES ('A001', 10.00, 3), ('A002', 99.95, 1
+sqlcode 0 sqlstate 00000 msgid - count 3
+> CREATE FUNCTION {lib}.QF1_GROSS (P_NET DECIMAL(9,2)) RETURNS DECIMAL(11,
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.QF1_LABEL (P_ITEM CHAR(4), P_QTY INTEGER) RETURNS 
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.QF1_TIER (P_AMT DECIMAL(11,2))
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.QF1_FACT (N INTEGER) RETURNS BIGINT
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.QF1_STOCK (P_ITEM CHAR(4)) RETURNS INTEGER
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.QF1_NORET (N INTEGER) RETURNS INTEGER LANGUAGE SQL
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.QF1_ABS (P DECIMAL(9,2)) RETURNS DECIMAL(9,2) SOUR
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.QF1_GROSS (P_NET INTEGER) RETURNS DECIMAL(11,2) LA
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.QF1_GROSS (P_X DECIMAL(5,1)) RETURNS DECIMAL(11,2)
+sqlcode -454 sqlstate 42723 msgid SQL0454
+> SELECT ITEM, {lib}.QF1_GROSS(NET), {lib}.QF1_TIER(NET * QTY), {lib}.QF1_
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(4) NOT NULL
+# 00002 DECIMAL(11,2)
+# 00003 CHAR(6)
+# 00004 VARCHAR(20)
+| 'A001' | 12.50 | 'SILVER' | 'A001 x3' |
+| 'A002' | 124.93 | 'SILVER' | 'A002 x1' |
+| 'A003' | 0.62 | 'SILVER' | 'A003 x40' |
+> SELECT ITEM FROM {lib}.QF1_PRICE WHERE {lib}.QF1_TIER({lib}.QF1_GROSS(NE
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(4) NOT NULL
+| 'A002' |
+> VALUES ({lib}.QF1_FACT(12), {lib}.QF1_STOCK('A003'), {lib}.QF1_STOCK('ZZ
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES QF1_FACT(5)
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 BIGINT
+| 120 |
+> VALUES {lib}.QF1_NORET(1)
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 1 |
+> VALUES {lib}.QF1_NORET(-1)
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+sqlcode -578 sqlstate 2F005 msgid SQL0578
+> VALUES {lib}.QF1_NOSUCH(1)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT SPECIFIC_NAME, ROUTINE_NAME, ROUTINE_BODY, EXTERNAL_NAME, PARM_SI
+sqlcode 0 sqlstate 00000 msgid -
+# SPECIFIC_NAME VARCHAR(128) NOT NULL
+# ROUTINE_NAME VARCHAR(128) NOT NULL
+# ROUTINE_BODY VARCHAR(8) NOT NULL
+# EXTERNAL_NAME VARCHAR(279)
+# PARM_SIGNATURE LONG VARCHAR () FOR BIT DATA NOT NULL
+# NUMBER_OF_RESULTS SMALLINT
+# IN_PARMS SMALLINT NOT NULL
+# FUNCTION_ORIGIN CHAR(1) NOT NULL
+# FUNCTION_TYPE CHAR(1) NOT NULL
+# EXTERNAL_ACTION CHAR(1)
+# IS_NULL_CALL VARCHAR(3)
+# SCRATCH_PAD INTEGER
+# FINAL_CALL VARCHAR(3)
+# PARALLELIZABLE VARCHAR(3)
+# DBINFO VARCHAR(3)
+# SOURCE_SPECIFIC_SCHEMA VARCHAR(128)
+# SOURCE_SPECIFIC_NAME VARCHAR(128)
+# IS_USER_DEFINED_CAST VARCHAR(3)
+# FENCED VARCHAR(3)
+# IS_DETERMINISTIC VARCHAR(3) NOT NULL
+# SQL_DATA_ACCESS VARCHAR(8)
+# ROUTINE_DEFINITION DBCLOB(2097152)
+| 'QF1_ABS' | 'QF1_ABS' | 'EXTERNAL' | '{lib}/QF1_ABS(QF1_ABS)' | X'01E4' | 1 | 1 | 'U' | 'S' | 'E' | 'YES' | 0 | 'NO' | 'NO' | 'NO' | 'QSYS2' | 'ABS' | 'NO' | 'YES' | 'YES' | 'READS' | NULL |
+| 'QF1_FACT' | 'QF1_FACT' | 'SQL' | '{lib}/QF1_FACT(QF1_FACT_1)' | X'01F0' | 1 | 1 | 'E' | 'S' | 'E' | 'YES' | 0 | 'NO' | 'NO' | 'NO' | NULL | NULL | 'NO' | 'YES' | 'NO' | 'READS' | 'BEGIN
+DECLARE R BIGINT DEFAULT 1 ;
+DECLARE I INTEGER DEFAULT 2 ;
+WHILE I <= N DO
+SET R = R * I ;
+SET I = I + 1 ;
+END WHILE ;
+RETURN R ;
+END ' |
+| 'QF1_GROSS' | 'QF1_GROSS' | 'SQL' | '{lib}/QF1_GROSS(QF1_GROSS_1)' | X'01E4' | 1 | 1 | 'E' | 'S' | 'E' | 'YES' | 0 | 'NO' | 'NO' | 'NO' | NULL | NULL | 'NO' | 'YES' | 'YES' | 'READS' | 'RETURN P_NET * 1.25 ' |
+| 'QF1_G00001' | 'QF1_GROSS' | 'SQL' | '{lib}/QF1_G00001(QF1_GROSS_1)' | X'01F0' | 1 | 1 | 'E' | 'S' | 'E' | 'YES' | 0 | 'NO' | 'NO' | 'NO' | NULL | NULL | 'NO' | 'YES' | 'NO' | 'READS' | 'RETURN P_NET * 2 ' |
+| 'QF1_LABEL' | 'QF1_LABEL' | 'SQL' | '{lib}/QF1_LABEL(QF1_LABEL_1)' | X'01C401F0' | 1 | 2 | 'E' | 'S' | 'E' | 'NO' | 0 | 'NO' | 'NO' | 'NO' | NULL | NULL | 'NO' | 'YES' | 'NO' | 'READS' | 'RETURN TRIM ( P_ITEM ) || '' x'' || TRIM ( CHAR ( P_QTY ) ) ' |
+| 'QF1_NORET' | 'QF1_NORET' | 'SQL' | '{lib}/QF1_NORET(QF1_NORET_1)' | X'01F0' | 1 | 1 | 'E' | 'S' | 'E' | 'YES' | 0 | 'NO' | 'NO' | 'NO' | NULL | NULL | 'NO' | 'YES' | 'NO' | 'READS' | 'BEGIN IF N > 0 THEN RETURN 1 ; END IF ; END ' |
+| 'QF1_STOCK' | 'QF1_STOCK' | 'SQL' | '{lib}/QF1_STOCK(QF1_STOCK_1)' | X'01C4' | 1 | 1 | 'E' | 'S' | 'E' | 'YES' | 0 | 'NO' | 'NO' | 'NO' | NULL | NULL | 'NO' | 'YES' | 'NO' | 'READS' | 'BEGIN
+DECLARE V INTEGER DEFAULT - 1 ;
+SELECT QTY INTO V FROM {lib} . QF1_PRICE WHERE ITEM = P_ITEM ;
+RETURN V ;
+END ' |
+| 'QF1_TIER' | 'QF1_TIER' | 'SQL' | '{lib}/QF1_TIER(QF1_TIER_1)' | X'01E4' | 1 | 1 | 'E' | 'S' | 'E' | 'YES' | 0 | 'NO' | 'NO' | 'NO' | NULL | NULL | 'NO' | 'YES' | 'YES' | 'READS' | 'BEGIN
+DECLARE V_TIER CHAR ( 6 ) ;
+IF P_AMT >= 100 THEN
+SET V_TIER = ''GOLD'' ;
+ELSEIF P_AMT >= 20 THEN
+SET V_TIER = ''SILVER'' ;
+ELSE
+SET V_TIER = ''BRONZE'' ;
+END IF ;
+RETURN V_TIER ;
+END ' |
+> SELECT SPECIFIC_NAME, ORDINAL_POSITION, PARAMETER_MODE, PARAMETER_NAME, 
+sqlcode 0 sqlstate 00000 msgid -
+# SPECIFIC_NAME VARCHAR(128) NOT NULL
+# ORDINAL_POSITION INTEGER NOT NULL
+# PARAMETER_MODE VARCHAR(5) NOT NULL
+# PARAMETER_NAME VARCHAR(128)
+# DATA_TYPE VARCHAR(128) NOT NULL
+# NUMERIC_SCALE INTEGER
+# NUMERIC_PRECISION INTEGER
+# CHARACTER_MAXIMUM_LENGTH INTEGER
+# ROW_TYPE CHAR(1)
+| 'QF1_ABS' | 1 | 'IN' | 'P' | 'DECIMAL' | 2 | 9 | NULL | 'P' |
+| 'QF1_ABS' | 2 | 'OUT' | NULL | 'DECIMAL' | 2 | 9 | NULL | 'C' |
+| 'QF1_FACT' | 1 | 'IN' | 'N' | 'INTEGER' | 0 | 10 | NULL | 'P' |
+| 'QF1_FACT' | 2 | 'OUT' | NULL | 'BIGINT' | 0 | 19 | NULL | 'C' |
+| 'QF1_GROSS' | 1 | 'IN' | 'P_NET' | 'DECIMAL' | 2 | 9 | NULL | 'P' |
+| 'QF1_GROSS' | 2 | 'OUT' | NULL | 'DECIMAL' | 2 | 11 | NULL | 'C' |
+| 'QF1_G00001' | 1 | 'IN' | 'P_NET' | 'INTEGER' | 0 | 10 | NULL | 'P' |
+| 'QF1_G00001' | 2 | 'OUT' | NULL | 'DECIMAL' | 2 | 11 | NULL | 'C' |
+| 'QF1_LABEL' | 1 | 'IN' | 'P_ITEM' | 'CHARACTER' | NULL | NULL | 4 | 'P' |
+| 'QF1_LABEL' | 2 | 'IN' | 'P_QTY' | 'INTEGER' | 0 | 10 | NULL | 'P' |
+| 'QF1_LABEL' | 3 | 'OUT' | NULL | 'CHARACTER VARYING' | NULL | NULL | 20 | 'C' |
+| 'QF1_NORET' | 1 | 'IN' | 'N' | 'INTEGER' | 0 | 10 | NULL | 'P' |
+| 'QF1_NORET' | 2 | 'OUT' | NULL | 'INTEGER' | 0 | 10 | NULL | 'C' |
+| 'QF1_STOCK' | 1 | 'IN' | 'P_ITEM' | 'CHARACTER' | NULL | NULL | 4 | 'P' |
+| 'QF1_STOCK' | 2 | 'OUT' | NULL | 'INTEGER' | 0 | 10 | NULL | 'C' |
+| 'QF1_TIER' | 1 | 'IN' | 'P_AMT' | 'DECIMAL' | 2 | 11 | NULL | 'P' |
+| 'QF1_TIER' | 2 | 'OUT' | NULL | 'CHARACTER' | NULL | NULL | 6 | 'C' |
+> SELECT SPECIFIC_NAME, ROUTINE_NAME, IN_PARMS, FUNCTION_ORIGIN FROM QSYS2
+sqlcode 0 sqlstate 00000 msgid -
+# SPECIFIC_NAME VARCHAR(128) NOT NULL
+# ROUTINE_NAME VARCHAR(128) NOT NULL
+# IN_PARMS SMALLINT NOT NULL
+# FUNCTION_ORIGIN CHAR(1) NOT NULL
+| 'QF1_ABS' | 'QF1_ABS' | 1 | 'U' |
+| 'QF1_FACT' | 'QF1_FACT' | 1 | 'E' |
+| 'QF1_GROSS' | 'QF1_GROSS' | 1 | 'E' |
+| 'QF1_G00001' | 'QF1_GROSS' | 1 | 'E' |
+| 'QF1_LABEL' | 'QF1_LABEL' | 2 | 'E' |
+| 'QF1_NORET' | 'QF1_NORET' | 1 | 'E' |
+| 'QF1_STOCK' | 'QF1_STOCK' | 1 | 'E' |
+| 'QF1_TIER' | 'QF1_TIER' | 1 | 'E' |
+> DROP FUNCTION {lib}.QF1_GROSS
+sqlcode -476 sqlstate 42725 msgid SQL0476
+> DROP FUNCTION {lib}.QF1_GROSS (INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.QF1_GROSS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.QF1_LABEL
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.QF1_TIER
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.QF1_FACT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.QF1_STOCK
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.QF1_NORET
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.QF1_ABS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QF1_PRICE
+sqlcode 0 sqlstate 00000 msgid -

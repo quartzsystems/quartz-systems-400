@@ -35,3 +35,4 @@ sqlpl/LOOPS   # COUNT and SUM described as VARCHAR: expression result types
 sqlpl/RESULT1   # COUNT and SUM described as VARCHAR: expression result types
 sqlpl/SETVARS   # CHAR(integer) is not blank padded to its length here
 sqlpl/STRINGS   # DIGITS of a DECIMAL(7,0) is not zero padded here
+sqlpl/FUNCS   # function results described as VARCHAR: expression result types; a function's error at fetch is the statement's here; catalog LOB columns
