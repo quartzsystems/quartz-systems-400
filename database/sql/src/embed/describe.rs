@@ -173,9 +173,11 @@ impl Tables {
                     let fields = ctx.resolve_table(txn, name).map_or_else(
                         // A catalog view: its columns' fields.
                         |_| {
-                            crate::exec::catalog::virtual_table(txn, ctx, name, &a)
-                                .ok()
-                                .flatten()
+                            // A service view's columns without its rows.
+                            crate::exec::catalog::services::columns(name, &a)
+                                .map(Ok)
+                                .or_else(|| crate::exec::catalog::virtual_table(txn, ctx, name, &a).transpose())
+                                .and_then(std::result::Result::ok)
                                 .map(|(sch, _)| sch.cols.iter().filter_map(|c| c.field.clone()).collect())
                                 .unwrap_or_default()
                         },
