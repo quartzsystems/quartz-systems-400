@@ -52,6 +52,7 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
         max: plan.max_results,
         nested: DEPTH.with(Cell::get) > 0,
         sqlstate: "00000".into(),
+        routine: plan.routine.clone(),
         ..Called::default()
     };
     if !plan.entry.is_empty() {

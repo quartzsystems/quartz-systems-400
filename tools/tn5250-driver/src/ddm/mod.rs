@@ -45,8 +45,10 @@ pub struct TraceRun {
     pub rdb: String,
     /// The security mechanism to ask for first.
     pub mechanism: Option<u16>,
-    /// SQL statements for the driver's requester: queries are prepared,
-    /// opened, fetched and closed; anything else runs immediately.
+    /// SQL statements for the driver's requester (`{user}` stands for
+    /// the user): queries are prepared, opened, fetched and closed; a
+    /// `CALL` is prepared and run with its result sets read; anything
+    /// else runs immediately.
     pub sql: Vec<String>,
     /// The package collection (`{user}` stands for the user).
     pub collection: Option<String>,
@@ -94,6 +96,30 @@ pub fn run(r: &TraceRun) -> Result<PathBuf> {
     let chunks: usize = t.connections.iter().map(|c| c.chunks().count()).sum();
     println!("{}: {} connections, {chunks} chunks", path.display(), t.connections.len());
     Ok(path)
+}
+
+/// Prepare and run a `CALL`, its result sets read to their end.
+fn call<S: std::io::Read + std::io::Write>(c: &mut Connection<S>, stmt: &str) -> Result<()> {
+    let p = c.prepare(stmt)?;
+    println!("prepared: {:?}", p.sqlca.as_ref().map(|s| s.sqlcode));
+    if p.sqlca.as_ref().is_some_and(ddm::sql::Sqlca::is_error) {
+        return Ok(());
+    }
+    let r = c.call(&p)?;
+    println!(
+        "call: {:?}, {} sections, {} sets",
+        r.sqlca.as_ref().map(|s| (s.sqlcode, s.sqlstate.clone())),
+        r.sections.len(),
+        r.sets.len()
+    );
+    for (i, set) in r.sets.iter().enumerate() {
+        println!("  set {}: {} rows, end {:?}", i + 1, set.rows.len(), set.end.as_ref().map(|s| s.sqlcode));
+        for row in &set.rows {
+            let cells: Vec<String> = row.iter().map(ddm::sql::Value::render).collect();
+            println!("  | {}", cells.join(" | "));
+        }
+    }
+    Ok(())
 }
 
 fn requester(r: &TraceRun, user: &str, password: &str) -> Result<()> {
@@ -149,6 +175,7 @@ fn requester(r: &TraceRun, user: &str, password: &str) -> Result<()> {
         println!("bind: {} {} {}", ca.sqlcode, ca.sqlstate, ca.sqlerrmc);
     }
     for stmt in &r.sql {
+        let stmt = &stmt.replace("{user}", &user.to_ascii_uppercase());
         let upper = stmt.trim_start().to_ascii_uppercase();
         if upper == "ROLLBACK" {
             let ca = c.rollback()?;
@@ -173,6 +200,8 @@ fn requester(r: &TraceRun, user: &str, password: &str) -> Result<()> {
             println!("end: {:?}", rows.end.as_ref().map(|s| (s.sqlcode, s.sqlstate.clone())));
             let ca = c.close(&p, &rows)?;
             println!("close: {}", ca.sqlcode);
+        } else if upper.starts_with("CALL") {
+            call(&mut c, stmt)?;
         } else {
             let ca = c.execute_immediate(stmt)?;
             println!("immediate: {} {}", ca.sqlcode, ca.sqlstate);

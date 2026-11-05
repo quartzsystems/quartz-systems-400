@@ -233,11 +233,21 @@ pub fn fields(b: &[u8]) -> Result<Vec<Field>, Error> {
 /// The `QRYDSC` (or `FDODSC`) of `fields`: an MDD and SDA per distinct
 /// type, the column group, the row and the set.
 pub fn qrydsc(fields: &[Field]) -> Vec<u8> {
+    describe(fields, false)
+}
+
+/// The `QRYDSC` of a procedure's result set as IBM i sends it: every
+/// field by DRDA's early descriptor, no MDDs.
+pub fn qrydsc_early(fields: &[Field]) -> Vec<u8> {
+    describe(fields, true)
+}
+
+fn describe(fields: &[Field], early: bool) -> Vec<u8> {
     let mut t = Vec::new();
     let mut lids: Vec<(u8, u8, u16)> = Vec::new();
     let mut refs = Vec::with_capacity(fields.len());
     for f in fields {
-        if f.ccsid == 0 {
+        if f.ccsid == 0 || early {
             refs.push((f.drda, f.len));
             continue;
         }
@@ -266,11 +276,13 @@ pub fn qrydsc(fields: &[Field]) -> Vec<u8> {
         };
         refs.push((lid, f.len));
     }
-    t.push(Triplet {
-        ttype: MDD,
-        id: 0x00,
-        data: vec![0x05, 0x02, 0x01, SQLDTAGRP],
-    });
+    if !early {
+        t.push(Triplet {
+            ttype: MDD,
+            id: 0x00,
+            data: vec![0x05, 0x02, 0x01, SQLDTAGRP],
+        });
+    }
     let chunks: Vec<&[(u8, u16)]> = if refs.is_empty() {
         vec![&[]]
     } else {
@@ -288,21 +300,25 @@ pub fn qrydsc(fields: &[Field]) -> Vec<u8> {
             data: d,
         });
     }
-    t.push(Triplet {
-        ttype: MDD,
-        id: 0x00,
-        data: vec![0x05, 0x03, 0x01, SQLCADTA],
-    });
+    if !early {
+        t.push(Triplet {
+            ttype: MDD,
+            id: 0x00,
+            data: vec![0x05, 0x03, 0x01, SQLCADTA],
+        });
+    }
     t.push(Triplet {
         ttype: RLO,
         id: SQLCADTA,
         data: vec![SQLCAGRP, 0x00, 0x01, SQLDTAGRP, 0x00, 0x01],
     });
-    t.push(Triplet {
-        ttype: MDD,
-        id: 0x00,
-        data: vec![0x05, 0x04, 0x01, SQLDTARD],
-    });
+    if !early {
+        t.push(Triplet {
+            ttype: MDD,
+            id: 0x00,
+            data: vec![0x05, 0x04, 0x01, SQLDTARD],
+        });
+    }
     t.push(Triplet {
         ttype: RLO,
         id: SQLDTARD,

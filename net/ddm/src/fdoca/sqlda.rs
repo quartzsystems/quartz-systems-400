@@ -33,12 +33,25 @@ pub struct Sqldard {
 /// Write an `SQLDARD`.
 pub fn write(w: &mut Writer, d: &Sqldard, sqlam: u16) {
     sqlca::write(w, d.sqlca.as_ref(), sqlam);
+    columns(w, &d.columns, false);
+}
+
+/// Write an `SQLCINRD`, a result set's columns: an `SQLDARD` without
+/// its SQLCA, each label the column's name when it has none (as IBM i
+/// answers, `tools/conformance/ddm/traces/drda-call.trace`).
+pub fn write_cinrd(w: &mut Writer, cols: &[Column]) {
+    columns(w, cols, true);
+}
+
+fn columns(w: &mut Writer, cols: &[Column], label_is_name: bool) {
     w.u8(NULL); // SQLDHGRP
-    w.i16(i16::try_from(d.columns.len()).unwrap_or(i16::MAX));
-    for c in &d.columns {
+    w.i16(i16::try_from(cols.len()).unwrap_or(i16::MAX));
+    for c in cols {
         let t = &c.ty;
-        w.i16(i16::from(t.precision));
-        w.i16(i16::from(t.scale));
+        // Precision and scale are a decimal's only, as IBM i sends them.
+        let digits = matches!(t.kind, crate::sql::Kind::Decimal | crate::sql::Kind::Numeric);
+        w.i16(if digits { i16::from(t.precision) } else { 0 });
+        w.i16(if digits { i16::from(t.scale) } else { 0 });
         w.i64(i64::from(t.length));
         w.i16(types::sqltype_of(t));
         w.be16(t.ccsid);
@@ -47,7 +60,8 @@ pub fn write(w: &mut Writer, d: &Sqldard, sqlam: u16) {
         w.vcs("");
         w.vcs(&c.name);
         w.vcs("");
-        w.vcs(c.label.as_deref().unwrap_or(""));
+        let none = if label_is_name { c.name.as_str() } else { "" };
+        w.vcs(c.label.as_deref().unwrap_or(none));
         w.vcs("");
         w.vcs("");
         w.u8(NULL); // SQLUDTGRP

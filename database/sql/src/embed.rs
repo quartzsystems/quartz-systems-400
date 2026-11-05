@@ -784,8 +784,8 @@ impl Session {
     /// for the outermost); an SQL procedure's other cursors close. The
     /// reply is the `CALL`'s outcome: the procedure's error or warning,
     /// else `SQL0466` with the sets, one row each (its name, the
-    /// procedure's cursor, its column count); `SQLERRD(1)` is the
-    /// return status.
+    /// procedure's cursor, its column count, the procedure);
+    /// `SQLERRD(1)` is the return status.
     fn called(&mut self, req: &Request) -> Reply {
         let Some(c) = crate::exec::routine::Called::from_inputs(&req.inputs) else {
             return Reply::of(code(-84, "42612"));
@@ -828,7 +828,12 @@ impl Session {
         let mut rows = Vec::new();
         for (i, (n, k)) in sets.into_iter().enumerate() {
             let name = format!("RS#{}", i + 1);
-            rows.push(vec![Value::Str(name.clone()), Value::Str(n), Value::int(i64::try_from(k.columns.len()).unwrap_or(0))]);
+            rows.push(vec![
+                Value::Str(name.clone()),
+                Value::Str(n),
+                Value::int(i64::try_from(k.columns.len()).unwrap_or(0)),
+                Value::Str(c.routine.clone()),
+            ]);
             target.cursors.insert(name, k);
         }
         if c.sqlcode < 0 {

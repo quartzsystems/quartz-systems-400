@@ -528,3 +528,136 @@ fn sql_and_record_access() {
     assert_eq!(rows.rows[0][0], Value::Text("Dee       ".into()));
     assert_eq!(rows.rows[0][1].render(), "12.34");
 }
+
+/// A procedure's result sets: `C1` of `ID INTEGER NOT NULL, NAME
+/// VARCHAR(3) NOT NULL` with `first` rows, `C2` of `TEN INTEGER` with one.
+struct CallSide {
+    first: usize,
+    open: HashMap<Section, VecDeque<Vec<Value>>>,
+}
+
+impl SqlBackend for CallSide {
+    fn prepare(&mut self, _: &Section, _: &str) -> SqlResult<Vec<Column>> {
+        Ok(Vec::new())
+    }
+    fn describe(&mut self, _: &Section) -> SqlResult<Vec<Column>> {
+        Ok(Vec::new())
+    }
+    fn execute(&mut self, _: &Section, _: &[Value]) -> SqlResult<Sqlca> {
+        let mut ca = Sqlca::error(466, "0100C", "");
+        ca.sqlerrd[1] = 2;
+        Ok(ca)
+    }
+    fn execute_immediate(&mut self, _: &str) -> SqlResult<Sqlca> {
+        Ok(Sqlca::default())
+    }
+    fn open(&mut self, _: &Section, _: &[Value]) -> SqlResult<Vec<Column>> {
+        Err(Sqlca::error(-507, "24501", ""))
+    }
+    fn fetch(&mut self, s: &Section, max: usize) -> SqlResult<Vec<Vec<Value>>> {
+        let q = self.open.get_mut(s).ok_or_else(|| Sqlca::error(-501, "24501", ""))?;
+        Ok((0..max).map_while(|_| q.pop_front()).collect())
+    }
+    fn close(&mut self, s: &Section) -> SqlResult<()> {
+        self.open.remove(s);
+        Ok(())
+    }
+    fn commit(&mut self) -> SqlResult<()> {
+        Ok(())
+    }
+    fn rollback(&mut self) -> SqlResult<()> {
+        Ok(())
+    }
+    fn result_sets(&mut self) -> (String, Vec<String>) {
+        ("QSTEST.QSDRSP".into(), vec!["C1".into(), "C2".into()])
+    }
+    fn open_result_set(&mut self, s: &Section, index: usize) -> SqlResult<Vec<Column>> {
+        let col = |name: &str, ty: ColType| Column { name: name.into(), ty, label: None };
+        let (cols, rows): (Vec<Column>, Vec<Vec<Value>>) = if index == 0 {
+            let names = ["ANN", "BOB", "CY"];
+            (
+                vec![col("ID", ColType::new(Kind::Integer, 0, 10, 0, false)), col("NAME", ColType::new(Kind::VarChar, 3, 0, 0, false))],
+                (0..self.first).map(|i| vec![Value::Int(i64::try_from(i + 1).unwrap()), Value::Text(names[i % 3].into())]).collect(),
+            )
+        } else {
+            (vec![col("TEN", ColType::new(Kind::Integer, 0, 10, 0, true))], vec![vec![Value::Int(20)]])
+        };
+        self.open.insert(s.clone(), rows.into());
+        Ok(cols)
+    }
+}
+
+fn call_pipe(first: usize) -> Pipe {
+    let e = Rc::new(RefCell::new(engine()));
+    let session = Session::new(
+        Config::new("QS400", "QS400"),
+        Box::new(Passwords),
+        Box::new(CallSide { first, open: HashMap::new() }),
+        Box::new(FileSide(e)),
+    );
+    Pipe {
+        session,
+        inbox: Vec::new(),
+        outbox: VecDeque::new(),
+    }
+}
+
+/// The reply to the `EXCSQLSTT` of `drda-call.trace` (pub400): each
+/// object's code point and bytes.
+fn oracle_call_reply() -> Vec<(u16, Vec<u8>)> {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/ddm/traces/drda-call.trace");
+    let t = ddm::trace::Trace::parse(&std::fs::read_to_string(path).unwrap()).unwrap();
+    let mut out = Vec::new();
+    let mut corr = None;
+    for ch in t.connections[0].chunks() {
+        let (d, _) = ddm::Dss::decode(&ch.bytes).unwrap();
+        if ch.dir == ddm::Dir::Request && d.code() == Some(ddm::cp::cmd::EXCSQLSTT) {
+            corr = Some(d.corr);
+        } else if ch.dir == ddm::Dir::Reply && Some(d.corr) == corr {
+            let o = d.first().unwrap();
+            out.push((o.cp, o.bytes().to_vec()));
+        }
+    }
+    out
+}
+
+#[test]
+fn a_calls_result_sets_come_as_ibm_i_sends_them() {
+    let mut o = ConnectOpts::new("QS400", USER, PASSWORD);
+    o.mechanisms = vec![Mechanism::EUsrIdPwd];
+    let mut c = Connection::connect(call_pipe(2), &o).unwrap();
+    let p = c.prepare("CALL QSTEST.QSDRSP(2)").unwrap();
+    let corr = c.next_corr();
+    let cmd = ddm::wire::Object::coll(
+        ddm::cp::cmd::EXCSQLSTT,
+        vec![p.pkg.to_object(), ddm::wire::Object::u32(ddm::cp::param::QRYBLKSZ, 32_767), ddm::wire::Object::u16(ddm::cp::param::MAXRSLCNT, 0xFFFF)],
+    );
+    let replies = c.exchange(vec![ddm::Dss::request(corr, cmd)]).unwrap();
+    let ours: Vec<(u16, Vec<u8>)> = replies.iter().filter_map(|d| d.first()).map(|o| (o.cp, o.bytes().to_vec())).collect();
+    let oracle = oracle_call_reply();
+    assert_eq!(ours.iter().map(|x| x.0).collect::<Vec<_>>(), oracle.iter().map(|x| x.0).collect::<Vec<_>>());
+    // SQLRSLRD, each set's SQLCINRD, QRYDSC and rows, byte for byte.
+    for (i, (cp, b)) in oracle.iter().enumerate() {
+        if matches!(*cp, 0x240E | 0x240B | 0x241A | 0x241B) {
+            assert_eq!(&ours[i].1, b, "object {i} ({cp:04X})");
+        }
+    }
+    // The sections name the procedure's package.
+    let rsl = replies[0].first().unwrap();
+    let secs: Vec<ddm::msg::Pkgnamcsn> =
+        rsl.all(ddm::cp::param::PKGSNLST).flat_map(|l| l.all(ddm::cp::param::PKGNAMCSN)).map(|x| ddm::msg::Pkgnamcsn::decode(x.bytes()).unwrap()).collect();
+    assert_eq!(secs.iter().map(|s| (s.collection.as_str(), s.package.as_str(), s.section)).collect::<Vec<_>>(), [("QSTEST", "QSDRSP", 1), ("QSTEST", "QSDRSP", 2)]);
+}
+
+#[test]
+fn a_large_result_set_continues_at_its_section() {
+    let mut o = ConnectOpts::new("QS400", USER, PASSWORD);
+    o.mechanisms = vec![Mechanism::EUsrIdPwd];
+    let mut c = Connection::connect(call_pipe(70), &o).unwrap();
+    let p = c.prepare("CALL QSTEST.QSDRSP(70)").unwrap();
+    let r = c.call(&p).unwrap();
+    assert_eq!(r.sqlca.as_ref().map(|s| s.sqlcode), Some(466));
+    assert_eq!(r.sets.iter().map(|s| s.rows.len()).collect::<Vec<_>>(), [70, 1]);
+    assert_eq!(r.sets[0].rows[69][1].render(), "ANN");
+    assert_eq!(r.sets[1].rows[0][0].render(), "20");
+}

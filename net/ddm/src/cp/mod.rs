@@ -106,6 +106,8 @@ pub mod rm {
         SQLERRRM = 0x2213,
         /// RDB update reply.
         RDBUPDRM = 0x2218,
+        /// Result set reply message: a `CALL` returned result sets.
+        RSLSETRM = 0x2219,
         /// RDB access failed.
         RDBAFLRM = 0x221A,
         /// Manager level conflict.
@@ -300,6 +302,8 @@ pub mod param {
         QRYBLKCTL = 0x2132,
         /// Correlation token.
         CRRTKN = 0x2135,
+        /// Package section number list: a `CALL`'s result sets.
+        PKGSNLST = 0x2139,
         /// Number of rows.
         NBRROW = 0x213A,
         /// Query row number.
@@ -579,6 +583,7 @@ pub fn is_collection(cp: u16) -> bool {
         || contains(s38::ALL, cp)
         || cp == obj::TYPDEFOVR
         || cp == obj::SQLDTA
+        || cp == param::PKGSNLST
 }
 
 fn contains(t: &[(&str, u16)], cp: u16) -> bool {

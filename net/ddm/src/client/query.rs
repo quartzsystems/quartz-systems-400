@@ -5,7 +5,7 @@
 //! Statements on a connection: prepare (`PRPSQLSTT` with `SQLSTT`),
 //! open (`OPNQRY`), continue (`CNTQRY`) and close (`CLSQRY`) a query,
 //! run immediately (`EXCSQLIMM`) or a prepared statement
-//! (`EXCSQLSTT`).
+//! (`EXCSQLSTT`), a `CALL` with its result sets read to their end.
 
 use std::io::{Read, Write};
 
@@ -43,6 +43,17 @@ pub struct Rows {
     pub qryinsid: Option<Vec<u8>>,
     /// Whether the server closed the query (`ENDQRYRM`).
     pub closed: bool,
+}
+
+/// What a `CALL` returned.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Called {
+    /// Its SQLCA (`+466` with result sets).
+    pub sqlca: Option<Sqlca>,
+    /// The sections the server gave the result sets (`PKGSNLST`).
+    pub sections: Vec<crate::msg::Pkgnamcsn>,
+    /// Each result set's rows.
+    pub sets: Vec<Rows>,
 }
 
 /// The SQLCA the replies carry, an error for a reply message that is
@@ -217,6 +228,67 @@ impl<S: Read + Write> Connection<S> {
             Dss::object(corr, sqlcmd::sqlstt(text)),
         ])?;
         sqlca_of(self, &r)
+    }
+
+    /// Run a prepared `CALL` taking every result set (`MAXRSLCNT`
+    /// 0xFFFF): the server answers `RSLSETRM` with a section per set,
+    /// then each set opened (`OPNQRYRM`, `QRYDSC`, rows); the rest of
+    /// each comes with `CNTQRY` at its section.
+    pub fn call(&mut self, p: &Prepared) -> Result<Called, Error> {
+        let corr = self.next_corr();
+        let cmd = crate::wire::Object::coll(
+            crate::cp::cmd::EXCSQLSTT,
+            vec![
+                p.pkg.to_object(),
+                crate::wire::Object::u32(param::QRYBLKSZ, QRYBLKSZ),
+                crate::wire::Object::u16(param::MAXRSLCNT, 0xFFFF),
+            ],
+        );
+        let replies = self.exchange(vec![Dss::request(corr, cmd)])?;
+        let mut out = Called::default();
+        let mut groups: Vec<Vec<Dss>> = Vec::new();
+        for d in replies {
+            let Some(o) = d.first() else { continue };
+            match o.cp {
+                rm::RSLSETRM => {
+                    for l in o.all(param::PKGSNLST) {
+                        for x in l.all(param::PKGNAMCSN) {
+                            out.sections.push(crate::msg::Pkgnamcsn::decode(x.bytes())?);
+                        }
+                    }
+                }
+                rm::OPNQRYRM => groups.push(vec![d]),
+                obj::SQLCARD if groups.is_empty() => {
+                    let mut r = Reader::new(o.bytes(), self.repr);
+                    out.sqlca = sqlca::read(&mut r, self.sqlam)?;
+                }
+                // The result sets' names and the columns' information.
+                obj::SQLRSLRD | obj::SQLCINRD | rm::SQLERRRM => {}
+                _ => match groups.last_mut() {
+                    Some(g) => g.push(d),
+                    None => return Err(reply_error(o)),
+                },
+            }
+        }
+        for (i, g) in groups.iter().enumerate() {
+            let mut rows = Rows::default();
+            let mut qryinsid = None;
+            let mut ended = false;
+            self.absorb(g, &mut rows, &mut qryinsid, &mut ended)?;
+            while !ended {
+                let Some(pkg) = out.sections.get(i).cloned() else { break };
+                let corr = self.next_corr();
+                let r = self.exchange(vec![Dss::request(corr, sqlcmd::cntqry(&pkg, QRYBLKSZ, qryinsid.as_deref()))])?;
+                let before = rows.rows.len();
+                self.absorb(&r, &mut rows, &mut qryinsid, &mut ended)?;
+                if !ended && rows.rows.len() == before {
+                    break;
+                }
+            }
+            rows.qryinsid = qryinsid;
+            out.sets.push(rows);
+        }
+        Ok(out)
     }
 
     /// Run a prepared statement (`EXCSQLSTT`).

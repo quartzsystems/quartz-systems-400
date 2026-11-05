@@ -46,6 +46,17 @@ pub trait SqlBackend {
     fn fetch(&mut self, section: &Section, max: usize) -> SqlResult<Vec<Vec<Value>>>;
     /// Close the cursor.
     fn close(&mut self, section: &Section) -> SqlResult<()>;
+    /// The result sets the last `CALL` left, in order: the procedure
+    /// (`schema.name`) and each set's cursor name in it. None by default.
+    fn result_sets(&mut self) -> (String, Vec<String>) {
+        (String::new(), Vec::new())
+    }
+    /// Open result set `index` (from 0) as the query of `section`,
+    /// giving its columns.
+    fn open_result_set(&mut self, section: &Section, index: usize) -> SqlResult<Vec<Column>> {
+        let _ = (section, index);
+        Err(Sqlca::error(-501, "24501", "no result set"))
+    }
     /// Commit.
     fn commit(&mut self) -> SqlResult<()>;
     /// Roll back.

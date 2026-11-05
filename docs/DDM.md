@@ -124,6 +124,18 @@ server takes any package and section, as packages hold nothing yet.
   reply. `CNTQRY` gives `QRYDTA`; the last block ends with the `+100`
   row, `ENDQRYRM` and an `SQLCARD`. `CLSQRY` needs the `QRYINSID`.
 - `EXCSQLIMM` with `SQLSTT` and `EXCSQLSTT` answer `SQLCARD`.
+- A `CALL` (`EXCSQLSTT` of a prepared `CALL`) is made in the server
+  job. When the procedure leaves result sets and the requester takes
+  them (`MAXRSLCNT` above 0) the reply is IBM i's
+  (`tools/conformance/ddm/traces/drda-call.trace`, pub400): `RSLSETRM`
+  (`SVRCOD` 0) with a `PKGSNLST` naming a section of the procedure's own
+  package per set, the `SQLCARD` (+466), `SQLRSLRD` (the count, then per
+  set a locator, the cursor's name and -1 rows), then per set
+  `OPNQRYRM` (limited block, `QRYATTSNS` 3, `QRYATTUPD` 1), an empty
+  `SQLCARD` before every set but the first, `SQLCINRD` (an `SQLDARD`
+  without its SQLCA, labels the names), `QRYDSC` by early descriptors
+  only, and the first block: when it holds every row, `ENDQRYRM` and the
+  +100 `SQLCARD` follow, else `CNTQRY` at the set's section reads on.
 - `RDBCMM` and `RDBRLLBCK` answer `ENDUOWRM` (`UOWDSP` 1, 2) and
   `SQLCARD`.
 
@@ -510,6 +522,7 @@ and `ADDSVRAUTE USRPRF(*CURRENT) SERVER(S062B175) USRID() PASSWORD()`.
 | `0x2128` | `DFTRDBCOL` |
 | `0x2132` | `QRYBLKCTL` |
 | `0x2135` | `CRRTKN` |
+| `0x2139` | `PKGSNLST` |
 | `0x213A` | `NBRROW` |
 | `0x213D` | `QRYROWNBR` |
 | `0x2140` | `MAXRSLCNT` |
@@ -571,6 +584,7 @@ and `ADDSVRAUTE USRPRF(*CURRENT) SERVER(S062B175) USRID() PASSWORD()`.
 | `0x2212` | `OPNQFLRM` |
 | `0x2213` | `SQLERRRM` |
 | `0x2218` | `RDBUPDRM` |
+| `0x2219` | `RSLSETRM` |
 | `0x221A` | `RDBAFLRM` |
 | `0x1210` | `MGRLVLRM` |
 | `0x1218` | `MGRDEPRM` |

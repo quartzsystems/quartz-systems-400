@@ -44,6 +44,8 @@ pub struct Called {
     /// The scope of an SQL procedure's own statements, whose cursors
     /// close as it returns (empty for an external procedure).
     pub scope: String,
+    /// The procedure, `schema.name` (the plan's `routine`).
+    pub routine: String,
 }
 
 impl Called {
@@ -59,6 +61,7 @@ impl Called {
             Value::Str(self.sqlstate.clone()),
             Value::Str(self.message.clone()),
             Value::Str(self.scope.clone()),
+            Value::Str(self.routine.clone()),
         ]
     }
 
@@ -75,6 +78,7 @@ impl Called {
             sqlstate: v.get(5)?.as_text(),
             message: v.get(6)?.as_text(),
             scope: v.get(7)?.as_text(),
+            routine: v.get(8).map(Value::as_text).unwrap_or_default(),
         })
     }
 }

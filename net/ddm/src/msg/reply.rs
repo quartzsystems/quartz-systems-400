@@ -30,6 +30,28 @@ pub fn enduowrm(rdb: &str, uowdsp: u8) -> Object {
     )
 }
 
+/// `OPNQRYRM` for a procedure's result set, as IBM i answers it:
+/// limited block protocol, insensitive (`QRYATTSNS` 3) and read-only
+/// (`QRYATTUPD` 1), no `SQLCSRHLD`.
+pub fn opnqryrm_result_set(qryinsid: &[u8; 8]) -> Object {
+    message(
+        rm::OPNQRYRM,
+        svrcod::INFO,
+        vec![
+            Object::u16(param::QRYPRCTYP, 0x2417),
+            Object::data(param::QRYINSID, qryinsid.to_vec()),
+            Object::byte(param::QRYATTSNS, 3),
+            Object::byte(param::QRYATTUPD, 1),
+        ],
+    )
+}
+
+/// `RSLSETRM`: a `CALL` returned result sets, one package section each
+/// (`PKGSNLST`).
+pub fn rslsetrm(sections: &[Object]) -> Object {
+    message(rm::RSLSETRM, svrcod::INFO, vec![Object::coll(param::PKGSNLST, sections.to_vec())])
+}
+
 /// `OPNQRYRM`: the query is open with fixed row protocol (`0x2418`)
 /// or limited block protocol (`0x2417`).
 pub fn opnqryrm(qryprctyp: u16, qryinsid: &[u8; 8]) -> Object {

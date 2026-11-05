@@ -7,7 +7,10 @@
 //! immediately, commit and roll back. Replies follow the pub400 traces:
 //! a failed prepare answers `SQLCARD` alone; `OPNQRY` answers `OPNQRYRM`
 //! and `QRYDSC`; the rows come with `CNTQRY`, and the last block ends
-//! with the `+100` row, `ENDQRYRM` and `SQLCARD`.
+//! with the `+100` row, `ENDQRYRM` and `SQLCARD`. A `CALL` that leaves
+//! result sets answers as `drda-call.trace` shows: `RSLSETRM` with a
+//! section per set, the `SQLCARD`, `SQLRSLRD`, then each set opened
+//! with its first block.
 
 // The SQLCA is the error DRDA returns; it is not boxed.
 #![allow(clippy::result_large_err)]
@@ -95,6 +98,84 @@ impl Session {
             r.u8().map_err(bad)?;
         }
         fields.iter().map(|f| rows::read_value(&mut r, f).map_err(bad)).collect()
+    }
+
+    /// The reply to a `CALL` that left result sets, at most `max` of
+    /// them: each gets a section of the procedure's own package, as IBM
+    /// i gives (`CNTQRY` names it for the rest of the rows).
+    fn result_sets(&mut self, pkg: &Pkgnamcsn, ca: &Sqlca, max: u16) -> Out {
+        let (routine, names) = self.sql.result_sets();
+        let n = names.len().min(usize::from(max));
+        let (schema, name) = routine.split_once('.').unwrap_or(("", routine.as_str()));
+        let base = Pkgnamcsn {
+            rdb: pkg.rdb.clone(),
+            collection: schema.to_string(),
+            package: name.to_string(),
+            token: *b"QSRSLSET",
+            section: 0,
+        };
+        let at = |i: usize| base.at(u16::try_from(i + 1).unwrap_or(u16::MAX));
+        let list: Vec<Object> = (0..n).map(|i| at(i).to_object()).collect();
+        let mut out = vec![(DssType::Reply, reply::rslsetrm(&list)), self.sqlcard(Some(ca))];
+        let mut w = Writer::new(crate::fdoca::Repr::default());
+        w.i16(i16::try_from(n).unwrap_or(i16::MAX));
+        for (i, cursor) in names.iter().take(n).enumerate() {
+            // The locator, the name (no mixed part) and an unknown count.
+            w.i32(0x0001_0000 + i32::try_from(i + 1).unwrap_or(0));
+            w.vcs("");
+            w.vcs(cursor);
+            w.i32(-1);
+        }
+        out.push((DssType::Object, Object::data(obj::SQLRSLRD, w.out)));
+        for i in 0..n {
+            let sec = section_of(&at(i));
+            let columns = match self.sql.open_result_set(&sec, i) {
+                Ok(c) => c,
+                Err(e) => {
+                    out.push((DssType::Reply, reply::opnqflrm(&self.cfg.rdb)));
+                    out.push(self.sqlcard(Some(&e)));
+                    continue;
+                }
+            };
+            let fields: Vec<Field> = columns.iter().map(|c| Field::of(&c.ty)).collect();
+            let id = self.next_qryinsid.to_be_bytes();
+            self.next_qryinsid += 1;
+            out.push((DssType::Reply, reply::opnqryrm_result_set(&id)));
+            if i > 0 {
+                // IBM i puts an empty SQLCARD before each later set's columns.
+                out.push(self.sqlcard(None));
+            }
+            let mut cin = Writer::new(crate::fdoca::Repr::default());
+            sqlda::write_cinrd(&mut cin, &columns);
+            out.push((DssType::Object, Object::data(obj::SQLCINRD, cin.out)));
+            out.push((DssType::Object, Object::data(obj::QRYDSC, desc::qrydsc_early(&fields))));
+            let block = self.cfg.block_rows.max(1);
+            let batch = match self.sql.fetch(&sec, block) {
+                Ok(b) => b,
+                Err(e) => {
+                    out.push(self.sqlcard(Some(&e)));
+                    continue;
+                }
+            };
+            let mut d = Writer::new(crate::fdoca::Repr::default());
+            for row in &batch {
+                if let Err(e) = rows::write_row(&mut d, &fields, row) {
+                    let ca = Sqlca::error(-30_000, "58008", &e.to_string());
+                    out.push(self.sqlcard(Some(&ca)));
+                }
+            }
+            out.push((DssType::Object, Object::data(obj::QRYDTA, d.out)));
+            if batch.len() < block {
+                let _ = self.sql.close(&sec);
+                let mut end = Sqlca::no_data();
+                end.rdbname.clone_from(&self.cfg.rdb);
+                out.push((DssType::Reply, reply::endqryrm(&self.cfg.rdb)));
+                out.push(self.sqlcard(Some(&end)));
+            } else {
+                self.queries.insert(sec, Query { fields });
+            }
+        }
+        out
     }
 
     #[allow(clippy::too_many_lines)] // one arm per command
@@ -239,7 +320,9 @@ impl Session {
                     Ok(p) => p,
                     Err(ca) => return vec![self.sqlcard(Some(&ca))],
                 };
+                let max = c.get_u16(param::MAXRSLCNT).unwrap_or(0);
                 match self.sql.execute(&section_of(&pkg), &params) {
+                    Ok(ca) if ca.sqlcode == 466 && max > 0 => self.result_sets(&pkg, &ca, max),
                     Ok(ca) => vec![self.sqlcard(Some(&ca).filter(|c| c.sqlcode != 0 || c.sqlerrd[2] != 0))],
                     Err(ca) => vec![self.sqlcard(Some(&ca))],
                 }

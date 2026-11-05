@@ -25,6 +25,7 @@ whether it matched.
 | `secmec-7.trace` | `ddm::client` | connect with `USRENCPWD` (DH, DES), `RDBCMM` |
 | `secmec-8.trace` | `ddm::client` | connect with `USRSSBPWD` (SHA-1 substitute), `RDBCMM` |
 | `drda-sql.trace` | `ddm::client` | connect with `EUSRIDPWD`; bind package `{user}B/QSDDMPKG` with eight dynamic sections (`BGNBND`, `BNDSQLSTT`, `ENDBND`); prepare, open, continue a catalog query and a query of every scalar type; an SQL error (-204); `EXCSQLIMM` of a temporary table and an insert into it; query it; `RDBRLLBCK`, `RDBCMM` |
+| `drda-call.trace` | `ddm::client` | recorded 2026-11-05: bind as above; `CREATE OR REPLACE PROCEDURE {user}B.QSDRSP (IN N INT) DYNAMIC RESULT SETS 2 LANGUAGE SQL` opening `C1` (`ID`, `NAME` from a `VALUES` table, `ID <= N`) and `C2` (`N * 10 AS TEN`) `WITH RETURN`; `PRPSQLSTT` and `EXCSQLSTT` (`MAXRSLCNT` 0xFFFF) of `CALL {user}B.QSDRSP(2)`: the +466 reply with both sets; `DROP PROCEDURE` |
 | `rla-read.trace` | JTOpen `SequentialFile` | read-only record access to `QIWS/QCUSTCDT`: the record format (`DSPFFD` to `QTEMP` by `S38CMD`), `S38OPEN`, `S38GET`, `S38GETM`, `S38CLOSE` |
 | `rla-write.trace` | JTOpen `KeyedFile` | creates `{user}B/QSDDMT` keyed, `S38PUTM` three records, `S38GETK`, `S38UPDAT`, `S38DEL`, `S38FEOD`, reads it back, `DLTF` |
 
@@ -52,3 +53,17 @@ table lived in `QTEMP`.
 - `CLSQRY` without `QRYINSID` is a syntax error (`SYNERRCD` 0x0E).
 - JTOpen's record access uses the System/38 commands and `USRSSBPWD`
   with the host servers' SHA-1 substitute.
+
+## What the CALL trace showed
+
+- A `CALL` that leaves result sets answers `RSLSETRM` (`SVRCOD` 0) whose
+  `PKGSNLST` names one section per set in a package named for the
+  procedure (collection its library, package its name, sections 1, 2,
+  ...), the `SQLCARD` (+466, `SQLERRP` `QSQCALLS`), `SQLRSLRD` (count;
+  per set locator `0x0001000n`, the cursor's name, -1 rows), then each set:
+  `OPNQRYRM` (limited block, `QRYINSID`, `QRYATTSNS` 3, `QRYATTUPD` 1;
+  no `SQLCSRHLD`), an empty `SQLCARD` before the second set's columns,
+  `SQLCINRD`, `QRYDSC` with early descriptors only (no MDDs, unlike
+  `OPNQRY`), `QRYDTA` with the rows, `ENDQRYRM` and the +100 `SQLCARD`.
+- `SQLCINRD` is an `SQLDARD` without the SQLCA; each label is the
+  column's name, and precision and scale are zero for integers.

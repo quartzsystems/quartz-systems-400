@@ -70,6 +70,12 @@ pub struct JobSql {
     sql: CallingSql,
     /// The columns each open cursor returns.
     cursors: HashMap<String, Vec<Column>>,
+    /// The last `CALL`'s procedure and its result sets: each one's
+    /// cursor here (`RS#n`) and in the procedure.
+    called: (String, Vec<(String, String)>),
+    /// The result sets opened as a section's query: the section's
+    /// cursor name and the set's.
+    sets: HashMap<String, String>,
 }
 
 impl JobSql {
@@ -78,6 +84,8 @@ impl JobSql {
         Self {
             sql: CallingSql::new(link, job),
             cursors: HashMap::new(),
+            called: (String::new(), Vec::new()),
+            sets: HashMap::new(),
         }
     }
 
@@ -200,7 +208,31 @@ impl SqlBackend for JobSql {
 
     fn execute(&mut self, s: &Section, params: &[Value]) -> SqlResult<Sqlca> {
         let r = self.checked(desc(Op::Execute, stmt(s)), params.iter().map(from_wire).collect())?;
+        self.called = (String::new(), Vec::new());
+        if r.sqlca.sqlcode == 466 {
+            let text = |row: &[sql::Value], i: usize| row.get(i).map(sql::Value::as_text).unwrap_or_default();
+            let routine = r.rows.first().map(|row| text(row, 3)).unwrap_or_default();
+            self.called = (routine, r.rows.iter().map(|row| (text(row, 0), text(row, 1))).collect());
+        }
         Ok(ca_of(&r.sqlca))
+    }
+
+    fn result_sets(&mut self) -> (String, Vec<String>) {
+        (self.called.0.clone(), self.called.1.iter().map(|(_, c)| c.clone()).collect())
+    }
+
+    fn open_result_set(&mut self, s: &Section, index: usize) -> SqlResult<Vec<Column>> {
+        let Some((set, _)) = self.called.1.get(index).cloned() else {
+            return Err(Sqlca::error(-501, "24501", "no such result set"));
+        };
+        let d = Desc {
+            orient: "CURSOR".into(),
+            ..desc(Op::Describe, set.clone())
+        };
+        let cols = columns(&self.checked(d, Vec::new())?.rows);
+        self.sets.insert(cursor(s), set);
+        self.cursors.insert(cursor(s), cols.clone());
+        Ok(cols)
     }
 
     fn execute_immediate(&mut self, text: &str) -> SqlResult<Sqlca> {
@@ -220,9 +252,10 @@ impl SqlBackend for JobSql {
     }
 
     fn fetch(&mut self, s: &Section, max: usize) -> SqlResult<Vec<Vec<Value>>> {
+        let name = self.sets.get(&cursor(s)).cloned().unwrap_or_else(|| cursor(s));
         let d = Desc {
             rows: true,
-            ..desc(Op::Fetch, cursor(s))
+            ..desc(Op::Fetch, name)
         };
         let r = self.checked(d, vec![sql::Value::int(i64::try_from(max.max(1)).unwrap_or(1))])?;
         let cols = self.cursors.get(&cursor(s)).cloned().unwrap_or_default();
@@ -235,7 +268,8 @@ impl SqlBackend for JobSql {
 
     fn close(&mut self, s: &Section) -> SqlResult<()> {
         self.cursors.remove(&cursor(s));
-        self.checked(desc(Op::Close, cursor(s)), Vec::new()).map(|_| ())
+        let name = self.sets.remove(&cursor(s)).unwrap_or_else(|| cursor(s));
+        self.checked(desc(Op::Close, name), Vec::new()).map(|_| ())
     }
 
     fn commit(&mut self) -> SqlResult<()> {
