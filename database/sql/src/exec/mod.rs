@@ -19,6 +19,7 @@ pub mod func;
 pub mod grant;
 pub mod index;
 pub mod json;
+pub mod locator;
 mod join;
 pub mod mem;
 pub mod names;
@@ -126,6 +127,8 @@ pub struct SqlContext {
     /// Whether result columns take data mapping errors as null (a
     /// `SELECT` statement's select list).
     pub map_errors: bool,
+    /// The unit of work's LOB locators.
+    pub locators: locator::Locators,
     /// Changes are not under commitment control even when the job has
     /// it (a program precompiled with `COMMIT(*NONE)`).
     pub no_commit: bool,
@@ -242,6 +245,7 @@ impl SqlContext {
             decfloat_rounding: qdecimal::DfRounding::HalfEven,
             mapping_warning: None,
             map_errors: false,
+            locators: locator::Locators::default(),
             no_commit: false,
             isolation: None,
             interrupt: None,
@@ -876,7 +880,7 @@ impl Prepared {
                 if ctx.session.commit_def().is_some() {
                     ctx.session.commit(txn, ctx.now)?;
                 }
-                ctx.isolation = None;
+                ctx.unit_ended();
                 if !hold {
                     cursor::end_of_unit(ctx);
                 }
@@ -886,7 +890,7 @@ impl Prepared {
                 if ctx.session.commit_def().is_some() {
                     rollback(txn, ctx)?;
                 }
-                ctx.isolation = None;
+                ctx.unit_ended();
                 if !hold {
                     cursor::end_of_unit(ctx);
                 }

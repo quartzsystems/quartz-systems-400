@@ -554,3 +554,10 @@ sev = 30
 text = "The text is not a well-formed XML document: &1."
 help = "XMLPARSE found markup that does not form a document: an element not closed, text outside the document element, or a reference it does not know. Correct the text."
 vars = ["*CHAR 256"]
+
+[[msg]]
+id = "SQL0423"
+sev = 30
+text = "Locator &1 is not valid."
+help = "The LOB locator was never assigned, was freed, or ended with its unit of work. Use a locator the unit of work still holds."
+vars = ["*BIN 4"]
