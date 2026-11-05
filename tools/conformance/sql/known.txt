@@ -45,3 +45,4 @@ sqlpl/PLBOOL   # BOOLEAN shown as 1/0 by JTOpen
 sqlpl/PLTYPES   # HEX of CCSID-tagged strings; a character DEFAULT for a VARGRAPHIC variable is SQL0408 there, converted here; 1E400 into DECFLOAT(16) is SQL0304 there, SQL0302 here
 sqlpl/PARMDFT   # SYSPARMS.DEFAULT is NCLOB at IBM, VARCHAR(2000) here (no LOB catalog columns)
 ddl/DGTTCLS   # ALTER TABLE of a table with an index or view over it refused (SQL0084, BLOCKED(sql) in alter)
+trigger/DLTFTRG   # the kit's in-memory store runs no commands (QSYS.QCMDEXC is SQL0204 there); DLTF's dropping of SQL trigger programs runs in the service (svc/db/files.rs)
