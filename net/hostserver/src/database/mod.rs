@@ -792,8 +792,10 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             id::RETRIEVE_LOB | id::WRITE_LOB | id::FREE_LOB => {
                 Some(self.finish(&r, code(-84, "42612"), Vec::new()))
             }
+            // BLOCKED(sql): no *SQLPKG is kept; a driver with extended dynamic
+            // support goes on without one, as it does when a package fails.
             id::CREATE_PACKAGE | id::CLEAR_PACKAGE | id::DELETE_PACKAGE | id::RETURN_PACKAGE => {
-                Some(self.finish(&r, Sqlca::default(), Vec::new()))
+                Some(self.finish(&r, code(-84, "42612"), Vec::new()))
             }
             id::END => return Outcome::close(),
             _ => Some(self.finish(&r, code(-84, "42612"), Vec::new())),

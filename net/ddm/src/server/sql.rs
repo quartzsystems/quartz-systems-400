@@ -102,7 +102,22 @@ impl Session {
         let rpy = |o: Object| (DssType::Reply, o);
         let pkg = Pkgnamcsn::from_command(c);
         match c.cp {
-            cmd::BGNBND | cmd::BNDSQLSTT | cmd::ENDBND | cmd::EXCSQLSET => vec![self.sqlcard(None)],
+            cmd::BGNBND | cmd::BNDSQLSTT | cmd::ENDBND => vec![self.sqlcard(None)],
+            // The SET statements of the connection's environment, each run.
+            cmd::EXCSQLSET => {
+                let texts: Vec<String> = data
+                    .iter()
+                    .filter(|o| o.cp == obj::SQLSTT)
+                    .filter_map(|o| sqlstt_bytes(o.bytes()).ok())
+                    .map(|(b, _)| ccsid::conv::to_string(self.their_repr.ccsid, &b).unwrap_or_else(|_| crate::wire::text(&b)))
+                    .collect();
+                for t in texts {
+                    if let Err(ca) = self.sql.execute_immediate(&t) {
+                        return vec![self.sqlcard(Some(&ca))];
+                    }
+                }
+                vec![self.sqlcard(None)]
+            }
             cmd::PRPSQLSTT | cmd::DSCSQLSTT => {
                 let Ok(pkg) = pkg else {
                     return vec![rpy(reply::syntaxrm(0x0E, param::PKGNAMCSN))];
