@@ -1,0 +1,58 @@
+-- captured from primary
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT '<a><b>x</b></a>') AS VARCHAR(100)
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(100) NOT NULL
+| '<a><b>x</b></a>' |
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT '<a>  <b x="1"  y=''2''>x &amp; y<
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(1024) NOT NULL
+| '<a><b x="1" y="2">x &amp; y</b></a>' |
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT '<a>  <b>x</b>  </a>' PRESERVE WHI
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(100) NOT NULL
+| '<a>  <b>x</b>  </a>' |
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT '<?xml version="1.0"?><a/>') AS VA
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(100) NOT NULL
+| '<a/>' |
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT '<a/>') AS VARCHAR(100) INCLUDING 
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(100) NOT NULL
+| '<?xml version="1.0" encoding="IBM037"?><a/>' |
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT '<a><!-- c --><?pi x?><![CDATA[<z>
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(100) NOT NULL
+| '<a><!-- c --><?pi x?>&lt;z&gt;&lt;A</a>' |
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT '<a>x</b>') AS VARCHAR(100)) FROM 
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(100) NOT NULL
+sqlcode -20398 sqlstate 2200M msgid SQ20398
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT 'text') AS VARCHAR(100)) FROM SYSI
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(100) NOT NULL
+sqlcode -20398 sqlstate 2200M msgid SQ20398
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT '<a>x</a>') AS VARCHAR(3)) FROM SY
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01004 -
+# 00001 VARCHAR(3) NOT NULL
+| '<a>' |
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT '<a b="&quot;"/>') AS VARCHAR(100)
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(100) NOT NULL
+| '<a b="&quot;"/>' |
+> SELECT XMLPARSE(DOCUMENT '<a/>') FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 XML NOT NULL
+| <a/> |
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT CAST(NULL AS VARCHAR(10))) AS VARC
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(10)
+| NULL |
+> SELECT XMLSERIALIZE(XMLELEMENT(NAME "a", 'x') AS VARCHAR(20)) FROM SYSIB
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(20) NOT NULL
+| '<a>x</a>' |
+> SELECT XMLSERIALIZE(XMLPARSE(DOCUMENT '<a>&#xE9;é</a>') AS VARCHAR(100))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(100) NOT NULL
+| '<a>éé</a>' |

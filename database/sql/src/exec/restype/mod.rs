@@ -236,6 +236,11 @@ pub fn type_of(e: &Expr, schema: &Schema) -> Result<Option<SqlType>> {
             Ok(t.map(|t| t.or_null(otherwise.is_none())))
         }
         Expr::Function(f) => function(f, schema),
+        // A predicate as a value is a BOOLEAN (IBM i 7.5).
+        Expr::IsNull(..) | Expr::Exists(..) => nn(DataType::Boolean),
+        Expr::Compare(..) | Expr::And(..) | Expr::Or(..) | Expr::Not(_) | Expr::Between(..) | Expr::InList(..) | Expr::InSubquery(..) | Expr::Like(..) => {
+            Ok(Some(SqlType { spec: TypeSpec { data_type: DataType::Boolean, ccsid: None, bit_data: false }, nullable: true }))
+        }
         _ => Ok(None),
     }
 }
@@ -390,6 +395,7 @@ pub fn check_cast(from: &SqlType, to: &TypeSpec) -> Result<()> {
     let refused = (unify::is_number(x) && (unify::is_binary(y) || datetime(y)))
         || ((unify::is_binary(x) || datetime(x)) && unify::is_number(y))
         || (lob(x) && datetime(y))
+        || (matches!(x, DataType::Blob(_)) && unify::is_text(y))
         || (datetime(x) && unify::is_binary(y))
         || (unify::is_binary(x) && datetime(y));
     if refused {

@@ -460,7 +460,12 @@ impl Parser {
             "CLOB" => DataType::Clob(self.lob_length()?),
             "DBCLOB" => DataType::Dbclob(self.lob_length()?),
             "NCHAR" | "NVARCHAR" | "NCLOB" | "NATIONAL" => return self.national_type(&w),
-            "XML" | "DATALINK" | "ROWID" => return Err(Self::unsupported(&format!("data type {w}"))),
+            // BLOCKED(sql): an XML column needs a stored field type (DB_FORMAT
+            // has none); ROWID needs the generated values of SQL-2's generated
+            // columns; DATALINK needs file links the IFS does not keep.
+            "XML" => return Err(Self::unsupported("the XML data type for a column or a CAST (XMLPARSE and XMLSERIALIZE take XML text)")),
+            "ROWID" => return Err(Self::unsupported("ROWID columns (generated row identifiers)")),
+            "DATALINK" => return Err(Self::unsupported("the DATALINK data type")),
             _ => return Err(self.expected("a data type")),
         };
         let mut spec = TypeSpec {

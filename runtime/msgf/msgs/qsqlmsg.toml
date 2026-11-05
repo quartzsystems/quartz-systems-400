@@ -534,3 +534,23 @@ id = "SQ16413"
 sev = 30
 text = "The SQL/JSON path does not give a single scalar item."
 help = "JSON_VALUE needs one scalar item and JSON_QUERY without a wrapper one item; the path gave more, or an array or object. Change the path or add WITH WRAPPER."
+
+[[msg]]
+id = "SQL0350"
+sev = 30
+text = "Column &1 cannot be a key: its type is a LOB, DATALINK or XML."
+help = "An index, key or constraint was defined over a large object column. Choose another column."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0402"
+sev = 30
+text = "An operand of an arithmetic operator is not a number."
+help = "Arithmetic needs numeric operands (or dates, times and timestamps with durations); a BOOLEAN, binary or other value cannot be used. Cast the operand first."
+
+[[msg]]
+id = "SQ20398"
+sev = 30
+text = "The text is not a well-formed XML document: &1."
+help = "XMLPARSE found markup that does not form a document: an element not closed, text outside the document element, or a reference it does not know. Correct the text."
+vars = ["*CHAR 256"]

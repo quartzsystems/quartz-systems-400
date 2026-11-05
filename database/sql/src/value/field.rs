@@ -191,7 +191,14 @@ impl Value {
                 }
                 Ok(db::record::Value::Char(b))
             }
-            DataType::Boolean => Ok(db::record::Value::Char(vec![if self.as_bool()? { 0xF1 } else { 0xF0 }])),
+            DataType::Boolean => {
+                let b = match self {
+                    Self::Str(s) => crate::value::parse_bool(s).ok_or_else(|| crate::exec::cast::bad_boolean(s))?,
+                    Self::Bool(_) | Self::Num(_) | Self::Double(_) | Self::Real(_) | Self::DecFloat(_) => self.as_bool()?,
+                    v => return Err(incompatible(f, v)),
+                };
+                Ok(db::record::Value::Char(vec![if b { 0xF1 } else { 0xF0 }]))
+            }
             DataType::Blob | DataType::Clob | DataType::Dbclob => Err(SqlError::Database {
                 what: format!("LOB field {} is written through its reference", f.name),
                 msgid: None,

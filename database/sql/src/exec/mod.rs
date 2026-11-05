@@ -27,6 +27,7 @@ pub mod query;
 pub mod rename;
 pub mod schema;
 pub mod restype;
+pub mod xml;
 mod sort;
 pub mod spill;
 pub mod table;

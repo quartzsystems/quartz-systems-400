@@ -1,0 +1,177 @@
+-- captured from primary
+> CREATE TABLE {lib}.QSLOB1 (K INTEGER NOT NULL, C CLOB(1M), D DBCLOB(1K) 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QSLOB1 VALUES (1, 'hello world', 'grüße', BX'010203040
+sqlcode 0 sqlstate 00000 msgid - count 2
+> SELECT K, C, D, HEX(B), I FROM {lib}.QSLOB1 ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+# C CLOB(1048576)
+# D NCLOB(1024)
+# 00004 VARCHAR(32740)
+# I CLOB(100)
+| 1 | 'hello world' | 'grüße' | '0102030405' | 'in line' |
+| 2 | '  padded  ' | NULL | NULL | NULL |
+> SELECT LENGTH(C), LENGTH(D), LENGTH(B), OCTET_LENGTH(D), CHARACTER_LENGT
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+# 00002 INTEGER
+# 00003 INTEGER
+# 00004 DECIMAL(31,0)
+# 00005 INTEGER
+| 11 | 5 | 5 | 10 | 11 |
+> SELECT SUBSTR(C, 7, 5), SUBSTR(D, 3), HEX(SUBSTR(B, 2, 2)), POSITION('wo
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(1048576)
+# 00002 NCLOB(1024)
+# 00003 VARCHAR(32740)
+# 00004 INTEGER
+# 00005 INTEGER
+# 00006 INTEGER
+| 'world' | 'üße' | '0203' | 7 | 5 | 8 |
+> SELECT TRIM(C), LTRIM(C), RTRIM(C), LENGTH(TRIM(C)), C || '!', CONCAT(C,
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(1048576)
+# 00002 CLOB(1048576)
+# 00003 CLOB(1048576)
+# 00004 INTEGER
+# 00005 CLOB(1048577)
+# 00006 CLOB(1048577)
+| 'padded' | 'padded  ' | '  padded' | 6 | '  padded  !' | '  padded  ?' |
+> SELECT UPPER(C), REPLACE(C, 'o', '0'), POSSTR(C, 'wor') FROM {lib}.QSLOB
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(1048576)
+# 00002 CLOB(1048576)
+# 00003 INTEGER
+| 'HELLO WORLD' | 'hell0 w0rld' | 7 |
+> SELECT K FROM {lib}.QSLOB1 WHERE C = 'hello world'
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 1 |
+> SELECT K FROM {lib}.QSLOB1 WHERE C LIKE 'hello%'
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 1 |
+> SELECT K FROM {lib}.QSLOB1 WHERE B = BX'0102030405'
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 1 |
+> SELECT K FROM {lib}.QSLOB1 WHERE C > 'a'
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 1 |
+> SELECT K FROM {lib}.QSLOB1 ORDER BY C
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 2 |
+| 1 |
+> SELECT C, COUNT(*) FROM {lib}.QSLOB1 GROUP BY C
+sqlcode 0 sqlstate 00000 msgid -
+# C CLOB(1048576)
+# 00002 INTEGER NOT NULL
+| 'hello world' | 1 |
+| '  padded  ' | 1 |
+> SELECT DISTINCT C FROM {lib}.QSLOB1
+sqlcode 0 sqlstate 00000 msgid -
+# C CLOB(1048576)
+| 'hello world' |
+| '  padded  ' |
+> SELECT K FROM {lib}.QSLOB1 WHERE C IN ('hello world', 'x')
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 1 |
+> SELECT MAX(C) FROM {lib}.QSLOB1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(1048576)
+| 'hello world' |
+> SELECT K FROM {lib}.QSLOB1 UNION SELECT K FROM {lib}.QSLOB1
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 1 |
+| 2 |
+> SELECT C FROM {lib}.QSLOB1 UNION SELECT C FROM {lib}.QSLOB1
+sqlcode 0 sqlstate 00000 msgid -
+# C CLOB(1048576)
+| 'hello world' |
+| '  padded  ' |
+> CREATE INDEX {lib}.QSLOB1X ON {lib}.QSLOB1 (C)
+sqlcode -350 sqlstate 42962 msgid SQL0350
+> SELECT CAST(C AS VARCHAR(5)), CAST(C AS CHAR(20)), CAST(B AS VARBINARY(3
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01004 -
+# 00001 VARCHAR(5)
+# 00002 CHAR(20)
+# 00003 VARBINARY(3)
+# 00004 BLOB(10) NOT NULL
+# 00005 NVARCHAR(3)
+| 'hello' | 'hello world         ' | X'010203' | X'818283' | 'grü' |
+> SELECT CAST(C AS INTEGER) FROM {lib}.QSLOB1 WHERE K = 1
+sqlcode 0 sqlstate 00000 msgid -
+warning 420 01565 SQL0420
+# 00001 INTEGER
+| NULL |
+> SELECT CAST(B AS CLOB(10)) FROM {lib}.QSLOB1 WHERE K = 1
+sqlcode -461 sqlstate 42846 msgid SQL0461
+> SELECT DATA_TYPE, LENGTH, CCSID FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA
+sqlcode 0 sqlstate 00000 msgid -
+# DATA_TYPE VARCHAR(8) NOT NULL
+# LENGTH INTEGER NOT NULL
+# CCSID INTEGER
+| 'INTEGER' | 4 | NULL |
+| 'CLOB' | 1048576 | 37 |
+| 'DBCLOB' | 1024 | 1200 |
+| 'BLOB' | 1048576 | 65535 |
+| 'CLOB' | 100 | 37 |
+> INSERT INTO {lib}.QSLOB1 (K, I) VALUES (3, REPEAT('x', 101))
+sqlcode -404 sqlstate 22001 msgid SQL0404
+> DROP TABLE {lib}.QSLOB1
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TABLE {lib}.QSLOB2 (G GRAPHIC(3) CCSID 37)
+sqlcode -189 sqlstate 22522 msgid SQL0189
+> CREATE TABLE {lib}.QSLOB2 (G CHAR(3) CCSID 1200)
+sqlcode -189 sqlstate 22522 msgid SQL0189
+> CREATE TABLE {lib}.QSLOB2 (A CHAR(3) CCSID 500, B VARCHAR(5) CCSID 65535
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QSLOB2 VALUES ('abc', 'ab', 'éx', 'ünï', 'nclob', 'gra
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT A, B, HEX(B), C, D, E, F, G FROM {lib}.QSLOB2
+sqlcode 0 sqlstate 00000 msgid -
+# A CHAR(3)
+# B VARCHAR () FOR BIT DATA
+# 00003 VARCHAR(10)
+# C NCHAR(2)
+# D NVARCHAR(4)
+# E NCLOB(10)
+# F VARGRAPHIC(4)
+# G CHAR(3)
+| 'abc' | X'8182' | '8182' | 'éx' | 'ünï' | 'nclob' | 'grap' | 'sb ' |
+> SELECT COLUMN_NAME, DATA_TYPE, LENGTH, CCSID FROM QSYS2.SYSCOLUMNS WHERE
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# DATA_TYPE VARCHAR(8) NOT NULL
+# LENGTH INTEGER NOT NULL
+# CCSID INTEGER
+| 'A' | 'CHAR' | 3 | 500 |
+| 'B' | 'VARCHAR' | 5 | 65535 |
+| 'C' | 'GRAPHIC' | 2 | 1200 |
+| 'D' | 'VARG' | 4 | 1200 |
+| 'E' | 'DBCLOB' | 10 | 1200 |
+| 'F' | 'VARG' | 4 | 13488 |
+| 'G' | 'CHAR' | 3 | 37 |
+> DROP TABLE {lib}.QSLOB2
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TABLE {lib}.QSLOB3 (R ROWID)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QSLOB3 (X XML)
+sqlcode -601 sqlstate 42710 msgid SQL0601
+> CREATE TABLE {lib}.QSLOB3 (H VARCHAR(3) FOR MIXED DATA)
+sqlcode -604 sqlstate 42611 msgid SQL0604
+> CREATE TABLE {lib}.QSLOB3 (J CLOB(5) FOR BIT DATA)
+sqlcode -683 sqlstate 42842 msgid SQL0683
+> CREATE TABLE {lib}.QSLOB3 (C CLOB(100) INLINE LENGTH 50)
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DROP TABLE {lib}.QSLOB3
+sqlcode 0 sqlstate 00000 msgid -

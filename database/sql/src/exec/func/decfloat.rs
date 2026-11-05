@@ -26,6 +26,9 @@ pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Resul
         "COMPARE_DECFLOAT" => compare,
         "TOTALORDER" => total_order,
         "DECFLOAT_FORMAT" => format,
+        "HEX" if matches!(args.first(), Some(Value::Bool(_))) => {
+            return Some(Ok(Value::Str(if matches!(args[0], Value::Bool(true)) { "F1" } else { "F0" }.into())));
+        }
         "CHAR" | "VARCHAR" if args.first().is_some_and(is_number) => {
             return Some(char_of(name, args));
         }

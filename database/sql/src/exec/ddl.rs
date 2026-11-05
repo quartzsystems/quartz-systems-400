@@ -184,7 +184,8 @@ fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
 fn no_lob_keys(rf: &dds::RecordFormat, keys: impl Iterator<Item = usize>) -> Result<()> {
     for k in keys {
         if let Some(f) = rf.fields.get(k).filter(|f| f.data_type.is_lob()) {
-            return Err(SqlError::Unsupported { what: format!("the LOB column {} as a key", f.name) });
+            // IBM: SQL0350, a LOB cannot be a key.
+            return Err(SqlError::Coded { code: -350, state: "42962", what: format!("the LOB column {} cannot be a key", f.name) });
         }
     }
     Ok(())

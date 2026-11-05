@@ -30,6 +30,15 @@ pub(crate) fn bad_chars(text: &str) -> SqlError {
     coded(-420, "22018", format!("'{text}' is not a valid number for the cast"))
 }
 
+/// `SQL0420` for text that is no BOOLEAN: an error even in a select
+/// list, where the other `SQL0420`s are a warning.
+pub(crate) fn bad_boolean(text: &str) -> SqlError {
+    coded(-420, "22018", format!("{BOOLEAN_TEXT}'{text}' is not TRUE or FALSE"))
+}
+
+/// The start of a [`bad_boolean`] text.
+const BOOLEAN_TEXT: &str = "BOOLEAN: ";
+
 /// `SQL0802`: a number past its target.
 pub(crate) fn out_of_range(what: impl std::fmt::Display) -> SqlError {
     coded(-802, "22003", format!("{what} is out of range for the result"))
@@ -225,7 +234,7 @@ fn is_special(v: &Value) -> bool {
 /// is not a string must fit (`SQL0433`); a string is cut off.
 fn to_string(v: &Value, n: u32, fixed: bool) -> Result<Value> {
     let max = usize::try_from(n).expect("fits");
-    let is_text = matches!(v, Value::Str(_) | Value::Bin(_));
+    let is_text = matches!(v, Value::Str(_) | Value::Bin(_) | Value::Bool(_));
     let s = match v {
         Value::Bin(b) => ccsid::from_ebcdic(b),
         v => char_text(v),
@@ -272,6 +281,8 @@ pub fn cast(v: &Value, t: &TypeSpec, mode: DfRounding) -> Result<Value> {
         return Err(coded(-332, "57017", "binary data has no CCSID a graphic string can be converted from"));
     }
     Ok(match dt {
+        // A BOOLEAN is no number on IBM i 7.5.
+        _ if matches!(v, Value::Bool(_)) && crate::exec::restype::unify::is_number(dt) => return Err(not_castable(v, dt)),
         DataType::DecFloat(n) => Value::DecFloat(to_decfloat(v, format_of(*n), mode)?),
         DataType::Decimal(p, s) | DataType::Numeric(p, s) => to_decimal(v, *p, *s)?,
         DataType::SmallInt => to_integer(v, dt, 16)?,
@@ -293,10 +304,10 @@ pub fn cast(v: &Value, t: &TypeSpec, mode: DfRounding) -> Result<Value> {
         }
         DataType::Binary(n) => to_binary(v, dt, *n, true)?,
         DataType::Varbinary(n) | DataType::Blob(n) => to_binary(v, dt, *n, false)?,
+        // Text only: a number is no BOOLEAN on IBM i 7.5.
         DataType::Boolean => match v {
             Value::Bool(b) => Value::Bool(*b),
-            Value::Str(s) => Value::Bool(crate::value::parse_bool(s).ok_or_else(|| bad_chars(s))?),
-            Value::Num(_) | Value::Double(_) | Value::Real(_) | Value::DecFloat(_) => Value::Bool(v.as_bool()?),
+            Value::Str(s) => Value::Bool(crate::value::parse_bool(s).ok_or_else(|| bad_boolean(s))?),
             v => return Err(not_castable(v, dt)),
         },
         DataType::Date => match v {
@@ -331,7 +342,7 @@ mod tests;
 /// primary returns a select list's errors.
 pub fn mapped(ctx: &mut crate::exec::SqlContext, r: Result<Value>) -> Result<Value> {
     let Err(e) = r else { return r };
-    if !ctx.map_errors {
+    if !ctx.map_errors || matches!(&e, SqlError::Coded { what, .. } if what.starts_with(BOOLEAN_TEXT)) {
         return Err(e);
     }
     let warning = match (e.sqlcode(), e.sqlstate()) {

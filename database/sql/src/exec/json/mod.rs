@@ -31,7 +31,7 @@ pub use value::Json;
 
 /// The functions written with JSON clauses.
 pub const CLAUSED: &[&str] =
-    &["JSON_OBJECT", "JSON_ARRAY", "JSON_VALUE", "JSON_QUERY", "JSON_EXISTS", "IS JSON", "JSON_ARRAYAGG", "JSON_OBJECTAGG"];
+    &["JSON_OBJECT", "JSON_ARRAY", "JSON_VALUE", "JSON_QUERY", "JSON_EXISTS", "IS JSON", "JSON_ARRAYAGG", "JSON_OBJECTAGG", "XMLPARSE", "XMLSERIALIZE"];
 
 /// The clauses of a call: `name=value` pairs.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -123,6 +123,7 @@ pub fn call(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, f: &Function, env: &Env) 
     let ret = returning(f).cloned();
     Some(match f.name.as_str() {
         "JSON_ARRAYAGG" | "JSON_OBJECTAGG" => agg::call(ev, txn, f, &opts, ret.as_ref(), env),
+        "XMLPARSE" | "XMLSERIALIZE" => xml(ev, txn, f, &opts, ret.as_ref(), env),
         _ => funcs::call(ev, txn, f, &opts, ret.as_ref(), env),
     })
 }
@@ -172,6 +173,9 @@ pub fn types(name: &str, args: &[Option<SqlType>], exprs: &[Expr]) -> Option<Sql
             let nullable = args.get(2).and_then(Option::as_ref).is_none_or(|t| t.nullable);
             SqlType { spec: plain_spec(DataType::Boolean), nullable: nullable && name == "IS JSON" }
         }
+        // An XML value is its text; QS/400 has no XML type to describe.
+        "XMLPARSE" if claused => SqlType { spec: plain_spec(DataType::Clob(2_147_483_646)), nullable: args.get(2).and_then(Option::as_ref).is_none_or(|t| t.nullable) },
+        "XMLSERIALIZE" if claused => SqlType { spec: ret()?.spec, nullable: args.get(2).and_then(Option::as_ref).is_none_or(|t| t.nullable) },
         "BSON_TO_JSON" => SqlType { spec: plain_spec(DataType::Clob(i32::MAX.unsigned_abs())), nullable: args.first()?.as_ref()?.nullable },
         "JSON_TO_BSON" => SqlType { spec: plain_spec(DataType::Blob(i32::MAX.unsigned_abs())), nullable: args.first()?.as_ref()?.nullable },
         _ => return None,
@@ -241,4 +245,21 @@ pub(crate) fn returned(j: &Json, ret: Option<&TypeSpec>) -> Result<Value> {
         return Err(coded(-802, "22001", format!("the JSON result is longer than {max} characters")));
     }
     Ok(Value::Str(text))
+}
+
+/// `XMLPARSE` and `XMLSERIALIZE`, written the same way as the JSON calls.
+fn xml(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, f: &Function, opts: &Opts, ret: Option<&TypeSpec>, env: &Env) -> Result<Value> {
+    let v = ev.eval(txn, &f.args[2], env)?;
+    if f.name == "XMLPARSE" {
+        return super::xml::call_parse(&v, opts.get("ws") == Some("preserve"));
+    }
+    if v.is_null() {
+        return Ok(Value::Null);
+    }
+    let text = super::xml::serialize(&v.as_text(), opts.get("decl") == Some("1"));
+    // A result longer than the type is cut off, as the primary does it.
+    match ret {
+        Some(t) => super::cast::cast(&Value::Str(text), t, ev.ctx.decfloat_rounding),
+        None => Ok(Value::Str(text)),
+    }
 }

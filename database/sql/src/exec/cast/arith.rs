@@ -51,6 +51,9 @@ pub fn binary(a: &Value, op: BinOp, b: &Value, mode: DfRounding) -> Result<Value
         }
         return eval::binary(a, op, b);
     }
+    if matches!(a, Value::Bool(_)) || matches!(b, Value::Bool(_)) {
+        return Err(coded(-402, "42819", "a BOOLEAN operand of an arithmetic operator"));
+    }
     // A string beside a number takes the number's type.
     let (a, b) = match (a, b) {
         (Value::Str(s), o) if is_number(o) => (string_as(s, o)?, o.clone()),

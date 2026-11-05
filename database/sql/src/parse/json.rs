@@ -40,6 +40,8 @@ impl Parser {
             "JSON_EXISTS" => self.json_exists()?,
             "JSON_ARRAYAGG" => self.json_arrayagg()?,
             "JSON_OBJECTAGG" => self.json_objectagg()?,
+            "XMLPARSE" => self.xml_parse()?,
+            "XMLSERIALIZE" => self.xml_serialize()?,
             "JSON_TABLE" | "XMLQUERY" | "XMLEXISTS" | "XMLTABLE" | "XMLVALIDATE" | "XMLAGG" | "XMLELEMENT"
             | "XMLFOREST" | "XMLCONCAT" | "XMLATTRIBUTES" | "XMLDOCUMENT" | "XMLTEXT" | "XMLPI" | "XMLCOMMENT"
             | "XMLNAMESPACES" | "XMLGROUP" | "XMLROW" | "XSLTRANSFORM" => {
@@ -348,5 +350,45 @@ impl Parser {
         }
         let e = made("IS JSON", &opts, None, vec![left]);
         Ok(if not { Expr::Not(Box::new(e)) } else { e })
+    }
+}
+
+impl Parser {
+    /// `XMLPARSE(DOCUMENT e [STRIP | PRESERVE WHITESPACE])`.
+    fn xml_parse(&mut self) -> Result<Expr> {
+        if self.is_word("CONTENT") {
+            return Err(Self::unsupported("XMLPARSE(CONTENT ...): only DOCUMENT"));
+        }
+        self.expect_word("DOCUMENT")?;
+        let e = self.expr()?;
+        let mut opts = Opts::default();
+        if self.eat_words(&["PRESERVE", "WHITESPACE"]) {
+            opts.set("ws", "preserve");
+        } else {
+            self.eat_words(&["STRIP", "WHITESPACE"]);
+        }
+        self.expect_sym(")")?;
+        Ok(made("XMLPARSE", &opts, None, vec![e]))
+    }
+
+    /// `XMLSERIALIZE([CONTENT] e AS type [VERSION '1.0'] [INCLUDING |
+    /// EXCLUDING XMLDECLARATION])`.
+    fn xml_serialize(&mut self) -> Result<Expr> {
+        self.eat_word("CONTENT");
+        let e = self.expr()?;
+        self.expect_word("AS")?;
+        let t = self.type_spec()?;
+        let mut opts = Opts::default();
+        loop {
+            if self.eat_word("VERSION") {
+                self.advance();
+            } else if self.eat_words(&["INCLUDING", "XMLDECLARATION"]) {
+                opts.set("decl", "1");
+            } else if !self.eat_words(&["EXCLUDING", "XMLDECLARATION"]) {
+                break;
+            }
+        }
+        self.expect_sym(")")?;
+        Ok(made("XMLSERIALIZE", &opts, Some(t), vec![e]))
     }
 }
