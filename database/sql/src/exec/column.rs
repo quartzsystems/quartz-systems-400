@@ -100,6 +100,10 @@ pub fn check_generated(c: &ast::ColumnDef) -> Result<()> {
         Some(Generated::Audit { what, .. }) if what == "DATA CHANGE OPERATION" && !matches!(c.type_spec.data_type, DataType::Char(1)) => {
             Err(err(-574, "42894", format!("column {} must be CHAR(1) to record the data change operation", c.name.value)))
         }
+        // A user or server is kept in a VARCHAR(128), as pub400 requires.
+        Some(Generated::Audit { what, .. }) if what != "DATA CHANGE OPERATION" && !matches!(c.type_spec.data_type, DataType::Varchar(128)) => {
+            Err(err(-574, "42894", format!("column {} must be VARCHAR(128) to record {what}", c.name.value)))
+        }
         _ if c.generated.is_some() && c.identity.is_some() => {
             Err(err(-574, "42894", format!("column {} cannot be generated twice", c.name.value)))
         }

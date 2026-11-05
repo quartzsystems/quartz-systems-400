@@ -1,0 +1,40 @@
+-- captured from pub400
+> CREATE TABLE {lib}.IAUD (K INT, OP CHAR(1) GENERATED ALWAYS AS (DATA CHA
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.IAUD (K) VALUES (1)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT K, OP FROM {lib}.IAUD
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER
+# OP CHAR(1)
+| 1 | 'I' |
+> UPDATE {lib}.IAUD SET K = 2
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT K, OP FROM {lib}.IAUD
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER
+# OP CHAR(1)
+| 2 | 'U' |
+> UPDATE {lib}.IAUD SET OP = 'X'
+sqlcode -798 sqlstate 428C9 msgid SQL0798
+> CREATE TABLE {lib}.IAUD5 (K INT, WHO VARCHAR(128) GENERATED ALWAYS AS (S
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.IAUD6 (K INT, WHO VARCHAR(18) GENERATED ALWAYS AS (SE
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.IAUD2 (K INT, OP CHAR(2) GENERATED ALWAYS AS (DATA CH
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.IAUD3 (K INT, A INT GENERATED ALWAYS AS (K * 2))
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CREATE TABLE {lib}.IAUD4 (K INT, H INT IMPLICITLY HIDDEN)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> DROP TABLE {lib}.IAUD
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.IAUD4
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.IAUD5
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.IAUD6
+sqlcode -204 sqlstate 42704 msgid SQL0204

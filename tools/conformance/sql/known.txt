@@ -23,3 +23,4 @@ integrity/CSTREF     # SQL7905; COUNT(*) typed VARCHAR
 integrity/IDENTITY   # SQL7905; IDENTITY_VAL_LOCAL() typed VARCHAR
 integrity/ROWCHG     # SQL7905; CASE result typed VARCHAR
 integrity/SEQUENCE   # NEXT/PREVIOUS VALUE typed VARCHAR; an error after the row description; a column named ORDER in a select list (SQL0104)
+integrity/AUDITCOL   # SQL7905; IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
