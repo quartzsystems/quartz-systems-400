@@ -704,6 +704,18 @@ mod tests {
         assert_eq!(text_of(&back.text), "A data area");
         assert_eq!(back.public_authority.display(), "*CHANGE");
         assert_eq!(Authority::ALL.display(), "*ALL");
+        // A version 1 header (V1R1M0): its reserved bytes read as no SQL
+        // information, whatever they hold.
+        let mut v1 = body.clone();
+        v1[OFF_VERSION..OFF_VERSION + 4].copy_from_slice(&1u32.to_le_bytes());
+        v1[OFF_SQL..OFF_SQL + 16].fill(0xAA);
+        assert_eq!(ObjectHeader::decode(&v1, 1).unwrap(), h);
+        let mut v3 = body.clone();
+        v3[OFF_VERSION..OFF_VERSION + 4].copy_from_slice(&3u32.to_le_bytes());
+        assert!(ObjectHeader::decode(&v3, 1).is_err());
+        h.sql = ObjectId { asp: 1, type_code: crate::obj::types::SQLINF, serial: 9, generation: 0 };
+        h.encode(&mut body);
+        assert_eq!(ObjectHeader::decode(&body, 1).unwrap().sql, h.sql);
         body[0] = 0;
         assert!(matches!(
             ObjectHeader::decode(&body, 1),
