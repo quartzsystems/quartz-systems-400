@@ -351,3 +351,9 @@ pub fn status(txn: &mut Txn<'_>, ctx: &SqlContext, out: &mut Out) -> Result<()> 
     out.text("JOB_SCHEDULE_STATUS", if s.scheduler_active { "ACTIVE" } else { "INACTIVE" });
     Ok(())
 }
+
+/// `SYSTEM_STATUS(RESET_STATISTICS, DETAILED_INFO)`: the view's row.
+/// Statistics are reset by `WRKSYSSTS`'s own interval, not here.
+pub fn status_function(txn: &mut Txn<'_>, ctx: &SqlContext, _args: &Args, out: &mut Out) -> Result<()> {
+    status(txn, ctx, out)
+}

@@ -186,3 +186,54 @@ pub fn data(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> 
     }
     Ok(())
 }
+
+/// `SPOOLED_FILE_INFO(USER_NAME, STARTING_TIMESTAMP, ENDING_TIMESTAMP,
+/// STATUS, JOB_NAME, OUTPUT_QUEUE, USER_DATA, FORM_TYPE, SYSTEM_NAME)`:
+/// the spooled files matching every filter given. The timestamps
+/// filter is refused (SQL0443) until it is needed.
+pub fn info(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
+    if !args.get("STARTING_TIMESTAMP").is_null() || !args.get("ENDING_TIMESTAMP").is_null() {
+        return Err(SqlError::Coded { code: -443, state: "38501", what: "the timestamp filters of SPOOLED_FILE_INFO are not supported".into() });
+    }
+    let user = args.word("USER_NAME").unwrap_or_else(|| "*CURRENT".into());
+    let user = if user == "*CURRENT" { ctx.user.trim().to_ascii_uppercase() } else { user };
+    let all = |k: &str| args.word(k).filter(|v| v != "*ALL");
+    let (status, job, outq, usrdta, form) = (all("STATUS"), all("JOB_NAME"), all("OUTPUT_QUEUE"), all("USER_DATA"), all("FORM_TYPE"));
+    let mut files = ask(txn, ctx, "the spooled files", |h| h.spooled_files())?;
+    files.sort_by_key(|f| f.created);
+    for f in &files {
+        if user != "*ALL" && f.job.1.trim() != user {
+            continue;
+        }
+        let st = status_text(f.status);
+        if status.as_ref().is_some_and(|s| s.trim_start_matches('*') != st && s != f.status.code()) {
+            continue;
+        }
+        if job.as_ref().is_some_and(|j| *j != f.job_text()) || usrdta.as_ref().is_some_and(|u| u != f.usrdta.trim()) {
+            continue;
+        }
+        let (ql, qn) = split(&f.outq);
+        if outq.as_ref().is_some_and(|q| q != qn && *q != format!("{ql}/{qn}")) || form.as_ref().is_some_and(|t| t != f.formtype.trim()) {
+            continue;
+        }
+        out.row();
+        out.text("SPOOLED_FILE_NAME", f.name.as_str());
+        out.int("SPOOLED_FILE_NUMBER", f.number);
+        out.text("STATUS", st);
+        out.int("OUTPUT_PRIORITY", f.outpty);
+        out.stamp_micros("CREATION_TIMESTAMP", f.created / 1_000_000, u32::try_from(f.created % 1_000_000).unwrap_or(0));
+        out.text_or_null("USER_DATA", &f.usrdta);
+        out.int("SIZE", f.data_len.div_ceil(1024));
+        out.int("TOTAL_PAGES", f.pages);
+        out.int("COPIES", f.copies);
+        out.text("QUALIFIED_JOB_NAME", f.job_text());
+        out.text("JOB_NAME", f.job.0.as_str());
+        out.text("JOB_USER", f.job.1.as_str());
+        out.text("JOB_NUMBER", format!("{:06}", f.job.2));
+        out.text("FORM_TYPE", star(&f.formtype, "*STD"));
+        out.text("OUTPUT_QUEUE_LIBRARY", ql);
+        out.text("OUTPUT_QUEUE", qn);
+        out.int("ASP_NUMBER", 1);
+    }
+    Ok(())
+}

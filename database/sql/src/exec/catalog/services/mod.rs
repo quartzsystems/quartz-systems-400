@@ -114,6 +114,8 @@ const FUNCTIONS: &[Function] = &[
     Function { schema: "QSYS2", specific: "QSQIFSREADUTF8", no_value: &[], rows: ifs::read_text },
     Function { schema: "QSYS2", specific: "QSQIFSREADBINARY", no_value: &[], rows: ifs::read_binary },
     Function { schema: "SYSTOOLS", specific: "SPOOL_FILE", no_value: &[], rows: spool::data },
+    Function { schema: "QSYS2", specific: "QSQSPLFINF", no_value: &[], rows: spool::info },
+    Function { schema: "QSYS2", specific: "QSQSYSSTAT", no_value: jobs::STATUS_NO_VALUE, rows: jobs::status_function },
     Function { schema: "QSYS2", specific: "HTTP_GETV", no_value: &[], rows: http::get_v },
     Function { schema: "QSYS2", specific: "HTTP_GETBV", no_value: &[], rows: http::get_bv },
     Function { schema: "QSYS2", specific: "HTTP_POSTV", no_value: &[], rows: http::post_v },

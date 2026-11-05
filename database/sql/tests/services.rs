@@ -780,3 +780,15 @@ fn journal_views() {
         vec![row(&["*FILE", "JSCH", "T1", "PHYSICAL"])]
     );
 }
+
+#[test]
+fn spooled_file_info_and_system_status() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT SPOOLED_FILE_NAME, STATUS, QUALIFIED_JOB_NAME, OUTPUT_QUEUE FROM TABLE(QSYS2.SPOOLED_FILE_INFO()) X"),
+        vec![row(&["QSYSPRT", "READY", "000009/CODY/QPADEV0001", "QPRINT"])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.SPOOLED_FILE_INFO(USER_NAME => 'OTHER')) X"), vec![row(&["0"])]);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.SPOOLED_FILE_INFO(STATUS => '*HELD')) X"), vec![row(&["0"])]);
+    assert_eq!(db.rows("SELECT ACTIVE_JOBS_IN_SYSTEM FROM TABLE(QSYS2.SYSTEM_STATUS()) X"), vec![row(&["38"])]);
+}
