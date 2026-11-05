@@ -34,6 +34,12 @@ impl Out {
         Self { shape, schema: Schema { cols }, index, rows: Vec::new(), unknown: Vec::new() }
     }
 
+    /// Whether the shape has `col`.
+    #[must_use]
+    pub fn has(&self, col: &str) -> bool {
+        self.index.contains_key(col)
+    }
+
     /// Start a row, every column null.
     pub fn row(&mut self) {
         self.rows.push(vec![Value::Null; self.shape.cols.len()]);

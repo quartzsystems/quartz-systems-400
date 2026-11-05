@@ -19,7 +19,11 @@ pub mod shape;
 mod args;
 mod out;
 
+mod absent;
 mod joblog;
+mod jrnent;
+mod msgfdata;
+mod secinfo;
 mod history;
 mod ifs;
 mod jobs;
@@ -100,6 +104,14 @@ const VIEWS: &[View] = &[
     View { schema: "QSYS2", name: "NETSTAT_JOB_INFO", no_value: &[], rows: netstat::jobs },
     View { schema: "QSYS2", name: "NETSTAT_INTERFACE_INFO", no_value: &[], rows: netstat::interfaces },
     View { schema: "QSYS2", name: "NETSTAT_ROUTE_INFO", no_value: netstat::ROUTE_NO_VALUE, rows: netstat::routes },
+    View { schema: "QSYS2", name: "MESSAGE_FILE_DATA", no_value: msgfdata::NO_VALUE, rows: msgfdata::view },
+    View { schema: "QSYS2", name: "SECURITY_INFO", no_value: secinfo::NO_VALUE, rows: secinfo::view },
+    View { schema: "QSYS2", name: "FUNCTION_INFO", no_value: &[], rows: absent::view },
+    View { schema: "QSYS2", name: "FUNCTION_USAGE", no_value: &[], rows: absent::view },
+    View { schema: "QSYS2", name: "LICENSE_INFO", no_value: &[], rows: absent::view },
+    View { schema: "QSYS2", name: "SYSLIMTBL", no_value: &[], rows: absent::view },
+    View { schema: "QSYS2", name: "SYSLIMITS", no_value: &[], rows: absent::view },
+    View { schema: "QSYS2", name: "ELECTRONIC_SERVICE_AGENT_INFO", no_value: &[], rows: absent::view },
 ];
 
 /// The table functions.
@@ -127,6 +139,57 @@ const FUNCTIONS: &[Function] = &[
     Function { schema: "QSYS2", specific: "HTTP_PTCBV", no_value: &[], rows: http::patch_bv },
     Function { schema: "QSYS2", specific: "HTTP_DELV", no_value: &[], rows: http::delete_v },
     Function { schema: "QSYS2", specific: "HTTP_DELBV", no_value: &[], rows: http::delete_bv },
+    Function { schema: "QSYS2", specific: "QSQMSGFDTA", no_value: &[], rows: msgfdata::function },
+    Function { schema: "QSYS2", specific: "QSQSECINF", no_value: &[], rows: secinfo::function },
+    Function { schema: "QSYS2", specific: "QSQSACONN", no_value: &[], rows: absent::function },
+    Function { schema: "QSYS2", specific: "QJOJRNTF", no_value: &[], rows: jrnent::display },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_AD", no_value: &[], rows: jrnent::audit::<b'A', b'D'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_AF", no_value: &[], rows: jrnent::audit::<b'A', b'F'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_AP", no_value: &[], rows: jrnent::audit::<b'A', b'P'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_AU", no_value: &[], rows: jrnent::audit::<b'A', b'U'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_AX", no_value: &[], rows: jrnent::audit::<b'A', b'X'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_CA", no_value: &[], rows: jrnent::audit::<b'C', b'A'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_CD", no_value: &[], rows: jrnent::audit::<b'C', b'D'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_CO", no_value: &[], rows: jrnent::audit::<b'C', b'O'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_CP", no_value: &[], rows: jrnent::audit::<b'C', b'P'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_DO", no_value: &[], rows: jrnent::audit::<b'D', b'O'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_DS", no_value: &[], rows: jrnent::audit::<b'D', b'S'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_EV", no_value: &[], rows: jrnent::audit::<b'E', b'V'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_GR", no_value: &[], rows: jrnent::audit::<b'G', b'R'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_IM", no_value: &[], rows: jrnent::audit::<b'I', b'M'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_JD", no_value: &[], rows: jrnent::audit::<b'J', b'D'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_JS", no_value: &[], rows: jrnent::audit::<b'J', b'S'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_LD", no_value: &[], rows: jrnent::audit::<b'L', b'D'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_M0", no_value: &[], rows: jrnent::audit::<b'M', b'0'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_M6", no_value: &[], rows: jrnent::audit::<b'M', b'6'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_M7", no_value: &[], rows: jrnent::audit::<b'M', b'7'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_M8", no_value: &[], rows: jrnent::audit::<b'M', b'8'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_M9", no_value: &[], rows: jrnent::audit::<b'M', b'9'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_NA", no_value: &[], rows: jrnent::audit::<b'N', b'A'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_OM", no_value: &[], rows: jrnent::audit::<b'O', b'M'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_OR", no_value: &[], rows: jrnent::audit::<b'O', b'R'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_OW", no_value: &[], rows: jrnent::audit::<b'O', b'W'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_PA", no_value: &[], rows: jrnent::audit::<b'P', b'A'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_PF", no_value: &[], rows: jrnent::audit::<b'P', b'F'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_PG", no_value: &[], rows: jrnent::audit::<b'P', b'G'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_PO", no_value: &[], rows: jrnent::audit::<b'P', b'O'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_PS", no_value: &[], rows: jrnent::audit::<b'P', b'S'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_PU", no_value: &[], rows: jrnent::audit::<b'P', b'U'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_PW", no_value: &[], rows: jrnent::audit::<b'P', b'W'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_RA", no_value: &[], rows: jrnent::audit::<b'R', b'A'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_RO", no_value: &[], rows: jrnent::audit::<b'R', b'O'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_RP", no_value: &[], rows: jrnent::audit::<b'R', b'P'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_RU", no_value: &[], rows: jrnent::audit::<b'R', b'U'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_RZ", no_value: &[], rows: jrnent::audit::<b'R', b'Z'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_SF", no_value: &[], rows: jrnent::audit::<b'S', b'F'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_SK", no_value: &[], rows: jrnent::audit::<b'S', b'K'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_SM", no_value: &[], rows: jrnent::audit::<b'S', b'M'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_ST", no_value: &[], rows: jrnent::audit::<b'S', b'T'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_SV", no_value: &[], rows: jrnent::audit::<b'S', b'V'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_VO", no_value: &[], rows: jrnent::audit::<b'V', b'O'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_VP", no_value: &[], rows: jrnent::audit::<b'V', b'P'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_ZC", no_value: &[], rows: jrnent::audit::<b'Z', b'C'> },
+    Function { schema: "SYSTOOLS", specific: "AUDIT_ZR", no_value: &[], rows: jrnent::audit::<b'Z', b'R'> },
 ];
 
 fn schema_of(name: &ObjectName) -> Option<&str> {
@@ -291,6 +354,8 @@ pub fn self_check(txn: &mut Txn<'_>, ctx: &SqlContext) -> Vec<String> {
                 .map(|p| {
                     let v = if matches!(p.ty.as_str(), "INTEGER" | "SMALLINT" | "BIGINT" | "DECIMAL") {
                         crate::value::Value::int(1)
+                    } else if p.name == "JOURNAL_NAME" {
+                        crate::value::Value::Str("QAUDJRN".into())
                     } else if p.name == "JOB_NAME" {
                         crate::value::Value::Str("*".into())
                     } else if p.name.contains("TYPE") || p.name.contains("LIST") {

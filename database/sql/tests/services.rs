@@ -54,7 +54,32 @@ impl SystemHost for Mock {
     }
 
     fn system_values(&self) -> Option<Vec<SysValue>> {
-        Some(vec![
+        let sv = |name: &str, number: Option<i64>, text: Option<&str>| SysValue {
+            name: name.into(),
+            number,
+            text: text.map(Into::into),
+            description: String::new(),
+            group: "*SEC".into(),
+            shipped: String::new(),
+            changeable: true,
+        };
+        let mut sec: Vec<SysValue> = [
+            ("QSECURITY", "40"), ("QPWDLVL", "0"), ("QPWDEXPWRN", "7"), ("QPWDLMTAJC", "0"), ("QPWDLMTREP", "0"),
+            ("QPWDPOSDIF", "0"), ("QPWDRQDDGT", "0"), ("QPWDMAXLEN", "8"), ("QPWDMINLEN", "6"), ("QPWDRQDDIF", "0"),
+            ("QMAXSGNACN", "3"), ("QVFYOBJRST", "1"), ("QLMTSECOFR", "1"), ("QAUTOCFG", "1"), ("QAUTORMT", "1"),
+        ]
+        .iter()
+        .map(|(n, v)| sv(n, v.parse().ok(), None))
+        .collect();
+        for (n, v) in [
+            ("QPWDCHGBLK", "*NONE"), ("QPWDEXPITV", "*NOMAX"), ("QPWDLMTCHR", "*NONE"), ("QPWDRULES", "*PWDSYSVAL"),
+            ("QPWDVLDPGM", "*NONE"), ("QCRTAUT", "*CHANGE"), ("QCRTOBJAUD", "*NONE"), ("QMAXSIGN", "3"), ("QALWOBJRST", "*ALL"),
+            ("QUSEADPAUT", "*NONE"), ("QALWUSRDMN", "*ALL"), ("QINACTITV", "*NONE"), ("QINACTMSGQ", "*ENDJOB"),
+            ("QDSCJOBITV", "240"), ("QAUDCTL", "*NONE"), ("QAUDLVL", "*NONE"), ("QAUDLVL2", "*NONE"),
+        ] {
+            sec.push(sv(n, None, Some(v)));
+        }
+        Some(sec.into_iter().chain(vec![
             SysValue {
                 name: "QMAXJOB".into(),
                 number: Some(163_520),
@@ -73,7 +98,7 @@ impl SystemHost for Mock {
                 shipped: "MDY".into(),
                 changeable: true,
             },
-        ])
+        ]).collect())
     }
 
     fn active_jobs(&self) -> Option<Vec<ActiveJob>> {
@@ -375,6 +400,7 @@ fn row(cells: &[&str]) -> Vec<String> {
 #[test]
 fn every_service_fills_its_not_null_columns() {
     let mut db = Db::new(true);
+    audit_journal(&mut db);
     let mut t = db.store.begin().unwrap();
     let faults = services::self_check(&mut t, &db.ctx);
     t.abort();
@@ -400,7 +426,7 @@ fn library_list_info() {
 fn system_value_info() {
     let mut db = Db::new(true);
     assert_eq!(
-        db.rows("SELECT SYSTEM_VALUE_NAME, SYSTEM_VALUE, CURRENT_NUMERIC_VALUE, CURRENT_CHARACTER_VALUE, CATEGORY, CHANGEABLE FROM QSYS2.SYSTEM_VALUE_INFO"),
+        db.rows("SELECT SYSTEM_VALUE_NAME, SYSTEM_VALUE, CURRENT_NUMERIC_VALUE, CURRENT_CHARACTER_VALUE, CATEGORY, CHANGEABLE FROM QSYS2.SYSTEM_VALUE_INFO WHERE SYSTEM_VALUE_NAME IN ('QDATFMT', 'QMAXJOB')"),
         vec![row(&["QDATFMT", "MDY", "-", "MDY", "*DATTIM", "YES"]), row(&["QMAXJOB", "163520", "163520", "-", "*SYSCTL", "YES"])]
     );
 }
@@ -800,4 +826,99 @@ fn library_info() {
     assert!(!ca.is_error(), "{}", ca.line());
     assert_eq!(db.rows("SELECT OBJECT_COUNT, LIBRARY_SIZE_COMPLETE, TEXT_DESCRIPTION FROM TABLE(QSYS2.LIBRARY_INFO('QSTEST')) X"), vec![row(&["1", "YES", "Test library"])]);
     assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.LIBRARY_INFO('NOPE')) X"), vec![row(&["0"])]);
+}
+
+/// `QSYS/QAUDJRN` with one `PW` entry.
+fn audit_journal(db: &mut Db) {
+    let mut t = db.store.begin().unwrap();
+    let qsys = db.ctx.qsys;
+    let rcv = jrn::rcv::crtjrnrcv(&mut t, qsys, Name::parse("AUDRCV0001").unwrap(), &jrn::rcv::CrtJrnRcvOpts::default()).unwrap();
+    let opts = jrn::CrtJrnOpts {
+        text: String::new(),
+        mngrcv_system: true,
+        dltrcv: false,
+        minentdta: false,
+        fixlendta: false,
+        rcvsizopt: 0,
+        owner: "QSYS".into(),
+        system: "QS400".into(),
+        now: 1_767_225_600,
+    };
+    jrn::journal::crtjrn(&mut t, qsys, Name::parse("QAUDJRN").unwrap(), rcv, &opts).unwrap();
+    let ev = sec::audit::Event::new(sec::audit::Kind::by_code("PW").unwrap()).set("ETYP", "P").set("USRP", "BADGUY").set("DEVN", "QPADEV0009");
+    let job = jrn::JobInfo { name: "QPADEV0009".into(), user: "QSYS".into(), number: 12 };
+    sec::audit::write::write(&mut t, qsys, &[(ev, job)]).unwrap();
+    t.commit().unwrap();
+}
+
+#[test]
+fn message_file_data() {
+    let mut db = Db::new(true);
+    {
+        let mut t = db.store.begin().unwrap();
+        let lib = ops::find_library(&mut t, db.ctx.qsys, Name::parse("QGPL").unwrap()).unwrap().id;
+        let c = msgf::store::Ctx { now: 1_767_225_600, owner: "QSYS".into(), system: "QS400".into() };
+        let id = msgf::store::crtmsgf(&mut t, &c, lib, Name::parse("MYMSGF").unwrap(), "Mine", false).unwrap();
+        let d = msgf::MsgDesc {
+            id: "USR0001".into(),
+            severity: 30,
+            text: "File &1 not found.".into(),
+            help: "Look again.".into(),
+            vars: vec![msgf::VarType::Char(10)],
+            dft_reply: Some("C".into()),
+            valid_replies: vec!["C".into(), "R".into()],
+            dump: Vec::new(),
+        };
+        msgf::store::addmsgd(&mut t, id, d).unwrap();
+        t.commit().unwrap();
+    }
+    assert_eq!(
+        db.rows("SELECT MESSAGE_FILE, MESSAGE_ID, MESSAGE_TEXT, SEVERITY, MESSAGE_DATA_COUNT, MESSAGE_DATA, DEFAULT_REPLY, VALID_REPLY_VALUES, CREATION_DATE FROM QSYS2.MESSAGE_FILE_DATA"),
+        vec![row(&["MYMSGF", "USR0001", "File &1 not found.", "30", "1", "*CHAR 10", "C", "C R", "-"])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.MESSAGE_FILE_DATA('QGPL', 'MYMSGF')) X"), vec![row(&["1"])]);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.MESSAGE_FILE_DATA('QGPL', 'NONE')) X"), vec![row(&["0"])]);
+}
+
+#[test]
+fn security_info() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT SECURITY_LEVEL, PASSWORD_LEVEL, AUDIT_JOURNAL_EXISTS, PASSWORD_EXPIRATION_INTERVAL, MAXIMUM_SIGNON_ATTEMPTS, PENDING_SECURITY_LEVEL FROM QSYS2.SECURITY_INFO"),
+        vec![row(&["40", "0", "NO", "*NOMAX", "3", "-"])]
+    );
+    audit_journal(&mut db);
+    assert_eq!(db.rows("SELECT AUDIT_JOURNAL_EXISTS, AUDIT_JOURNAL_RECEIVER FROM TABLE(QSYS2.SECURITY_INFO()) X"), vec![row(&["YES", "AUDRCV0001"])]);
+}
+
+#[test]
+fn audit_journal_and_display_journal() {
+    let mut db = Db::new(true);
+    audit_journal(&mut db);
+    assert_eq!(
+        db.rows("SELECT QUALIFIED_JOB_NAME, VIOLATION_TYPE, AUDIT_USER_NAME, DEVICE_NAME, RECEIVER_NAME FROM TABLE(SYSTOOLS.AUDIT_JOURNAL_PW()) X"),
+        vec![row(&["000012/QSYS/QPADEV0009", "P", "BADGUY", "QPADEV0009", "AUDRCV0001"])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(SYSTOOLS.AUDIT_JOURNAL_AF()) X"), vec![row(&["0"])]);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(SYSTOOLS.AUDIT_JOURNAL_PW(USER_NAME => 'NOBODY')) X"), vec![row(&["0"])]);
+    assert_eq!(
+        db.rows("SELECT JOURNAL_CODE, JOURNAL_ENTRY_TYPE, JOB_NUMBER FROM TABLE(QSYS2.DISPLAY_JOURNAL('QSYS', 'QAUDJRN')) X"),
+        vec![row(&["T", "PW", "000012"])]
+    );
+    for st in ["CREATE SCHEMA JSCH", "CREATE TABLE JSCH.T1 (A INT)", "INSERT INTO JSCH.T1 VALUES 1, 2"] {
+        let (ca, _) = db.run(st);
+        assert!(!ca.is_error(), "{st}: {}", ca.line());
+    }
+    let rows = db.rows("SELECT JOURNAL_ENTRY_TYPE, OBJECT, COUNT_OR_RRN FROM TABLE(QSYS2.DISPLAY_JOURNAL('JSCH', 'QSQJRN', JOURNAL_ENTRY_TYPES => 'PT')) X");
+    assert_eq!(rows, vec![row(&["PT", "T1        JSCH      T1", "1"]), row(&["PT", "T1        JSCH      T1", "2"])]);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.DISPLAY_JOURNAL('JSCH', 'QSQJRN', EOF_DELAY => 5)) X"), -443);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.DISPLAY_JOURNAL('JSCH', 'NOPE')) X"), -443);
+}
+
+#[test]
+fn services_qs400_does_not_have_answer_no_rows() {
+    let mut db = Db::new(true);
+    for v in ["FUNCTION_INFO", "FUNCTION_USAGE", "LICENSE_INFO", "SYSLIMTBL", "SYSLIMITS", "ELECTRONIC_SERVICE_AGENT_INFO"] {
+        assert_eq!(db.rows(&format!("SELECT COUNT(*) FROM QSYS2.{v}")), vec![row(&["0"])], "{v}");
+    }
 }

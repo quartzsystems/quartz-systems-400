@@ -18,7 +18,7 @@ use crate::error::{Result, SqlError};
 
 /// The libraries `schema` names: one, or a list's (`*LIBL`, `*USRLIBL`,
 /// `*CURLIB`, `*ALLUSR`, `*ALL`).
-fn libraries(txn: &mut Txn<'_>, ctx: &SqlContext, schema: &str) -> Result<Vec<ObjectId>> {
+pub(super) fn libraries(txn: &mut Txn<'_>, ctx: &SqlContext, schema: &str) -> Result<Vec<ObjectId>> {
     let all = |txn: &mut Txn<'_>| -> Result<Vec<ObjectId>> {
         let mut v: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
         v.insert(0, ctx.qsys);
@@ -51,7 +51,7 @@ fn libraries(txn: &mut Txn<'_>, ctx: &SqlContext, schema: &str) -> Result<Vec<Ob
 }
 
 /// Whether `name` matches `filter`: a name, a generic name, `*ALL`.
-fn matches(filter: Option<&str>, name: &str) -> bool {
+pub(super) fn matches(filter: Option<&str>, name: &str) -> bool {
     match filter {
         None | Some("*ALL") => true,
         Some(f) => match f.strip_suffix('*') {

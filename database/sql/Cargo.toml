@@ -23,6 +23,7 @@ sha2.workspace = true
 qir = { path = "../../runtime/qir", version = "0.1.0" }
 ile = { path = "../../runtime/ile", version = "0.1.0" }
 wm = { path = "../../work/wm", version = "0.1.0" }
+msgf = { path = "../../runtime/msgf", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
 
