@@ -8260,3 +8260,145 @@ id = "CPFB995"
 sev = 40
 text = "Management collection not found."
 help = "The collection named is not in the library named. DSPOBJD OBJTYPE(*MGTCOL) lists the collections of a library."
+
+# Physical file constraints.
+
+[[msg]]
+id = "CPC32B0"
+sev = 0
+text = "&1 constraint(s) added to file &2."
+help = "ADDPFCST added the constraints named in the messages before this one."
+vars = ["*BIN 4", "*CHAR 10"]
+
+[[msg]]
+id = "CPC32B1"
+sev = 0
+text = "&1 constraint(s) removed from file &2."
+help = "RMVPFCST removed the constraints named in the messages before this one; those it could not remove are named too."
+vars = ["*BIN 4", "*CHAR 10"]
+
+[[msg]]
+id = "CPC32B2"
+sev = 0
+text = "&1 constraint(s) changed for file &2."
+help = "CHGPFCST changed the constraints named in the messages before this one."
+vars = ["*BIN 4", "*CHAR 10"]
+
+[[msg]]
+id = "CPI32B0"
+sev = 0
+text = "Constraint &1 was added to file &2."
+help = "The constraint is enforced from now on, unless a later message puts it in check pending."
+vars = ["*CHAR 258", "*CHAR 10"]
+
+[[msg]]
+id = "CPI32B1"
+sev = 0
+text = "Constraint &1 was removed from file &2."
+help = "The file no longer has the constraint."
+vars = ["*CHAR 258", "*CHAR 10"]
+
+[[msg]]
+id = "CPI32B2"
+sev = 0
+text = "Constraint &1 of file &2 was changed."
+help = "The constraint's state is the one asked for, unless a later message puts it in check pending."
+vars = ["*CHAR 258", "*CHAR 10"]
+
+[[msg]]
+id = "CPI32B4"
+sev = 0
+text = "Parent file &1 is not journaled."
+help = "Delete rules other than NO ACTION and RESTRICT need the parent and dependent files journaled to the same journal before records of the parent can change."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPI32B5"
+sev = 0
+text = "File &1 has more than one referential constraint over the same parent."
+help = "Each is enforced on its own."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD32B1"
+sev = 30
+text = "Constraint &1 cannot be removed from file &2."
+help = "The constraint is not there, or it is the parent key of referential constraints of other files: remove those first, or give RMVCST(*REMOVE)."
+vars = ["*CHAR 258", "*CHAR 10"]
+
+[[msg]]
+id = "CPD32B6"
+sev = 30
+text = "Constraint &1 of file &2 is not in check pending."
+help = "DSPCPCST shows the records of a constraint in check pending only."
+vars = ["*CHAR 258", "*CHAR 10"]
+
+[[msg]]
+id = "CPD32B7"
+sev = 30
+text = "File &1 is in check pending."
+help = "Records of the file break a constraint that was enabled. Until they are corrected or the constraint is disabled, the file cannot be used. DSPCPCST and EDTCPCST show them."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD32C5"
+sev = 30
+text = "Records of the file break referential constraint &1."
+help = "Foreign keys of the records have no matching parent key. The constraint is in check pending."
+vars = ["*CHAR 258"]
+
+[[msg]]
+id = "CPF32B0"
+sev = 40
+text = "Constraint cannot be added to file &1."
+help = "A message before this one says why."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF32B1"
+sev = 40
+text = "Constraints were not removed from file &1."
+help = "A message before this one says why."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF32B2"
+sev = 40
+text = "Constraints of file &1 were not changed."
+help = "A message before this one says why."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF32B6"
+sev = 40
+text = "Constraint cannot be displayed for file &1."
+help = "A message before this one says why."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF502D"
+sev = 30
+text = "A foreign key of member &1 has no parent key."
+help = "The record written or changed holds a foreign key value the parent file does not have. Write the parent record first, or change the value."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF502F"
+sev = 30
+text = "A check constraint of member &1 refuses the record."
+help = "The record written or changed does not meet the condition of a check constraint of the file."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF503A"
+sev = 30
+text = "A referential constraint prevents the change of member &1."
+help = "Records of a dependent file match the parent key being deleted or changed, and the rule is RESTRICT or NO ACTION."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF523B"
+sev = 30
+text = "A constraint of member &1 is in check pending."
+help = "The file cannot be used until the records that break the constraint are corrected or the constraint is disabled (EDTCPCST, CHGPFCST)."
+vars = ["*CHAR 10"]

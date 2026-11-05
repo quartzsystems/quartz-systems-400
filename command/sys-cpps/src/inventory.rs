@@ -166,6 +166,13 @@ pub const PUBLIC_EXCLUDE: &[&str] = &[
 /// The commands `lic/slic/src/cpp/direct.rs` implements on the library
 /// functions directly (kept in step with its match by hand).
 pub const DIRECT: &[&str] = &[
+    // --- physical file constraints (lic/slic/src/cpp/cstcmd.rs)
+    "ADDPFCST",
+    "CHGPFCST",
+    "DSPCPCST",
+    "EDTCPCST",
+    "RMVPFCST",
+    "WRKPFCST",
     // --- IFS commands (lic/slic/src/cpp/ifscmd.rs)
     "ADDLNK",
     "ADDMFS",
@@ -516,6 +523,9 @@ pub const JOB_SITE: &[&str] = &[
     "WRKWTR",
     "WRKJOBSCDE",
     // --- panels: messages and objects (panels/objects.rs)
+    "DSPCPCST",
+    "EDTCPCST",
+    "WRKPFCST",
     "DSPDBR",
     "DSPDTAARA",
     "DSPFD",

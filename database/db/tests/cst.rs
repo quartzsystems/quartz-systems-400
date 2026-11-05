@@ -158,6 +158,8 @@ fn keys_checks_and_referential_rules() {
     // Removing the primary key others depend on is refused; with cascade
     // the referential constraint goes too.
     let mut t = store.begin().unwrap();
+    let fd = db::dsp::fd::dspfd(&mut t, chd).unwrap().render(db::dsp::fd::FdType::Cst);
+    assert!(fd.contains("Q_QSTEST_CHD_PID_00001") && fd.contains("*CASCADE") && fd.contains("QSTEST/PAR"), "{fd}");
     let pick = Pick { name: None, kinds: vec![Kind::PrimaryKey] };
     let r = ops::remove(&mut t, par, &pick, false, 3).unwrap();
     assert!(r.removed.is_empty() && r.refused == ["PAR_PK"]);

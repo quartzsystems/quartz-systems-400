@@ -280,22 +280,49 @@ fn rebuild_and_validate(txn: &mut Txn<'_>, file: ObjectId, name: &str) -> Result
 
 /// Whether any record breaks check or referential constraint `name`.
 fn breaks(txn: &mut Txn<'_>, m: &Member, name: &str) -> Result<bool> {
-    let Some(a) = m.csts.clone() else { return Ok(false) };
-    let Some(c) = a.csts.iter().find(|c| c.name == name) else { return Ok(false) };
+    Ok(!broken(txn, m, name, 1)?.is_empty())
+}
+
+/// The records of `file` that break its constraint `name` (`DSPCPCST`).
+pub fn pending_records(txn: &mut Txn<'_>, file: ObjectId, name: &str) -> Result<Vec<u64>> {
+    let desc = file::describe(txn, file)?;
+    let mut out = Vec::new();
+    for e in &desc.members {
+        let mut m = Member::open(txn, &desc, e)?;
+        // A file in check pending opens for this: the constraint is active.
+        if let Some(a) = m.csts.as_mut() {
+            let a = std::sync::Arc::make_mut(a);
+            for c in &mut a.csts {
+                c.check_pending = false;
+            }
+        }
+        out.extend(broken(txn, &m, name, usize::MAX)?);
+    }
+    Ok(out)
+}
+
+/// Up to `max` records that break check or referential constraint `name`.
+fn broken(txn: &mut Txn<'_>, m: &Member, name: &str, max: usize) -> Result<Vec<u64>> {
+    let mut found = Vec::new();
+    let Some(a) = m.csts.clone() else { return Ok(found) };
+    let Some(c) = a.csts.iter().find(|c| c.name == name) else { return Ok(found) };
     if !matches!(c.kind, Kind::Check | Kind::Referential) {
-        return Ok(false);
+        return Ok(found);
     }
     let parent = if c.kind == Kind::Referential { Some(Member::open_by(txn, c.other, MemberSpec::First)?) } else { None };
     let mut rrn = 1;
     loop {
         let slots = m.scan(txn, rrn, 256)?;
-        let Some(last) = slots.last() else { return Ok(false) };
+        let Some(last) = slots.last() else { return Ok(found) };
         rrn = last.rrn + 1;
         for s in &slots {
             if c.kind == Kind::Check {
                 let row = check::Row { format: m.format(), data: &s.record, nulls: &s.null_map };
                 if !c.check.as_ref().is_none_or(|e| e.met(&row).unwrap_or(false)) {
-                    return Ok(true);
+                    found.push(s.rrn);
+                    if found.len() >= max {
+                        return Ok(found);
+                    }
                 }
                 continue;
             }
@@ -309,7 +336,10 @@ fn breaks(txn: &mut Txn<'_>, m: &Member, name: &str) -> Result<bool> {
             let pk = pa.key_of(&c.other_name).ok_or_else(|| DbError::Corrupt { what: "parent key gone".into() })?;
             let tree = p.cst_tree().expect("keyed");
             if pa.find(txn, &tree, pk, &key, 1)?.is_empty() {
-                return Ok(true);
+                found.push(s.rrn);
+                if found.len() >= max {
+                    return Ok(found);
+                }
             }
         }
     }

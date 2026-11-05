@@ -1110,3 +1110,16 @@ note = "a panel at a display; the service's text otherwise"
 site = "job"
 note = "a panel at a display; the service's text otherwise"
 
+
+# --- physical file constraints (lic/slic/src/cpp/cstcmd.rs)
+[cmd.DSPCPCST]
+site = "job"
+note = "the records in check pending in the viewer at a display; the text form in the service otherwise"
+
+[cmd.WRKPFCST]
+site = "job"
+note = "the constraint list in the viewer at a display (BLOCKED(sql): the list panel with options); the text form in the service otherwise"
+
+[cmd.EDTCPCST]
+site = "job"
+note = "the constraints in check pending in the viewer at a display (BLOCKED(sql): the edit panel); the text form in the service otherwise"

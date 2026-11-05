@@ -40,6 +40,8 @@ pub enum FdType {
     Select,
     /// `*JOIN`.
     Join,
+    /// `*CST`.
+    Cst,
 }
 
 impl FdType {
@@ -56,6 +58,7 @@ impl FdType {
             "*RCDFMT" => Self::RcdFmt,
             "*SELECT" => Self::Select,
             "*JOIN" => Self::Join,
+            "*CST" => Self::Cst,
             _ => return None,
         })
     }
@@ -116,6 +119,9 @@ pub struct FileDescription {
     /// Logical file: based-on files as `library/file` with the record
     /// format each supplies.
     pub based_on: Vec<(String, Name)>,
+    /// Physical file: its constraints, with the parent file of each
+    /// referential one as `library/file`.
+    pub constraints: Vec<(crate::cst::Constraint, String)>,
 }
 
 /// Describe the file.
@@ -159,6 +165,15 @@ pub fn dspfd(txn: &mut Txn<'_>, file: ObjectId) -> Result<FileDescription> {
             }
         }
     }
+    let mut constraints = Vec::new();
+    for c in crate::cst::list(txn, file)?.into_iter().filter(|c| c.kind != crate::cst::Kind::Dependent) {
+        let parent = if c.kind == crate::cst::Kind::Referential {
+            ops::read_header(txn, c.other).map_or_else(|_| String::new(), |(_, h)| format!("{}/{}", library_name(txn, h.library), h.name))
+        } else {
+            String::new()
+        };
+        constraints.push((c, parent));
+    }
     Ok(FileDescription {
         name: desc.name(),
         library: library_name(txn, desc.header.library),
@@ -171,6 +186,7 @@ pub fn dspfd(txn: &mut Txn<'_>, file: ObjectId) -> Result<FileDescription> {
         formats: desc.formats,
         members,
         based_on,
+        constraints,
     })
 }
 
@@ -211,7 +227,39 @@ impl FileDescription {
         if want(FdType::MbrList) || want(FdType::Mbr) {
             self.members(&mut out, ty != FdType::MbrList);
         }
+        if (ty == FdType::Cst || (ty == FdType::All && !self.constraints.is_empty())) && self.kind != FileKind::Logical {
+            self.cst(&mut out);
+        }
         out
+    }
+
+    fn cst(&self, out: &mut String) {
+        out.push_str("Constraint description
+");
+        kv(out, "Number of constraints", self.constraints.len());
+        for (c, parent) in &self.constraints {
+            kv(out, "Constraint", &c.name);
+            kv(out, "  Type", c.kind.word());
+            let state = match (c.enabled, c.check_pending) {
+                (false, _) => "*DISABLED",
+                (true, true) => "*CHKPND",
+                (true, false) => "*ENABLED",
+            };
+            kv(out, "  State", state);
+            if !c.columns.is_empty() && c.kind != crate::cst::Kind::Check {
+                let keys: Vec<String> = c.columns.iter().map(ToString::to_string).collect();
+                kv(out, "  Key", keys.join(" "));
+            }
+            if c.kind == crate::cst::Kind::Referential {
+                kv(out, "  Parent file", parent);
+                kv(out, "  Parent key constraint", &c.other_name);
+                kv(out, "  Delete rule", c.delete_rule.word());
+                kv(out, "  Update rule", c.update_rule.word());
+            }
+            if c.kind == crate::cst::Kind::Check {
+                kv(out, "  Check condition", &c.text);
+            }
+        }
     }
 
     fn basatr(&self, out: &mut String) {
