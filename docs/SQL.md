@@ -66,10 +66,14 @@ rows the work has not reached as refused, as the code does today.
 | `EXPLAIN` | partial: a query only | none: our own plan text | |
 | `CREATE SEQUENCE`, `ALTER SEQUENCE`, `DROP SEQUENCE`, `NEXT VALUE FOR`, `PREVIOUS VALUE FOR` | supported, IBM's cache blocks matched; `ALTER SEQUENCE AS` refused SQL0084; a failed statement gives back the value it used, where IBM keeps it used | primary | `integrity/SEQUENCE` |
 | `GRANT` on sequences | refused SQL0084 | none | |
-| `CREATE [OR REPLACE] PROCEDURE` with an SQL body, compiled through QIR to a `*PGM` | supported; `BEGIN ATOMIC` and `UNDO` handlers refused SQL0084 (BLOCKED(sql): no savepoints) | primary | `sqlpl/*` |
-| `CREATE PROCEDURE ... EXTERNAL` (RPGLE, CL; `PARAMETER STYLE SQL`, `GENERAL`, `GENERAL WITH NULLS`) | partial: the program must exist when the procedure is made; a service program procedure refused at `CALL` (BLOCKED(sql)); `LANGUAGE C/COBOL/PLI/JAVA`, `DB2GENERAL`, `JAVA`, `DB2SQL` refused SQL0084 | primary | `sqlpl/EXTERN` |
+| `CREATE [OR REPLACE] PROCEDURE` with an SQL body, compiled through QIR to a `*PGM` | supported | primary | `sqlpl/*` |
+| `BEGIN ATOMIC`, `UNDO` handlers (procedures, functions, AFTER triggers; in BEFORE triggers UNDO acts as EXIT) | supported on savepoints; also under `COMMIT(*NONE)` through the routine's own commit definition; SQL0775, SQL0780 | primary | `sqlpl/ATOMIC`, `sqlpl/ATOMIC2` |
+| `CREATE PROCEDURE ... EXTERNAL` (RPGLE, CL; `PARAMETER STYLE SQL`, `GENERAL`, `GENERAL WITH NULLS`) | supported, also before the program exists (SQL7909); service program procedures up to 64 parameters in the call; `LANGUAGE C/COBOL/PLI/JAVA`, `DB2GENERAL`, `JAVA`, `DB2SQL` refused SQL0084 | primary | `sqlpl/EXTERN`, `qrpgrt::sqlpl` |
 | SQL PL: compound statements, `DECLARE` (variables, conditions, cursors, handlers), `SET`, `IF`, `CASE`, `LOOP`, `WHILE`, `REPEAT`, `FOR`, `LEAVE`, `ITERATE`, `GOTO`, `RETURN`, `CALL`, `SIGNAL`, `RESIGNAL`, `GET DIAGNOSTICS`, cursors, `PREPARE`/`EXECUTE`/`EXECUTE IMMEDIATE`, labels, `SQLSTATE`/`SQLCODE` variables, `CONTINUE` and `EXIT` handlers | supported | primary | `sqlpl/*` |
-| SQL PL: `GET STACKED DIAGNOSTICS`, `ALLOCATE`/`ASSOCIATE`/`DESCRIBE` in routines, `EXECUTE ... INTO`, cursors and handlers in functions, variables of type `GRAPHIC`, `BINARY`, `DECFLOAT`, `BOOLEAN`, parameter defaults, `AS LOCATOR`, `AUTONOMOUS` | refused SQL0084 | primary | |
+| `GET STACKED DIAGNOSTICS` (one stacked area) | supported | primary | `sqlpl/STACKED` |
+| SQL PL variables of `GRAPHIC`/`VARGRAPHIC`/`DBCLOB`, `BINARY`/`VARBINARY`/`BLOB`, `DECFLOAT`, `BOOLEAN` | supported | pub400 | `sqlpl/PLTYPES`, `sqlpl/PLBOOL` |
+| Parameter `DEFAULT`, `CALL p(name => v)`, `DEFAULT` as an argument (SQL0469, SQ20483) | supported | pub400 | `sqlpl/PARMDFT` |
+| `ALLOCATE`/`ASSOCIATE`/`DESCRIBE` in routines, `EXECUTE ... INTO`, cursors and handlers in functions, `AS LOCATOR`, `AUTONOMOUS` | refused SQL0084 | primary | |
 | Cursors `WITH RETURN [TO CALLER \| TO CLIENT]`, `DYNAMIC RESULT SETS` (SQL0464), `SET RESULT SETS CURSOR` | supported | primary | `sqlpl/RESULT1`, `sqlpl/DYNSQL` |
 | `CALL` from embedded SQL and SQL routines; unqualified through the path or library list | supported | primary | `sqlpl/NESTED` |
 | `CALL` from the database host server (JTOpen, ACS): OUT/INOUT values, result sets one after another, parameter modes and names | supported | primary | `hostserver::call`, replay `database-callproc` |
@@ -80,16 +84,18 @@ rows the work has not reached as refused, as the code does today.
 | `PREPARE` of a `CALL` with markers no procedure names | SQL0204, as the primary | primary | `sql::embed` |
 | `DESCRIBE INPUT` of a `CALL` (types, names, modes) | supported | primary | `sql::embed` |
 | `CREATE FUNCTION`: SQL scalar, SQL table (`RETURNS TABLE`, through `TABLE(f(args))`), `SOURCE`, overloading, `SPECIFIC` | supported | primary | `sqlpl/FUNCS`, `sqlpl/TABFUNC` |
-| `CREATE FUNCTION ... EXTERNAL` | refused SQL0084: BLOCKED(sql), programs run in the job, not inside a query | primary | |
+| `CREATE FUNCTION ... EXTERNAL` scalar, `PARAMETER STYLE SQL`, `SCRATCHPAD`, `FINAL CALL`, `DISALLOW PARALLEL` | supported: called in the job mid-statement | none | `qrpgrt::extfunc` |
+| External table functions; `GENERAL` style external functions; `DBINFO`; external functions during an in-place scan or from the service console | refused SQL0084: BLOCKED(sql) | none | |
 | `DROP [SPECIFIC] PROCEDURE/FUNCTION` with signature (SQL0476) | supported | primary | `sqlpl/OVERLOAD` |
-| `ALTER PROCEDURE`, `ALTER FUNCTION` | refused SQL0084 | primary | |
-| Array types (`CREATE TYPE ... AS ARRAY`, `ARRAY_AGG`, `UNNEST`, `CARDINALITY`, `TRIM_ARRAY`) | refused SQL0084 | none | |
+| `ALTER PROCEDURE`, `ALTER FUNCTION` (`ALTER` options, `REPLACE` definition, `SPECIFIC`) | supported; the specific name is kept | primary | `sqlpl/ALTERRTN` |
+| Array types `CREATE TYPE ... ARRAY[n]`; array variables, constructors, `a[i]`, `CARDINALITY`, `MAX_CARDINALITY`, `TRIM_ARRAY`, `ARRAY_EXISTS`, `ARRAY_AGG(... ORDER BY)`, `UNNEST ... WITH ORDINALITY` | supported in SQL procedures; elsewhere SQ20441; SQ20439, SQ20440, SQL0304 | primary | `sqlpl/ARRAYS`, `sqlpl/ARRAYERR` |
+| Array parameters, array arguments in `CALL` | refused SQL0084: BLOCKED(sql) | primary | `sqlpl/ARRAYS` |
 | `CREATE [OR REPLACE] VARIABLE` (`DEFAULT`, `CONSTANT`), `SET` (also the row form and `DEFAULT`), use in expressions and DML, `DROP VARIABLE` | supported; `SET` of a constant SQL0151 | primary | `objects2/VARIABLE` |
 | `CREATE TYPE ... AS` source type `[WITH COMPARISONS]`, `DROP TYPE` | supported (a `*SQLUDT`) | primary | `sql::objects2` |
 | Using a distinct type (column type, `CAST`, generated casts, strong typing) | refused SQL0084: BLOCKED(sql), the engine has no strong typing yet | primary | `objects2/TYPES` |
 | `CREATE [OR REPLACE] TRIGGER` `BEFORE`/`AFTER`, `INSERT`/`UPDATE [OF]`/`DELETE`, `FOR EACH ROW`, `REFERENCING OLD/NEW [ROW]`, `WHEN`, `MODE DB2ROW/DB2SQL`, `SET OPTION`; `DROP TRIGGER`; `LABEL ON`/`COMMENT ON TRIGGER` | supported: a `*PGM` named as the primary names it, over the trigger buffer, so record I/O fires SQL triggers too; SQL7051 for a BEFORE trigger in DB2SQL mode | primary | `trigger/TRGFIRE`, `trigger/TRGDEFS` |
 | `FOR EACH STATEMENT`, `OLD/NEW TABLE`, `INSTEAD OF`, several events (`INSERT OR ...`), `SECURED` | refused SQL0084 after IBM's own checks (SQL0628, SQL0696, SQL0159, SQL0156): BLOCKED(sql) | primary | `trigger/TRGDEFS` |
-| `BEGIN ATOMIC` in a trigger body | supported in BEFORE triggers; in AFTER triggers refused SQL0084 until savepoints | none | `qrpgrt::sqltrg` |
+| `BEGIN ATOMIC` in a trigger body | supported | none | `qrpgrt::sqltrg` |
 | `GRANT` on variables and types | refused SQL0084 | none | |
 | `GRANT`, `REVOKE` on tables and views (`WITH GRANT OPTION`, SQL0569, SQL0557, SQL7027) | supported, mapped to object authorities as the primary does | primary | `ddl/GRANT` |
 | `GRANT`, `REVOKE` on schemas, routines, sequences, variables, types; column privileges | refused SQL0084 | none | `sql::objects` |
@@ -104,7 +110,7 @@ rows the work has not reached as refused, as the code does today.
 | `SQLTYPE` host variables (LOBs, locators, `BINARY`, `VARBINARY`, `ROWID`, `RESULT_SET_LOCATOR`), `FREE LOCATOR`, `HOLD LOCATOR` (SQL7034, SQL0423) | supported | pub400 | `rpg/b11sql/SQL060`, `SQL065` |
 | LOB file reference variables | declared; any use refused SQL0084: BLOCKED(sql), the job's runtime has no IFS access | pub400 | `rpg/b11sql/SQL060` |
 | `CONNECT`, `DISCONNECT`, `RELEASE`, `SET CONNECTION` | refused SQL0084 (the DRDA client is not built) | primary | |
-| `SAVEPOINT`, `RELEASE SAVEPOINT`, `ROLLBACK TO SAVEPOINT` | refused SQL0084 | primary | |
+| `SAVEPOINT [UNIQUE] ON ROLLBACK RETAIN CURSORS [ON ROLLBACK RETAIN LOCKS]`, `RELEASE [TO] SAVEPOINT`, `ROLLBACK TO SAVEPOINT` (SQL0880, 0881, 0882) | supported; without commitment control a savepoint is named and undoes nothing, as on the primary | primary | `sqlpl/SAVEPT` |
 | `TRUNCATE` (all options) | supported; SQL0100 on an empty table; `RESTART IDENTITY` on an identity table refused SQL0084 (BLOCKED(sql), joins identity state) | pub400 | `query/CHANGES` |
 | `REFRESH TABLE` | refused SQL0084 | primary | |
 | `DECLARE GLOBAL TEMPORARY TABLE`; any SQL object in QTEMP | refused SQL0084: BLOCKED(sql), QTEMP is the temporary ASP and a statement runs in one ASP transaction | pub400 | `ddl/DGTT` |
@@ -194,12 +200,12 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `SYSTOOLS.SPLIT` | supported | pub400 | `query/JOINS` |
 | `ENCRYPT_AES`, `ENCRYPT_RC2`, `ENCRYPT_TDES`, `DECRYPT_*`, `GETHINT` | refused SQL0084: IBM's encrypted layout is unpublished, so nothing made here could be read there | pub400 | |
 | `VERIFY_GROUP_FOR_USER` | refused SQL0084 | pub400 | |
-| `TRIM_ARRAY`, `CARDINALITY`, `MAX_CARDINALITY` | refused SQL0084: no array type | none | |
+| `TRIM_ARRAY`, `CARDINALITY`, `MAX_CARDINALITY` | supported in SQL procedures (§2) | primary | `sqlpl/ARRAYS` |
 | `ASINH`, `ACOSH`, `DATE_TRUNC`, `DATE_PART`, `DAYS_BETWEEN` and the other `_BETWEEN`, `INITCAP`, `LEN`, `TO_MULTI_BYTE`, `RAWTOHEX`, `EBCDIC_CHR` | SQL0204, as pub400 answers | pub400 | |
 | Aggregates `COUNT`, `COUNT_BIG`, `SUM`, `AVG`, `MIN`, `MAX`, with `DISTINCT` everywhere | supported, typed as IBM (AVG of DEC(9,2) is scale 24) | primary | `kit/BASIC` |
 | `STDDEV`, `STDDEV_SAMP`, `STDDEV_POP`, `VARIANCE`, `VAR`, `VAR_SAMP`, `VAR_POP`, `COVARIANCE`, `COVARIANCE_SAMP`, `CORRELATION`, `REGR_*` | supported, to the last digit | pub400 | `query/STATAGG` |
 | `MEDIAN`, `PERCENTILE_CONT`, `PERCENTILE_DISC`, `LISTAGG` (`WITHIN GROUP`, `ON OVERFLOW`, SQL0137) | supported | pub400 | `query/ORDAGG` |
-| `ARRAY_AGG` | refused SQL0084 (pub400 gives SQ20441) until the array type | pub400 | |
+| `ARRAY_AGG` | supported in SQL procedures; elsewhere SQ20441, as pub400 | primary, pub400 | `sqlpl/ARRAYS` |
 | `XMLAGG` | refused SQL0084 | pub400 | |
 | Aggregate or OLAP function where none may be | SQL0120 | pub400 | |
 
