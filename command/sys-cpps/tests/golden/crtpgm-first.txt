@@ -10,7 +10,7 @@
  Program entry module . . . . . .   *FIRST        Name, *FIRST, *ONLY, *PGM     
    Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB...     
  Bind service program:                                                          
-   Service program  . . . . . . .                   Name, generic*, *ALL        
+   Service program  . . . . . . .     *NONE         Name, generic*, *ALL        
      Library  . . . . . . . . . .                     Name, *LIBL, *CURLIB...   
    Activation . . . . . . . . . .                   *IMMED, *DEFER              
                        + for more values                                        

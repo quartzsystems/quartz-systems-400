@@ -3,8 +3,8 @@
  Type choices, press Enter.                                                     
                                                                                 
  Data area specification:                                                       
-   Data area  . . . . . . . . . .   >               Name, *LDA, *GDA, *PDA      
-     Library  . . . . . . . . . .       *LIBL         Name, *LIBL, *CURLIB      
+   Data area  . . . . . . . . . .   > FLAG          Name, *LDA, *GDA, *PDA      
+     Library  . . . . . . . . . .       QGPL          Name, *LIBL, *CURLIB      
    Substring:                                                                   
      Start position . . . . . . .       *ALL          1-2000                    
      Length . . . . . . . . . . .                     1-2000                    

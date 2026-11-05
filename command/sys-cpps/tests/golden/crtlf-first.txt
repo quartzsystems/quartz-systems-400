@@ -14,7 +14,7 @@
                        + for more values                                        
  System . . . . . . . . . . . . .   *LCL          *LCL, *RMT, *FILETYPE         
  Physical file data members:                                                    
-   Physical file  . . . . . . . .                   Name                        
+   Physical file  . . . . . . . .     *ALL          Name                        
      Library  . . . . . . . . . .                     Name, *CURRENT, *LIBL...  
    Members  . . . . . . . . . . .                   Name, *NONE                 
                          + for more values                                      
