@@ -119,6 +119,14 @@ const NOW: u64 = 1_792_000_000;
 
 /// An SQL session over a store with `QSYS2`, `SYSIBM` and `QSTEST`.
 pub fn session() -> Session {
+    let (store, qsys, names) = store();
+    Session::new(Box::new(store), qsys, JobHandle(1), names)
+}
+
+/// The store [`session`] runs over, to share between connections: the
+/// store, `QSYS` and the names (`QSTEST` the library list).
+#[allow(dead_code)] // not every test shares one
+pub fn store() -> (Rc<RefCell<Store>>, store::obj::ObjectId, NameContext) {
     let d = Arc::new(MemBlockDev::with_seed(16384, 21));
     let params = FormatParams {
         asp_number: 1,
@@ -184,7 +192,7 @@ pub fn session() -> Session {
         curlib: Some(lib),
         libl: vec![lib],
     };
-    Session::new(Box::new(Rc::new(RefCell::new(store))), qsys, JobHandle(1), names)
+    (Rc::new(RefCell::new(store)), qsys, names)
 }
 
 

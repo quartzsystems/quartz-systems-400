@@ -263,6 +263,7 @@ pub const DIRECT: &[&str] = &[
     "DLTMSGF",
     "DLTPGM",
     "DLTPRXCMD",
+    "DLTSQLPKG",
     "DLTSRVPGM",
     "CRTDEVDSP",
     "DLTDEVD",

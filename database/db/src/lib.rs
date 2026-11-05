@@ -27,6 +27,7 @@ pub mod record;
 pub mod source;
 pub mod spec;
 pub mod sqlinf;
+pub mod sqlpkg;
 pub mod trg;
 pub mod util;
 

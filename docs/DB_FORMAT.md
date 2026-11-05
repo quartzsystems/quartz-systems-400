@@ -1061,6 +1061,60 @@ record of an insert, the new one of a delete or read) and all padding are
 x'40'. A null map has one byte per field, `0` or `1`, whether or not the
 field is null-capable.
 
+## 9. SQL packages
+
+A `*SQLPKG` (type 0x001E) keeps statements prepared for a client so a
+later connection can run them without preparing them again: the
+database host server's extended dynamic packages (JDBC
+`extended dynamic=true`, ODBC) and the packages a DRDA requester binds
+(`BGNBND`, `BNDSQLSTT`, `ENDBND`). The attribute area holds a
+`SqlPkgAttr`; the byte space holds `stmt_count` `SqlPkgStmt` entries one
+after another, `space_len` bytes in all. A package is replaced whole
+when it changes (one transaction). Text is UTF-8.
+
+### `SqlPkgAttr` (64 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | version | 1 |
+| 2 | 1 | kind | 0 extended dynamic (host server), 1 bound by a DRDA requester |
+| 3 | 1 | naming | 0 `*SYS`, 1 `*SQL` |
+| 4 | 1 | commit | 0 `*NONE`, 1 `*CHG`, 2 `*CS`, 3 `*ALL`, 4 `*RR` |
+| 5 | 1 | date_format | the host server's date format code (0 `*JUL`, 1 `*MDY`, 2 `*DMY`, 3 `*YMD`, 4 `*USA`, 5 `*ISO`, 6 `*EUR`, 7 `*JIS`) |
+| 6 | 1 | date_sep | the separator character (ASCII) |
+| 7 | 1 | time_format | 0 `*HMS`, 1 `*USA`, 2 `*ISO`, 3 `*EUR`, 4 `*JIS` |
+| 8 | 1 | time_sep | the separator character (ASCII) |
+| 9 | 1 | decimal_point | `.` or `,` (ASCII) |
+| 10 | 2 | reserved | 0 |
+| 12 | 4 | stmt_count | statements in the byte space |
+| 16 | 8 | space_len | bytes of statements |
+| 24 | 8 | token | the consistency token: the creation time in microseconds |
+| 32 | 10 | default_collection | ASCII, blank padded; blank for none |
+| 42 | 22 | reserved2 | 0 |
+
+### `SqlPkgStmt` (variable)
+
+Followed by `text_len` bytes of statement text, `cols_len` bytes
+describing its result columns and `markers_len` bytes describing its
+parameter markers, each an SQLDA as IBM lays it out (16-byte header,
+then 80 bytes per entry: type, length, 12 reserved bytes, two 16-byte
+pointers left zero, the name's length and 30 bytes of name), empty when
+there are none.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 4 | len | bytes of the entry, parts included |
+| 4 | 18 | name | the statement's name, ASCII, blank padded |
+| 22 | 1 | stmt_type | the host server's statement type (1 other, 2 `SELECT`, 3 `CALL`, ...); for a DRDA section 0 |
+| 23 | 1 | flags | bit 0 the statement needs the default collection |
+| 24 | 2 | section | the DRDA section number; 0 for the host server |
+| 26 | 2 | reserved | 0 |
+| 28 | 4 | text_len | |
+| 32 | 4 | cols_len | |
+| 36 | 4 | markers_len | |
+| 40 | 8 | reserved2 | 0 |
+| 48 | variable | parts | text, columns, markers |
+
 ## Frozen at V1R1M0
 
 Frozen: the `*FILE` attribute and alias payloads, the member and dependents tables, the format sections and level identifiers, the member attribute, record slots, LOB storage and the key encoding of access paths (`database`); the `*JRN` and `*JRNRCV` payloads and the journal entry layout (`journal`). Each payload carries its own `VERSION`.

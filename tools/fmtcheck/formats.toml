@@ -79,6 +79,15 @@ files = [
     "database/db/src/sqlinf/routine.rs",
 ]
 
+# SQL packages (*SQLPKG): a draft until the SQL completion work freezes it.
+[[format]]
+name = "sql-package"
+frozen_at = "V1R2M0"
+draft = true
+doc = "docs/DB_FORMAT.md"
+version = ["database/db/src/sqlpkg/format.rs::VERSION"]
+files = ["database/db/src/sqlpkg/format.rs"]
+
 [[format]]
 name = "database"
 frozen_at = "V1R1M0"

@@ -529,6 +529,9 @@ fn sql_and_record_access() {
     assert_eq!(rows.rows[0][1].render(), "12.34");
 }
 
+/// The packages a bind made: collection, package, statements.
+type Bound = Rc<RefCell<Vec<(String, String, Vec<(u16, String)>)>>>;
+
 /// A procedure's result sets: `C1` of `ID INTEGER NOT NULL, NAME
 /// VARCHAR(3) NOT NULL` with `first` rows, `C2` of `TEN INTEGER` with one.
 struct CallSide {
@@ -536,6 +539,8 @@ struct CallSide {
     open: HashMap<Section, VecDeque<Vec<Value>>>,
     /// `QSOUTP` was prepared: the call leaves no result sets.
     outp: bool,
+    /// The packages bound: collection, package, statements.
+    bound: Bound,
 }
 
 impl SqlBackend for CallSide {
@@ -577,6 +582,10 @@ impl SqlBackend for CallSide {
     fn result_sets(&mut self) -> (String, Vec<String>) {
         ("QSTEST.QSDRSP".into(), vec!["C1".into(), "C2".into()])
     }
+    fn bind(&mut self, collection: &str, package: &str, _: [u8; 8], stmts: &[(u16, String)]) -> SqlResult<()> {
+        self.bound.borrow_mut().push((collection.into(), package.into(), stmts.to_vec()));
+        Ok(())
+    }
     fn call_outputs(&mut self, _: &Section) -> SqlResult<Vec<(ColType, Value)>> {
         // QSOUTP(IN N INTEGER, OUT W VARCHAR(10), INOUT A DECIMAL(7, 2)).
         Ok(vec![
@@ -602,11 +611,15 @@ impl SqlBackend for CallSide {
 }
 
 fn call_pipe(first: usize) -> Pipe {
+    call_pipe_binding(first, Rc::default())
+}
+
+fn call_pipe_binding(first: usize, bound: Bound) -> Pipe {
     let e = Rc::new(RefCell::new(engine()));
     let session = Session::new(
         Config::new("QS400", "QS400"),
         Box::new(Passwords),
-        Box::new(CallSide { first, open: HashMap::new(), outp: false }),
+        Box::new(CallSide { first, open: HashMap::new(), outp: false, bound }),
         Box::new(FileSide(e)),
     );
     Pipe {
@@ -706,4 +719,19 @@ fn a_calls_output_values_come_as_the_primary_sends_them() {
         ours.extend(x.encode());
     }
     assert_eq!(ours, oracle_outexp());
+}
+
+#[test]
+fn a_bind_makes_the_package() {
+    let bound = Rc::default();
+    let mut o = ConnectOpts::new("QS400", USER, PASSWORD);
+    o.mechanisms = vec![Mechanism::EUsrIdPwd];
+    o.collection = "QSTEST".into();
+    o.package = "QSDDMPKG".into();
+    let mut c = Connection::connect(call_pipe_binding(0, Rc::clone(&bound)), &o).unwrap();
+    assert_eq!(c.bind_dynamic(2).unwrap().sqlcode, 0);
+    let b = bound.borrow();
+    assert_eq!(b.len(), 1);
+    assert_eq!((b[0].0.as_str(), b[0].1.as_str()), ("QSTEST", "QSDDMPKG"));
+    assert_eq!(b[0].2, [(1, "DECLARE C1 CURSOR FOR S1".to_string()), (2, "DECLARE C2 CURSOR FOR S2".to_string())]);
 }

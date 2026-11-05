@@ -143,3 +143,57 @@ fn probe_statements() {
     println!("fetch {} {}", r.sqlca.sqlcode, r.rows.len());
     for row in r.rows.iter().take(5) { println!("{row:?}"); }
 }
+
+/// Extended dynamic SQL (the `sqlpkg` trace): every connection over one
+/// store, so the package one connection fills is the next one's.
+#[test]
+fn sqlpkg() {
+    let t = trace("database", "sqlpkg");
+    let auth = TraceAuth::of(&t);
+    let cfg = DbConfig {
+        rdb: "S062B175".into(),
+        job: ("QZDASOINIT".into(), "QUSER".into(), "007839".into()),
+    };
+    let (store, qsys, names) = common::mem::store();
+    let ours = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+    let diffs = replay(&t, &masks(), &mut || {
+        let s = sql::embed::Session::new(Box::new(store.clone()), qsys, store::obj::JobHandle(1), names.clone());
+        let db = Box::new(Database::new(auth.clone(), s, NoExits, cfg.clone()));
+        Box::new(Renamer { inner: db, ours: ours.clone() }) as Box<dyn Handler>
+    });
+    accept("database-sqlpkg", &diffs);
+    assert_eq!(ours.borrow().len(), 1, "one statement in the package");
+}
+
+/// Our package's statements are named by our token, the trace's by the
+/// primary's: a request naming a package statement (`0x3806`, `QZ...`)
+/// gets the name our return package gave.
+struct Renamer {
+    inner: Box<dyn Handler>,
+    ours: std::rc::Rc<std::cell::RefCell<Vec<Vec<u8>>>>,
+}
+
+impl Handler for Renamer {
+    fn handle(&mut self, frame: &[u8]) -> hostserver::Outcome {
+        let mut f = hostsvr::frame::Frame::decode(frame).unwrap();
+        if let Some(name) = self.ours.borrow().first() {
+            for p in &mut f.params {
+                if p.cp == 0x3806 && p.data.len() == 22 && p.data[4..6] == [0xD8, 0xE9] {
+                    p.data[4..].copy_from_slice(name);
+                }
+            }
+        }
+        let o = self.inner.handle(&f.encode());
+        for r in &o.replies {
+            let f = hostsvr::frame::Frame::decode(r).unwrap();
+            if let Some(p) = f.params.iter().find(|p| p.cp == 0x380B && p.data.len() > 63) {
+                let name = p.data[45..63].to_vec();
+                let mut ours = self.ours.borrow_mut();
+                if !ours.contains(&name) {
+                    ours.push(name);
+                }
+            }
+        }
+        o
+    }
+}

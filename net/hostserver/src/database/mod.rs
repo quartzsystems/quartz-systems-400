@@ -16,6 +16,7 @@
 pub mod catalog;
 pub mod data;
 pub mod format;
+pub mod package;
 pub mod sqlca;
 pub mod types;
 
@@ -124,6 +125,12 @@ pub struct Database<A, E, X> {
     sql_naming: bool,
     date_format: u16,
     default_lib: String,
+    /// The extended dynamic package the client named: library and name.
+    package: Option<(String, String)>,
+    /// How often this connection prepared each text with a package.
+    prepares: HashMap<String, u32>,
+    /// The package's statements as last read or added: name and text.
+    pkg_stmts: Vec<(String, String)>,
 }
 
 /// A request's template.
@@ -195,6 +202,9 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             sql_naming: true,
             date_format: 1,
             default_lib: String::new(),
+            package: None,
+            prepares: HashMap::new(),
+            pkg_stmts: Vec::new(),
         }
     }
 
@@ -462,6 +472,9 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             ca.sqlerrd[4] = i32::try_from(rpb.markers.len()).unwrap_or(0);
         }
         self.rpbs.insert(r.rpb, rpb.clone());
+        if !ca.is_error() {
+            self.package_prepared(&rpb, params);
+        }
         let (class, code) = Self::class_of(&ca);
         let mut params = Self::results(r, &ca, true);
         if describe && r.wants(ors::DATA_FORMAT) {
@@ -845,15 +858,28 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
                     Some(Answer { of: r.function, class: 0, code: 0, params: p })
                 }
             }
-            id::EXECUTE => Some(self.execute(&r, &params)),
+            id::EXECUTE => {
+                self.package_statement(&r, &params);
+                Some(self.execute(&r, &params))
+            }
             id::PREPARE_EXECUTE => {
                 let a = self.prepare(&r, &params, false);
                 if a.class == 0 { Some(self.execute(&r, &params)) } else { Some(a) }
             }
             id::EXECUTE_IMMEDIATE => Some(self.exec_immediate(&r, &params)),
-            id::OPEN_DESCRIBE => Some(self.open(&r, &params, false)),
-            id::OPEN_DESCRIBE_FETCH => Some(self.open(&r, &params, true)),
+            id::OPEN_DESCRIBE => {
+                self.package_statement(&r, &params);
+                Some(self.open(&r, &params, false))
+            }
+            id::OPEN_DESCRIBE_FETCH => {
+                self.package_statement(&r, &params);
+                Some(self.open(&r, &params, true))
+            }
+            id::CREATE_PACKAGE | id::RETURN_PACKAGE | id::CLEAR_PACKAGE | id::DELETE_PACKAGE => {
+                Some(self.package_request(&r, &params))
+            }
             id::EXECUTE_OPEN_DESCRIBE => {
+                self.package_statement(&r, &params);
                 let rpb = self.rpb(&r);
                 if rpb.select || rpb.call.is_some() {
                     Some(self.open(&r, &params, false))
@@ -869,9 +895,7 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             id::DELETE_RESULTS | id::TEST_CONNECTION => None,
             id::END => return Outcome::close(),
             // BLOCKED(sql): LOB locators of the database server (RETRIEVE_LOB,
-            // WRITE_LOB, FREE_LOB) and *SQLPKG packages are not kept; a driver
-            // with extended dynamic support goes on without a package, as it
-            // does when one fails.
+            // WRITE_LOB, FREE_LOB) are not kept.
             _ => Some(self.finish(&r, code(-84, "42612"), Vec::new())),
         };
         match ans {

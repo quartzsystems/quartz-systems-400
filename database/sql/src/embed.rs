@@ -27,6 +27,7 @@ use crate::sqlca::Sqlca;
 use crate::value::Value;
 
 pub mod describe;
+mod package;
 
 /// What a statement does at run time.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -67,6 +68,9 @@ pub enum Op {
     /// are its outcome ([`crate::exec::routine::Called`]); its result
     /// sets go to the caller.
     Called,
+    /// An SQL package action for a requester (the host server's
+    /// extended dynamic support, a DRDA bind): see `embed::package`.
+    Package,
 }
 
 impl Op {
@@ -86,6 +90,7 @@ impl Op {
             Self::Nothing => 'N',
             Self::Deallocate => 'R',
             Self::Called => 'K',
+            Self::Package => 'G',
         }
     }
 
@@ -105,6 +110,7 @@ impl Op {
             'N' => Self::Nothing,
             'R' => Self::Deallocate,
             'K' => Self::Called,
+            'G' => Self::Package,
             _ => return None,
         })
     }
@@ -559,7 +565,7 @@ impl Session {
         };
         self.ctx.no_commit = level.is_none();
         let lcklvl = level?;
-        if matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag | Op::Deallocate) {
+        if matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag | Op::Deallocate | Op::Package) {
             return None;
         }
         if let Some(def) = self.ctx.session.commit_def() {
@@ -585,6 +591,7 @@ impl Session {
             Op::End => self.end(&req.scope),
             Op::Deallocate => self.deallocate(&req.scope, &d.name),
             Op::Called => self.called(req),
+            Op::Package => self.package(req),
             Op::Diag => self.diagnostics(&d.text),
             Op::Describe => self.describe(req),
             Op::Query => self.with_txn(&req.scope, |txn, ctx, _| {
@@ -1110,7 +1117,7 @@ fn command_function(d: &Desc) -> String {
         Op::Describe => "DESCRIBE".into(),
         Op::Deallocate => "DEALLOCATE".into(),
         Op::Called => "CALL".into(),
-        Op::Diag | Op::End | Op::Nothing => String::new(),
+        Op::Diag | Op::End | Op::Nothing | Op::Package => String::new(),
     }
 }
 

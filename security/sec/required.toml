@@ -150,6 +150,14 @@ ibm = "RTVDTAARA, DSPDTAARA, QWCRDTAA: *USE"
 need = ["*CHANGE"]
 ibm = "CHGDTAARA: *CHANGE"
 
+[op."sqlpkg.use"]
+need = ["*OBJOPR", "*EXECUTE"]
+ibm = "running a statement of an SQL package, DSPSQLPKG, PRTSQLINF: *OBJOPR and *EXECUTE"
+
+[op."sqlpkg.change"]
+need = ["*CHANGE"]
+ibm = "adding statements to or clearing an extended dynamic SQL package: *CHANGE"
+
 [op."dtaq.send"]
 need = ["*OBJOPR", "*ADD"]
 ibm = "QSNDDTAQ: *OBJOPR and *ADD"

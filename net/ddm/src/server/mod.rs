@@ -94,6 +94,9 @@ pub struct Session {
     queries: HashMap<Section, sql::Query>,
     opened: HashMap<String, file::Open>,
     next_qryinsid: u64,
+    /// The package a bind is making (`BGNBND` to `ENDBND`): its name and
+    /// token, and each statement by section.
+    binding: Option<(crate::msg::Pkgnamcsn, Vec<(u16, String)>)>,
 }
 
 impl std::fmt::Debug for Session {
@@ -128,6 +131,7 @@ impl Session {
             queries: HashMap::new(),
             opened: HashMap::new(),
             next_qryinsid: 1,
+            binding: None,
         }
     }
 

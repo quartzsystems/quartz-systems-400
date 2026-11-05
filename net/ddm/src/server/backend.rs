@@ -64,6 +64,13 @@ pub trait SqlBackend {
         let _ = section;
         Err(Sqlca::error(-84, "42612", "CALL output values over DRDA (OUTEXP)"))
     }
+    /// Bind package `collection/package` (`ENDBND`): its consistency
+    /// token and each statement by section. Accepted and kept nowhere by
+    /// default.
+    fn bind(&mut self, collection: &str, package: &str, token: [u8; 8], stmts: &[(u16, String)]) -> SqlResult<()> {
+        let _ = (collection, package, token, stmts);
+        Ok(())
+    }
     /// Commit.
     fn commit(&mut self) -> SqlResult<()>;
     /// Roll back.

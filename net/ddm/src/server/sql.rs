@@ -127,6 +127,48 @@ impl Session {
         )
     }
 
+    /// `BGNBND` starts a package, `BNDSQLSTT` adds a section's statement,
+    /// `ENDBND` makes it (`SqlBackend::bind`), as the primary keeps a
+    /// bound package (`DLTSQLPKG` deletes it).
+    fn bind_command(&mut self, c: &Object, data: &[Object]) -> Out {
+        let named = |cp: u16| {
+            c.get(cp).and_then(|o| {
+                let mut b = o.bytes().to_vec();
+                if cp == param::PKGNAMCT {
+                    b.extend([0, 0]);
+                }
+                Pkgnamcsn::decode(&b).ok()
+            })
+        };
+        match c.cp {
+            cmd::BGNBND => {
+                let Some(p) = named(param::PKGNAMCT) else {
+                    return vec![(DssType::Reply, reply::syntaxrm(0x0E, param::PKGNAMCT))];
+                };
+                self.binding = Some((p, Vec::new()));
+                vec![self.sqlcard(None)]
+            }
+            cmd::BNDSQLSTT => {
+                let (Some(p), Some(text)) = (named(param::PKGNAMCSN), self.statement(data)) else {
+                    return vec![(DssType::Reply, reply::syntaxrm(0x0E, param::PKGNAMCSN))];
+                };
+                if let Some((_, stmts)) = self.binding.as_mut() {
+                    stmts.push((p.section, text));
+                }
+                vec![self.sqlcard(None)]
+            }
+            _ => {
+                let Some((p, stmts)) = self.binding.take() else {
+                    return vec![self.sqlcard(None)];
+                };
+                match self.sql.bind(&p.collection, &p.package, p.token, &stmts) {
+                    Ok(()) => vec![self.sqlcard(None)],
+                    Err(ca) => vec![self.sqlcard(Some(&ca))],
+                }
+            }
+        }
+    }
+
     fn statement(&self, data: &[Object]) -> Option<String> {
         let o = data.iter().find(|o| o.cp == obj::SQLSTT)?;
         let (b, _) = sqlstt_bytes(o.bytes()).ok()?;
@@ -234,7 +276,7 @@ impl Session {
         let rpy = |o: Object| (DssType::Reply, o);
         let pkg = Pkgnamcsn::from_command(c);
         match c.cp {
-            cmd::BGNBND | cmd::BNDSQLSTT | cmd::ENDBND => vec![self.sqlcard(None)],
+            cmd::BGNBND | cmd::BNDSQLSTT | cmd::ENDBND => self.bind_command(c, data),
             // The SET statements of the connection's environment, each run.
             cmd::EXCSQLSET => {
                 let texts: Vec<String> = data

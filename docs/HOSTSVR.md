@@ -1211,9 +1211,29 @@ The metadata calls `SYSIBM.SQLTABLES`, `SQLCOLUMNS` (and the other
 `SYSIBM` catalog procedures, answered empty) are answered by the server
 from `QSYS2.SYSTABLES` and `QSYS2.SYSCOLUMNS` in the JDBC shapes;
 another `CALL` answers SQL0204 (QS/400 has no stored procedures of its
-own yet). LOBs are refused (`-84`). Extended dynamic packages are
-accepted and kept nowhere (`*SQLPKG` minimal: create, clear, delete and
-return answer success).
+own yet). LOBs are refused (`-84`).
+
+Extended dynamic packages (`*SQLPKG`, `docs/DB_FORMAT.md` §9) are kept
+as the primary keeps them for JTOpen (`extended dynamic=true`;
+`traces/database/sqlpkg.trace`, `net/hostserver/src/database/
+package.rs`): create package makes the package in the library the
+request names, with the connection's naming, commitment control and
+date format, and answers SQL0601 (class 1) when it exists, which the
+client ignores; a statement prepared with the package's name goes into
+it the second time the connection prepares it (the primary stored a
+statement prepared twice and none prepared once, in five runs of six;
+the sixth stored none), named `QZ`, 13 hexadecimal digits of the
+package's token and a 3-digit sequence; return package (`0x380B`)
+sends the statements: length, CCSID 13488, 18 bytes of default
+collection (sent zero), the count, 16 reserved bytes, a 64-byte entry
+per statement (needs the collection, type, EBCDIC name, offsets and
+lengths from the parameter's start of the columns, the UTF-16 text and
+the markers), then the parts, the columns and markers as IBM's 80-byte
+SQLDA entries; an open or execute naming a package statement (`0x3806`
+with `0x3804`) runs it without a prepare. Clear and delete package
+clear and delete it. The packages live in the store through the job's
+SQL session (`Op::Package`); `DLTSQLPKG` deletes one, save and restore
+carry it. V7R1M0 has no `DSPSQLPKG` command (CPD0030 on the primary).
 
 Fixed in the Phase 3 engine on the way: a catalog view can be prepared
 and opened as a cursor (it has no file), its columns describe with their

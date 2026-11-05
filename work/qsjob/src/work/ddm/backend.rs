@@ -241,6 +241,19 @@ impl SqlBackend for JobSql {
             .collect())
     }
 
+    fn bind(&mut self, collection: &str, package: &str, token: [u8; 8], stmts: &[(u16, String)]) -> SqlResult<()> {
+        let mut inputs = vec![
+            sql::Value::Str(collection.trim().to_string()),
+            sql::Value::Str(package.trim().to_string()),
+            sql::Value::Str(u64::from_be_bytes(token).to_string()),
+        ];
+        for (n, text) in stmts {
+            inputs.push(sql::Value::int(i64::from(*n)));
+            inputs.push(sql::Value::Str(text.clone()));
+        }
+        self.checked(desc(Op::Package, "BIND".into()), inputs).map(|_| ())
+    }
+
     fn result_sets(&mut self) -> (String, Vec<String>) {
         (self.called.0.clone(), self.called.1.iter().map(|(_, c)| c.clone()).collect())
     }

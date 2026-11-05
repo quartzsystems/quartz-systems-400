@@ -47,7 +47,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CRTPNLGRP" | "CRTMNU" => super::uicmd::run(system, name, parms),
         "CLRLIB" => clrlib(system, &parms.name("LIB")),
         "DLTPGM" | "DLTMOD" | "DLTSRVPGM" | "DLTMSGF" | "DLTBNDDIR" | "DLTAUTL" | "DLTMNU"
-        | "DLTPNLGRP" => {
+        | "DLTPNLGRP" | "DLTSQLPKG" => {
             let (kwd, ty) = match name {
                 "DLTPGM" => ("PGM", "*PGM"),
                 "DLTMOD" => ("MODULE", "*MODULE"),
@@ -56,6 +56,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
                 "DLTBNDDIR" => ("BNDDIR", "*BNDDIR"),
                 "DLTMNU" => ("MENU", "*MENU"),
                 "DLTPNLGRP" => ("PNLGRP", "*PNLGRP"),
+                "DLTSQLPKG" => ("SQLPKG", "*SQLPKG"),
                 _ => ("AUTL", "*AUTL"),
             };
             let (n, l) = if kwd == "AUTL" {
