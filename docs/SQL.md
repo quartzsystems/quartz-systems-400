@@ -78,12 +78,24 @@ rows the work has not reached as refused, as the code does today.
 | `DROP [SPECIFIC] PROCEDURE/FUNCTION` with signature (SQL0476) | supported | primary | `sqlpl/OVERLOAD` |
 | `ALTER PROCEDURE`, `ALTER FUNCTION` | refused SQL0084 | primary | |
 | Array types (`CREATE TYPE ... AS ARRAY`, `ARRAY_AGG`, `UNNEST`, `CARDINALITY`, `TRIM_ARRAY`) | refused SQL0084 | none | |
-| `CREATE TRIGGER`, `CREATE VARIABLE`, `CREATE TYPE ... AS DISTINCT TYPE` | refused SQL0084 | primary | |
+| `CREATE [OR REPLACE] VARIABLE` (`DEFAULT`, `CONSTANT`), `SET` (also the row form and `DEFAULT`), use in expressions and DML, `DROP VARIABLE` | supported; `SET` of a constant SQL0151 | primary | `objects2/VARIABLE` |
+| `CREATE TYPE ... AS` source type `[WITH COMPARISONS]`, `DROP TYPE` | supported (a `*SQLUDT`) | primary | `sql::objects2` |
+| Using a distinct type (column type, `CAST`, generated casts, strong typing) | refused SQL0084: BLOCKED(sql), the engine has no strong typing yet | primary | `objects2/TYPES` |
+| `CREATE TRIGGER`, `DROP TRIGGER` | refused SQL0084 | primary | |
+| `GRANT` on variables and types | refused SQL0084 | none | |
 | `GRANT`, `REVOKE` on tables and views (`WITH GRANT OPTION`, SQL0569, SQL0557, SQL7027) | supported, mapped to object authorities as the primary does | primary | `ddl/GRANT` |
 | `GRANT`, `REVOKE` on schemas, routines, sequences, variables, types; column privileges | refused SQL0084 | none | `sql::objects` |
 | `LOCK TABLE` | refused SQL0084 | primary | |
-| `PREPARE`, `EXECUTE`, `EXECUTE IMMEDIATE`, `DESCRIBE` (dynamic) | refused SQL0084 outside embedded SQL | primary | |
-| `CONNECT`, `DISCONNECT`, `RELEASE`, `SET CONNECTION` | refused SQL0084 | primary | |
+| `PREPARE`, `EXECUTE`, `EXECUTE IMMEDIATE`, `DESCRIBE`, cursor statements, `WHENEVER`, `INCLUDE`, locator statements given to a dynamic interface (JDBC, STRSQL, RUNSQLSTM, `PREPARE` text) | refused as IBM refuses them: SQL0104, SQL0084, SQL0312 for host variables, SQL0199 | primary | `dyn/NOPREP` |
+| SQLDA from `DESCRIBE OUTPUT/INPUT/TABLE` and `PREPARE INTO` (`USING NAMES/SYSTEM NAMES/LABELS/ANY/BOTH/ALL`, LOB extended entries, +237) | supported byte for byte, except the job CCSID and a reserved area IBM leaves unset | pub400 | `rpg/b11sql/SQL056`, `SQL057` |
+| `DESCRIBE CURSOR`, `DESCRIBE PROCEDURE`, `ALLOCATE/ASSOCIATE LOCATORS` | refused SQL0084 | none | |
+| Scrollable cursors (`SCROLL`, every orientation, SQL0231), `WITH HOLD`, `INSENSITIVE`, `ASENSITIVE` | supported | pub400 | `rpg/b11sql/SQL058` |
+| `SENSITIVE` cursors | refused SQL0243: BLOCKED(sql), rows are read at OPEN | pub400 | `rpg/b11sql/SQL058` |
+| `SET OPTION` (every program option, SQL5066 order) | supported; values QS/400 cannot honour refused SQL0084 | pub400 | `rpg/b11sql/SQL061`, `SQL062` |
+| Blocked `INSERT ... n ROWS`, indicator arrays, `GET DIAGNOSTICS` in programs, `DECLARE TABLE`, `DECLARE STATEMENT` | supported | pub400 | `rpg/b11sql/SQL063`, `SQL064` |
+| `SQLTYPE` host variables (LOBs, locators, `BINARY`, `VARBINARY`, `ROWID`, `RESULT_SET_LOCATOR`), `FREE LOCATOR`, `HOLD LOCATOR` (SQL7034, SQL0423) | supported | pub400 | `rpg/b11sql/SQL060`, `SQL065` |
+| LOB file reference variables | declared; any use refused SQL0084: BLOCKED(sql), the job's runtime has no IFS access | pub400 | `rpg/b11sql/SQL060` |
+| `CONNECT`, `DISCONNECT`, `RELEASE`, `SET CONNECTION` | refused SQL0084 (the DRDA client is not built) | primary | |
 | `SAVEPOINT`, `RELEASE SAVEPOINT`, `ROLLBACK TO SAVEPOINT` | refused SQL0084 | primary | |
 | `TRUNCATE` (all options) | supported; SQL0100 on an empty table; `RESTART IDENTITY` on an identity table refused SQL0084 (BLOCKED(sql), joins identity state) | pub400 | `query/CHANGES` |
 | `REFRESH TABLE` | refused SQL0084 | primary | |
@@ -236,6 +248,8 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `QSYS2.SYSSCHEMAS`, `SYSTABLES`, `SYSCOLUMNS`, `SYSINDEXES`, `SYSKEYS`, `SYSVIEWS`, `SYSVIEWDEP`, `SYSTABLESTAT`, `SYSCOLUMNSTAT`, `SYSPARTITIONSTAT` | partial: computed from the store; SQL and system names; SYSVIEWS with the 7.1 columns | primary | `ddl/LONGNAME`, `ddl/VIEWQRY` |
 | `QSYS2.SYSCST`, `SYSCSTCOL`, `SYSKEYCST`, `SYSCHKCST`, `SYSREFCST`, `SYSCSTDEP`, `SYSSEQUENCES` | supported with the oracle's columns | primary | `integrity/CSTBASIC`, `integrity/SEQUENCE` |
 | `QSYS2.SYSROUTINES`, `SYSPROCS`, `SYSFUNCS`, `SYSPARMS`, `SYSROUTINEDEP` | supported (`PARSE_TREE`, `PARM_ARRAY` empty) | primary | `sqlpl/CATALOG` |
+| `QSYS2.SYSVARIABLES`, `SYSTYPES`, `SYSTRIGGERS` (external triggers) | supported; `SYSVARIABLES.DEFAULT` is VARGRAPHIC(2000) where IBM has NCLOB | primary | `objects2/VARIABLE` |
+| `QSYS2.SYSVARIABLEDEP`, `SYSTRIGCOL`, `SYSTRIGDEP`, `SYSTRIGUPD`, `SYSJARCONTENTS`, `SYSJAROBJECTS` | present, empty | primary (columns) | `objects2/TYPES` |
 | `QSYS2.SYSTABAUTH` | supported | pub400 | `sql::objects` |
 | `QSYS2.SYSCOLAUTH` | present, always empty: BLOCKED(sql), the store keeps no column authorities | pub400 | `sql::objects` |
 | Catalog views in a schema (`CREATE SCHEMA`) | partial: the QSYS2 views above only | none | |
@@ -259,20 +273,37 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `NETSTAT_INFO`, `NETSTAT_JOB_INFO`, `NETSTAT_INTERFACE_INFO`, `NETSTAT_ROUTE_INFO` | partial: socket options and sequence counters null | pub400 | `sql::services` |
 | `SOFTWARE_PRODUCT_INFO`, `PTF_INFO`, `JOB_DESCRIPTION_INFO` | supported (no registration columns, no job switches) | pub400 | `sql::services` |
 | `IFS_OBJECT_STATISTICS`, `IFS_READ`, `IFS_READ_UTF8`, `IFS_READ_BINARY` | supported | pub400 | `sql::services` |
-| `IFS_WRITE`, `IFS_WRITE_UTF8`, `IFS_WRITE_BINARY`, procedure `QSYS2.QCMDEXC` | partial: built in the engine; SQL `CALL` of them comes with the routines work joining them | pub400 | `sql::services` |
+| `CALL QSYS2.QCMDEXC` (both forms), `IFS_WRITE`, `IFS_WRITE_UTF8`, `IFS_WRITE_BINARY` | supported: qualified, or unqualified when no other procedure has the name; named arguments | pub400 | `sql::services` |
+| `JOB_QUEUE_INFO`, `SUBSYSTEM_INFO`, `SUBSYSTEM_POOL_INFO` | partial: `CONTROLLING_SUBSYSTEM` always NO | pub400 | `sql::services` |
+| `MESSAGE_QUEUE_INFO`, `REPLY_LIST_INFO`, `SCHEDULED_JOB_INFO`, `AUTHORIZATION_LIST_INFO`, `AUTHORIZATION_LIST_USER_INFO` | supported (no message tokens) | pub400 | `sql::services` (shape only) |
+| `OBJECT_PRIVILEGES`, `OBJECT_OWNERSHIP` | supported | pub400 | `sql::services` |
+| `USER_STORAGE` | partial: profile-entry counts null | pub400 | `sql::services` |
+| `JOURNAL_INFO`, `JOURNAL_RECEIVER_INFO`, `JOURNALED_OBJECTS` | partial: no remote journals, no journal message queue | pub400 | `sql::services` |
+| `SPOOLED_FILE_INFO`, `SYSTEM_STATUS` (table function) | partial: timestamp filters refused SQL0443; `RESET_STATISTICS` not applied | pub400 | `sql::services` |
+| `LIBRARY_INFO` | partial: `LIBRARY_TYPE` and journaling columns null | pub400 | `sql::services` |
 | Scalar `QSYS2.QCMDEXC` | partial: only commands that run in the storage service (CPF0006 for the others) | pub400 | `sql::services` |
 | `BASE64_ENCODE/DECODE`, `URL_ENCODE/DECODE` | supported, as pub400 answers | pub400 | `sql::services` |
 | `HTTP_GET/POST/PUT/PATCH/DELETE`, `_BLOB` and `_VERBOSE` forms | supported over `net/httpc` with TLS; a call holds the statement until it answers (at most 300 s) | none | `sql::services`, `httpc` |
 | Live-state services outside a query or execute (e.g. the service console's `sql` mode) | SQL0443: they read the system only on a statement's fiber | none | |
-| Other `QSYS2`/`SYSTOOLS` services (job queues, subsystems, pools, locks, privileges, journals, audit journal, limits, exit points, hardware, ...) | not present: SQL0204 | pub400 | |
+| Other `QSYS2`/`SYSTOOLS` services (`MEMORY_POOL_INFO`, `SYSTEM_ACTIVITY_INFO`, `OBJECT_LOCK_INFO`, `IFS_OBJECT_PRIVILEGES`, `IFS_OBJECT_LOCK_INFO`, `FUNCTION_INFO`, `FUNCTION_USAGE`, `SECURITY_INFO`, `MESSAGE_FILE_DATA`, `GROUP_PTF_*`, `LICENSE_INFO`, `TCPIP_INFO`, `SERVER_SBS_ROUTING`, `DNS_LOOKUP`, `ASP_*`, `SYSDISKSTAT`, `MEDIA_LIBRARY_INFO`, `DISPLAY_JOURNAL`, `AUDIT_JOURNAL_*`, `SYSLIMITS`, `SYSLIMTBL`, `ENVIRONMENT_VARIABLE_INFO`, `EXIT_*_INFO`, `COLLECTION_SERVICES_INFO`, `HARDWARE_RESOURCE_INFO`, `ELECTRONIC_SERVICE_AGENT_INFO`, `SYSTOOLS.GENERATE_SPREADSHEET`, `SYSTOOLS.CHANGE_USER_PROFILE`) and procedures (`OVERRIDE_TABLE`, `SET_SERVER_SBS_ROUTING`, `SET_COLUMN_ATTRIBUTE`, `SET_PASE_SHELL_INFO`, `SYSTOOLS.LPRINTF`, `GENERATE_SQL`) | not present: SQL0204 | pub400 | |
 | `STRSQL` | partial (Phase 8) | pub400 | |
-| `RUNSQLSTM` | partial: `COMMIT`, `ERRLVL` | primary | |
-| `RUNSQL` | not present | primary | |
+| `RUNSQLSTM`, `RUNSQL` | partial: options checked (values QS/400 cannot honour refused SQL0084; `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `SYSTIME`, `TGTRLS` and the listing options without effect); not yet run end to end | none | |
 | SQLRPGLE precompiler (`CRTSQLRPGI`) | partial (Phase 9) | pub400 | |
-| DRDA server (JDBC, ACS) | partial (Phase 10) | primary | |
+| DRDA server (JDBC, ACS) | partial: `EXCSQLSET` runs; packages and LOB locators refused SQL0084; `CALL` result sets not streamed yet | primary | replay `database-jdbc` |
+| `SYSIBM` metadata views `SQLTABLES`, `SQLCOLUMNS`, `SQLPRIMARYKEYS`, `SQLFOREIGNKEYS`, `SQLSCHEMAS`, `SQLTABLETYPES`, `SYSTABLETYPES`, `SQLTYPEINFO`, `SQLSTATISTICS`, `SQLSPECIALCOLUMNS`, `SQLTABLEPRIVILEGES`, `TABLES`, `COLUMNS`, `VIEWS`, `SCHEMATA` | supported: the primary's columns, rows from the QSYS2 views | primary | `sysibm/SQLMETA` |
+| JDBC catalog requests (`DatabaseMetaData`) | partial: answered from the views; replies not yet byte-identical; `SQLPROCEDURES`, `SQLFUNCTIONS`, `SQLUDTS` empty | primary | replay `database-metadata` |
+| Other `SYSIBM` views (`_S` forms, `ROUTINES`, `PARAMETERS`, ...) | not present: SQL0204 | primary | `sysibm/SYSIBMLS` |
 | DRDA client | not present | primary | |
-| SQL CLI (`QSQCLI`) | not present | primary | |
+| SQL CLI (`QSQCLI`), server mode, `QSQSRVR` | not present | primary | |
+| `*SQLPKG`, `DSPSQLPKG`, `DLTSQLPKG`; `CRTSQLCI`, `CRTSQLCBLI` | not present | none | |
 | `STRDBMON`, `PRTSQLINF`, `DSPSQLPKG` | not present | primary | |
+| `ADDPFTRG` (`RPLTRG`, generated names, `ALWREPCHG`, `TRGUPDCND`, `THDSAFE`, `MLTTHDACN`), `RMVPFTRG`, `CHGPFTRG`, `DSPFD TYPE(*TRG)` | supported; the `QAFDTRG` outfile not built | primary | `db::trg` |
+| Trigger buffer | supported, byte for byte as the primary's | primary | `db::trg`, `mi::trigger` |
+| `*BEFORE`/`*AFTER` x `*INSERT`/`*UPDATE`/`*DELETE` from record I/O (physical and logical files; status 01023/01024, CPF502B) | supported | primary | `mi::trigger` |
+| `*READ` triggers | partial: record I/O of a physical file; logical reads and SQL queries of the table refused SQL0084 | primary | `sql::trigger` |
+| SQL changes firing external triggers | partial: in the engine (SQL0443 38501, SQL0204 for a missing program); refused SQL0084 in the storage service until its call path exists (BLOCKED(sql)) | primary | `sql::trigger` |
+| Triggers from `CPYF`, DFU, FTP, the DDM server, the service console | refused (CPF502B, SQL0084) | none | |
+| `ALWREPCHG(*NO)` on after triggers | partial: the program's own change of the row is not refused | none | |
 | `ADDPFCST`, `RMVPFCST`, `CHGPFCST`, `DSPCPCST`, `DSPFD TYPE(*CST)` | supported, the primary's messages; not yet run end to end under QEMU | primary | `sys-cpps` |
 | `WRKPFCST`, `EDTCPCST` | supported: `QSDBCST` panels as 7.1 shows them (options 2, 4, 6; a sequence verifies a constraint in check pending again); F15, F16, F17, F22 and F11 not yet | primary (`verified/oracle71/audit/wrkpfcst`, `edtcpcst`) | `uim --test audit_panels` |
 | Query/400 (`WRKQRY`, `RUNQRY`, product QS00QU1) | not in this work: a follow-on product | | |
