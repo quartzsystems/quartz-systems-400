@@ -1,0 +1,220 @@
+> SET SCHEMA QSTEST
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGT)', 0000000022.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGT in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTPGM PGM(QSTEST/TRGDUMP)', 0000000026.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGDUMP in QSTEST type *PGM not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTDTAQ DTAQ(QSTEST/TRGQ)', 0000000025.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGQ in QSTEST type *DTAQ not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/QTRGSRC)', 0000000025.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object QTRGSRC in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGFD)', 0000000023.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGFD in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('CRTSRCPF FILE(QSTEST/QTRGSRC) RCDLEN(92)', 0000000040.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFM FILE(QSTEST/QTRGSRC) MBR(TRGDUMP) SRCTYPE(CLLE)', 0000000054.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('CRTDTAQ DTAQ(QSTEST/TRGQ) MAXLEN(4000)', 0000000038.00000)
+  sqlcode 0 count 0
+> CREATE ALIAS QSTEST.TRGSRCM FOR QSTEST.QTRGSRC(TRGDUMP)
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.TRGSRCM VALUES  (1, 0, '             PGM        PARM(&BUF &LEN)'),  (2, 0, '             DCL        VAR(&BUF) TYPE(*CHAR) LEN(3000)'),  (3, 0, '             DCL        VAR(&LEN) TYPE(*CHAR) LEN(4)'),  (4, 0, '             DCL        VAR(&N) TYPE(*DEC) LEN(5 0)'),  (5, 0, '             DCL        VAR(&OFF) TYPE(*DEC) LEN(9 0)'),  (6, 0, '             DCL        VAR(&ST) TYPE(*DEC) LEN(9 0)'),  (7, 0, '             DCL        VAR(&C) TYPE(*CHAR) LEN(1)'),  (8, 0, '             CHGVAR     VAR(&N) VALUE(%BIN(&LEN))'),  (9, 0, '             CALL       PGM(QSNDDTAQ) PARM(''TRGQ'' ''QSTEST'' &N &BUF)'),  (10, 0, '             CHGVAR     VAR(&OFF) VALUE(%BIN(&BUF 65 4))'),  (11, 0, '             IF         COND(&OFF *GT 0) THEN(DO)'),  (12, 0, '             CHGVAR     VAR(&ST) VALUE(&OFF + 1)'),  (13, 0, '             CHGVAR     VAR(&C) VALUE(%SST(&BUF &ST 1))'),  (14, 0, '             IF         COND(&C *EQ ''X'') THEN(SNDPGMMSG MSGID(CPF9898) +'),  (15, 0, '                          MSGF(QCPFMSG) MSGDTA(''refused'') MSGTYPE(*ESCAPE))'),  (16, 0, '             IF         COND(&C *EQ ''R'') THEN(CHGVAR +'),  (17, 0, '                          VAR(%SST(&BUF &ST 1)) VALUE(''Z''))'),  (18, 0, '             ENDDO'),  (19, 0, '             ENDPGM')
+  sqlcode 0 count 19
+> DROP ALIAS QSTEST.TRGSRCM
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('CRTBNDCL PGM(QSTEST/TRGDUMP) SRCFILE(QSTEST/QTRGSRC) SRCMBR(TRGDUMP)', 0000000068.00000)
+  sqlcode 0 count 0
+> CREATE TABLE QSTEST.TRGT (C1 CHAR(3) NOT NULL, N1 DECIMAL(5,2), V1 VARCHAR(10), I1 INTEGER)
+  warning 7905 01567 SQL7905 [SQL7905] Table TRGT in QSTEST created but was not journaled. Cause . . . . . :   The table TRGT was created in QSTEST, but the table was not journaled.  Either a QDFTJRN data area indicated that journaling should not be started, the default journal did not exist, or the default journal did exist but the journaling could not be started.  The default journal may be damaged, unable to accept journal entries, or may not exist. The SQL name for the table is TRGT and the system name for the table is TRGT. For a distributed table, journaling could not be started on all of the systems.  The default journal must exist, and be able to accept journal entries, on each of the systems in the node group. Recovery  . . . :   The table was created, but until the table is journaled, COMMIT(*CHG), COMMIT(*CS), COMMIT(*RS), COMMIT(*RR), COMMIT(*UR), and COMMIT(*ALL) will not be allowed for table TRGT. If the default journal does not exist, create the journal (CRTJRN command) and start journaling (STRJRNPF command). If the journal is in error, correct the problem to the journal If the table is distributed, correct the problems on all the systems in the node group and start journaling (STRJRNPF command).
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGT) TRGTIME(*BEFORE) TRGEVENT(*INSERT) PGM(QSTEST/TRGDUMP) ALWREPCHG(*YES) TRG(BEFINS)', 0000000109.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGT) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM(QSTEST/TRGDUMP) TRG(AFTINS)', 0000000092.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGT) TRGTIME(*BEFORE) TRGEVENT(*UPDATE) PGM(QSTEST/TRGDUMP) TRG(BEFUPD)', 0000000093.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGT) TRGTIME(*AFTER) TRGEVENT(*UPDATE) PGM(QSTEST/TRGDUMP) TRGUPDCND(*CHANGE) TRG(AFTUPD)', 0000000111.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGT) TRGTIME(*AFTER) TRGEVENT(*DELETE) PGM(QSTEST/TRGDUMP)', 0000000080.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGT) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM(QSTEST/TRGDUMP) TRG(AFTINS)', 0000000092.00000)
+  sqlcode -443 38501 CPF32C6 [CPF32C6] Trigger operation not successful. Cause . . . . . :   The trigger operation for file TRGT in library QSTEST failed because of errors. The operation code was 1. Operation codes and their meanings are: 1 - Add a trigger 2 - Remove a trigger 3 - Change a trigger 4 - Create an SQL trigger program 5 - Register the trigger with Cross Reference 6 - Rename a trigger 7 - Revoke authorities Recovery  . . . :   See the error messages previously listed. Correct the errors and then try the request again.
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGT) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM(QSTEST/TRGDUMP) TRG(AFTINS) RPLTRG(*YES)', 0000000105.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGT) TRGTIME(*AFTER) TRGEVENT(*READ) PGM(QSTEST/TRGDUMP) ALWREPCHG(*YES) TRG(BADREAD)', 0000000107.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGT) TRGTIME(*BEFORE) TRGEVENT(*READ) PGM(QSTEST/TRGDUMP) TRG(BADREAD2)', 0000000093.00000)
+  sqlcode -443 38501 CPF0006 [CPF0006] Errors occurred in command. Cause . . . . . :   If the wrong length was passed on one part of the command, other messages are issued because the wrong part of the command is being analyzed. Recovery  . . . :   See the previously listed messages in the job log. Correct the errors and then try the command again.
+> INSERT INTO QSTEST.TRGT VALUES ('AAA', 1.5, 'hi', NULL)
+  sqlcode 0 count 1
+> -- dtaq TRGQ
+  entry 1 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F1F2
+    0032 F000000000000025000000000000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 4040404040404040404040404040404040404040404040404040404040404040
+    0128 40404040404040404040404040404040C1C1C100150F00028889404040404040
+    0160 404000000000F0F0F0F140404040404040404040404040404040404040404040
+  entry 2 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F1F1
+    0032 F000000000000025000000010000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 4040404040404040404040404040404040404040404040404040404040404040
+    0128 40404040404040404040404040404040C1C1C100150F00028889404040404040
+    0160 404000000000F0F0F0F140404040404040404040404040404040404040404040
+  entries 2
+> INSERT INTO QSTEST.TRGT VALUES ('RRR', NULL, 'abc', 7)
+  sqlcode 0 count 1
+> -- dtaq TRGQ
+  entry 1 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F1F2
+    0032 F000000000000025000000000000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 4040404040404040404040404040404040404040404040404040404040404040
+    0128 40404040404040404040404040404040D9D9D900000F00038182834040404040
+    0160 404000000007F0F1F0F040404040404040404040404040404040404040404040
+  entry 2 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F1F1
+    0032 F000000000000025000000020000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 4040404040404040404040404040404040404040404040404040404040404040
+    0128 40404040404040404040404040404040E9D9D900000F00038182834040404040
+    0160 404000000007F0F1F0F040404040404040404040404040404040404040404040
+  entries 2
+> SELECT * FROM QSTEST.TRGT ORDER BY C1
+  cols | C1 CHAR(3,0) NN | N1 DECIMAL(5,2) | V1 VARCHAR(10,0) | I1 INTEGER(10,0)
+  row | 'AAA' | '1.50' | 'hi' | -
+  row | 'ZRR' | - | 'abc' | '7'
+> INSERT INTO QSTEST.TRGT VALUES ('XXX', 2, 'no', 1)
+  sqlcode -443 38501 CPF9898 [CPF9898] refused. Cause . . . . . :   This message is used by application programs as a general escape message.
+> -- dtaq TRGQ
+  entry 1 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F4F1
+    0032 F000000000000025000000010000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 C1C1C100150F00028889404040404040404000000000F0F0F0F1404040404040
+    0128 4040404040404040404040404040404040404040404040404040404040404040
+    0160 4040404040404040404040404040404040404040404040404040404040404040
+  entry 2 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F4F1
+    0032 F000000000000025000000020000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 E9D9D900000F00038182834040404040404000000007F0F1F0F0404040404040
+    0128 4040404040404040404040404040404040404040404040404040404040404040
+    0160 4040404040404040404040404040404040404040404040404040404040404040
+  entry 3 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F1F2
+    0032 F000000000000025000000000000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 4040404040404040404040404040404040404040404040404040404040404040
+    0128 40404040404040404040404040404040E7E7E700200F00029596404040404040
+    0160 404000000001F0F0F0F040404040404040404040404040404040404040404040
+  entries 3
+> UPDATE QSTEST.TRGT SET N1 = 9.25 WHERE C1 = 'AAA'
+  sqlcode 0 count 1
+> -- dtaq TRGQ
+  entry 1 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F3F2
+    0032 F000000000000025000000010000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 C1C1C100150F00028889404040404040404000000000F0F0F0F1404040404040
+    0128 40404040404040404040404040404040C1C1C100925F00028889404040404040
+    0160 404000000000F0F0F0F140404040404040404040404040404040404040404040
+  entry 2 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F3F1
+    0032 F000000000000025000000010000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 C1C1C100150F00028889404040404040404000000000F0F0F0F1404040404040
+    0128 40404040404040404040404040404040C1C1C100925F00028889404040404040
+    0160 404000000000F0F0F0F140404040404040404040404040404040404040404040
+  entries 2
+> UPDATE QSTEST.TRGT SET N1 = N1 WHERE C1 = 'AAA'
+  sqlcode 0 count 1
+> -- dtaq TRGQ
+  entry 1 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F3F2
+    0032 F000000000000025000000010000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 C1C1C100925F00028889404040404040404000000000F0F0F0F1404040404040
+    0128 40404040404040404040404040404040C1C1C100925F00028889404040404040
+    0160 404000000000F0F0F0F140404040404040404040404040404040404040404040
+  entries 1
+> UPDATE QSTEST.TRGT SET C1 = 'XYZ' WHERE C1 = 'AAA'
+  sqlcode -443 38501 CPF9898 [CPF9898] refused. Cause . . . . . :   This message is used by application programs as a general escape message.
+> -- dtaq TRGQ
+  entry 1 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F3F2
+    0032 F000000000000025000000010000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 C1C1C100925F00028889404040404040404000000000F0F0F0F1404040404040
+    0128 40404040404040404040404040404040E7E8E900925F00028889404040404040
+    0160 404000000000F0F0F0F140404040404040404040404040404040404040404040
+  entries 1
+> DELETE FROM QSTEST.TRGT WHERE C1 = 'ZRR'
+  sqlcode 0 count 1
+> -- dtaq TRGQ
+  entry 1 length 192
+    0000 E3D9C7E3404040404040D8E2E3C5E2E340404040E3D9C7E3404040404040F2F1
+    0032 F000000000000025000000020000000000000060000000160000007600000004
+    0064 0000009000000016000000A60000000400000000000000000000000000000000
+    0096 E9D9D900000F00038182834040404040404000000007F0F1F0F0404040404040
+    0128 4040404040404040404040404040404040404040404040404040404040404040
+    0160 4040404040404040404040404040404040404040404040404040404040404040
+  entries 1
+> SELECT * FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_SCHEMA = 'QSTEST' ORDER BY TRIGGER_NAME
+  cols | TRIGGER_SCHEMA VARCHAR(128,0) | TRIGGER_NAME VARCHAR(128,0) NN | EVENT_MANIPULATION VARCHAR(6,0) NN | EVENT_OBJECT_SCHEMA VARCHAR(128,0) NN | EVENT_OBJECT_TABLE VARCHAR(128,0) NN | ACTION_ORDER INTEGER(10,0) NN | ACTION_CONDITION DBCLOB(2097152,0) | ACTION_STATEMENT DBCLOB(2097152,0) | ACTION_ORIENTATION VARCHAR(9,0) NN | ACTION_TIMING VARCHAR(7,0) NN | TRIGGER_MODE VARCHAR(6,0) NN | ACTION_REFERENCE_OLD_ROW VARCHAR(128,0) | ACTION_REFERENCE_NEW_ROW VARCHAR(128,0) | ACTION_REFERENCE_OLD_TABLE VARCHAR(128,0) | ACTION_REFERENCE_NEW_TABLE VARCHAR(128,0) | SQL_PATH VARCHAR(3483,0) | CREATED TIMESTAMP(26,6) NN | TRIGGER_PROGRAM_NAME VARCHAR(128,0) NN | TRIGGER_PROGRAM_LIBRARY VARCHAR(128,0) NN | OPERATIVE VARCHAR(1,0) NN | ENABLED VARCHAR(1,0) NN | THREADSAFE VARCHAR(8,0) NN | MULTITHREADED_JOB_ACTION VARCHAR(8,0) NN | ALLOW_REPEATED_CHANGE VARCHAR(8,0) NN | TRIGGER_UPDATE_CONDITION CHAR(8,0) | TRIGGER_DEFINER VARCHAR(128,0) NN | TRIGGER_TEXT NVARCHAR(50,0) | LONG_COMMENT DBCLOB(2000,0) | ROUNDING_MODE CHAR(1,0) | SYSTEM_TRIGGER_SCHEMA CHAR(10,0) NN | SYSTEM_EVENT_OBJECT_SCHEMA CHAR(10,0) NN | SYSTEM_EVENT_OBJECT_TABLE CHAR(10,0) NN
+  row | 'QSTEST' | 'AFTINS' | 'INSERT' | 'QSTEST' | 'TRGT' | '2' | - | - | 'ROW' | 'AFTER' | 'DB2ROW' | - | - | - | - | - | '2026-11-04 23:39:38.000000' | 'TRGDUMP' | 'QSTEST' | 'Y' | 'Y' | 'UNKNOWN ' | 'SYSVAL  ' | 'NO      ' | - | '{user}' | - | - | - | 'QSTEST    ' | 'QSTEST    ' | 'TRGT      '
+  row | 'QSTEST' | 'AFTUPD' | 'UPDATE' | 'QSTEST' | 'TRGT' | '4' | - | - | 'ROW' | 'AFTER' | 'DB2ROW' | - | - | - | - | - | '2026-11-04 23:39:39.000000' | 'TRGDUMP' | 'QSTEST' | 'Y' | 'Y' | 'UNKNOWN ' | 'SYSVAL  ' | 'NO      ' | 'CHANGE  ' | '{user}' | - | - | - | 'QSTEST    ' | 'QSTEST    ' | 'TRGT      '
+  row | 'QSTEST' | 'BADREAD' | 'READ' | 'QSTEST' | 'TRGT' | '7' | - | - | 'ROW' | 'AFTER' | 'DB2ROW' | - | - | - | - | - | '2026-11-04 23:39:39.000000' | 'TRGDUMP' | 'QSTEST' | 'Y' | 'Y' | 'UNKNOWN ' | 'SYSVAL  ' | 'YES     ' | - | '{user}' | - | - | - | 'QSTEST    ' | 'QSTEST    ' | 'TRGT      '
+  row | 'QSTEST' | 'BEFINS' | 'INSERT' | 'QSTEST' | 'TRGT' | '1' | - | - | 'ROW' | 'BEFORE' | 'DB2ROW' | - | - | - | - | - | '2026-11-04 23:39:38.000000' | 'TRGDUMP' | 'QSTEST' | 'Y' | 'Y' | 'UNKNOWN ' | 'SYSVAL  ' | 'YES     ' | - | '{user}' | - | - | - | 'QSTEST    ' | 'QSTEST    ' | 'TRGT      '
+  row | 'QSTEST' | 'BEFUPD' | 'UPDATE' | 'QSTEST' | 'TRGT' | '3' | - | - | 'ROW' | 'BEFORE' | 'DB2ROW' | - | - | - | - | - | '2026-11-04 23:39:38.000000' | 'TRGDUMP' | 'QSTEST' | 'Y' | 'Y' | 'UNKNOWN ' | 'SYSVAL  ' | 'NO      ' | 'ALWAYS  ' | '{user}' | - | - | - | 'QSTEST    ' | 'QSTEST    ' | 'TRGT      '
+  row | 'QSTEST' | 'QSYS_TRIG_QSTEST_____TRGT_______000001' | 'DELETE' | 'QSTEST' | 'TRGT' | '5' | - | - | 'ROW' | 'AFTER' | 'DB2ROW' | - | - | - | - | - | '2026-11-04 23:39:39.000000' | 'TRGDUMP' | 'QSTEST' | 'Y' | 'Y' | 'UNKNOWN ' | 'SYSVAL  ' | 'NO      ' | - | '{user}' | - | - | - | 'QSTEST    ' | 'QSTEST    ' | 'TRGT      '
+> CALL QSYS.QCMDEXC('DSPFD FILE(QSTEST/TRGT) TYPE(*TRG) OUTPUT(*OUTFILE) OUTFILE(QSTEST/TRGFD)', 0000000073.00000)
+  sqlcode 0 count 0
+> SELECT * FROM QSTEST.TRGFD
+  cols | TRRCEN CHAR(1,0) NN | TRRDAT CHAR(6,0) NN | TRRTIM CHAR(6,0) NN | TRFILE CHAR(10,0) NN | TRLIB CHAR(10,0) NN | TRFTYP CHAR(1,0) NN | TRFILA CHAR(4,0) NN | TRMXD CHAR(3,0) NN | TRFATR CHAR(6,0) NN | TRSYSN CHAR(8,0) NN | TRASP DECIMAL(3,0) NN | TRRES CHAR(4,0) NN | TRTRTM CHAR(1,0) NN | TRTREV CHAR(1,0) NN | TRTRCN CHAR(1,0) NN | TRTRIG CHAR(10,0) NN | TRTRLB CHAR(10,0) NN | TRTARC CHAR(1,0) NN | TRTTSF CHAR(1,0) NN | TRTMJA CHAR(1,0) NN | TRNAM CHAR(258,0) NN | TRLB CHAR(10,0) NN | TRST CHAR(1,0) NN | TRSTAT CHAR(1,0) NN | TRTYP CHAR(1,0) NN | TRMOD CHAR(1,0) NN | TRORNT CHAR(1,0) NN | TRCEN CHAR(1,0) NN | TRDATE CHAR(6,0) NN | TRTIME CHAR(6,0) NN | TRUCN DECIMAL(5,0) NN | TRUC VARCHAR(1000,0) NN
+  row | '1' | '261104' | '233940' | 'TRGT      ' | 'QSTEST    ' | 'P' | '*PHY' | '   ' | 'PF    ' | 'S062B175' | '1' | '    ' | 'B' | 'I' | ' ' | 'TRGDUMP   ' | 'QSTEST    ' | 'Y' | 'U' | 'S' | 'BEFINS                                                                                                                                                                                                                                                            ' | 'QSTEST    ' | 'E' | 'O' | 'Y' | ' ' | 'R' | '1' | '261104' | '233938' | '0' | ''
+  row | '1' | '261104' | '233940' | 'TRGT      ' | 'QSTEST    ' | 'P' | '*PHY' | '   ' | 'PF    ' | 'S062B175' | '1' | '    ' | 'A' | 'I' | ' ' | 'TRGDUMP   ' | 'QSTEST    ' | 'N' | 'U' | 'S' | 'AFTINS                                                                                                                                                                                                                                                            ' | 'QSTEST    ' | 'E' | 'O' | 'Y' | ' ' | 'R' | '1' | '261104' | '233938' | '0' | ''
+  row | '1' | '261104' | '233940' | 'TRGT      ' | 'QSTEST    ' | 'P' | '*PHY' | '   ' | 'PF    ' | 'S062B175' | '1' | '    ' | 'B' | 'U' | 'A' | 'TRGDUMP   ' | 'QSTEST    ' | 'N' | 'U' | 'S' | 'BEFUPD                                                                                                                                                                                                                                                            ' | 'QSTEST    ' | 'E' | 'O' | 'Y' | ' ' | 'R' | '1' | '261104' | '233938' | '0' | ''
+  row | '1' | '261104' | '233940' | 'TRGT      ' | 'QSTEST    ' | 'P' | '*PHY' | '   ' | 'PF    ' | 'S062B175' | '1' | '    ' | 'A' | 'U' | 'C' | 'TRGDUMP   ' | 'QSTEST    ' | 'N' | 'U' | 'S' | 'AFTUPD                                                                                                                                                                                                                                                            ' | 'QSTEST    ' | 'E' | 'O' | 'Y' | ' ' | 'R' | '1' | '261104' | '233939' | '0' | ''
+  row | '1' | '261104' | '233940' | 'TRGT      ' | 'QSTEST    ' | 'P' | '*PHY' | '   ' | 'PF    ' | 'S062B175' | '1' | '    ' | 'A' | 'D' | ' ' | 'TRGDUMP   ' | 'QSTEST    ' | 'N' | 'U' | 'S' | 'QSYS_TRIG_QSTEST_____TRGT_______000001                                                                                                                                                                                                                            ' | 'QSTEST    ' | 'E' | 'O' | 'Y' | ' ' | 'R' | '1' | '261104' | '233939' | '0' | ''
+  row | '1' | '261104' | '233940' | 'TRGT      ' | 'QSTEST    ' | 'P' | '*PHY' | '   ' | 'PF    ' | 'S062B175' | '1' | '    ' | 'A' | 'R' | ' ' | 'TRGDUMP   ' | 'QSTEST    ' | 'Y' | 'U' | 'S' | 'BADREAD                                                                                                                                                                                                                                                           ' | 'QSTEST    ' | 'E' | 'O' | 'Y' | ' ' | 'R' | '1' | '261104' | '233939' | '0' | ''
+> CALL QSYS.QCMDEXC('CHGPFTRG FILE(QSTEST/TRGT) TRG(*ALL) STATE(*DISABLED)', 0000000053.00000)
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.TRGT VALUES ('DIS', 1, 'off', 1)
+  sqlcode 0 count 1
+> -- dtaq TRGQ
+  entries 0
+> SELECT TRIGGER_NAME, ENABLED FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_SCHEMA = 'QSTEST' ORDER BY TRIGGER_NAME
+  cols | TRIGGER_NAME VARCHAR(128,0) NN | ENABLED VARCHAR(1,0) NN
+  row | 'AFTINS' | 'N'
+  row | 'AFTUPD' | 'N'
+  row | 'BADREAD' | 'N'
+  row | 'BEFINS' | 'N'
+  row | 'BEFUPD' | 'N'
+  row | 'QSYS_TRIG_QSTEST_____TRGT_______000001' | 'N'
+> CALL QSYS.QCMDEXC('CHGPFTRG FILE(QSTEST/TRGT) TRG(AFTINS) STATE(*ENABLED)', 0000000054.00000)
+  sqlcode -443 38501 CPF0006 [CPF0006] Errors occurred in command. Cause . . . . . :   If the wrong length was passed on one part of the command, other messages are issued because the wrong part of the command is being analyzed. Recovery  . . . :   See the previously listed messages in the job log. Correct the errors and then try the command again.
+> INSERT INTO QSTEST.TRGT VALUES ('ENA', 1, 'on', 1)
+  sqlcode 0 count 1
+> -- dtaq TRGQ
+  entries 0
+> CALL QSYS.QCMDEXC('RMVPFTRG FILE(QSTEST/TRGT) TRGTIME(*AFTER) TRGEVENT(*INSERT)', 0000000060.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('RMVPFTRG FILE(QSTEST/TRGT) TRG(NOSUCH)', 0000000038.00000)
+  sqlcode -443 38501 CPF32C6 [CPF32C6] Trigger operation not successful. Cause . . . . . :   The trigger operation for file TRGT in library QSTEST failed because of errors. The operation code was 2. Operation codes and their meanings are: 1 - Add a trigger 2 - Remove a trigger 3 - Change a trigger 4 - Create an SQL trigger program 5 - Register the trigger with Cross Reference 6 - Rename a trigger 7 - Revoke authorities Recovery  . . . :   See the error messages previously listed. Correct the errors and then try the request again.
+> CALL QSYS.QCMDEXC('RMVPFTRG FILE(QSTEST/TRGT)', 0000000026.00000)
+  sqlcode 0 count 0
+> SELECT COUNT(*) FROM QSYS2.SYSTRIGGERS WHERE TRIGGER_SCHEMA = 'QSTEST'
+  cols | 00001 INTEGER(10,0) NN
+  row | '0'
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGT)', 0000000022.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGFD)', 0000000023.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTPGM PGM(QSTEST/TRGDUMP)', 0000000026.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTDTAQ DTAQ(QSTEST/TRGQ)', 0000000025.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/QTRGSRC)', 0000000025.00000)
+  sqlcode 0 count 0

@@ -27,6 +27,7 @@ pub mod record;
 pub mod source;
 pub mod spec;
 pub mod sqlinf;
+pub mod trg;
 pub mod util;
 
 pub use error::{DbError, Result};

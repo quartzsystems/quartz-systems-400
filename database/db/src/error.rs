@@ -326,6 +326,47 @@ pub enum DbError {
         what: String,
     },
 
+    /// A trigger that cannot be added, removed or changed, with IBM's
+    /// diagnostic (`CPF32C6` after it).
+    #[error("{what}")]
+    Trigger {
+        /// The operation code `CPF32C6` names (`trg::ops::op`).
+        op: u8,
+        /// Why.
+        reason: crate::trg::ops::Refusal,
+        /// What is wrong.
+        what: String,
+    },
+
+    /// A trigger program ended in an exception or could not be called.
+    #[error("trigger {trigger} of file {file} failed: {} {}", failure.msgid, failure.text)]
+    TriggerFailed {
+        /// The file.
+        file: String,
+        /// The trigger.
+        trigger: String,
+        /// A before trigger (nothing was changed).
+        before: bool,
+        /// The program's failure.
+        failure: crate::trg::Failure,
+    },
+
+    /// Trigger programs must be called before the change is made: the
+    /// operation is resumed once they were (`trg::Mode::Defer`).
+    #[error("trigger programs are due")]
+    TriggersDue {
+        /// The calls, in order.
+        calls: Vec<crate::trg::Call>,
+    },
+
+    /// A change a trigger fires for, made where no trigger program can be
+    /// called.
+    #[error("file {file} has triggers, and this function cannot call trigger programs")]
+    TriggerNotCallable {
+        /// The file.
+        file: String,
+    },
+
     /// A long operation ended at one of its pauses ([`crate::Pause`]).
     #[error("the operation was ended before it finished")]
     Ended,
@@ -364,11 +405,14 @@ impl DbError {
             Self::RefRestricted { .. } => "CPF503A",
             Self::CheckPending { .. } => "CPF523B",
             Self::Constraint { msgid, .. } => msgid,
+            Self::Trigger { .. } => "CPF32C6",
+            Self::TriggerFailed { .. } | Self::TriggerNotCallable { .. } => "CPF502B",
             Self::MemberFull { .. }
             | Self::RecordLength { .. }
             | Self::HasDependents { .. }
             | Self::IdentityExhausted { .. }
             | Self::Closed
+            | Self::TriggersDue { .. }
             | Self::Ended
             | Self::Definition { .. } => return None,
         })

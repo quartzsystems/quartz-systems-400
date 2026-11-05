@@ -198,6 +198,10 @@ pub struct Member {
     pub jrn: crate::journal::JrnCtx,
     /// Physical member: the file's constraints.
     pub csts: Option<std::sync::Arc<crate::cst::Active>>,
+    /// Physical member: the file's enabled triggers.
+    pub trgs: Option<std::sync::Arc<crate::trg::Active>>,
+    /// Logical member: a based-on file has read triggers.
+    pub base_read_triggers: bool,
     /// Physical member: the identity column's full attributes, when SQL
     /// keeps them (`COLUMN` entry).
     pub identity: Option<crate::sqlinf::seq::SeqAttrs>,
@@ -373,6 +377,8 @@ impl Member {
             dependents: Vec::new(),
             jrn: crate::journal::JrnCtx::default(),
             csts: None,
+            trgs: None,
+            base_read_triggers: false,
             identity: None,
             identity_block: None,
         };
@@ -388,11 +394,16 @@ impl Member {
                             what: format!("format {fi} of {} has no based-on file", file.name()),
                         })?;
                 let format = base_format(txn, base_file, name)?;
+                let bdesc = file::describe(txn, base_file)?;
+                if crate::trg::Active::load(txn, &bdesc)?.is_some_and(|a| a.any(crate::trg::Event::Read)) {
+                    m.base_read_triggers = true;
+                }
                 m.bases.push(Base { member, format });
             }
         } else {
             m.load_dependents(txn)?;
             m.csts = crate::cst::Active::load(txn, file)?;
+            m.trgs = crate::trg::Active::load(txn, file)?;
             if !file.header.sql.is_none()
                 && let Some((a, be)) = crate::sqlinf::seq::columns(txn, file.id)?.into_iter().find_map(|c| match c.kind {
                     crate::sqlinf::seq::ColumnKind::Identity(a) => Some((a, c.block_end)),

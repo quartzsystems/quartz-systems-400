@@ -930,6 +930,41 @@ written, UTF-8.
 | 0 | 2 | count | |
 | 2 | 2 | reserved | 0 |
 | 4 | variable | options | |
+### `SqlTrigger` (variable)
+
+The body of a `TRIGGER` entry: one trigger of a physical file
+(`ADDPFTRG`, SQL's `CREATE TRIGGER`), kept in the order added. The parts
+follow the fixed 72 bytes: `name_len` bytes of the trigger name (UTF-8),
+`col_count` × 10 bytes of CP037 field names (SQL's `UPDATE OF`),
+`definer_len` bytes of the profile that added it and `text_len` bytes of
+its `LABEL ON` text (both UTF-8). Names of 10 bytes are CP037.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | time | 1 `*BEFORE`, 2 `*AFTER`, 3 `INSTEAD OF` |
+| 1 | 1 | event | 1 `*INSERT`, 2 `*DELETE`, 3 `*UPDATE`, 4 `*READ` (the trigger buffer's digit) |
+| 2 | 1 | flags | bit 0 disabled, bit 1 inoperative, bit 2 `ALWREPCHG(*YES)`, bit 3 an SQL trigger |
+| 3 | 1 | update_condition | 0 not an update trigger, 1 `*ALWAYS`, 2 `*CHANGE` |
+| 4 | 1 | threadsafe | 0 `*UNKNOWN`, 1 `*YES`, 2 `*NO` |
+| 5 | 1 | mt_action | 0 `*SYSVAL`, 1 `*MSG`, 2 `*NORUN`, 3 `*RUN` |
+| 6 | 1 | mode | 0 `DB2ROW`, 1 `DB2SQL` |
+| 7 | 1 | orientation | 0 `FOR EACH ROW`, 1 `FOR EACH STATEMENT` |
+| 8 | 4 | number | `ACTION_ORDER`: the file's count of triggers added when this one was |
+| 12 | 4 | issued | the count when the entry was last written; a replace (`RPLTRG(*YES)`) keeps `number` and uses a count, so the next trigger's number is one past the largest `number` or `issued` |
+| 16 | 10 | program_lib | the trigger program's library |
+| 26 | 10 | program | the trigger program |
+| 36 | 10 | trigger_lib | the library of the trigger's name (`TRGLIB`) |
+| 46 | 2 | name_len | |
+| 48 | 8 | created | Unix seconds |
+| 56 | 2 | col_count | |
+| 58 | 2 | definer_len | |
+| 60 | 2 | text_len | |
+| 62 | 10 | reserved | 0 |
+| 72 | variable | parts | as above |
+
+Integers are little-endian. Only enabled triggers fire; a member loads
+them as it opens (`db::trg::Active`), so a trigger is added, removed or
+changed only while nobody has the file open.
 
 ### 8.2 The SQL name index
 
@@ -943,6 +978,44 @@ CP037 name. Schemas' SQL names are in QSYS's index.
 |---|---|---|---|
 | 0 | 1 | space | 1 tables, views, aliases; 2 indexes; 3 routine specific names; 4 sequences; 5 global variables; 6 types; 7 triggers; 8 constraints; 9 schemas |
 | 1 | 512 | name | UTF-8, zero padded |
+
+### 8.3 The trigger buffer
+
+Not stored: what a trigger program gets as its first parameter, the
+buffer's length (`BINARY(4)`, big-endian) its second. IBM's layout, byte
+for byte as the primary builds it
+(`tools/conformance/sql/oracle/trigger/primary-facts.md`). Integers are
+big-endian, characters CP037.
+
+### `TriggerBuffer` (96 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | file | the physical file |
+| 10 | 10 | library | |
+| 20 | 10 | member | |
+| 30 | 1 | event | `1` insert, `2` delete, `3` update, `4` read |
+| 31 | 1 | time | `1` after, `2` before |
+| 32 | 1 | commit_level | `0` none, `1` `*CHG`, `2` `*CS`, `3` `*ALL` |
+| 33 | 3 | reserved | 0 |
+| 36 | 4 | ccsid | 37 |
+| 40 | 4 | rrn | the record's number; 0 for a before insert |
+| 44 | 4 | reserved2 | 0 |
+| 48 | 4 | old_offset | 96 |
+| 52 | 4 | old_len | the record length |
+| 56 | 4 | old_null_offset | `old_offset + old_len` |
+| 60 | 4 | old_null_len | the number of fields |
+| 64 | 4 | new_offset | the old null map's end rounded up to 16, plus 16 |
+| 68 | 4 | new_len | the record length |
+| 72 | 4 | new_null_offset | `new_offset + new_len` |
+| 76 | 4 | new_null_len | the number of fields |
+| 80 | 16 | reserved3 | 0 |
+
+The buffer ends at the new null map's end rounded up to 16, plus 16.
+Every offset is set for every event; an image the event has not (the old
+record of an insert, the new one of a delete or read) and all padding are
+x'40'. A null map has one byte per field, `0` or `1`, whether or not the
+field is null-capable.
 
 ## Frozen at V1R1M0
 

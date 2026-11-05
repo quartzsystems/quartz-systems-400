@@ -21,6 +21,10 @@ pub mod status {
     pub const DUPLICATE_KEY: u16 = 1021;
     /// A referential or check constraint refused the operation.
     pub const CONSTRAINT: u16 = 1022;
+    /// A trigger program failed before the operation was performed.
+    pub const TRIGGER_BEFORE: u16 = 1023;
+    /// A trigger program failed after the operation was performed.
+    pub const TRIGGER_AFTER: u16 = 1024;
     /// Operation on a closed file.
     pub const CLOSED: u16 = 1211;
     /// Record locked by another job.
@@ -104,6 +108,8 @@ impl IoFeedback {
             | DbError::RefNoParent { .. }
             | DbError::RefRestricted { .. }
             | DbError::CheckPending { .. } => status::CONSTRAINT,
+            DbError::TriggerFailed { before: true, .. } | DbError::TriggerNotCallable { .. } => status::TRIGGER_BEFORE,
+            DbError::TriggerFailed { before: false, .. } => status::TRIGGER_AFTER,
             DbError::RecordLocked { .. } => status::LOCKED,
             DbError::NoLockedRecord { .. } => status::NO_PRIOR_READ,
             DbError::FileLocked { .. } => status::ALLOCATE,

@@ -75,6 +75,7 @@ files = [
     "database/db/src/cst/check.rs",
     "database/db/src/sqlinf/seq.rs",
     "database/db/src/sqlinf/routine.rs",
+    "database/db/src/trg/model.rs",
 ]
 
 [[format]]

@@ -1,0 +1,210 @@
+> SET SCHEMA QSTEST
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGV)', 0000000022.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGV in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGC)', 0000000022.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGC in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGS)', 0000000022.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGS in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTPGM PGM(QSTEST/TRGDUMP)', 0000000026.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGDUMP in QSTEST type *PGM not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTDTAQ DTAQ(QSTEST/TRGQ)', 0000000025.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGQ in QSTEST type *DTAQ not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/QTRGSRC)', 0000000025.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object QTRGSRC in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('CRTSRCPF FILE(QSTEST/QTRGSRC) RCDLEN(92)', 0000000040.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFM FILE(QSTEST/QTRGSRC) MBR(TRGDUMP) SRCTYPE(CLLE)', 0000000054.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('CRTDTAQ DTAQ(QSTEST/TRGQ) MAXLEN(4000)', 0000000038.00000)
+  sqlcode 0 count 0
+> CREATE ALIAS QSTEST.TRGSRCM FOR QSTEST.QTRGSRC(TRGDUMP)
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.TRGSRCM VALUES  (1, 0, '             PGM        PARM(&BUF &LEN)'),  (2, 0, '             DCL        VAR(&BUF) TYPE(*CHAR) LEN(3000)'),  (3, 0, '             DCL        VAR(&LEN) TYPE(*CHAR) LEN(4)'),  (4, 0, '             DCL        VAR(&N) TYPE(*DEC) LEN(5 0)'),  (5, 0, '             DCL        VAR(&OFF) TYPE(*DEC) LEN(9 0)'),  (6, 0, '             DCL        VAR(&ST) TYPE(*DEC) LEN(9 0)'),  (7, 0, '             DCL        VAR(&C) TYPE(*CHAR) LEN(1)'),  (8, 0, '             CHGVAR     VAR(&N) VALUE(%BIN(&LEN))'),  (9, 0, '             CALL       PGM(QSNDDTAQ) PARM(''TRGQ'' ''QSTEST'' &N &BUF)'),  (10, 0, '             CHGVAR     VAR(&OFF) VALUE(%BIN(&BUF 65 4))'),  (11, 0, '             IF         COND(&OFF *GT 0) THEN(DO)'),  (12, 0, '             CHGVAR     VAR(&ST) VALUE(&OFF + 1)'),  (13, 0, '             CHGVAR     VAR(&C) VALUE(%SST(&BUF &ST 1))'),  (14, 0, '             IF         COND(&C *EQ ''X'') THEN(SNDPGMMSG MSGID(CPF9898) +'),  (15, 0, '                          MSGF(QCPFMSG) MSGDTA(''refused'') MSGTYPE(*ESCAPE))'),  (16, 0, '             IF         COND(&C *EQ ''R'') THEN(CHGVAR +'),  (17, 0, '                          VAR(%SST(&BUF &ST 1)) VALUE(''Z''))'),  (18, 0, '             ENDDO'),  (19, 0, '             ENDPGM')
+  sqlcode 0 count 19
+> DROP ALIAS QSTEST.TRGSRCM
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('CRTBNDCL PGM(QSTEST/TRGDUMP) SRCFILE(QSTEST/QTRGSRC) SRCMBR(TRGDUMP)', 0000000068.00000)
+  sqlcode 0 count 0
+> CREATE TABLE QSTEST.TRGC (C1 CHAR(5) NOT NULL, N INTEGER)
+  warning 7905 01567 SQL7905 [SQL7905] Table TRGC in QSTEST created but was not journaled. Cause . . . . . :   The table TRGC was created in QSTEST, but the table was not journaled.  Either a QDFTJRN data area indicated that journaling should not be started, the default journal did not exist, or the default journal did exist but the journaling could not be started.  The default journal may be damaged, unable to accept journal entries, or may not exist. The SQL name for the table is TRGC and the system name for the table is TRGC. For a distributed table, journaling could not be started on all of the systems.  The default journal must exist, and be able to accept journal entries, on each of the systems in the node group. Recovery  . . . :   The table was created, but until the table is journaled, COMMIT(*CHG), COMMIT(*CS), COMMIT(*RS), COMMIT(*RR), COMMIT(*UR), and COMMIT(*ALL) will not be allowed for table TRGC. If the default journal does not exist, create the journal (CRTJRN command) and start journaling (STRJRNPF command). If the journal is in error, correct the problem to the journal If the table is distributed, correct the problems on all the systems in the node group and start journaling (STRJRNPF command).
+  sqlcode 0 count 0
+> CREATE VIEW QSTEST.TRGV AS SELECT C1 FROM QSTEST.TRGC
+  sqlcode 0 count 0
+> -- joblog
+  msg CPF1124 type 4 sev 0 Job 009195/QUSER/QZDASOINIT started on 11/04/26 at 23:05:51 in subsystem QUSRWRK in QSYS. Job entered system on 11/04/26 at 23:05:51.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009195/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1336 type 15 sev 40 Errors on CHGJOB command for job 009195/QUSER/QZDASOINIT.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009195/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD1672 type 2 sev 0 Job changed successfully; however errors occurred.
+  msg CPIAD02 type 4 sev 0 User {user} from client 10.42.30.100 connected to server.
+  msg CPD0912 type 2 sev 20 Printer device PRT01 not found.
+  msg CPF1301 type 4 sev 30 ACGDTA for 009195/QUSER/QZDASOINIT not journaled; reason 1.
+  msg CPD1672 type 2 sev 0 Job changed successfully; however errors occurred.
+  msg CPF2105 type 15 sev 40 Object TRGV in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPF2105 type 15 sev 40 Object TRGC in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPF2105 type 15 sev 40 Object TRGS in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPF2105 type 15 sev 40 Object TRGDUMP in QSTEST type *PGM not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPF2105 type 15 sev 40 Object TRGQ in QSTEST type *DTAQ not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPF2105 type 15 sev 40 Object QTRGSRC in QSTEST type *FILE not found.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPC7301 type 1 sev 0 File QTRGSRC created in library QSTEST.
+  msg CPC7305 type 1 sev 0 Member TRGDUMP added to file QTRGSRC in QSTEST.
+  msg CPC9801 type 1 sev 0 Object TRGQ type *DTAQ created in library QSTEST.
+  msg CPD4090 type 2 sev 10 Printer device PRT01 not found. Output queue changed to QPRINT in library QGPL.
+  msg CPC0815 type 1 sev 0 Program TRGDUMP created in library QSTEST.
+  msg SQL7905 type 4 sev 20 Table TRGC in QSTEST created but was not journaled.
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGC) TRGTIME(*BEFORE) TRGEVENT(*INSERT) PGM(QSTEST/TRGDUMP) TRG(C1) ALWREPCHG(*YES)', 0000000105.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGC) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM(QSTEST/TRGDUMP) TRG(C1)', 0000000088.00000)
+  sqlcode -443 38501 CPF32C6 [CPF32C6] Trigger operation not successful. Cause . . . . . :   The trigger operation for file TRGC in library QSTEST failed because of errors. The operation code was 1. Operation codes and their meanings are: 1 - Add a trigger 2 - Remove a trigger 3 - Change a trigger 4 - Create an SQL trigger program 5 - Register the trigger with Cross Reference 6 - Rename a trigger 7 - Revoke authorities Recovery  . . . :   See the error messages previously listed. Correct the errors and then try the request again.
+> -- joblog
+  msg CPI321A type 4 sev 0 Trigger C1 in library QSTEST was added to file TRGC in library QSTEST.
+  msg CPC3203 type 1 sev 0 Trigger added to file.
+  msg CPD32E7 type 2 sev 20 The trigger operation failed.
+  msg CPF32C6 type 15 sev 40 Trigger operation not successful.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGC) TRGTIME(*BEFORE) TRGEVENT(*READ) PGM(QSTEST/TRGDUMP)', 0000000079.00000)
+  sqlcode -443 38501 CPF0006 [CPF0006] Errors occurred in command. Cause . . . . . :   If the wrong length was passed on one part of the command, other messages are issued because the wrong part of the command is being analyzed. Recovery  . . . :   See the previously listed messages in the job log. Correct the errors and then try the command again.
+> -- joblog
+  msg CPD730A type 2 sev 30 TRGTIME(*BEFORE) not allowed with TRGEVENT(*READ).
+  msg CPF0001 type 15 sev 30 Error found on ADDPFTRG command.
+  msg CPF0006 type 15 sev 30 Errors occurred in command.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGC) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM(QSTEST/NOSUCH) TRG(C9)', 0000000087.00000)
+  sqlcode -443 38501 CPF32C6 [CPF32C6] Trigger operation not successful. Cause . . . . . :   The trigger operation for file TRGC in library QSTEST failed because of errors. The operation code was 1. Operation codes and their meanings are: 1 - Add a trigger 2 - Remove a trigger 3 - Change a trigger 4 - Create an SQL trigger program 5 - Register the trigger with Cross Reference 6 - Rename a trigger 7 - Revoke authorities Recovery  . . . :   See the error messages previously listed. Correct the errors and then try the request again.
+> -- joblog
+  msg CPF9811 type 2 sev 40 Program NOSUCH in library QSTEST not found.
+  msg CPF32C6 type 15 sev 40 Trigger operation not successful.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGV) TRGTIME(*AFTER) TRGEVENT(*INSERT) PGM(QSTEST/TRGDUMP) TRG(C8)', 0000000088.00000)
+  sqlcode -443 38501 CPF32C6 [CPF32C6] Trigger operation not successful. Cause . . . . . :   The trigger operation for file TRGV in library QSTEST failed because of errors. The operation code was 1. Operation codes and their meanings are: 1 - Add a trigger 2 - Remove a trigger 3 - Change a trigger 4 - Create an SQL trigger program 5 - Register the trigger with Cross Reference 6 - Rename a trigger 7 - Revoke authorities Recovery  . . . :   See the error messages previously listed. Correct the errors and then try the request again.
+> -- joblog
+  msg CPF3210 type 2 sev 40 File TRGV in library QSTEST not correct type.
+  msg CPF32C6 type 15 sev 40 Trigger operation not successful.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGC) TRGTIME(*AFTER) TRGEVENT(*UPDATE) PGM(QSTEST/TRGDUMP) TRG(C2) ALWREPCHG(*YES) TRGUPDCND(*CHANGE)', 0000000123.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGC) TRGTIME(*AFTER) TRGEVENT(*DELETE) PGM(QSTEST/TRGDUMP) TRG(C3) TRGUPDCND(*CHANGE)', 0000000107.00000)
+  sqlcode -443 38501 CPF0006 [CPF0006] Errors occurred in command. Cause . . . . . :   If the wrong length was passed on one part of the command, other messages are issued because the wrong part of the command is being analyzed. Recovery  . . . :   See the previously listed messages in the job log. Correct the errors and then try the command again.
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGC) TRGTIME(*BEFORE) TRGEVENT(*DELETE) PGM(QSTEST/TRGDUMP) TRG(C4) ALWREPCHG(*YES)', 0000000105.00000)
+  sqlcode 0 count 0
+> -- joblog
+  msg CPI321A type 4 sev 0 Trigger C2 in library QSTEST was added to file TRGC in library QSTEST.
+  msg CPC3203 type 1 sev 0 Trigger added to file.
+  msg CPD7308 type 2 sev 30 Trigger update condition cannot be used for trigger event of *INSERT or *DELETE.
+  msg CPF0001 type 15 sev 30 Error found on ADDPFTRG command.
+  msg CPF0006 type 15 sev 30 Errors occurred in command.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+  msg CPI321A type 4 sev 0 Trigger C4 in library QSTEST was added to file TRGC in library QSTEST.
+  msg CPC3203 type 1 sev 0 Trigger added to file.
+> SELECT TRIGGER_NAME, ALLOW_REPEATED_CHANGE, TRIGGER_UPDATE_CONDITION, ACTION_TIMING FROM QSYS2.SYSTRIGGERS WHERE EVENT_OBJECT_TABLE = 'TRGC' ORDER BY ACTION_ORDER
+  cols | TRIGGER_NAME VARCHAR(128,0) NN | ALLOW_REPEATED_CHANGE VARCHAR(8,0) NN | TRIGGER_UPDATE_CONDITION CHAR(8,0) | ACTION_TIMING VARCHAR(7,0) NN
+  row | 'C1' | 'YES     ' | - | 'BEFORE'
+  row | 'C2' | 'YES     ' | 'CHANGE  ' | 'AFTER'
+  row | 'C4' | 'YES     ' | - | 'BEFORE'
+> INSERT INTO QSTEST.TRGC VALUES ('Xaaaa', 1)
+  sqlcode -443 38501 CPF9898 [CPF9898] refused. Cause . . . . . :   This message is used by application programs as a general escape message.
+> -- joblog
+  msg CPF9898 type 2 sev 40 refused.
+  msg CPF502B type 6 sev 30 Error occurred in trigger program.
+  msg CPF502B type 14 sev 30 Error occurred in trigger program.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+> -- dtaq TRGQ
+  entry 1 length 160
+    0000 E3D9C7C3404040404040D8E2E3C5E2E340404040E3D9C7C3404040404040F1F2
+    0032 F000000000000025000000000000000000000060000000090000006900000002
+    0064 0000008000000009000000890000000200000000000000000000000000000000
+    0096 4040404040404040404040404040404040404040404040404040404040404040
+    0128 E78181818100000001F0F0404040404040404040404040404040404040404040
+  entries 1
+> INSERT INTO QSTEST.TRGV VALUES ('Rbbbb')
+  sqlcode 0 count 1
+> -- dtaq TRGQ
+  entry 1 length 160
+    0000 E3D9C7C3404040404040D8E2E3C5E2E340404040E3D9C7C3404040404040F1F2
+    0032 F000000000000025000000000000000000000060000000090000006900000002
+    0064 0000008000000009000000890000000200000000000000000000000000000000
+    0096 4040404040404040404040404040404040404040404040404040404040404040
+    0128 D98282828200000000F0F1404040404040404040404040404040404040404040
+  entries 1
+> CREATE TABLE QSTEST.TRGS (C1 CHAR(5) NOT NULL, N INTEGER)
+  warning 7905 01567 SQL7905 [SQL7905] Table TRGS in QSTEST created but was not journaled. Cause . . . . . :   The table TRGS was created in QSTEST, but the table was not journaled.  Either a QDFTJRN data area indicated that journaling should not be started, the default journal did not exist, or the default journal did exist but the journaling could not be started.  The default journal may be damaged, unable to accept journal entries, or may not exist. The SQL name for the table is TRGS and the system name for the table is TRGS. For a distributed table, journaling could not be started on all of the systems.  The default journal must exist, and be able to accept journal entries, on each of the systems in the node group. Recovery  . . . :   The table was created, but until the table is journaled, COMMIT(*CHG), COMMIT(*CS), COMMIT(*RS), COMMIT(*RR), COMMIT(*UR), and COMMIT(*ALL) will not be allowed for table TRGS. If the default journal does not exist, create the journal (CRTJRN command) and start journaling (STRJRNPF command). If the journal is in error, correct the problem to the journal If the table is distributed, correct the problems on all the systems in the node group and start journaling (STRJRNPF command).
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.TRGS VALUES ('ccccc', 1), ('Xdddd', 2)
+  sqlcode 0 count 2
+> -- joblog
+  msg SQL7905 type 4 sev 20 Table TRGS in QSTEST created but was not journaled.
+> CALL QSYS.QCMDEXC('CPYF FROMFILE(QSTEST/TRGS) TOFILE(QSTEST/TRGC) MBROPT(*ADD)', 0000000059.00000)
+  sqlcode -443 38501 CPF2972 [CPF2972] Error writing to member TRGC in file TRGC. Cause . . . . . :   The file was not copied because an error occurred while writing records to member TRGC in file TRGC in library QSTEST. Recovery  . . . :   See the messages previously listed.  Correct the error, and then try the request again.
+> -- joblog
+  msg CPF4028 type 2 sev 10 Open of member TRGC was changed to SEQONLY(*NO).
+  msg CPF9898 type 2 sev 40 refused.
+  msg CPF502B type 14 sev 30 Error occurred in trigger program.
+  msg  type 23 sev 30 C
+  msg CPF5104 type 2 sev 40 Cancel reply received for message CPF502B.
+  msg CPF2950 type 4 sev 10 1 records copied to TRGC in QSTEST.
+  msg CPF2972 type 15 sev 40 Error writing to member TRGC in file TRGC.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+> -- dtaq TRGQ
+  entry 1 length 160
+    0000 E3D9C7C3404040404040D8E2E3C5E2E340404040E3D9C7C3404040404040F1F2
+    0032 F000000000000025000000000000000000000060000000090000006900000002
+    0064 0000008000000009000000890000000200000000000000000000000000000000
+    0096 4040404040404040404040404040404040404040404040404040404040404040
+    0128 838383838300000001F0F0404040404040404040404040404040404040404040
+  entry 2 length 160
+    0000 E3D9C7C3404040404040D8E2E3C5E2E340404040E3D9C7C3404040404040F1F2
+    0032 F000000000000025000000000000000000000060000000090000006900000002
+    0064 0000008000000009000000890000000200000000000000000000000000000000
+    0096 4040404040404040404040404040404040404040404040404040404040404040
+    0128 E78484848400000002F0F0404040404040404040404040404040404040404040
+  entries 2
+> CALL QSYS.QCMDEXC('DLTPGM PGM(QSTEST/TRGDUMP)', 0000000026.00000)
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.TRGC VALUES ('eeeee', 1)
+  sqlcode -204 42704 SQL0204 [SQL0204] TRGDUMP in QSTEST type *PGM not found. Cause . . . . . :   TRGDUMP in QSTEST type *PGM was not found. If the member name is *ALL, the table is not partitioned. If this is an ALTER TABLE statement and the type is *N, a constraint or partition was not found. If this is not an ALTER TABLE statement and the type is *N, a function, procedure, trigger or sequence object was not found. If a function was not found, TRGDUMP is the service program that contains the function.  The function will not be found unless the external name and usage name match exactly.  Examine the job log for a message that gives more details on which function name is being searched for and the name that did not match. Recovery  . . . :   Change the name and try the request again.  If the object is a node group, ensure that the DB2 Multisystem product is installed on your system and create a nodegroup with the CRTNODGRP CL command. If an external function was not found, be sure that the case of the EXTERNAL NAME on the CREATE FUNCTION statement exactly matches the case of the name exported by the service program.
+> -- joblog
+  msg CPC2191 type 1 sev 0 Object TRGDUMP in QSTEST type *PGM deleted.
+  msg CPF4160 type 15 sev 50 Program TRGDUMP in QSTEST not found.
+  msg SQL0204 type 2 sev 30 TRGDUMP in QSTEST type *PGM not found.
+> SELECT TRIGGER_NAME, OPERATIVE FROM QSYS2.SYSTRIGGERS WHERE EVENT_OBJECT_TABLE = 'TRGC' ORDER BY ACTION_ORDER
+  cols | TRIGGER_NAME VARCHAR(128,0) NN | OPERATIVE VARCHAR(1,0) NN
+  row | 'C1' | 'Y'
+  row | 'C2' | 'Y'
+  row | 'C4' | 'Y'
+> CALL QSYS.QCMDEXC('CHGPFTRG FILE(QSTEST/TRGC) TRG(C1) STATE(*DISABLED)', 0000000051.00000)
+  sqlcode -443 38501 CPF0006 [CPF0006] Errors occurred in command. Cause . . . . . :   If the wrong length was passed on one part of the command, other messages are issued because the wrong part of the command is being analyzed. Recovery  . . . :   See the previously listed messages in the job log. Correct the errors and then try the command again.
+> -- joblog
+  msg CPD32E9 type 2 sev 20 The TRG parameter conflicts with TRGLIB parameter.
+  msg CPF0001 type 15 sev 30 Error found on CHGPFTRG command.
+  msg CPF0006 type 15 sev 30 Errors occurred in command.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+> CALL QSYS.QCMDEXC('RMVPFTRG FILE(QSTEST/TRGC) TRG(NOSUCH)', 0000000038.00000)
+  sqlcode -443 38501 CPF32C6 [CPF32C6] Trigger operation not successful. Cause . . . . . :   The trigger operation for file TRGC in library QSTEST failed because of errors. The operation code was 2. Operation codes and their meanings are: 1 - Add a trigger 2 - Remove a trigger 3 - Change a trigger 4 - Create an SQL trigger program 5 - Register the trigger with Cross Reference 6 - Rename a trigger 7 - Revoke authorities Recovery  . . . :   See the error messages previously listed. Correct the errors and then try the request again.
+> -- joblog
+  msg CPD321B type 2 sev 10 Trigger not found in file.
+  msg CPF32C6 type 15 sev 40 Trigger operation not successful.
+  msg SQL0443 type 2 sev 30 Trigger program or external routine detected an error.
+> CALL QSYS.QCMDEXC('RMVPFTRG FILE(QSTEST/TRGC) TRGTIME(*BEFORE)', 0000000043.00000)
+  sqlcode 0 count 0
+> SELECT TRIGGER_NAME FROM QSYS2.SYSTRIGGERS WHERE EVENT_OBJECT_TABLE = 'TRGC' ORDER BY ACTION_ORDER
+  cols | TRIGGER_NAME VARCHAR(128,0) NN
+  row | 'C2'
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGV)', 0000000022.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGC)', 0000000022.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGS)', 0000000022.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTDTAQ DTAQ(QSTEST/TRGQ)', 0000000025.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/QTRGSRC)', 0000000025.00000)
+  sqlcode 0 count 0

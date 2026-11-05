@@ -13,6 +13,7 @@ pub mod lfwrite;
 pub mod locks;
 pub mod ovrdbf;
 pub mod session;
+pub mod trigger;
 
 pub use feedback::{IoFeedback, status};
 pub use keyarg::KeyArg;
@@ -34,6 +35,8 @@ use crate::lf;
 use crate::member::{Core, Member};
 use crate::path::{self, PathKey};
 use crate::record::Value;
+use crate::trg::fire::{Resume, Row};
+use crate::trg::{Call, Event, Mode};
 
 /// How the file is used.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -209,6 +212,7 @@ pub struct Odp {
     file_lock: LockState,
     open: bool,
     cmt: Option<CommitRef>,
+    trg: trigger::TrgState,
 }
 
 impl Odp {
@@ -338,6 +342,7 @@ impl Odp {
             file_lock,
             open: true,
             cmt: None,
+            trg: trigger::TrgState::default(),
         })
     }
 
@@ -376,6 +381,29 @@ impl Odp {
     /// The next identity value of the member's format, taken.
     pub fn next_identity(&mut self, txn: &mut Txn<'_>) -> Result<Option<i64>> {
         self.member.next_identity(txn)
+    }
+
+    /// How the path makes its trigger calls (`trg::Mode`); a new path
+    /// refuses them.
+    pub fn set_trigger_mode(&mut self, mode: Mode) {
+        self.trg.mode = mode;
+    }
+
+    /// The job's answer to the before calls the last operation returned
+    /// (`DbError::TriggersDue`): the same operation, given again, goes on
+    /// with it.
+    pub fn resume_triggers(&mut self, r: Resume) {
+        self.trg.resume(r);
+    }
+
+    /// The after calls a deferring path's last operation left to make.
+    pub fn take_due(&mut self) -> Vec<Call> {
+        self.trg.take_due()
+    }
+
+    /// The trigger buffer's commit lock level digit.
+    fn trg_level(&self) -> u8 {
+        trigger::level_digit(self.lcklvl())
     }
 
     /// Put the path under the job's commit definition (`COMMIT(*YES)`).
@@ -482,10 +510,16 @@ impl Odp {
     fn write_logical(&mut self, txn: &mut Txn<'_>, data: &[u8], null_map: &[u8]) -> Result<u64> {
         let (mut base, lf_fmt, log, base_fmt) = self.base_for_change(txn)?;
         let (rec, nulls) = lfwrite::to_base(&lf_fmt, &log, &base_fmt, data, null_map, None)?;
+        let lvl = self.trg_level();
+        let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((&rec, &nulls)) };
+        let (rec, nulls) = self.trg.before(txn, &mut base, &row, lvl)?.unwrap_or((rec, nulls));
         crate::cst::enforce::before_write(txn, &base, &rec, &nulls)?;
         self.begin_change_on(txn, &mut base)?;
         let rrn = base.write_new(txn, &rec, &nulls)?;
         self.hold_new(base.id(), rrn);
+        self.fb.rrn = rrn;
+        let row = Row { event: Event::Insert, rrn, old: None, new: Some((&rec, &nulls)) };
+        self.trg.after(txn, &mut base, &row, lvl)?;
         Ok(rrn)
     }
 
@@ -510,9 +544,19 @@ impl Odp {
             null_map,
             Some((&old.record, &old.null_map)),
         )?;
+        let lvl = self.trg_level();
+        let row = Row {
+            event: Event::Update,
+            rrn,
+            old: Some((&old.record, &old.null_map)),
+            new: Some((&rec, &nulls)),
+        };
+        let (rec, nulls) = self.trg.before(txn, &mut base, &row, lvl)?.unwrap_or((rec, nulls));
         crate::cst::enforce::before_update(txn, &base, rrn, &rec, &nulls)?;
         self.begin_change_on(txn, &mut base)?;
-        base.update(txn, rrn, &rec, &nulls)
+        base.update(txn, rrn, &rec, &nulls)?;
+        let row = Row { event: Event::Update, rrn, old: Some((&old.record, &old.null_map)), new: Some((&rec, &nulls)) };
+        self.trg.after(txn, &mut base, &row, lvl)
     }
 
     /// `DELETE` through a logical file.
@@ -527,9 +571,95 @@ impl Odp {
             });
         }
         let mut base = self.member.open_base(txn, fi)?;
+        let old = Self::old_for(txn, &base, Event::Delete, rrn)?;
+        let lvl = self.trg_level();
+        let row = Row { event: Event::Delete, rrn, old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())), new: None };
+        self.trg.before(txn, &mut base, &row, lvl)?;
         self.begin_change_on(txn, &mut base)?;
         crate::cst::enforce::before_delete(txn, &mut base, rrn, self.cmt.as_ref())?;
-        base.delete(txn, rrn)
+        base.delete(txn, rrn)?;
+        self.trg.after(txn, &mut base, &row, lvl)
+    }
+
+    /// The record as it was, when `m` has triggers for `event`.
+    fn old_for(txn: &mut Txn<'_>, m: &Member, event: Event, rrn: u64) -> Result<Option<crate::member::Slot>> {
+        if m.trgs.as_ref().is_some_and(|a| a.any(event)) {
+            m.read(txn, rrn)
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// `WRITE` of a physical record: before triggers, constraints, the
+    /// record, after triggers.
+    fn write_physical(&mut self, txn: &mut Txn<'_>, data: &[u8], null_map: &[u8]) -> Result<u64> {
+        let lvl = self.trg_level();
+        let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((data, null_map)) };
+        let replaced = self.trg.before(txn, &mut self.member, &row, lvl)?;
+        let (data, null_map) = replaced.as_ref().map_or((data, null_map), |(d, n)| (d.as_slice(), n.as_slice()));
+        self.before_row(txn, RowEvent::Insert, None, Some((data, null_map)))?;
+        self.begin_change(txn)?;
+        let rrn = self.member.write_new(txn, data, null_map)?;
+        self.fb.rrn = rrn;
+        let member = self.member.id();
+        self.hold_new(member, rrn);
+        let row = Row { event: Event::Insert, rrn, old: None, new: Some((data, null_map)) };
+        self.trg.after(txn, &mut self.member, &row, lvl)?;
+        Ok(rrn)
+    }
+
+    /// `UPDATE` of a physical record.
+    fn update_physical(&mut self, txn: &mut Txn<'_>, rrn: u64, data: &[u8], null_map: &[u8]) -> Result<()> {
+        let old = Self::old_for(txn, &self.member, Event::Update, rrn)?;
+        let lvl = self.trg_level();
+        let row = Row {
+            event: Event::Update,
+            rrn,
+            old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())),
+            new: Some((data, null_map)),
+        };
+        let replaced = self.trg.before(txn, &mut self.member, &row, lvl)?;
+        let (data, null_map) = replaced.as_ref().map_or((data, null_map), |(d, n)| (d.as_slice(), n.as_slice()));
+        self.before_row(txn, RowEvent::Update, Some(rrn), Some((data, null_map)))?;
+        self.begin_change(txn)?;
+        self.member.update(txn, rrn, data, null_map)?;
+        let row = Row { new: Some((data, null_map)), ..row };
+        self.trg.after(txn, &mut self.member, &row, lvl)
+    }
+
+    /// `DELETE` of a physical record.
+    fn delete_physical(&mut self, txn: &mut Txn<'_>, rrn: u64) -> Result<()> {
+        let old = Self::old_for(txn, &self.member, Event::Delete, rrn)?;
+        let lvl = self.trg_level();
+        let row = Row { event: Event::Delete, rrn, old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())), new: None };
+        self.trg.before(txn, &mut self.member, &row, lvl)?;
+        self.begin_change(txn)?;
+        self.before_row(txn, RowEvent::Delete, Some(rrn), None)?;
+        self.member.delete(txn, rrn)?;
+        self.trg.after(txn, &mut self.member, &row, lvl)
+    }
+
+    /// Record a failure in the feedback, unless it is the before calls
+    /// due: the operation is not over.
+    fn failed(&mut self, e: DbError) -> DbError {
+        if !matches!(e, DbError::TriggersDue { .. }) {
+            self.fb.fail(&e);
+        }
+        e
+    }
+
+    /// Whether this path may read: one that cannot call trigger programs
+    /// may not read a file with read triggers, and a logical path may not
+    /// read over one (BLOCKED(sql): read triggers fire for physical paths
+    /// only so far).
+    fn may_read(&self) -> Result<()> {
+        if self.member.is_logical() {
+            if self.member.base_read_triggers {
+                return Err(DbError::TriggerNotCallable { file: self.member.file.name().to_string() });
+            }
+            return Ok(());
+        }
+        self.trg.may_read(&self.member)
     }
 
     /// After a change: the record lock goes to the commit definition, or
@@ -966,7 +1096,6 @@ impl Odp {
         found: Option<(PathKey, Record)>,
         lock: bool,
     ) -> Result<Option<Record>> {
-        let _ = txn;
         match found {
             None => {
                 self.fb.eof = true;
@@ -974,9 +1103,22 @@ impl Odp {
                 Ok(None)
             }
             Some((k, r)) => {
+                if let Err(e) = self.may_read() {
+                    self.fb.fail(&e);
+                    return Err(e);
+                }
                 if let Err(e) = self.take_lock(&k, lock) {
                     self.fb.fail(&e);
                     return Err(e);
+                }
+                if !self.member.is_logical() && self.member.trgs.is_some() {
+                    let lvl = self.trg_level();
+                    let row = Row { event: Event::Read, rrn: k.rrn, old: Some((&r.data, &r.null_map)), new: None };
+                    if let Err(e) = self.trg.after(txn, &mut self.member, &row, lvl) {
+                        self.unlock();
+                        self.fb.fail(&e);
+                        return Err(e);
+                    }
                 }
                 self.fb.rrn = k.rrn;
                 self.fb.key.clone_from(&k.key);
@@ -1236,35 +1378,12 @@ impl Odp {
         if self.opts.inhwrt {
             return Ok(0);
         }
-        if self.member.is_logical() {
-            return match self.write_logical(txn, data, null_map) {
-                Ok(rrn) => {
-                    self.fb.rrn = rrn;
-                    Ok(rrn)
-                }
-                Err(e) => {
-                    self.fb.fail(&e);
-                    Err(e)
-                }
-            };
-        }
-        if let Err(e) = self.before_row(txn, RowEvent::Insert, None, Some((data, null_map))) {
-            self.fb.fail(&e);
-            return Err(e);
-        }
-        self.begin_change(txn)?;
-        match self.member.write_new(txn, data, null_map) {
-            Ok(rrn) => {
-                self.fb.rrn = rrn;
-                let member = self.member.id();
-                self.hold_new(member, rrn);
-                Ok(rrn)
-            }
-            Err(e) => {
-                self.fb.fail(&e);
-                Err(e)
-            }
-        }
+        let r = if self.member.is_logical() {
+            self.write_logical(txn, data, null_map)
+        } else {
+            self.write_physical(txn, data, null_map)
+        };
+        r.map_err(|e| self.failed(e))
     }
 
     /// The record read for update, or the error RPG reports as 01221.
@@ -1292,13 +1411,15 @@ impl Odp {
         let result = if self.member.is_logical() {
             self.update_logical(txn, k.rrn, data, null_map)
         } else {
-            self.before_row(txn, RowEvent::Update, Some(k.rrn), Some((data, null_map)))
-                .and_then(|()| self.begin_change(txn))
-                .and_then(|()| self.member.update(txn, k.rrn, data, null_map))
+            self.update_physical(txn, k.rrn, data, null_map)
         };
+        // Before calls due: the record stays held for the resumed update.
+        if let Err(DbError::TriggersDue { .. }) = &result {
+            return result;
+        }
         self.keep_or_unlock();
         self.fb.rrn = k.rrn;
-        result.inspect_err(|e| self.fb.fail(e))
+        result.map_err(|e| self.failed(e))
     }
 
     /// `DELETE`: delete the record last read for update.
@@ -1314,13 +1435,14 @@ impl Odp {
         let result = if self.member.is_logical() {
             self.delete_logical(txn, k.rrn)
         } else {
-            self.begin_change(txn)
-                .and_then(|()| self.before_row(txn, RowEvent::Delete, Some(k.rrn), None))
-                .and_then(|()| self.member.delete(txn, k.rrn))
+            self.delete_physical(txn, k.rrn)
         };
+        if let Err(DbError::TriggersDue { .. }) = &result {
+            return result;
+        }
         self.keep_or_unlock();
         self.fb.rrn = k.rrn;
-        result.inspect_err(|e| self.fb.fail(e))
+        result.map_err(|e| self.failed(e))
     }
 
     /// `DELETE` with a key: `CHAIN` then delete.
