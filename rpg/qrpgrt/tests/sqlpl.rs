@@ -43,6 +43,9 @@ impl ObjectSource for StoreSource {
 
 struct Env {
     job: Box<mi::Job>,
+    store: Rc<RefCell<Store>>,
+    qsys: ObjectId,
+    lib: ObjectId,
 }
 
 fn env() -> Env {
@@ -80,10 +83,10 @@ fn env() -> Env {
     ctx.now = Some(NOW);
     ctx.current_schema = Some(Name::parse("QSTEST").unwrap());
     let session = Session::with_ctx(Box::new(Rc::clone(&store)), ctx);
-    let mut job = mi::Job::boxed(Box::new(StoreSource { store, lib }));
+    let mut job = mi::Job::boxed(Box::new(StoreSource { store: Rc::clone(&store), lib }));
     qrpgrt::install(&mut job);
     job.sql = Some(Box::new(session));
-    Env { job }
+    Env { job, store, qsys, lib }
 }
 
 impl Env {
@@ -332,4 +335,60 @@ fn sqlstate_and_sqlcode_variables() {
     let rows = e.rows("SELECT STEP, ST, CODE FROM QSTEST.XL ORDER BY STEP");
     let got: Vec<String> = rows.iter().map(|r| r.iter().map(text).collect::<Vec<_>>().join(",")).collect();
     assert_eq!(got, ["1,00000,0", "2,23505,-803", "3,02000,100"]);
+}
+
+impl Env {
+    /// A program made from IR text in QSTEST.
+    fn program(&mut self, name: &str, text: &str) {
+        let module = qir::parse(text).unwrap();
+        qir::verify(&module).unwrap();
+        let object = ile::ModuleObject::compile(module, ile::CreateData::default(), NOW).unwrap();
+        let mut st = self.store.borrow_mut();
+        let mut txn = st.begin().unwrap();
+        let c = ile::store::Ctx {
+            qsys: self.qsys,
+            names: NameContext { curlib: Some(self.lib), libl: vec![self.lib] },
+            now: NOW,
+            owner: "QSECOFR".into(),
+            system: "QS400".into(),
+        };
+        let n = Name::parse(name).unwrap();
+        let m = ile::store::crtmod(&mut txn, &c, self.lib, n, &object, "").unwrap();
+        let spec = ile::store::ObjSpec { lib: qsname::LibSpec::Name(Name::parse("QSTEST").unwrap()), name: n };
+        ile::store::crtpgm(&mut txn, &c, self.lib, &[spec], &[], ile::BindOptions::new(name, PgmKind::Pgm), "").unwrap();
+        store::obj::ops::delete(&mut txn, JobHandle(0), m).unwrap();
+        txn.commit().unwrap();
+    }
+}
+
+#[test]
+fn external_procedures_get_their_parameters() {
+    let mut e = env();
+    e.program(
+        "EXTP",
+        "module EXTP lang(QIR) ccsid(37) actgrp(*CALLER)
+proc EXTP($a: i32, $b: packed(7,2), $c: char(4)) entry {
+L0:
+  %v = load $a
+  %w = mul %v, 2
+  store $a, %w
+  dec.add $b, $b, 1 prec(8,2)
+  mov $c, \"done\"
+  ret
+}
+",
+    );
+    e.ok("CREATE PROCEDURE QSTEST.EXTP (INOUT A INTEGER, INOUT B DECIMAL(7, 2), OUT C CHAR(4)) LANGUAGE RPGLE EXTERNAL NAME QSTEST.EXTP PARAMETER STYLE GENERAL");
+    let (r, outs) = e.run_with("CALL QSTEST.EXTP(?, ?, ?)", vec![Value::int(21), Value::Num(qdecimal::Decimal::parse("1.50").unwrap()), Value::Null]);
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    assert_eq!(outs.iter().map(|(_, v)| text(v)).collect::<Vec<_>>(), ["42", "2.50", "done"]);
+    // No procedure of that name: the program itself, its arguments by
+    // their own types.
+    e.ok("DROP PROCEDURE QSTEST.EXTP");
+    let rows = e.rows("SELECT COUNT(*) FROM QSYS2.SYSROUTINES WHERE ROUTINE_NAME = 'EXTP'");
+    assert_eq!(text(&rows[0][0]), "0");
+    let r = e.run("CALL QSTEST.EXTP(1, 12345.67, 'abcd')");
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    let r = e.run("CREATE PROCEDURE QSTEST.NOPE (IN A INTEGER) LANGUAGE C EXTERNAL NAME QSTEST.NOPE");
+    assert_eq!(r.sqlca.sqlcode, -84, "{:?}", r.sqlca);
 }
