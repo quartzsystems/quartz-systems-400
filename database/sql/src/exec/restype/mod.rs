@@ -314,6 +314,7 @@ fn cast_functions(name: &str, args: &[Option<SqlType>], exprs: &[Expr]) -> Optio
         "REAL" => DataType::Real,
         "DECFLOAT" => DataType::DecFloat(if int_arg(1) == Some(16) { 16 } else { 34 }),
         "NORMALIZE_DECFLOAT" => DataType::DecFloat(df(first)),
+        "DECFLOAT_FORMAT" => DataType::DecFloat(34),
         "QUANTIZE" => {
             let second = args.get(1)?.as_ref()?;
             let n = if df(first) == 16 && df(second) == 16 { 16 } else { 34 };

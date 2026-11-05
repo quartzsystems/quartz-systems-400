@@ -575,3 +575,10 @@ sev = 30
 text = "A clause is not valid for the data type of &1."
 help = "FOR BIT DATA, CCSID or another option was given to a type that does not take it, for example FOR BIT DATA on a CLOB. Remove the clause."
 vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQ20477"
+sev = 30
+text = "The string &1 does not match the format &2."
+help = "DECFLOAT_FORMAT read a character the format model has no element for, such as a sign without S, MI or PR. Correct the string or the format."
+vars = ["*CHAR 128", "*CHAR 128"]

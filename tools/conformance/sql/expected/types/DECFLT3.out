@@ -1,0 +1,41 @@
+-- captured from pub400
+> SELECT CHAR(DECFLOAT_FORMAT('123.45')), CHAR(DECFLOAT_FORMAT('-1,234.50'
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(42) NOT NULL
+# 00002 CHAR(42) NOT NULL
+# 00003 CHAR(42) NOT NULL
+sqlcode -20477 sqlstate 22018 msgid SQ20477
+> SELECT CHAR(DECFLOAT_FORMAT('$1,234.50', '$9,999.99')), CHAR(DECFLOAT_FO
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(42) NOT NULL
+# 00002 CHAR(42) NOT NULL
+# 00003 CHAR(42) NOT NULL
+| '1234.50                                   ' | '-12                                       ' | '-12                                       ' |
+> SELECT DECFLOAT_FORMAT('abc') FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+warning 420 01565 SQL0420
+# 00001 DECFLOAT(34) NOT NULL
+| NULL |
+> SELECT JSON_OBJECT('d' VALUE DATE('2026-11-05')) FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"d":"2026-11-05"}' |
+> SELECT JSON_OBJECT('t' VALUE TIME('10:20:30'), 's' VALUE TIMESTAMP('2026
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| '{"t":"10.20.30","s":"2026-11-05-10.20.30.123456"}' |
+> SELECT JSON_OBJECT('x' VALUE BX'C1F0') FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+sqlcode -16402 sqlstate 22032 msgid SQ16402
+> CREATE TABLE {lib}.QSDF3 (C CLOB(100) INLINE LENGTH 50)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QSDF3 VALUES ('in line')
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT C FROM {lib}.QSDF3
+sqlcode 0 sqlstate 00000 msgid -
+# C CLOB(100)
+| 'in line' |
+> DROP TABLE {lib}.QSDF3
+sqlcode 0 sqlstate 00000 msgid -

@@ -280,3 +280,11 @@ impl Expr {
         Self::Literal(Literal::Str(s.into()))
     }
 }
+
+impl DataType {
+    /// Whether `BLOB`, `CLOB` or `DBCLOB`.
+    #[must_use]
+    pub fn is_lob_type(&self) -> bool {
+        matches!(self, Self::Blob(_) | Self::Clob(_) | Self::Dbclob(_))
+    }
+}

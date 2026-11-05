@@ -123,6 +123,10 @@ fn format(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
             body.pop();
         }
         body = body.replace([',', '$'], "");
+        // A sign the format has no element for (pub400: SQ20477).
+        if body.starts_with('-') && !f.contains('S') && !f.ends_with("MI") && !f.ends_with("PR") {
+            return Err(SqlError::Coded { code: -20477, state: "22018", what: format!("'{text}' does not match the format '{fmt}'") });
+        }
     }
     if let Some(r) = body.strip_prefix('-') {
         neg = !neg;

@@ -16,3 +16,4 @@ types/JSON1     # BOOLEAN shown as 1/0 by JTOpen, 01003 warnings, JSON_TABLE wai
 types/XML1      # XMLPARSE describes as XML on the primary (QS/400 has no XML type), errors at fetch, 01004 warnings, XMLELEMENT refused (SQL0084)
 types/BOOL1     # BOOLEAN shown as 1/0 by JTOpen, NOT on a null BOOLEAN column is true on pub400, 01003 warnings, catalog and function column types, SQL7905
 types/LOB1      # NCLOB/NVARCHAR type names, function result types (SQL-3), OCTET_LENGTH of a DBCLOB, SYSCOLUMNS column types, SQL7905
+types/DECFLT3   # errors at fetch, SQL7905

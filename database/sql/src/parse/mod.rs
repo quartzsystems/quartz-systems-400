@@ -479,6 +479,11 @@ impl Parser {
                     Some(u16::try_from(self.integer()?).map_err(|_| self.expected("a CCSID"))?);
             } else if self.eat_words(&["FOR", "BIT", "DATA"]) {
                 spec.bit_data = true;
+            } else if spec.data_type.is_lob_type() && self.eat_words(&["INLINE", "LENGTH"]) {
+                // A storage hint: QS/400 keeps a LOB of up to 24 bytes in its
+                // LobRef whatever the length asks (docs/DB_FORMAT.md); results
+                // are the same either way.
+                self.integer()?;
             } else if self.eat_words(&["FOR", "MIXED", "DATA"]) {
                 // The job's CCSID 37 has no mixed form (the primary: SQL0604).
                 return Err(crate::exec::cast::no_mixed());
