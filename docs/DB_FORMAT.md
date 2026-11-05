@@ -871,6 +871,66 @@ the statement's transaction.
 | 88 | 16 | block_end | the last value of the block of `cache` values IBM would hold now; `SYSSEQUENCES.MAXASSIGNEDVAL` |
 | 104 | 24 | reserved2 | 0 |
 
+### `SqlRoutine` (variable)
+
+The `ROUTINE` entry: a procedure's or function's attributes. A
+`*SQLINF` may hold several routines (external routines over one
+program); each `ROUTINE` entry is followed by its `PARM` entries and its
+`OPTIONS`. `strings` are the entry name, the specific name, the routine
+name, the source of a sourced function, the `CREATE` statement and the
+routine body, UTF-8, in that order and of the lengths given.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | routine_type | 1 procedure, 2 function |
+| 1 | 1 | language | 1 SQL, 2 RPGLE, 3 RPG, 4 CL, 5 C, 6 COBOL, 7 COBOLLE, 8 JAVA, 9 PLI |
+| 2 | 1 | style | 1 SQL, 2 GENERAL, 3 GENERAL WITH NULLS, 4 DB2GENERAL, 5 JAVA, 6 DB2SQL |
+| 3 | 1 | access | 1 NO SQL, 2 CONTAINS SQL, 3 READS SQL DATA, 4 MODIFIES SQL DATA |
+| 4 | 1 | body | 1 SQL, 2 external, 3 sourced |
+| 5 | 1 | function_type | 0 not a function, 1 scalar, 2 table |
+| 6 | 2 | flags | bit 0 deterministic, 1 commit on return, 2 program type sub, 3 returns null on null input, 4 no external action, 5 not fenced, 6 allow parallel, 7 final call, 8 dbinfo, 9 new savepoint level, 10 default special registers |
+| 8 | 2 | result_sets | `DYNAMIC RESULT SETS` |
+| 10 | 2 | parm_count | parameters among the `PARM` entries |
+| 12 | 4 | scratchpad | its length, 0 for none |
+| 16 | 8 | created | Unix seconds |
+| 24 | 10 | program_library | CP037; `*LIBL` for an unqualified external name |
+| 34 | 10 | program | CP037 |
+| 44 | 2 | entry_len | a service program's procedure |
+| 46 | 2 | specific_len | |
+| 48 | 2 | name_len | |
+| 50 | 2 | sourced_len | `SCHEMA.SPECIFIC` of a sourced function's source |
+| 52 | 4 | text_len | |
+| 56 | 4 | body_len | |
+| 60 | 4 | reserved | 0 |
+| 64 | variable | strings | |
+
+### `SqlParm` (variable)
+
+The `PARM` entry: one parameter, a table function's result column or a
+scalar function's result.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | ordinal | from 1 |
+| 2 | 1 | mode | 1 IN, 2 OUT, 3 INOUT |
+| 3 | 1 | role | 0 parameter, 1 result column, 2 result |
+| 4 | 2 | name_len | 0 for a parameter without a name |
+| 6 | 2 | type_len | |
+| 8 | variable | name | UTF-8 |
+| — | variable | type | the type as SQL writes it, UTF-8 (`DECIMAL(9, 2)`) |
+
+### `SqlOptions` (variable)
+
+The `OPTIONS` entry: the `SET OPTION` values, `count` pairs of a
+2-byte length and the option's name, a 2-byte length and its value as
+written, UTF-8.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | count | |
+| 2 | 2 | reserved | 0 |
+| 4 | variable | options | |
+
 ### 8.2 The SQL name index
 
 A B+tree in a library header's tree root slot 0, keyed by `SqlNameKey`

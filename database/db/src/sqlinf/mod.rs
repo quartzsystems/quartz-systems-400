@@ -11,6 +11,7 @@ pub mod body;
 pub mod entry;
 pub mod names;
 pub mod seq;
+pub mod routine;
 
 use store::obj::ops::{self, CreateParams};
 use store::obj::space::Space;
