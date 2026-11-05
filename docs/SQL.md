@@ -246,7 +246,25 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 
 | Item | Status | Oracle | Test |
 |---|---|---|---|
-| `QSYS2` services (views, table functions, procedures) | not present: SQL0204 | pub400 | |
+| `QSYS2` service shapes (column names, types, order) | captured from pub400 for every listed service; a test holds the code to the capture | pub400 | `sql::service_shapes` |
+| `LIBRARY_LIST_INFO`, `SYSTEM_VALUE_INFO` | supported | pub400 | `sql::services` |
+| `SYSTEM_STATUS_INFO` (and `_BASIC`) | partial: no partition, segment, address-rate or machine-type figures (null) | pub400 | `sql::services` |
+| `ACTIVE_JOB_INFO` | partial: SQL, lock-wait and client columns null | pub400 | `sql::services` |
+| `JOB_INFO` | partial: active jobs only | pub400 | `sql::services` |
+| `OBJECT_STATISTICS` | partial: journaling and source columns null | pub400 | `sql::services` |
+| `USER_INFO` (and `_BASIC`), `GROUP_PROFILE_ENTRIES` | supported; three columns IBM declares NOT NULL are null | pub400 | `sql::services` |
+| `OUTPUT_QUEUE_ENTRIES` (and `_BASIC`), `OUTPUT_QUEUE_INFO`, `SYSTOOLS.SPOOLED_FILE_DATA` | partial: no AFP or font columns | pub400 | `sql::services` |
+| `JOBLOG_INFO` | partial: no message tokens; the message key is the position in the log | pub400 | `sql::services` |
+| `HISTORY_LOG_INFO` | partial: `GENERATE_SYSLOG` and `EOF_DELAY` refused SQL0443 | pub400 | `sql::services` |
+| `NETSTAT_INFO`, `NETSTAT_JOB_INFO`, `NETSTAT_INTERFACE_INFO`, `NETSTAT_ROUTE_INFO` | partial: socket options and sequence counters null | pub400 | `sql::services` |
+| `SOFTWARE_PRODUCT_INFO`, `PTF_INFO`, `JOB_DESCRIPTION_INFO` | supported (no registration columns, no job switches) | pub400 | `sql::services` |
+| `IFS_OBJECT_STATISTICS`, `IFS_READ`, `IFS_READ_UTF8`, `IFS_READ_BINARY` | supported | pub400 | `sql::services` |
+| `IFS_WRITE`, `IFS_WRITE_UTF8`, `IFS_WRITE_BINARY`, procedure `QSYS2.QCMDEXC` | partial: built in the engine; SQL `CALL` of them comes with the routines work joining them | pub400 | `sql::services` |
+| Scalar `QSYS2.QCMDEXC` | partial: only commands that run in the storage service (CPF0006 for the others) | pub400 | `sql::services` |
+| `BASE64_ENCODE/DECODE`, `URL_ENCODE/DECODE` | supported, as pub400 answers | pub400 | `sql::services` |
+| `HTTP_GET/POST/PUT/PATCH/DELETE`, `_BLOB` and `_VERBOSE` forms | supported over `net/httpc` with TLS; a call holds the statement until it answers (at most 300 s) | none | `sql::services`, `httpc` |
+| Live-state services outside a query or execute (e.g. the service console's `sql` mode) | SQL0443: they read the system only on a statement's fiber | none | |
+| Other `QSYS2`/`SYSTOOLS` services (job queues, subsystems, pools, locks, privileges, journals, audit journal, limits, exit points, hardware, ...) | not present: SQL0204 | pub400 | |
 | `STRSQL` | partial (Phase 8) | pub400 | |
 | `RUNSQLSTM` | partial: `COMMIT`, `ERRLVL` | primary | |
 | `RUNSQL` | not present | primary | |
