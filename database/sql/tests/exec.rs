@@ -232,7 +232,8 @@ fn tables_inserts_and_selects() {
     );
     assert_eq!(
         db.rows("SELECT 1 + 2 * 3, 7 / 2, 'a' CONCAT 'b', -bal FROM cust WHERE cusno = 1"),
-        [row(&["7", "3.500000", "ab", "-10.50"])]
+        // An integer division is an integer, as on IBM i.
+        [row(&["7", "3", "ab", "-10.50"])]
     );
     // Parameters.
     let p = prepare(

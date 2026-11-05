@@ -458,6 +458,7 @@ impl Parser {
             "BLOB" => DataType::Blob(self.lob_length()?),
             "CLOB" => DataType::Clob(self.lob_length()?),
             "DBCLOB" => DataType::Dbclob(self.lob_length()?),
+            "NCHAR" | "NVARCHAR" | "NCLOB" | "NATIONAL" => return self.national_type(&w),
             "XML" | "DATALINK" | "ROWID" => return Err(Self::unsupported(&format!("data type {w}"))),
             _ => return Err(self.expected("a data type")),
         };

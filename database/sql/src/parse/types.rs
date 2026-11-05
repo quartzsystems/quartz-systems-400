@@ -32,3 +32,30 @@ impl Parser {
             .ok_or(SqlError::ColumnNotFound { name })
     }
 }
+
+impl Parser {
+    /// `NCHAR(n)`, `NVARCHAR(n)`, `NCHAR VARYING(n)`, `NCLOB(n)` and the
+    /// `NATIONAL CHARACTER` spellings: `GRAPHIC`, `VARGRAPHIC` and
+    /// `DBCLOB` in CCSID 1200, as IBM defines them. `w` is consumed.
+    pub(crate) fn national_type(&mut self, w: &str) -> Result<crate::ast::TypeSpec> {
+        use crate::ast::DataType;
+        let w = if w == "NATIONAL" {
+            if !(self.eat_word("CHARACTER") || self.eat_word("CHAR")) {
+                return Err(self.expected("CHARACTER after NATIONAL"));
+            }
+            "NCHAR"
+        } else {
+            w
+        };
+        let data_type = match w {
+            "NCLOB" => DataType::Dbclob(self.lob_length()?),
+            "NCHAR" if self.eat_words(&["LARGE", "OBJECT"]) => DataType::Dbclob(self.lob_length()?),
+            "NVARCHAR" => DataType::Vargraphic(self.length_args()?.ok_or_else(|| self.expected("a length"))?.0),
+            _ if self.eat_word("VARYING") => {
+                DataType::Vargraphic(self.length_args()?.ok_or_else(|| self.expected("a length"))?.0)
+            }
+            _ => DataType::Graphic(self.length_args()?.map_or(1, |(n, _)| n)),
+        };
+        Ok(crate::ast::TypeSpec { data_type, ccsid: Some(1200), bit_data: false })
+    }
+}

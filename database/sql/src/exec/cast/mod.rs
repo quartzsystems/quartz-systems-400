@@ -150,7 +150,9 @@ pub fn to_decfloat(v: &Value, format: DfFormat, mode: DfRounding) -> Result<DecF
         Value::Double(x) => DecFloat::from_f64_exact(*x, format, mode).map_err(decfloat_error),
         Value::Real(x) => DecFloat::from_f32_exact(*x, format, mode).map_err(decfloat_error),
         Value::Str(s) => {
-            DecFloat::parse_in(s.trim_matches(' '), format, mode).map_err(|_| bad_chars(s)).and_then(|d| {
+            DecFloat::parse_in(s.trim_matches(' '), format, mode)
+                .map_err(|e| if matches!(e, qdecimal::DecimalError::Parse { .. }) { bad_chars(s) } else { decfloat_error(e) })
+                .and_then(|d| {
                 if d.is_finite() || !s.contains(' ') { Ok(d) } else { Err(bad_chars(s)) }
             })
         }
@@ -300,7 +302,7 @@ pub fn cast(v: &Value, t: &TypeSpec, mode: DfRounding) -> Result<Value> {
         DataType::Date => match v {
             Value::Date(d) => Value::Date(*d),
             Value::Timestamp(ts) => Value::Date(ts.date),
-            Value::Str(s) => Value::Date(crate::value::parse_date(s.trim()).ok_or_else(|| bad_datetime(s, "date"))?),
+            Value::Str(s) => Value::Date(cast_date(s).ok_or_else(|| bad_datetime(s, "date"))?),
             v => return Err(not_castable(v, dt)),
         },
         DataType::Time => match v {
@@ -350,4 +352,17 @@ impl crate::exec::SqlContext {
         self.decfloat_rounding = mode;
         crate::exec::Outcome::Done
     }
+}
+
+/// A date from text as a `CAST` reads it: ISO, USA, EUR or JIS.
+fn cast_date(s: &str) -> Option<db::record::datetime::Date> {
+    use dds::DateFmt;
+    let t = s.trim();
+    // A date has separators: `20261105` is not one.
+    if !t.contains(['-', '/', '.']) {
+        return None;
+    }
+    [DateFmt::Iso, DateFmt::Usa, DateFmt::Eur, DateFmt::Jis]
+        .iter()
+        .find_map(|f| db::record::datetime::Date::parse(t, *f))
 }

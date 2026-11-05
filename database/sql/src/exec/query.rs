@@ -246,6 +246,7 @@ fn body(
             let mut ev = Evaluator { ctx, params };
             let mut out = Vec::new();
             let width = rows.first().map_or(0, Vec::len);
+            let types = super::restype::values_types(rows, width)?;
             for r in rows {
                 if r.len() != width {
                     return Err(SqlError::ValueCount {
@@ -253,8 +254,12 @@ fn body(
                     });
                 }
                 let mut row = Vec::with_capacity(r.len());
-                for e in r {
-                    let v = ev.eval(txn, e, outer);
+                for (e, fit) in r.iter().zip(&types) {
+                    let mode = ev.ctx.decfloat_rounding;
+                    let v = ev.eval(txn, e, outer).and_then(|v| match fit {
+                        Some(t) => super::restype::conform(v, t, mode),
+                        None => Ok(v),
+                    });
                     row.push(super::cast::mapped(ev.ctx, v)?);
                 }
                 out.push(row);
@@ -264,8 +269,8 @@ fn body(
                     .map(|i| ColInfo {
                         name: format!("{:05}", i + 1),
                         table: None,
-                        field: None,
-                        nullable: true,
+                        field: types[i].as_ref().map(super::restype::field_of),
+                        nullable: types[i].as_ref().is_none_or(|t| t.nullable),
                         hidden: false,
                     })
                     .collect(),
@@ -307,9 +312,19 @@ fn body(
             left_rows = strip(&ls, left_rows);
             let mut all_rows = left_rows;
             all_rows.extend(strip(&rs, right_rows));
-            let schema = Rc::new(Schema {
-                cols: ls.cols.iter().filter(|c| !c.hidden).cloned().collect(),
-            });
+            let mut cols: Vec<ColInfo> = ls.cols.iter().filter(|c| !c.hidden).cloned().collect();
+            // Both sides' values in the type they have in common.
+            let right_cols: Vec<&ColInfo> = rs.cols.iter().filter(|c| !c.hidden).collect();
+            let fits = super::restype::union_types(&mut cols, &right_cols);
+            for p in &mut all_rows {
+                for (v, fit) in p.out.iter_mut().zip(&fits) {
+                    if let Some(t) = fit {
+                        let r = super::restype::conform(std::mem::replace(v, Value::Null), t, ctx.decfloat_rounding);
+                        *v = super::cast::mapped(ctx, r)?;
+                    }
+                }
+            }
+            let schema = Rc::new(Schema { cols });
             let mut charge = ctx.charge();
             for p in &all_rows {
                 charge.row(&p.out)?;
@@ -1281,6 +1296,8 @@ fn select(
     // The select list.
     let mut out_cols: Vec<ColInfo> = Vec::new();
     let mut plan: Vec<(Expr, usize)> = Vec::new();
+    // The result types computed columns are fitted to.
+    let mut fits: Vec<Option<super::restype::SqlType>> = Vec::new();
     let mut n = 0;
     for item in &sel.items {
         match item {
@@ -1293,6 +1310,7 @@ fn select(
                             ..c.clone()
                         });
                         plan.push((column_at(&schema, i), i));
+                        fits.push(None);
                     }
                 }
             }
@@ -1307,6 +1325,7 @@ fn select(
                             ..c.clone()
                         });
                         plan.push((column_at(&schema, i), i));
+                        fits.push(None);
                     }
                 }
                 if !any {
@@ -1317,6 +1336,7 @@ fn select(
             }
             SelectItem::Expr(e, alias) => {
                 n += 1;
+                let ty = if matches!(e, Expr::Column(_)) { None } else { super::restype::type_of(e, &schema)? };
                 let field = match e {
                     Expr::Column(c) => {
                         let table = c.table.as_ref().map(|t| t.value.as_str());
@@ -1324,7 +1344,7 @@ fn select(
                             .find(table, &c.column.value)?
                             .and_then(|i| schema.cols[i].field.clone())
                     }
-                    _ => None,
+                    _ => ty.as_ref().map(super::restype::field_of),
                 };
                 out_cols.push(ColInfo {
                     name: item_name(e, alias.as_ref(), n),
@@ -1334,6 +1354,7 @@ fn select(
                     hidden: false,
                 });
                 plan.push((e.clone(), usize::MAX));
+                fits.push(ty);
             }
         }
     }
@@ -1342,9 +1363,13 @@ fn select(
     for env in envs {
         ev.ctx.tick(txn)?;
         let mut row = Vec::with_capacity(plan.len());
-        for (e, direct) in &plan {
+        for ((e, direct), fit) in plan.iter().zip(&fits) {
             if *direct == usize::MAX {
-                let v = ev.eval(txn, e, &env);
+                let mode = ev.ctx.decfloat_rounding;
+                let v = ev.eval(txn, e, &env).and_then(|v| match fit {
+                    Some(t) => super::restype::conform(v, t, mode),
+                    None => Ok(v),
+                });
                 row.push(super::cast::mapped(ev.ctx, v)?);
             } else {
                 row.push(env.frames.last().expect("row").1[*direct].clone());

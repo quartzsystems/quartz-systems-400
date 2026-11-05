@@ -62,6 +62,7 @@ pub fn char_text(v: &Value) -> String {
         Value::Double(x) => float_char(*x),
         Value::Real(x) => float_char(f64::from(*x)),
         Value::DecFloat(d) => decfloat_char(d),
+        Value::Timestamp(t) => t.render_field(),
         v => v.as_text(),
     }
 }

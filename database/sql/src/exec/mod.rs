@@ -25,6 +25,7 @@ pub mod opnqryf;
 pub mod query;
 pub mod rename;
 pub mod schema;
+pub mod restype;
 mod sort;
 pub mod spill;
 pub mod table;

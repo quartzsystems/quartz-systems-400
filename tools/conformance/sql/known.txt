@@ -8,3 +8,7 @@ ddl/VIEWQRY   # SUM and COUNT described as VARCHAR: expression result types
 ddl/INDEXEXT   # SEARCH_CONDITION is NCLOB at IBM, CHAR here (no LOB catalog columns)
 ddl/DGTT   # DECLARE GLOBAL TEMPORARY TABLE refused: QTEMP is in the temporary ASP
 ddl/GRANT   # the kit store has no QUSER/QSYSOPR/QPGMR profiles (SQL0204); USAGE ON SCHEMA refused SQL0084 where 7.1 says SQL0104
+types/CASTSTR   # errors the primary raises at fetch (SQL0433), 01004 truncation warnings, HEX of CCSID-tagged strings, NCHAR and FOR BIT DATA type names, a hex constant into VARBINARY (SQL0301), SQL7905
+types/DECFLT1   # DECFLOAT values quoted in the oracle capture, DECFLOAT_FORMAT absent on 7.1 (SQL0204), SYSCOLUMNS column types, SQL7905
+types/DECFLT2   # errors at fetch, HEX of CCSID-tagged strings, FOR SBCS/MIXED DATA in CAST (SQL0604), DECFLOAT values quoted, CAST('abc' AS INTEGER) in WHERE (SQL0802 22023)
+types/FLOATFMT  # errors at fetch (SQL0433); the primary makes CHAR(4.9E-324) a CHAR(42)

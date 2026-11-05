@@ -218,8 +218,12 @@ impl Value {
                     }
                     return Ok(db::record::Value::Char(units.iter().take(max).flat_map(|u| u.to_be_bytes()).collect()));
                 }
-                if s.chars().count() > max && s.trim_end().chars().count() > max {
-                    return Err(too_long(f, s.chars().count()));
+                if s.chars().count() > max {
+                    // Trailing blanks past the length are dropped.
+                    if s.trim_end().chars().count() > max {
+                        return Err(too_long(f, s.chars().count()));
+                    }
+                    return text(s.trim_end());
                 }
                 text(&s)
             }
