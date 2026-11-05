@@ -37,6 +37,7 @@ pub mod opnqryf;
 mod olap;
 pub mod query;
 pub mod rename;
+pub mod routine;
 pub mod schema;
 pub mod registers;
 pub mod restype;
@@ -197,6 +198,9 @@ pub struct SqlContext {
     pub(crate) skip_locked: bool,
     /// Special registers and built-in global variables.
     pub registers: registers::Registers,
+    /// Routines: whether the requester runs the calls `CALL` plans,
+    /// and the plan the last one left.
+    pub routine: routine::State,
 }
 
 /// See [`SqlContext::yielder`].
@@ -296,6 +300,7 @@ impl SqlContext {
             captured: None,
             skip_locked: false,
             registers: registers::Registers::default(),
+            routine: routine::State::default(),
         }
     }
 
@@ -1011,6 +1016,11 @@ impl Prepared {
                 ctx.registers.set(name, &v)?;
                 Ok(Outcome::Done)
             }
+            st @ (Statement::CreateRoutine(_)
+            | Statement::Call(_)
+            | Statement::DropRoutine(_)
+            | Statement::Signal(_)
+            | Statement::SetResultSets(_)) => routine::run(txn, ctx, st, params),
         }
     }
 }
@@ -1088,6 +1098,12 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::Revoke(_) => "REVOKE",
         Statement::Truncate(_) => "TRUNCATE",
         Statement::SetRegister { .. } => "SET",
+        Statement::CreateRoutine(r) if r.kind == crate::ast::RoutineKind::Procedure => "CREATE PROCEDURE",
+        Statement::CreateRoutine(_) => "CREATE FUNCTION",
+        Statement::Call(_) => "CALL",
+        Statement::DropRoutine(_) => "DROP ROUTINE",
+        Statement::Signal(_) => "SIGNAL",
+        Statement::SetResultSets(_) => "SET RESULT SETS",
     }
 }
 

@@ -18,8 +18,10 @@ mod cte;
 mod olap;
 
 pub use olap::GROUPING_SETS;
-mod query;
 mod json;
+mod pl;
+mod query;
+mod routine;
 mod types;
 
 use crate::ast::{
@@ -657,7 +659,9 @@ impl Parser {
             }
             "GRANT" => self.grant(false),
             "REVOKE" => self.grant(true),
-            "CALL" | "LOCK" | "PREPARE" | "EXECUTE" | "DESCRIBE"
+            "CALL" => self.call_stmt(),
+            "SIGNAL" | "RESIGNAL" => Ok(Statement::Signal(self.signal()?)),
+            "LOCK" | "PREPARE" | "EXECUTE" | "DESCRIBE"
             | "CONNECT" | "DISCONNECT" | "RELEASE" | "SAVEPOINT" | "REFRESH" => {
                 Err(Self::unsupported(&format!("{w} statement")))
             }
@@ -770,6 +774,9 @@ impl Parser {
 
     fn set(&mut self) -> Result<Statement> {
         self.expect_word("SET")?;
+        if self.is_words(&["RESULT", "SETS"]) {
+            return self.set_result_sets();
+        }
         if self.eat_word("SCHEMA")
             || self.eat_words(&["CURRENT", "SCHEMA"])
             || self.eat_words(&["CURRENT_SCHEMA"])

@@ -36,6 +36,8 @@ struct Out {
 #[derive(Default)]
 struct Pending {
     inputs: Vec<Value>,
+    /// Where each input came from, for a `CALL`'s outputs.
+    in_vars: Vec<Out>,
     outs: Vec<Out>,
     /// The SQLDA a `DESCRIBE` or `PREPARE INTO` fills.
     da: Option<u64>,
@@ -114,7 +116,12 @@ pub extern "sysv64" fn sql_in(_env: *mut Env, _argc: i64, _od: i64, var: i64, de
     } else {
         read_value(var.cast_unsigned(), &d, extra)
     };
-    PENDING.with(|p| p.borrow_mut().inputs.push(v));
+    let o = Out { addr: var.cast_unsigned(), desc: d, extra, ind: (has != 0).then_some(ind.cast_unsigned()), stride: 0 };
+    PENDING.with(|p| {
+        let mut p = p.borrow_mut();
+        p.inputs.push(v);
+        p.in_vars.push(o);
+    });
 }
 
 /// `_QRNX_SQLOUT(var, desc, extra, ind, has_ind, stride)`: an output
@@ -186,7 +193,11 @@ pub extern "sysv64" fn sql_da(env: *mut Env, _argc: i64, _od: i64, da: i64, mode
         let ind = if ty & 1 == 1 { da_ptr(job, at + 32) } else { None };
         if mode == 1 {
             let v = if ind.is_some_and(|i| read_ind(i) < 0) { Value::Null } else { read_value(data, &desc, 0) };
-            PENDING.with(|p| p.borrow_mut().inputs.push(v));
+            PENDING.with(|p| {
+                let mut p = p.borrow_mut();
+                p.inputs.push(v);
+                p.in_vars.push(Out { addr: data, desc, extra: 0, ind, stride: 0 });
+            });
         } else {
             let o = Out {
                 addr: data,
@@ -453,10 +464,12 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
     let pending = PENDING.with(|p| std::mem::take(&mut *p.borrow_mut()));
     let desc_text = text_of(text.cast_unsigned(), usize::try_from(tlen).unwrap_or(0));
     let scope = text_of(scope.cast_unsigned(), usize::try_from(slen).unwrap_or(0)).trim().to_string();
-    let Some(desc) = SqlDesc::decode(&desc_text) else {
+    let Some(mut desc) = SqlDesc::decode(&desc_text) else {
         write_sqlca(ca.cast_unsigned(), &Sqlca::from_error(&sql::SqlError::Unsupported { what: "statement".into() }));
         return;
     };
+    // This runtime makes the calls a CALL plans.
+    desc.calls = true;
     let job = mi::storage::job_of(env);
     // A module's statements belong to it in its activation group.
     let end = desc.op == sql::embed::Op::End;
@@ -473,7 +486,12 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
                 msgid: None,
             }),
             rows: Vec::new(),
+            call: None,
         },
+    };
+    let reply = match reply.call.clone() {
+        Some(plan) => call(job, &req.scope, &plan, &pending.in_vars),
+        None => reply,
     };
     // The end of a module's statements leaves its SQLCA alone.
     if end {
@@ -501,4 +519,73 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
         sqlca.sqlwarn[0] = 'W';
     }
     write_sqlca(ca.cast_unsigned(), &sqlca);
+}
+
+/// A `CALL`'s plan carried out: the call, its outputs into the
+/// statement's variables, then the database told.
+fn call(job: &mut mi::Job, scope: &str, plan: &sql::exec::routine::CallPlan, vars: &[Out]) -> sql::embed::Reply {
+    let out = crate::sqlcall::perform(job, plan);
+    let mut ca = Sqlca::default();
+    for (m, v) in &out.outs {
+        if let Some(o) = vars.get(*m) {
+            assign(std::slice::from_ref(o), std::slice::from_ref(v), 0, &mut ca);
+        }
+    }
+    let mut called = out.called;
+    if ca.is_error() && called.sqlcode >= 0 {
+        called.sqlcode = ca.sqlcode;
+        called.sqlstate.clone_from(&ca.sqlstate);
+    }
+    let req = Request {
+        scope: scope.to_string(),
+        desc: SqlDesc { op: sql::embed::Op::Called, ..SqlDesc::default() },
+        inputs: called.inputs(),
+    };
+    let ok = called.sqlcode >= 0;
+    let Some(s) = job.sql.as_mut() else { return sql::embed::Reply::default() };
+    let r = s.run(&req);
+    if ok && plan.commit_on_return {
+        let commit = Request { scope: scope.to_string(), desc: SqlDesc { op: sql::embed::Op::Exec, text: "COMMIT".into(), ..SqlDesc::default() }, inputs: Vec::new() };
+        let c = s.run(&commit);
+        if c.sqlca.is_error() && c.sqlca.sqlcode != -7007 {
+            return c;
+        }
+    }
+    r
+}
+
+/// The bytes a value takes in storage of `d`, for a call's argument.
+pub(crate) fn value_image(v: &Value, d: &Desc, extra: i64) -> Result<Vec<u8>, (i32, &'static str)> {
+    image(v, d, extra).map(|(b, _)| b)
+}
+
+/// The bytes of an empty value of `d`.
+pub(crate) fn empty_image(d: &Desc, extra: i64) -> Vec<u8> {
+    empty(d, extra)
+}
+
+/// The value in storage of `d`.
+pub(crate) fn value_of(b: &[u8], d: &Desc, extra: i64) -> Value {
+    read_value(b.as_ptr() as u64, d, extra)
+}
+
+/// An SQLCA into a buffer.
+pub(crate) fn write_sqlca_at(b: &mut [u8], ca: &Sqlca) {
+    write_sqlca(b.as_mut_ptr() as u64, ca);
+}
+
+/// An SQLCA from a buffer in IBM's layout.
+pub(crate) fn read_sqlca_at(b: &[u8]) -> Sqlca {
+    let be = |at: usize| i32::from_be_bytes([b[at], b[at + 1], b[at + 2], b[at + 3]]);
+    let ml = usize::from(u16::from_be_bytes([b[16], b[17]])).min(70);
+    let mut ca = Sqlca {
+        sqlcode: be(12),
+        sqlstate: ccsid::from_ebcdic(&b[131..136]),
+        sqlerrmc: ccsid::from_ebcdic(&b[18..18 + ml]).trim_end().to_string(),
+        ..Sqlca::default()
+    };
+    for i in 0..6 {
+        ca.sqlerrd[i] = be(96 + i * 4);
+    }
+    ca
 }

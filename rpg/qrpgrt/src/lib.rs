@@ -26,6 +26,7 @@ pub mod shipped;
 pub mod natives;
 pub mod ops;
 pub mod sql;
+pub mod sqlcall;
 pub mod strops;
 pub mod value;
 pub mod xml;

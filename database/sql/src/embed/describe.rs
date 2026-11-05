@@ -531,5 +531,5 @@ pub fn reply(txn: &mut Txn<'_>, ctx: &mut SqlContext, text: &str, naming: Naming
             ]
         })
         .collect();
-    Reply { sqlca: code(0, "00000"), rows }
+    Reply { sqlca: code(0, "00000"), rows, call: None }
 }

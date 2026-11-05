@@ -11,7 +11,7 @@ use crate::error::Result;
 impl Parser {
     /// The byte offset of token `i` in the statement text (the end for
     /// the end token).
-    fn offset_of(&self, i: usize) -> usize {
+    pub(crate) fn offset_of(&self, i: usize) -> usize {
         let Some(t) = self.toks.get(i).filter(|t| !matches!(t.tok, crate::lex::Tok::End)) else {
             return self.src.len();
         };

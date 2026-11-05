@@ -2453,6 +2453,7 @@ dependencies = [
 name = "qrpgrt"
 version = "0.1.0"
 dependencies = [
+ "blockdev",
  "ccsid",
  "codegen",
  "db",
@@ -2461,7 +2462,9 @@ dependencies = [
  "mi",
  "qdecimal",
  "qir",
+ "qsname",
  "sql",
+ "store",
 ]
 
 [[package]]
@@ -3398,8 +3401,10 @@ dependencies = [
  "ccsid",
  "db",
  "dds",
+ "ile",
  "jrn",
  "qdecimal",
+ "qir",
  "qsname",
  "regex",
  "sec",

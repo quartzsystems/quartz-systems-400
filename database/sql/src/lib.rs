@@ -15,6 +15,7 @@ pub mod embed;
 pub mod exec;
 pub mod lex;
 pub mod parse;
+pub mod pl;
 pub mod rla;
 pub mod run;
 pub mod sqlca;

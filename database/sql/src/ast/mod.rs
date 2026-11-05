@@ -9,12 +9,14 @@ pub mod ddl;
 pub mod expr;
 pub mod grant;
 pub mod query;
+pub mod routine;
 pub mod visit;
 
 pub use ddl::*;
 pub use expr::*;
 pub use grant::*;
 pub use query::*;
+pub use routine::*;
 
 use std::fmt;
 
@@ -245,6 +247,16 @@ pub enum Statement {
         /// The value.
         value: Expr,
     },
+    /// `CREATE PROCEDURE`, `CREATE FUNCTION`.
+    CreateRoutine(Box<CreateRoutine>),
+    /// `CALL`.
+    Call(Call),
+    /// `DROP PROCEDURE`, `DROP FUNCTION`, `DROP SPECIFIC ...`.
+    DropRoutine(DropRoutine),
+    /// `SIGNAL` (inside a routine, as its program runs it).
+    Signal(Signal),
+    /// `SET RESULT SETS CURSOR c, ...` (no names: `NONE`).
+    SetResultSets(Vec<Ident>),
 }
 
 /// `TRUNCATE`.

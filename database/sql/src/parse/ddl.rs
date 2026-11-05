@@ -14,8 +14,12 @@ use crate::lex::Tok;
 
 impl Parser {
     pub(crate) fn create(&mut self) -> Result<Statement> {
+        let start = self.mark();
         self.expect_word("CREATE")?;
         let replace = self.eat_words(&["OR", "REPLACE"]);
+        if self.is_word("PROCEDURE") || self.is_word("FUNCTION") {
+            return self.create_routine(replace, start);
+        }
         if self.eat_word("TABLE") {
             return self.create_table(replace);
         }
@@ -336,6 +340,9 @@ impl Parser {
 
     pub(crate) fn drop(&mut self) -> Result<Statement> {
         self.expect_word("DROP")?;
+        if self.is_word("PROCEDURE") || self.is_word("FUNCTION") || self.is_word("SPECIFIC") || self.is_word("ROUTINE") {
+            return self.drop_routine();
+        }
         let Tok::Word(kind) = self.tok().clone() else {
             return Err(self.expected("TABLE, INDEX, VIEW, ALIAS or SCHEMA"));
         };

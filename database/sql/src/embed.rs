@@ -62,6 +62,10 @@ pub enum Op {
     /// The prepared statement `name` goes from the scope, as a CLI
     /// statement handle is freed; its open cursors stay.
     Deallocate,
+    /// The procedure the last `CALL` planned has returned: the inputs
+    /// are its outcome ([`crate::exec::routine::Called`]); its result
+    /// sets go to the caller.
+    Called,
 }
 
 impl Op {
@@ -80,6 +84,7 @@ impl Op {
             Self::End => 'Z',
             Self::Nothing => 'N',
             Self::Deallocate => 'R',
+            Self::Called => 'K',
         }
     }
 
@@ -98,6 +103,7 @@ impl Op {
             'Z' => Self::End,
             'N' => Self::Nothing,
             'R' => Self::Deallocate,
+            'K' => Self::Called,
             _ => return None,
         })
     }
@@ -129,6 +135,15 @@ pub struct Desc {
     /// The commitment control the program was precompiled with
     /// (`COMMIT(*CHG|*CS|*ALL|*RR)`); `None` for `*NONE`.
     pub commit: Option<LckLvl>,
+    /// `OPEN` of a cursor declared `WITH RETURN`: its result set goes
+    /// to the procedure's caller, or its client.
+    pub returns: Option<crate::ast::ReturnTo>,
+    /// A routine's own evaluation (an `IF` condition, a `SET`): it
+    /// leaves the diagnostics of the last statement alone.
+    pub quiet: bool,
+    /// The requester performs the calls a `CALL` plans
+    /// ([`crate::exec::routine::CallPlan`]); without it `CALL` is refused.
+    pub calls: bool,
     /// The statement text (the cursor's query for `OPEN`).
     pub text: String,
 }
@@ -152,7 +167,19 @@ impl Desc {
     pub fn encode(&self) -> String {
         let mut flags = String::new();
         flags.push(self.op.letter());
-        for (on, c) in [(self.hold, 'H'), (self.scroll, 'S'), (self.rows, 'R'), (self.sql_naming, 'N'), (self.into, 'D')] {
+        let to_caller = self.returns == Some(crate::ast::ReturnTo::Caller);
+        let to_client = self.returns == Some(crate::ast::ReturnTo::Client);
+        for (on, c) in [
+            (self.hold, 'H'),
+            (self.scroll, 'S'),
+            (self.rows, 'R'),
+            (self.sql_naming, 'N'),
+            (self.into, 'D'),
+            (to_caller, 'W'),
+            (to_client, 'U'),
+            (self.quiet, 'V'),
+            (self.calls, 'L'),
+        ] {
             if on {
                 flags.push(c);
             }
@@ -185,6 +212,15 @@ impl Desc {
             rows: rest.contains('R'),
             sql_naming: rest.contains('N'),
             into: rest.contains('D'),
+            returns: if rest.contains('W') {
+                Some(crate::ast::ReturnTo::Caller)
+            } else if rest.contains('U') {
+                Some(crate::ast::ReturnTo::Client)
+            } else {
+                None
+            },
+            quiet: rest.contains('V'),
+            calls: rest.contains('L'),
             commit: if rest.contains('G') {
                 Some(LckLvl::Chg)
             } else if rest.contains('T') {
@@ -223,11 +259,14 @@ pub struct Reply {
     pub sqlca: Sqlca,
     /// The rows for the output host variables.
     pub rows: Vec<Vec<Value>>,
+    /// For `CALL`: the call the requester is to make, then report with
+    /// [`Op::Called`].
+    pub call: Option<Box<crate::exec::routine::CallPlan>>,
 }
 
 impl Reply {
     fn of(sqlca: Sqlca) -> Self {
-        Self { sqlca, rows: Vec::new() }
+        Self { sqlca, rows: Vec::new(), call: None }
     }
 }
 
@@ -238,8 +277,9 @@ impl Reply {
 pub type WireValue = (u8, String);
 
 /// A reply between processes: SQLCODE, SQLSTATE, SQLERRD, SQLWARN,
-/// SQLERRMC and the rows.
-pub type WireReply = (i32, String, Vec<i32>, String, String, Vec<Vec<WireValue>>);
+/// SQLERRMC, and the rows with the call plan (`CallPlan::encode`, empty
+/// for none).
+pub type WireReply = (i32, String, Vec<i32>, String, String, (Vec<Vec<WireValue>>, String));
 
 /// A value as it crosses to another process.
 #[must_use]
@@ -295,14 +335,17 @@ impl Reply {
             c.sqlerrd.to_vec(),
             c.sqlwarn.iter().collect(),
             c.sqlerrmc.clone(),
-            self.rows.iter().map(|r| r.iter().map(to_wire).collect()).collect(),
+            (
+                self.rows.iter().map(|r| r.iter().map(to_wire).collect()).collect(),
+                self.call.as_ref().map_or_else(String::new, |p| p.encode()),
+            ),
         )
     }
 
     /// A reply from another process.
     #[must_use]
     pub fn from_wire(w: &WireReply) -> Self {
-        let (code, state, errd, warn, errmc, rows) = w;
+        let (code, state, errd, warn, errmc, (rows, plan)) = w;
         let mut sqlca = Sqlca {
             sqlcode: *code,
             sqlstate: state.clone(),
@@ -318,6 +361,7 @@ impl Reply {
         Self {
             sqlca,
             rows: rows.iter().map(|r| r.iter().map(from_wire).collect()).collect(),
+            call: crate::exec::routine::CallPlan::decode(plan).map(Box::new),
         }
     }
 }
@@ -520,6 +564,7 @@ impl Session {
             Op::Nothing => Reply::default(),
             Op::End => self.end(&req.scope),
             Op::Deallocate => self.deallocate(&req.scope, &d.name),
+            Op::Called => self.called(req),
             Op::Diag => self.diagnostics(&d.text),
             Op::Describe => self.describe(req),
             Op::Query => self.with_txn(&req.scope, |txn, ctx, _| {
@@ -533,10 +578,12 @@ impl Session {
                         1 => Reply {
                             sqlca: Sqlca::rows(1),
                             rows: rs.rows,
+                            call: None,
                         },
                         _ => Reply {
                             sqlca: code(-811, "21000"),
                             rows: rs.rows.into_iter().take(1).collect(),
+                            call: None,
                         },
                     },
                     Ok(o) => Reply::of(Sqlca::from_outcome(&o)),
@@ -612,6 +659,9 @@ impl Session {
                     return r;
                 }
                 let r = exec_text(txn, ctx, &format!("OPEN {}", d.name), naming, &req.inputs);
+                if let Some(c) = ctx.cursors.get_mut(&d.name) {
+                    c.returns = d.returns;
+                }
                 if r.sqlca.sqlcode == 100 { Reply::default() } else { r }
             }),
             Op::Fetch => self.with_txn(&req.scope, |txn, ctx, _| fetch(txn, ctx, d, &req.inputs)),
@@ -647,6 +697,73 @@ impl Session {
         Reply::default()
     }
 
+    /// A procedure returned ([`Op::Called`]): the cursors it left open
+    /// `WITH RETURN` become the caller's result sets, `RS#1` on, in the
+    /// order they were opened (a nested call leaves those `TO CLIENT`
+    /// for the outermost); an SQL procedure's other cursors close. The
+    /// reply is the `CALL`'s outcome: the procedure's error or warning,
+    /// else `SQL0466` with the sets, one row each (its name, the
+    /// procedure's cursor, its column count); `SQLERRD(1)` is the
+    /// return status.
+    fn called(&mut self, req: &Request) -> Reply {
+        let Some(c) = crate::exec::routine::Called::from_inputs(&req.inputs) else {
+            return Reply::of(code(-84, "42612"));
+        };
+        let mut sets: Vec<(String, Cursor)> = Vec::new();
+        for sc in self.scopes.values_mut() {
+            let names: Vec<String> = sc
+                .cursors
+                .iter()
+                .filter(|(_, k)| k.open && k.returns.is_some() && k.seq > c.seq)
+                .filter(|(_, k)| !(c.nested && k.returns == Some(crate::ast::ReturnTo::Client)))
+                .map(|(n, _)| n.clone())
+                .collect();
+            for n in names {
+                let Some(mut k) = sc.cursors.remove(&n) else { continue };
+                if c.sqlcode < 0 {
+                    // A failed procedure returns no result sets.
+                    continue;
+                }
+                k.returns = None;
+                sets.push((n, k));
+            }
+        }
+        if !c.scope.is_empty()
+            && let Some(sc) = self.scopes.get_mut(&c.scope)
+        {
+            for k in sc.cursors.values_mut().filter(|k| k.returns.is_none()) {
+                k.open = false;
+                k.rows.clear();
+            }
+        }
+        sets.sort_by_key(|(_, k)| k.seq);
+        let mut sqlca = Sqlca::default();
+        if usize::from(c.max) < sets.len() {
+            sets.truncate(c.max.into());
+            sqlca = code(464, "0100E");
+        }
+        let target = self.scopes.entry(req.scope.clone()).or_default();
+        target.cursors.retain(|n, _| !n.starts_with("RS#"));
+        let mut rows = Vec::new();
+        for (i, (n, k)) in sets.into_iter().enumerate() {
+            let name = format!("RS#{}", i + 1);
+            rows.push(vec![Value::Str(name.clone()), Value::Str(n), Value::int(i64::try_from(k.columns.len()).unwrap_or(0))]);
+            target.cursors.insert(name, k);
+        }
+        if c.sqlcode < 0 {
+            sqlca = Sqlca { sqlcode: c.sqlcode, sqlstate: c.sqlstate, sqlerrmc: c.message, ..Sqlca::default() };
+        } else if c.sqlcode > 0 && c.sqlcode != 100 {
+            sqlca = Sqlca { sqlcode: c.sqlcode, sqlstate: c.sqlstate, sqlerrmc: c.message, ..Sqlca::default() };
+            sqlca.sqlwarn[0] = 'W';
+        } else if !rows.is_empty() && sqlca.sqlcode == 0 {
+            sqlca = code(466, "0100C");
+            sqlca.sqlerrmc = format!("{} result sets", rows.len());
+        }
+        sqlca.sqlerrd[0] = c.status;
+        sqlca.sqlerrd[1] = i32::try_from(rows.len()).unwrap_or(0);
+        Reply { sqlca, rows, call: None }
+    }
+
     /// A prepared statement goes: -514 when the scope has none of
     /// that name.
     fn deallocate(&mut self, scope: &str, name: &str) -> Reply {
@@ -662,7 +779,7 @@ impl Session {
         let row = items
             .split(',')
             .map(|i| match i.trim() {
-                "ROW_COUNT" => Value::int(i64::from(ca.sqlerrd[2])),
+                "ROW_COUNT" | "DB2_ROW_COUNT" => Value::int(i64::from(ca.sqlerrd[2])),
                 "NUMBER" => Value::int(1),
                 "DB2_RETURNED_SQLCODE" => Value::int(i64::from(ca.sqlcode)),
                 "RETURNED_SQLSTATE" => Value::Str(ca.sqlstate.clone()),
@@ -670,12 +787,20 @@ impl Session {
                 "MESSAGE_TEXT" => Value::Str(ca.sqlerrmc.clone()),
                 "MESSAGE_LENGTH" => Value::int(i64::try_from(ca.sqlerrmc.len()).unwrap_or(0)),
                 "MORE" => Value::Str("N".into()),
+                "DB2_RETURN_STATUS" => Value::int(i64::from(ca.sqlerrd[0])),
+                "DB2_NUMBER_RESULT_SETS" => Value::int(i64::from(if ca.sqlcode == 466 { ca.sqlerrd[1] } else { 0 })),
+                "DB2_SQLERRD1" | "DB2_SQLERRD2" | "DB2_SQLERRD3" | "DB2_SQLERRD4" | "DB2_SQLERRD5" | "DB2_SQLERRD6" => {
+                    let i = usize::from(i.trim().as_bytes()[11] - b'1');
+                    Value::int(i64::from(ca.sqlerrd[i]))
+                }
+                "COMMAND_FUNCTION" | "DYNAMIC_FUNCTION" => Value::Str(String::new()),
                 _ => Value::Null,
             })
             .collect();
         Reply {
             sqlca: Sqlca::default(),
             rows: vec![row],
+            call: None,
         }
     }
 }
@@ -693,14 +818,20 @@ pub fn may_yield(desc: &Desc) -> bool {
 impl Embedded for Session {
     fn run(&mut self, req: &Request) -> Reply {
         let kept = if may_yield(&req.desc) { None } else { self.ctx.yielder.take() };
-        let r = match self.commitment(req) {
+        self.ctx.routine.can_call = req.desc.calls;
+        self.ctx.routine.pending = None;
+        let mut r = match self.commitment(req) {
             Some(r) => r,
             None => self.run_inner(req),
         };
+        if !r.sqlca.is_error() {
+            r.call = self.ctx.routine.pending.take();
+        }
+        self.ctx.routine.can_call = false;
         if kept.is_some() {
             self.ctx.yielder = kept;
         }
-        if req.desc.op != Op::Diag {
+        if req.desc.op != Op::Diag && !req.desc.quiet {
             self.last = r.sqlca.clone();
         }
         r
@@ -793,7 +924,7 @@ fn fetch(txn: &mut store::txn::Txn<'_>, ctx: &mut SqlContext, d: &Desc, inputs: 
     {
         ca.sqlerrd[4] = 100;
     }
-    Reply { sqlca: ca, rows }
+    Reply { sqlca: ca, rows, call: None }
 }
 
 #[cfg(test)]
@@ -805,6 +936,12 @@ mod tests {
         let r = Reply {
             sqlca: code(-811, "21000"),
             rows: vec![vec![Value::int(5), Value::Str("x ".into()), Value::Null]],
+            call: Some(Box::new(crate::exec::routine::CallPlan {
+                program: "P".into(),
+                library: "L".into(),
+                parms: vec![crate::exec::routine::PlanParm { mode: 3, desc: 7, extra: 0, value: Value::int(3), marker: Some(1) }],
+                ..Default::default()
+            })),
         };
         assert_eq!(Reply::from_wire(&r.to_wire()), r);
     }

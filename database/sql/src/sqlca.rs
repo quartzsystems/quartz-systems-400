@@ -121,7 +121,7 @@ pub struct Warning {
     /// The `SQLCODE`, positive.
     pub sqlcode: i32,
     /// The `SQLSTATE`, class `01`.
-    pub sqlstate: &'static str,
+    pub sqlstate: String,
     /// The message tokens, here the text.
     pub text: String,
 }
@@ -131,13 +131,19 @@ impl Warning {
     /// journaled.
     #[must_use]
     pub fn not_journaled(table: &str, library: &str) -> Self {
-        Self { sqlcode: 7905, sqlstate: "01567", text: format!("table {table} in {library} was made but is not journaled") }
+        Self { sqlcode: 7905, sqlstate: "01567".into(), text: format!("table {table} in {library} was made but is not journaled") }
     }
 
     /// `SQL0569`: a privilege the user did not have was not revoked.
     #[must_use]
     pub fn not_all_revoked(object: &str) -> Self {
-        Self { sqlcode: 569, sqlstate: "01006", text: format!("not every privilege named was revoked from {object}") }
+        Self { sqlcode: 569, sqlstate: "01006".into(), text: format!("not every privilege named was revoked from {object}") }
+    }
+
+    /// A warning with a code and state of its own (`SIGNAL`).
+    #[must_use]
+    pub fn coded(sqlcode: i32, sqlstate: &str, text: &str) -> Self {
+        Self { sqlcode, sqlstate: sqlstate.into(), text: text.into() }
     }
 
     /// The SQLCA of a statement that succeeded with this warning.
@@ -145,7 +151,7 @@ impl Warning {
     pub fn apply(&self, mut ca: Sqlca) -> Sqlca {
         if ca.sqlcode == 0 || ca.sqlcode == 100 {
             ca.sqlcode = self.sqlcode;
-            ca.sqlstate = self.sqlstate.into();
+            ca.sqlstate.clone_from(&self.sqlstate);
             ca.sqlerrmc.clone_from(&self.text);
             ca.sqlwarn[0] = 'W';
         }

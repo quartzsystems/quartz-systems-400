@@ -34,6 +34,10 @@ pub struct Cursor {
     pub rrns: Vec<Option<u64>>,
     /// Position: 0 before the first row, `rows.len() + 1` after the last.
     pub pos: usize,
+    /// `WITH RETURN`: its result set goes to the procedure's caller.
+    pub returns: Option<crate::ast::ReturnTo>,
+    /// When it was opened, in the order of every open ([`current_seq`]).
+    pub seq: u64,
 }
 
 impl Cursor {
@@ -77,6 +81,8 @@ pub fn declare(ctx: &mut SqlContext, d: &DeclareCursor) -> Outcome {
             table: None,
             rrns: Vec::new(),
             pos: 0,
+            returns: None,
+            seq: 0,
         },
     );
     Outcome::Done
@@ -114,6 +120,7 @@ pub fn open(
     c.rrns = rrns;
     c.pos = 0;
     c.open = true;
+    c.seq = OPENS.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
     Ok(Outcome::Done)
 }
 
@@ -225,4 +232,14 @@ pub fn end_of_unit(ctx: &mut SqlContext) {
             c.rrns.clear();
         }
     }
+}
+
+/// Cursors opened so far in this process.
+static OPENS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// The number of the last cursor opened: a cursor opened later has a
+/// greater [`Cursor::seq`].
+#[must_use]
+pub fn current_seq() -> u64 {
+    OPENS.load(std::sync::atomic::Ordering::Relaxed)
 }

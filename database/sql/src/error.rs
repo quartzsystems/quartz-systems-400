@@ -353,6 +353,18 @@ pub enum SqlError {
         /// The CPF message, when there is one.
         msgid: Option<String>,
     },
+
+    /// A condition `SIGNAL` raised, with the SQLSTATE the statement gave
+    /// (`SQL0438`), or a procedure's error passed to its caller.
+    #[error("{what}")]
+    Signalled {
+        /// The SQLCODE.
+        code: i32,
+        /// The SQLSTATE.
+        state: String,
+        /// The message text.
+        what: String,
+    },
 }
 
 impl SqlError {
@@ -401,12 +413,13 @@ impl SqlError {
             Self::Duration { .. } => -187,
             Self::Database { .. } => -901,
             Self::Coded { code, .. } | Self::Recursion { code, .. } => *code,
+            Self::Signalled { code, .. } => *code,
         }
     }
 
     /// The `SQLSTATE`.
     #[must_use]
-    pub fn sqlstate(&self) -> &'static str {
+    pub fn sqlstate(&self) -> &str {
         match self {
             Self::Syntax { .. } | Self::ThreePartName { .. } | Self::Keyword { .. } | Self::RowComparison { .. } => "42601",
             Self::Unsupported { .. } => "42612",
@@ -448,6 +461,7 @@ impl SqlError {
             Self::Recursion { .. } => "42925",
             Self::Database { .. } => "58004",
             Self::Coded { state, .. } => state,
+            Self::Signalled { state, .. } => state,
         }
     }
 

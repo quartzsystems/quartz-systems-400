@@ -276,7 +276,8 @@ impl Lexer<'_> {
             self.bump();
             let name = self.word();
             if name.is_empty() {
-                return Err(self.syntax(":", "a host variable name"));
+                // A statement label's colon (`L1: LOOP`).
+                return Ok(token(Tok::Sym(":")));
             }
             let ind = if self.peek() == Some(b':') {
                 self.bump();
