@@ -11,15 +11,9 @@ types/JSON1     # engine: a predicate as a JSON_ARRAY value (SQL0104 on 7.5); FO
 types/XML1      # engine: XMLPARSE describes as XML on the primary (QS/400 has no XML type); no 01004; XMLELEMENT refused (SQL0084)
 types/BOOL1     # engine: no 01004; predicates in a select list described nullable here; NOT of a null BOOLEAN column is true on pub400; SYSCOLUMNS.DATA_TYPE CHAR(8) here; a CHAR result VARCHAR here
 types/LOB1      # engine: function result types (LENGTH of a LOB, CAST of a DBCLOB), a LOB index key SQL0084 here, SQL0350 there; no 01004; SYSCOLUMNS column types and CCSIDs; SQL7905
-types/DECFLT3   # errors at fetch, SQL7905
-integrity/CSTBASIC   # NVARCHAR catalog columns described as VARGRAPHIC
-integrity/CSTALTER   # NVARCHAR catalog columns described as VARGRAPHIC
 integrity/SEQUENCE   # engine: a column named ORDER in a select list (SQL0104 here)
 integrity/AUDITCOL   # engine: IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
 query/JOINS   # engine: ORDER BY an unqualified USING column is SQL0203 on DB2 for i, resolved here
-query/OLAP   # the 01003 warning (SQLCODE 0) is not reported by the local runner
-query/STATAGG   # 01003 warnings (SQLCODE 0) not reported by the local runner
-query/ORDAGG   # 01003 not reported
 query/DATEARITH   # engine: the 01506 warning (date adjusted to month end, SQLCODE 0) is not raised
 query/DTFUNCS   # engine: 01506 not raised; TIMESTAMP_FORMAT('bad') SQL0302 here, SQ20448 there
 query/STRFUNCS   # engine (by choice): DECODE is SQL0204 on pub400 but in the brief's must-have list
@@ -41,7 +35,6 @@ trigger/TRGCAT   # engine: ACTION_CONDITION and ACTION_STATEMENT are DBCLOB at I
 services/GENSQL    # engine: QTEMP/Q_GENSQL is not written (the result set is); oracle: pub400 CCSID 273; engine: generated constraint names differ
 sqlpl/ARRAYS   # engine: array parameters and array arguments in CALL refused SQL0084 (BLOCKED(sql)); ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here
 sqlpl/ARRAYERR   # engine: the primary cannot see a one-column UNNEST correlation's column (SQL0206), QS/400 can
-sqlpl/PLBOOL   # BOOLEAN shown as 1/0 by JTOpen
 sqlpl/PLTYPES   # engine: HEX of CCSID-tagged strings; a character DEFAULT for a VARGRAPHIC variable is SQL0408 there, converted here; 1E400 into DECFLOAT(16) is SQL0304 there, SQL0302 here
 sqlpl/PARMDFT   # engine: SYSPARMS.DEFAULT is NCLOB at IBM, VARCHAR(2000) here (no LOB catalog columns)
 ddl/DGTTCLS   # engine: ALTER TABLE of a table with an index or view over it refused (SQL0084, BLOCKED(sql) in alter)
