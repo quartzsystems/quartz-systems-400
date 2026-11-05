@@ -389,6 +389,12 @@ impl Odp {
         self.trg.mode = mode;
     }
 
+    /// Reads through this path fire no read triggers (it reads only to
+    /// change, as SQL's `UPDATE` and `DELETE` do).
+    pub fn quiet_reads(&mut self) {
+        self.trg.quiet_reads = true;
+    }
+
     /// The job's answer to the before calls the last operation returned
     /// (`DbError::TriggersDue`): the same operation, given again, goes on
     /// with it.
@@ -649,17 +655,34 @@ impl Odp {
     }
 
     /// Whether this path may read: one that cannot call trigger programs
-    /// may not read a file with read triggers, and a logical path may not
-    /// read over one (BLOCKED(sql): read triggers fire for physical paths
-    /// only so far).
+    /// may not read a file with read triggers, nor a logical path over
+    /// one; nor (BLOCKED(sql)) a logical path over more than one member
+    /// with them, whose records are no one member's.
     fn may_read(&self) -> Result<()> {
         if self.member.is_logical() {
-            if self.member.base_read_triggers {
+            let refused = matches!(self.trg.mode, Mode::Refuse) || self.member.bases.len() != 1;
+            if self.member.base_read_triggers && refused && !self.trg.quiet_reads {
                 return Err(DbError::TriggerNotCallable { file: self.member.file.name().to_string() });
             }
             return Ok(());
         }
         self.trg.may_read(&self.member)
+    }
+
+    /// A logical path's read of base record `rrn`: the based-on file's
+    /// read triggers, with its record (as the primary's `CPYF` from an
+    /// index fires them).
+    fn base_read(&mut self, txn: &mut Txn<'_>, rrn: u64) -> Result<()> {
+        let [base] = self.member.bases.as_slice() else { return Ok(()) };
+        let id = base.member;
+        let file_id = store::obj::ops::read_header(txn, id)?.1.library;
+        let desc = file::describe(txn, file_id)?;
+        let Some(md) = desc.members.iter().find(|d| d.object == id).copied() else { return Ok(()) };
+        let mut bm = Member::open(txn, &desc, &md)?;
+        let Some(slot) = bm.read(txn, rrn)? else { return Ok(()) };
+        let lvl = self.trg_level();
+        let row = Row { event: Event::Read, rrn, old: Some((&slot.record, &slot.null_map)), new: None };
+        self.trg.after(txn, &mut bm, &row, lvl)
     }
 
     /// After a change: the record lock goes to the commit definition, or
@@ -1111,7 +1134,13 @@ impl Odp {
                     self.fb.fail(&e);
                     return Err(e);
                 }
-                if !self.member.is_logical() && self.member.trgs.is_some() {
+                if self.member.is_logical() && self.member.base_read_triggers && !self.trg.quiet_reads {
+                    if let Err(e) = self.base_read(txn, k.rrn) {
+                        self.unlock();
+                        self.fb.fail(&e);
+                        return Err(e);
+                    }
+                } else if !self.member.is_logical() && self.member.trgs.is_some() && !self.trg.quiet_reads {
                     let lvl = self.trg_level();
                     let row = Row { event: Event::Read, rrn: k.rrn, old: Some((&r.data, &r.null_map)), new: None };
                     if let Err(e) = self.trg.after(txn, &mut self.member, &row, lvl) {

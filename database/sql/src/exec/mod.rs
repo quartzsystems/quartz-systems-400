@@ -39,6 +39,7 @@ pub mod names;
 pub mod opnqryf;
 mod olap;
 pub mod qtemp;
+pub mod reads;
 pub mod query;
 pub mod rename;
 mod savepoint;
@@ -794,12 +795,20 @@ impl SqlContext {
         if let Some(c) = cmt {
             o.set_commit(c);
         }
-        if let Some(c) = &self.triggers {
-            o.set_trigger_mode(db::trg::Mode::Call(c.clone()));
-        } else if let Some(m) = &self.midcall {
-            o.set_trigger_mode(db::trg::Mode::Call(routine::midcall::Triggers::shared(m.clone(), self.later_triggers.clone())));
+        if let Some(c) = self.trigger_caller() {
+            o.set_trigger_mode(db::trg::Mode::Call(c));
         }
         Ok(o)
+    }
+
+    /// What calls trigger programs for this context's statements, when
+    /// anything can.
+    #[must_use]
+    pub fn trigger_caller(&self) -> Option<db::trg::fire::CallerRef> {
+        if let Some(c) = &self.triggers {
+            return Some(c.clone());
+        }
+        self.midcall.as_ref().map(|m| routine::midcall::Triggers::shared(m.clone(), self.later_triggers.clone()))
     }
 }
 

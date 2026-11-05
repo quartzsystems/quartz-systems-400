@@ -271,6 +271,49 @@ fn deferred_refused_and_through_a_logical_file() {
     t.commit().unwrap();
 }
 
+/// Reads through a logical file call the physical file's read triggers
+/// with its record; a path that cannot call programs may not read.
+#[test]
+fn reads_through_a_logical_file_fire_the_physical_files_triggers() {
+    let (_d, mut store, lib) = open_new();
+    let locks = odp::new_shared();
+    let mut t = store.begin().unwrap();
+    let f = trgt(&mut t, lib);
+    let mut o = open(&mut t, &locks, f);
+    for c in ["AAA", "BBB"] {
+        let (r, n) = trgt_rec(c);
+        o.write(&mut t, &r, &n).unwrap();
+    }
+    o.close(&mut t);
+    ops::add(&mut t, f, &NewTrg { name: Some("RD".into()), ..NewTrg::new(Time::After, Event::Read, pgm()) }, 2).unwrap();
+    let mut refs = MapRefs::default();
+    refs.insert_pf("QSTEST", "TRGT", &pf(&[
+        rec("TRGT", ""),
+        fld("C1", "3", "A", "", ""),
+        fld("N1", "5", "P", "2", "ALWNULL"),
+        fld("V1", "10", "A", "", "VARLEN ALWNULL"),
+        fld("I1", "9", "B", "0", "ALWNULL"),
+    ]));
+    let def = lf(&[rec("TRGT", "PFILE(QSTEST/TRGT)")], &refs);
+    let l = file::create_lf(&mut t, lib, name("TRGL"), &def, &mut |_| Ok(f), &CreateFileOpts { now: 1, ..CreateFileOpts::default() }).unwrap();
+    let mut o = Odp::open(&mut t, locks.clone(), l, OpenOpts::input(JobHandle(1))).unwrap();
+    let e = o.read(&mut t, false).unwrap_err();
+    assert!(matches!(e, DbError::TriggerNotCallable { .. }), "{e:?}");
+    o.close(&mut t);
+    let dump = Rc::new(RefCell::new(Dump::default()));
+    let mut o = Odp::open(&mut t, locks.clone(), l, OpenOpts::input(JobHandle(1))).unwrap();
+    o.set_trigger_mode(Mode::Call(dump.clone()));
+    while o.read(&mut t, false).unwrap().is_some() {}
+    let d = dump.borrow();
+    assert_eq!(d.seen.len(), 2);
+    assert!(d.seen.iter().all(|c| c.trigger == "RD" && c.buffer[30] == 0xF4));
+    assert_eq!(&d.seen[0].buffer[0..4], &[0xE3, 0xD9, 0xC7, 0xE3], "the physical file's name");
+    assert_eq!(&d.seen[1].buffer[40..44], &[0, 0, 0, 2], "its record number");
+    drop(d);
+    o.close(&mut t);
+    t.commit().unwrap();
+}
+
 #[test]
 fn cpyf_fires_insert_triggers_and_stops_at_a_refusal() {
     let (_d, mut store, lib) = open_new();

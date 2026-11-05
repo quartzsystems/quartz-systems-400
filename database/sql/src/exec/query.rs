@@ -850,12 +850,20 @@ fn scan_table(
     ctx.release_open();
     let (rows, ordered) = r?;
     let mut ev = Evaluator { ctx, params };
-    Ok((filter_rows(txn, &mut ev, scan, outer, rows)?, ordered))
+    let rows = filter_rows(txn, &mut ev, scan, outer, rows)?;
+    // Read triggers, once the members are let go (`reads`).
+    if !explain_only
+        && let Some(t) = &scan.info
+        && reads_fire(txn, t)?
+    {
+        super::reads::fire(txn, ctx, t, &rows)?;
+    }
+    Ok((rows, ordered))
 }
 
 /// Whether reading `t` fires read triggers (its own, or a logical
 /// file's based-on files').
-fn reads_fire(txn: &mut Txn<'_>, t: &super::TableInfo) -> Result<bool> {
+pub(super) fn reads_fire(txn: &mut Txn<'_>, t: &super::TableInfo) -> Result<bool> {
     if t.desc.header.sql.is_none() && t.desc.attr.kind != FileKind::Logical {
         return Ok(false);
     }
@@ -907,9 +915,7 @@ fn scan_table_in(
         ev.ctx.hold(txn, &objects, &label)?;
     }
     if !explain_only && reads_fire(txn, t)? {
-        return Err(SqlError::Unsupported {
-            what: format!("a query of {}: it has read triggers (BLOCKED(sql): read triggers fire for record I/O only)", t.desc.name()),
-        });
+        super::reads::callable(ev.ctx, t)?;
     }
     let open_pf = |txn: &mut Txn<'_>| -> Result<Option<Member>> {
         if t.desc.attr.kind == FileKind::Logical {

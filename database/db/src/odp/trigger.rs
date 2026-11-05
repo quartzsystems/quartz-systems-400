@@ -25,6 +25,9 @@ pub struct TrgState {
     resume: Option<Resume>,
     /// After calls a deferring caller has to make.
     due: Vec<Call>,
+    /// Reads fire no read triggers: the path reads only to change (an
+    /// SQL `UPDATE` or `DELETE`, as the primary).
+    pub quiet_reads: bool,
 }
 
 /// The commit lock level digit of the trigger buffer.
@@ -113,6 +116,9 @@ impl TrgState {
     /// Whether the path may read `m`'s records: a path that cannot call
     /// programs may not read a file with read triggers.
     pub fn may_read(&self, m: &Member) -> Result<()> {
+        if self.quiet_reads {
+            return Ok(());
+        }
         match (&self.mode, &m.trgs) {
             (Mode::Refuse, Some(a)) if a.any(crate::trg::Event::Read) => {
                 Err(DbError::TriggerNotCallable { file: m.file.name().to_string() })

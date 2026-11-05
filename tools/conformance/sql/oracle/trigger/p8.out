@@ -1,0 +1,103 @@
+Note: tools\conformance\sql\oracle\trigger\TrgProbe.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+> SET SCHEMA QSTEST
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGQF)', 0000000023.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGQF in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGFD8)', 0000000024.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGFD8 in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTPGM PGM(QSTEST/TRGDUMP)', 0000000026.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGDUMP in QSTEST type *PGM not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTDTAQ DTAQ(QSTEST/TRGQ)', 0000000025.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object TRGQ in QSTEST type *DTAQ not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/QTRGSRC)', 0000000025.00000)
+  sqlcode -443 38501 CPF2105 [CPF2105] Object QTRGSRC in QSTEST type *FILE not found. Cause . . . . . :   No object was found for the name or type specified. Recovery  . . . :   Specify the correct name or type of the object. Then try the request again.
+> CALL QSYS.QCMDEXC('CRTSRCPF FILE(QSTEST/QTRGSRC) RCDLEN(92)', 0000000040.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFM FILE(QSTEST/QTRGSRC) MBR(TRGDUMP) SRCTYPE(CLLE)', 0000000054.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('CRTDTAQ DTAQ(QSTEST/TRGQ) MAXLEN(4000)', 0000000038.00000)
+  sqlcode 0 count 0
+> CREATE ALIAS QSTEST.TRGSRCM FOR QSTEST.QTRGSRC(TRGDUMP)
+  sqlcode 0 count 0
+> INSERT INTO QSTEST.TRGSRCM VALUES  (1, 0, '             PGM        PARM(&BUF &LEN)'),  (2, 0, '             DCL        VAR(&BUF) TYPE(*CHAR) LEN(3000)'),  (3, 0, '             DCL        VAR(&LEN) TYPE(*CHAR) LEN(4)'),  (4, 0, '             ENDPGM')
+  sqlcode 0 count 4
+> DROP ALIAS QSTEST.TRGSRCM
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('CRTBNDCL PGM(QSTEST/TRGDUMP) SRCFILE(QSTEST/QTRGSRC) SRCMBR(TRGDUMP)', 0000000068.00000)
+  sqlcode 0 count 0
+> CREATE TABLE QSTEST.TRGQF (K INT NOT NULL, V CHAR(5), W INT)
+  warning 7905 01567 SQL7905 [SQL7905] Table TRGQF in QSTEST created but was not journaled. Cause . . . . . :   The table TRGQF was created in QSTEST, but the table was not journaled.  Either a QDFTJRN data area indicated that journaling should not be started, the default journal did not exist, or the default journal did exist but the journaling could not be started.  The default journal may be damaged, unable to accept journal entries, or may not exist. The SQL name for the table is TRGQF and the system name for the table is TRGQF. For a distributed table, journaling could not be started on all of the systems.  The default journal must exist, and be able to accept journal entries, on each of the systems in the node group. Recovery  . . . :   The table was created, but until the table is journaled, COMMIT(*CHG), COMMIT(*CS), COMMIT(*RS), COMMIT(*RR), COMMIT(*UR), and COMMIT(*ALL) will not be allowed for table TRGQF. If the default journal does not exist, create the journal (CRTJRN command) and start journaling (STRJRNPF command). If the journal is in error, correct the problem to the journal If the table is distributed, correct the problems on all the systems in the node group and start journaling (STRJRNPF command).
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('ADDPFTRG FILE(QSTEST/TRGQF) TRGTIME(*AFTER) TRGEVENT(*UPDATE) PGM(QSTEST/TRGDUMP) TRG(EXTOFF) ALWREPCHG(*NO)', 0000000108.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('CHGPFTRG FILE(QSTEST/TRGQF) TRG(EXTOFF) TRGLIB(QSTEST) STATE(*DISABLED)', 0000000071.00000)
+  sqlcode 0 count 0
+> CREATE TRIGGER QSTEST.SQLROW AFTER UPDATE OF V, W ON QSTEST.TRGQF REFERENCING NEW AS N FOR EACH ROW MODE DB2ROW BEGIN END
+  sqlcode 0 count 0
+> CREATE TRIGGER QSTEST.SQLSTMT AFTER INSERT ON QSTEST.TRGQF FOR EACH STATEMENT MODE DB2SQL BEGIN END
+  sqlcode 0 count 0
+> CREATE TRIGGER QSTEST.SQLBEF BEFORE DELETE ON QSTEST.TRGQF REFERENCING OLD AS O FOR EACH ROW MODE DB2SQL BEGIN END
+  warning 7051 01647 SQL7051 [SQL7051] MODE DB2SQL before trigger converted to MODE DB2ROW. Cause . . . . . :   MODE DB2SQL before triggers are not supported.  The SQL trigger SQLBEF in QSTEST will be converted from MODE DB2SQL to MODE DB2ROW. Recovery  . . . :   MODE DB2ROW should be specified for all BEFORE triggers.  Change the statement and try the request again. Technical description . . . . . . . . :   Self referencing MODE DB2SQL before triggers are not allowed.  Non-self referencing MODE DB2SQL triggers are converted internally to MODE DB2ROW.
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DSPFD FILE(QSTEST/TRGQF) TYPE(*TRG) OUTPUT(*OUTFILE) OUTFILE(QSTEST/TRGFD8)', 0000000075.00000)
+  sqlcode 0 count 0
+> SELECT TRTRTM, TRTREV, TRTRCN, TRTRIG, TRTRLB, TRTARC, TRTTSF, TRTMJA, TRNAM, TRLB, TRST, TRSTAT, TRTYP, TRMOD, TRORNT, TRUCN, TRUC FROM QSTEST.TRGFD8
+  cols | TRTRTM CHAR(1,0) NN | TRTREV CHAR(1,0) NN | TRTRCN CHAR(1,0) NN | TRTRIG CHAR(10,0) NN | TRTRLB CHAR(10,0) NN | TRTARC CHAR(1,0) NN | TRTTSF CHAR(1,0) NN | TRTMJA CHAR(1,0) NN | TRNAM CHAR(258,0) NN | TRLB CHAR(10,0) NN | TRST CHAR(1,0) NN | TRSTAT CHAR(1,0) NN | TRTYP CHAR(1,0) NN | TRMOD CHAR(1,0) NN | TRORNT CHAR(1,0) NN | TRUCN DECIMAL(5,0) NN | TRUC VARCHAR(1000,0) NN
+  row | 'A' | 'I' | ' ' | 'SQLSTMT   ' | 'QSTEST    ' | 'Y' | 'Y' | 'R' | 'SQLSTMT                                                                                                                                                                                                                                                           ' | 'QSTEST    ' | 'E' | 'O' | 'S' | 'S' | 'S' | '0' | ''
+  row | 'A' | 'U' | 'A' | 'TRGDUMP   ' | 'QSTEST    ' | 'N' | 'U' | 'S' | 'EXTOFF                                                                                                                                                                                                                                                            ' | 'QSTEST    ' | 'D' | 'O' | 'Y' | ' ' | 'R' | '0' | ''
+  row | 'A' | 'U' | 'A' | 'SQLROW    ' | 'QSTEST    ' | 'Y' | 'Y' | 'R' | 'SQLROW                                                                                                                                                                                                                                                            ' | 'QSTEST    ' | 'E' | 'O' | 'S' | 'R' | 'R' | '2' | 'V         W         '
+  row | 'B' | 'D' | ' ' | 'SQLBEF    ' | 'QSTEST    ' | 'Y' | 'Y' | 'R' | 'SQLBEF                                                                                                                                                                                                                                                            ' | 'QSTEST    ' | 'E' | 'O' | 'S' | 'R' | 'R' | '0' | ''
+> CALL QSYS.QCMDEXC('DSPFD FILE(QSTEST/TRGQF) TYPE(*TRG) OUTPUT(*OUTFILE) OUTFILE(QSTEST/TRGFD8) OUTMBR(*FIRST *ADD)', 0000000095.00000)
+  sqlcode 0 count 0
+> SELECT COUNT(*) FROM QSTEST.TRGFD8
+  cols | 00001 INTEGER(10,0) NN
+  row | '8'
+> CALL QSYS.QCMDEXC('DSPFFD FILE(QSYS/QAFDTRG) OUTPUT(*OUTFILE) OUTFILE(QSTEST/TRGFFD)', 0000000065.00000)
+  sqlcode 0 count 0
+> SELECT WHFLDE, WHFLDT, WHFLDB, WHFLDD, WHFLDP, WHFOBO FROM QSTEST.TRGFFD ORDER BY WHFOBO
+  cols | WHFLDE CHAR(10,0) NN | WHFLDT CHAR(1,0) NN | WHFLDB NUMERIC(5,0) NN | WHFLDD NUMERIC(2,0) NN | WHFLDP NUMERIC(2,0) NN | WHFOBO NUMERIC(5,0) NN
+  row | 'TRRCEN    ' | 'A' | '1' | '0' | '0' | '1'
+  row | 'TRRDAT    ' | 'A' | '6' | '0' | '0' | '2'
+  row | 'TRRTIM    ' | 'A' | '6' | '0' | '0' | '8'
+  row | 'TRFILE    ' | 'A' | '10' | '0' | '0' | '14'
+  row | 'TRLIB     ' | 'A' | '10' | '0' | '0' | '24'
+  row | 'TRFTYP    ' | 'A' | '1' | '0' | '0' | '34'
+  row | 'TRFILA    ' | 'A' | '4' | '0' | '0' | '35'
+  row | 'TRMXD     ' | 'A' | '3' | '0' | '0' | '39'
+  row | 'TRFATR    ' | 'A' | '6' | '0' | '0' | '42'
+  row | 'TRSYSN    ' | 'A' | '8' | '0' | '0' | '48'
+  row | 'TRASP     ' | 'P' | '2' | '3' | '0' | '56'
+  row | 'TRRES     ' | 'A' | '4' | '0' | '0' | '58'
+  row | 'TRTRTM    ' | 'A' | '1' | '0' | '0' | '62'
+  row | 'TRTREV    ' | 'A' | '1' | '0' | '0' | '63'
+  row | 'TRTRCN    ' | 'A' | '1' | '0' | '0' | '64'
+  row | 'TRTRIG    ' | 'A' | '10' | '0' | '0' | '65'
+  row | 'TRTRLB    ' | 'A' | '10' | '0' | '0' | '75'
+  row | 'TRTARC    ' | 'A' | '1' | '0' | '0' | '85'
+  row | 'TRTTSF    ' | 'A' | '1' | '0' | '0' | '86'
+  row | 'TRTMJA    ' | 'A' | '1' | '0' | '0' | '87'
+  row | 'TRNAM     ' | 'A' | '258' | '0' | '0' | '88'
+  row | 'TRLB      ' | 'A' | '10' | '0' | '0' | '346'
+  row | 'TRST      ' | 'A' | '1' | '0' | '0' | '356'
+  row | 'TRSTAT    ' | 'A' | '1' | '0' | '0' | '357'
+  row | 'TRTYP     ' | 'A' | '1' | '0' | '0' | '358'
+  row | 'TRMOD     ' | 'A' | '1' | '0' | '0' | '359'
+  row | 'TRORNT    ' | 'A' | '1' | '0' | '0' | '360'
+  row | 'TRCEN     ' | 'A' | '1' | '0' | '0' | '361'
+  row | 'TRDATE    ' | 'A' | '6' | '0' | '0' | '362'
+  row | 'TRTIME    ' | 'A' | '6' | '0' | '0' | '368'
+  row | 'TRUCN     ' | 'P' | '3' | '5' | '0' | '374'
+  row | 'TRUC      ' | 'A' | '1002' | '0' | '0' | '377'
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGFFD)', 0000000024.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGFD8)', 0000000024.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/TRGQF)', 0000000023.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTPGM PGM(QSTEST/TRGDUMP)', 0000000026.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTDTAQ DTAQ(QSTEST/TRGQ)', 0000000025.00000)
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DLTF FILE(QSTEST/QTRGSRC)', 0000000025.00000)
+  sqlcode 0 count 0

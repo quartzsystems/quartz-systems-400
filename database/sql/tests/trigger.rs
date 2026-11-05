@@ -165,7 +165,41 @@ fn sql_changes_fire_external_triggers() {
     db.add("TRGC", &NewTrg { name: Some("GONE".into()), ..NewTrg::new(Time::Before, Event::Update, pgm("MISSING")) });
     db.ctx.triggers = Some(probe.clone());
     assert_eq!(db.code("UPDATE QSTEST.TRGC SET N = 6"), (-204, "42704".to_string()));
-    // Read triggers: a query is refused (BLOCKED(sql)).
+    // Read triggers: with no caller a query is refused.
     db.add("TRGC", &trg("RD", Time::After, Event::Read, false));
+    db.ctx.triggers = None;
     assert_eq!(db.code("SELECT * FROM QSTEST.TRGC").0, -84);
+}
+
+/// The rows a query's reads fire for, as the primary
+/// (`tools/conformance/sql/oracle/trigger/p7.out`).
+#[test]
+fn read_triggers_fire_for_the_rows_a_scan_keeps() {
+    let mut db = Db::new();
+    db.ok("CREATE TABLE QSTEST.RDT (K INT NOT NULL, V CHAR(5))");
+    db.ok("CREATE TABLE QSTEST.RDT2 (K INT NOT NULL, V CHAR(5))");
+    db.ok("INSERT INTO QSTEST.RDT VALUES (1, 'aaaaa'), (2, 'bbbbb'), (3, 'ccccc')");
+    db.add("RDT", &trg("RD1", Time::After, Event::Read, false));
+    let probe = Rc::new(RefCell::new(Probe::default()));
+    db.ctx.triggers = Some(probe.clone());
+    let mut fired = |db: &mut Db, sql: &str| {
+        probe.borrow_mut().calls.clear();
+        db.ok(sql);
+        let calls = probe.borrow().calls.clone();
+        assert!(calls.iter().all(|c| c.0 == "RD1" && c.1 == 0xF4 && c.2 == 0xF1), "{sql}: {calls:?}");
+        calls.len()
+    };
+    assert_eq!(fired(&mut db, "SELECT K, V FROM QSTEST.RDT ORDER BY K"), 3);
+    assert_eq!(fired(&mut db, "SELECT V FROM QSTEST.RDT WHERE K = 2"), 1);
+    assert_eq!(fired(&mut db, "SELECT COUNT(*) FROM QSTEST.RDT"), 3);
+    // The primary fires 4: the inner table's rows only as the join reads
+    // them (BLOCKED(sql) in exec::reads); every row its scan keeps here.
+    assert_eq!(fired(&mut db, "SELECT A.K FROM QSTEST.RDT A JOIN QSTEST.RDT B ON A.K = B.K WHERE A.K < 3 ORDER BY 1"), 5);
+    db.ok("CREATE INDEX QSTEST.RDTIX ON QSTEST.RDT (K)");
+    assert_eq!(fired(&mut db, "SELECT V FROM QSTEST.RDT WHERE K = 3"), 1);
+    db.ok("CREATE VIEW QSTEST.RDTV AS SELECT K, V FROM QSTEST.RDT WHERE K > 1");
+    assert_eq!(fired(&mut db, "SELECT K FROM QSTEST.RDTV ORDER BY K"), 2);
+    assert_eq!(fired(&mut db, "UPDATE QSTEST.RDT SET V = 'uuuuu' WHERE K = 1"), 0);
+    assert_eq!(fired(&mut db, "DELETE FROM QSTEST.RDT WHERE K = 99"), 0);
+    assert_eq!(fired(&mut db, "INSERT INTO QSTEST.RDT2 SELECT K, V FROM QSTEST.RDT WHERE K > 2"), 1);
 }

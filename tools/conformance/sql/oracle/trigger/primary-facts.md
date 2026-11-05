@@ -154,3 +154,42 @@ and `p6.out`.
 - `SYSTRIGDEP`: one row per table the statement names (a subquery's
   included), `OBJECT_TYPE` `TABLE` padded to 24.
 - `SYSTRIGUPD`: one row per `UPDATE OF` column (`TRIGGERED_UPDATE_COLUMNS`).
+
+# Read triggers and queries on the primary (V7R1M0), 2026-11-05
+
+Probe `p7.sql`, output `p7.out` (`TrgProbe.java`; the trigger program sends
+the event digit and the record to `QSTEST/TRGQ`). A table of three rows with
+an after `*READ` trigger:
+
+- `SELECT` of every row: 3 calls, in record order, each with the row's record.
+- `WHERE K = 2` with no index (a full scan): 1 call. Rows the scan's own
+  selection rejects fire nothing.
+- `COUNT(*)`: 3. `FETCH FIRST 1 ROW ONLY`: 3 (JDBC's blocked fetch reads them).
+- A self join `ON A.K = B.K WHERE A.K < 3`: 4, the outer table's 2 rows and
+  the inner one's 2 matches (the inner table is read by the join condition).
+- Through an index (`WHERE K = 3`): 1; through a view (`WHERE K > 1`): 2.
+- `UPDATE ... WHERE K = 1` and `DELETE`: none.
+- `INSERT ... SELECT ... WHERE K > 2`: 1. `CPYF` from an index over it: 3.
+- `VALUES (SELECT V FROM t WHERE K = 1)`: `SQL0255` reason 12 (a query
+  over a file with read triggers runs where a `VALUES` fullselect cannot).
+
+# DSPFD TYPE(*TRG) OUTPUT(*OUTFILE) on the primary (V7R1M0), 2026-11-05
+
+Probe `p8.sql`, output `p8.out`: `QAFDTRG`'s fields (`DSPFFD`, positions
+1-based): `TRRCEN` 1, `TRRDAT` 6, `TRRTIM` 6, `TRFILE` 10, `TRLIB` 10,
+`TRFTYP` 1, `TRFILA` 4, `TRMXD` 3, `TRFATR` 6, `TRSYSN` 8, `TRASP` P(3,0),
+`TRRES` 4, `TRTRTM` 1 (62), `TRTREV` 1, `TRTRCN` 1, `TRTRIG` 10, `TRTRLB` 10,
+`TRTARC` 1, `TRTTSF` 1, `TRTMJA` 1, `TRNAM` 258 (88), `TRLB` 10, `TRST` 1,
+`TRSTAT` 1, `TRTYP` 1, `TRMOD` 1, `TRORNT` 1, `TRCEN` 1, `TRDATE` 6,
+`TRTIME` 6, `TRUCN` P(5,0) (374), `TRUC` VARCHAR(1000) (377, 1002 bytes).
+
+- An SQL trigger: `TRTRIG`/`TRTRLB` its program, `TRTARC` `Y`, `TRTTSF` `Y`,
+  `TRTMJA` `R`, `TRTYP` `S`, `TRMOD` `R` (`DB2ROW`) or `S` (`DB2SQL`),
+  `TRORNT` `R` or `S` (`FOR EACH STATEMENT`). An external one: `TRTYP` `Y`,
+  `TRMOD` blank, `TRTTSF` `U`, `TRTMJA` `S`.
+- `TRST` `D` for a disabled trigger. `UPDATE OF V, W`: `TRUCN` 2, `TRUC` the
+  columns' system names, 10 bytes each (`V         W         `); `TRTRCN` `A`.
+- Rows come in no order by time (here an after insert first). A second
+  `DSPFD` with `OUTMBR(*FIRST *ADD)` adds its records (8).
+- A before `MODE DB2SQL` trigger is made `DB2ROW` with warning `SQL7051`.
+

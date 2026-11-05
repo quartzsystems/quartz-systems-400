@@ -427,6 +427,8 @@ fn change(
     if matches!(w, Where::Cond(c) if has_subquery(c)) {
         ctx.answers = Some(Answers::recording());
     }
+    // The reads of a change fire no read triggers of its table.
+    let _quiet = super::reads::changing(t.id);
     let read = match w {
         Where::All => matching_rows(txn, ctx, params, &t, &alias, None, &Env::default()),
         Where::Cond(c) => matching_rows(txn, ctx, params, &t, &alias, Some(c), &Env::default()),
@@ -439,6 +441,7 @@ fn change(
         _ => None,
     };
     let mut o = ctx.open(txn, &t, Usage::UPDATE)?;
+    o.quiet_reads();
     ctx.hold_open();
     let result = change_rows(txn, ctx, params, &t, &schema, rows, &mut o, set, cond);
     ctx.release_open();
