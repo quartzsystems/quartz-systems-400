@@ -28,8 +28,10 @@ pub enum Refusal {
     Exists,
     /// A column is not in the file (`SQL0205`).
     NoColumn,
-    /// A column is named twice, or is a LOB (`SQL0537`).
+    /// A column is named twice (`SQL0537`).
     BadColumns,
+    /// A key column is a LOB (`SQL0350`).
+    LobKey,
     /// The file has a primary key already (`SQL0624`).
     SecondPrimary,
     /// A unique or primary key over the same columns exists (`SQL0541`).
@@ -44,6 +46,9 @@ pub enum Refusal {
     RefData,
     /// The foreign key does not match a parent key (`SQL0538`).
     KeyMismatch,
+    /// The parent has no unique or primary key over the columns
+    /// referenced (`SQL0573`).
+    NoParentKey,
     /// `SET NULL` on a foreign key that cannot be null (`SQL0629`).
     SetNullNotNull,
     /// The constraint is not there (`SQL0204`).
@@ -156,7 +161,10 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
         let Some((_, f)) = fmt.format.field(col) else {
             return Err(refuse(ADD, Refusal::NoColumn, &name, format!("field {col} is not in file {}", desc.name())));
         };
-        if c.kind.keyed() && (f.data_type.is_lob() || c.columns[..i].contains(col)) {
+        if c.kind.keyed() && f.data_type.is_lob() {
+            return Err(refuse(ADD, Refusal::LobKey, &name, format!("LOB field {col} cannot be a key of constraint {name}")));
+        }
+        if c.kind.keyed() && c.columns[..i].contains(col) {
             return Err(refuse(ADD, Refusal::BadColumns, &name, format!("field {col} cannot be a key of constraint {name}")));
         }
     }
@@ -184,7 +192,18 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
                 && if new.parent_columns.is_empty() { p.kind == Kind::PrimaryKey } else { p.columns == new.parent_columns }
         });
         let Some(pk) = pk else {
-            return Err(refuse(ADD, Refusal::KeyMismatch, &name, format!("file {} has no matching parent key", pdesc.name())));
+            // Columns named unlike the foreign key's are `SQL0538` before
+            // the missing unique key is `SQL0573`, as on the primary.
+            let pfmt = &pdesc.formats[0];
+            let unlike = new.parent_columns.len() != c.columns.len()
+                || c.columns.iter().zip(&new.parent_columns).any(|(fc, pc)| {
+                    match (fmt.format.field(fc), pfmt.format.field(pc)) {
+                        (Some((_, f)), Some((_, p))) => f.data_type != p.data_type || f.length != p.length || f.decimals != p.decimals || f.varlen != p.varlen,
+                        _ => false,
+                    }
+                });
+            let reason = if !new.parent_columns.is_empty() && unlike { Refusal::KeyMismatch } else { Refusal::NoParentKey };
+            return Err(refuse(ADD, reason, &name, format!("file {} has no matching parent key", pdesc.name())));
         };
         if pk.columns.len() != c.columns.len() {
             return Err(refuse(ADD, Refusal::KeyMismatch, &name, "the foreign key and the parent key differ in length"));

@@ -10,7 +10,9 @@
 //! `NO ACTION` is checked as `RESTRICT` is, row by row, after this
 //! row's cascades (`docs/DB_OPEN_QUESTIONS.md`): the difference shows
 //! only within one statement that both deletes a parent and its
-//! dependents' parents, and in the SQLSTATE it reports.
+//! dependents' parents, and in the SQLSTATE it reports. As on the
+//! primary, a parent whose rule is `NO ACTION` changes only when it and
+//! its dependent are journaled (`CPF4328`, `SQL7008`).
 
 #![allow(clippy::many_single_char_names)]
 
@@ -55,7 +57,7 @@ pub fn before_update(
 ) -> Result<()> {
     let Some(a) = m.csts.clone() else { return Ok(()) };
     usable(m)?;
-    rules_journaled(txn, m, &a)?;
+    rules_journaled(txn, m, &a, true)?;
     let old = m.read(txn, rrn)?.ok_or(DbError::RecordNotFound { rrn })?;
     checks(m, &a, record, nulls)?;
     foreign_keys(txn, m, &a, record, nulls, Some((&old.record, &old.null_map)))?;
@@ -89,7 +91,7 @@ pub fn before_update(
 pub fn before_delete(txn: &mut Txn<'_>, m: &mut Member, rrn: u64, cmt: Option<&CommitRef>) -> Result<()> {
     let Some(a) = m.csts.clone() else { return Ok(()) };
     usable(m)?;
-    rules_journaled(txn, m, &a)?;
+    rules_journaled(txn, m, &a, false)?;
     let mut changed = false;
     let old = m.read(txn, rrn)?.ok_or(DbError::RecordNotFound { rrn })?;
     for d in a.csts.iter().filter(|c| c.kind == Kind::Dependent) {
@@ -184,11 +186,20 @@ fn before_update_excluding(
 /// A parent file whose dependents' delete rules change them is updated
 /// and deleted from only while it and those dependents are journaled, as
 /// IBM refuses at once whatever the rows (`SQL7008` reason 3, `CPF4328`).
-fn rules_journaled(txn: &mut Txn<'_>, m: &Member, a: &Active) -> Result<()> {
+fn rules_journaled(txn: &mut Txn<'_>, m: &Member, a: &Active, update: bool) -> Result<()> {
     for d in a.csts.iter().filter(|c| c.kind == Kind::Dependent) {
         let child = if d.other == m.file.id { a.csts.clone() } else { super::list(txn, d.other).unwrap_or_default() };
         let Some(ri) = child.iter().find(|c| c.kind == Kind::Referential && c.name == d.other_name) else { continue };
-        if !ri.delete_rule.changes_dependents() || !ri.enabled {
+        // As on the primary, both files are journaled for a delete of the
+        // parent under any delete rule but RESTRICT, and for an update
+        // under an update rule of NO ACTION or a delete rule that changes
+        // dependents.
+        let needs = if update {
+            ri.update_rule != Rule::Restrict || ri.delete_rule.changes_dependents()
+        } else {
+            ri.delete_rule != Rule::Restrict
+        };
+        if !needs || !ri.enabled {
             continue;
         }
         let child_jrn = if d.other == m.file.id { m.file.attr.journal } else { crate::file::describe(txn, d.other)?.attr.journal };

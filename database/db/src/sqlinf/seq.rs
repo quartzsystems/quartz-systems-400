@@ -99,8 +99,11 @@ impl SeqAttrs {
     #[must_use]
     pub fn after(&self, v: i128) -> Option<i128> {
         let n = v.checked_add(self.increment);
+        // A value short of the range (a sequence's START WITH below its
+        // MINVALUE) moves on towards it.
+        let within = |n: i128| if self.increment > 0 { n <= self.max && (n >= self.min || v < self.min) } else { n >= self.min && n <= self.max };
         match n {
-            Some(n) if n >= self.min && n <= self.max => Some(n),
+            Some(n) if within(n) => Some(n),
             _ if self.cycle => Some(if self.increment > 0 { self.min } else { self.max }),
             _ => None,
         }

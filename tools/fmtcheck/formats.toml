@@ -79,6 +79,7 @@ files = [
     "database/db/src/sqlinf/routine.rs",
     "database/db/src/sqlinf/program.rs",
     "database/db/src/sqlinf/colstats.rs",
+    "database/db/src/sqlinf/comment.rs",
 ]
 
 # SQL packages (*SQLPKG): a draft until the SQL completion work freezes it.

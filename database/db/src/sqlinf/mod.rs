@@ -9,6 +9,7 @@
 
 pub mod body;
 pub mod colstats;
+pub mod comment;
 pub mod entry;
 pub mod names;
 pub mod program;

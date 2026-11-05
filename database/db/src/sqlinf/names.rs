@@ -157,7 +157,7 @@ impl crate::sqlinf::Kind {
     pub fn space(self) -> Space {
         use crate::sqlinf::Kind as K;
         match self {
-            K::Table | K::View | K::Alias | K::Mqt => Space::Table,
+            K::Table | K::View | K::Alias | K::Mqt | K::File => Space::Table,
             K::Index => Space::Index,
             // A program keeps no SQL name; the space is never asked for.
             K::Procedure | K::Function | K::Program => Space::Specific,

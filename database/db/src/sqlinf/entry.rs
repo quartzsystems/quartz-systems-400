@@ -70,6 +70,9 @@ pub enum Kind {
     Schema = 12,
     /// A program or service program made with embedded SQL.
     Program = 13,
+    /// A database file SQL did not make, with SQL information of its own
+    /// (a long comment).
+    File = 14,
 }
 
 impl Kind {
@@ -90,6 +93,7 @@ impl Kind {
             11 => Self::Mqt,
             12 => Self::Schema,
             13 => Self::Program,
+            14 => Self::File,
             _ => return None,
         })
     }
@@ -132,6 +136,8 @@ pub mod tag {
     pub const COLTYPE: u16 = 16;
     /// One column's statistics of one member (a physical file's).
     pub const COLSTATS: u16 = 17;
+    /// A long comment of the object or a column (`COMMENT ON`).
+    pub const COMMENT: u16 = 18;
 }
 
 /// One tagged entry.

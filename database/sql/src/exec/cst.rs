@@ -37,7 +37,8 @@ pub fn field_name(rf: &RecordFormat, c: &Ident) -> Result<Name> {
         .iter()
         .find(|f| f.alias.as_deref() == Some(c.value.as_str()))
         .map(|f| f.name)
-        .ok_or_else(|| SqlError::ColumnNotFound { name: c.value.clone() })
+        // A key or a change naming a column the table lacks: `SQL0205`.
+        .ok_or_else(|| SqlError::Coded { code: -205, state: "42703", what: format!("column {} is not in the table", c.value) })
 }
 
 fn rule(r: RefRule) -> Rule {
@@ -131,6 +132,7 @@ pub fn from_db(e: &DbError) -> SqlError {
             Refusal::Exists => err(-601, "42710", what),
             Refusal::NoColumn => err(-205, "42703", what),
             Refusal::BadColumns => err(-537, "42709", what),
+            Refusal::LobKey => err(-350, "42962", what),
             Refusal::SecondPrimary => err(-624, "42889", what),
             Refusal::SameKey => err(-541, "42891", what),
             Refusal::Nullable => err(-542, "42831", what),
@@ -138,6 +140,7 @@ pub fn from_db(e: &DbError) -> SqlError {
             Refusal::CheckData => err(-544, "23512", what),
             Refusal::RefData => err(-667, "23520", what),
             Refusal::KeyMismatch => err(-538, "42830", what),
+            Refusal::NoParentKey => err(-573, "42890", what),
             Refusal::SetNullNotNull => err(-629, "42834", what),
             Refusal::NotFound => err(-204, "42704", what),
             Refusal::HasDependents => err(-616, "42893", what),
@@ -176,7 +179,8 @@ pub fn compile_check(cond: &Expr, rf: &RecordFormat, cname: &str) -> Result<chec
             if c.table.is_some() {
                 return Err(invalid(cname, "a qualified column"));
             }
-            check::Expr::Col(field_name(rf, &c.column)?)
+            // A check's column the table lacks is `SQL0206`, as in a query.
+            check::Expr::Col(field_name(rf, &c.column).map_err(|_| SqlError::ColumnNotFound { name: c.column.value.clone() })?)
         }
         Expr::Neg(a) => check::Expr::Neg(b(a)?),
         Expr::Binary(x, op, y) => match op {

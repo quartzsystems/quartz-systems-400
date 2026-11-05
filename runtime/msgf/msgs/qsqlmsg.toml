@@ -621,6 +621,13 @@ help = "A check condition names columns of its own table and constants only: no 
 vars = ["*CHAR 128"]
 
 [[msg]]
+id = "SQL0573"
+sev = 30
+text = "Table &1 has no unique key over the columns the foreign key references."
+help = "A foreign key references a primary key or unique constraint of its parent table. Add one over the columns named, or reference the columns of one that exists."
+vars = ["*CHAR 128"]
+
+[[msg]]
 id = "SQL0574"
 sev = 30
 text = "The definition of column &1 is not valid for what it generates or defaults."

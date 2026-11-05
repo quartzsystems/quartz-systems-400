@@ -690,7 +690,7 @@ The attribute area holds `SqlInfAttr`; the byte space holds
 |---|---|---|---|
 | 0 | 8 | magic | `QS400SQI` |
 | 8 | 2 | version | 1 |
-| 10 | 1 | kind | 1 table, 2 view, 3 index, 4 alias, 5 procedure, 6 function, 7 trigger, 8 sequence, 9 global variable, 10 user-defined type, 11 materialized query table, 12 schema (only in a saved library's `sqlinf` part), 13 program made with embedded SQL |
+| 10 | 1 | kind | 1 table, 2 view, 3 index, 4 alias, 5 procedure, 6 function, 7 trigger, 8 sequence, 9 global variable, 10 user-defined type, 11 materialized query table, 12 schema (only in a saved library's `sqlinf` part), 13 program made with embedded SQL, 14 a database file SQL did not make (it keeps a long comment) |
 | 11 | 1 | reserved | 0 |
 | 12 | 4 | entry_count | |
 | 16 | 8 | body_len | bytes of the byte space in use |
@@ -723,6 +723,7 @@ The attribute area holds `SqlInfAttr`; the byte space holds
 | 15 `STATEMENT` | one embedded statement of a program (kind 13 `PROGRAM`) |
 | 16 `COLTYPE` | one column of a distinct type: the field and its type (a table's or view's) |
 | 17 `COLSTATS` | one column's statistics of one member of a physical file |
+| 18 `COMMENT` | a long comment (`COMMENT ON`) of the object or one of its columns |
 
 A schema keeps its SQL name only in QSYS's name index (a `*LIB` owns
 no `*SQLINF`). An object keeps a `NAME` entry only when its SQL
@@ -763,6 +764,18 @@ column's SQL name or the expression's text; `includes` are
 | 12 | variable | where | the sparse condition, UTF-8 |
 | 12 + where_len | variable | keys | the keys as written |
 | — | variable | includes | `INCLUDE` aggregates |
+
+### `SqlComment` (variable)
+
+The `COMMENT` entry: one long comment, the object's own or a column's,
+as `LONG_COMMENT` in the catalogs shows it. An empty comment keeps no
+entry.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | column | CP037 system name of the column; blanks for the object |
+| 10 | 2 | reserved | 0 |
+| 12 | variable | text | the comment, UTF-8, up to 2000 characters |
 
 ### `SqlDependency` (32 bytes)
 
