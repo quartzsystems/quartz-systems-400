@@ -125,7 +125,7 @@ fn physical(desc: &FileDesc, msgid: &'static str, cst: &str) -> Result<()> {
 #[allow(clippy::too_many_lines)]
 pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<Report> {
     const ADD: &str = "CPF32B0";
-    crate::auth::check(txn, "file.change", file)?;
+    crate::auth::check(txn, "file.constraint", file)?;
     let desc = file::describe(txn, file)?;
     let given = new.name.clone().unwrap_or_default();
     physical(&desc, ADD, &given)?;
@@ -175,6 +175,7 @@ pub fn add(txn: &mut Txn<'_>, file: ObjectId, new: &NewCst, now: u64) -> Result<
     }
     let mut report = Report::default();
     if c.kind == Kind::Referential {
+        crate::auth::check(txn, "file.reference", new.parent)?;
         let pdesc = file::describe(txn, new.parent)?;
         physical(&pdesc, ADD, &name)?;
         let pcsts = if new.parent == file { csts.clone() } else { list(txn, new.parent)? };
@@ -285,6 +286,7 @@ fn breaks(txn: &mut Txn<'_>, m: &Member, name: &str) -> Result<bool> {
 
 /// The records of `file` that break its constraint `name` (`DSPCPCST`).
 pub fn pending_records(txn: &mut Txn<'_>, file: ObjectId, name: &str) -> Result<Vec<u64>> {
+    crate::auth::check(txn, "file.open-input", file)?;
     let desc = file::describe(txn, file)?;
     let mut out = Vec::new();
     for e in &desc.members {
@@ -385,7 +387,7 @@ pub struct Removed {
 /// `RMVPFCST`, and SQL's `DROP CONSTRAINT`: with `cascade` a parent
 /// key's dependent referential constraints go too.
 pub fn remove(txn: &mut Txn<'_>, file: ObjectId, pick: &Pick, cascade: bool, now: u64) -> Result<Removed> {
-    crate::auth::check(txn, "file.change", file)?;
+    crate::auth::check(txn, "file.constraint", file)?;
     let desc = file::describe(txn, file)?;
     let csts = list(txn, file)?;
     let mut out = Removed::default();
@@ -464,7 +466,7 @@ pub struct Changed {
 /// `CHGPFCST STATE(*ENABLED|*DISABLED)`: an enabled one is checked
 /// against the records and left in check pending when they break it.
 pub fn set_state(txn: &mut Txn<'_>, file: ObjectId, pick: &Pick, enabled: bool, now: u64) -> Result<Changed> {
-    crate::auth::check(txn, "file.change", file)?;
+    crate::auth::check(txn, "file.constraint", file)?;
     let mut csts = list(txn, file)?;
     let mut out = Changed::default();
     let names: Vec<String> = csts
