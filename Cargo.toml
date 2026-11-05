@@ -90,6 +90,7 @@ members = [
     "net/hostserver",
     "net/certs",
     "net/tls",
+    "net/httpc",
     "net/sockets",
     "net/regfac",
     "net/cmncfg",

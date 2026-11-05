@@ -1,0 +1,15 @@
+[package]
+name = "httpc"
+description = "QS/400 HTTP/1.1 client: what the QSYS2 HTTP functions send, over TCP or TLS"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+tls = { path = "../../net/tls", version = "0.1.0" }
+certs = { path = "../../net/certs", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true

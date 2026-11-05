@@ -35,6 +35,7 @@ licpgm = { path = "../../licpgm/licpgm", version = "0.1.0" }
 lpstore = { path = "../../licpgm/lpstore", version = "0.1.0" }
 jrn = { path = "../../database/jrn", version = "0.1.0" }
 sql = { path = "../../database/sql", version = "0.1.0" }
+httpc = { path = "../../net/httpc", version = "0.1.0" }
 dds = { path = "../../database/dds", version = "0.1.0" }
 dspf = { path = "../../ui/dspf", version = "0.1.0" }
 osobjects = { path = "../../lic/osobjects", version = "0.1.0" }

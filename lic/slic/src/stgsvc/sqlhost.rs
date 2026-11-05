@@ -10,7 +10,7 @@
 //! again after. Elsewhere (a statement not taking turns) the host
 //! cannot reach the system and the service says so (SQL0443).
 
-use sql::exec::catalog::services::host::{ActiveJob, SysValue, SystemHost, SystemStatus};
+use sql::exec::catalog::services::host::{ActiveJob, HttpRequest, HttpResponse, SysValue, SystemHost, SystemStatus};
 
 use crate::ipl::system::System;
 use crate::svc::ile;
@@ -108,5 +108,20 @@ impl SystemHost for SqlHost {
 
     fn system_status(&self) -> Option<SystemStatus> {
         with_system(super::stats::sql_status)
+    }
+
+    fn http(&self, req: &HttpRequest) -> Option<Result<HttpResponse, String>> {
+        // BLOCKED(sql): the request holds the service until it answers
+        // (at most its timeout); it does not yet take turns.
+        let r = httpc::send(&httpc::Request {
+            method: req.method.clone(),
+            url: req.url.clone(),
+            headers: req.headers.clone(),
+            body: req.body.clone(),
+            timeout: if req.timeout == 0 { 30 } else { req.timeout.min(300) },
+            redirects: req.redirects,
+            tolerate: req.tolerate,
+        });
+        Some(r.map(|r| HttpResponse { status: r.status, headers: r.headers, body: r.body }).map_err(|e| e.to_string()))
     }
 }
