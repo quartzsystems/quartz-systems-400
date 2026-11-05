@@ -11,6 +11,7 @@
 //! procedure's result sets become cursors of the caller.
 
 mod call;
+mod alter;
 pub(crate) mod create;
 pub mod find;
 pub mod midcall;
@@ -194,6 +195,7 @@ pub fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, st: &Statement, params: &[Va
     match st {
         Statement::CreateRoutine(r) => create::create(txn, ctx, r).map(|()| Outcome::Done),
         Statement::DropRoutine(d) => create::drop(txn, ctx, d).map(|()| Outcome::Done),
+        Statement::AlterRoutine(a) => alter::alter(txn, ctx, a).map(|()| Outcome::Done),
         Statement::Call(c) => call::call(txn, ctx, c, params),
         Statement::Signal(s) => signal(txn, ctx, s, params),
         Statement::SetResultSets(names) => {

@@ -23,6 +23,11 @@ impl Parser {
             RoutineKind::Function
         };
         let name = self.object_name()?;
+        self.routine_definition(kind, replace, name, start)
+    }
+
+    /// A routine's parameters, options and body, after its name.
+    fn routine_definition(&mut self, kind: RoutineKind, replace: bool, name: crate::ast::ObjectName, start: usize) -> Result<Statement> {
         let parms = if self.is_sym("(") { self.routine_parms(kind)? } else { Vec::new() };
         let returns = if kind == RoutineKind::Function {
             self.expect_word("RETURNS")?;
@@ -354,6 +359,15 @@ impl Parser {
     /// `DROP PROCEDURE|FUNCTION|SPECIFIC PROCEDURE|SPECIFIC FUNCTION`,
     /// after `DROP`.
     pub(crate) fn drop_routine(&mut self) -> Result<Statement> {
+        let s = self.drop_routine_target()?;
+        if self.is_word("RESTRICT") || self.is_word("CASCADE") {
+            self.advance();
+        }
+        Ok(s)
+    }
+
+    /// `[SPECIFIC] PROCEDURE|FUNCTION name [(types)]`.
+    fn drop_routine_target(&mut self) -> Result<Statement> {
         let specific = self.eat_word("SPECIFIC");
         let kind = if self.eat_word("PROCEDURE") {
             RoutineKind::Procedure
@@ -376,10 +390,37 @@ impl Parser {
         } else {
             None
         };
-        if self.is_word("RESTRICT") || self.is_word("CASCADE") {
+        Ok(Statement::DropRoutine(DropRoutine { kind, specific, name, signature }))
+    }
+
+    /// After `ALTER`: `[SPECIFIC] PROCEDURE|FUNCTION name [(types)]`, then
+    /// `ALTER options` or `REPLACE definition`, kept as text for the
+    /// routine's stored definition (`exec::routine::alter`).
+    pub(crate) fn alter_routine(&mut self) -> Result<Statement> {
+        let Statement::DropRoutine(target) = self.drop_routine_target()? else { unreachable!("a routine") };
+        let replace = if self.eat_word("REPLACE") {
+            true
+        } else {
+            self.expect_word("ALTER")?;
+            false
+        };
+        let mark = self.mark();
+        if replace {
+            // Parsed here for its end; made from the text with the name.
+            self.routine_definition(target.kind, false, target.name.clone(), mark)?;
+        }
+        while !self.at_end() && !self.is_sym(";") {
+            // The specific name stays; a routine's options do not name one.
+            if !replace && self.is_word("SPECIFIC") {
+                return Err(self.expected("an option of the routine"));
+            }
             self.advance();
         }
-        Ok(Statement::DropRoutine(DropRoutine { kind, specific, name, signature }))
+        let tail = self.text_from(mark);
+        if tail.is_empty() {
+            return Err(self.expected("the routine's options"));
+        }
+        Ok(Statement::AlterRoutine(Box::new(crate::ast::AlterRoutine { target, replace, tail })))
     }
 
     /// `SIGNAL` or `RESIGNAL`: the condition and its message.

@@ -262,6 +262,8 @@ pub enum Statement {
         /// `HOLD`.
         hold: bool,
     },
+    /// `ALTER PROCEDURE`, `ALTER FUNCTION`.
+    AlterRoutine(Box<AlterRoutine>),
     /// `SAVEPOINT`, `RELEASE SAVEPOINT`, `ROLLBACK TO SAVEPOINT`.
     Savepoint(SavepointStmt),
     /// `SET SCHEMA`.

@@ -1070,6 +1070,7 @@ impl Prepared {
                 Ok(Outcome::Done)
             }
             st @ (Statement::CreateRoutine(_)
+            | Statement::AlterRoutine(_)
             | Statement::Call(_)
             | Statement::DropRoutine(_)
             | Statement::Signal(_)
@@ -1162,6 +1163,8 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::CreateRoutine(_) => "CREATE FUNCTION",
         Statement::Call(_) => "CALL",
         Statement::DropRoutine(_) => "DROP ROUTINE",
+        Statement::AlterRoutine(a) if a.target.kind == crate::ast::RoutineKind::Procedure => "ALTER PROCEDURE",
+        Statement::AlterRoutine(_) => "ALTER FUNCTION",
         Statement::Signal(_) => "SIGNAL",
         Statement::SetResultSets(_) => "SET RESULT SETS",
     }

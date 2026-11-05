@@ -250,6 +250,18 @@ pub struct Call {
     pub args: Vec<Expr>,
 }
 
+/// `ALTER [SPECIFIC] PROCEDURE|FUNCTION name ALTER options | REPLACE
+/// definition`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AlterRoutine {
+    /// The routine, as `DROP` names it.
+    pub target: DropRoutine,
+    /// `REPLACE`: `tail` is the new parameters, options and body.
+    pub replace: bool,
+    /// The text after `ALTER` or `REPLACE`.
+    pub tail: String,
+}
+
 /// `DROP PROCEDURE|FUNCTION|SPECIFIC ...`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DropRoutine {

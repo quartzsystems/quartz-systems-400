@@ -429,6 +429,13 @@ impl Catalog for Cat<'_, '_> {
 
 /// `DROP PROCEDURE|FUNCTION|SPECIFIC ...`.
 pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, d: &DropRoutine) -> Result<()> {
+    let one = the_one(txn, ctx, d)?;
+    remove(txn, ctx, &one)
+}
+
+/// The one routine a `DROP` names: `SQL0204` for none, `SQL0476` for
+/// more than one.
+pub(super) fn the_one(txn: &mut Txn<'_>, ctx: &mut SqlContext, d: &DropRoutine) -> Result<Found> {
     let routine_type = if d.kind == RoutineKind::Procedure { 1 } else { 2 };
     let not_found = || SqlError::ObjectNotFound { name: d.name.to_string(), kind: if routine_type == 1 { "procedure" } else { "function" } };
     let found = if d.specific {
@@ -442,7 +449,7 @@ pub fn drop(txn: &mut Txn<'_>, ctx: &mut SqlContext, d: &DropRoutine) -> Result<
     };
     match found.as_slice() {
         [] => Err(not_found()),
-        [one] => remove(txn, ctx, one),
+        [one] => Ok(one.clone()),
         _ => Err(SqlError::Coded {
             code: -476,
             state: "42725",
@@ -460,7 +467,7 @@ fn signature_matches(f: &Found, sig: &[TypeSpec]) -> bool {
 
 /// Drop a routine: an SQL routine's program goes with it; an external
 /// one's program only loses the routine's attributes.
-fn remove(txn: &mut Txn<'_>, ctx: &SqlContext, f: &Found) -> Result<()> {
+pub(super) fn remove(txn: &mut Txn<'_>, ctx: &SqlContext, f: &Found) -> Result<()> {
     if f.routine.def.routine_type == 2 {
         super::udf::forget(&f.routine.def.name, &f.schema, f.routine.def.parm_count.into());
     }
