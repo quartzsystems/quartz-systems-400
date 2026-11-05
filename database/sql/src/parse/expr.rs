@@ -353,6 +353,11 @@ impl Parser {
                     "SCHEMA" => Register::Schema,
                     "PATH" => Register::Path,
                     "TIMEZONE" => Register::Timezone,
+                    "DECFLOAT" if self.is_word_at(1, "ROUNDING") && self.is_word_at(2, "MODE") => {
+                        self.advance();
+                        self.advance();
+                        Register::DecfloatRounding
+                    }
                     _ => return Err(Self::unsupported(&format!("CURRENT {next}"))),
                 };
                 self.advance();

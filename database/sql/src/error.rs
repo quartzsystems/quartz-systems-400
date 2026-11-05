@@ -255,6 +255,18 @@ pub enum SqlError {
         name: String,
     },
 
+    /// An error with IBM's own `SQLCODE` and `SQLSTATE` (the casting
+    /// and data type codes: `SQL0420`, `SQL0180`, `SQL0404` ...).
+    #[error("{what}")]
+    Coded {
+        /// The `SQLCODE`, negative.
+        code: i32,
+        /// The `SQLSTATE`.
+        state: &'static str,
+        /// What failed.
+        what: String,
+    },
+
     /// The database failed in a way SQL has no code for.
     #[error("database error: {what}")]
     Database {
@@ -302,6 +314,7 @@ impl SqlError {
             Self::PrivilegeNotValid { .. } => -557,
             Self::CannotGrant { .. } => -7027,
             Self::Database { .. } => -901,
+            Self::Coded { code, .. } => *code,
         }
     }
 
@@ -341,12 +354,15 @@ impl SqlError {
             Self::PrivilegeNotValid { .. } => "42852",
             Self::CannotGrant { .. } => "42984",
             Self::Database { .. } => "58004",
+            Self::Coded { state, .. } => state,
         }
     }
 
-    /// The message ID: `SQL` plus the code's four digits.
+    /// The message ID: `SQL` plus the code's four digits, `SQ` plus
+    /// five (`SQ20365`).
     #[must_use]
     pub fn msgid(&self) -> String {
-        format!("SQL{:04}", self.sqlcode().unsigned_abs())
+        let n = self.sqlcode().unsigned_abs();
+        if n > 9999 { format!("SQ{n:05}") } else { format!("SQL{n:04}") }
     }
 }

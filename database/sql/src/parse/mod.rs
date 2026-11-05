@@ -11,6 +11,7 @@ mod dml;
 mod expr;
 mod objects;
 mod query;
+mod types;
 
 use crate::ast::{
     DataType, DeclareCursor, Fetch, FetchOrientation, Ident, Isolation, Naming, ObjectName,
@@ -730,6 +731,9 @@ impl Parser {
             // ANY, NONE, MAX, IO, OPTIMIZE, a number or a string.
             self.advance();
             return Ok(Statement::SetCurrentDegree);
+        }
+        if self.eat_words(&["CURRENT", "DECFLOAT", "ROUNDING", "MODE"]) {
+            return self.set_decfloat_rounding();
         }
         if self.eat_words(&["TRANSACTION", "ISOLATION", "LEVEL"]) {
             return self.set_transaction();

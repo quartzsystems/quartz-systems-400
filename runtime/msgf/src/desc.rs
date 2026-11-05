@@ -296,13 +296,14 @@ pub struct MsgDesc {
 }
 
 impl MsgDesc {
-    /// Whether an identifier is three letters and four hexadecimal
-    /// digits, as `ADDMSGD` requires.
+    /// Whether an identifier is a letter, two letters or digits and four
+    /// hexadecimal digits, as `ADDMSGD` requires (`CPF1234`, `SQ20365`).
     #[must_use]
     pub fn valid_id(id: &str) -> bool {
         let b = id.as_bytes();
         b.len() == 7
-            && b[..3].iter().all(u8::is_ascii_alphabetic)
+            && b[0].is_ascii_alphabetic()
+            && b[1..3].iter().all(u8::is_ascii_alphanumeric)
             && b[3..].iter().all(u8::is_ascii_hexdigit)
     }
 

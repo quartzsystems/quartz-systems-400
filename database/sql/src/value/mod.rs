@@ -14,7 +14,7 @@ use std::fmt;
 
 use db::record::datetime::{Date, Time};
 use dds::{DateFmt, TimeFmt};
-use qdecimal::{DecFloat, Decimal, DecimalError, DfFormat, Rounding};
+use qdecimal::{DecFloat, Decimal, DecimalError, DfFormat, DfRounding, Rounding};
 
 use crate::error::{Result, SqlError};
 
@@ -70,11 +70,17 @@ fn conversion(what: impl fmt::Display) -> SqlError {
 /// A `DECFLOAT` failure as SQL reports it.
 #[must_use]
 pub fn decfloat_error(e: DecimalError) -> SqlError {
-    match e {
-        DecimalError::DivideByZero => SqlError::DivideByZero,
-        DecimalError::Parse { text } => conversion(format!("'{text}' is not a number")),
-        e => SqlError::Overflow { what: e.to_string() },
-    }
+    crate::exec::cast::decfloat_error(e)
+}
+
+/// Text compared with a number, as the number's type; text that is not
+/// a number is `SQL0302`, as the primary reports it.
+fn number_of(s: &str, num: &Value) -> Result<Value> {
+    crate::exec::cast::arith::string_as(s, num).map_err(|_| SqlError::Coded {
+        code: -302,
+        state: "22023",
+        what: format!("'{s}' is not a number to compare with {num}"),
+    })
 }
 
 /// A date from text in the ISO, USA, EUR or two-digit forms.
@@ -192,9 +198,9 @@ impl Value {
         match self {
             Self::DecFloat(d) => Ok(*d),
             Self::Num(d) => DecFloat::from_decimal(d, format).map_err(decfloat_error),
-            // A float's shortest digits.
-            Self::Double(x) => DecFloat::from_f64(*x, format).map_err(decfloat_error),
-            Self::Real(x) => DecFloat::from_f32(*x, format).map_err(decfloat_error),
+            // A float's exact binary value, as IBM i converts it.
+            Self::Double(x) => DecFloat::from_f64_exact(*x, format, DfRounding::HalfEven).map_err(decfloat_error),
+            Self::Real(x) => DecFloat::from_f32_exact(*x, format, DfRounding::HalfEven).map_err(decfloat_error),
             Self::Str(s) => DecFloat::parse(s, format).map_err(decfloat_error),
             v => Err(conversion(format!("{} is not a number", v.type_name()))),
         }
@@ -333,8 +339,13 @@ impl Value {
             (Self::Num(a), Self::DecFloat(b)) => DecFloat::from_decimal(a, DfFormat::D34).map_err(decfloat_error)?.sql_cmp(b),
             (Self::Str(a), Self::Str(b)) => ccsid::ebcdic_cmp_str(a.trim_end(), b.trim_end()),
             (Self::Bin(a), Self::Bin(b)) => a.cmp(b),
-            (Self::Bin(a), Self::Str(_)) => a.cmp(&other.as_bytes()?),
-            (Self::Str(_), Self::Bin(b)) => self.as_bytes()?.cmp(b),
+            // A number beside text: the text read as the number's type.
+            (Self::Num(_) | Self::Double(_) | Self::Real(_) | Self::DecFloat(_), Self::Str(s)) => {
+                return self.compare(&number_of(s, self)?);
+            }
+            (Self::Str(s), Self::Num(_) | Self::Double(_) | Self::Real(_) | Self::DecFloat(_)) => {
+                return number_of(s, other)?.compare(other);
+            }
             (Self::Bool(a), Self::Bool(b)) => a.cmp(b),
             // Predicates give 0 and 1.
             (Self::Bool(a), Self::Num(_) | Self::Double(_) | Self::Real(_)) => a.cmp(&other.as_bool()?),
@@ -377,6 +388,8 @@ impl Value {
         match self {
             Self::DecFloat(d) => d.format(),
             Self::Num(d) => format_of(d),
+            // A float beside a `DECFLOAT(16)` stays in 16 digits.
+            Self::Double(_) | Self::Real(_) => DfFormat::D16,
             _ => DfFormat::D34,
         }
     }

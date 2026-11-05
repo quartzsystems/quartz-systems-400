@@ -699,14 +699,16 @@ fn updates_deletes_and_errors() {
     assert_eq!(db.code("INSERT INTO cust (cusno) VALUES (7)"), -407);
     assert_eq!(
         db.code("INSERT INTO cust (cusno, name) VALUES ('x', 'bad')"),
-        -302
+        // The primary: SQL0420, a character not valid for the cast.
+        -420
     );
     assert_eq!(
         db.code("INSERT INTO cust (cusno, name) VALUES (12345678, 'big')"),
-        -802
+        -406
     );
     assert_eq!(db.code("INSERT INTO cust (cusno, name) VALUES (8)"), -117);
-    assert_eq!(db.code("SELECT cusno FROM cust WHERE name = 1"), -401);
+    // The primary reads the text as a number: SQL0302 when it is not one.
+    assert_eq!(db.code("SELECT cusno FROM cust WHERE name = 1"), -302);
     assert_eq!(db.code("SELECT 1 / 0 FROM cust"), -802);
     assert_eq!(db.code("SELECT NOSUCHFN(1) FROM cust"), -84);
     assert_eq!(db.code("CREATE TABLE cust (a INT)"), -901);

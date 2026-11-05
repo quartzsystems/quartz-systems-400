@@ -5,6 +5,8 @@
 //! Scalar functions. The first set is here; later sets are families in
 //! their own modules, each listed in [`FAMILIES`] and asked first.
 
+mod decfloat;
+
 use std::fmt::Write as _;
 
 use db::record::datetime::{Date, Time, days_in_month, is_leap};
@@ -112,7 +114,7 @@ pub(crate) struct Family {
 }
 
 /// The families, asked in order before the first set.
-const FAMILIES: &[Family] = &[];
+const FAMILIES: &[Family] = &[Family { call: decfloat::call }];
 
 /// Call a scalar function; `args` are already evaluated.
 #[allow(clippy::too_many_lines)]

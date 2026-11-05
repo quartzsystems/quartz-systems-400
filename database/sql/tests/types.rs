@@ -161,7 +161,7 @@ fn timestamps_to_the_picosecond() {
 fn decfloat_values() {
     let mut db = Db::new();
     db.ok("CREATE TABLE QSTEST/DF (K INTEGER NOT NULL, A DECFLOAT(16), B DECFLOAT, PRIMARY KEY(K))");
-    db.ok("INSERT INTO QSTEST/DF VALUES(1, 1.5, 1.5E-30), (2, -2, 'Infinity'), (3, 12345678901234567, 'NaN'), (4, NULL, '-sNaN')");
+    db.ok("INSERT INTO QSTEST/DF VALUES(1, 1.5, '1.5E-30'), (2, -2, 'Infinity'), (3, 12345678901234567, 'NaN'), (4, NULL, '-sNaN')");
     db.ok("INSERT INTO QSTEST/DF VALUES(5, 'Infinity', 1.00)");
     assert_eq!(
         db.rows("SELECT A, B FROM QSTEST/DF ORDER BY K"),
@@ -181,7 +181,8 @@ fn decfloat_values() {
     assert_eq!(db.rows("SELECT K FROM QSTEST/DF ORDER BY B, K"), vec![vec!["4"], vec!["1"], vec!["5"], vec!["2"], vec!["3"]]);
     assert_eq!(db.one("SELECT CAST(B AS DECIMAL(5, 2)) FROM QSTEST/DF WHERE K = 5"), "1.00");
     assert_eq!(db.one("SELECT NORMALIZE_DECFLOAT(B) FROM QSTEST/DF WHERE K = 5"), "1");
-    assert!(db.run_with("SELECT B - B FROM QSTEST/DF WHERE K = 2", &[]).is_err());
+    // Infinity - Infinity is NaN on the primary.
+    assert_eq!(db.one("SELECT B - B FROM QSTEST/DF WHERE K = 2"), "NaN");
     let p = Value::DecFloat(qdecimal::DecFloat::parse("-1E+5", qdecimal::DfFormat::D34).unwrap());
     db.run_with("INSERT INTO QSTEST/DF VALUES(6, ?, ?)", &[Value::int(7), p]).unwrap();
     assert_eq!(db.one("SELECT A || ' ' || B FROM QSTEST/DF WHERE K = 6"), "7 -1E+5");
@@ -593,8 +594,9 @@ fn decfloat_keeps_its_exponent() {
     let both = |db: &mut Db, k: usize| db.rows(&format!("SELECT A, B FROM QSTEST/DX WHERE K = {k}"))[0].clone();
     for (i, &(text, back)) in EXPONENTS.iter().enumerate() {
         let want = vec![back.to_string(), back.to_string()];
-        // A literal: `-0` is the integer 0, so `-0E0` stands for it.
-        let lit = if text == "-0" { "-0E0" } else { text };
+        // An exponent literal is a double (see decfloat_from_doubles); a
+        // string stands for the literal here.
+        let lit = format!("'{text}'");
         db.ok(&format!("INSERT INTO QSTEST/DX VALUES({}, {lit}, {lit})", 100 + i));
         assert_eq!(both(&mut db, 100 + i), want, "literal {text}");
         // A string.
@@ -649,10 +651,28 @@ fn decfloat_keeps_its_exponent() {
     assert_eq!(ex(&mut db, "B / 1E+2"), "0.0150");
     assert_eq!(ex(&mut db, "SUM(B)"), "1.50");
     assert_eq!(ex(&mut db, "CAST(1.00E+2 AS DOUBLE)"), "100");
-    // A double has no exponent: a whole one becomes a DECFLOAT with 0.
-    assert_eq!(ex(&mut db, "CAST(CAST(1E+2 AS DOUBLE) AS DECFLOAT)"), "100");
+    // A double becomes its exact value, normalized, as on the primary.
+    assert_eq!(ex(&mut db, "CAST(CAST(1E+2 AS DOUBLE) AS DECFLOAT)"), "1E+2");
     assert_eq!(ex(&mut db, "CAST(CAST(1.5 AS DOUBLE) AS DECFLOAT)"), "1.5");
     // A DECFLOAT(16) on the wire keeps its format.
     let w = sql::embed::to_wire(&db.values("SELECT A FROM QSTEST/DX WHERE K = 103")[0][0]);
     assert_eq!(w, (6, "16:1E+2".to_string()));
+}
+
+#[test]
+fn decfloat_from_doubles() {
+    // The primary's values (tools/conformance/sql/cases/types/DECFLT1.sql, DECFLT2.sql).
+    let mut db = Db::new();
+    db.ok("CREATE TABLE QSTEST/DD (K INTEGER NOT NULL, A DECFLOAT(16), B DECFLOAT(34))");
+    db.ok("INSERT INTO QSTEST/DD VALUES (3, -0, 1E-30), (4, 12345678901234567, 0.1E0)");
+    assert_eq!(
+        db.rows("SELECT CHAR(A), CHAR(B) FROM QSTEST/DD ORDER BY K"),
+        [["0", "1.000000000000000083336420607585985E-30"], ["1.234567890123457E+16", "0.1000000000000000055511151231257827"]]
+    );
+    assert_eq!(db.one("SELECT CHAR(DECFLOAT(1.5E-30)) FROM QSTEST/DD WHERE K = 3"), "1.499999999999999949842322870776844E-30");
+    assert_eq!(db.one("SELECT CHAR(DECFLOAT(100E0)) FROM QSTEST/DD WHERE K = 3"), "1E+2");
+    assert_eq!(db.one("SELECT CHAR(DECFLOAT(1, 34) + 1.5E-30) FROM QSTEST/DD WHERE K = 3"), "1.000000000000000000000000000001500");
+    assert_eq!(db.one("SELECT CHAR(CAST(0.1E0 AS DECFLOAT(16))) FROM QSTEST/DD WHERE K = 3"), "0.1");
+    assert_eq!(db.one("SELECT CHAR(DECFLOAT(1) + CAST(0.1 AS REAL)) FROM QSTEST/DD WHERE K = 3"), "1.100000001490116119384765625");
+    assert_eq!(db.one("SELECT CHAR(DECFLOAT(1.0E0) * 3) FROM QSTEST/DD WHERE K = 3"), "3");
 }

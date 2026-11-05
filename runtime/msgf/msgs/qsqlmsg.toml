@@ -438,3 +438,61 @@ sev = 10
 text = "Table &1 in &2 was made but is not journaled."
 help = "The library is not an SQL schema, so it has no QSQJRN journal to start journaling to. The table works; changes to it under commitment control need journaling started with STRJRNPF."
 vars = ["*CHAR 128", "*CHAR 128"]
+[[msg]]
+id = "SQL0171"
+sev = 30
+text = "Argument &1 of function &2 is not valid."
+help = "The argument's data type, length or value is not one the function accepts. Change the argument."
+vars = ["*BIN 4", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0180"
+sev = 30
+text = "The text of a date, time or timestamp value is not in a form that can be read."
+help = "A character string used as a date, time or timestamp is not written in one of the forms the system reads. Correct the string."
+
+[[msg]]
+id = "SQL0181"
+sev = 30
+text = "A date, time or timestamp string has a part out of range."
+help = "The string has the right form but a month, day, hour, minute or second that does not exist. Correct the value."
+
+[[msg]]
+id = "SQL0189"
+sev = 30
+text = "CCSID &1 cannot be used here."
+help = "The CCSID is unknown or is not one the data type may have: character types take single-byte or mixed EBCDIC CCSIDs, 1208 or 65535; graphic types take 1200, 13488 or a double-byte CCSID."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "SQL0332"
+sev = 30
+text = "Data in CCSID &1 cannot be converted to CCSID &2."
+help = "No conversion exists between the two CCSIDs, for example from binary data (65535) to a graphic string. Cast the data to a type with a convertible CCSID."
+vars = ["*BIN 4", "*BIN 4"]
+
+[[msg]]
+id = "SQL0408"
+sev = 30
+text = "The value given for &1 is not compatible with its data type."
+help = "A value of one type family (for example a date) was assigned to a column or variable of another (for example an integer). Convert the value first."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0433"
+sev = 30
+text = "A value is too long for the result of a CAST."
+help = "Cutting the value to the length of the result would lose significant characters, for example digits of a number. Give the result a longer length."
+
+[[msg]]
+id = "SQL0461"
+sev = 30
+text = "A value of type &1 cannot be cast to type &2."
+help = "The cast between these two data types is not allowed. Cast through an intermediate type, or use a function that converts between them."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQ20365"
+sev = 30
+text = "A signaling NaN was met, or a DECFLOAT operation failed."
+help = "An expression used the DECFLOAT special value sNaN, or a DECFLOAT operation could not give a result. Remove the sNaN value or change the expression."

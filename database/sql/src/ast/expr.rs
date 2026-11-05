@@ -107,6 +107,8 @@ pub enum Register {
     Path,
     /// `CURRENT TIMEZONE`.
     Timezone,
+    /// `CURRENT DECFLOAT ROUNDING MODE`.
+    DecfloatRounding,
 }
 
 /// Comparison operators.

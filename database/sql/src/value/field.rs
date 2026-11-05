@@ -10,6 +10,7 @@ use dds::{DataType, FieldDef};
 use qdecimal::{Rounding, Shape};
 
 use super::{Timestamp, Value, conversion, decfloat_error};
+use crate::exec::cast::{coded, number};
 use crate::error::{Result, SqlError};
 
 /// A LOB's bytes as its column's value: a `BLOB` binary, a `CLOB`
@@ -22,8 +23,54 @@ pub fn lob_value(f: &FieldDef, bytes: &[u8]) -> Value {
     }
 }
 
+/// `SQL0404`: a string longer than its column.
 fn too_long(f: &FieldDef, n: usize) -> SqlError {
-    SqlError::Overflow { what: format!("a value of length {n} is longer than field {} ({})", f.name, f.length) }
+    coded(-404, "22001", format!("a value of length {n} is longer than column {} ({})", f.name, f.length))
+}
+
+/// `SQL0406`: a number past its column.
+fn misfit(f: &FieldDef, v: impl std::fmt::Display) -> SqlError {
+    coded(-406, "22003", format!("{v} does not fit column {}", f.name))
+}
+
+/// `SQL0408`: a value of a type the column cannot take.
+fn incompatible(f: &FieldDef, v: &Value) -> SqlError {
+    coded(-408, "42821", format!("a {} value cannot be assigned to column {}", v.type_name(), f.name))
+}
+
+impl Value {
+    /// The value as a number for a numeric column: text read as a
+    /// `CAST` reads it (`SQL0420`), a date or binary string refused.
+    fn assign_decimal(&self, f: &FieldDef) -> Result<qdecimal::Decimal> {
+        match self {
+            Self::Str(s) => number::parse(s)?.decimal(63, s).map_err(|_| misfit(f, s)),
+            Self::Bool(b) => Ok(qdecimal::Decimal::new(i128::from(*b), 0).expect("fits")),
+            Self::Num(_) | Self::Double(_) | Self::Real(_) | Self::DecFloat(_) => {
+                self.as_decimal().map_err(|_| misfit(f, self.as_text()))
+            }
+            v => Err(incompatible(f, v)),
+        }
+    }
+
+    /// Why the value is no date, time or timestamp for column `f`.
+    fn datetime_misfit(&self, f: &FieldDef, what: &str) -> SqlError {
+        match self {
+            Self::Str(s) => crate::exec::cast::bad_datetime(s, what),
+            v => incompatible(f, v),
+        }
+    }
+
+    /// The value as a double for a float column.
+    fn assign_f64(&self, f: &FieldDef) -> Result<f64> {
+        match self {
+            Self::Str(s) => {
+                number::parse(s)?;
+                s.trim_matches(' ').parse().map_err(|_| misfit(f, s))
+            }
+            Self::Bool(_) | Self::Num(_) | Self::Double(_) | Self::Real(_) | Self::DecFloat(_) => self.as_f64(),
+            v => Err(incompatible(f, v)),
+        }
+    }
 }
 
 impl Value {
@@ -105,10 +152,10 @@ impl Value {
             // A float: its IEEE value; a single's range is checked
             // when it is encoded.
             DataType::Float => {
-                let x = self.as_f64()?;
+                let x = self.assign_f64(f)?;
                 #[allow(clippy::cast_possible_truncation)] // the single it rounds to
                 if f.precision == dds::FloatPrecision::Single && x.is_finite() && (x as f32).is_infinite() {
-                    return Err(SqlError::Overflow { what: format!("{} does not fit field {}", self.as_text(), f.name) });
+                    return Err(misfit(f, self.as_text()));
                 }
                 Ok(db::record::Value::Float(x))
             }
@@ -119,22 +166,22 @@ impl Value {
             )),
             // An SQL integer: its bytes' range, the fraction cut off.
             DataType::Binary if f.int_range => {
-                let d = self.as_decimal()?;
+                let d = self.assign_decimal(f)?;
                 let bits = f.data_len() * 8;
                 let whole = d.rescale(0, Rounding::Truncate).ok().and_then(|w| w.to_i128());
                 match whole {
                     Some(n) if n >= -(1i128 << (bits - 1)) && n < (1i128 << (bits - 1)) => {
                         Ok(db::record::Value::Num(qdecimal::Decimal::new(n, 0).map_err(conversion)?))
                     }
-                    _ => Err(SqlError::Overflow { what: format!("{d} does not fit field {}", f.name) }),
+                    _ => Err(misfit(f, &d)),
                 }
             }
             DataType::Zoned | DataType::Packed | DataType::Binary => {
-                let d = self.as_decimal()?;
+                let d = self.assign_decimal(f)?;
                 let shape = Shape::new(u8::try_from(f.length).unwrap_or(63), f.decimals).map_err(conversion)?;
                 let fitted = d
                     .fit(shape, Rounding::Truncate)
-                    .map_err(|_| SqlError::Overflow { what: format!("{d} does not fit field {}", f.name) })?;
+                    .map_err(|_| misfit(f, &d))?;
                 Ok(db::record::Value::Num(fitted))
             }
             DataType::Bytes => {
@@ -149,10 +196,10 @@ impl Value {
                 what: format!("LOB field {} is written through its reference", f.name),
                 msgid: None,
             }),
-            DataType::Date => text(&self.as_date()?.render(f.date_fmt.unwrap_or_default(), f.date_sep)),
-            DataType::Time => text(&self.as_time()?.stored(f.time_fmt.unwrap_or_default(), f.time_sep)),
+            DataType::Date => text(&self.as_date().map_err(|_| self.datetime_misfit(f, "date"))?.render(f.date_fmt.unwrap_or_default(), f.date_sep)),
+            DataType::Time => text(&self.as_time().map_err(|_| self.datetime_misfit(f, "time"))?.stored(f.time_fmt.unwrap_or_default(), f.time_sep)),
             DataType::Timestamp => text(
-                &self.as_timestamp()?.with_precision(DataType::timestamp_precision(f.length)).render_field(),
+                &self.as_timestamp().map_err(|_| self.datetime_misfit(f, "timestamp"))?.with_precision(DataType::timestamp_precision(f.length)).render_field(),
             ),
             _ => {
                 let s = match self {
@@ -167,12 +214,12 @@ impl Value {
                     let units: Vec<u16> = s.encode_utf16().collect();
                     let trimmed = s.trim_end().encode_utf16().count();
                     if units.len() > max && trimmed > max {
-                        return Err(SqlError::Overflow { what: format!("'{s}' is longer than field {} ({max})", f.name) });
+                        return Err(too_long(f, s.chars().count()));
                     }
                     return Ok(db::record::Value::Char(units.iter().take(max).flat_map(|u| u.to_be_bytes()).collect()));
                 }
                 if s.chars().count() > max && s.trim_end().chars().count() > max {
-                    return Err(SqlError::Overflow { what: format!("'{s}' is longer than field {} ({max})", f.name) });
+                    return Err(too_long(f, s.chars().count()));
                 }
                 text(&s)
             }

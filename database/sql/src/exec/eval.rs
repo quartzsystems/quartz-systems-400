@@ -11,14 +11,14 @@ use std::rc::Rc;
 
 use db::record::datetime::{Date, Time, days_in_month};
 use dds::FieldDef;
-use qdecimal::{Decimal, Rounding, Shape};
+use qdecimal::Decimal;
 use store::txn::Txn;
 
 use super::func;
 use super::query::run_query;
 use super::{ColumnDesc, SqlContext};
 use crate::ast::{
-    BinOp, CmpOp, DataType, DurationUnit, Expr, Function, Literal, Quantifier, Query, Register, TypeSpec,
+    BinOp, CmpOp, DurationUnit, Expr, Function, Literal, Quantifier, Query, Register, TypeSpec,
 };
 use crate::error::{Result, SqlError};
 use crate::value::{Timestamp, Value};
@@ -410,13 +410,12 @@ impl Evaluator<'_> {
         }
     }
 
-    /// The value of an expression bound for a `DECFLOAT`: an exponent
-    /// literal is read from its text ([`decfloat_literal`]).
+    /// The value of an expression bound for a `DECFLOAT`. An exponent
+    /// literal is a double there too, its exact binary value converted,
+    /// as the primary converts it (`DECFLOAT(1.5E-30)` is
+    /// `1.499999999999999949842322870776844E-30`).
     pub fn eval_decfloat(&mut self, txn: &mut Txn<'_>, e: &Expr, env: &Env) -> Result<Value> {
-        match decfloat_literal(e) {
-            Some(v) => v,
-            None => self.eval(txn, e, env),
-        }
+        self.eval(txn, e, env)
     }
 
     /// The value of an expression.
@@ -486,21 +485,9 @@ impl Evaluator<'_> {
                     }
                     return add_duration(&x, n.as_i64()?, *unit);
                 }
-                let mut x = self.eval(txn, a, env)?;
-                let mut y = self.eval(txn, b, env)?;
-                // Beside a `DECFLOAT`, an exponent literal keeps its exponent.
-                if *op != BinOp::Concat {
-                    if matches!(x, Value::DecFloat(_))
-                        && let Some(v) = decfloat_literal(b)
-                    {
-                        y = v?;
-                    } else if matches!(y, Value::DecFloat(_))
-                        && let Some(v) = decfloat_literal(a)
-                    {
-                        x = v?;
-                    }
-                }
-                binary(&x, *op, &y)
+                let x = self.eval(txn, a, env)?;
+                let y = self.eval(txn, b, env)?;
+                super::cast::arith::binary(&x, *op, &y, self.ctx.decfloat_rounding)
             }
             Expr::Duration(a, unit) => {
                 // A labeled duration stands alone only inside arithmetic;
@@ -535,11 +522,8 @@ impl Evaluator<'_> {
                 }
             }
             Expr::Cast(a, t) => {
-                let v = match t.data_type {
-                    DataType::DecFloat(_) => self.eval_decfloat(txn, a, env)?,
-                    _ => self.eval(txn, a, env)?,
-                };
-                cast(&v, t)
+                let v = self.eval(txn, a, env)?;
+                super::cast::cast(&v, t, self.ctx.decfloat_rounding)
             }
             Expr::Function(f) => self.function(txn, f, env),
             Expr::Subquery(q) => {
@@ -592,6 +576,7 @@ impl Evaluator<'_> {
             ),
             Register::Path => Value::Str("*LIBL".into()),
             Register::Timezone => Value::int(0),
+            Register::DecfloatRounding => Value::Str(self.ctx.decfloat_rounding.name().into()),
         }
     }
 
@@ -754,27 +739,6 @@ fn column_length(env: &Env, c: &crate::ast::ColumnRef) -> Option<usize> {
         }
     }
     None
-}
-
-/// A number literal with an exponent (`1.00E+2`, `-0E3`), or its
-/// negation, as the `DECFLOAT(34)` its text spells. Such a literal is a
-/// double, which has no exponent; into or beside a `DECFLOAT` the
-/// exponent written is kept. `None` for any other expression.
-pub fn decfloat_literal(e: &Expr) -> Option<Result<Value>> {
-    match e {
-        Expr::Literal(Literal::Num(n)) if n.contains(['E', 'e']) => Some(
-            qdecimal::DecFloat::parse(n, qdecimal::DfFormat::D34)
-                .map(Value::DecFloat)
-                .map_err(crate::value::decfloat_error),
-        ),
-        Expr::Neg(a) => decfloat_literal(a).map(|v| {
-            v.map(|v| match v {
-                Value::DecFloat(d) => Value::DecFloat(d.negated()),
-                v => v,
-            })
-        }),
-        _ => None,
-    }
 }
 
 /// A literal's value.
@@ -1058,91 +1022,7 @@ pub fn like(text: &str, pattern: &str, escape: Option<char>) -> bool {
 
 /// `CAST`.
 pub fn cast(v: &Value, t: &TypeSpec) -> Result<Value> {
-    if v.is_null() {
-        return Ok(Value::Null);
-    }
-    let fit = |p: u8, s: u8| -> Result<Value> {
-        let d = v.as_decimal()?;
-        let shape = Shape::new(p, s).map_err(overflow)?;
-        Ok(Value::Num(d.fit(shape, Rounding::Truncate).map_err(
-            |_| SqlError::Overflow {
-                what: format!("{d} does not fit {p},{s}"),
-            },
-        )?))
-    };
-    let bytes = |n: u32, pad: bool| -> Result<Value> {
-        let mut b = v.as_bytes()?;
-        let n = usize::try_from(n).expect("fits");
-        b.truncate(n);
-        if pad {
-            b.resize(n, 0);
-        }
-        Ok(Value::Bin(b))
-    };
-    let chars = |n: u32| -> String { v.as_text().chars().take(usize::try_from(n).expect("fits")).collect() };
-    // A binary string as bit data is its bytes.
-    let v = &match v {
-        Value::Bin(b) if matches!(t.data_type, DataType::Char(_) | DataType::Varchar(_)) => {
-            Value::Str(ccsid::from_ebcdic(b))
-        }
-        v => v.clone(),
-    };
-    Ok(match &t.data_type {
-        DataType::DecFloat(n) => {
-            let format = if *n == 16 { qdecimal::DfFormat::D16 } else { qdecimal::DfFormat::D34 };
-            let d = match v {
-                Value::Str(s) => qdecimal::DecFloat::parse(s, format).map_err(crate::value::decfloat_error)?,
-                v => v.as_decfloat(format)?,
-            };
-            Value::DecFloat(d.to_format(format).map_err(crate::value::decfloat_error)?)
-        }
-        DataType::Binary(n) => bytes(*n, true)?,
-        DataType::Varbinary(n) | DataType::Blob(n) => bytes(*n, false)?,
-        DataType::Boolean => Value::Bool(v.as_bool()?),
-        DataType::Clob(n) | DataType::Dbclob(n) => Value::Str(chars(*n)),
-        DataType::Char(n) => {
-            let s = v.as_text();
-            let n = usize::try_from(*n).expect("fits");
-            let mut out: String = s.chars().take(n).collect();
-            while out.chars().count() < n {
-                out.push(' ');
-            }
-            Value::Str(out)
-        }
-        DataType::Varchar(n) | DataType::Graphic(n) | DataType::Vargraphic(n) => Value::Str(
-            v.as_text()
-                .chars()
-                .take(usize::try_from(*n).expect("fits"))
-                .collect(),
-        ),
-        DataType::Decimal(p, s) | DataType::Numeric(p, s) => fit(*p, *s)?,
-        DataType::SmallInt => fit(5, 0).and_then(|x| range(&x, 32_767))?,
-        DataType::Integer => fit(10, 0).and_then(|x| range(&x, 2_147_483_647))?,
-        DataType::BigInt => fit(19, 0).and_then(|x| range(&x, i64::MAX))?,
-        DataType::Double => Value::Double(v.as_f64()?),
-        DataType::Real => {
-            let x = v.as_f64()?;
-            #[allow(clippy::cast_possible_truncation)] // the single it rounds to
-            let r = x as f32;
-            if r.is_infinite() && x.is_finite() {
-                return Err(SqlError::Overflow { what: format!("{} does not fit REAL", v.as_text()) });
-            }
-            Value::Real(r)
-        }
-        DataType::Date => Value::Date(v.as_date()?),
-        DataType::Time => Value::Time(v.as_time()?),
-        DataType::Timestamp(p) => Value::Timestamp(v.as_timestamp()?.with_precision(*p)),
-    })
-}
-
-fn range(v: &Value, max: i64) -> Result<Value> {
-    let n = v.as_i64()?;
-    if n > max || n < -max - 1 {
-        return Err(SqlError::Overflow {
-            what: format!("{n} is out of range"),
-        });
-    }
-    Ok(Value::int(n))
+    super::cast::cast(v, t, qdecimal::DfRounding::HalfEven)
 }
 
 #[cfg(test)]

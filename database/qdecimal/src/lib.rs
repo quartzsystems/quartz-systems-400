@@ -20,7 +20,7 @@ mod error;
 pub mod fuzz;
 
 pub use arith::{Mode, Typed};
-pub use decfloat::{DecFloat, DfFormat, DfKind};
+pub use decfloat::{DecFloat, DfFormat, DfKind, DfRounding};
 pub use decimal::{Decimal, MAX_DIGITS, Rounding, Shape};
 pub use edit::{DateEditFmt, EditOpts, Fill, code_width, edit_code, edit_word};
 pub use encode::{Binary, Float, Integer, Packed, Zoned};

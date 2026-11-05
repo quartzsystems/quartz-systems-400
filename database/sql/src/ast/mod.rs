@@ -211,6 +211,8 @@ pub enum Statement {
     SetPath(Vec<PathEntry>),
     /// `SET CURRENT DEGREE`: accepted, ignored.
     SetCurrentDegree,
+    /// `SET CURRENT DECFLOAT ROUNDING MODE`.
+    SetDecfloatRounding(qdecimal::DfRounding),
     /// `SET TRANSACTION ISOLATION LEVEL`: the unit of work's level.
     SetTransaction(Isolation),
     /// `EXPLAIN` (Quartz's): the plan of the statement as text.

@@ -91,7 +91,8 @@ impl Sqlca {
     /// success.
     #[must_use]
     pub fn msgid(&self) -> String {
-        format!("SQL{:04}", self.sqlcode.unsigned_abs())
+        let n = self.sqlcode.unsigned_abs();
+        if n > 9999 { format!("SQ{n:05}") } else { format!("SQL{n:04}") }
     }
 
     /// One line as a listing shows it.

@@ -254,7 +254,8 @@ fn body(
                 }
                 let mut row = Vec::with_capacity(r.len());
                 for e in r {
-                    row.push(ev.eval(txn, e, outer)?);
+                    let v = ev.eval(txn, e, outer);
+                    row.push(super::cast::mapped(ev.ctx, v)?);
                 }
                 out.push(row);
             }
@@ -1343,7 +1344,8 @@ fn select(
         let mut row = Vec::with_capacity(plan.len());
         for (e, direct) in &plan {
             if *direct == usize::MAX {
-                row.push(ev.eval(txn, e, &env)?);
+                let v = ev.eval(txn, e, &env);
+                row.push(super::cast::mapped(ev.ctx, v)?);
             } else {
                 row.push(env.frames.last().expect("row").1[*direct].clone());
             }

@@ -97,7 +97,8 @@ fn binary_and_boolean() {
     assert!(Value::Bin(vec![0; 5]).to_field(&fixed).is_err());
     assert_eq!(v.to_string(), "0040FF");
     assert_eq!(Value::Bin(vec![1]).compare(&Value::Bin(vec![1, 0])).unwrap(), Some(Ordering::Less));
-    assert_eq!(Value::Bin(vec![0xC1]).compare(&Value::Str("A".into())).unwrap(), Some(Ordering::Equal));
+    // The primary: BX'C1' = 'A' is SQL0401.
+    assert_eq!(Value::Bin(vec![0xC1]).compare(&Value::Str("A".into())).unwrap_err().sqlcode(), -401);
     let b = field(DataType::Boolean, 1);
     assert_eq!(round_trip(&b, &Value::Bool(true)), Value::Bool(true));
     assert_eq!(round_trip(&b, &Value::Str("false".into())), Value::Bool(false));

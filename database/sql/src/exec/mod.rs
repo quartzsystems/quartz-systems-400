@@ -8,6 +8,7 @@
 
 pub mod alias;
 mod answers;
+pub mod cast;
 pub mod catalog;
 pub mod cursor;
 pub mod ddl;
@@ -114,6 +115,14 @@ pub struct SqlContext {
     pub spill: Box<dyn spill::SpillArea>,
     /// A column function left out a null value (SQLSTATE `01003`).
     pub nulls_eliminated: bool,
+    /// `CURRENT DECFLOAT ROUNDING MODE`.
+    pub decfloat_rounding: qdecimal::DfRounding,
+    /// The data mapping error a result column took as null (`+802`,
+    /// `+420`, `+180` ...): the statement's warning code and state.
+    pub mapping_warning: Option<(i32, &'static str)>,
+    /// Whether result columns take data mapping errors as null (a
+    /// `SELECT` statement's select list).
+    pub map_errors: bool,
     /// Changes are not under commitment control even when the job has
     /// it (a program precompiled with `COMMIT(*NONE)`).
     pub no_commit: bool,
@@ -227,6 +236,9 @@ impl SqlContext {
             sort_budget: DEFAULT_SORT_BUDGET,
             spill: Box::new(spill::MemSpill::default()),
             nulls_eliminated: false,
+            decfloat_rounding: qdecimal::DfRounding::HalfEven,
+            mapping_warning: None,
+            map_errors: false,
             no_commit: false,
             isolation: None,
             interrupt: None,
@@ -912,6 +924,7 @@ impl Prepared {
                 Ok(Outcome::Done)
             }
             Statement::SetPath(_) | Statement::SetCurrentDegree => Ok(Outcome::Done),
+            Statement::SetDecfloatRounding(m) => Ok(ctx.set_decfloat_rounding(*m)),
             Statement::SetTransaction(iso) => set_transaction(ctx, *iso).map(|()| Outcome::Done),
             Statement::Grant(g) => grant::run(txn, ctx, g, false).map(|()| Outcome::Done),
             Statement::Revoke(g) => grant::run(txn, ctx, g, true).map(|()| Outcome::Done),
@@ -946,10 +959,23 @@ impl Prepared {
         ctx: &mut SqlContext,
         params: &[Value],
     ) -> (crate::sqlca::Sqlca, Option<Outcome>) {
-        match self.execute(txn, ctx, params) {
+        ctx.mapping_warning = None;
+        ctx.map_errors = matches!(self.statement, Statement::Select(_));
+        let r = self.execute(txn, ctx, params);
+        ctx.map_errors = false;
+        match r {
             Ok(o) => {
-                let ca = crate::sqlca::Sqlca::from_outcome(&o);
-                (ctx.warning.as_ref().map_or_else(|| ca.clone(), |w| w.apply(ca.clone())), Some(o))
+                let mut ca = crate::sqlca::Sqlca::from_outcome(&o);
+                if let Some((code, state)) = ctx.mapping_warning.take()
+                    && ca.sqlcode >= 0
+                {
+                    ca.sqlcode = code;
+                    ca.sqlstate = state.into();
+                }
+                if let Some(w) = ctx.warning.as_ref() {
+                    ca = w.apply(ca);
+                }
+                (ca, Some(o))
             }
             Err(e) => (crate::sqlca::Sqlca::from_error(&e), None),
         }
@@ -988,6 +1014,7 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::SetSchema(_) => "SET SCHEMA",
         Statement::SetPath(_) => "SET PATH",
         Statement::SetCurrentDegree => "SET CURRENT DEGREE",
+        Statement::SetDecfloatRounding(_) => "SET CURRENT DECFLOAT ROUNDING MODE",
         Statement::SetTransaction(_) => "SET TRANSACTION",
         Statement::Explain(_) => "EXPLAIN",
         Statement::Grant(_) => "GRANT",
