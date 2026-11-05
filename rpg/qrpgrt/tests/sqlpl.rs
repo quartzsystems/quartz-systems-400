@@ -340,6 +340,11 @@ fn sqlstate_and_sqlcode_variables() {
 impl Env {
     /// A program made from IR text in QSTEST.
     fn program(&mut self, name: &str, text: &str) {
+        self.object(name, text, PgmKind::Pgm);
+    }
+
+    /// A program or service program made from IR text in QSTEST.
+    fn object(&mut self, name: &str, text: &str, kind: PgmKind) {
         let module = qir::parse(text).unwrap();
         qir::verify(&module).unwrap();
         let object = ile::ModuleObject::compile(module, ile::CreateData::default(), NOW).unwrap();
@@ -355,7 +360,7 @@ impl Env {
         let n = Name::parse(name).unwrap();
         let m = ile::store::crtmod(&mut txn, &c, self.lib, n, &object, "").unwrap();
         let spec = ile::store::ObjSpec { lib: qsname::LibSpec::Name(Name::parse("QSTEST").unwrap()), name: n };
-        ile::store::crtpgm(&mut txn, &c, self.lib, &[spec], &[], ile::BindOptions::new(name, PgmKind::Pgm), "").unwrap();
+        ile::store::crtpgm(&mut txn, &c, self.lib, &[spec], &[], ile::BindOptions::new(name, kind), "").unwrap();
         store::obj::ops::delete(&mut txn, JobHandle(0), m).unwrap();
         txn.commit().unwrap();
     }
@@ -391,4 +396,43 @@ L0:
     assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
     let r = e.run("CREATE PROCEDURE QSTEST.NOPE (IN A INTEGER) LANGUAGE C EXTERNAL NAME QSTEST.NOPE");
     assert_eq!(r.sqlca.sqlcode, -84, "{:?}", r.sqlca);
+}
+
+#[test]
+fn a_service_program_procedure_takes_its_parameters() {
+    let mut e = env();
+    // Eight by-reference parameters: past the six of a procedure pointer.
+    e.object(
+        "SRV8",
+        "module SRV8 lang(QIR) ccsid(37) actgrp(*CALLER) nomain
+proc SUM8($a: i32, $b: i32, $c: i32, $d: i32, $e: i32, $f: i32, $g: i32, $h: i32) export {
+L0:
+  %a = load $a
+  %b = load $b
+  %c = load $c
+  %d = load $d
+  %e = load $e
+  %f = load $f
+  %g = load $g
+  %h = load $h
+  %s1 = add %a, %b
+  %s2 = add %s1, %c
+  %s3 = add %s2, %d
+  %s4 = add %s3, %e
+  %s5 = add %s4, %f
+  %s6 = add %s5, %g
+  %s7 = add %s6, %h
+  store $a, %s7
+  ret
+}
+",
+        PgmKind::SrvPgm,
+    );
+    e.ok("CREATE PROCEDURE QSTEST.SUM8 (INOUT A INTEGER, IN B INTEGER, IN C INTEGER, IN D INTEGER, IN E INTEGER, IN F INTEGER, IN G INTEGER, IN H INTEGER) LANGUAGE RPGLE EXTERNAL NAME 'QSTEST/SRV8(SUM8)' PARAMETER STYLE GENERAL");
+    let (r, outs) = e.run_with("CALL QSTEST.SUM8(?, 2, 3, 4, 5, 6, 7, 8)", vec![Value::int(1)]);
+    assert_eq!(r.sqlca.sqlcode, 0, "{:?}", r.sqlca);
+    assert_eq!(outs.iter().map(|(_, v)| text(v)).collect::<Vec<_>>(), ["36"]);
+    e.ok("CREATE PROCEDURE QSTEST.NOSUCH (INOUT A INTEGER) LANGUAGE RPGLE EXTERNAL NAME 'QSTEST/SRV8(NOSUCH)' PARAMETER STYLE GENERAL");
+    let (r, _) = e.run_with("CALL QSTEST.NOSUCH(?)", vec![Value::int(1)]);
+    assert_eq!(r.sqlca.sqlcode, -204, "{:?}", r.sqlca);
 }

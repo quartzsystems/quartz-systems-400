@@ -56,6 +56,25 @@ fn read_varchar(b: &[u8]) -> String {
     ccsid::from_ebcdic(&b[2..2 + n]).trim_end().to_string()
 }
 
+/// A service program's procedure (`EXTERNAL NAME lib/srvpgm(proc)`),
+/// its parameters by reference.
+fn call_procedure(job: &mut mi::Job, plan: &CallPlan, args: &[u64]) -> Result<(), (i32, String)> {
+    let table = job.table.clone();
+    let what = format!("{}/{}({})", plan.library, plan.program, plan.entry);
+    let p = job
+        .act
+        .load_program(&plan.program, &plan.library, ile::PgmKind::SrvPgm, &table)
+        .map_err(|c| (-204, format!("service program procedure {what} could not be called: {}", c.msgid())))?;
+    let addr = p
+        .export_addr(&plan.entry)
+        .or_else(|| p.export_addr(&plan.entry.to_ascii_uppercase()))
+        .ok_or_else(|| (-204, format!("service program {}/{} exports no procedure {}", plan.library, plan.program, plan.entry)))?;
+    if !mi::act::call_by_ref_many(job, addr, args) {
+        return Err((-84, format!("CALL of {what} with more than {} parameters in all: not supported", mi::act::MAX_BY_REF)));
+    }
+    Ok(())
+}
+
 /// Make the call the plan describes.
 #[allow(clippy::too_many_lines)] // the styles in order
 pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
@@ -71,14 +90,6 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
         routine: plan.routine.clone(),
         ..Called::default()
     };
-    if !plan.entry.is_empty() {
-        // BLOCKED(sql): a service program procedure takes at most six
-        // parameters through the runtime's procedure-pointer call.
-        called.sqlcode = -84;
-        called.sqlstate = "42612".into();
-        called.message = format!("CALL of service program procedure {}/{}({}): not supported", plan.library, plan.program, plan.entry);
-        return Outcome { called, outs: Vec::new(), answer: None };
-    }
     let mut bufs: Vec<Vec<u8>> = Vec::with_capacity(n);
     let mut inds: Vec<i16> = Vec::with_capacity(n);
     for p in &plan.parms {
@@ -123,12 +134,16 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
         }
     }
     DEPTH.with(|d| d.set(d.get() + 1));
-    let r = job.call_program(&plan.program, &plan.library, &args);
+    let r = if plan.entry.is_empty() {
+        job.call_program(&plan.program, &plan.library, &args).map_err(|c| (-204, format!("program {}/{} could not be called: {}", plan.library, plan.program, c.msgid())))
+    } else {
+        call_procedure(job, plan, &args)
+    };
     DEPTH.with(|d| d.set(d.get() - 1));
-    if let Err(c) = r {
-        called.sqlcode = -204;
-        called.sqlstate = "42704".into();
-        called.message = format!("program {}/{} could not be called: {}", plan.library, plan.program, c.msgid());
+    if let Err((code, message)) = r {
+        called.sqlcode = code;
+        called.sqlstate = if code == -204 { "42704" } else { "42612" }.into();
+        called.message = message;
         return Outcome { called, outs: Vec::new(), answer: None };
     }
     if let Some(e) = job.clear() {
