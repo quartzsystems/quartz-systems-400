@@ -1,0 +1,23 @@
+# STRSQL services: Save Session in Source File (left with F12), the
+# SELECT output types 2 (printer) and 3 (file) on Change Session
+# Attributes and the displays they lead to (left with F12, nothing
+# changed), then Print current session. Left with option 2.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+snap strsql-a-start
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 4
+key enter
+settle 2000
+snap strsql-savesrc
+key f12
+settle 1500
+snap strsql-savesrc-f12

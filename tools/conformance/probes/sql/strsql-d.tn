@@ -1,0 +1,104 @@
+# STRSQL: a saved session dropped first (option 2), a query shown, Print current session through Change Printer
+# File (a spooled file of the account's own, deleted after it is read),
+# SELECT output 2 and a query printed, Remove all entries, output set
+# back to 1, left with option 2 (exit without saving).
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+type select 'ABC' as c, dec(-1234.5,7,2) as d, date('2026-01-15') as dt, time('13:45:30') as tm, cast(null as int) as n from qsys2.qsqptabl
+key enter
+wait "Display Data"
+settle 1000
+snap strsql-fmt-ymd -date -time
+key f3
+wait "Enter SQL Statements"
+settle 1000
+snap strsql-fmt-history -date -time
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 2
+key enter
+wait "Change Printer File"
+key enter
+wait "Interactive SQL Session Services"
+settle 1500
+snap strsql-print-done
+type 1
+key enter
+wait "Change Session Attributes"
+cursor 6 37
+key eraseeof
+type 2
+key enter
+settle 1500
+key enter
+wait "Interactive SQL Session Services"
+settle 1500
+snap strsql-attrs-applied
+key f12
+wait "Enter SQL Statements"
+settle 1000
+snap strsql-attrs-applied-2
+key eraseinput
+key f9
+settle 1000
+key enter
+wait "Enter SQL Statements"
+settle 2500
+snap strsql-select-printed -date -time
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 3
+key enter
+settle 2000
+snap strsql-removed
+key enter
+settle 2000
+snap strsql-removed-done
+key f12
+settle 1500
+snap strsql-removed-f12
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+cursor 6 37
+key eraseeof
+type 1
+key enter
+settle 1500
+key enter
+wait "Interactive SQL Session Services"
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

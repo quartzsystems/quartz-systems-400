@@ -1,0 +1,24 @@
+                              Select SQL Statement                              
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. ALTER TABLE                                                            
+      2. CALL                                                                   
+      3. COMMENT ON                                                             
+      4. COMMIT                                                                 
+      5. CONNECT                                                                
+      6. CREATE ALIAS                                                           
+      7. CREATE COLLECTION                                                      
+      8. CREATE INDEX                                                           
+      9. CREATE PROCEDURE                                                       
+     10. CREATE TABLE                                                           
+     11. CREATE VIEW                                                            
+     12. DELETE                                                                 
+     13. DISCONNECT                                                             
+     14. DROP ALIAS                                                             
+                                                                        More... 
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

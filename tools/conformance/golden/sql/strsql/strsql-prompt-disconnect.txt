@@ -1,0 +1,24 @@
+                          Specify DISCONNECT Statement                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Connection . . . . . . . . . . .                          1=Relational       
+                                                               database         
+                                                             2=CURRENT          
+                                                             3=ALL              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel   F21=Display statement                      
+                                                                                

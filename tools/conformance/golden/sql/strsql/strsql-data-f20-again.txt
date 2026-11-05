@@ -1,0 +1,24 @@
+                                  Display Data                                  
+                                              Data width . . . . . . :     127  
+ Position to line  . . . . .              Shift to column  . . . . . .          
+ .5....+....6....+....7....+....8....+....9....+...10....+...11....+...12....+..
+             F  TS                          V                          Z      H 
+ 00000000E+003  2026-01-15-13.45.30.123456  xyz                        5    .50 
+ ********  End of data  ********                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                       Bottom   
+ F3=Exit      F12=Cancel      F19=Left      F20=Right      F21=Split            
+ Last column of data.                                                           

@@ -1,0 +1,46 @@
+# STRSQL: the identifier of the message F20 leaves at the data's last
+# column (F1), F20 again there, F19 back and its message (F1). Only a SELECT runs; left
+# with option 2.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+pick "===>" select smallint(-12) s, bigint(123456789012) b, double(1.5e3) f, timestamp('2026-01-15-13.45.30.123456') ts, varchar('xyz',20) v, dec(5,5,0) z, dec(0.5,3,2) h from qsys2.qsqptabl
+key enter
+wait "Display Data"
+key f20
+settle 1500
+cursor 24 2
+key help
+settle 2000
+snap strsql-msg-lastcol
+key f12
+wait "Display Data"
+key f20
+settle 1500
+snap strsql-data-f20-again -date -time
+key f19
+settle 1500
+snap strsql-data-f19 -date -time
+cursor 24 2
+key help
+settle 2000
+snap strsql-msg-firstcol
+key f12
+wait "Display Data"
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

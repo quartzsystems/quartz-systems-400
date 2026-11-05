@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   SQL6102       Severity . . . . . . . :   00         
+ Message type . . . . . :   Information                                         
+                                                                                
+ Message . . . . :   Session was saved and started again.                       
+ Cause . . . . . :   Interactive SQL has found a saved session, and the session 
+   started again.  This means that all values in effect now are the values that 
+   were in effect when the session was saved, along with any previous           
+   statements and messages that were entered or sent.                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

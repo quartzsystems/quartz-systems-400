@@ -1,0 +1,214 @@
+# STRSQL, after strsql-g.tn: the statement prompts from GRANT PACKAGE
+# on, chosen on Select SQL Statement (typing GRANT PACKAGE and F4 is a
+# syntax error), each left with F12; the history after a cancelled
+# prompt and its message's identifier (F1); the second displays of the
+# INSERT, UPDATE and CREATE INDEX prompts. Nothing is run; left with
+# option 2.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 20
+key enter
+settle 2500
+snap strsql-prompt-grant-package
+key f12
+settle 1500
+snap strsql-prompt-grant-package-f12
+seek "Enter SQL Statements" 2 f12
+settle 1000
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 21
+key enter
+settle 2500
+snap strsql-prompt-grant-table
+key f12
+settle 1000
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 23
+key enter
+settle 2500
+snap strsql-prompt-label-on
+key f12
+settle 1000
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 24
+key enter
+settle 2500
+snap strsql-prompt-lock-table
+key f12
+settle 1000
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 25
+key enter
+settle 2500
+snap strsql-prompt-rename
+key f12
+settle 1000
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 26
+key enter
+settle 2500
+snap strsql-prompt-release
+key f12
+settle 1000
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 27
+key enter
+settle 2500
+snap strsql-prompt-revoke-package
+key f12
+settle 1000
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 28
+key enter
+settle 2500
+snap strsql-prompt-revoke-table
+key f12
+settle 1000
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 29
+key enter
+settle 2500
+snap strsql-prompt-rollback
+key f12
+settle 1000
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 31
+key enter
+settle 2500
+snap strsql-prompt-set-connection
+key f12
+settle 1000
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+cursor 21 7
+type 32
+key enter
+settle 2500
+snap strsql-prompt-set-transaction
+key f12
+settle 1000
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+pick "===>" insert
+key f4
+wait "Specify INSERT Statement"
+cursor 5 32
+type qsqptabl
+cursor 6 34
+type qsys2
+key enter
+settle 2500
+snap strsql-prompt-insert-2
+key f12
+settle 1500
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+pick "===>" update
+key f4
+wait "Specify UPDATE Statement"
+cursor 5 29
+type qsqptabl
+cursor 6 31
+type qsys2
+key enter
+settle 2500
+snap strsql-prompt-update-2
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" create index
+key f4
+wait "Specify CREATE INDEX Statement"
+cursor 5 28
+type x
+cursor 6 30
+type qtemp
+cursor 8 28
+type qsqptabl
+cursor 9 30
+type qsys2
+key enter
+settle 2500
+snap strsql-prompt-crtidx-2
+key f12
+settle 1500
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

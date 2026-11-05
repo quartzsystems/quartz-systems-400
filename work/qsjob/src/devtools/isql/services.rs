@@ -4,18 +4,22 @@
 
 //! F13's Interactive SQL Session Services (the attributes, printing,
 //! clearing and saving the session in a source file), the Exit
-//! Interactive SQL display, and a plain help display.
+//! Interactive SQL display, and a plain help display. The displays and
+//! what each option leaves are pub400's
+//! (`tools/conformance/golden/sql/strsql/`).
 
 use isql::attrs::Attrs;
 use isql::history::Line;
+use isql::print::{self, Stamp};
 use isql::saved::source_lines;
-use isql::screen::menus::{self, ATTR_PAGES, attr_keys};
-use isql::screen::{Screen, blank, keys, leader, message, more, put, title, var};
+use isql::screen::menus::{self, attr_keys, attr_pages};
+use isql::screen::services::{self as panels, SourceFile};
+use isql::screen::{Screen, blank, keys, more, put};
 use stg::Client;
 use uim::render::Attr;
 
 use super::ui::{Key, show};
-use super::{Session, note, note_error, start_sql};
+use super::{Session, note, note_error, start_sql, words};
 use crate::console::host::Host;
 use crate::display::surface::Surface;
 
@@ -35,14 +39,16 @@ pub fn services(host: &Host, surface: &mut Surface, s: &mut Session) {
                         return;
                     }
                 }
-                "2" => {
-                    let lines = session_lines(s);
-                    super::run::print(host, &mut s.h, &lines);
-                    return;
-                }
+                "2" => match print_session(host, surface, s) {
+                    Some(Ok(())) => msg = Some(crate::display::msgline::say(host, "SQL6085", &[])),
+                    Some(Err(e)) => msg = Some(crate::display::msgline::of_error(host, &e)),
+                    None => {}
+                },
                 "3" => {
-                    s.h.clear();
-                    return;
+                    if confirm_remove(host, surface) {
+                        s.h.clear();
+                        msg = Some(crate::display::msgline::say(host, "SQL6086", &[]));
+                    }
                 }
                 "4" => {
                     if save_source(host, surface, s).is_some() {
@@ -56,31 +62,82 @@ pub fn services(host: &Host, surface: &mut Surface, s: &mut Session) {
     }
 }
 
-/// The session as printed lines.
+/// The session as printed lines: statements and messages as Enter SQL
+/// Statements shows them, at the left margin.
 fn session_lines(s: &Session) -> Vec<String> {
     s.h.lines()
         .into_iter()
         .map(|l| match l {
-            Line::Statement { text, first, .. } => {
-                format!("{} {text}", if first { ">" } else { " " })
-            }
-            Line::Message { text, .. } => format!("    {text}"),
+            Line::Statement { text, .. } | Line::Message { text, .. } => text,
         })
         .collect()
 }
 
+/// The job's date and time now, as the job writes them.
+#[allow(clippy::many_single_char_names)] // year, month, day
+pub fn stamp(host: &Host) -> Stamp {
+    let f = Attrs::default().format(&super::job_formats(host));
+    let env = crate::display::dds::env_of(host, "");
+    let (y, m, d) = env.date;
+    let (h, mi, sec) = env.time;
+    Stamp {
+        date: f.date(&format!("{y:04}-{m:02}-{d:02}")),
+        time: f.time(&format!("{h:02}.{mi:02}.{sec:02}")),
+    }
+}
+
+/// Change Printer File, then the session printed; `None` when left
+/// with F3 or F12.
+fn print_session(host: &Host, surface: &mut Surface, s: &Session) -> Option<Result<(), String>> {
+    let w = words(host);
+    let mut file = "QSYSPRT".to_string();
+    let mut msg: Option<String> = None;
+    loop {
+        let a = show(surface, &panels::printer_file(&file, msg.take().as_deref(), &w))?;
+        file = a.up("PRTF");
+        match a.key {
+            Key::F(3 | 12) => return None,
+            Key::F(5) => file = "QSYSPRT".into(),
+            Key::Enter if file.is_empty() => msg = Some(crate::display::msgline::say(host, "CPD9BF4", &[])),
+            Key::Enter => {
+                let pages = print::session(
+                    &session_lines(s),
+                    "5770ST1",
+                    &release::RELEASE.to_string(),
+                    &stamp(host),
+                    60,
+                    &w,
+                );
+                return Some(super::run::spool(host, &file, &pages));
+            }
+            _ => msg = Some(crate::display::msgline::say(host, "CPD6A60", &[])),
+        }
+    }
+}
+
+/// Confirm Remove Entries Request; true on Enter.
+fn confirm_remove(host: &Host, surface: &mut Surface) -> bool {
+    let w = words(host);
+    show(surface, &panels::confirm_remove(&w)).is_some_and(|a| a.key == Key::Enter)
+}
+
 /// Change Session Attributes; true when F3 asked to leave the services.
+/// Enter applies the values unless they change what the display shows
+/// (SELECT output's rows, the separators a format takes): then it is
+/// shown again with them, as pub400 does.
 fn attributes(host: &Host, surface: &mut Surface, s: &mut Session) -> bool {
+    let w = words(host);
     let mut work = s.attrs.clone();
     let mut page = 0;
     let mut msg: Option<String> = None;
     loop {
-        let screen = menus::attributes(page, &work, msg.take().as_deref());
+        let screen = menus::attributes(page, &work, msg.take().as_deref(), &w);
         let Some(a) = show(surface, &screen) else {
             return true;
         };
+        let before = layout(&work, &w);
         // What was typed on this page, checked as it is read.
-        for k in attr_keys(page) {
+        for k in attr_keys(page, &work, &w) {
             if let Some(v) = a.vars.get(k)
                 && let Err(e) = work.set(k, v)
             {
@@ -92,15 +149,20 @@ fn attributes(host: &Host, surface: &mut Surface, s: &mut Session) -> bool {
             Key::F(12) => return false,
             Key::F(5) => work = s.attrs.clone(),
             Key::F(4) => msg = Some(crate::display::msgline::say(host, "CPI9BD9", &[])),
-            Key::PageDown if page + 1 < ATTR_PAGES => page += 1,
+            Key::PageDown if page + 1 < attr_pages(&work, &w) => page += 1,
             Key::PageUp if page > 0 => page -= 1,
-            Key::Enter if msg.is_none() => {
+            Key::Enter if msg.is_none() && layout(&work, &w) == before => {
                 apply(host, s, work);
                 return false;
             }
-            _ => {}
+            _ => page = page.min(attr_pages(&work, &w) - 1),
         }
     }
+}
+
+/// The keys every page shows, to see whether the display changed.
+fn layout(a: &Attrs, w: &dyn Fn(&str) -> String) -> Vec<Vec<&'static str>> {
+    (0..attr_pages(a, w)).map(|p| attr_keys(p, a, w)).collect()
 }
 
 /// New attributes in force: the service told of a naming or
@@ -123,7 +185,6 @@ fn apply(host: &Host, s: &mut Session, new: Attrs) {
     {
         note_error(host, &mut s.h, &e);
     }
-    note(host, &mut s.h, "CPI9BF1", &[]);
 }
 
 /// Exit Interactive SQL; true when the session ends.
@@ -141,11 +202,7 @@ pub fn exit(host: &Host, surface: &mut Surface, s: &mut Session) -> bool {
             Key::Enter => match option.as_str() {
                 "1" => {
                     let text = s.saved();
-                    if let Err(e) = host
-                        .link
-                        .borrow_mut()
-                        .with(|l| l.isql_session_put(Some(text)))
-                    {
+                    if let Err(e) = host.link.borrow_mut().with(|l| l.isql_session_put(Some(text))) {
                         msg = Some(crate::display::msgline::text_of(host, &crate::panels::line(&e)));
                         continue;
                     }
@@ -180,38 +237,55 @@ fn end(host: &Host, s: &Session, commit: bool) {
     }
 }
 
-/// Save Session in Source File: the statements written to a member;
-/// what happened goes into the history; `None` when cancelled.
+/// Change Source File: the statements written to a member (options 1
+/// to 4 create or replace it, 5 adds to it); what happened goes into
+/// the history; `None` when cancelled. A new file's authority and text
+/// other than the defaults are refused (SQL0084), not ignored.
 fn save_source(host: &Host, surface: &mut Surface, s: &mut Session) -> Option<()> {
-    let mut file = "QSQLSRC".to_string();
-    let mut lib = host.attrs().libl.cur.unwrap_or_else(|| "QGPL".into());
-    let mut member = "QSQLSESS".to_string();
+    let txt = words(host);
+    let lib = host.attrs().libl.cur.unwrap_or_else(|| "QGPL".into());
+    let mut form = SourceFile::new(&lib);
     let mut msg: Option<String> = None;
     loop {
-        let screen = save_screen(&file, &lib, &member, msg.take().as_deref());
-        let a = show(surface, &screen)?;
-        file = a.up("FILE");
-        lib = a.up("LIB");
-        member = a.up("MBR");
+        let a = show(surface, &panels::source_file(&form, msg.take().as_deref(), &txt))?;
+        form.file = a.up("FILE");
+        form.lib = a.up("LIB");
+        form.member = a.up("MBR");
+        form.option = a.get("OPTION");
+        form.aut = a.up("AUT");
+        form.text = a.get("TEXT");
         match a.key {
             Key::F(3 | 12) => return None,
+            Key::F(5) => form = SourceFile::new(&lib),
             Key::Enter => {
-                if file.is_empty() || lib.is_empty() || member.is_empty() {
+                if form.file.is_empty() || form.lib.is_empty() || form.member.is_empty() {
                     msg = Some(crate::display::msgline::say(host, "CPD9BF4", &[]));
                     continue;
                 }
-                let lines = source_lines(&s.h.entries);
-                let r = host.link.borrow_mut().with(|l| {
-                    l.pdm_write(
-                        lib.clone(),
-                        file.clone(),
-                        member.clone(),
-                        lines,
-                        "SQL".into(),
-                    )
-                });
+                if !matches!(form.option.as_str(), "1" | "2" | "3" | "4" | "5") {
+                    msg = Some(crate::display::msgline::say(host, "CPD9B98", &[]));
+                    continue;
+                }
+                if form.aut != "*EXCLUDE" || !form.text.is_empty() {
+                    msg = Some(crate::display::msgline::say(host, "SQL0084", &[&"AUT TEXT"]));
+                    continue;
+                }
+                // `*FILE` and `*FIRST` name the member after the file.
+                let member = if form.member.starts_with('*') { form.file.clone() } else { form.member.clone() };
+                let mut lines = source_lines(&s.h.entries);
+                if form.option == "5"
+                    && let Ok(Some(mut old)) =
+                        host.link.borrow_mut().with(|l| l.pdm_read(form.lib.clone(), form.file.clone(), member.clone()))
+                {
+                    old.append(&mut lines);
+                    lines = old;
+                }
+                let r = host
+                    .link
+                    .borrow_mut()
+                    .with(|l| l.pdm_write(form.lib.clone(), form.file.clone(), member.clone(), lines, "SQL".into()));
                 match r {
-                    Ok(()) => note(host, &mut s.h, "CPI9BEF", &[&member, &lib, &file]),
+                    Ok(()) => note(host, &mut s.h, "CPI9BEF", &[&member, &form.lib, &form.file]),
                     Err(e) => note_error(host, &mut s.h, &e),
                 }
                 return Some(());
@@ -221,39 +295,12 @@ fn save_source(host: &Host, surface: &mut Surface, s: &mut Session) -> Option<()
     }
 }
 
-/// The source file, library and member to save the session in.
-fn save_screen(file: &str, lib: &str, member: &str, msg: Option<&str>) -> Screen {
-    let mut s = blank();
-    title(&mut s, 25, "Save Session in Source File");
-    put(&mut s, 3, 2, Attr::Blue, "Type choices, press Enter.");
-    for (row, label, name, value, hint) in [
-        (5, "File", "FILE", file, "Name"),
-        (6, "Library", "LIB", lib, "Name"),
-        (7, "Member", "MBR", member, "Name"),
-    ] {
-        put(&mut s, row, 4, Attr::Normal, &leader(label, 4, 33));
-        var(&mut s, row, 37, 10, name, value);
-        put(&mut s, row, 52, Attr::Normal, hint);
-    }
-    put(
-        &mut s,
-        9,
-        2,
-        Attr::Normal,
-        "The member is made, or replaced, with the session's statements.",
-    );
-    keys(&mut s, &[(23, 2, "F3=Exit"), (23, 12, "F12=Cancel")]);
-    message(&mut s, msg);
-    s.cursor = Some((5, 37));
-    s
-}
-
 /// A help display: the title centred, the lines from row 3, paged.
 pub fn help_display(surface: &mut Surface, heading: &str, lines: &[String]) {
     const PER: usize = 17;
     let mut page = 0;
     loop {
-        let mut s = blank();
+        let mut s: Screen = blank();
         put(&mut s, 1, 2, Attr::Blue, "Help");
         let col = 1 + 80usize.saturating_sub(heading.len()) / 2;
         put(&mut s, 1, col, Attr::HighIntensity, heading);

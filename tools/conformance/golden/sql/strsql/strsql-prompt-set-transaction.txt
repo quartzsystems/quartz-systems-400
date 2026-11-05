@@ -1,0 +1,24 @@
+                       Specify SET TRANSACTION Statement                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   ISOLATION LEVEL . . . . . . . .              1=NO COMMIT (NC, NONE)          
+                                                2=READ UNCOMMITTED (UR, CHG)    
+                                                3=READ COMMITTED (CS)           
+                                                4=REPEATABLE READ (RS, ALL)     
+                                                5=SERIALIZABLE (RR)             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel   F21=Display statement                      
+                                                                                

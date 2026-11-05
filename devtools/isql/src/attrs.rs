@@ -12,6 +12,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use crate::IsqlError;
+use crate::format::{DateFmt, Format, TimeFmt};
 
 /// How a value is checked.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -24,6 +25,8 @@ pub enum Check {
     Char(&'static str),
     /// Anything, blank included.
     Any,
+    /// Text kept as typed (not upper case).
+    Text,
 }
 
 /// One attribute: its key (the `STRSQL` keyword), its label on the
@@ -159,9 +162,20 @@ pub const FIELDS: &[Field] = &[
         "*NONE",
         Check::NameOr(&["*NONE"]),
     ),
-    f("OUTFILE", "File", "", Check::Any),
-    f("OUTLIB", "Library", "", Check::Any),
-    f("OUTMBR", "Member", "", Check::Any),
+    f("OUTFILE", "File", "QSQLSELECT", Check::NameOr(&[])),
+    f("OUTLIB", "Library", "*CURLIB", Check::NameOr(&["*CURLIB"])),
+    f("OUTMBR", "Member", "*FILE", Check::NameOr(&["*FILE", "*FIRST", "*ALL"])),
+    // Labelled by `QSTXTMSG` identifier: the printer and the output
+    // file's option, authority and text.
+    f("PRINTER", "TXT0930", "*PRINT", Check::NameOr(&["*PRINT"])),
+    f("OUTOPT", "TXT0931", "1", Check::Set(&["1", "2", "3", "4", "5"])),
+    f(
+        "OUTAUT",
+        "TXT0932",
+        "*EXCLUDE",
+        Check::NameOr(&["*LIBCRTAUT", "*CHANGE", "*ALL", "*EXCLUDE", "*USE"]),
+    ),
+    f("OUTTEXT", "TXT0933", "", Check::Text),
 ];
 
 /// The field of a key.
@@ -194,6 +208,19 @@ impl Default for Attrs {
                 .collect(),
         }
     }
+}
+
+/// The job's formats, for the attributes left `*JOB`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct JobFormats {
+    /// `DATFMT`: `*YMD`, `*MDY`, `*DMY` or `*JUL`.
+    pub datfmt: String,
+    /// `DATSEP`.
+    pub datsep: String,
+    /// `TIMSEP`.
+    pub timsep: String,
+    /// `DECFMT`: blank, `J` or `I`.
+    pub decfmt: String,
 }
 
 /// Where a query's rows go.
@@ -261,6 +288,7 @@ impl Attrs {
                     .next()
                     .map_or_else(|| " ".to_string(), |c| c.to_string())
             }
+            Check::Text => raw.trim().to_string(),
             _ => up,
         };
         let ok = match f.check {
@@ -269,7 +297,7 @@ impl Attrs {
                 words.contains(&v.as_str()) || is_name(&v) || (v.is_empty() && f.default.is_empty())
             }
             Check::Char(set) => v == "*JOB" || set.contains(v.as_str()),
-            Check::Any => true,
+            Check::Any | Check::Text => true,
         };
         if !ok {
             return Err(IsqlError::BadValue {
@@ -288,6 +316,43 @@ impl Attrs {
             "2" => Output::Printer,
             "3" => Output::File,
             _ => Output::Display,
+        }
+    }
+
+    /// The `*JOB` formats replaced by the job's (a new session shows
+    /// the job's values, as pub400 does): its date format, date and
+    /// time separators, and decimal format (`J` or `I` a comma).
+    pub fn resolve_job(&mut self, job: &JobFormats) {
+        if self.get("DATFMT") == "*JOB" && DateFmt::parse(&job.datfmt).is_some() {
+            let _ = self.set("DATFMT", &job.datfmt);
+        }
+        for (key, value) in [("DATSEP", &job.datsep), ("TIMSEP", &job.timsep)] {
+            if self.get(key) == "*JOB" && value.chars().count() == 1 {
+                let _ = self.set(key, value);
+            }
+        }
+        if self.get("DECPNT") == "*JOB" {
+            let comma = matches!(job.decfmt.trim(), "J" | "I");
+            let _ = self.set("DECPNT", if comma { "*COMMA" } else { "*PERIOD" });
+        }
+    }
+
+    /// How Display Data and the report show values under these
+    /// attributes, `*JOB` taken from `job`.
+    #[must_use]
+    pub fn format(&self, job: &JobFormats) -> Format {
+        let mut a = self.clone();
+        a.resolve_job(job);
+        let sep = |key: &str, dft: char| {
+            let v = a.get(key);
+            if v == "*JOB" { dft } else { v.chars().next().unwrap_or(dft) }
+        };
+        Format {
+            date: DateFmt::parse(&a.get("DATFMT")).unwrap_or(DateFmt::Iso),
+            datsep: sep("DATSEP", '-'),
+            time: TimeFmt::parse(&a.get("TIMFMT")).unwrap_or(TimeFmt::Hms),
+            timsep: sep("TIMSEP", ':'),
+            point: if a.get("DECPNT") == "*COMMA" { ',' } else { '.' },
         }
     }
 
@@ -362,6 +427,24 @@ mod tests {
         let b = Attrs::from_text(&a.to_text());
         assert_eq!(a, b);
         assert_eq!(b.get("TIMSEP"), " ");
+    }
+
+    #[test]
+    fn job_formats() {
+        let job = JobFormats {
+            datfmt: "*YMD".into(),
+            datsep: "-".into(),
+            timsep: ":".into(),
+            decfmt: " ".into(),
+        };
+        let mut a = Attrs::default();
+        a.resolve_job(&job);
+        assert_eq!(a.get("DATFMT"), "*YMD");
+        assert_eq!(a.get("DATSEP"), "-");
+        assert_eq!(a.get("DECPNT"), "*PERIOD");
+        let f = Attrs::default().format(&job);
+        assert_eq!(f.date, DateFmt::Ymd);
+        assert_eq!(f.timsep, ':');
     }
 
     #[test]

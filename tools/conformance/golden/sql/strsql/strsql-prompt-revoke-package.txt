@@ -1,0 +1,24 @@
+                        Specify REVOKE PACKAGE Statement                        
+                                                                                
+ Type one choice per line, press Enter to select privileges.                    
+                                                                                
+   Package . . . . . . . . . .                               Name, F4 for list  
+                                                                                
+                                                                                
+   User  . . . . . . . . . . .                               Name, PUBLIC       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit      F4=Prompt         F5=Refresh   F6=Insert line   F10=Copy line     
+ F12=Cancel   F14=Delete line   F21=Display statement                           
+                                                                                

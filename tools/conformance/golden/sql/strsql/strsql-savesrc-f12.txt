@@ -1,0 +1,24 @@
+                          Interactive SQL Session Services                      
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Change session attributes                                              
+      2. Print current session                                                  
+      3. Remove all entries from current session                                
+      4. Save session in source file                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit     F12=Cancel                                                         
+                                                                                

@@ -1,0 +1,24 @@
+                              Enter SQL Statements                              
+                                                                                
+ Type SQL statement, press Enter.                                               
+    > select 'ABC' as c, dec(-1234.5,7,2) as d, date('2026-01-15') as dt,       
+      time('HH:MM:SS') as tm, cast(null as int) as n from qsys2.qsqptabl        
+      SELECT statement run complete.                                            
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        Bottom  
+ F3=Exit   F4=Prompt   F6=Insert line   F9=Retrieve   F10=Copy line             
+ F12=Cancel            F13=Services     F24=More keys                           
+                                                                                

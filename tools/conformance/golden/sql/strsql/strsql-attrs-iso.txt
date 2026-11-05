@@ -1,0 +1,24 @@
+                           Change Session Attributes                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Statement processing . . . . .   *RUN           *RUN, *VLD, *SYN             
+   SELECT output  . . . . . . . .   1              1=Display, 2=Printer         
+                                                   3=File                       
+   Commitment control . . . . . .   *NONE          *NONE, *CHG, *CS, *ALL, *RR  
+                                                   *NC, *UR, *RS                
+   Date format  . . . . . . . . .   *ISO           *JOB, *USA, *ISO, *EUR, *JIS 
+                                                   *MDY, *DMY, *YMD, *JUL       
+   Time format  . . . . . . . . .   *ISO           *HMS, *USA, *ISO             
+                                                   *EUR, *JIS                   
+   Data refresh . . . . . . . . .   *ALWAYS        *ALWAYS, *FORWARD            
+   Allow copy data  . . . . . . .   *YES           *YES, *OPTIMIZE, *NO         
+   Naming convention  . . . . . .   *SYS           *SYS, *SQL                   
+   List of libraries  . . . . . .   *LIBL          Name, *LIBL, *USRLIBL        
+                                                   *ALLUSR, *ALL, *CURLIB       
+   List type  . . . . . . . . . .   *ALL           *ALL, *SQL                   
+   Decimal point  . . . . . . . .   *PERIOD        *PERIOD, *COMMA, *JOB,       
+                                                     *SYSVAL                    
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+                                                                                

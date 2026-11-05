@@ -7,8 +7,8 @@
 //! history as a message. Also the help behind F1.
 
 use isql::attrs::Output;
-use isql::history::{History, Line};
-use isql::result::{Column, Data, report};
+use isql::history::Line;
+use isql::result::{Column, Data};
 use isql::screen::data;
 use isql::screen::enter::Slot;
 use sql::embed::{Desc, Op, Request};
@@ -79,6 +79,7 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
                 })
                 .collect(),
             rows: r.rows.clone(),
+            fmt: s.attrs.format(&super::job_formats(host)),
         };
         let cut = r
             .truncated
@@ -86,10 +87,23 @@ pub fn statement(host: &Host, surface: &mut Surface, s: &mut Session) {
         match s.attrs.output() {
             Output::Display => display(surface, &d, cut.as_deref()),
             Output::Printer => {
-                let lines = report(&text, &d, 132);
-                print(host, &mut s.h, &lines);
+                let w = super::words(host);
+                let pages = isql::print::select(&d, &super::services::stamp(host), 132, 60, &w);
+                // The query report's printer file; QSYSPRT where it is
+                // not there.
+                let r = spool(host, "QPQUPRFIL", &pages).or_else(|_| spool(host, "QSYSPRT", &pages));
+                if let Err(e) = r {
+                    note_error(host, &mut s.h, &e);
+                }
             }
-            Output::File => note(host, &mut s.h, "CPD9CD0", &[]),
+            Output::File => {
+                if let Err(e) = to_file(host, s, &text) {
+                    s.h.message(&e.0, &e.1);
+                    s.h.input.clear();
+                    s.h.to_end();
+                    return;
+                }
+            }
         }
         done(host, s, &r);
     }
@@ -158,8 +172,18 @@ pub fn display(surface: &mut Surface, d: &Data, note: Option<&str>) {
                 }
                 p.up();
             }
-            Key::F(19) => p.left(),
-            Key::F(20) => p.right(width),
+            Key::F(19) => {
+                p.left();
+                if p.shift == 1 {
+                    msg = Some(crate::display::msgline::say(surface.host(), "QRY1908", &[]));
+                }
+            }
+            Key::F(20) => {
+                p.right(width);
+                if p.shift + p.cols > width {
+                    msg = Some(crate::display::msgline::say(surface.host(), "QRY1909", &[]));
+                }
+            }
             Key::F(21) => {
                 msg = Some(crate::display::msgline::say(surface.host(), "CPD9B81", &[]));
             }
@@ -176,18 +200,14 @@ pub fn display(surface: &mut Surface, d: &Data, note: Option<&str>) {
     }
 }
 
-/// Print lines to `QSYSPRT` as a spooled file; what happened goes into
-/// the history.
-pub fn print(host: &Host, h: &mut History, lines: &[String]) {
+/// Pages to a spooled file of printer file `file`, each page's first
+/// line after a skip to line 1.
+pub fn spool(host: &Host, file: &str, pages: &[Vec<String>]) -> Result<(), String> {
     use spool::printer::{Control, PageFormat, Printer};
-    let opened = host
+    let (id, prtf) = host
         .link
         .borrow_mut()
-        .with(|l| l.prt_open("QSYSPRT".into(), "*LIBL".into(), "*DFTACTGRP".into()));
-    let (id, prtf) = match opened {
-        Ok(o) => o,
-        Err(e) => return note_error(host, h, &e),
-    };
+        .with(|l| l.prt_open(file.into(), "*LIBL".into(), "*DFTACTGRP".into()))?;
     let mut p = Printer::new(PageFormat {
         len: prtf.page_len,
         width: prtf.page_width,
@@ -196,19 +216,65 @@ pub fn print(host: &Host, h: &mut History, lines: &[String]) {
         ovrflw: prtf.ovrflw,
         fold: prtf.fold,
     });
-    for l in lines {
-        p.write_str(l, Control::line());
+    for page in pages {
+        for (i, l) in page.iter().enumerate() {
+            let ctl = if i == 0 {
+                Control {
+                    skip_before: 1,
+                    ..Control::default()
+                }
+            } else {
+                Control::line()
+            };
+            p.write_str(l, ctl);
+        }
     }
     let bytes = p.take();
-    let put = host
-        .link
-        .borrow_mut()
-        .with(|l| l.splf_put(id, bytes, p.pages, p.records));
+    let put = host.link.borrow_mut().with(|l| l.splf_put(id, bytes, p.pages, p.records));
     let closed = host.link.borrow_mut().with(|l| l.splf_close(id, prtf.hold));
-    match put.and(closed) {
-        Ok(()) => note(host, h, "CPI9BEE", &[]),
-        Err(e) => note_error(host, h, &e),
+    put.and(closed)
+}
+
+/// SELECT output 3: the query's rows written to the session's output
+/// file through the statements that do it: option 1 `CREATE TABLE ...
+/// AS (...) WITH DATA`, 2 the file dropped first, 4 its rows deleted
+/// first, 5 the rows inserted. Option 3 and a member other than the
+/// first are refused (SQL0084): members are not made from here.
+fn to_file(host: &Host, s: &Session, query: &str) -> Result<(), (String, String)> {
+    let a = &s.attrs;
+    let sep = if s.sql() { "." } else { "/" };
+    let target = format!("{}{sep}{}", a.get("OUTLIB"), a.get("OUTFILE"));
+    let refuse = |what: &str| {
+        let id = "SQL0084".to_string();
+        let text = crate::display::msgline::say(host, &id, &[&what]);
+        (id, text)
+    };
+    if !matches!(a.get("OUTMBR").as_str(), "*FILE" | "*FIRST") {
+        return Err(refuse("OUTMBR"));
     }
+    if a.get("OUTAUT") != "*EXCLUDE" || !a.get("OUTTEXT").is_empty() {
+        return Err(refuse("OUTAUT OUTTEXT"));
+    }
+    let create = format!("CREATE TABLE {target} AS ({query}) WITH DATA");
+    let steps: Vec<(String, bool)> = match a.get("OUTOPT").as_str() {
+        "1" => vec![(create, false)],
+        "2" => vec![(format!("DROP TABLE {target}"), true), (create, false)],
+        "4" => vec![(format!("DELETE FROM {target}"), false), (format!("INSERT INTO {target} {query}"), false)],
+        "5" => vec![(format!("INSERT INTO {target} {query}"), false)],
+        _ => return Err(refuse("OUTOPT(3)")),
+    };
+    for (stmt, may_fail) in steps {
+        let r = host.link.borrow_mut().with(|l| l.isql_run(stmt, s.naming(), false, 0));
+        if r.sqlcode < 0 && !may_fail {
+            let text = if r.text.is_empty() {
+                crate::display::msgline::say(host, &r.msgid, &[])
+            } else {
+                r.text
+            };
+            return Err((r.msgid, text));
+        }
+    }
+    Ok(())
 }
 
 /// F1: a message's help when the cursor is on one, else the display's.

@@ -3587,19 +3587,8 @@ work/qsjob/src/devtools/isql/run.rs	statement may run over several lines; the li
 work/qsjob/src/devtools/isql/run.rs	the session. F16, F17 and F18 add library, file and field names
 work/qsjob/src/devtools/isql/run.rs	where the cursor is.
 work/qsjob/src/devtools/isql/services.rs	F12=Cancel
-work/qsjob/src/devtools/isql/services.rs	F12=Cancel
-work/qsjob/src/devtools/isql/services.rs	F3=Exit
 work/qsjob/src/devtools/isql/services.rs	F3=Exit help
-work/qsjob/src/devtools/isql/services.rs	File
 work/qsjob/src/devtools/isql/services.rs	Help
-work/qsjob/src/devtools/isql/services.rs	Library
-work/qsjob/src/devtools/isql/services.rs	Member
-work/qsjob/src/devtools/isql/services.rs	Name
-work/qsjob/src/devtools/isql/services.rs	Name
-work/qsjob/src/devtools/isql/services.rs	Name
-work/qsjob/src/devtools/isql/services.rs	Save Session in Source File
-work/qsjob/src/devtools/isql/services.rs	The member is made, or replaced, with the session\'s statements.
-work/qsjob/src/devtools/isql/services.rs	Type choices, press Enter.
 work/qsjob/src/devtools/pdm/lists.rs	Change Text
 work/qsjob/src/devtools/pdm/lists.rs	File {file} in library {lib} not found.
 work/qsjob/src/devtools/pdm/lists.rs	Libraries

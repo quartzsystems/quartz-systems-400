@@ -1,0 +1,24 @@
+                              Change Printer File                               
+                                                                                
+ Type choice, press Enter.                                                      
+                                                                                
+   Printer file . . . . . . . . . .   QSYSPRT        Name                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F5=Refresh     F12=Cancel                                          
+                                                                                

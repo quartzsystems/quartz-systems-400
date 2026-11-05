@@ -5,9 +5,9 @@
 //! Interactive SQL (`STRSQL`): the session's attributes ([`attrs`]),
 //! the statement history and the lines being typed ([`history`]),
 //! statements built from the prompt displays ([`assemble`]), a query's
-//! rows paged and shifted for Display Data or laid out for print
-//! ([`result`]), the saved session ([`saved`]) and the displays
-//! ([`screen`]). No store and no screen I/O: the job's driver
+//! rows paged and shifted for Display Data ([`result`]) under the
+//! session's formats ([`format`]) or printed ([`print`]), the saved
+//! session ([`saved`]) and the displays ([`screen`]). No store and no screen I/O: the job's driver
 //! (`work/qsjob/src/devtools/isql.rs`) runs the statements through the
 //! storage service.
 
@@ -16,7 +16,9 @@
 
 pub mod assemble;
 pub mod attrs;
+pub mod format;
 pub mod history;
+pub mod print;
 pub mod result;
 pub mod saved;
 pub mod screen;

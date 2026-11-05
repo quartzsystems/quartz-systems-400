@@ -1151,3 +1151,38 @@ id = "SQL9011"
 sev = 30
 text = "The SQL information was not printed."
 help = "The messages before this one say why."
+
+[[msg]]
+id = "SQL6085"
+sev = 0
+text = "The session was printed."
+help = "Every statement and message of the session went to a spooled file of the printer file named on Change Printer File."
+vars = []
+
+[[msg]]
+id = "SQL6086"
+sev = 0
+text = "The session's statements and messages were removed."
+help = "Enter SQL Statements starts again empty; the session attributes are unchanged."
+vars = []
+
+[[msg]]
+id = "SQL6102"
+sev = 0
+text = "The session saved when STRSQL was last left is back."
+help = "Interactive SQL found the session saved for this user and resumed it: its statements, messages and attributes are those in effect when it was saved."
+vars = []
+
+[[msg]]
+id = "SQL6130"
+sev = 0
+text = "The prompt was left; no statement was built."
+help = "F3 or F12 ended the statement prompt. Type a statement, or press F4 to prompt again."
+vars = []
+
+[[msg]]
+id = "SQL6335"
+sev = 0
+text = "The saved session's attributes are used, not the STRSQL parameters."
+help = "A saved session was resumed. Its attributes stay as they were when it was saved; the values given on, or defaulted by, the STRSQL command that resumed it are not applied. Change them with F13, option 1."
+vars = []

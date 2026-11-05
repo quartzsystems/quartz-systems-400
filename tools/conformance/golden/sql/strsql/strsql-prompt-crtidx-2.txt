@@ -1,0 +1,24 @@
+                         Specify CREATE INDEX Statement                         
+                                                                                
+ Type sequence numbers (1-999) to select columns, press Enter.                  
+ Order:  A=Ascending, D=Descending                                              
+                                                                                
+ Seq  Field                 Order         Seq  Field                 Order      
+      INTEGER_COLUMN                                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F10=Copy line   F12=Cancel                              
+ F19=Display system field names   F20=Display entire name   F24=More keys       
+                                                                                

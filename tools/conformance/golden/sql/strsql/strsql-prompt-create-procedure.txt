@@ -1,0 +1,24 @@
+                       Specify CREATE PROCEDURE Statement                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Procedure  . . . . . .                          Name                         
+     Library  . . . . . .                          Name, F4 for list            
+                                                                                
+   RESULT SETS  . . . . .                          Number or blank              
+                                                                                
+   Language . . . . . . .                          C, CL, COBOL, COBOLLE,       
+                                                   C++, FORTRAN, PLI,           
+                                                   REXX, RPG, RPGLE,            
+                                                   JAVA, or blank               
+                                                                                
+   PARAMETER STYLE  . . .   1                      1=GENERAL                    
+                                                   2=GENERAL WITH NULLS         
+                                                   3=SQL                        
+                                                   4=JAVA                       
+                                                   5=DB2GENERAL                 
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F20=Display entire name        
+ F21=Display statement                                                          
+                                                                                

@@ -15,7 +15,7 @@ mod services;
 mod ui;
 
 use cmd::{Resolved, Value};
-use isql::attrs::{Attrs, lock_level};
+use isql::attrs::{Attrs, JobFormats, lock_level};
 use isql::history::{AREA, History, Line, WIDTH};
 use isql::saved;
 use isql::screen::enter::{self, AREA_ROW, INPUT_COL, Slot, line_name};
@@ -123,7 +123,39 @@ pub fn run(host: &Host, r: &Resolved) -> Result<String, Fail> {
     Ok(String::new())
 }
 
-/// The session: the saved one when the user has one, else a new one
+/// The job's formats, for the attributes left `*JOB`.
+pub fn job_formats(host: &Host) -> JobFormats {
+    let a = host.attrs();
+    JobFormats {
+        datfmt: a.datfmt.clone(),
+        datsep: a.datsep.clone(),
+        timsep: a.timsep.clone(),
+        decfmt: a.decfmt.clone(),
+    }
+}
+
+/// The displays' words (`QSTXTMSG`) in the job's language.
+pub fn words(host: &Host) -> impl Fn(&str) -> String + '_ {
+    move |id| crate::display::msgline::text(host, id, &[])
+}
+
+/// The attributes a new session starts with: the command's, the
+/// `*JOB` values the job's, the output file in the current library.
+fn fresh(host: &Host, r: &Resolved) -> Attrs {
+    let mut a = Attrs::default();
+    for f in isql::attrs::FIELDS {
+        if let Some(v) = parm(r, f.key) {
+            let _ = a.set(f.key, &v);
+        }
+    }
+    a.resolve_job(&job_formats(host));
+    let lib = host.attrs().libl.cur.unwrap_or_else(|| "QGPL".into());
+    let _ = a.set("OUTLIB", &lib);
+    a
+}
+
+/// The session: the saved one when the user has one (its attributes
+/// kept over the command's, SQL6335 when they differ), else a new one
 /// with the command's attributes.
 fn open(host: &Host, r: &Resolved) -> Session {
     let stored = host
@@ -132,7 +164,7 @@ fn open(host: &Host, r: &Resolved) -> Session {
         .with(Client::isql_session)
         .and_then(|t| saved::from_text(&t).ok());
     let mut s = Session {
-        attrs: Attrs::default(),
+        attrs: fresh(host, r),
         h: History::new(),
         page: 0,
         libs: Vec::new(),
@@ -141,17 +173,17 @@ fn open(host: &Host, r: &Resolved) -> Session {
         calls: None,
     };
     if let Some(saved) = stored {
+        let ignored = isql::attrs::FIELDS
+            .iter()
+            .any(|f| r.get(f.key).is_some() && saved.attrs.get(f.key) != s.attrs.get(f.key));
         s.attrs = saved.attrs;
         s.h.entries = saved.entries;
         s.h.input = saved.input;
-        note(host, &mut s.h, "CPI9BEA", &[]);
-        s.h.to_end();
-        return s;
-    }
-    for f in isql::attrs::FIELDS {
-        if let Some(v) = parm(r, f.key) {
-            let _ = s.attrs.set(f.key, &v);
+        note(host, &mut s.h, "SQL6102", &[]);
+        if ignored {
+            note(host, &mut s.h, "SQL6335", &[]);
         }
+        s.h.to_end();
     }
     s
 }

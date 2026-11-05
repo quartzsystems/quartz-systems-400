@@ -12,6 +12,7 @@ pub mod enter;
 pub mod lists;
 pub mod menus;
 pub mod prompt;
+pub mod services;
 
 pub use uim::Screen;
 use uim::model::{Shift, Usage};

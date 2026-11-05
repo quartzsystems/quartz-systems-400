@@ -1,0 +1,24 @@
+                               Change Source File                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   File . . . . . . . . .   QSQLSESS     Name                                   
+     Library  . . . . . .   USERNAME1    Name                                   
+   Member . . . . . . . .   *FILE        Name, *FILE, *FIRST                    
+                                                                                
+   Option . . . . . . . .   1            1=Create new file                      
+                                         2=Replace file                         
+                                         3=Create new member                    
+                                         4=Replace member                       
+                                         5=Add to member                        
+                                                                                
+   For a new file:                                                              
+     Authority  . . . . .   *EXCLUDE     Authorization list name, *LIBCRTAUT    
+                                         *CHANGE, *ALL, *EXCLUDE, *USE          
+                                                                                
+                                                                                
+     Text . . . . . . . .                                                       
+                                                                                
+                                                                                
+ F3=Exit     F5=Refresh     F12=Cancel                                          
+                                                                                

@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   SQL6335       Severity . . . . . . . :   00         
+ Message type . . . . . :   Information                                         
+                                                                                
+ Message . . . . :   STRSQL parameters were ignored.                            
+ Cause . . . . . :   The requested session attributes have changed because a    
+   saved interactive session has been resumed or an interactive session has     
+   been recovered. When a saved or recovered interactive session is used, the   
+   session attributes that were in effect for that session are used instead of  
+   the attributes specified on the Start SQL (STRSQL) command. The date format  
+   value has been changed from *YMD to *ISO.                                    
+ Recovery  . . . :   If the session attributes from the saved or recovered      
+   session are not desired, press F13 to change the session attributes.         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

@@ -1,0 +1,32 @@
+# STRSQL: SELECT output 3 (file) on Change Session Attributes (left
+# with F12), Print current session, Remove all entries, then the
+# session left with option 2 (exit without saving).
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+cursor 6 37
+key eraseeof
+type 3
+key enter
+settle 2000
+snap strsql-out-file
+key pgdn
+settle 1000
+snap strsql-out-file-2
+key f12
+wait "Interactive SQL Session Services"
+type 2
+key enter
+settle 2500
+snap strsql-print

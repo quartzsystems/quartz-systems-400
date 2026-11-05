@@ -1,0 +1,132 @@
+# STRSQL: what a saved session keeps. A session with a query and
+# DATFMT(*ISO) is left with option 1 (save), started again (the
+# history and the attributes back), left with option 1 again, started
+# with STRSQL DATFMT(*USA) NAMING(*SQL) over the saved session, left
+# with option 2 (the saved session dropped) and started once more.
+# Only SELECTs run.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+pick "===>" select 'ABC' as c, dec(-1234.5,7,2) as d, date('2026-01-15') as dt, time('13:45:30') as tm, cast(null as int) as n from qsys2.qsqptabl
+key enter
+wait "Display Data"
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+pick "Date format" *ISO
+seek "Interactive SQL Session Services" 3 enter
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 1
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+snap strsql-resume -date -time
+cursor 8 7
+key help
+settle 2000
+snap strsql-msg-resumed
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+snap strsql-resume-attrs
+key f12
+wait "Interactive SQL Session Services"
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 1
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"
+type strsql datfmt(*usa) naming(*sql)
+key enter
+wait "Enter SQL Statements"
+settle 1500
+snap strsql-resume-parm -date -time
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+snap strsql-resume-parm-attrs
+key f12
+wait "Interactive SQL Session Services"
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+snap strsql-fresh
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+snap strsql-fresh-attrs
+key f12
+wait "Interactive SQL Session Services"
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

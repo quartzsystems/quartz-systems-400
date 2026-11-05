@@ -1,0 +1,77 @@
+# STRSQL: the identifiers of "STRSQL parameters were ignored." (a
+# saved session whose date format differs from the command's) and of
+# "Prompting was cancelled by the user." (F4 on DROP TABLE left with
+# F12), by F1. Nothing is run; left with option 2.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+pick "Date format" *ISO
+seek "Interactive SQL Session Services" 3 enter
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 1
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+snap strsql-h-resume
+cursor 6 7
+key help
+settle 2000
+snap strsql-msg-ignored
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" drop table
+key f4
+wait "Specify DROP TABLE Statement"
+key f12
+wait "Enter SQL Statements"
+settle 1000
+snap strsql-cancelled
+cursor 5 7
+key help
+settle 2000
+snap strsql-msg-cancelled
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

@@ -8552,3 +8552,16 @@ sev = 40
 text = "Library &1 does not exist."
 help = "Name a library that exists, or create it first."
 vars = ["*CHAR 10"]
+[[msg]]
+id = "QRY1908"
+sev = 30
+text = "The data's first column is shown."
+help = "The display already starts at column 1 of the data. F20 shows the columns to the right."
+vars = []
+
+[[msg]]
+id = "QRY1909"
+sev = 30
+text = "The data's last column is shown."
+help = "The display already ends at the data's last column. F19 shows the columns to the left."
+vars = []

@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   QRY1909       Severity . . . . . . . :   30         
+ Message type . . . . . :   Information                                         
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Last column of data.                                       
+ Recovery  . . . :   This message is for your information; press F19 to see the 
+   positions to the left of the present display.                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

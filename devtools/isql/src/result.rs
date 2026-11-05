@@ -3,25 +3,48 @@
 // root directory of this project.
 
 //! A query's rows as Display Data shows them: each column as wide as
-//! its type or heading, numbers on the right, nulls as `-`; the lines
-//! paged by the display's height and shifted by its width; the same
-//! lines as a printed report.
+//! its edited values or its heading, numbers on the right with their
+//! heading over the last digit, nulls as `-`; the lines paged by the
+//! display's height and shifted by its width; the same lines as the
+//! printed report (`QPQUPRFIL`). The widths are pub400's
+//! (`tools/conformance/golden/sql/strsql/strsql-fmt*`).
 
 use std::fmt::Write as _;
+
+use crate::format::Format;
 
 /// A result column.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Column {
     /// The heading: the column's name.
     pub name: String,
-    /// Its SQL type, e.g. `DECIMAL(7,0)`.
+    /// Its SQL type, e.g. `DECIMAL(7, 0)`.
     pub data_type: String,
 }
 
+/// What a column holds, for its width and its edit.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Kind {
+    /// Text of this many characters.
+    Text(usize),
+    /// A decimal of precision and scale.
+    Decimal(usize, usize),
+    /// A binary integer of this many digits.
+    Integer(usize),
+    /// A float with this many digits after the point.
+    Float(usize),
+    /// A date.
+    Date,
+    /// A time.
+    Time,
+    /// A timestamp of this many characters.
+    Timestamp(usize),
+}
+
 impl Column {
-    /// The width its values take, from the type.
+    /// What the column holds, from its type.
     #[must_use]
-    pub fn type_width(&self) -> usize {
+    pub fn kind(&self) -> Kind {
         let t = self.data_type.to_ascii_uppercase();
         let (base, args) = match t.split_once('(') {
             Some((b, a)) => (b.trim().to_string(), a.trim_end_matches(')').to_string()),
@@ -33,38 +56,67 @@ impl Column {
             .collect();
         let first = nums.first().copied();
         match base.as_str() {
-            "SMALLINT" => 6,
-            "INTEGER" | "INT" => 11,
-            "BIGINT" => 20,
+            "SMALLINT" => Kind::Integer(5),
+            "INTEGER" | "INT" => Kind::Integer(10),
+            "BIGINT" => Kind::Integer(19),
             "DECIMAL" | "NUMERIC" | "DEC" => {
-                let p = first.unwrap_or(5);
-                let s = nums.get(1).copied().unwrap_or(0);
-                p + 1 + usize::from(s > 0)
+                Kind::Decimal(first.unwrap_or(5), nums.get(1).copied().unwrap_or(0))
             }
-            "REAL" | "FLOAT" | "DOUBLE" => 22,
-            "DATE" => 10,
-            "TIME" => 8,
-            "TIMESTAMP" => 26,
-            _ => first.unwrap_or(1).min(MAX_WIDTH),
+            "DOUBLE" | "FLOAT" => Kind::Float(16),
+            "REAL" => Kind::Float(7),
+            "DATE" => Kind::Date,
+            "TIME" => Kind::Time,
+            "TIMESTAMP" => Kind::Timestamp(match first {
+                Some(0) => 19,
+                Some(p) => 20 + p,
+                None => 26,
+            }),
+            _ => Kind::Text(first.unwrap_or(1).min(MAX_WIDTH)),
+        }
+    }
+
+    /// The width its values take under `f`.
+    #[must_use]
+    pub fn type_width(&self, f: &Format) -> usize {
+        match self.kind() {
+            Kind::Text(n) | Kind::Timestamp(n) => n,
+            Kind::Decimal(p, s) => {
+                let int = p.saturating_sub(s);
+                p + int.saturating_sub(1) / 3 + usize::from(s > 0) + 1
+            }
+            Kind::Integer(d) => d + (d - 1) / 3 + 1,
+            Kind::Float(d) => d + 8,
+            Kind::Date => f.date.width(),
+            Kind::Time => 8,
         }
     }
 
     /// Whether values sit on the right.
     #[must_use]
     pub fn numeric(&self) -> bool {
-        let t = self.data_type.to_ascii_uppercase();
-        [
-            "SMALLINT", "INTEGER", "INT", "BIGINT", "DECIMAL", "NUMERIC", "DEC", "REAL", "FLOAT",
-            "DOUBLE",
-        ]
-        .iter()
-        .any(|b| t == *b || t.starts_with(&format!("{b}(")))
+        matches!(self.kind(), Kind::Decimal(..) | Kind::Integer(_) | Kind::Float(_))
     }
 
     /// The column's width on the line.
     #[must_use]
-    pub fn width(&self) -> usize {
-        self.type_width().max(self.name.chars().count())
+    pub fn width(&self, f: &Format) -> usize {
+        self.type_width(f).max(self.name.chars().count())
+    }
+
+    /// A value as shown.
+    #[must_use]
+    pub fn show(&self, v: &str, f: &Format) -> String {
+        match self.kind() {
+            // A positive number leaves the sign's column blank.
+            Kind::Decimal(..) | Kind::Integer(_) => {
+                let n = f.number(v);
+                if n.ends_with('-') { n } else { format!("{n} ") }
+            }
+            Kind::Float(d) => f.float(v, d),
+            Kind::Date => f.date(v),
+            Kind::Time => f.time(v),
+            Kind::Text(_) | Kind::Timestamp(_) => v.to_string(),
+        }
     }
 }
 
@@ -81,39 +133,20 @@ pub struct Data {
     pub columns: Vec<Column>,
     /// Rows, `None` for a null.
     pub rows: Vec<Vec<Option<String>>>,
+    /// How the values are shown.
+    pub fmt: Format,
 }
 
 impl Data {
     /// The width of a line: every column and the gaps between them.
     #[must_use]
     pub fn width(&self) -> usize {
-        let cols: usize = self.columns.iter().map(Column::width).sum();
+        let cols: usize = self.columns.iter().map(|c| c.width(&self.fmt)).sum();
         cols + GAP * self.columns.len().saturating_sub(1)
     }
 
-    fn cells(&self, values: impl Iterator<Item = (usize, String)>) -> String {
-        let mut out = String::new();
-        for (i, v) in values {
-            let c = &self.columns[i];
-            let w = c.width();
-            if i > 0 {
-                out.push_str(&" ".repeat(GAP));
-            }
-            // A value narrower than its heading sits in the middle of it.
-            let tw = c.type_width().min(w);
-            let lead = (w - tw) / 2;
-            let v: String = v.chars().take(tw).collect();
-            let cell = if c.numeric() {
-                format!("{:lead$}{v:>tw$}", "")
-            } else {
-                format!("{:lead$}{v:<tw$}", "")
-            };
-            let _ = write!(out, "{cell:<w$}");
-        }
-        out
-    }
-
-    /// The heading line.
+    /// The heading line: text and dates on the left, numbers over
+    /// their last digit (a float's over its last character).
     #[must_use]
     pub fn heading(&self) -> String {
         let mut out = String::new();
@@ -121,23 +154,52 @@ impl Data {
             if i > 0 {
                 out.push_str(&" ".repeat(GAP));
             }
-            let w = c.width();
-            let _ = write!(out, "{:<w$}", c.name);
+            let w = c.width(&self.fmt);
+            let n = c.name.chars().count();
+            let end = match c.kind() {
+                Kind::Decimal(..) | Kind::Integer(_) if n < w => w - 1,
+                Kind::Float(_) => w,
+                _ => n,
+            };
+            let _ = write!(out, "{:>end$}{:rest$}", c.name, "", rest = w - end);
         }
         out
     }
 
     /// Row `i` as a line.
     #[must_use]
+    #[allow(clippy::many_single_char_names)] // row, column, value
     pub fn line(&self, i: usize) -> String {
         let Some(r) = self.rows.get(i) else {
             return String::new();
         };
-        self.cells(
-            r.iter()
-                .enumerate()
-                .map(|(j, v)| (j, v.clone().unwrap_or_else(|| "-".to_string()))),
-        )
+        let mut out = String::new();
+        for (j, v) in r.iter().enumerate() {
+            let Some(c) = self.columns.get(j) else {
+                break;
+            };
+            if j > 0 {
+                out.push_str(&" ".repeat(GAP));
+            }
+            let w = c.width(&self.fmt);
+            let tw = c.type_width(&self.fmt).min(w);
+            // A value narrower than its heading sits in the middle of it.
+            let lead = (w - tw) / 2;
+            let cell = match v {
+                None if c.numeric() => format!("{:>w$}", "-"),
+                None => format!("{:lead$}{:<tw$}", "", "-"),
+                Some(v) => {
+                    let v: String = c.show(v, &self.fmt).chars().take(tw).collect();
+                    if c.numeric() {
+                        format!("{:lead$}{v:>tw$}", "")
+                    } else {
+                        format!("{:lead$}{v:<tw$}", "")
+                    }
+                }
+            };
+            let _ = write!(out, "{cell:<w$}");
+        }
+        out
     }
 }
 
@@ -212,11 +274,15 @@ impl Pager {
         self.top = self.top.saturating_sub(self.page);
     }
 
-    /// F20: right by a page width, not past the data's last column.
-    pub fn right(&mut self, width: usize) {
-        if self.shift + self.cols <= width {
-            self.shift += self.cols;
+    /// F20: right by a page width. The last page ends on the data's last column; false when that
+    /// page is already shown.
+    pub fn right(&mut self, width: usize) -> bool {
+        let last = width.saturating_sub(self.cols) + 1;
+        if self.shift >= last {
+            return false;
         }
+        self.shift = (self.shift + self.cols).min(last);
+        true
     }
 
     /// F19: left by a page width.
@@ -261,31 +327,6 @@ impl Pager {
 /// The end-of-data line.
 pub const END_OF_DATA: &str = "********  End of data  ********";
 
-/// The printed report of a query: the statement, the heading and the
-/// rows, the end line.
-#[must_use]
-pub fn report(statement: &str, data: &Data, width: usize) -> Vec<String> {
-    let mut out = Vec::new();
-    for chunk in crate::history::wrap(statement, width) {
-        out.push(chunk);
-    }
-    out.push(String::new());
-    let w = data.width();
-    let mut shift = 1;
-    while shift <= w.max(1) {
-        out.push(window(&data.heading(), shift, width));
-        for i in 0..data.rows.len() {
-            out.push(window(&data.line(i), shift, width));
-        }
-        shift += width;
-        if shift <= w {
-            out.push(String::new());
-        }
-    }
-    out.push(END_OF_DATA.to_string());
-    out
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -306,23 +347,25 @@ mod tests {
                 vec![Some("BOLT".into()), Some("12".into())],
                 vec![Some("NUT".into()), None],
             ],
+            fmt: Format::default(),
         }
     }
 
     #[test]
     fn widths_and_lines() {
         let d = data();
-        assert_eq!(d.columns[1].width(), 6);
-        assert_eq!(d.width(), 6 + 2 + 6);
-        assert_eq!(d.heading(), "NAME    QTY   ");
-        assert_eq!(d.line(0), "BOLT        12");
-        assert_eq!(d.line(1), "NUT          -");
+        assert_eq!(d.columns[1].width(&d.fmt), 7);
+        assert_eq!(d.width(), 6 + 2 + 7);
+        assert_eq!(d.heading(), "NAME       QTY ");
+        assert_eq!(d.line(0), "BOLT        12 ");
+        assert_eq!(d.line(1), "NUT           -");
         let one = Data {
             columns: vec![Column {
                 name: "IBMREQD".into(),
                 data_type: "CHAR(1)".into(),
             }],
             rows: vec![vec![Some("Y".into())]],
+            fmt: Format::default(),
         };
         assert_eq!(one.width(), 7);
         assert_eq!(one.line(0), "   Y   ");
@@ -351,20 +394,14 @@ mod tests {
         assert!(p.position("3", 25));
         assert_eq!(p.top, 2);
         assert!(!p.position("x", 25));
-        p.right(200);
+        assert!(p.right(200));
         assert_eq!(p.shift, 81);
-        p.right(200);
-        assert_eq!(p.shift, 161);
-        p.right(200);
-        assert_eq!(p.shift, 161);
+        assert!(p.right(200));
+        assert_eq!(p.shift, 121);
+        assert!(!p.right(200));
+        assert_eq!(p.shift, 121);
         p.left();
-        assert_eq!(p.shift, 81);
+        assert_eq!(p.shift, 41);
     }
 
-    #[test]
-    fn printed() {
-        let r = report("SELECT * FROM T", &data(), 132);
-        assert_eq!(r[0], "SELECT * FROM T");
-        assert_eq!(r.last().map(String::as_str), Some(END_OF_DATA));
-    }
 }

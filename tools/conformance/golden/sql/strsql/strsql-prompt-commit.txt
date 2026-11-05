@@ -1,0 +1,24 @@
+                            Specify COMMIT Statement                            
+                                                                                
+ Type choice, press Enter.                                                      
+                                                                                
+   Hold . . . . . . . . . . . . . .   N   Y=Yes, N=No                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel   F21=Display statement                      
+                                                                                

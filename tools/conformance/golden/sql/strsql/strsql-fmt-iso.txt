@@ -1,0 +1,24 @@
+                                  Display Data                                  
+                                              Data width . . . . . . :      53  
+ Position to line  . . . . .              Shift to column  . . . . . .          
+ ....+....1....+....2....+....3....+....4....+....5...                          
+ C            D   DT          TM                    N                           
+ ABC   1,234.50-  2026-01-15  13.45.30               -                          
+ ********  End of data  ********                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                       Bottom   
+ F3=Exit      F12=Cancel      F19=Left      F20=Right      F21=Split            
+                                                                                

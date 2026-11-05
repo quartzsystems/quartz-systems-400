@@ -1,0 +1,197 @@
+# STRSQL: the message identifiers behind the history's messages (F1),
+# Display Data under different date, time and decimal formats (two
+# queries of fixed values), the attributes on page 2. Only SELECTs run;
+# a saved session is dropped first and the session is left with option 2.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+cursor 4 7
+key help
+settle 2000
+snap strsql-msg-connect
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+key pgdn
+settle 1000
+snap strsql-attrs-now-2
+key f12
+wait "Interactive SQL Session Services"
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" select 'ABC' as c, dec(-1234.5,7,2) as d, date('2026-01-15') as dt, time('13:45:30') as tm, cast(null as int) as n from qsys2.qsqptabl
+key enter
+wait "Display Data"
+settle 1000
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" select smallint(-12) s, bigint(123456789012) b, double(1.5e3) f, timestamp('2026-01-15-13.45.30.123456') ts, varchar('xyz',20) v, dec(5,5,0) z, dec(0.5,3,2) h from qsys2.qsqptabl
+key enter
+wait "Display Data"
+settle 1000
+snap strsql-fmt2-ymd -date -time
+key f20
+settle 1000
+snap strsql-fmt2-ymd-f20 -date -time
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+seek "Decimal point" 3
+pick "Decimal point" *PERIOD
+seek "Date format" 3 pgup
+pick "Date format" *ISO
+pick "Time format" *ISO
+key enter
+settle 1500
+snap strsql-attrs-iso
+seek "Interactive SQL Session Services" 3 enter
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" select 'ABC' as c, dec(-1234.5,7,2) as d, date('2026-01-15') as dt, time('13:45:30') as tm, cast(null as int) as n from qsys2.qsqptabl
+key enter
+wait "Display Data"
+settle 1000
+snap strsql-fmt-iso -date -time
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" select smallint(-12) s, bigint(123456789012) b, double(1.5e3) f, timestamp('2026-01-15-13.45.30.123456') ts, varchar('xyz',20) v, dec(5,5,0) z, dec(0.5,3,2) h from qsys2.qsqptabl
+key enter
+wait "Display Data"
+settle 1000
+snap strsql-fmt2-iso -date -time
+key f20
+settle 1000
+snap strsql-fmt2-iso-f20 -date -time
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+seek "Decimal point" 3
+pick "Decimal point" *COMMA
+key eraseeof
+seek "Date format" 3 pgup
+pick "Date format" *USA
+pick "Time format" *USA
+key enter
+settle 1500
+snap strsql-attrs-usa
+seek "Interactive SQL Session Services" 3 enter
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" select 'ABC' as c, dec(-1234,5, 7, 2) as d, date('2026-01-15') as dt, time('13:45:30') as tm, cast(null as int) as n from qsys2.qsqptabl
+key enter
+wait "Display Data"
+settle 1000
+snap strsql-fmt-usa -date -time
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" select smallint(-12) s, bigint(123456789012) b, double(15e2) f, timestamp('2026-01-15-13.45.30.123456') ts, varchar('xyz', 20) v, dec(5, 5, 0) z, dec(0,5, 3, 2) h from qsys2.qsqptabl
+key enter
+wait "Display Data"
+settle 1000
+snap strsql-fmt2-usa -date -time
+key f20
+settle 1000
+snap strsql-fmt2-usa-f20 -date -time
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 1
+key enter
+wait "Change Session Attributes"
+seek "Decimal point" 3
+pick "Decimal point" *PERIOD
+seek "Date format" 3 pgup
+pick "Date format" *JUL
+pick "Time format" *HMS
+key enter
+settle 1500
+snap strsql-attrs-jul
+pick "Date separator" '/'
+pick "Time separator" '.'
+seek "Interactive SQL Session Services" 3 enter
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" select 'ABC' as c, dec(-1234.5,7,2) as d, date('2026-01-15') as dt, time('13:45:30') as tm, cast(null as int) as n from qsys2.qsqptabl
+key enter
+wait "Display Data"
+settle 1000
+snap strsql-fmt-jul -date -time
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" select smallint(-12) s, bigint(123456789012) b, double(1.5e3) f, timestamp('2026-01-15-13.45.30.123456') ts, varchar('xyz',20) v, dec(5,5,0) z, dec(0.5,3,2) h from qsys2.qsqptabl
+key enter
+wait "Display Data"
+settle 1000
+snap strsql-fmt2-jul -date -time
+key f20
+settle 1000
+snap strsql-fmt2-jul-f20 -date -time
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 3
+key enter
+wait "Confirm Remove Entries Request"
+key enter
+wait "Entries from current session removed"
+cursor 24 2
+key help
+settle 2000
+snap strsql-msg-removed
+key f12
+settle 1000
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

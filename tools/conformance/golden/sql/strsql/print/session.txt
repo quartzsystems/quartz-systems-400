@@ -1,0 +1,6 @@
+  5770ST1   V7R5M0 220415    Interactive SQL Session   26-11-05   19:38:09           Page       1
+Current connection is to relational database PUB400.
+select 'ABC' as c, dec(-1234.5,7,2) as d, date('2026-01-15') as dt,
+time('13:45:30') as tm, cast(null as int) as n from qsys2.qsqptabl
+SELECT statement run complete.
+                                * * * * *  E N D  O F  L I S T I N G  * * * * *

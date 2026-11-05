@@ -10,7 +10,9 @@ use uim::Screen;
 use uim::render::Attr;
 
 use super::{blank, keys, leader, message, more, put, title, var};
-use crate::attrs::Attrs;
+use crate::attrs::{Attrs, Output};
+use crate::format::{DateFmt, TimeFmt};
+use crate::print::Words;
 
 /// The statements Select SQL Statement lists, in its order.
 pub const STATEMENTS: &[&str] = &[
@@ -108,12 +110,11 @@ pub fn services(selection: &str, msg: Option<&str>) -> Screen {
     s
 }
 
-/// One attribute on Change Session Attributes: key, row, field width,
-/// the choices shown to its right (a line each; the second column
-/// given when it is indented).
+/// One attribute on Change Session Attributes: key, field width, the
+/// choices shown to its right (a line each; the second column given
+/// when it is indented).
 struct AttrRow {
     key: &'static str,
-    row: usize,
     width: usize,
     hints: &'static [(usize, &'static str)],
 }
@@ -121,25 +122,21 @@ struct AttrRow {
 const PAGE1: &[AttrRow] = &[
     AttrRow {
         key: "PROCESS",
-        row: 5,
         width: 4,
         hints: &[(52, "*RUN, *VLD, *SYN")],
     },
     AttrRow {
         key: "OUTPUT",
-        row: 6,
         width: 1,
         hints: &[(52, "1=Display, 2=Printer"), (52, "3=File")],
     },
     AttrRow {
         key: "COMMIT",
-        row: 8,
         width: 5,
         hints: &[(52, "*NONE, *CHG, *CS, *ALL, *RR"), (52, "*NC, *UR, *RS")],
     },
     AttrRow {
         key: "DATFMT",
-        row: 10,
         width: 4,
         hints: &[
             (52, "*JOB, *USA, *ISO, *EUR, *JIS"),
@@ -148,37 +145,31 @@ const PAGE1: &[AttrRow] = &[
     },
     AttrRow {
         key: "DATSEP",
-        row: 12,
         width: 6,
         hints: &[(52, "*JOB, '/', '.', ',', '-'"), (52, "' ', *BLANK")],
     },
     AttrRow {
         key: "TIMFMT",
-        row: 14,
         width: 4,
         hints: &[(52, "*HMS, *USA, *ISO"), (52, "*EUR, *JIS")],
     },
     AttrRow {
         key: "TIMSEP",
-        row: 16,
         width: 6,
         hints: &[(52, "*JOB, ':', '.', ','"), (52, "' ', *BLANK")],
     },
     AttrRow {
         key: "REFRESH",
-        row: 18,
         width: 8,
         hints: &[(52, "*ALWAYS, *FORWARD")],
     },
     AttrRow {
         key: "ALWCPYDTA",
-        row: 19,
         width: 9,
         hints: &[(52, "*YES, *OPTIMIZE, *NO")],
     },
     AttrRow {
         key: "NAMING",
-        row: 20,
         width: 4,
         hints: &[(52, "*SYS, *SQL")],
     },
@@ -187,7 +178,6 @@ const PAGE1: &[AttrRow] = &[
 const PAGE2: &[AttrRow] = &[
     AttrRow {
         key: "LIBOPT",
-        row: 5,
         width: 10,
         hints: &[
             (52, "Name, *LIBL, *USRLIBL"),
@@ -196,19 +186,16 @@ const PAGE2: &[AttrRow] = &[
     },
     AttrRow {
         key: "LISTTYPE",
-        row: 7,
         width: 4,
         hints: &[(52, "*ALL, *SQL")],
     },
     AttrRow {
         key: "DECPNT",
-        row: 8,
         width: 7,
         hints: &[(52, "*PERIOD, *COMMA, *JOB,"), (54, "*SYSVAL")],
     },
     AttrRow {
         key: "SRTSEQ",
-        row: 10,
         width: 10,
         hints: &[
             (52, "Name, *JOB, *JOBRUN"),
@@ -218,55 +205,193 @@ const PAGE2: &[AttrRow] = &[
     },
     AttrRow {
         key: "LANGID",
-        row: 13,
         width: 7,
         hints: &[(52, "Name, *JOB, *JOBRUN"), (52, "F4 for Prompt")],
     },
     AttrRow {
         key: "SQLCURRULE",
-        row: 15,
         width: 4,
         hints: &[(52, "*DB2, *STD")],
     },
     AttrRow {
         key: "DSPPWD",
-        row: 16,
         width: 4,
         hints: &[(52, "*NO, *YES")],
     },
 ];
 
-/// The pages of Change Session Attributes.
-pub const ATTR_PAGES: usize = 2;
+/// The rows Change Session Attributes lays out from: row 5 to 21.
+const FIRST_ROW: usize = 5;
+/// The last row items are placed on.
+const LAST_ROW: usize = 21;
 
-/// The attribute keys each page shows, for reading the fields back.
-#[must_use]
-pub fn attr_keys(page: usize) -> Vec<&'static str> {
-    let rows = if page == 0 { PAGE1 } else { PAGE2 };
-    rows.iter().map(|r| r.key).collect()
+/// One placed piece of Change Session Attributes: a heading line, or
+/// an attribute's label, field and choices.
+#[derive(Clone, Debug)]
+struct Placed {
+    /// The attribute; `None` for a heading.
+    key: Option<&'static str>,
+    /// The label's column.
+    col: usize,
+    /// The label.
+    label: String,
+    /// The field's column and width.
+    field: (usize, usize),
+    /// The choices, a row each.
+    hints: Vec<(usize, String)>,
+    /// Rows taken.
+    height: usize,
 }
 
-/// Change Session Attributes, page `page` from 0, with `values` (as
-/// typed when redisplayed after an error).
+impl Placed {
+    fn row(r: &AttrRow) -> Self {
+        Self {
+            key: Some(r.key),
+            col: 4,
+            label: crate::attrs::field(r.key).map_or("", |f| f.label).to_string(),
+            field: (37, r.width),
+            hints: r.hints.iter().map(|(c, h)| (*c, (*h).to_string())).collect(),
+            height: r.hints.len().max(1),
+        }
+    }
+
+    fn word(key: &'static str, col: usize, label: &str, field: (usize, usize), hints: &[&str], w: &Words<'_>) -> Self {
+        Self {
+            key: Some(key),
+            col,
+            label: label.to_string(),
+            field,
+            hints: hints.iter().map(|h| (52, w(h))).collect(),
+            height: hints.len().max(1) + usize::from(field.0 + field.1 > 81),
+        }
+    }
+}
+
+/// The `QSTXTMSG` words of the output rows.
+mod words {
+    pub const OUTPUT_FILE: &str = "TXT0934";
+    pub const NAME: &str = "TXT0935";
+    pub const MEMBERS: &str = "TXT0936";
+    pub const CREATE_FILE: &str = "TXT0937";
+    pub const REPLACE_FILE: &str = "TXT0938";
+    pub const CREATE_MEMBER: &str = "TXT0939";
+    pub const REPLACE_MEMBER: &str = "TXT093A";
+    pub const ADD_MEMBER: &str = "TXT093B";
+    pub const AUTL: &str = "TXT093C";
+    pub const AUTS: &str = "TXT093D";
+    pub const AUTS2: &str = "TXT093E";
+}
+
+/// The attributes `a` shows, in order: the printer under SELECT output
+/// 2, the output file under 3, a date separator only for the formats
+/// that take one, a time separator only for `*HMS`.
+fn items(a: &Attrs, w: &Words<'_>) -> Vec<Placed> {
+    let label = |key: &str| {
+        let l = crate::attrs::field(key).map_or("", |f| f.label);
+        if l.starts_with("TXT") { w(l) } else { l.to_string() }
+    };
+    let mut out = Vec::new();
+    for r in PAGE1.iter().chain(PAGE2) {
+        let keep = match r.key {
+            "DATSEP" => DateFmt::parse(&a.get("DATFMT")).is_none_or(DateFmt::has_sep),
+            "TIMSEP" => TimeFmt::parse(&a.get("TIMFMT")).is_none_or(TimeFmt::has_sep),
+            _ => true,
+        };
+        if keep {
+            out.push(Placed::row(r));
+        }
+        if r.key != "OUTPUT" {
+            continue;
+        }
+        match a.output() {
+            Output::Printer => out.push(Placed::word("PRINTER", 4, &label("PRINTER"), (37, 10), &[words::NAME], w)),
+            Output::File => {
+                out.push(Placed {
+                    key: None,
+                    col: 4,
+                    label: w(words::OUTPUT_FILE),
+                    field: (0, 0),
+                    hints: Vec::new(),
+                    height: 1,
+                });
+                out.push(Placed::word("OUTFILE", 6, &label("OUTFILE"), (37, 10), &[words::NAME], w));
+                out.push(Placed::word("OUTLIB", 8, &label("OUTLIB"), (39, 10), &[words::NAME], w));
+                out.push(Placed::word("OUTMBR", 6, &label("OUTMBR"), (37, 10), &[words::MEMBERS], w));
+                out.push(Placed::word(
+                    "OUTOPT",
+                    6,
+                    &label("OUTOPT"),
+                    (37, 1),
+                    &[words::CREATE_FILE, words::REPLACE_FILE, words::CREATE_MEMBER, words::REPLACE_MEMBER, words::ADD_MEMBER],
+                    w,
+                ));
+                out.push(Placed::word("OUTAUT", 6, &label("OUTAUT"), (37, 10), &[words::AUTL, words::AUTS, words::AUTS2], w));
+                out.push(Placed::word("OUTTEXT", 6, &label("OUTTEXT"), (37, 50), &[], w));
+            }
+            Output::Display => {}
+        }
+    }
+    out
+}
+
+/// The items cut into pages of rows 5 to 21, none split.
+fn pages_of(items: Vec<Placed>) -> Vec<Vec<Placed>> {
+    let room = LAST_ROW + 1 - FIRST_ROW;
+    let mut pages: Vec<Vec<Placed>> = vec![Vec::new()];
+    let mut used = 0;
+    for it in items {
+        if used + it.height > room && used > 0 {
+            pages.push(Vec::new());
+            used = 0;
+        }
+        used += it.height;
+        if let Some(p) = pages.last_mut() {
+            p.push(it);
+        }
+    }
+    pages
+}
+
+/// The pages of Change Session Attributes for `a`.
 #[must_use]
-pub fn attributes(page: usize, a: &Attrs, msg: Option<&str>) -> Screen {
+pub fn attr_pages(a: &Attrs, w: &Words<'_>) -> usize {
+    pages_of(items(a, w)).len()
+}
+
+/// The attribute keys page `page` shows, for reading the fields back.
+#[must_use]
+pub fn attr_keys(page: usize, a: &Attrs, w: &Words<'_>) -> Vec<&'static str> {
+    pages_of(items(a, w))
+        .get(page)
+        .map(|p| p.iter().filter_map(|i| i.key).collect())
+        .unwrap_or_default()
+}
+
+/// Change Session Attributes, page `page` from 0.
+#[must_use]
+pub fn attributes(page: usize, a: &Attrs, msg: Option<&str>, w: &Words<'_>) -> Screen {
     let mut s = blank();
     title(&mut s, 28, "Change Session Attributes");
     put(&mut s, 3, 2, Attr::Blue, "Type choices, press Enter.");
-    let rows = if page == 0 { PAGE1 } else { PAGE2 };
-    for r in rows {
-        let label = crate::attrs::field(r.key).map_or("", |f| f.label);
-        put(&mut s, r.row, 4, Attr::Normal, &leader(label, 4, 33));
-        var(&mut s, r.row, 37, r.width, r.key, &a.shown(r.key));
-        for (i, (col, h)) in r.hints.iter().enumerate() {
-            put(&mut s, r.row + i, *col, Attr::Normal, h);
+    let pages = pages_of(items(a, w));
+    let page = page.min(pages.len() - 1);
+    let mut row = FIRST_ROW;
+    let mut first = None;
+    for it in &pages[page] {
+        match it.key {
+            None => put(&mut s, row, it.col, Attr::Normal, &it.label),
+            Some(key) => {
+                put(&mut s, row, it.col, Attr::Normal, &leader(&it.label, it.col, 33));
+                var(&mut s, row, it.field.0, it.field.1, key, &a.shown(key));
+                first.get_or_insert((row, it.field.0));
+                for (i, (col, h)) in it.hints.iter().enumerate() {
+                    put(&mut s, row + i, *col, Attr::Normal, h);
+                }
+            }
         }
+        row += it.height;
     }
-    if page == 0 {
-        more(&mut s, 22, 79, false);
-    } else {
-        more(&mut s, 22, 79, true);
-    }
+    more(&mut s, 22, 79, page + 1 == pages.len());
     keys(
         &mut s,
         &[
@@ -277,7 +402,7 @@ pub fn attributes(page: usize, a: &Attrs, msg: Option<&str>) -> Screen {
         ],
     );
     message(&mut s, msg);
-    s.cursor = Some((rows[0].row, 37));
+    s.cursor = first;
     s
 }
 

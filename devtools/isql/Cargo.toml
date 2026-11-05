@@ -10,5 +10,8 @@ publish.workspace = true
 uim = { path = "../../ui/uim", version = "0.1.0" }
 thiserror.workspace = true
 
+[dev-dependencies]
+msgf = { path = "../../runtime/msgf", version = "0.1.0" }
+
 [lints]
 workspace = true

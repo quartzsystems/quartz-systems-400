@@ -1,0 +1,49 @@
+# STRSQL: the second display of the CREATE INDEX prompt (strsql-g2.tn's
+# last step), left with F12; nothing is run; left with option 2.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+pick "===>" create index
+key f4
+wait "Specify CREATE INDEX Statement"
+cursor 5 28
+type x
+cursor 6 30
+type qtemp
+cursor 8 28
+type qsqptabl
+cursor 9 30
+type qsys2
+key enter
+settle 2500
+snap strsql-prompt-crtidx-2
+key f12
+settle 1500
+seek "Enter SQL Statements" 2 f12
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

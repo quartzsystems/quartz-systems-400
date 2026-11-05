@@ -1,0 +1,24 @@
+                      Specify CREATE COLLECTION Statement                       
+                                                                                
+ Type choice, press Enter.                                                      
+                                                                                
+   Library  . . . . . . . . . . . .                  Name                       
+                                                                                
+   IN ASP . . . . . . . . . . . . .                  1-32, ASP device name      
+   WITH DATA DICTIONARY . . . . . .   N              Y=Yes, N=No                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel   F21=Display statement                      
+                                                                                

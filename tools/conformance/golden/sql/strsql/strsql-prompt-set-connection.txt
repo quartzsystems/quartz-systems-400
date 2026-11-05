@@ -1,0 +1,24 @@
+                        Specify SET CONNECTION Statement                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Relational database  . . . . . .                          Name, F4 for list  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F21=Display statement          
+                                                                                

@@ -447,3 +447,248 @@ help = "Text of the file description (DSPFD): *SYS for ADDPFTRG, *SQL for CREATE
 id = "TXT028D"
 text = "  Created"
 help = "Text of the file description (DSPFD): when the trigger was added."
+
+[[msg]]
+id = "TXT0901"
+text = "Interactive SQL Session"
+help = "Text of the interactive SQL displays and reports (STRSQL): the title in the heading of the printed session (F13, option 2)."
+
+[[msg]]
+id = "TXT0902"
+text = "Page"
+help = "Text of the interactive SQL displays and reports (STRSQL): the page label in the heading of the printed session."
+
+[[msg]]
+id = "TXT0903"
+text = "* * * * *  E N D  O F  L I S T I N G  * * * * *"
+help = "Text of the interactive SQL displays and reports (STRSQL): the last line of the printed session."
+
+[[msg]]
+id = "TXT0904"
+text = "PAGE"
+help = "Text of the interactive SQL displays and reports (STRSQL): the page label in the heading of a query printed with SELECT output 2."
+
+[[msg]]
+id = "TXT0905"
+text = "* * *  E N D  O F  R E P O R T  * * *"
+help = "Text of the interactive SQL displays and reports (STRSQL): the last line of a query printed with SELECT output 2."
+
+[[msg]]
+id = "TXT0910"
+text = "Change Printer File"
+help = "Text of the interactive SQL displays and reports (STRSQL): the title of the display that names the printer file the session is printed with."
+
+[[msg]]
+id = "TXT0911"
+text = "Type choice, press Enter."
+help = "Text of the interactive SQL displays and reports (STRSQL): the instruction of a display with one choice."
+
+[[msg]]
+id = "TXT0912"
+text = "Printer file"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of the printer file the session is printed with."
+
+[[msg]]
+id = "TXT0913"
+text = "F3=Exit"
+help = "Text of the interactive SQL displays and reports (STRSQL): the function key that leaves the display."
+
+[[msg]]
+id = "TXT0914"
+text = "F5=Refresh"
+help = "Text of the interactive SQL displays and reports (STRSQL): the function key that shows the display's values again as they were."
+
+[[msg]]
+id = "TXT0915"
+text = "F12=Cancel"
+help = "Text of the interactive SQL displays and reports (STRSQL): the function key that goes back to the previous display."
+
+[[msg]]
+id = "TXT0916"
+text = "Change Source File"
+help = "Text of the interactive SQL displays and reports (STRSQL): the title of the display that names the source member the session is saved in."
+
+[[msg]]
+id = "TXT0917"
+text = "Type choices, press Enter."
+help = "Text of the interactive SQL displays and reports (STRSQL): the instruction of a display with several choices."
+
+[[msg]]
+id = "TXT0918"
+text = "File"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of a file's name."
+
+[[msg]]
+id = "TXT0919"
+text = "Library"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of a file's library."
+
+[[msg]]
+id = "TXT091A"
+text = "Member"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of the member the session is saved in."
+
+[[msg]]
+id = "TXT091B"
+text = "Name, *FILE, *FIRST"
+help = "Text of the interactive SQL displays and reports (STRSQL): the values the member of the saved session takes."
+
+[[msg]]
+id = "TXT091C"
+text = "Option"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of how the session is saved: a new file, a replaced file, a new member, a replaced member or added records."
+
+[[msg]]
+id = "TXT091D"
+text = "1=Create new file"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice that saves the session in a new source file."
+
+[[msg]]
+id = "TXT091E"
+text = "2=Replace file"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice that replaces the source file the session is saved in."
+
+[[msg]]
+id = "TXT091F"
+text = "3=Create new member"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice that saves the session in a new member."
+
+[[msg]]
+id = "TXT0920"
+text = "4=Replace member"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice that replaces the member's records with the session."
+
+[[msg]]
+id = "TXT0921"
+text = "5=Add to member"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice that adds the session after the member's records."
+
+[[msg]]
+id = "TXT0922"
+text = "For a new file:"
+help = "Text of the interactive SQL displays and reports (STRSQL): the heading over the attributes of a source file the save creates."
+
+[[msg]]
+id = "TXT0923"
+text = "Authority"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of the public authority to a file the save creates."
+
+[[msg]]
+id = "TXT0924"
+text = "Authorization list name, *LIBCRTAUT"
+help = "Text of the interactive SQL displays and reports (STRSQL): the first line of the values the authority takes."
+
+[[msg]]
+id = "TXT0925"
+text = "*CHANGE, *ALL, *EXCLUDE, *USE"
+help = "Text of the interactive SQL displays and reports (STRSQL): the second line of the values the authority takes."
+
+[[msg]]
+id = "TXT0926"
+text = "Text"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of the text of a file the save creates."
+
+[[msg]]
+id = "TXT0927"
+text = "Confirm Remove Entries Request"
+help = "Text of the interactive SQL displays and reports (STRSQL): the title of the display that confirms clearing the session (F13, option 3)."
+
+[[msg]]
+id = "TXT0928"
+text = "Removing the entries clears every statement and message from the"
+help = "Text of the interactive SQL displays and reports (STRSQL): the first line of what clearing the session does."
+
+[[msg]]
+id = "TXT0929"
+text = "session display. The statements cannot be retrieved afterwards; the"
+help = "Text of the interactive SQL displays and reports (STRSQL): the second line of what clearing the session does."
+
+[[msg]]
+id = "TXT092C"
+text = "session attributes are kept."
+help = "Text of the interactive SQL displays and reports (STRSQL): the third line of what clearing the session does."
+
+[[msg]]
+id = "TXT092A"
+text = "Press Enter to confirm your choice to remove all entries."
+help = "Text of the interactive SQL displays and reports (STRSQL): the instruction that Enter clears the session."
+
+[[msg]]
+id = "TXT092B"
+text = "Press F12=Cancel to return to change your choice."
+help = "Text of the interactive SQL displays and reports (STRSQL): the instruction that F12 goes back without clearing the session."
+
+[[msg]]
+id = "TXT0930"
+text = "Printer"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of the printer device a query's rows are printed on (SELECT output 2)."
+
+[[msg]]
+id = "TXT0931"
+text = "Option"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of how a query's rows are written to the output file (SELECT output 3)."
+
+[[msg]]
+id = "TXT0932"
+text = "Authority"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of the public authority to an output file the query creates."
+
+[[msg]]
+id = "TXT0933"
+text = "Text"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of the text of an output file the query creates."
+
+[[msg]]
+id = "TXT0934"
+text = "Output file:"
+help = "Text of the interactive SQL displays and reports (STRSQL): the heading over the output file of SELECT output 3."
+
+[[msg]]
+id = "TXT0935"
+text = "Name"
+help = "Text of the interactive SQL displays and reports (STRSQL): the value a name field takes."
+
+[[msg]]
+id = "TXT0936"
+text = "Name, *FILE, *FIRST, *ALL"
+help = "Text of the interactive SQL displays and reports (STRSQL): the values the output file's member takes."
+
+[[msg]]
+id = "TXT0937"
+text = "1=Create file"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice that writes the rows to a new file."
+
+[[msg]]
+id = "TXT0938"
+text = "2=Replace file"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice that replaces the output file."
+
+[[msg]]
+id = "TXT0939"
+text = "3=Create member"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice that writes the rows to a new member."
+
+[[msg]]
+id = "TXT093A"
+text = "4=Replace member"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice that replaces the member's records with the rows."
+
+[[msg]]
+id = "TXT093B"
+text = "5=Add to member"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice that adds the rows after the member's records."
+
+[[msg]]
+id = "TXT093C"
+text = "Authorization list name"
+help = "Text of the interactive SQL displays and reports (STRSQL): the first line of the values the output file's authority takes."
+
+[[msg]]
+id = "TXT093D"
+text = "*LIBCRTAUT, *CHANGE, *ALL"
+help = "Text of the interactive SQL displays and reports (STRSQL): the second line of the values the output file's authority takes."
+
+[[msg]]
+id = "TXT093E"
+text = "*EXCLUDE, *USE"
+help = "Text of the interactive SQL displays and reports (STRSQL): the third line of the values the output file's authority takes."

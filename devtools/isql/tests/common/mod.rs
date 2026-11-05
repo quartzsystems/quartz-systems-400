@@ -26,9 +26,31 @@ fn golden_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/conformance/golden/verified/pub400")
 }
 
+/// The captures of the SQL tools' round (`golden/sql/strsql/`), named
+/// `sql/NAME`.
+fn golden_path(name: &str) -> PathBuf {
+    match name.strip_prefix("sql/") {
+        Some(n) => Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tools/conformance/golden/sql/strsql")
+            .join(format!("{n}.txt")),
+        None => golden_dir().join(format!("{name}.txt")),
+    }
+}
+
+/// The text of a `QSTXTMSG` identifier, from the shipped source.
+pub fn words(id: &str) -> String {
+    static FILES: std::sync::OnceLock<Vec<msgf::source::MsgFile>> = std::sync::OnceLock::new();
+    FILES
+        .get_or_init(msgf::source::builtin)
+        .iter()
+        .find(|f| f.name == "QSTXTMSG")
+        .and_then(|f| f.find(id))
+        .map_or_else(|| id.to_string(), |m| m.text.clone())
+}
+
 /// A golden's rows.
 pub fn golden_rows(name: &str) -> Vec<String> {
-    let path = golden_dir().join(format!("{name}.txt"));
+    let path = golden_path(name);
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
     text.replace("\r\n", "\n")
         .lines()

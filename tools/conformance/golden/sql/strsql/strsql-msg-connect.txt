@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   SQL7971       Severity . . . . . . . :   00         
+ Message type . . . . . :   Information                                         
+                                                                                
+ Message . . . . :   Current connection is to relational database PUB400.       
+ Cause . . . . . :   The product identification is QSQ07050, the server class   
+   name is QAS, and the user ID is USERNAME. The connection method used is      
+   *DUW. The connection type is 5.  A list of the connection types follows:     
+     -- Type 1 indicates that committable updates can be performed and either   
+   the connection uses an unprotected conversation, is a connection to an       
+   application requester driver program using *RUW connection method, or is a   
+   local connection using *RUW connection method.                               
+     -- Type 2 indicates that the conversation is unprotected and no            
+   committable updates can be performed.                                        
+     -- Type 3 indicates that the conversation is protected and it is unknown   
+   if committable updates can be performed.                                     
+     -- Type 4 indicates that the conversation is unprotected and it is unknown 
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

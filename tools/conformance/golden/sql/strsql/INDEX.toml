@@ -1,0 +1,655 @@
+[[golden]]
+name = "strsql-a-start"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-a"
+width = 80
+
+[[golden]]
+name = "strsql-savesrc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-a"
+width = 80
+
+[[golden]]
+name = "strsql-savesrc-f12"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-a"
+width = 80
+
+[[golden]]
+name = "strsql-b-restored"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-b"
+width = 80
+
+[[golden]]
+name = "strsql-out-printer"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-b"
+width = 80
+
+[[golden]]
+name = "strsql-out-printer-f12"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-b"
+width = 80
+
+[[golden]]
+name = "strsql-out-file"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-c"
+width = 80
+
+[[golden]]
+name = "strsql-out-file-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-c"
+width = 80
+
+[[golden]]
+name = "strsql-print"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-c"
+width = 80
+
+[[golden]]
+name = "strsql-fmt-ymd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-d"
+width = 80
+
+[[golden]]
+name = "strsql-fmt-history"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-d"
+width = 80
+
+[[golden]]
+name = "strsql-print-done"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-d"
+width = 80
+
+[[golden]]
+name = "strsql-attrs-applied"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-d"
+width = 80
+
+[[golden]]
+name = "strsql-attrs-applied-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-d"
+width = 80
+
+[[golden]]
+name = "strsql-select-printed"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-d"
+width = 80
+
+[[golden]]
+name = "strsql-removed"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-d"
+width = 80
+
+[[golden]]
+name = "strsql-removed-done"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-d"
+width = 80
+
+[[golden]]
+name = "strsql-removed-f12"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-d"
+width = 80
+
+[[golden]]
+name = "strsql-msg-connect"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-attrs-now-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt2-ymd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt2-ymd-f20"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-attrs-iso"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt-iso"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt2-iso"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt2-iso-f20"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-attrs-usa"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt-usa"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt2-usa"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt2-usa-f20"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-attrs-jul"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt-jul"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt2-jul"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-fmt2-jul-f20"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-msg-removed"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-e"
+width = 80
+
+[[golden]]
+name = "strsql-resume"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-f"
+width = 80
+
+[[golden]]
+name = "strsql-msg-resumed"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-f"
+width = 80
+
+[[golden]]
+name = "strsql-resume-attrs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-f"
+width = 80
+
+[[golden]]
+name = "strsql-resume-parm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-f"
+width = 80
+
+[[golden]]
+name = "strsql-resume-parm-attrs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-f"
+width = 80
+
+[[golden]]
+name = "strsql-fresh"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-f"
+width = 80
+
+[[golden]]
+name = "strsql-fresh-attrs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-f"
+width = 80
+
+[[golden]]
+name = "strsql-msg-printed"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-g-resume"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-alter-table"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-call"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-comment-on"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-commit"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-connect"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-create-alias"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-create-collection"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-create-procedure"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-disconnect"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-drop-alias"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-drop-collection"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-drop-index"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-drop-package"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-drop-table"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-drop-view"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-grant-package"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-grant-package-f12"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-grant-table"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-label-on"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-lock-table"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-rename"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-release"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-revoke-package"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-revoke-table"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-rollback"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-set-connection"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-set-transaction"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-insert-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-update-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-crtidx-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-g3"
+width = 80
+
+[[golden]]
+name = "strsql-h-resume"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-h"
+width = 80
+
+[[golden]]
+name = "strsql-msg-ignored"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-h"
+width = 80
+
+[[golden]]
+name = "strsql-cancelled"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-h2"
+width = 80
+
+[[golden]]
+name = "strsql-msg-cancelled"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-h2"
+width = 80
+
+[[golden]]
+name = "strsql-msg-lastcol"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-i"
+width = 80
+
+[[golden]]
+name = "strsql-data-f20-again"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-i"
+width = 80
+
+[[golden]]
+name = "strsql-data-f19"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-i"
+width = 80
+
+[[golden]]
+name = "strsql-msg-firstcol"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "strsql-i"
+width = 80

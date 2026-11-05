@@ -8,7 +8,7 @@
 
 mod common;
 
-use common::{compare, compare_rows};
+use common::{compare, compare_rows, words};
 use isql::assemble::Values;
 use isql::attrs::Attrs;
 use isql::history::History;
@@ -123,11 +123,11 @@ fn golden_attrs() -> Attrs {
 #[test]
 fn strsql_attrs() {
     let a = golden_attrs();
-    compare("strsql-attrs", &menus::attributes(0, &a, None));
-    compare("strsql-attrs-2", &menus::attributes(1, &a, None));
+    compare("strsql-attrs", &menus::attributes(0, &a, None, &words));
+    compare("strsql-attrs-2", &menus::attributes(1, &a, None, &words));
     compare_rows(
         "strsql-attrs-3",
-        &menus::attributes(1, &a, None),
+        &menus::attributes(1, &a, None, &words),
         &rows_but(&[24]),
     );
 }
@@ -184,6 +184,7 @@ fn strsql_data_dummy() {
             data_type: "CHAR(1)".into(),
         }],
         rows: vec![vec![Some("Y".into())]],
+        ..Data::default()
     };
     compare(
         "strsql-data-dummy",
@@ -204,7 +205,11 @@ fn wide() -> Data {
     let rows = (0..40)
         .map(|i| vec![Some(format!("T{i}")), Some(String::new())])
         .collect();
-    Data { columns, rows }
+    Data {
+        columns,
+        rows,
+        ..Data::default()
+    }
 }
 
 #[test]

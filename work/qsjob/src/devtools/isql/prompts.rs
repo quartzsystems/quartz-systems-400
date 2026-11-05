@@ -7,7 +7,7 @@
 //! need); the statement built goes on the input lines to be run.
 
 use isql::IsqlError;
-use isql::assemble::{self, Kind, LIST, Values};
+use isql::assemble::{self, Kind, Values};
 use isql::screen::menus::{self, STATEMENTS, statement_pages};
 use isql::screen::prompt::{self, Prompt};
 
@@ -24,43 +24,42 @@ enum Left {
     Cancelled,
 }
 
-/// F4 on Enter SQL Statements.
+/// F4 on Enter SQL Statements. A prompt chosen on Select SQL
+/// Statement and left with F12 goes back to the list; one reached from
+/// the statement typed leaves the statement in the history with
+/// SQL6130, as pub400 does.
 pub fn prompt(host: &Host, surface: &mut Surface, s: &mut Session) {
-
     let text = s.h.text();
-    let kind = if text.trim().is_empty() {
-        match pick_statement(surface, s) {
-            Some(k) => k,
-            None => return,
+    let from_list = text.trim().is_empty();
+    loop {
+        let kind = if from_list {
+            match pick_statement(surface, s) {
+                Some(k) => k,
+                None => return,
+            }
+        } else if let Some(k) = assemble::kind_of(&text) {
+            k
+        } else {
+            super::note(host, &mut s.h, "CPD9CD4", &[]);
+            s.h.fit();
+            return;
+        };
+        let start = if from_list { Values::new() } else { assemble::fields_of(kind, &text) };
+        if let Some(stmt) = statement(surface, s, kind, start) {
+            s.h.clear_input();
+            s.h.set_text(&stmt);
+            s.h.fit();
+            return;
         }
-    } else if let Some(k) = assemble::kind_of(&text) {
-        k
-    } else {
-        super::note(host, &mut s.h, "CPD9CD4", &[]);
-        s.h.fit();
-        return;
-    };
-    let typed = s.h.typed();
-    let start = assemble::fields_of(kind, &text);
-    if let Some(stmt) = statement(surface, s, kind, start) {
+        if from_list {
+            continue;
+        }
+        s.h.statement(s.h.typed());
+        super::note(host, &mut s.h, "SQL6130", &[]);
         s.h.clear_input();
-        s.h.set_text(&stmt);
-        s.h.fit();
+        s.h.to_end();
         return;
     }
-    let shown = if typed.is_empty() {
-        vec![
-            LIST.iter()
-                .find(|(k, _)| *k == kind)
-                .map_or(String::new(), |(_, w)| (*w).to_string()),
-        ]
-    } else {
-        typed
-    };
-    s.h.statement(shown);
-    super::note(host, &mut s.h, "CPI9BF2", &[]);
-    s.h.clear_input();
-    s.h.to_end();
 }
 
 /// A prompt display's check of its values before it is left.

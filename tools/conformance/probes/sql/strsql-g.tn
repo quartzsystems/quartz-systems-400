@@ -1,0 +1,175 @@
+# STRSQL: the message identifiers of "Session printed." and of the
+# ignored STRSQL parameters (F1), every statement prompt not captured
+# before (F4 on the statement's first words, left with F12) and the
+# second displays of the INSERT, UPDATE and CREATE INDEX prompts (left
+# with F12; nothing is run). The printed session is deleted after.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key f13
+wait "Interactive SQL Session Services"
+type 2
+key enter
+wait "Change Printer File"
+key enter
+wait "Session printed"
+cursor 24 2
+key help
+settle 2000
+snap strsql-msg-printed
+key f12
+wait "Interactive SQL Session Services"
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 1
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+snap strsql-g-resume
+cursor 6 7
+key help
+settle 2000
+snap strsql-msg-ignored
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" alter table
+key f4
+settle 2500
+snap strsql-prompt-alter-table
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" call
+key f4
+settle 2500
+snap strsql-prompt-call
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" comment on
+key f4
+settle 2500
+snap strsql-prompt-comment-on
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" commit
+key f4
+settle 2500
+snap strsql-prompt-commit
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" connect
+key f4
+settle 2500
+snap strsql-prompt-connect
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" create alias
+key f4
+settle 2500
+snap strsql-prompt-create-alias
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" create collection
+key f4
+settle 2500
+snap strsql-prompt-create-collection
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" create procedure
+key f4
+settle 2500
+snap strsql-prompt-create-procedure
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" disconnect
+key f4
+settle 2500
+snap strsql-prompt-disconnect
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" drop alias
+key f4
+settle 2500
+snap strsql-prompt-drop-alias
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" drop collection
+key f4
+settle 2500
+snap strsql-prompt-drop-collection
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" drop index
+key f4
+settle 2500
+snap strsql-prompt-drop-index
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" drop package
+key f4
+settle 2500
+snap strsql-prompt-drop-package
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" drop table
+key f4
+settle 2500
+snap strsql-prompt-drop-table
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+pick "===>" drop view
+key f4
+settle 2500
+snap strsql-prompt-drop-view
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

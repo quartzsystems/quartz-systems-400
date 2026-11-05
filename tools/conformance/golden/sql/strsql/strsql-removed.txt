@@ -1,0 +1,24 @@
+                         Confirm Remove Entries Request                         
+                                                                                
+ You are about to remove all of the entries from your session. You will lose    
+ all previously entered statements. Your session parameters will remain         
+ unchanged.                                                                     
+                                                                                
+ Press Enter to confirm your choice to remove all entries.                      
+ Press F12=Cancel to return to change your choice.                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F12=Cancel                                                                     
+                                                                                

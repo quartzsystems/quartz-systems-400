@@ -1,0 +1,24 @@
+                           Change Session Attributes                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Statement processing . . . . .   *RUN           *RUN, *VLD, *SYN             
+   SELECT output  . . . . . . . .   3              1=Display, 2=Printer         
+                                                   3=File                       
+   Output file:                                                                 
+     File . . . . . . . . . . . .   QSQLSELECT     Name                         
+       Library  . . . . . . . . .     USERNAME1    Name                         
+     Member . . . . . . . . . . .   *FILE          Name, *FILE, *FIRST, *ALL    
+     Option . . . . . . . . . . .   1              1=Create file                
+                                                   2=Replace file               
+                                                   3=Create member              
+                                                   4=Replace member             
+                                                   5=Add to member              
+     Authority  . . . . . . . . .   *EXCLUDE       Authorization list name      
+                                                   *LIBCRTAUT, *CHANGE, *ALL    
+                                                   *EXCLUDE, *USE               
+     Text . . . . . . . . . . . .                                               
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+                                                                                

@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   SQL6130       Severity . . . . . . . :   00         
+ Message type . . . . . :   Information                                         
+                                                                                
+ Message . . . . :   Prompting was cancelled by the user.                       
+ Cause . . . . . :   SQL statement prompting ended because the F3 (Exit) or F12 
+   (Cancel) key was pressed.                                                    
+ Recovery  . . . :   Enter a new request.                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

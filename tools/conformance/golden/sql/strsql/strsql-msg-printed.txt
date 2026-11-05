@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   SQL6085       Severity . . . . . . . :   00         
+ Message type . . . . . :   Information                                         
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Session printed.                                           
+ Cause . . . . . :   All the SQL statements and messages have been printed from 
+   the Enter SQL Statements panel.                                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details                                
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                
