@@ -30,6 +30,7 @@ pub const SYSTEM_JOBS: &[&str] = &[
     "QDBSRV03",
     "QDBSRV04",
     "QDBSRV05",
+    "QDBFSTCCOL",
     "QSPLMAINT",
     "QALERT",
     "QSYSCOMM1",

@@ -28,6 +28,7 @@ pub mod value;
 pub use ast::{Naming, Statement};
 pub use error::{Result, SqlError};
 pub use exec::dynamic::prepare_dynamic;
+pub use exec::plan::stats::collect_due as collect_statistics;
 pub use exec::{ColumnDesc, Outcome, Prepared, ResultSet, SqlContext, prepare};
 pub use parse::{parse, parse_all};
 pub use run::{CommitOpt, RunEntry, RunOpts, RunReport, runsqlstm, runsqlstm_lent};

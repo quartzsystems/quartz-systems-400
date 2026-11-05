@@ -864,6 +864,10 @@ ipc::rpc! {
     1481 => fn sqlsrv_assume / SqlsrvAssume (ticket: Vec<u8>, user: String, password: String) -> Result<String, HostRefused>;
     /// The connection ended: the job's SQL goes, its own user again.
     1482 => fn sqlsrv_end / SqlsrvEnd () -> ();
+    // --- database statistics (1495; sql::collect_statistics)
+    /// `QDBFSTCCOL`'s pass: the column statistics asked for and those
+    /// gone stale collected; the lines for the log.
+    1495 => fn stats_tick / StatsTick () -> Vec<String>;
 }
 
 /// What `machine` answers. Each string is empty when unknown.

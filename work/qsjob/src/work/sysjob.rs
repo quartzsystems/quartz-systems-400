@@ -10,7 +10,9 @@
 //! itself is the service's); `QSYSCOMM1` has the service check the
 //! certificate stores for expiry ten minutes after the IPL and then daily
 //! (warnings go to `QSYSOPR`) and hourly whether an update check is due
-//! (`QSCHGUPDA`); the others hold their place: the storage service
+//! (`QSCHGUPDA`); `QDBFSTCCOL` has the service collect the column
+//! statistics the planner asked for and those gone stale every minute
+//! (`QDBFSTCCOL` system value `*NONE`: none); the others hold their place: the storage service
 //! keeps the devices' states itself (varied on, signed on, the job
 //! at each), rebuilds access paths at IPL, and
 //! communications are `QTCPWRK`'s and the servers'. No alerts are
@@ -38,6 +40,9 @@ const CERTCHK_FIRST: Duration = Duration::from_mins(10);
 /// How often `QSYSCOMM1` checks them after that.
 const CERTCHK: Duration = Duration::from_hours(24);
 
+/// How often `QDBFSTCCOL` collects the database statistics due.
+const STCCOL: Duration = Duration::from_mins(1);
+
 /// How often `QSYSCOMM1` asks whether an update check is due.
 const UPDCHK: Duration = Duration::from_hours(1);
 
@@ -62,6 +67,13 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
                 eprintln!("qsjob: QSYSCOMM1: {line}");
             }
             updchk = Instant::now() + UPDCHK;
+        }
+        if start.name == "QDBFSTCCOL" && Instant::now() >= next {
+            status(link, Status::Run, "STCCOL");
+            for line in link.borrow_mut().with(Client::stats_tick) {
+                eprintln!("qsjob: QDBFSTCCOL: {line}");
+            }
+            next = Instant::now() + STCCOL;
         }
         if start.name == "QSPLMAINT" && Instant::now() >= next {
             status(link, Status::Run, "SPLMAINT");

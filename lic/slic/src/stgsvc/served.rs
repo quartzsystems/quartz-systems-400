@@ -1307,6 +1307,17 @@ impl Service for Served<'_> {
         Ok((id, prtf))
     }
 
+    fn stats_tick(&mut self) -> Vec<String> {
+        if super::security::sysval_text(self.system, "QDBFSTCCOL").trim() == "*NONE" {
+            return Vec::new();
+        }
+        let Some(st) = self.system.storage.as_mut() else { return Vec::new() };
+        let Ok(mut txn) = st.store.begin() else { return Vec::new() };
+        let lines = sql::collect_statistics(&mut txn, crate::ipl::system::now_unix());
+        txn.abort();
+        lines
+    }
+
     fn spool_maint(&mut self) -> String {
         super::spool::maintain(self.system)
     }
