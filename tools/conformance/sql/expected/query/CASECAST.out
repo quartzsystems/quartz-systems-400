@@ -1,0 +1,83 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4C_T (ID INTEGER NOT NULL, CODE CHAR(2), QTY DECIMAL
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4C_T VALUES (1, 'A1', 10, 1.255, 'first', '2026-01-31
+sqlcode 0 sqlstate 00000 msgid - count 3
+> SELECT ID, CASE CODE WHEN 'A1' THEN 'Alpha' WHEN 'B2' THEN 'Bravo' ELSE 
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# 00002 VARCHAR(5) NOT NULL
+| 1 | 'Alpha' |
+| 2 | 'None' |
+| 3 | 'Bravo' |
+> SELECT ID, CASE WHEN QTY > 0 THEN 'in' WHEN QTY < 0 THEN 'out' END FROM 
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# 00002 VARCHAR(3)
+| 1 | 'in' |
+| 2 | NULL |
+| 3 | 'out' |
+> SELECT ID, CASE WHEN PRICE IS NULL THEN 0 ELSE PRICE END, COALESCE(NOTE,
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# 00002 DECIMAL(14,3)
+# 00003 VARCHAR(10) NOT NULL
+# 00004 DECIMAL(7,0)
+| 1 | 1.255 | 'first' | 10 |
+| 2 | 0.000 | '(none)' | NULL |
+| 3 | 99.999 | '' | -5 |
+> SELECT ID FROM {lib}.D4C_T WHERE CODE IS NULL OR NOTE IS NOT NULL AND NO
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 2 |
+| 3 |
+> SELECT CAST(PRICE AS DECIMAL(5, 1)), CAST(PRICE AS INTEGER), CAST(QTY AS
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 DECIMAL(5,1)
+# 00002 INTEGER
+# 00003 CHAR(8)
+# 00004 VARCHAR(4) NOT NULL
+| 1.2 | 1 | '10      ' | '1' |
+| 99.9 | 99 | '-5      ' | '3' |
+> SELECT CAST(D AS CHAR(10)), CAST(CHAR(D) AS DATE), CAST('12:30:00' AS TI
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CHAR(10)
+# 00002 DATE
+# 00003 TIME NOT NULL
+# 00004 TIMESTAMP NOT NULL
+| '2026-01-31' | '2026-01-31' | '12.30.00' | 2026-01-31-10.00.00.000000 |
+> SELECT CAST('123' AS INTEGER) + 1, CAST(' 4.5 ' AS DECIMAL(3, 1)), CAST(
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+# 00002 DECIMAL(3,1) NOT NULL
+# 00003 DOUBLE NOT NULL
+# 00004 DECIMAL(31,28) NOT NULL
+| 124 | 4.5 | 3.5 | 3.5000000000000000000000000000 |
+> SELECT CAST(CODE AS CHAR(1)), CAST(NOTE AS CHAR(3)) FROM {lib}.D4C_T WHE
+sqlcode 0 sqlstate 00000 msgid -
+warning 0 01004 -
+# 00001 CHAR(1)
+# 00002 CHAR(3)
+| 'A' | 'fir' |
+> SELECT CAST(PRICE AS DECIMAL(3, 0)) FROM {lib}.D4C_T WHERE ID = 3
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 DECIMAL(3,0)
+| 99 |
+> SELECT CASE WHEN 1 = 1 THEN 1 ELSE 'x' END FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 1 |
+> SELECT CASE ID WHEN 1 THEN NULL ELSE 2.5 END FROM {lib}.D4C_T ORDER BY I
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 DECIMAL(2,1)
+| NULL |
+| 2.5 |
+| 2.5 |
+> SELECT CAST(NULL AS INTEGER), CAST(NULL AS VARCHAR(3)) FROM SYSIBM.SYSDU
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+# 00002 VARCHAR(3)
+| NULL | NULL |
+> DROP TABLE {lib}.D4C_T
+sqlcode 0 sqlstate 00000 msgid -

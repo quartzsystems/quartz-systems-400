@@ -1,0 +1,25 @@
+-- captured from pub400
+> VALUES LENGTH(ENCRYPT_RC2('secret', 'password1234'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 16 |
+> VALUES LENGTH(ENCRYPT_TDES('secret', 'password1234'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 24 |
+> VALUES DECRYPT_CHAR(ENCRYPT_RC2('secret', 'password1234'), 'password1234
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(8) NOT NULL
+| 'secret' |
+> VALUES GETHINT(ENCRYPT_RC2('secret', 'password1234', 'hint'))
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(32)
+| 'hint' |
+> VALUES VERIFY_GROUP_FOR_USER(SESSION_USER, 'QSYSOPR')
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> VALUES ENCRYPT_AES('x')
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR () FOR BIT DATA NOT NULL
+sqlcode -20143 sqlstate 51039 msgid SQ20143

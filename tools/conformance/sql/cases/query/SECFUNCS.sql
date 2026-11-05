@@ -1,0 +1,8 @@
+-- oracle: pub400
+-- Functions refused for want of IBM's layouts or profiles: ENCRYPT_AES, ENCRYPT_RC2, ENCRYPT_TDES, DECRYPT_CHAR, GETHINT, VERIFY_GROUP_FOR_USER.
+VALUES LENGTH(ENCRYPT_RC2('secret', 'password1234'));
+VALUES LENGTH(ENCRYPT_TDES('secret', 'password1234'));
+VALUES DECRYPT_CHAR(ENCRYPT_RC2('secret', 'password1234'), 'password1234');
+VALUES GETHINT(ENCRYPT_RC2('secret', 'password1234', 'hint'));
+VALUES VERIFY_GROUP_FOR_USER(SESSION_USER, 'QSYSOPR');
+VALUES ENCRYPT_AES('x');

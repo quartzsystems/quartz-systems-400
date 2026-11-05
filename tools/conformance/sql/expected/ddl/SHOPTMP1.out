@@ -1,0 +1,54 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4_STOCK_MOVE (ITEM CHAR(8) NOT NULL, MOVE_TYPE CHAR(
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4_STOCK_MOVE VALUES ('A', 'R', 10), ('A', 'I', 3), ('
+sqlcode 0 sqlstate 00000 msgid - count 5
+> DECLARE GLOBAL TEMPORARY TABLE SESSION.D4_NET (ITEM CHAR(8) NOT NULL, NE
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO SESSION.D4_NET SELECT ITEM, SUM(CASE MOVE_TYPE WHEN 'R' THEN
+sqlcode 0 sqlstate 00000 msgid - count 3
+> SELECT ITEM, NET_QTY FROM SESSION.D4_NET ORDER BY ITEM
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(8) NOT NULL
+# NET_QTY INTEGER
+| 'A       ' | 5 |
+| 'B       ' | 5 |
+| 'C       ' | 1 |
+> DECLARE GLOBAL TEMPORARY TABLE SESSION.D4_NET (ITEM CHAR(8)) ON COMMIT P
+sqlcode -601 sqlstate 42710 msgid SQL0601
+> DECLARE GLOBAL TEMPORARY TABLE SESSION.D4_NET (ITEM CHAR(8), FLAG CHAR(1
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM SESSION.D4_NET
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> DECLARE GLOBAL TEMPORARY TABLE SESSION.D4_COPY AS (SELECT ITEM, QTY FROM
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ITEM, QTY FROM SESSION.D4_COPY ORDER BY ITEM
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(8) NOT NULL
+# QTY INTEGER NOT NULL
+| 'A       ' | 10 |
+| 'B       ' | 5 |
+| 'C       ' | 1 |
+> DECLARE GLOBAL TEMPORARY TABLE SESSION.D4_LIKE LIKE {lib}.D4_STOCK_MOVE 
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO SESSION.D4_LIKE VALUES ('Z', 'R', 1)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT * FROM SESSION.D4_LIKE
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(8) NOT NULL
+# MOVE_TYPE CHAR(1) NOT NULL
+# QTY INTEGER NOT NULL
+| 'Z       ' | 'R' | 1 |
+> DROP TABLE SESSION.D4_NET
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE SESSION.D4_COPY
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE SESSION.D4_LIKE
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM SESSION.D4_LIKE
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE {lib}.D4_STOCK_MOVE
+sqlcode 0 sqlstate 00000 msgid -

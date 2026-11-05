@@ -1,0 +1,40 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4M_RATE (CODE CHAR(3) NOT NULL, RATE DECIMAL(7, 5) N
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE SEQUENCE {lib}.D4M_SEQ
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON {lib}.D4M_RATE (CODE IS 'ISO currency code', RATE IS 'Units p
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON {lib}.D4M_RATE (CODE IS 'Currency', RATE IS 'Exchange          
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON SEQUENCE {lib}.D4M_SEQ IS 'Rate batch numbers'
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON SEQUENCE {lib}.D4M_SEQ IS 'One number per rate load.'
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON TABLE {lib}.D4M_RATE IS ''
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COLUMN_NAME, COLUMN_HEADING, LONG_COMMENT FROM QSYS2.SYSCOLUMNS W
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# COLUMN_HEADING NVARCHAR(60)
+# LONG_COMMENT NVARCHAR(2000)
+| 'CODE' | 'Currency' | 'ISO currency code' |
+| 'RATE' | 'Exchange            rate' | 'Units per US dollar' |
+| 'VALID_FROM' | 'VALID_FROM' | 'First day the rate applies' |
+| 'VALID_TO' | 'Valid               until' | NULL |
+> SELECT SEQUENCE_NAME, SEQUENCE_TEXT, LONG_COMMENT FROM QSYS2.SYSSEQUENCE
+sqlcode 0 sqlstate 00000 msgid -
+# SEQUENCE_NAME VARCHAR(128) NOT NULL
+# SEQUENCE_TEXT NVARCHAR(50)
+# LONG_COMMENT NVARCHAR(2000)
+| 'D4M_SEQ' | 'Rate batch numbers' | 'One number per rate load.' |
+> SELECT TABLE_NAME, LONG_COMMENT FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA 
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+| 'D4M_RATE' | NULL |
+> DROP SEQUENCE {lib}.D4M_SEQ
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4M_RATE
+sqlcode 0 sqlstate 00000 msgid -

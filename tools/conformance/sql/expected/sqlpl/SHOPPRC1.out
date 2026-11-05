@@ -1,0 +1,66 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4P_ORD (ORD_NO INTEGER NOT NULL PRIMARY KEY, CUST CH
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.D4P_LIN (ORD_NO INTEGER NOT NULL, LIN SMALLINT NOT NU
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.D4P_LOG (MSG VARCHAR(80) NOT NULL)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.D4P_POST (IN P_ORD INTEGER, IN P_CUST CHAR(6), IN
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4P_PRICE (IN P_ORD INTEGER, OUT P_TOTAL DECIMAL(
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4P_CLOSE (IN P_BEFORE DATE, OUT P_CLOSED INTEGER
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4P_REPORT (IN P_CUST CHAR(6))
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4P_DRIVE ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.D4P_DRIVE()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.D4P_PRICE(2, 0, 0)
+sqlcode -469 sqlstate 42886 msgid SQL0469
+> CALL {lib}.D4P_REPORT('C00001')
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# ORD_NO INTEGER NOT NULL
+# STATUS CHAR(1) NOT NULL
+# TOTAL DECIMAL(11,2) NOT NULL
+| 1 | 'C' | 25.50 |
+| 2 | 'O' | 0.00 |
+> SELECT MSG FROM {lib}.D4P_LOG ORDER BY MSG
+sqlcode 0 sqlstate 00000 msgid -
+# MSG VARCHAR(80) NOT NULL
+| 'closed 1          ' |
+| 'duplicate 1          ' |
+| 'order 1 25.50         lines 2          ' |
+| 'order 3 .00           lines 0          ' |
+| 'posted 1          ' |
+| 'posted 2          ' |
+| 'rc again -1         ' |
+| 'rc 0          ' |
+> SELECT ORD_NO, STATUS, TOTAL FROM {lib}.D4P_ORD ORDER BY ORD_NO
+sqlcode 0 sqlstate 00000 msgid -
+# ORD_NO INTEGER NOT NULL
+# STATUS CHAR(1) NOT NULL
+# TOTAL DECIMAL(11,2) NOT NULL
+| 1 | 'C' | 25.50 |
+| 2 | 'O' | 0.00 |
+> DROP PROCEDURE {lib}.D4P_DRIVE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.D4P_POST
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.D4P_PRICE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.D4P_CLOSE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.D4P_REPORT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4P_LIN
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4P_ORD
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4P_LOG
+sqlcode 0 sqlstate 00000 msgid -

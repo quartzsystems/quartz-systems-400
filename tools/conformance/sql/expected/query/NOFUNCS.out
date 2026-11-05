@@ -1,0 +1,43 @@
+-- captured from pub400
+> VALUES ASINH(1)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES ACOSH(2)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES DATE_TRUNC('MONTH', DATE('2026-11-05'))
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES DATE_PART('YEAR', DATE('2026-11-05'))
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES DAYS_BETWEEN(DATE('2026-11-05'), DATE('2026-11-01'))
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES INITCAP('hello world')
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES LEN('abc')
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES TO_MULTI_BYTE('abc')
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES RAWTOHEX('abc')
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES EBCDIC_CHR(193)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT LENGTH(GENERATE_UNIQUE()), RAND() < 1, RAND() >= 0 FROM SYSIBM.SY
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+# 00002 BOOLEAN NOT NULL
+# 00003 BOOLEAN NOT NULL
+| 13 | 1 | 1 |
+> SELECT RAND(7) < 1 FROM SYSIBM.SYSDUMMY1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 BOOLEAN NOT NULL
+| 1 |
+> SELECT COUNT(*) FROM SYSIBM.SYSDUMMY1 WHERE MAX(1) = 1
+sqlcode -120 sqlstate 42903 msgid SQL0120
+> SELECT IBMREQD FROM SYSIBM.SYSDUMMY1 GROUP BY IBMREQD HAVING SUM(AVG(1))
+sqlcode -112 sqlstate 42607 msgid SQL0112
+> VALUES (SUM(1))
+sqlcode -120 sqlstate 42903 msgid SQL0120
+> SELECT IBMREQD FROM SYSIBM.SYSDUMMY1 ORDER BY ROW_NUMBER() OVER ()
+sqlcode 0 sqlstate 00000 msgid -
+# IBMREQD VARCHAR(1)
+| 'Y' |
+> SELECT IBMREQD FROM SYSIBM.SYSDUMMY1 GROUP BY ROW_NUMBER() OVER ()
+sqlcode -120 sqlstate 42903 msgid SQL0120

@@ -1,0 +1,43 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4R_ITEM (ITEM CHAR(8) NOT NULL, QTY INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE INDEX {lib}.D4R_ITEM_IX ON {lib}.D4R_ITEM (ITEM)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TABLE {lib}.D4R_TAKEN (X INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4R_ITEM VALUES ('A', 1), ('B', 2)
+sqlcode 0 sqlstate 00000 msgid - count 2
+> RENAME TABLE {lib}.D4R_ITEM TO D4R_ITEM2
+sqlcode 0 sqlstate 00000 msgid -
+> RENAME INDEX {lib}.D4R_ITEM_IX TO D4R_ITEM2_IX
+sqlcode 0 sqlstate 00000 msgid -
+> RENAME TABLE {lib}.D4R_ITEM2 TO D4R_TAKEN
+sqlcode -601 sqlstate 42710 msgid SQL0601
+> RENAME TABLE {lib}.D4R_NONE TO D4R_NEW
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> RENAME {lib}.D4R_ITEM2 TO D4R_ITEM3
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ITEM, QTY FROM {lib}.D4R_ITEM3 ORDER BY ITEM
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(8) NOT NULL
+# QTY INTEGER
+| 'A       ' | 1 |
+| 'B       ' | 2 |
+> SELECT COUNT(*) FROM {lib}.D4R_ITEM
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT INDEX_NAME, TABLE_NAME FROM QSYS2.SYSINDEXES WHERE INDEX_SCHEMA =
+sqlcode 0 sqlstate 00000 msgid -
+# INDEX_NAME VARCHAR(128) NOT NULL
+# TABLE_NAME VARCHAR(128) NOT NULL
+| 'D4R_ITEM2_IX' | 'D4R_ITEM3' |
+> SELECT TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = '{lib}' AND 
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+| 'D4R_ITEM3' |
+| 'D4R_TAKEN' |
+> DROP TABLE {lib}.D4R_ITEM3
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4R_TAKEN
+sqlcode 0 sqlstate 00000 msgid -

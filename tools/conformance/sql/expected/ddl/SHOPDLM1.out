@@ -1,0 +1,47 @@
+-- captured from primary
+> CREATE TABLE {lib}."D4 Monthly Totals" ("Month" CHAR(7) NOT NULL, "Total
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}."D4 Monthly Totals" VALUES ('2026-01', 100.00, 5), ('2
+sqlcode 0 sqlstate 00000 msgid - count 2
+> SELECT "Month", "Total Sales", "units" FROM {lib}."D4 Monthly Totals" OR
+sqlcode 0 sqlstate 00000 msgid -
+# Month CHAR(7) NOT NULL
+# Total Sales DECIMAL(11,2)
+# units INTEGER
+| '2026-01' | 100.00 | 5 |
+| '2026-02' | 250.50 | 9 |
+> SELECT * FROM {lib}."D4 Monthly Totals" WHERE "units" > 6
+sqlcode 0 sqlstate 00000 msgid -
+# Month CHAR(7) NOT NULL
+# Total Sales DECIMAL(11,2)
+# units INTEGER
+| '2026-02' | 250.50 | 9 |
+> SELECT "Month", UNITS FROM {lib}."D4 Monthly Totals"
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> SELECT COUNT(*) FROM {lib}."d4 monthly totals"
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CREATE VIEW {lib}."D4 Big Months" AS SELECT "Month" AS "Big Month" FROM 
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT * FROM {lib}."D4 Big Months"
+sqlcode 0 sqlstate 00000 msgid -
+# Big Month CHAR(7) NOT NULL
+| '2026-02' |
+> SELECT TABLE_NAME, SYSTEM_TABLE_NAME, TABLE_TYPE FROM QSYS2.SYSTABLES WH
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# SYSTEM_TABLE_NAME CHAR(10) NOT NULL
+# TABLE_TYPE CHAR(1) NOT NULL
+| 'D4 Big Months' | 'D4_B0001  ' | 'V' |
+| 'D4 Monthly Totals' | 'D4_M0001  ' | 'T' |
+> SELECT COLUMN_NAME, SYSTEM_COLUMN_NAME FROM QSYS2.SYSCOLUMNS WHERE TABLE
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# SYSTEM_COLUMN_NAME CHAR(10) NOT NULL
+| 'Month' | 'MONTH00001' |
+| 'Total Sales' | 'TOTAL00001' |
+| 'units' | 'UNITS00001' |
+> DROP VIEW {lib}."D4 Big Months"
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}."D4 Monthly Totals"
+sqlcode 0 sqlstate 00000 msgid -

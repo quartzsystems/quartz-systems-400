@@ -1,0 +1,65 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4_PART (PART_NUMBER CHAR(10) NOT NULL, PART_DESCRIPT
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE INDEX {lib}.D4_PART_IX ON {lib}.D4_PART (PART_NUMBER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.D4_PART_V AS SELECT PART_NUMBER, UNIT_COST FROM {lib}.
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE ALIAS {lib}.D4_PART_A FOR {lib}.D4_PART
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON TABLE {lib}.D4_PART IS 'Part master'
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON INDEX {lib}.D4_PART_IX IS 'Part master by number'
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON TABLE {lib}.D4_PART_V IS 'Part costs'
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON ALIAS {lib}.D4_PART_A IS 'Part master alias'
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON COLUMN {lib}.D4_PART.PART_NUMBER IS 'Part                Number
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON COLUMN {lib}.D4_PART.UNIT_COST IS 'Unit                Cost'
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON COLUMN {lib}.D4_PART (PART_DESCRIPTION TEXT IS 'Description of 
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON TABLE {lib}.D4_PART IS 'Every part the plant buys or makes, o
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON COLUMN {lib}.D4_PART.UNIT_COST IS 'Standard cost, four decima
+sqlcode 0 sqlstate 00000 msgid -
+> COMMENT ON INDEX {lib}.D4_PART_IX IS 'Lookup by part number.'
+sqlcode 0 sqlstate 00000 msgid -
+> LABEL ON TABLE {lib}.D4_PART IS 'This label is far longer than the fifty
+sqlcode -107 sqlstate 42622 msgid SQL0107
+> LABEL ON COLUMN {lib}.D4_PART.NO_SUCH_COLUMN IS 'x'
+sqlcode -205 sqlstate 42703 msgid SQL0205
+> SELECT TABLE_NAME, TABLE_TYPE, TABLE_TEXT, LONG_COMMENT FROM QSYS2.SYSTA
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# TABLE_TYPE CHAR(1) NOT NULL
+# TABLE_TEXT NVARCHAR(50) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+| 'D4_PART' | 'T' | 'Part master' | 'Every part the plant buys or makes, one row a part.' |
+| 'D4_PART_A' | 'A' | 'Part master alias' | NULL |
+| 'D4_PART_V' | 'V' | 'Part costs' | NULL |
+> SELECT COLUMN_NAME, COLUMN_HEADING, COLUMN_TEXT, LONG_COMMENT FROM QSYS2
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# COLUMN_HEADING NVARCHAR(60)
+# COLUMN_TEXT NVARCHAR(50)
+# LONG_COMMENT NVARCHAR(2000)
+| 'PART_NUMBER' | 'Part                Number' | NULL | NULL |
+| 'PART_DESCRIPTION' | 'PART_DESCRIPTION' | 'Description of the part' | NULL |
+| 'UNIT_COST' | 'Unit                Cost' | NULL | 'Standard cost, four decimals.' |
+| 'WEIGHT_KG' | 'WEIGHT_KG' | 'Weight in kilograms' | NULL |
+> SELECT INDEX_NAME, INDEX_TEXT, LONG_COMMENT FROM QSYS2.SYSINDEXES WHERE 
+sqlcode 0 sqlstate 00000 msgid -
+# INDEX_NAME VARCHAR(128) NOT NULL
+# INDEX_TEXT NVARCHAR(50) NOT NULL
+# LONG_COMMENT NVARCHAR(2000)
+| 'D4_PART_IX' | 'Part master by number' | 'Lookup by part number.' |
+> DROP ALIAS {lib}.D4_PART_A
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VIEW {lib}.D4_PART_V
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4_PART
+sqlcode 0 sqlstate 00000 msgid -

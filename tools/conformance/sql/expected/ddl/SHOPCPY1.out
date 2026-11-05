@@ -1,0 +1,82 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4_PRICE_LIST (ITEM CHAR(8) NOT NULL, PRICE DECIMAL(9
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4_PRICE_LIST VALUES ('A1', 10.00, '2026-01-01', 'USD'
+sqlcode 0 sqlstate 00000 msgid - count 3
+> CREATE TABLE {lib}.D4_PRICE_USD AS (SELECT ITEM, PRICE, EFFECTIVE FROM {
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.D4_PRICE_WORK AS (SELECT * FROM {lib}.D4_PRICE_LIST) 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.D4_PRICE_COPY LIKE {lib}.D4_PRICE_LIST
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> SELECT ITEM, PRICE, EFFECTIVE FROM {lib}.D4_PRICE_USD ORDER BY ITEM
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(8) NOT NULL
+# PRICE DECIMAL(9,2) NOT NULL
+# EFFECTIVE DATE NOT NULL
+| 'A1      ' | 10.00 | '2026-01-01' |
+| 'A3      ' | 30.00 | '2026-02-01' |
+> SELECT COUNT(*) FROM {lib}.D4_PRICE_WORK
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> INSERT INTO {lib}.D4_PRICE_WORK SELECT * FROM {lib}.D4_PRICE_LIST WHERE 
+sqlcode 0 sqlstate 00000 msgid - count 2
+> INSERT INTO {lib}.D4_PRICE_COPY (ITEM, PRICE, EFFECTIVE) VALUES ('B1', 1
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT ITEM, CURRENCY FROM {lib}.D4_PRICE_COPY
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(8) NOT NULL
+# CURRENCY CHAR(3) NOT NULL
+| 'B1      ' | 'USD' |
+> SELECT ITEM, PRICE FROM {lib}.D4_PRICE_WORK ORDER BY ITEM
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(8) NOT NULL
+# PRICE DECIMAL(9,2) NOT NULL
+| 'A2      ' | 20.00 |
+| 'A3      ' | 30.00 |
+> SELECT COLUMN_NAME, LENGTH, NUMERIC_SCALE, IS_NULLABLE, HAS_DEFAULT FROM
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# LENGTH INTEGER NOT NULL
+# NUMERIC_SCALE INTEGER
+# IS_NULLABLE CHAR(1) NOT NULL
+# HAS_DEFAULT CHAR(1) NOT NULL
+| 'ITEM' | 8 | NULL | 'N' | 'N' |
+| 'PRICE' | 9 | 2 | 'N' | 'N' |
+| 'EFFECTIVE' | 4 | NULL | 'N' | 'N' |
+| 'CURRENCY' | 3 | NULL | 'N' | 'Y' |
+> RENAME TABLE {lib}.D4_PRICE_WORK TO D4_PRICE_TEMP
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM {lib}.D4_PRICE_TEMP
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 2 |
+> SELECT COUNT(*) FROM {lib}.D4_PRICE_WORK
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CREATE ALIAS {lib}.D4_PRICES FOR {lib}.D4_PRICE_LIST
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM {lib}.D4_PRICES
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 3 |
+> DELETE FROM {lib}.D4_PRICES WHERE ITEM = 'A3'
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT COUNT(*) FROM {lib}.D4_PRICE_LIST
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 2 |
+> DROP ALIAS {lib}.D4_PRICES
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4_PRICE_TEMP
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4_PRICE_COPY
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4_PRICE_USD
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4_PRICE_LIST
+sqlcode 0 sqlstate 00000 msgid -

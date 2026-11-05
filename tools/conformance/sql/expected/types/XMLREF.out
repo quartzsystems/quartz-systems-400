@@ -1,0 +1,25 @@
+-- captured from pub400
+> CREATE TABLE {lib}.D4X_T (ID INTEGER NOT NULL, NAME VARCHAR(10))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4X_T VALUES (1, 'a'), (2, 'b')
+sqlcode 0 sqlstate 00000 msgid - count 2
+> SELECT XMLSERIALIZE(XMLAGG(XMLELEMENT(NAME "n", NAME) ORDER BY ID) AS VA
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(100)
+| '<n>a</n><n>b</n>' |
+> SELECT ID FROM {lib}.D4X_T WHERE XMLEXISTS('$d/a' PASSING XMLPARSE(DOCUM
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> SELECT XMLSERIALIZE(XMLQUERY('$d/a' PASSING XMLPARSE(DOCUMENT '<a>1</a>'
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> CREATE TABLE {lib}.D4X_X (ID INTEGER, DOC XML)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> VALUES ARRAY_EXISTS(ARRAY[1, 2], 1)
+sqlcode -20441 sqlstate 428H2 msgid SQ20441
+> SELECT XMLSERIALIZE(XMLPARSE(CONTENT 'text') AS VARCHAR(10)) FROM SYSIBM
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> DROP TABLE {lib}.D4X_X
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4X_T
+sqlcode 0 sqlstate 00000 msgid -

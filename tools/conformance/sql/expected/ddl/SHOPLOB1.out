@@ -1,0 +1,51 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4_DOCUMENT (DOC_ID INTEGER NOT NULL PRIMARY KEY, TIT
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4_DOCUMENT VALUES (1, 'Terms', 'Payment is due in thi
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.D4_DOCUMENT VALUES (2, 'Empty', '', NULL, NULL)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.D4_DOCUMENT (DOC_ID, TITLE, BODY) VALUES (3, 'Long', R
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT DOC_ID, TITLE, LENGTH(BODY), LENGTH(IMAGE), HEX(CHECKSUM) FROM {l
+sqlcode 0 sqlstate 00000 msgid -
+# DOC_ID INTEGER NOT NULL
+# TITLE VARCHAR(60) NOT NULL
+# 00003 INTEGER
+# 00004 INTEGER
+# 00005 VARCHAR(32)
+| 1 | 'Terms' | 30 | 4 | '0102030405' |
+| 2 | 'Empty' | 0 | NULL | NULL |
+| 3 | 'Long' | 2000 | NULL | NULL |
+> SELECT DOC_ID, SUBSTR(BODY, 1, 12), LOCATE('thirty', BODY), POSSTR(BODY,
+sqlcode 0 sqlstate 00000 msgid -
+# DOC_ID INTEGER NOT NULL
+# 00002 CLOB(65536)
+# 00003 INTEGER
+# 00004 INTEGER
+| 1 | 'Payment is d' | 19 | 12 |
+> SELECT DOC_ID FROM {lib}.D4_DOCUMENT WHERE BODY = '' ORDER BY DOC_ID
+sqlcode 0 sqlstate 00000 msgid -
+# DOC_ID INTEGER NOT NULL
+| 2 |
+> UPDATE {lib}.D4_DOCUMENT SET BODY = BODY CONCAT ' Late fees apply.' WHER
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT CAST(BODY AS VARCHAR(60)) FROM {lib}.D4_DOCUMENT WHERE DOC_ID = 1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(60)
+| 'Payment is due in thirty days. Late fees apply.' |
+> SELECT COLUMN_NAME, LENGTH, CCSID FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHE
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# LENGTH INTEGER NOT NULL
+# CCSID INTEGER
+| 'DOC_ID' | 4 | NULL |
+| 'TITLE' | 60 | 37 |
+| 'BODY' | 65536 | 37 |
+| 'IMAGE' | 1048576 | 65535 |
+| 'CHECKSUM' | 16 | 65535 |
+> CREATE INDEX {lib}.D4_DOCUMENT_IX ON {lib}.D4_DOCUMENT (BODY)
+sqlcode -350 sqlstate 42962 msgid SQL0350
+> DROP TABLE {lib}.D4_DOCUMENT
+sqlcode 0 sqlstate 00000 msgid -

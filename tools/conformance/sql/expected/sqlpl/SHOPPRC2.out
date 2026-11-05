@@ -1,0 +1,61 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4Q_HOL (HDATE DATE NOT NULL PRIMARY KEY, HNAME VARCH
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4Q_HOL VALUES ('2026-01-01', 'New year'), ('2026-05-2
+sqlcode 0 sqlstate 00000 msgid - count 3
+> CREATE TABLE {lib}.D4Q_OUT (K VARCHAR(20) NOT NULL, V VARCHAR(40))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE FUNCTION {lib}.D4Q_ISWORK (P_D DATE) RETURNS CHAR(1)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.D4Q_ADDWORK (P_D DATE, P_N INTEGER) RETURNS DATE
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4Q_LIST (IN P_YEAR INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4Q_DRIVE ()
+sqlcode 0 sqlstate 00000 msgid -
+> VALUES ({lib}.D4Q_ISWORK('2026-01-01'), {lib}.D4Q_ISWORK('2026-01-02'), 
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES ({lib}.D4Q_ADDWORK('2025-12-31', 1), {lib}.D4Q_ADDWORK('2026-07-0
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT HDATE, {lib}.D4Q_ADDWORK(HDATE, 3) FROM {lib}.D4Q_HOL ORDER BY HD
+sqlcode 0 sqlstate 00000 msgid -
+# HDATE DATE NOT NULL
+# 00002 DATE
+| '2026-01-01' | '2026-01-06' |
+| '2026-05-25' | '2026-05-28' |
+| '2026-07-03' | '2026-07-08' |
+> CALL {lib}.D4Q_DRIVE()
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT K, V FROM {lib}.D4Q_OUT ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K VARCHAR(20) NOT NULL
+# V VARCHAR(40)
+| 'hol1          ' | '2026-01-01 New year' |
+| 'hol2          ' | '2026-05-25 Memorial day' |
+| 'hol3          ' | '2026-07-03 Independence observed' |
+| 'rc1999' | '4          ' |
+| 'rc2026' | '0          ' |
+> SELECT ROUTINE_NAME, ROUTINE_TYPE, SQL_DATA_ACCESS, IS_DETERMINISTIC FRO
+sqlcode 0 sqlstate 00000 msgid -
+# ROUTINE_NAME VARCHAR(128) NOT NULL
+# ROUTINE_TYPE VARCHAR(9) NOT NULL
+# SQL_DATA_ACCESS VARCHAR(8)
+# IS_DETERMINISTIC VARCHAR(3) NOT NULL
+| 'D4Q_ADDWORK' | 'FUNCTION' | 'READS' | 'NO' |
+| 'D4Q_DRIVE' | 'PROCEDURE' | 'MODIFIES' | 'NO' |
+| 'D4Q_ISWORK' | 'FUNCTION' | 'READS' | 'NO' |
+| 'D4Q_LIST' | 'PROCEDURE' | 'MODIFIES' | 'NO' |
+> DROP FUNCTION {lib}.D4Q_ADDWORK
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.D4Q_ISWORK
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.D4Q_DRIVE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.D4Q_LIST
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4Q_OUT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4Q_HOL
+sqlcode 0 sqlstate 00000 msgid -

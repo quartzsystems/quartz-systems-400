@@ -1,0 +1,24 @@
+-- captured from pub400
+> CREATE TABLE {lib}.D4_AUDITED_ORDER (
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4_AUDITED_ORDER (AMOUNT) VALUES (10.00), (20.00)
+sqlcode 0 sqlstate 00000 msgid - count 2
+> UPDATE {lib}.D4_AUDITED_ORDER SET AMOUNT = AMOUNT + 1 WHERE ORDER_ID = 1
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT ORDER_ID, AMOUNT, CHANGED_BY = USER, CHANGE_OP FROM {lib}.D4_AUDI
+sqlcode 0 sqlstate 00000 msgid -
+# ORDER_ID INTEGER NOT NULL
+# AMOUNT DECIMAL(9,2) NOT NULL
+# 00003 BOOLEAN NOT NULL
+# CHANGE_OP CHAR(1)
+| 1 | 11.00 | 1 | 'U' |
+| 2 | 20.00 | 1 | 'I' |
+> INSERT INTO {lib}.D4_AUDITED_ORDER (AMOUNT, CHANGE_OP) VALUES (30.00, 'X
+sqlcode -798 sqlstate 428C9 msgid SQL0798
+> UPDATE {lib}.D4_AUDITED_ORDER SET CHANGED_BY = 'ME'
+sqlcode -798 sqlstate 428C9 msgid SQL0798
+> SELECT COLUMN_NAME, HAS_DEFAULT, IS_GENERATED, GENERATED FROM QSYS2.SYSC
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> DROP TABLE {lib}.D4_AUDITED_ORDER
+sqlcode 0 sqlstate 00000 msgid -

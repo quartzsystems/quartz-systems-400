@@ -1,0 +1,82 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4I_T (ID INTEGER NOT NULL, V INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4I_T VALUES (1, 10), (2, 20), (3, 30)
+sqlcode 0 sqlstate 00000 msgid - count 3
+> SELECT ID, V FROM {lib}.D4I_T WITH NC
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# V INTEGER
+| 1 | 10 |
+| 2 | 20 |
+| 3 | 30 |
+> SELECT ID, V FROM {lib}.D4I_T ORDER BY ID WITH UR
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# V INTEGER
+| 1 | 10 |
+| 2 | 20 |
+| 3 | 30 |
+> SELECT COUNT(*) FROM {lib}.D4I_T WITH CS
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 3 |
+> SELECT SUM(V) FROM {lib}.D4I_T WITH RS
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 60 |
+> SELECT MAX(V) FROM {lib}.D4I_T WITH RR
+sqlcode 0 sqlstate 00000 msgid -
+warning 595 01526 SQL0595
+# 00001 INTEGER
+| 30 |
+> SELECT ID FROM {lib}.D4I_T ORDER BY ID FOR READ ONLY
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+| 3 |
+> SELECT ID FROM {lib}.D4I_T ORDER BY ID OPTIMIZE FOR 2 ROWS
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+| 3 |
+> SELECT ID, V FROM {lib}.D4I_T WHERE ID = 2 FOR UPDATE OF V
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# V INTEGER
+| 2 | 20 |
+> UPDATE {lib}.D4I_T SET V = V + 1 WHERE ID = 1 WITH NC
+sqlcode 0 sqlstate 00000 msgid - count 1
+> DELETE FROM {lib}.D4I_T WHERE ID = 3 WITH CHG
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> INSERT INTO {lib}.D4I_T VALUES (4, 40) WITH NONE
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT ID, V FROM {lib}.D4I_T ORDER BY ID WITH XX
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SET TRANSACTION ISOLATION LEVEL READ COMMITTED
+sqlcode 0 sqlstate 00000 msgid -
+> SET TRANSACTION ISOLATION LEVEL SERIALIZABLE
+sqlcode 0 sqlstate 00000 msgid -
+> SET TRANSACTION ISOLATION LEVEL NO COMMIT
+sqlcode 0 sqlstate 00000 msgid -
+> COMMIT
+sqlcode 0 sqlstate 00000 msgid -
+> ROLLBACK
+sqlcode 0 sqlstate 00000 msgid -
+> COMMIT HOLD
+sqlcode 0 sqlstate 00000 msgid -
+> ROLLBACK WORK HOLD
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ID, V FROM {lib}.D4I_T ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# V INTEGER
+| 1 | 11 |
+| 2 | 20 |
+| 3 | 30 |
+| 4 | 40 |
+> DROP TABLE {lib}.D4I_T
+sqlcode 0 sqlstate 00000 msgid -

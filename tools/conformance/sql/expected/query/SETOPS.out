@@ -1,0 +1,76 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4U_A (K INTEGER NOT NULL, S VARCHAR(5), D DECIMAL(5,
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.D4U_B (K SMALLINT NOT NULL, S CHAR(3), D DECIMAL(7, 1
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4U_A VALUES (1, 'a', 1.25), (2, 'b', NULL), (3, 'c', 
+sqlcode 0 sqlstate 00000 msgid - count 4
+> INSERT INTO {lib}.D4U_B VALUES (2, 'b', 9.5), (3, 'c', 3.0), (4, 'd', NU
+sqlcode 0 sqlstate 00000 msgid - count 3
+> SELECT K, S FROM {lib}.D4U_A UNION SELECT K, S FROM {lib}.D4U_B ORDER BY
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+# S VARCHAR(5)
+| 1 | 'a' |
+| 2 | 'b' |
+| 3 | 'c' |
+| 4 | 'd  ' |
+> SELECT K, S FROM {lib}.D4U_A UNION ALL SELECT K, S FROM {lib}.D4U_B ORDE
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+# S VARCHAR(5)
+| 1 | 'a' |
+| 2 | 'b' |
+| 2 | 'b  ' |
+| 3 | 'c' |
+| 3 | 'c' |
+| 3 | 'c  ' |
+| 4 | 'd  ' |
+> SELECT K FROM {lib}.D4U_A EXCEPT SELECT K FROM {lib}.D4U_B ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 1 |
+> SELECT K FROM {lib}.D4U_A INTERSECT SELECT K FROM {lib}.D4U_B ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 2 |
+| 3 |
+> SELECT K, D FROM {lib}.D4U_A UNION SELECT K, D FROM {lib}.D4U_B ORDER BY
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+# D DECIMAL(8,2)
+| 1 | 1.25 |
+| 2 | 9.50 |
+| 2 | NULL |
+| 3 | 3.00 |
+| 4 | NULL |
+> SELECT S FROM {lib}.D4U_A WHERE K = 1 UNION ALL SELECT S FROM {lib}.D4U_
+sqlcode 0 sqlstate 00000 msgid -
+# S VARCHAR(5)
+| 'a' |
+| 'd  ' |
+> SELECT K FROM {lib}.D4U_A UNION SELECT K, S FROM {lib}.D4U_B
+sqlcode -421 sqlstate 42826 msgid SQL0421
+> SELECT K FROM {lib}.D4U_A UNION SELECT S FROM {lib}.D4U_B
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER
+| 1 |
+| 2 |
+| 3 |
+sqlcode -802 sqlstate 22023 msgid SQL0802
+> (SELECT K FROM {lib}.D4U_A UNION SELECT K FROM {lib}.D4U_B) EXCEPT SELEC
+sqlcode 0 sqlstate 00000 msgid -
+# K INTEGER NOT NULL
+| 1 |
+| 2 |
+| 3 |
+> SELECT COUNT(*) FROM (SELECT K FROM {lib}.D4U_A INTERSECT ALL SELECT K F
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SELECT K, S AS NAME FROM {lib}.D4U_A UNION SELECT K, S FROM {lib}.D4U_B 
+sqlcode -208 sqlstate 42707 msgid SQL0208
+> DROP TABLE {lib}.D4U_A
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4U_B
+sqlcode 0 sqlstate 00000 msgid -

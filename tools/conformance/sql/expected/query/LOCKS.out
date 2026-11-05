@@ -1,0 +1,49 @@
+-- captured from pub400
+> CREATE TABLE {lib}.D4K_T (ID INTEGER NOT NULL, V INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4K_T VALUES (1, 10), (2, 20)
+sqlcode 0 sqlstate 00000 msgid - count 2
+> SELECT ID, V FROM {lib}.D4K_T ORDER BY ID SKIP LOCKED DATA
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# V INTEGER
+| 1 | 10 |
+| 2 | 20 |
+> SELECT ID, V FROM {lib}.D4K_T ORDER BY ID WITH CS SKIP LOCKED DATA
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# V INTEGER
+| 1 | 10 |
+| 2 | 20 |
+> UPDATE {lib}.D4K_T SET V = 0 WHERE ID = 9 SKIP LOCKED DATA
+sqlcode 0 sqlstate 00000 msgid - count 0
+warning 100 02000 SQL0100
+> DELETE FROM {lib}.D4K_T WHERE ID = 9 SKIP LOCKED DATA
+sqlcode 0 sqlstate 00000 msgid - count 0
+warning 100 02000 SQL0100
+> SELECT ID FROM {lib}.D4K_T WITH RS USE AND KEEP EXCLUSIVE LOCKS
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+> SELECT ID FROM {lib}.D4K_T WITH RR USE AND KEEP UPDATE LOCKS
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> SELECT ID FROM {lib}.D4K_T WAIT FOR OUTCOME
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+> SELECT ID FROM {lib}.D4K_T USE CURRENTLY COMMITTED
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+> LOCK TABLE {lib}.D4K_T IN SHARE MODE
+sqlcode 0 sqlstate 00000 msgid -
+> LOCK TABLE {lib}.D4K_T IN EXCLUSIVE MODE ALLOW READ
+sqlcode 0 sqlstate 00000 msgid -
+> LOCK TABLE {lib}.D4K_NONE IN SHARE MODE
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE {lib}.D4K_T
+sqlcode 0 sqlstate 00000 msgid -

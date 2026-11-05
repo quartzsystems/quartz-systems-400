@@ -1,0 +1,31 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4_PAYROLL (EMPLOYEE_ID INTEGER NOT NULL, PAY_DATE DA
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE VIEW {lib}.D4_PAYROLL_V AS SELECT EMPLOYEE_ID, PAY_DATE FROM {lib
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT SELECT ON {lib}.D4_PAYROLL_V TO PUBLIC
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT SELECT, INSERT, UPDATE ON {lib}.D4_PAYROLL TO QPGMR
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT ALL PRIVILEGES ON TABLE {lib}.D4_PAYROLL TO QUSER WITH GRANT OPTIO
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT DELETE ON {lib}.D4_PAYROLL TO NOSUCHUSR
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> GRANT UPDATE (GROSS) ON {lib}.D4_PAYROLL TO QPGMR
+sqlcode 0 sqlstate 00000 msgid -
+> REVOKE INSERT ON {lib}.D4_PAYROLL FROM QPGMR
+sqlcode 0 sqlstate 00000 msgid -
+> REVOKE ALL ON {lib}.D4_PAYROLL FROM QUSER
+sqlcode 0 sqlstate 00000 msgid -
+> REVOKE SELECT ON {lib}.D4_PAYROLL_V FROM PUBLIC
+sqlcode 0 sqlstate 00000 msgid -
+> REVOKE DELETE ON {lib}.D4_PAYROLL FROM QPGMR
+sqlcode 0 sqlstate 00000 msgid -
+warning 569 01006 SQL0569
+> GRANT SELECT ON {lib}.D4_NO_SUCH_TABLE TO QPGMR
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP VIEW {lib}.D4_PAYROLL_V
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4_PAYROLL
+sqlcode 0 sqlstate 00000 msgid -

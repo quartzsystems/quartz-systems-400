@@ -1,0 +1,68 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4_WAREHOUSE (WHS CHAR(3) NOT NULL, ZONE CHAR(2) NOT 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.D4_BIN (BIN_ID INTEGER NOT NULL PRIMARY KEY, WHS CHAR
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4_WAREHOUSE VALUES ('W00', 'XX', 'Unassigned'), ('W01
+sqlcode 0 sqlstate 00000 msgid - count 4
+> INSERT INTO {lib}.D4_BIN (BIN_ID, WHS, ZONE) VALUES (1, 'W01', 'A1'), (2
+sqlcode 0 sqlstate 00000 msgid - count 3
+> INSERT INTO {lib}.D4_BIN (BIN_ID, WHS, ZONE) VALUES (4, 'W02', 'B1')
+sqlcode -530 sqlstate 23503 msgid SQL0530
+> INSERT INTO {lib}.D4_BIN (BIN_ID) VALUES (5)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT BIN_ID, WHS, ZONE, CASE WHEN CREATED_BY = USER THEN 'Y' ELSE 'N' 
+sqlcode 0 sqlstate 00000 msgid -
+# BIN_ID INTEGER NOT NULL
+# WHS CHAR(3) NOT NULL
+# ZONE CHAR(2) NOT NULL
+# 00004 VARCHAR(1) NOT NULL
+# 00005 VARCHAR(1) NOT NULL
+| 1 | 'W01' | 'A1' | 'Y' | 'Y' |
+| 2 | 'W01' | 'B1' | 'Y' | 'Y' |
+| 3 | 'W02' | 'A1' | 'Y' | 'Y' |
+| 5 | 'W00' | 'XX' | 'Y' | 'Y' |
+> DELETE FROM {lib}.D4_WAREHOUSE WHERE WHS = 'W01' AND ZONE = 'B1'
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> SELECT BIN_ID, WHS, ZONE FROM {lib}.D4_BIN ORDER BY BIN_ID
+sqlcode 0 sqlstate 00000 msgid -
+# BIN_ID INTEGER NOT NULL
+# WHS CHAR(3) NOT NULL
+# ZONE CHAR(2) NOT NULL
+| 1 | 'W01' | 'A1' |
+| 2 | 'W01' | 'B1' |
+| 3 | 'W02' | 'A1' |
+| 5 | 'W00' | 'XX' |
+> DELETE FROM {lib}.D4_WAREHOUSE WHERE WHS = 'W00'
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> SELECT B.BIN_ID, W.ZONE_NAME FROM {lib}.D4_BIN B JOIN {lib}.D4_WAREHOUSE
+sqlcode 0 sqlstate 00000 msgid -
+# BIN_ID INTEGER NOT NULL
+# ZONE_NAME VARCHAR(30) NOT NULL
+| 1 | 'Dock' |
+| 2 | 'Racks' |
+| 3 | 'Yard' |
+| 5 | 'Unassigned' |
+> SELECT CONSTRAINT_NAME, UPDATE_RULE, DELETE_RULE, COLUMN_COUNT FROM QSYS
+sqlcode 0 sqlstate 00000 msgid -
+# CONSTRAINT_NAME VARCHAR(128) NOT NULL
+# UPDATE_RULE VARCHAR(11) NOT NULL
+# DELETE_RULE VARCHAR(11) NOT NULL
+# COLUMN_COUNT INTEGER NOT NULL
+| 'D4_BIN_ZONE' | 'NO ACTION' | 'SET DEFAULT' | 2 |
+> SELECT CONSTRAINT_NAME, COLUMN_NAME, ORDINAL_POSITION FROM QSYS2.SYSKEYC
+sqlcode 0 sqlstate 00000 msgid -
+# CONSTRAINT_NAME VARCHAR(128) NOT NULL
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# ORDINAL_POSITION INTEGER NOT NULL
+| 'D4_BIN_ZONE' | 'WHS' | 1 |
+| 'D4_BIN_ZONE' | 'ZONE' | 2 |
+| 'Q_{lib}_D4_BIN_BIN_ID_00001' | 'BIN_ID' | 1 |
+| 'Q_{lib}_D4_WA00001_WHS_00001' | 'WHS' | 1 |
+| 'Q_{lib}_D4_WA00001_WHS_00001' | 'ZONE' | 2 |
+> DROP TABLE {lib}.D4_BIN
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4_WAREHOUSE
+sqlcode 0 sqlstate 00000 msgid -

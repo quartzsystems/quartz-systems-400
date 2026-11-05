@@ -51,3 +51,33 @@ objects2/TYPES2   # SYSCOLUMNS.DATA_TYPE is CHAR(8) here, VARCHAR(8) at IBM
 objects2/TYPES3   # a distinct type compared with a quantified subquery's column of another type is not refused (SQL0401 there; BLOCKED(sql) in udt::typing::check)
 ddl/QTEMPCL   # the kit's in-memory store runs no commands (QCMDEXC); one QTEMP for CL and SQL is tested in sql tests/qtemp_job.rs and in the service
 perf/DECORR   # a scalar subquery's result column described VARCHAR(32767) here (its type is not inferred); the primary describes a statement it fails at fetch (SQL0811) before the error
+ddl/SHOPORD1   # engine: SYSCOLUMNS COLUMN_HEADING null where IBM gives the column name, heading lines joined here (IBM keeps the 20-character lines), DATE LENGTH 10 here (4 there), COLUMN_DEFAULT 'CURRENT DATE' here ('CURRENT_DATE' there); SYSTABLES.TABLE_TEXT CHAR(50) padded here, NVARCHAR(50) there
+ddl/SHOPCUS1   # engine: a failed INSERT gives its identity value back here, IBM keeps it used; SYSCOLUMNS has no IDENTITY_GENERATION column (SQL0206)
+ddl/SHOPINV1   # engine: a sequence with a long name refused SQL0084 (CREATE SEQUENCE of a name over 10 characters)
+ddl/SHOPEMP1   # oracle: ALTER TABLE DROP COLUMN of a table with rows waits on an inquiry the JDBC job cancels (SQL0952); engine: SYSCOLUMNS.COLUMN_DEFAULT type
+ddl/SHOPGL1   # engine: UPDATE of a parent whose constraint's update rule is NO ACTION needs both files journaled on IBM (SQL7008), not here; DROP TABLE RESTRICT with a view over it SQL0478 here, SQL0616 there
+ddl/SHOPAP1   # engine: changes of a parent under a NO ACTION rule need journaling on IBM (SQL7008); here the rule is checked (SQL0532, SQL0531)
+ddl/SHOPSEQ1   # engine: START WITH below MINVALUE accepted on the primary, SQL0846 here
+ddl/SHOPVIEW1   # engine: SYSVIEWS.IS_INSERTABLE_INTO CHAR(3) padded here, VARCHAR(3) there; a view with expression columns is updatable (IS_UPDATABLE Y) at IBM
+ddl/SHOPLBL1   # engine: a label over 50 characters accepted here (SQL0107 there); a missing column SQL0206 here, SQL0205 there; SYSTABLES, SYSCOLUMNS and SYSINDEXES have no LONG_COMMENT column (SQL0206)
+ddl/SHOPGRT1   # engine: column privileges (GRANT UPDATE (col)) refused SQL0084
+ddl/SHOPALT1   # oracle: ALTER COLUMN SET DATA TYPE and SET NOT NULL of a table with rows wait on an inquiry the JDBC job cancels (SQL0952); engine: SET DATA TYPE DECIMAL(3, 1) SQL0302 here; SYSCOLUMNS.HAS_DEFAULT N for a nullable column without a default (Y there), DATE LENGTH; a missing column SQL0206 here, SQL0205 there
+ddl/SHOPCPY1   # engine: SYSCOLUMNS LENGTH of a DATE 10 here, 4 there
+ddl/SHOPIDN1   # engine: SYSCOLUMNS has no IDENTITY_* columns (SQL0206)
+ddl/SHOPTMP1   # engine: DECLARE GLOBAL TEMPORARY TABLE WITH REPLACE, AS ... WITH DATA and LIKE warn SQL7905 here, nothing there
+ddl/SHOPNUM1   # engine: SYSCOLUMNS has no NUMERIC_PRECISION_RADIX column (SQL0206)
+ddl/SHOPDLM1   # engine: an undelimited name of a delimited lower-case column found here; CREATE VIEW with a delimited result name refused; the system name of a delimited long name keeps its quotes ('"D4_M0001"')
+ddl/SHOPCST2   # engine: a foreign key to a column with no unique constraint SQL0538 here, SQL0573 there
+ddl/SHOPLOB1   # engine: the BLOB() function refused SQL0084; SYSCOLUMNS.CCSID of a VARCHAR or CLOB column null here (37 there); an index on a CLOB column SQL0084 here, SQL0350 there
+ddl/SHOPVW2   # engine: INSERT into a grouped view SQL0204 here, SQL0150 there
+ddl/SHOPCOM1   # engine: COMMENT ON and LABEL ON a table's columns in the list form without COLUMN, LABEL ON and COMMENT ON SEQUENCE refused SQL0104; SYSSEQUENCES.SEQUENCE_TEXT null; SYSCOLUMNS and SYSTABLES have no LONG_COMMENT
+ddl/SHOPSEQ2   # engine: sequences with long names refused SQL0084
+ddl/SHOPAUD2   # engine: a VARCHAR(18) audit column GENERATED ALWAYS AS (USER) SQL0574 here (pub400 takes it); SYSCOLUMNS.GENERATED column
+sqlpl/SHOPPRC2   # engine: GET DIAGNOSTICS RETURN_STATUS after a CALL in SQL PL is null here, the RETURN value there
+query/SETOPS   # engine: EXCEPT and INTERSECT with ORDER BY refused SQL0084; a select-list count mismatch SQL0117 here, SQL0421 there; UNION of INTEGER and VARCHAR converts (SQL0420 warning) here, SQL0802 there; INTERSECT ALL SQL0084 here, SQL0104 on 7.1; ORDER BY a result name of a union SQL0206 here, SQL0208 there
+query/CASECAST   # engine: no 01004 truncation warning
+query/ISOLATE   # oracle: WITH RS on a query warns SQL0595 (escalated) on the primary; DELETE ... WITH CHG of a table not journaled SQL7008 there
+query/LOCKS   # engine: SKIP LOCKED DATA on UPDATE and DELETE, USE AND KEEP ... LOCKS, WAIT FOR OUTCOME, USE CURRENTLY COMMITTED and LOCK TABLE refused SQL0084 (pub400 runs them; WAIT FOR OUTCOME is SQL0104 there)
+query/NOFUNCS   # engine: RAND() comparisons described nullable here; an aggregate in WHERE SQL0120 here, SQL0112 (nested aggregate) first there; SYSDUMMY1.IBMREQD CHAR(1) NOT NULL here, VARCHAR(1) on pub400
+query/SECFUNCS   # engine (by choice): ENCRYPT_RC2, ENCRYPT_TDES, DECRYPT_CHAR, GETHINT and VERIFY_GROUP_FOR_USER refused SQL0084 (IBM's encrypted layout is unpublished)
+types/XMLREF   # engine: XMLAGG and an XML column refused SQL0084 (pub400 runs them); XMLEXISTS, XMLQUERY and ARRAY_EXISTS outside a routine are SQL0199 on pub400, SQL0084 here

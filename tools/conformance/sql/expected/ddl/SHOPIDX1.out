@@ -1,0 +1,59 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4_CONTACT (CONTACT_ID INTEGER NOT NULL, LAST_NAME VA
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE INDEX {lib}.D4_CONTACT_NAME ON {lib}.D4_CONTACT (LAST_NAME, FIRST
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.D4_CONTACT_GEO ON {lib}.D4_CONTACT (STATE ASC, CITY D
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE UNIQUE WHERE NOT NULL INDEX {lib}.D4_CONTACT_BADGE ON {lib}.D4_CO
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE ENCODED VECTOR INDEX {lib}.D4_CONTACT_EVI ON {lib}.D4_CONTACT (ST
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.D4_CONTACT_ACT ON {lib}.D4_CONTACT (CONTACT_ID) WHERE
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.D4_CONTACT VALUES (1, 'Moss', 'Ike', 'Austin', 'TX', '
+sqlcode 0 sqlstate 00000 msgid - count 3
+> INSERT INTO {lib}.D4_CONTACT VALUES (4, 'Oakes', 'Lou', 'Reno', 'NV', 'B
+sqlcode -803 sqlstate 23505 msgid SQL0803
+> CREATE UNIQUE INDEX {lib}.D4_CONTACT_LN ON {lib}.D4_CONTACT (LAST_NAME)
+sqlcode -603 sqlstate 23515 msgid SQL0603
+> CREATE INDEX {lib}.D4_CONTACT_NAME ON {lib}.D4_CONTACT (CITY)
+sqlcode -601 sqlstate 42710 msgid SQL0601
+> CREATE INDEX {lib}.D4_CONTACT_X ON {lib}.D4_CONTACT (NO_SUCH_COLUMN)
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> SELECT LAST_NAME, FIRST_NAME FROM {lib}.D4_CONTACT WHERE STATE = 'TX' OR
+sqlcode 0 sqlstate 00000 msgid -
+# LAST_NAME VARCHAR(30) NOT NULL
+# FIRST_NAME VARCHAR(20)
+| 'Moss' | 'Ike' |
+| 'Moss' | 'Jo' |
+> SELECT INDEX_NAME, IS_UNIQUE, COLUMN_COUNT FROM QSYS2.SYSINDEXES WHERE T
+sqlcode 0 sqlstate 00000 msgid -
+# INDEX_NAME VARCHAR(128) NOT NULL
+# IS_UNIQUE CHAR(1) NOT NULL
+# COLUMN_COUNT INTEGER NOT NULL
+| 'D4_CONTACT_ACT' | 'D' | 1 |
+| 'D4_CONTACT_BADGE' | 'V' | 1 |
+| 'D4_CONTACT_EVI' | 'E' | 1 |
+| 'D4_CONTACT_GEO' | 'D' | 2 |
+| 'D4_CONTACT_NAME' | 'D' | 2 |
+> SELECT INDEX_NAME, COLUMN_NAME, ORDINAL_POSITION, ORDERING FROM QSYS2.SY
+sqlcode 0 sqlstate 00000 msgid -
+# INDEX_NAME VARCHAR(128) NOT NULL
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# ORDINAL_POSITION INTEGER NOT NULL
+# ORDERING CHAR(1) NOT NULL
+| 'D4_CONTACT_ACT' | 'CONTACT_ID' | 1 | 'A' |
+| 'D4_CONTACT_BADGE' | 'BADGE' | 1 | 'A' |
+| 'D4_CONTACT_EVI' | 'STATE' | 1 | 'A' |
+| 'D4_CONTACT_GEO' | 'STATE' | 1 | 'A' |
+| 'D4_CONTACT_GEO' | 'CITY' | 2 | 'D' |
+| 'D4_CONTACT_NAME' | 'LAST_NAME' | 1 | 'A' |
+| 'D4_CONTACT_NAME' | 'FIRST_NAME' | 2 | 'A' |
+> DROP INDEX {lib}.D4_CONTACT_EVI
+sqlcode 0 sqlstate 00000 msgid -
+> DROP INDEX {lib}.D4_CONTACT_NOPE
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE {lib}.D4_CONTACT
+sqlcode 0 sqlstate 00000 msgid -

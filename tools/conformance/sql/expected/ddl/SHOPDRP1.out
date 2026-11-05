@@ -1,0 +1,55 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4_OLD_PARENT (ID INTEGER NOT NULL PRIMARY KEY)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.D4_OLD_CHILD (ID INTEGER NOT NULL, PID INTEGER REFERE
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE INDEX {lib}.D4_OLD_IX ON {lib}.D4_OLD_CHILD (PID)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.D4_OLD_V1 AS SELECT ID FROM {lib}.D4_OLD_CHILD
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VIEW {lib}.D4_OLD_V2 AS SELECT ID FROM {lib}.D4_OLD_V1
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE ALIAS {lib}.D4_OLD_AL FOR {lib}.D4_OLD_CHILD
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4_OLD_PARENT RESTRICT
+sqlcode -478 sqlstate 42893 msgid SQL0478
+> DROP VIEW {lib}.D4_OLD_V1 RESTRICT
+sqlcode -616 sqlstate 42893 msgid SQL0616
+> DROP TABLE {lib}.D4_OLD_CHILD RESTRICT
+sqlcode -616 sqlstate 42893 msgid SQL0616
+> DROP VIEW {lib}.D4_OLD_V1 CASCADE
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = '{lib}' AND 
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+| 'D4_OLD_AL' |
+| 'D4_OLD_CHILD' |
+| 'D4_OLD_PARENT' |
+> DROP TABLE {lib}.D4_OLD_PARENT
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM QSYS2.SYSREFCST WHERE CONSTRAINT_SCHEMA = '{lib}' A
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> DROP INDEX {lib}.D4_OLD_IX
+sqlcode 0 sqlstate 00000 msgid -
+> DROP INDEX {lib}.D4_OLD_IX
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT COUNT(*) FROM {lib}.D4_OLD_AL
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> DROP TABLE {lib}.D4_OLD_CHILD
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT COUNT(*) FROM {lib}.D4_OLD_AL
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP ALIAS {lib}.D4_OLD_AL
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VIEW {lib}.D4_OLD_V2
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE {lib}.D4_OLD_CHILD
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP ALIAS {lib}.D4_OLD_AL
+sqlcode -204 sqlstate 42704 msgid SQL0204

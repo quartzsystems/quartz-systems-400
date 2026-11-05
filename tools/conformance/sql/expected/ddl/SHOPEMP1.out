@@ -1,0 +1,66 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4_EMPLOYEE (
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4_EMPLOYEE VALUES (1, 'Stone', 'Ada', '2010-01-04', N
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.D4_EMPLOYEE VALUES (2, 'Brook', 'Ben', '2015-06-01', N
+sqlcode 0 sqlstate 00000 msgid - count 2
+> INSERT INTO {lib}.D4_EMPLOYEE VALUES (4, 'Early', 'Dee', '2020-01-01', '
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> INSERT INTO {lib}.D4_EMPLOYEE VALUES (5, 'Rich', 'Eve', '2020-01-01', NU
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> INSERT INTO {lib}.D4_EMPLOYEE VALUES (6, 'Lost', 'Fay', '2020-01-01', NU
+sqlcode -530 sqlstate 23503 msgid SQL0530
+> ALTER TABLE {lib}.D4_EMPLOYEE ADD COLUMN DEPARTMENT CHAR(3) NOT NULL DEF
+sqlcode 0 sqlstate 00000 msgid -
+> ALTER TABLE {lib}.D4_EMPLOYEE ADD COLUMN PHONE_EXT CHAR(4)
+sqlcode 0 sqlstate 00000 msgid -
+> ALTER TABLE {lib}.D4_EMPLOYEE ALTER COLUMN DEPARTMENT SET DEFAULT 'ADM'
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.D4_EMPLOYEE (EMPLOYEE_ID, LAST_NAME, FIRST_NAME, HIRE_
+sqlcode 0 sqlstate 00000 msgid - count 1
+> ALTER TABLE {lib}.D4_EMPLOYEE DROP COLUMN PHONE_EXT
+sqlcode -952 sqlstate 57014 msgid SQL0952
+> DELETE FROM {lib}.D4_EMPLOYEE WHERE EMPLOYEE_ID = 1
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> SELECT EMPLOYEE_ID, LAST_NAME, MANAGER_ID, DEPARTMENT FROM {lib}.D4_EMPL
+sqlcode 0 sqlstate 00000 msgid -
+# EMPLOYEE_ID INTEGER NOT NULL
+# LAST_NAME VARCHAR(30) NOT NULL
+# MANAGER_ID INTEGER
+# DEPARTMENT CHAR(3) NOT NULL
+| 1 | 'Stone' | NULL | 'GEN' |
+| 2 | 'Brook' | 1 | 'GEN' |
+| 3 | 'Field' | 1 | 'GEN' |
+| 7 | 'New' | 2 | 'ADM' |
+> SELECT E.LAST_NAME, M.LAST_NAME AS MANAGER FROM {lib}.D4_EMPLOYEE E LEFT
+sqlcode 0 sqlstate 00000 msgid -
+# LAST_NAME VARCHAR(30) NOT NULL
+# MANAGER VARCHAR(30)
+| 'Stone' | NULL |
+| 'Brook' | 'Stone' |
+| 'Field' | 'Stone' |
+| 'New' | 'Brook' |
+> SELECT CONSTRAINT_NAME, CHECK_CLAUSE FROM QSYS2.SYSCHKCST WHERE CONSTRAI
+sqlcode 0 sqlstate 00000 msgid -
+# CONSTRAINT_NAME VARCHAR(128) NOT NULL
+# CHECK_CLAUSE NVARCHAR(2000)
+| 'D4_EMP_DATES' | 'TERM_DATE IS NULL OR TERM_DATE >= HIRE_DATE ' |
+| 'D4_EMP_SALARY' | 'SALARY BETWEEN 0 AND 500000 ' |
+> SELECT COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT FROM QSYS2.SYSCOLUM
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# ORDINAL_POSITION INTEGER NOT NULL
+# COLUMN_DEFAULT NVARCHAR(2000)
+| 'EMPLOYEE_ID' | 1 | NULL |
+| 'LAST_NAME' | 2 | NULL |
+| 'FIRST_NAME' | 3 | NULL |
+| 'HIRE_DATE' | 4 | NULL |
+| 'TERM_DATE' | 5 | NULL |
+| 'MANAGER_ID' | 6 | NULL |
+| 'SALARY' | 7 | NULL |
+| 'DEPARTMENT' | 8 | '''ADM''' |
+| 'PHONE_EXT' | 9 | NULL |
+> DROP TABLE {lib}.D4_EMPLOYEE
+sqlcode 0 sqlstate 00000 msgid -

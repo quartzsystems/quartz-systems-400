@@ -1,0 +1,51 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4_SUPPLIER (
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4_SUPPLIER VALUES ('S00001', 'Acme', 'US', 5, 0.050, 
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.D4_SUPPLIER VALUES ('S00002', 'Bolt Co', 'CA', NULL, 0
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.D4_SUPPLIER VALUES ('X00003', 'Bad code', 'US', 1, 0, 
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> INSERT INTO {lib}.D4_SUPPLIER VALUES ('s00004', 'Lower', 'US', 1, 0, NUL
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> INSERT INTO {lib}.D4_SUPPLIER VALUES ('S00005', ' ', 'US', 1, 0, NULL)
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> INSERT INTO {lib}.D4_SUPPLIER VALUES ('S00006', 'France', 'FR', 1, 0, NU
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> INSERT INTO {lib}.D4_SUPPLIER VALUES ('S00007', 'Rated', 'MX', 6, 0, NUL
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> INSERT INTO {lib}.D4_SUPPLIER VALUES ('S00008', 'Generous', 'DE', 2, 0.5
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> INSERT INTO {lib}.D4_SUPPLIER VALUES ('S00009', 'Phone', 'DE', 2, 0, '55
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> UPDATE {lib}.D4_SUPPLIER SET RATING = RATING + 1
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> UPDATE {lib}.D4_SUPPLIER SET DISCOUNT = DISCOUNT * 2
+sqlcode 0 sqlstate 00000 msgid - count 2
+> SELECT SUPPLIER_CODE, NAME, COUNTRY, RATING, DISCOUNT FROM {lib}.D4_SUPP
+sqlcode 0 sqlstate 00000 msgid -
+# SUPPLIER_CODE CHAR(6) NOT NULL
+# NAME VARCHAR(40) NOT NULL
+# COUNTRY CHAR(2) NOT NULL
+# RATING SMALLINT
+# DISCOUNT DECIMAL(4,3) NOT NULL
+| 'S00001' | 'Acme' | 'US' | 5 | 0.100 |
+| 'S00002' | 'Bolt Co' | 'CA' | NULL | 0.000 |
+> ALTER TABLE {lib}.D4_SUPPLIER ADD CONSTRAINT D4_SUP_RATE2 CHECK (RATING 
+sqlcode -544 sqlstate 23512 msgid SQL0544
+> ALTER TABLE {lib}.D4_SUPPLIER ADD CONSTRAINT D4_SUP_CODE CHECK (1 = 1)
+sqlcode -601 sqlstate 42710 msgid SQL0601
+> SELECT CONSTRAINT_NAME, CHECK_CLAUSE FROM QSYS2.SYSCHKCST WHERE CONSTRAI
+sqlcode 0 sqlstate 00000 msgid -
+# CONSTRAINT_NAME VARCHAR(128) NOT NULL
+# CHECK_CLAUSE NVARCHAR(2000)
+| 'D4_SUP_CODE' | 'SUPPLIER_CODE LIKE ''S_____'' AND UPPER ( SUPPLIER_CODE ) = SUPPLIER_CODE ' |
+| 'D4_SUP_CTRY' | 'COUNTRY IN ( ''US'' , ''CA'' , ''MX'' , ''DE'' ) ' |
+| 'D4_SUP_DISC' | 'DISCOUNT >= 0 AND DISCOUNT < 0.5 ' |
+| 'D4_SUP_NAME' | 'LENGTH ( TRIM ( NAME ) ) > 1 ' |
+| 'D4_SUP_PHONE' | 'SUBSTR ( PHONE , 1 , 1 ) = ''+'' ' |
+| 'D4_SUP_RATE' | 'RATING BETWEEN 1 AND 5 OR RATING IS NULL ' |
+> DROP TABLE {lib}.D4_SUPPLIER
+sqlcode 0 sqlstate 00000 msgid -

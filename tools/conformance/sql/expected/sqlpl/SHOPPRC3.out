@@ -1,0 +1,53 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4R_ACCT (ACCT INTEGER NOT NULL PRIMARY KEY, BAL DECI
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4R_ACCT VALUES (1, 100.00), (2, 50.00)
+sqlcode 0 sqlstate 00000 msgid - count 2
+> CREATE TABLE {lib}.D4R_AUDIT (SEQ INTEGER NOT NULL, NOTE VARCHAR(100) NO
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.D4R_XFER (IN P_FROM INTEGER, IN P_TO INTEGER, IN 
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4R_SAFE (IN P_SEQ INTEGER, IN P_FROM INTEGER, IN
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4R_STRICT (IN P_AMT DECIMAL(11, 2))
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.D4R_SAFE(1, 1, 2, 30.00)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.D4R_SAFE(2, 1, 2, -5.00)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.D4R_SAFE(3, 1, 9, 5.00)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.D4R_SAFE(4, 2, 1, 500.00)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.D4R_XFER(1, 2, 0)
+sqlcode -438 sqlstate 75001 msgid SQL0438
+> CALL {lib}.D4R_STRICT(1000.00)
+sqlcode -438 sqlstate 75009 msgid SQL0438
+> CALL {lib}.D4R_STRICT(10.00)
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT SEQ, NOTE FROM {lib}.D4R_AUDIT ORDER BY SEQ
+sqlcode 0 sqlstate 00000 msgid -
+# SEQ INTEGER NOT NULL
+# NOTE VARCHAR(100) NOT NULL
+| 1 | 'ok' |
+| 2 | '75001 -438        amount must be positive' |
+| 3 | '75002 -438        no such account' |
+| 4 | '23513 -545        ' |
+> SELECT ACCT, BAL FROM {lib}.D4R_ACCT ORDER BY ACCT
+sqlcode 0 sqlstate 00000 msgid -
+# ACCT INTEGER NOT NULL
+# BAL DECIMAL(11,2) NOT NULL
+| 1 | 80.00 |
+| 2 | 70.00 |
+> DROP PROCEDURE {lib}.D4R_STRICT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.D4R_SAFE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.D4R_XFER
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4R_AUDIT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4R_ACCT
+sqlcode 0 sqlstate 00000 msgid -
