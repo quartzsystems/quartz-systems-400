@@ -101,16 +101,21 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateSequence) -> Re
     let attrs = super::column::attrs(&c.options, range, &format!("sequence {}", c.name.name.value))?;
     super::qtemp::refuse_in_qtemp(&c.name, "sequence")?;
     let lib = ctx.library_for(txn, &c.name)?;
-    let sys = match &c.system_name {
-        Some(s) => SqlContext::sys_name(s)?,
-        None => SqlContext::sys_name(&c.name.name)?,
-    };
+    super::names::check_length(&c.name.name)?;
     if names::find(txn, lib, Space::Sequence, &c.name.name.value)?.is_some() {
         if !c.replace {
             return Err(err(-601, "42710", format!("sequence {} exists", c.name.name.value)));
         }
         drop(txn, ctx, &c.name)?;
     }
+    // A long name gets a system name as a table's does (`D4_CU00001`).
+    let sys = match &c.system_name {
+        Some(s) => SqlContext::sys_name(s)?,
+        None => match super::names::direct(&c.name.name) {
+            Some(n) => n,
+            None => super::names::generate(txn, lib, types::DTAARA, &c.name.name.value, &|_| false)?,
+        },
+    };
     let now = ctx.clock();
     let params = store::obj::CreateParams {
         library: lib,
@@ -161,7 +166,7 @@ pub fn alter(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName, o: &Ide
         s.next = r.unwrap_or(s.attrs.start);
         s.exhausted = false;
         s.block_end = None;
-        if !s.attrs.holds(s.next) {
+        if r.is_some() && !s.attrs.holds(s.next) {
             return Err(err(-846, "42815", format!("RESTART WITH {} is outside the range of sequence {}", s.next, name.name.value)));
         }
     }
@@ -221,10 +226,11 @@ fn value_of(s: &Sequence, v: i128) -> Value {
 pub fn next_value(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName) -> Result<Value> {
     let (id, mut s) = resolve(txn, ctx, name)?;
     db::auth::check(txn, "sequence.use", id).map_err(SqlError::from)?;
-    if s.exhausted {
+    let v = s.next;
+    // A descending sequence that starts below its MINVALUE has none.
+    if s.exhausted || (s.attrs.increment < 0 && v < s.attrs.min) {
         return Err(err(-359, "23522", format!("sequence {} has no more values", name.name.value)));
     }
-    let v = s.next;
     // The block of values IBM would cache: kept so an ALTER goes on after it.
     let end = *s.block_end.get_or_insert_with(|| s.attrs.block_end(v));
     if v == end {

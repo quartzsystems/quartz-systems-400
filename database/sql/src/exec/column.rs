@@ -59,7 +59,9 @@ pub fn attrs(id: &ast::Identity, range: (i128, i128), what: &str) -> Result<SeqA
     if min > max {
         return Err(err(-846, "42815", format!("MINVALUE must be less than MAXVALUE for {what}")));
     }
-    if start < min || start > max {
+    // The primary takes a sequence's START WITH below its MINVALUE (an
+    // ascending one gives it, a descending one has no values).
+    if (start < min && !sequence) || start > max {
         return Err(err(-846, "42815", format!("START WITH {start} is outside MINVALUE and MAXVALUE of {what}")));
     }
     // The counter is eight bytes: a DECIMAL identity past them waits.
@@ -100,9 +102,13 @@ pub fn check_generated(c: &ast::ColumnDef) -> Result<()> {
         Some(Generated::Audit { what, .. }) if what == "DATA CHANGE OPERATION" && !matches!(c.type_spec.data_type, DataType::Char(1)) => {
             Err(err(-574, "42894", format!("column {} must be CHAR(1) to record the data change operation", c.name.value)))
         }
-        // A user or server is kept in a VARCHAR(128), as pub400 requires.
-        Some(Generated::Audit { what, .. }) if what != "DATA CHANGE OPERATION" && !matches!(c.type_spec.data_type, DataType::Varchar(128)) => {
-            Err(err(-574, "42894", format!("column {} must be VARCHAR(128) to record {what}", c.name.value)))
+        // USER is kept in a VARCHAR(18) or longer, another user or the
+        // server in a VARCHAR(128), as pub400 requires.
+        Some(Generated::Audit { what, .. })
+            if what != "DATA CHANGE OPERATION"
+                && !matches!(c.type_spec.data_type, DataType::Varchar(n) if n >= if what == "USER" { 18 } else { 128 }) =>
+        {
+            Err(err(-574, "42894", format!("column {} is too short or not VARCHAR to record {what}", c.name.value)))
         }
         _ if c.generated.is_some() && c.identity.is_some() => {
             Err(err(-574, "42894", format!("column {} cannot be generated twice", c.name.value)))

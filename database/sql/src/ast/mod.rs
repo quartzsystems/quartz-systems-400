@@ -426,6 +426,8 @@ pub enum LabelTarget {
     Alias(ObjectName),
     /// A trigger.
     Trigger(ObjectName),
+    /// A sequence.
+    Sequence(ObjectName),
 }
 
 /// `RENAME`.

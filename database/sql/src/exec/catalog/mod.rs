@@ -12,6 +12,8 @@ pub mod objects2;
 pub mod routines;
 pub mod services;
 pub mod sys;
+mod syscolumns;
+mod systables;
 pub mod systools;
 pub mod sysibm;
 

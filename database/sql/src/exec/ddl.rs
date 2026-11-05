@@ -118,6 +118,25 @@ pub(super) fn register_text(r: crate::ast::Register) -> Result<String> {
     .into())
 }
 
+/// A floating-point constant (`1.5E3`, `-2E-1`) as written.
+fn float_constant(e: &Expr) -> Option<String> {
+    match e {
+        Expr::Literal(Literal::Num(n)) if n.contains(['E', 'e']) => Some(n.clone()),
+        Expr::Neg(inner) => float_constant(inner).map(|n| format!("-{n}")),
+        _ => None,
+    }
+}
+
+/// The heading IBM gives a column SQL makes: its name, quoted when it
+/// must be, in lines of twenty characters.
+pub(crate) fn default_heading(name: &str) -> Vec<String> {
+    let plain = name.starts_with(|ch: char| ch.is_ascii_uppercase() || "$#@".contains(ch))
+        && name.chars().all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || "$#@_".contains(ch));
+    let head = if plain { name.to_string() } else { format!("\"{}\"", name.replace('"', "\"\"")) };
+    let chars: Vec<char> = head.chars().take(60).collect();
+    chars.chunks(20).map(|ch| ch.iter().collect::<String>().trim_end().to_string()).collect()
+}
+
 /// What DDS cannot say about a column, set on the compiled field: the
 /// identity definition and an expression default.
 pub(super) fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
@@ -125,6 +144,9 @@ pub(super) fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
     // (`column_lines` refused a longer one).
     if c.name.value != f.name.to_string() {
         f.alias = Some(c.name.value.clone());
+    }
+    if f.colhdg.is_empty() {
+        f.colhdg = default_heading(&c.name.value);
     }
     if let Some(id) = &c.identity {
         // The full attributes are the table's `COLUMN` entry (`column`);
@@ -142,8 +164,17 @@ pub(super) fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
             cycle: a.cycle,
         });
     }
-    if let Some(ColumnDefault::Value(Expr::Register(r))) = &c.default {
-        f.default = Some(dds::DefaultValue::Expr(register_text(*r)?));
+    match &c.default {
+        Some(ColumnDefault::Value(Expr::Register(r))) => f.default = Some(dds::DefaultValue::Expr(register_text(*r)?)),
+        Some(ColumnDefault::Value(e)) if float_constant(e).is_some() => {
+            f.default = float_constant(e).map(dds::DefaultValue::Number);
+        }
+        Some(ColumnDefault::System) => {
+            if let Some(r) = super::defaults::current_register(&c.type_spec.data_type) {
+                f.default = Some(dds::DefaultValue::Expr(register_text(r)?));
+            }
+        }
+        _ => {}
     }
     // SQL's integers hold their bytes' whole range.
     f.int_range = matches!(c.type_spec.data_type, DataType::SmallInt | DataType::Integer | DataType::BigInt);
@@ -223,6 +254,7 @@ fn column_lines(c: &ColumnDef) -> Result<Vec<String>> {
 /// The DDS field line(s) of a column whose system name is `name`.
 pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> {
     crate::exec::cast::check_column(&c.type_spec)?;
+    super::defaults::check(c)?;
     if c.name.value.chars().count() > db::format::sections::ALIAS_MAX {
         return Err(SqlError::NameTooLong { name: c.name.value.clone(), max: db::format::sections::ALIAS_MAX });
     }
@@ -275,7 +307,11 @@ pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> 
         // as it does the default of a type DDS does not have.
         Some(ColumnDefault::Value(Expr::Register(_))) | None => {}
         Some(_) if sql_only => {}
+        // DDS has no floating-point constant: `finish_field` keeps it.
+        Some(ColumnDefault::Value(e)) if float_constant(e).is_some() => {}
         Some(ColumnDefault::Value(e)) => kws.push(format!("DFT({})", dds_literal(e)?)),
+        // The current date or time is set on the field (`finish_field`).
+        Some(ColumnDefault::System) if super::defaults::current_register(&c.type_spec.data_type).is_some() => {}
         Some(ColumnDefault::System) => {
             kws.push(format!("DFT({})", system_default(&c.type_spec.data_type)));
         }
@@ -465,6 +501,10 @@ pub(super) fn field_of(c: &ColumnDef) -> Result<dds::FieldDef> {
 pub(super) fn default_def(d: &ColumnDefault, t: &DataType) -> Result<Option<dds::DefaultValue>> {
     use dds::DefaultValue as D;
     Ok(Some(match d {
+        // A date, time or timestamp's is the current one, as IBM's.
+        ColumnDefault::System if super::defaults::current_register(t).is_some() => {
+            D::Expr(register_text(super::defaults::current_register(t).expect("a register"))?)
+        }
         ColumnDefault::System => {
             let text = system_default(t);
             match text.strip_prefix('\'').and_then(|s| s.strip_suffix('\'')) {
@@ -536,7 +576,7 @@ fn create_index_with_text(
     for (c, desc) in &i.columns {
         let col = SqlContext::sys_name(c)?;
         if let Some((_, f)) = table.format.format.field(&col).filter(|(_, f)| f.data_type.is_lob()) {
-            return Err(SqlError::Unsupported { what: format!("the LOB column {} as a key", f.name) });
+            return Err(SqlError::Coded { code: -350, state: "42962", what: format!("the LOB column {} cannot be a key", f.name) });
         }
         if table.format.format.field(&col).is_none() {
             return Err(SqlError::ColumnNotFound {
@@ -770,15 +810,16 @@ pub fn create_view(
         match item {
             SelectItem::Star | SelectItem::TableStar(_) => {}
             SelectItem::Expr(Expr::Column(c), alias) => {
-                let base = SqlContext::sys_name(&c.column)?;
+                // A name DDS cannot write (long or delimited): the view runs
+                // its query instead.
+                let not_dds = || SqlError::Unsupported { what: "a view column DDS cannot name".into() };
+                let base = SqlContext::sys_name(&c.column).map_err(|_| not_dds())?;
                 if table.format.format.field(&base).is_none() {
-                    return Err(SqlError::ColumnNotFound {
-                        name: c.column.value.clone(),
-                    });
+                    return Err(not_dds());
                 }
                 let out_name = match (v.columns.get(n), alias) {
-                    (Some(col), _) => SqlContext::sys_name(col)?,
-                    (None, Some(a)) => SqlContext::sys_name(a)?,
+                    (Some(col), _) => SqlContext::sys_name(col).map_err(|_| not_dds())?,
+                    (None, Some(a)) => SqlContext::sys_name(a).map_err(|_| not_dds())?,
                     (None, None) => base,
                 };
                 if out_name == base {
@@ -861,62 +902,4 @@ pub fn create_view(
         // `*SQLINF`.
         &CreateFileOpts { now: ctx.clock(), text: String::new(), ..CreateFileOpts::default() },
     )?)
-}
-
-/// `LABEL ON` and `COMMENT ON`: the object's text, or a column's
-/// heading or text.
-pub fn label(txn: &mut Txn<'_>, ctx: &mut SqlContext, l: &crate::ast::Label) -> Result<()> {
-    use crate::ast::LabelTarget;
-    let (name, column) = match &l.target {
-        LabelTarget::Table(n) | LabelTarget::Index(n) | LabelTarget::Alias(n) => (n, None),
-        LabelTarget::Column(n, c) => (n, Some(c)),
-        LabelTarget::Trigger(n) => return super::trigger::label(txn, ctx, n, l),
-    };
-    let id = ctx.resolve_file(txn, name)?;
-    super::qtemp::refuse_declared(ctx, id, "LABEL ON or COMMENT ON")?;
-    db::auth::check(txn, "file.change", id)?;
-    if column.is_none() && l.columns.is_empty() {
-        let text = l.text.clone().unwrap_or_default();
-        store::obj::ops::change_text(
-            txn,
-            id,
-            &text.chars().take(50).collect::<String>(),
-            ctx.clock(),
-        )?;
-        return Ok(());
-    }
-    let desc = file::describe(txn, id)?;
-    let mut formats = desc.formats.clone();
-    let mut changes: Vec<(&crate::ast::Ident, &str, bool)> = Vec::new();
-    if let Some(c) = column {
-        changes.push((c, l.text.as_deref().unwrap_or(""), l.is_text));
-    }
-    for (c, t, is_text) in &l.columns {
-        changes.push((c, t, *is_text));
-    }
-    for (c, text, is_text) in changes {
-        // The column by its system name or its SQL name.
-        let Some(f) = formats
-            .iter_mut()
-            .flat_map(|fm| fm.format.fields.iter_mut())
-            .find(|f| f.name.to_string() == c.value || f.alias.as_deref() == Some(c.value.as_str()))
-        else {
-            return Err(SqlError::ColumnNotFound {
-                name: c.value.clone(),
-            });
-        };
-        if is_text {
-            f.text = Some(text.chars().take(50).collect());
-        } else {
-            // A heading is up to three parts of twenty characters.
-            let chars: Vec<char> = text.chars().collect();
-            f.colhdg = chars
-                .chunks(20)
-                .take(3)
-                .map(|ch| ch.iter().collect::<String>().trim_end().to_string())
-                .collect();
-        }
-    }
-    file::replace_formats(txn, id, &formats)?;
-    Ok(())
 }

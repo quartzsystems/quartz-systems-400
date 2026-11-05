@@ -45,6 +45,10 @@ fn default_of(f: &FieldDef) -> Result<Option<Dft>> {
         Some(DefaultValue::Number(n)) if f.data_type == dds::DataType::DecFloat => {
             Some(Dft::Value(Value::Str(n.clone())))
         }
+        // A floating-point constant.
+        Some(DefaultValue::Number(n)) if n.contains(['E', 'e']) => Some(Dft::Value(Value::Double(
+            n.parse().map_err(|_| SqlError::Conversion { what: format!("'{n}' is not a number") })?,
+        ))),
         Some(DefaultValue::Number(n)) => Some(Dft::Value(Value::Num(
             qdecimal::Decimal::parse(n).map_err(|e| SqlError::Conversion {
                 what: e.to_string(),
@@ -420,6 +424,11 @@ fn change(
 ) -> Result<u64> {
     let t = ctx.resolve_table(txn, table)?;
     let alias = alias.map_or_else(|| table.name.value.clone(), |a| a.value.clone());
+    // A column set that the table lacks is refused before any row is read
+    // (`SQL0206`), however many rows there are.
+    if let Some(c) = set.unwrap_or_default().iter().flat_map(|a| &a.columns).find(|c| t.field(&c.value).is_none()) {
+        return Err(SqlError::ColumnNotFound { name: c.value.clone() });
+    }
     if super::udt::registry::any() {
         check_types(&t, &alias, w, set)?;
     }

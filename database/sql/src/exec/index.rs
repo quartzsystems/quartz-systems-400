@@ -53,7 +53,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) -> Resul
             return Err(SqlError::ColumnNotFound { name: c.value.clone() });
         };
         if f.data_type.is_lob() {
-            return Err(SqlError::Unsupported { what: format!("the LOB column {} as a key", f.name) });
+            return Err(SqlError::Coded { code: -350, state: "42962", what: format!("the LOB column {} cannot be a key", f.name) });
         }
         lines.push(dds("K", &f.name.to_string(), "", "", "", if *desc { "DESCEND" } else { "" }));
         keys.push(IndexKey { expression: false, descend: *desc, text: c.value.clone() });

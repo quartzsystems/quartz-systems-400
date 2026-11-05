@@ -519,7 +519,10 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
 
 /// A `SYSCOLUMNS` row's type.
 fn column_type(v: &View, r: &Row) -> TypeInfo {
-    type_info(&v.text(r, "DATA_TYPE"), v.num(r, "LENGTH").unwrap_or(0), v.num(r, "NUMERIC_SCALE"), v.num(r, "CCSID"))
+    // A timestamp's precision is DATETIME_PRECISION (its NUMERIC_SCALE is null).
+    let ty = v.text(r, "DATA_TYPE");
+    let scale = if ty == "TIMESTMP" { v.num(r, "DATETIME_PRECISION") } else { v.num(r, "NUMERIC_SCALE") };
+    type_info(&ty, v.num(r, "LENGTH").unwrap_or(0), scale, v.num(r, "CCSID"))
 }
 
 /// The digits of an exact numeric as the information schema gives them:

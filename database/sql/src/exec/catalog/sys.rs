@@ -34,7 +34,7 @@ pub const TABLES: &[&str] = &[
 ];
 
 /// A column of a catalog view.
-fn col(alias: &str, name: &str, ty: DataType, len: u32, dec: u8, nullable: bool) -> ColInfo {
+pub(super) fn col(alias: &str, name: &str, ty: DataType, len: u32, dec: u8, nullable: bool) -> ColInfo {
     // IBM's types: names are VARCHAR(128), counts INTEGER or BIGINT.
     let (ty, len) = match (ty, len, dec) {
         (DataType::Packed, 0..=9, 0) => (DataType::Binary, 9),
@@ -65,15 +65,52 @@ fn col(alias: &str, name: &str, ty: DataType, len: u32, dec: u8, nullable: bool)
     }
 }
 
-fn s(v: impl Into<String>) -> Value {
+/// A `VARCHAR(len)` column.
+pub(super) fn vc(alias: &str, name: &str, len: u32, nullable: bool) -> ColInfo {
+    let mut c = col(alias, name, DataType::Char, len, 0, nullable);
+    if let Some(f) = c.field.as_mut() {
+        f.varlen = Some(dds::VarLen { allocated: None });
+    }
+    c
+}
+
+/// A `VARGRAPHIC(len) CCSID 1200` column (`NVARCHAR`).
+pub(super) fn nv(alias: &str, name: &str, len: u32, nullable: bool) -> ColInfo {
+    let mut c = col(alias, name, DataType::Graphic, len, 0, nullable);
+    if let Some(f) = c.field.as_mut() {
+        f.varlen = Some(dds::VarLen { allocated: None });
+        f.ccsid = Some(1200);
+    }
+    c
+}
+
+/// A nullable `DBCLOB(2M)` column (`NCLOB` in CCSID 1200).
+pub(super) fn nclob(alias: &str, name: &str, ccsid: u16) -> ColInfo {
+    let mut c = col(alias, name, DataType::Dbclob, 2_097_152, 0, true);
+    if let Some(f) = c.field.as_mut() {
+        f.ccsid = Some(ccsid);
+    }
+    c
+}
+
+/// A `DECIMAL(p, 0)` column (`col` would make it an integer).
+pub(super) fn dec(alias: &str, name: &str, p: u32, nullable: bool) -> ColInfo {
+    let mut c = col(alias, name, DataType::Packed, p, 1, nullable);
+    if let Some(f) = c.field.as_mut() {
+        f.decimals = 0;
+    }
+    c
+}
+
+pub(super) fn s(v: impl Into<String>) -> Value {
     Value::Str(v.into())
 }
 
-fn n(v: u64) -> Value {
+pub(super) fn n(v: u64) -> Value {
     Value::int(i64::try_from(v).unwrap_or(i64::MAX))
 }
 
-fn stamp(secs: u64) -> Value {
+pub(super) fn stamp(secs: u64) -> Value {
     Value::Timestamp(Timestamp::new(
         db::record::datetime::Date::from_unix(secs),
         db::record::datetime::Time::from_unix(secs),
@@ -82,7 +119,7 @@ fn stamp(secs: u64) -> Value {
 }
 
 /// Every database file in every library, with its library name.
-fn files(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<(Name, FileDesc)>> {
+pub(super) fn files(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<(Name, FileDesc)>> {
     // QSYS lists itself; every other library is in its directory.
     let mut libraries: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?
         .into_iter()
@@ -111,49 +148,6 @@ fn files(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<(Name, FileDesc)>> {
     Ok(out)
 }
 
-/// The `SYSTABLES` rows of the aliases (`A`): their columns and row
-/// length the table's they name, 0 when it is not there.
-fn alias_rows(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
-    let mut rows = Vec::new();
-    let mut libraries: Vec<ObjectId> = ops::list(txn, ctx.qsys, Some(types::LIB))?.into_iter().map(|(_, id)| id).collect();
-    if !libraries.contains(&ctx.qsys) {
-        libraries.insert(0, ctx.qsys);
-    }
-    for lib in libraries {
-        let Ok((_, lh)) = ops::read_header(txn, lib) else {
-            continue;
-        };
-        let Ok(list) = ops::list(txn, lib, Some(types::FILE)) else {
-            continue;
-        };
-        for (_, id) in list {
-            let Ok(Some(def)) = file::alias_of(txn, id) else {
-                continue;
-            };
-            let (_, h) = ops::read_header(txn, id)?;
-            let (count, len) = ctx
-                .resolve_table(txn, &crate::exec::alias::target(&def))
-                .map_or((0, 0), |t| (t.format.format.fields.len() as u64, u64::from(t.desc.attr.record_len)));
-            let sql = crate::exec::names::sql_name(txn, id);
-            let schema = crate::exec::names::schema_name(txn, lib);
-            rows.push(vec![
-                s(sql),
-                s(ccsid::decode_trimmed(&h.owner)),
-                s("A"),
-                n(count),
-                n(len),
-                s(ccsid::decode_trimmed(&h.text)),
-                s(schema),
-                stamp(h.changed.max(h.created)),
-                s(h.name.to_string()),
-                s(lh.name.to_string()),
-                s("D"),
-            ]);
-        }
-    }
-    Ok(rows)
-}
-
 /// What SQL knows of a file: its SQL name, its schema's, its kind.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Meta {
@@ -163,6 +157,16 @@ pub(crate) struct Meta {
     pub schema: String,
     /// The kind SQL made it as.
     pub kind: Option<db::sqlinf::Kind>,
+    /// Its long comments and its columns'.
+    pub comments: Vec<db::sqlinf::comment::Comment>,
+}
+
+impl Meta {
+    /// The long comment of `column` (the object's when `None`).
+    #[must_use]
+    pub fn comment(&self, column: Option<Name>) -> Value {
+        self.comments.iter().find(|c| c.column == column).map_or(Value::Null, |c| s(c.text.clone()))
+    }
 }
 
 /// The SQL names and kinds of every file listed, by file.
@@ -178,18 +182,21 @@ pub(crate) fn metas(txn: &mut Txn<'_>, all: &[(Name, FileDesc)]) -> std::collect
             schemas.insert(lib, s.clone());
             s
         };
-        let (sql, kind) = if d.header.sql.is_none() {
-            (d.name().to_string(), None)
+        let (sql, kind, comments) = if d.header.sql.is_none() {
+            (d.name().to_string(), None, Vec::new())
         } else {
-            (crate::exec::names::sql_name(txn, d.id), crate::exec::names::kind_of(txn, d.id))
+            let info = db::sqlinf::load(txn, d.id).ok().flatten();
+            // A file SQL did not make keeps only comments.
+            let kind = info.as_ref().map(|i| i.kind).filter(|k| *k != db::sqlinf::Kind::File);
+            (crate::exec::names::sql_name(txn, d.id), kind, crate::exec::label::comments_of(info.as_ref()))
         };
-        out.insert(d.id, Meta { sql, schema, kind });
+        out.insert(d.id, Meta { sql, schema, kind, comments });
     }
     out
 }
 
 /// How SQL sees a file, by its kind when SQL made it.
-fn type_of(m: Option<&Meta>, desc: &FileDesc) -> &'static str {
+pub(super) fn type_of(m: Option<&Meta>, desc: &FileDesc) -> &'static str {
     use db::sqlinf::Kind as K;
     match m.and_then(|m| m.kind) {
         Some(K::Table) => "T",
@@ -259,154 +266,33 @@ pub fn virtual_table(
         col(alias, nm, ty, len, dec, nullable)
     };
     let (cols, rows): (Vec<ColInfo>, Vec<Row>) = match which {
-        "SYSTABLES" => {
-            let cols = vec![
-                c("TABLE_NAME", DataType::Char, 128, 0, false),
-                c("TABLE_OWNER", DataType::Char, 10, 0, false),
-                c("TABLE_TYPE", DataType::Char, 1, 0, false),
-                c("COLUMN_COUNT", DataType::Packed, 9, 0, false),
-                c("ROW_LENGTH", DataType::Packed, 9, 0, false),
-                c("TABLE_TEXT", DataType::Char, 50, 0, true),
-                c("TABLE_SCHEMA", DataType::Char, 128, 0, false),
-                c("LAST_ALTERED_TIMESTAMP", DataType::Timestamp, 26, 0, false),
-                c("SYSTEM_TABLE_NAME", DataType::Char, 10, 0, false),
-                c("SYSTEM_TABLE_SCHEMA", DataType::Char, 10, 0, false),
-                c("FILE_TYPE", DataType::Char, 1, 0, false),
-            ];
-            let mut rows: Vec<Row> = all
-                .iter()
-                // IBM lists no index here.
-                .filter(|(_, d)| type_of(meta.get(&d.id), d) != "I")
-                .map(|(lib, d)| {
-                    let md = m(d);
-                    vec![
-                        s(md.sql.clone()),
-                        s(ccsid::decode_trimmed(&d.header.owner)),
-                        s(type_of(Some(&md), d)),
-                        n(d.formats
-                            .first()
-                            .map_or(0, |f| f.format.fields.len() as u64)),
-                        n(u64::from(d.attr.record_len)),
-                        s(ccsid::decode_trimmed(&d.header.text)),
-                        s(md.schema.clone()),
-                        stamp(d.header.changed.max(d.header.created)),
-                        s(d.name().to_string()),
-                        s(lib.to_string()),
-                        s(if d.attr.kind == FileKind::Source {
-                            "S"
-                        } else {
-                            "D"
-                        }),
-                    ]
-                })
-                .collect();
-            rows.extend(alias_rows(txn, ctx)?);
-            (cols, rows)
-        }
-        "SYSCOLUMNS" => {
-            let cols = vec![
-                c("COLUMN_NAME", DataType::Char, 128, 0, false),
-                c("TABLE_NAME", DataType::Char, 128, 0, false),
-                c("TABLE_OWNER", DataType::Char, 10, 0, false),
-                c("ORDINAL_POSITION", DataType::Packed, 9, 0, false),
-                c("DATA_TYPE", DataType::Char, 8, 0, false),
-                c("LENGTH", DataType::Packed, 9, 0, false),
-                c("NUMERIC_SCALE", DataType::Packed, 9, 0, true),
-                c("NUMERIC_PRECISION", DataType::Packed, 9, 0, true),
-                c("IS_NULLABLE", DataType::Char, 1, 0, false),
-                c("COLUMN_HEADING", DataType::Char, 60, 0, true),
-                c("COLUMN_TEXT", DataType::Char, 50, 0, true),
-                c("SYSTEM_COLUMN_NAME", DataType::Char, 10, 0, false),
-                c("SYSTEM_TABLE_NAME", DataType::Char, 10, 0, false),
-                c("TABLE_SCHEMA", DataType::Char, 128, 0, false),
-                c("COLUMN_DEFAULT", DataType::Char, 100, 0, true),
-                c("CCSID", DataType::Packed, 5, 0, true),
-                c("HAS_DEFAULT", DataType::Char, 1, 0, false),
-                c("USER_DEFINED_TYPE_SCHEMA", DataType::Char, 128, 0, true),
-                c("USER_DEFINED_TYPE_NAME", DataType::Char, 128, 0, true),
-            ];
-            let mut rows = Vec::new();
-            for (_, d) in &all {
-                let Some(fmt) = d.formats.first() else {
-                    continue;
-                };
-                // Columns of a distinct type.
-                let typed = if crate::exec::udt::registry::any() { crate::exec::udt::column::of(txn, d.id)? } else { Vec::new() };
-                for (i, f) in fmt.format.fields.iter().enumerate() {
-                    let udt = typed.iter().find(|c| c.field == f.name);
-                    let numeric = f.data_type.is_numeric();
-                    let (length, scale, precision) = match f.data_type {
-                        // A DECFLOAT's length is its bytes, its precision its digits.
-                        DataType::DecFloat => (
-                            n(u64::from(f.data_len())),
-                            Value::Null,
-                            n(if f.length <= 16 { 16 } else { 34 }),
-                        ),
-                        // A timestamp's scale is its precision.
-                        DataType::Timestamp => (
-                            n(u64::from(f.length)),
-                            n(u64::from(DataType::timestamp_precision(f.length))),
-                            Value::Null,
-                        ),
-                        // An SQL integer's length is its bytes, its precision
-                        // its range's digits.
-                        DataType::Binary if f.int_range => (
-                            n(u64::from(f.data_len())),
-                            n(u64::from(f.decimals)),
-                            n(u64::from(f.digits())),
-                        ),
-                        _ if numeric => (n(u64::from(f.length)), n(u64::from(f.decimals)), n(u64::from(f.length))),
-                        _ => (n(u64::from(f.length)), Value::Null, Value::Null),
-                    };
-                    rows.push(vec![
-                        s(f.alias.clone().unwrap_or_else(|| f.name.to_string())),
-                        s(m(d).sql),
-                        s(ccsid::decode_trimmed(&d.header.owner)),
-                        n(i as u64 + 1),
-                        s(if udt.is_some() { "DISTINCT".into() } else { data_type_name(f) }),
-                        length,
-                        scale,
-                        precision,
-                        s(if f.allow_null { "Y" } else { "N" }),
-                        if f.colhdg.is_empty() {
-                            Value::Null
-                        } else {
-                            s(f.colhdg.join(" "))
-                        },
-                        f.text.clone().map_or(Value::Null, s),
-                        s(f.name.to_string()),
-                        s(d.name().to_string()),
-                        s(m(d).schema),
-                        f.default
-                            .as_ref()
-                            .map_or(Value::Null, |dft| s(default_text(dft))),
-                        f.ccsid.or((f.data_type == DataType::Hex).then_some(65535)).map_or(Value::Null, |x| n(u64::from(x))),
-                        s(if f.default.is_some() { "Y" } else { "N" }),
-                        udt.map_or(Value::Null, |c| s(c.library.to_string().trim_end().to_string())),
-                        udt.map_or(Value::Null, |c| s(c.name.clone())),
-                    ]);
-                }
-            }
-            (cols, rows)
-        }
+        "SYSTABLES" => (super::systables::columns(alias), super::systables::rows(txn, ctx, &all, &meta)?),
+        "SYSCOLUMNS" => (super::syscolumns::columns(alias), super::syscolumns::rows(txn, &all, &meta)?),
         "SYSINDEXES" => {
             let cols = vec![
-                c("INDEX_NAME", DataType::Char, 128, 0, false),
-                c("INDEX_OWNER", DataType::Char, 10, 0, false),
-                c("INDEX_SCHEMA", DataType::Char, 128, 0, false),
-                c("TABLE_NAME", DataType::Char, 128, 0, false),
-                c("TABLE_SCHEMA", DataType::Char, 128, 0, false),
+                vc(alias, "INDEX_NAME", 128, false),
+                vc(alias, "INDEX_OWNER", 128, false),
+                vc(alias, "TABLE_NAME", 128, false),
+                vc(alias, "TABLE_OWNER", 128, false),
+                vc(alias, "TABLE_SCHEMA", 128, false),
                 c("IS_UNIQUE", DataType::Char, 1, 0, false),
                 c("COLUMN_COUNT", DataType::Packed, 9, 0, false),
+                vc(alias, "INDEX_SCHEMA", 128, false),
                 c("SYSTEM_INDEX_NAME", DataType::Char, 10, 0, false),
                 c("SYSTEM_INDEX_SCHEMA", DataType::Char, 10, 0, false),
                 c("SYSTEM_TABLE_NAME", DataType::Char, 10, 0, false),
                 c("SYSTEM_TABLE_SCHEMA", DataType::Char, 10, 0, false),
-                c("INDEX_TEXT", DataType::Char, 50, 0, true),
+                nv(alias, "LONG_COMMENT", 2000, true),
+                c("IASP_NUMBER", DataType::Binary, 4, 0, false),
+                nv(alias, "INDEX_TEXT", 50, false),
+                vc(alias, "IS_SPANNING_INDEX", 11, true),
+                vc(alias, "INDEX_DEFINER", 128, true),
+                c("ROUNDING_MODE", DataType::Char, 1, 0, true),
                 c("INDEX_HAS_SEARCH_CONDITION", DataType::Char, 1, 0, false),
-                c("SEARCH_CONDITION", DataType::Char, 2000, 0, true),
+                c("SEARCH_CONDITION_HAS_UDF", DataType::Char, 1, 0, false),
+                nclob(alias, "SEARCH_CONDITION", 1200),
                 c("INDEX_HAS_INCLUDE_EXPRESSION", DataType::Char, 1, 0, false),
-                c("INCLUDE_EXPRESSION", DataType::Char, 2000, 0, true),
+                nclob(alias, "INCLUDE_EXPRESSION", 1200),
             ];
             let mut rows = Vec::new();
             for (lib, d) in &all {
@@ -416,21 +302,22 @@ pub fn virtual_table(
                 }
                 let fmt = &d.formats[0];
                 let (tlib, tname, tid) = base_of(txn, fmt);
-                let (tsql, tschema) = match tid {
+                let (tsql, tschema, towner) = match tid {
                     Some(id) => {
-                        let tl = ops::read_header(txn, id).map_or(id, |(_, h)| h.library);
-                        (crate::exec::names::sql_name(txn, id), crate::exec::names::schema_name(txn, tl))
+                        let (tl, owner) = ops::read_header(txn, id).map_or((id, String::new()), |(_, h)| (h.library, ccsid::decode_trimmed(&h.owner)));
+                        (crate::exec::names::sql_name(txn, id), crate::exec::names::schema_name(txn, tl), owner)
                     }
-                    None => (tname.clone(), tlib.clone()),
+                    None => (tname.clone(), tlib.clone(), String::new()),
                 };
                 let def = crate::exec::index::definition(txn, d.id);
                 let search = def.as_ref().map(|x| x.where_text.clone()).filter(|w| !w.is_empty());
                 let include = def.as_ref().filter(|x| !x.includes.is_empty()).map(|x| x.includes.join(", "));
+                let owner = ccsid::decode_trimmed(&d.header.owner);
                 rows.push(vec![
                     s(md.sql.clone()),
-                    s(ccsid::decode_trimmed(&d.header.owner)),
-                    s(md.schema.clone()),
+                    s(owner.clone()),
                     s(tsql),
+                    s(towner),
                     s(tschema),
                     s(match (fmt.unique, def.as_ref().is_some_and(|x| x.encoded_vector)) {
                         (_, true) => "E",
@@ -439,12 +326,19 @@ pub fn virtual_table(
                         (Some(_), _) => "U",
                     }),
                     n(fmt.format.keys.len() as u64),
+                    s(md.schema.clone()),
                     s(d.name().to_string()),
                     s(lib.to_string()),
                     s(tname),
                     s(tlib),
+                    md.comment(None),
+                    n(0),
                     s(ccsid::decode_trimmed(&d.header.text)),
+                    Value::Null,
+                    s(owner),
+                    Value::Null,
                     s(if search.is_some() { "Y" } else { "N" }),
+                    s("N"),
                     search.map_or(Value::Null, s),
                     s(if include.is_some() { "Y" } else { "N" }),
                     include.map_or(Value::Null, s),
@@ -498,12 +392,12 @@ pub fn virtual_table(
                 c("VIEW_OWNER", DataType::Char, 128, 0, false),
                 c("SEQNO", DataType::Binary, 9, 0, false),
                 c("CHECK_OPTION", DataType::Char, 1, 0, false),
-                c("VIEW_DEFINITION", DataType::Char, 5000, 0, true),
+                nv(alias, "VIEW_DEFINITION", 5000, true),
                 c("IS_UPDATABLE", DataType::Char, 1, 0, false),
                 c("TABLE_SCHEMA", DataType::Char, 128, 0, false),
                 c("SYSTEM_VIEW_NAME", DataType::Char, 10, 0, false),
                 c("SYSTEM_VIEW_SCHEMA", DataType::Char, 10, 0, false),
-                c("IS_INSERTABLE_INTO", DataType::Char, 3, 0, false),
+                vc(alias, "IS_INSERTABLE_INTO", 3, false),
                 c("IASP_NUMBER", DataType::Binary, 4, 0, false),
                 c("IS_DELETABLE", DataType::Char, 1, 0, true),
                 c("VIEW_DEFINER", DataType::Char, 128, 0, true),
@@ -844,13 +738,15 @@ pub fn virtual_table(
 }
 
 /// The SQL type name of a field, as `SYSCOLUMNS.DATA_TYPE` spells it.
-fn data_type_name(f: &FieldDef) -> String {
+pub(super) fn data_type_name(f: &FieldDef) -> String {
     let t = sql_type(f);
     let t = t.split('(').next().unwrap_or(&t).trim();
     // IBM's eight-character spellings.
     match t {
         "VARBINARY" => "VARBIN".into(),
         "TIMESTAMP" => "TIMESTMP".into(),
+        "VARGRAPHIC" => "VARG".into(),
+        "REAL" | "DOUBLE" => "FLOAT".into(),
         t => t.to_string(),
     }
 }
@@ -880,7 +776,7 @@ fn base_of(txn: &mut Txn<'_>, fmt: &db::format::FormatDef) -> (String, String, O
 
 /// A fixed-length character column's values padded with blanks to its
 /// length, as IBM's catalog returns them.
-fn pad_fixed(cols: &[ColInfo], mut rows: Vec<Row>) -> Vec<Row> {
+pub(super) fn pad_fixed(cols: &[ColInfo], mut rows: Vec<Row>) -> Vec<Row> {
     let widths: Vec<Option<usize>> = cols
         .iter()
         .map(|c| c.field.as_ref().filter(|f| f.data_type == DataType::Char && f.varlen.is_none()).map(|f| f.length as usize))

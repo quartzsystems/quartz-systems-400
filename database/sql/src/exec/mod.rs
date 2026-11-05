@@ -20,6 +20,7 @@ mod cte;
 pub mod datetime;
 pub mod cursor;
 pub mod ddl;
+mod defaults;
 pub mod dml;
 pub mod drop;
 pub mod dynamic;
@@ -30,6 +31,7 @@ pub mod func;
 pub mod grant;
 mod grant_obj;
 pub mod index;
+pub mod label;
 pub mod json;
 pub mod locator;
 mod grouping;
@@ -758,6 +760,10 @@ impl SqlContext {
         if let Some(f) = desc.formats.first_mut() {
             udt::column::mark(txn, id, &mut f.format.fields)?;
         }
+        // A view that runs its query has no member: it is read only (`SQL0150`).
+        if desc.member(spec).is_none() && view::definition(txn, id).is_some_and(|(v, _)| v.read_only) {
+            return Err(SqlError::Coded { code: -150, state: "42807", what: format!("view {name} is read only") });
+        }
         let member = *desc
             .member(spec)
             .ok_or_else(|| SqlError::ObjectNotFound {
@@ -1074,9 +1080,8 @@ impl Prepared {
             Statement::Fetch(f) => cursor::fetch(txn, ctx, f, params),
             Statement::Close(c) => cursor::close(ctx, &c.value),
             Statement::CreateView(v) => view::create(txn, ctx, v).map(|()| Outcome::Done),
-            Statement::LabelOn(l) | Statement::CommentOn(l) => {
-                ddl::label(txn, ctx, l).map(|()| Outcome::Done)
-            }
+            Statement::LabelOn(l) => label::label(txn, ctx, l, false).map(|()| Outcome::Done),
+            Statement::CommentOn(l) => label::label(txn, ctx, l, true).map(|()| Outcome::Done),
             Statement::Merge(m) => dml::merge(txn, ctx, params, m).map(Outcome::Count),
             Statement::SetSchema(target) => {
                 ctx.current_schema = match target {

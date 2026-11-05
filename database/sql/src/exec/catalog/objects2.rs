@@ -58,6 +58,16 @@ fn schema(alias: &str, cols: &[Col], national: &[&str]) -> Schema {
                 let mut f = SqlType::new(k, len, scale, null).to_field();
                 if national.contains(&name) {
                     f.ccsid = Some(NAT);
+                } else if k == Kind::Dbclob {
+                    // IBM's DBCLOB catalog columns not in CCSID 1200.
+                    f.ccsid = Some(13488);
+                }
+                // Named as the column, so a query's description finds it.
+                if let Ok(n) = qsname::Name::parse(&name[..name.len().min(10)]) {
+                    f.name = n;
+                }
+                if name.len() > 10 {
+                    f.alias = Some(name.to_string());
                 }
                 ColInfo { name: name.into(), table: Some(alias.into()), nullable: null, field: Some(f), hidden: false }
             })
@@ -87,7 +97,7 @@ const VARIABLES: &[Col] = &[
     ("CHARACTER_OCTET_LENGTH", Kind::Integer, 0, 0, true),
     ("NUMERIC_PRECISION_RADIX", Kind::Integer, 0, 0, true),
     ("DATETIME_PRECISION", Kind::Integer, 0, 0, true),
-    ("DEFAULT", Kind::Vargraphic, 2000, 0, true),
+    ("DEFAULT", Kind::Dbclob, 2_097_152, 0, true),
     ("IASP_NUMBER", Kind::SmallInt, 0, 0, false),
     ("VARIABLE_TEXT", Kind::Vargraphic, 50, 0, true),
     ("LONG_COMMENT", Kind::Vargraphic, 2000, 0, true),
@@ -141,8 +151,8 @@ const TRIGGERS: &[Col] = &[
     ("EVENT_OBJECT_SCHEMA", V128, 128, 0, false),
     ("EVENT_OBJECT_TABLE", V128, 128, 0, false),
     ("ACTION_ORDER", Kind::Integer, 0, 0, false),
-    ("ACTION_CONDITION", Kind::Vargraphic, 2000, 0, true),
-    ("ACTION_STATEMENT", Kind::Vargraphic, 2000, 0, true),
+    ("ACTION_CONDITION", Kind::Dbclob, 2_097_152, 0, true),
+    ("ACTION_STATEMENT", Kind::Dbclob, 2_097_152, 0, true),
     ("ACTION_ORIENTATION", Kind::Varchar, 9, 0, false),
     ("ACTION_TIMING", Kind::Varchar, 7, 0, false),
     ("TRIGGER_MODE", Kind::Varchar, 6, 0, false),
@@ -162,7 +172,7 @@ const TRIGGERS: &[Col] = &[
     ("TRIGGER_UPDATE_CONDITION", Kind::Char, 8, 0, true),
     ("TRIGGER_DEFINER", V128, 128, 0, false),
     ("TRIGGER_TEXT", Kind::Vargraphic, 50, 0, true),
-    ("LONG_COMMENT", Kind::Vargraphic, 2000, 0, true),
+    ("LONG_COMMENT", Kind::Dbclob, 2000, 0, true),
     ("ROUNDING_MODE", Kind::Char, 1, 0, true),
     ("SYSTEM_TRIGGER_SCHEMA", Kind::Char, 10, 0, false),
     ("SYSTEM_EVENT_OBJECT_SCHEMA", Kind::Char, 10, 0, false),
@@ -325,7 +335,7 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
         "SYSVARIABLES" => (schema(alias, VARIABLES, &nat), variables(txn, ctx)?),
         "SYSVARIABLEDEP" => (schema(alias, VARIABLEDEP, &nat), Vec::new()),
         "SYSTYPES" => (schema(alias, TYPES, &nat), udts(txn, ctx)?),
-        "SYSTRIGGERS" => (schema(alias, TRIGGERS, &nat), triggers(txn, ctx)?),
+        "SYSTRIGGERS" => (schema(alias, TRIGGERS, &["TRIGGER_TEXT"]), triggers(txn, ctx)?),
         "SYSTRIGCOL" => (schema(alias, TRIGCOL, &nat), trigger_uses(txn, ctx, false)?),
         "SYSTRIGDEP" => (schema(alias, TRIGDEP, &nat), trigger_uses(txn, ctx, true)?),
         "SYSTRIGUPD" => (schema(alias, TRIGUPD, &nat), trigger_updates(txn, ctx)?),

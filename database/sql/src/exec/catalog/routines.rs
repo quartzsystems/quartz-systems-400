@@ -40,6 +40,8 @@ enum T {
     Big,
     Stamp,
     Bits,
+    /// `DBCLOB(n)` in a CCSID.
+    Dbclob(u32, u16),
 }
 
 fn col(alias: &str, name: &str, t: T, nullable: bool) -> ColInfo {
@@ -50,12 +52,16 @@ fn col(alias: &str, name: &str, t: T, nullable: bool) -> ColInfo {
         T::Big => (DataType::Binary, 18),
         T::Stamp => (DataType::Timestamp, 26),
         T::Bits => (DataType::Hex, 32_700),
+        T::Dbclob(n, _) => (DataType::Dbclob, n),
     };
     let fname = Name::parse(&name[..name.len().min(10)]).unwrap_or_else(|_| Name::parse("COL").expect("valid"));
     let mut f = FieldDef::new(fname, ty, len, 0);
     f.int_range = ty == DataType::Binary;
     if matches!(t, T::Varchar(_) | T::Bits) {
         f.varlen = Some(dds::VarLen { allocated: None });
+    }
+    if let T::Dbclob(_, ccsid) = t {
+        f.ccsid = Some(ccsid);
     }
     f.allow_null = nullable;
     if name.len() > 10 {
@@ -127,7 +133,7 @@ const ROUTINE_COLS: &[(&str, T, bool, u8)] = &[
     ("PARSE_TREE", T::Bits, false, 1),
     ("PARM_ARRAY", T::Bits, false, 1),
     ("LONG_COMMENT", T::Varchar(2000), true, 7),
-    ("ROUTINE_DEFINITION", T::Varchar(32_740), true, 7),
+    ("ROUTINE_DEFINITION", T::Dbclob(2_097_152, 13488), true, 7),
     ("FUNCTION_ORIGIN", T::Char(1), false, 5),
     ("FUNCTION_TYPE", T::Char(1), false, 5),
     ("EXTERNAL_ACTION", T::Char(1), true, 5),
@@ -271,7 +277,7 @@ fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
         col(alias, "IASP_NUMBER", T::Small, false),
         col(alias, "NORMALIZE_DATA", T::Varchar(3), true),
         // 7.2 and later: a parameter's DEFAULT as written.
-        col(alias, "DEFAULT", T::Varchar(2000), true),
+        col(alias, "DEFAULT", T::Dbclob(65_536, 1200), true),
     ];
     let mut rows: Vec<Row> = Vec::new();
     for f in all {
@@ -305,7 +311,14 @@ fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
                 scale.map_or(Value::Null, int),
                 if numeric { int(len) } else { Value::Null },
                 if char_like && !binary { int(t.ccsid.map_or(37, i64::from)) } else { Value::Null },
-                if char_like { int(len) } else { Value::Null },
+                // A date's and time's maximum length is its characters, as IBM's.
+                match t.data_type {
+                    _ if char_like => int(len),
+                    crate::ast::DataType::Date => int(10),
+                    crate::ast::DataType::Time => int(8),
+                    crate::ast::DataType::Timestamp(p) => int(19 + i64::from(p) + i64::from(p > 0)),
+                    _ => Value::Null,
+                },
                 if char_like { int(octets) } else { Value::Null },
                 if numeric { int(if matches!(t.data_type, crate::ast::DataType::Real | crate::ast::DataType::Double) { 2 } else { 10 }) } else { Value::Null },
                 datetime.map_or(Value::Null, int),

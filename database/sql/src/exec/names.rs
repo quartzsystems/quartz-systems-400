@@ -54,7 +54,18 @@ fn object_candidate(sql: &str, n: u32) -> Option<Name> {
         return Name::parse(&format!("{five}{n:05}")).ok();
     }
     let four: String = sql.chars().take(4).map(|c| if c == ' ' { '_' } else { c }).collect();
+    // Quoted only when the name could not stand unquoted (`"D4 M"` is `D4_M0001`).
+    let first = four.chars().next()?;
+    if (first.is_ascii_uppercase() || "$#@".contains(first)) && four.chars().all(name_char) {
+        return Name::parse(&format!("{four}{n:04}")).ok();
+    }
     Name::parse(&format!("\"{four}{n:04}\"")).ok()
+}
+
+/// Whether `sql` takes the four-character form of a generated name.
+fn four_form(sql: &str) -> bool {
+    let five: String = sql.chars().take(5).collect();
+    !five.chars().next().is_some_and(|c| c.is_ascii_uppercase() || "$#@".contains(c)) || !five.chars().all(name_char)
 }
 
 /// A system name for a long SQL name: the lowest number whose name no
@@ -67,7 +78,7 @@ pub fn generate(
     taken: &dyn Fn(&Name) -> bool,
 ) -> Result<Name> {
     let l = Library::load(txn, lib)?;
-    let limit = if object_candidate(sql, 1).is_some_and(|n| n.is_quoted()) { 9999 } else { 99_999 };
+    let limit = if four_form(sql) { 9999 } else { 99_999 };
     for n in 1..=limit {
         let Some(cand) = object_candidate(sql, n) else {
             break;
@@ -287,6 +298,7 @@ mod tests {
         assert_eq!(object_candidate("CUSTOMER_MASTER_FILE", 1).unwrap().to_string(), "CUSTO00001");
         assert_eq!(object_candidate("A_LONGER_NAME_X", 1).unwrap().to_string(), "A_LON00001");
         assert_eq!(object_candidate("a long lower name", 1).unwrap().to_string(), "\"a_lo0001\"");
+        assert_eq!(object_candidate("D4 Monthly Totals", 1).unwrap().to_string(), "D4_M0001");
         let none = |_: &Name| false;
         assert_eq!(generate_column("lower", &none).to_string(), "LOWER00001");
         assert_eq!(generate_column("Mixed Case Column", &none).to_string(), "MIXED00001");

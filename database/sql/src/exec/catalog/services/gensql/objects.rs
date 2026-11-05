@@ -299,7 +299,8 @@ fn column_labels(fields: &[dds::FieldDef], me: &str, out: &mut Vec<Line>) {
     let name = |f: &dds::FieldDef| ident(&f.alias.clone().unwrap_or_else(|| f.name.to_string()));
     let headings: Vec<String> = fields
         .iter()
-        .filter(|f| !f.colhdg.is_empty())
+        // The heading SQL gives a column (its name) is not written.
+        .filter(|f| !f.colhdg.is_empty() && f.colhdg != crate::exec::ddl::default_heading(&f.alias.clone().unwrap_or_else(|| f.name.to_string())))
         .map(|f| {
             let parts: Vec<String> = f.colhdg.iter().map(|p| format!("{p:<20}")).collect();
             format!("{} IS {}", name(f), literal(parts.concat().trim_end()))

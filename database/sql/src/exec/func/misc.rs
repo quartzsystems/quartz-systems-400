@@ -5,7 +5,7 @@
 //! Binary and miscellaneous scalar functions: `HASH_MD5`, `HASH_SHA1`,
 //! `HASH_SHA256`, `HASH_SHA512` and `HASH` over the string's bytes in
 //! its CCSID, `GENERATE_UNIQUE`, `HEXTORAW`, `VARCHAR_BIT_FORMAT`,
-//! `VARCHAR_FORMAT_BINARY`; the encryption functions refused; and the
+//! `VARCHAR_FORMAT_BINARY`, `BLOB`; the encryption functions refused; and the
 //! names DB2 for i does not have, refused as it refuses them.
 
 #![allow(clippy::many_single_char_names)]
@@ -151,6 +151,22 @@ pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Resul
             }
             Ok(Value::Bin(from_hex(&args[0].as_text())?))
         })(),
+        // A string's bytes as a BLOB, cut to the length given; a number
+        // is no string (`SQL0171`, as the primary).
+        "BLOB" => (|| {
+            arity(name, args, 1, 2)?;
+            if matches!(args[0], Value::Num(_) | Value::Double(_) | Value::Real(_) | Value::DecFloat(_)) {
+                return Err(SqlError::Coded { code: -171, state: "42815", what: "the argument of BLOB must be a string".into() });
+            }
+            if null {
+                return Ok(Value::Null);
+            }
+            let mut b = bytes(&args[0])?;
+            if let Some(n) = args.get(1) {
+                b.truncate(usize::try_from(n.as_i64()?).unwrap_or(0));
+            }
+            Ok(Value::Bin(b))
+        })(),
         "VARCHAR_FORMAT_BINARY" => (|| {
             arity(name, args, 2, 2)?;
             if null {
@@ -205,6 +221,13 @@ pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], exprs: &[crate:
         "GENERATE_UNIQUE" => SqlType::new(Kind::Binary, 13, 0, false),
         "HEXTORAW" | "VARCHAR_BIT_FORMAT" => SqlType::new(Kind::Varbinary, (first.len() / 2).max(1), 0, null),
         "VARCHAR_FORMAT_BINARY" => SqlType::varchar(40, null),
+        "BLOB" => {
+            let n = match exprs.get(1) {
+                Some(crate::ast::Expr::Literal(crate::ast::Literal::Num(n))) => n.parse().unwrap_or(1),
+                _ => first.len().max(1),
+            };
+            SqlType::new(Kind::Blob, n, 0, null)
+        }
         _ => return None,
     })
 }

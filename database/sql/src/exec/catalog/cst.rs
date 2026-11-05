@@ -403,7 +403,7 @@ fn sequences(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<Table> 
                 stamp(h.created),
                 stamp(h.changed.max(h.created)),
                 opt(Some(ccsid::decode_trimmed(&h.text)).filter(|t| !t.is_empty())),
-                Value::Null,
+                opt(db::sqlinf::comment::get(&info, None)),
                 s(lname),
                 s(sys.name.to_string()),
                 i(0),

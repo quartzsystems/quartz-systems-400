@@ -404,10 +404,10 @@ impl Parser {
             is_text: comment,
         };
         // `LABEL ON COLUMN table ( column IS ... )`: the list form, as
-        // GENERATE_SQL writes it.
+        // GENERATE_SQL writes it; COLUMN may be left out.
         let column = self.eat_word("COLUMN");
         let at = self.at;
-        let list = column && self.object_name().is_ok() && self.is_sym("(");
+        let list = self.object_name().is_ok() && self.is_sym("(");
         self.at = at;
         if column && !list {
             let name = self.object_name_and_column()?;
@@ -425,6 +425,12 @@ impl Parser {
         }
         if !list && self.eat_word("TRIGGER") {
             l.target = LabelTarget::Trigger(self.object_name()?);
+            self.expect_word("IS")?;
+            l.text = Some(self.string()?);
+            return Ok(if comment { Statement::CommentOn(l) } else { Statement::LabelOn(l) });
+        }
+        if !list && self.eat_word("SEQUENCE") {
+            l.target = LabelTarget::Sequence(self.object_name()?);
             self.expect_word("IS")?;
             l.text = Some(self.string()?);
             return Ok(if comment { Statement::CommentOn(l) } else { Statement::LabelOn(l) });
