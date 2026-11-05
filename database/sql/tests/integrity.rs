@@ -207,7 +207,7 @@ fn identity_columns_and_sequences() {
         db.ok("INSERT INTO IT.CYC (V) VALUES (0)");
     }
     assert_eq!(db.rows("SELECT ID FROM IT.CYC"), ["3", "4", "1"]);
-    assert_eq!(db.code("CREATE TABLE IT.BAD (ID INT GENERATED ALWAYS AS IDENTITY (MINVALUE 5 MAXVALUE 1))").0, -815);
+    assert_eq!(db.code("CREATE TABLE IT.BAD (ID INT GENERATED ALWAYS AS IDENTITY (MINVALUE 5 MAXVALUE 1))").0, -846);
     db.ok("CREATE SEQUENCE IT.ORDSEQ AS BIGINT START WITH 100 INCREMENT BY 5 MAXVALUE 110");
     assert_eq!(db.code("VALUES PREVIOUS VALUE FOR IT.ORDSEQ"), c(-845, "51035"));
     assert_eq!(db.rows("VALUES NEXT VALUE FOR IT.ORDSEQ"), ["100"]);
@@ -218,10 +218,17 @@ fn identity_columns_and_sequences() {
     db.ok("ALTER SEQUENCE IT.ORDSEQ RESTART WITH 101");
     assert_eq!(db.rows("VALUES NEXT VALUE FOR IT.ORDSEQ"), ["101"]);
     assert_eq!(
-        db.rows("SELECT SEQUENCE_NAME, DATA_TYPE, START, INCREMENT, MAXIMUM_VALUE, CYCLE_OPTION FROM QSYS2.SYSSEQUENCES WHERE SEQUENCE_SCHEMA = 'IT'"),
-        ["ORDSEQ|BIGINT|100|5|110|NO"]
+        db.rows("SELECT SEQUENCE_NAME, DATA_TYPE, START, INCREMENT, MAXIMUM_VALUE, CYCLE_OPTION, MAXASSIGNEDVAL FROM QSYS2.SYSSEQUENCES WHERE SEQUENCE_SCHEMA = 'IT'"),
+        ["ORDSEQ|BIGINT|100|5|110|NO|101"]
     );
     assert_eq!(db.code("CREATE SEQUENCE IT.ORDSEQ").0, -601);
+    // An identity column added numbers the rows there.
+    db.ok("CREATE TABLE IT.ADDID (V INT)");
+    db.ok("INSERT INTO IT.ADDID VALUES (7), (8), (9)");
+    assert_eq!(db.code("ALTER TABLE IT.ADDID ALTER COLUMN V RESTART WITH 3"), c(-190, "42837"));
+    db.ok("ALTER TABLE IT.ADDID ADD COLUMN Z BIGINT GENERATED ALWAYS AS IDENTITY");
+    assert_eq!(db.rows("SELECT V, Z FROM IT.ADDID"), ["7|1", "8|2", "9|3"]);
+    assert_eq!(db.code("ALTER TABLE IT.ADDID ADD COLUMN Y INT GENERATED ALWAYS AS IDENTITY"), c(-372, "428C1"));
     db.ok("DROP SEQUENCE IT.ORDSEQ");
     assert_eq!(db.code("VALUES NEXT VALUE FOR IT.ORDSEQ").0, -204);
 }

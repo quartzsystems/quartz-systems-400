@@ -53,6 +53,8 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
     let mut cols = seq::columns(txn, id)?;
     let mut touched = false;
     let mut restart: Option<i128> = None;
+    // An identity column added: the rows there are numbered, in RRN order.
+    let mut number: Option<Name> = None;
     let find = |rf: &dds::RecordFormat, name: &Ident| -> Result<usize> {
         let n = super::cst::field_name(rf, name)?;
         Ok(rf.field(&n).expect("found").0)
@@ -70,11 +72,7 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
                         if cols.iter().any(|x| matches!(x.kind, ColumnKind::Identity(_))) || rf.fields.iter().any(|x| x.identity.is_some()) {
                             return Err(err(-372, "428C1", "a table has one identity column at most"));
                         }
-                        if records(txn, &table)? > 0 {
-                            return Err(SqlError::Unsupported {
-                                what: "adding an identity column to a table with rows; BLOCKED(sql): existing rows are not numbered".into(),
-                            });
-                        }
+                        number = Some(f.name);
                         if let ColumnKind::Identity(a) = e.kind {
                             restart = Some(a.start);
                         }
@@ -114,7 +112,7 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
                 };
                 let mut f = field_of(&c)?;
                 if old.identity.is_some() && super::column::type_range(&ts.data_type).is_none() {
-                    return Err(err(-574, "42894", format!("identity column {} must stay an integer or DECIMAL(n, 0)", name.value)));
+                    return Err(err(-846, "42815", format!("identity column {} must stay an integer or DECIMAL(n, 0)", name.value)));
                 }
                 f.name = old.name;
                 f.text = old.text;
@@ -149,7 +147,7 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
                 let i = find(&rf, column)?;
                 let f = &mut rf.fields[i];
                 let Some(ident) = f.identity.as_mut() else {
-                    return Err(err(-372, "428C1", format!("column {} is not an identity column", column.value)));
+                    return Err(err(-190, "42837", format!("column {} is not an identity column", column.value)));
                 };
                 if let Some(a) = always {
                     ident.always = *a;
@@ -187,7 +185,7 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
             AlterAction::DropIdentity(column) => {
                 let i = find(&rf, column)?;
                 if rf.fields[i].identity.take().is_none() {
-                    return Err(err(-372, "428C1", format!("column {} is not an identity column", column.value)));
+                    return Err(err(-190, "42837", format!("column {} is not an identity column", column.value)));
                 }
                 let n = rf.fields[i].name;
                 cols.retain(|c| c.field != n);
@@ -199,7 +197,7 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
                 let before = cols.len();
                 cols.retain(|c| !(c.field == n && matches!(c.kind, ColumnKind::RowChange(_) | ColumnKind::Audit(..) | ColumnKind::Expr(_))));
                 if cols.len() == before {
-                    return Err(err(-372, "428C1", format!("column {} is not generated", column.value)));
+                    return Err(err(-190, "42837", format!("column {} is not generated", column.value)));
                 }
             }
             _ => {}
@@ -211,6 +209,9 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
     seq::store_columns(txn, id, &cols, ctx.clock())?;
     if let Some(r) = restart {
         super::column::set_counter(txn, id, r)?;
+    }
+    if let Some(field) = number {
+        number_rows(txn, id, field)?;
     }
     // 3. Constraints added, over the new format.
     let new_rf = file::describe(txn, id)?.formats[0].format.clone();
@@ -228,12 +229,28 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
     Ok(())
 }
 
-fn records(txn: &mut Txn<'_>, t: &TableInfo) -> Result<u64> {
-    let mut n = 0;
-    for e in &t.desc.members {
-        n += db::member::Core::load(txn, e.object)?.attr.record_count;
+/// Give each row of the table the identity column's next value.
+fn number_rows(txn: &mut Txn<'_>, id: store::obj::ObjectId, field: Name) -> Result<()> {
+    let desc = file::describe(txn, id)?;
+    for e in &desc.members {
+        let mut m = db::member::Member::open(txn, &desc, e)?;
+        let (fi, f) = m.format().format.field(&field).map(|(i, f)| (i, f.clone())).expect("added");
+        let _ = fi;
+        let mut rrn = 1;
+        loop {
+            let slots = m.scan(txn, rrn, 256)?;
+            let Some(last) = slots.last() else { break };
+            rrn = last.rrn + 1;
+            for s in &slots {
+                let v = m.next_identity(txn)?.unwrap_or(1);
+                let mut rec = s.record.clone();
+                let d = qdecimal::Decimal::new(i128::from(v), 0).expect("fits");
+                db::record::write_field(&f, &mut rec, &db::Value::Num(d))?;
+                m.update(txn, s.rrn, &rec, &s.null_map)?;
+            }
+        }
     }
-    Ok(n)
+    Ok(())
 }
 
 fn is_key_column(txn: &mut Txn<'_>, id: store::obj::ObjectId, col: Name) -> Result<bool> {

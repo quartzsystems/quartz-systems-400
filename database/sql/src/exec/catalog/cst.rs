@@ -345,45 +345,83 @@ fn sequences(txn: &mut Txn<'_>, ctx: &SqlContext, alias: &str) -> Result<Table> 
             let (ty, p) = match q.data_type {
                 1 => ("SMALLINT", 5),
                 3 => ("BIGINT", 19),
-                4 => ("DECIMAL", u32::from(q.precision)),
-                5 => ("NUMERIC", u32::from(q.precision)),
+                4 => ("DECIMAL", usize::from(q.precision)),
+                5 => ("NUMERIC", usize::from(q.precision)),
                 _ => ("INTEGER", 10),
             };
             let d = |v: i128| Value::Num(qdecimal::Decimal::new(v, 0).expect("fits"));
+            // The highest value given: none before the first.
+            let assigned = if q.exhausted {
+                d(q.next)
+            } else if q.next == q.attrs.start {
+                Value::Null
+            } else {
+                d(q.next - q.attrs.increment)
+            };
+            let stamp = |secs: u64| {
+                Value::Timestamp(crate::value::Timestamp::new(
+                    db::record::datetime::Date::from_unix(secs),
+                    db::record::datetime::Time::from_unix(secs),
+                    0,
+                ))
+            };
             let lname = lib.to_string();
             rows.push(vec![
                 s(lname.clone()),
                 s(info.name().unwrap_or_else(|| sys.name.to_string())),
-                s(ccsid::decode_trimmed(&h.owner)),
-                s(ty),
-                i(usize::try_from(p).unwrap_or(0)),
-                d(q.attrs.start),
-                d(q.attrs.min),
                 d(q.attrs.max),
-                d(q.attrs.increment),
+                d(q.attrs.min),
+                Value::int(i64::try_from(q.attrs.increment).unwrap_or(0)),
                 s(if q.attrs.cycle { "YES" } else { "NO" }),
                 i(q.attrs.cache as usize),
                 s(if q.attrs.order { "YES" } else { "NO" }),
-                s(sys.name.to_string()),
+                s(ty),
+                i(p),
+                Value::Null,
+                Value::Null,
+                d(q.attrs.start),
+                assigned,
+                s(ccsid::decode_trimmed(&h.owner)),
+                stamp(h.created),
+                stamp(h.changed.max(h.created)),
+                opt(Some(ccsid::decode_trimmed(&h.text)).filter(|t| !t.is_empty())),
+                Value::Null,
                 s(lname),
+                s(sys.name.to_string()),
+                i(0),
             ]);
         }
     }
+    let ts = |n: &str| {
+        let mut ci = c(n, T::Fix(26), false);
+        if let Some(f) = ci.field.as_mut() {
+            *f = FieldDef::new(f.name, DataType::Timestamp, 26, 0);
+        }
+        ci
+    };
     let cols = vec![
         c("SEQUENCE_SCHEMA", T::Var(128), false),
         c("SEQUENCE_NAME", T::Var(128), false),
-        c("SEQUENCE_DEFINER", T::Var(128), false),
-        c("DATA_TYPE", T::Var(128), false),
-        c("NUMERIC_PRECISION", T::Int, false),
-        c("START", T::Dec(31), false),
-        c("MINIMUM_VALUE", T::Dec(31), false),
-        c("MAXIMUM_VALUE", T::Dec(31), false),
-        c("INCREMENT", T::Dec(31), false),
+        c("MAXIMUM_VALUE", T::Dec(63), false),
+        c("MINIMUM_VALUE", T::Dec(63), false),
+        c("INCREMENT", T::Int, false),
         c("CYCLE_OPTION", T::Var(3), false),
         c("CACHE", T::Int, false),
         c("ORDER", T::Var(3), false),
-        c("SYSTEM_SEQUENCE_NAME", T::Fix(10), false),
-        c("SYSTEM_SEQUENCE_SCHEMA", T::Fix(10), false),
+        c("DATA_TYPE", T::Var(128), false),
+        c("NUMERIC_PRECISION", T::Int, false),
+        c("USER_DEFINED_TYPE_SCHEMA", T::Var(128), true),
+        c("USER_DEFINED_TYPE_NAME", T::Var(128), true),
+        c("START", T::Dec(63), false),
+        c("MAXASSIGNEDVAL", T::Dec(63), true),
+        c("SEQUENCE_DEFINER", T::Var(128), false),
+        ts("SEQUENCE_CREATED"),
+        ts("LAST_ALTERED_TIMESTAMP"),
+        c("SEQUENCE_TEXT", T::NVar(50), true),
+        c("LONG_COMMENT", T::NVar(2000), true),
+        c("SYSTEM_SEQ_SCHEMA", T::Fix(10), false),
+        c("SYSTEM_SEQ_NAME", T::Fix(10), false),
+        c("IASP_NUMBER", T::Small, false),
     ];
     let _ = T::Big;
     Ok((Schema { cols }, rows))

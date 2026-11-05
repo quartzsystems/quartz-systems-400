@@ -695,7 +695,7 @@ vars = ["*CHAR 128"]
 id = "SQL0683"
 sev = 30
 text = "A clause is not valid for the data type of &1."
-help = "FOR BIT DATA, CCSID or another option was given to a type that does not take it, for example FOR BIT DATA on a CLOB. Remove the clause."
+help = "FOR BIT DATA, CCSID or another option was given to a type that does not take it, for example FOR BIT DATA on a CLOB. A row change timestamp column is a TIMESTAMP. Remove the clause or change the type."
 vars = ["*CHAR 128"]
 
 [[msg]]
@@ -727,13 +727,6 @@ help = "Rows of the table hold foreign key values the parent table does not have
 vars = ["*CHAR 128"]
 
 [[msg]]
-id = "SQL0815"
-sev = 30
-text = "The values of the identity column or sequence &1 are not consistent."
-help = "INCREMENT BY is not zero, MINVALUE is less than MAXVALUE, and START WITH and RESTART WITH lie between them, all within the data type."
-vars = ["*CHAR 128"]
-
-[[msg]]
 id = "SQL0845"
 sev = 30
 text = "PREVIOUS VALUE for sequence &1 is not yet set in this job."
@@ -746,3 +739,17 @@ sev = 30
 text = "Constraint &1 of table &2 is in check pending."
 help = "Rows of the table break the constraint, which was enabled again. Correct the rows (EDTCPCST, DSPCPCST show them) or disable the constraint."
 vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0190"
+sev = 30
+text = "Column &1 in &2 in &3 cannot be changed that way."
+help = "The change asked of the column does not fit what the column is: only an identity column can be restarted or lose its identity, only a generated column can stop being generated."
+vars = ["*CHAR 128", "*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0846"
+sev = 30
+text = "The attributes of identity column or sequence &1 are not valid."
+help = "An identity column or sequence is an integer, or DECIMAL or NUMERIC with no scale; MINVALUE is not above MAXVALUE, and START WITH and RESTART WITH lie between them, all within the data type."
+vars = ["*CHAR 128"]

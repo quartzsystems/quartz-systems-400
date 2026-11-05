@@ -130,8 +130,8 @@ pub(super) fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
         // The full attributes are the table's `COLUMN` entry (`column`);
         // the field keeps what four bytes hold.
         let range = super::column::type_range(&c.type_spec.data_type).ok_or_else(|| SqlError::Integrity {
-            sqlcode: -574,
-            sqlstate: "42894",
+            sqlcode: -846,
+            sqlstate: "42815",
             what: format!("identity column {} must be an integer or DECIMAL(n, 0)", c.name.value),
         })?;
         let a = super::column::attrs(id, range, &format!("identity column {}", c.name.value))?;

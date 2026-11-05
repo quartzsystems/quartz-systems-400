@@ -89,7 +89,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateSequence) -> Re
     }
     let t = c.data_type.as_ref().map_or(DataType::Integer, |t| t.data_type.clone());
     let Some((code, p)) = type_code(&t) else {
-        return Err(err(-604, "42611", format!("a sequence cannot be of type {t:?}")));
+        return Err(err(-846, "42815", format!("a sequence cannot be of type {t:?}")));
     };
     let range = super::column::type_range(&t).expect("an integer type");
     let attrs = super::column::attrs(&c.options, range, &format!("sequence {}", c.name.name.value))?;
@@ -139,7 +139,7 @@ pub fn alter(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName, o: &Ide
         s.next = r.unwrap_or(s.attrs.start);
         s.exhausted = false;
         if !s.attrs.holds(s.next) {
-            return Err(err(-815, "42815", format!("RESTART WITH {} is outside the range of sequence {}", s.next, name.name.value)));
+            return Err(err(-846, "42815", format!("RESTART WITH {} is outside the range of sequence {}", s.next, name.name.value)));
         }
     }
     save(txn, id, &s, ctx.clock())

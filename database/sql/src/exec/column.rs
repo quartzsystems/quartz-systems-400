@@ -42,23 +42,20 @@ pub fn type_range(t: &DataType) -> Option<(i128, i128)> {
 /// primary, `oracle/integrity/`).
 pub fn attrs(id: &ast::Identity, range: (i128, i128), what: &str) -> Result<SeqAttrs> {
     let increment = id.increment.unwrap_or(1);
-    if increment == 0 {
-        return Err(err(-815, "42815", format!("INCREMENT BY 0 is not valid for {what}")));
-    }
     let up = increment > 0;
     let min = id.min.flatten().unwrap_or(if up { 1 } else { range.0 });
     let max = id.max.flatten().unwrap_or(if up { range.1 } else { -1 });
     let start = id.start.unwrap_or(if up { min } else { max });
     for v in [min, max, start] {
         if v < range.0 || v > range.1 {
-            return Err(err(-815, "42815", format!("value {v} is outside the range of {what}")));
+            return Err(err(-846, "42815", format!("value {v} is outside the range of {what}")));
         }
     }
-    if min >= max {
-        return Err(err(-815, "42815", format!("MINVALUE must be less than MAXVALUE for {what}")));
+    if min > max {
+        return Err(err(-846, "42815", format!("MINVALUE must be less than MAXVALUE for {what}")));
     }
     if start < min || start > max {
-        return Err(err(-815, "42815", format!("START WITH {start} is outside MINVALUE and MAXVALUE of {what}")));
+        return Err(err(-846, "42815", format!("START WITH {start} is outside MINVALUE and MAXVALUE of {what}")));
     }
     // The counter is eight bytes: a DECIMAL identity past them waits.
     if i64::try_from(min).is_err() || i64::try_from(max).is_err() {
@@ -89,9 +86,11 @@ pub fn check_generated(c: &ast::ColumnDef) -> Result<()> {
         });
     }
     match &c.generated {
-        Some(Generated::Expr(_)) => Err(SqlError::Unsupported { what: "GENERATED ALWAYS AS (expression) columns".into() }),
+        // IBM generates identities, row change timestamps and auditing
+        // columns only: an expression is a syntax error there.
+        Some(Generated::Expr(_)) => Err(err(-104, "42601", "GENERATED ALWAYS AS ( expects IDENTITY or an auditing value")),
         Some(Generated::RowChangeTimestamp { .. }) if !matches!(c.type_spec.data_type, DataType::Timestamp(_)) => {
-            Err(err(-574, "42894", format!("column {} must be a TIMESTAMP to be a row change timestamp", c.name.value)))
+            Err(err(-683, "42842", format!("column {} must be a TIMESTAMP to be a row change timestamp", c.name.value)))
         }
         Some(Generated::Audit { what, .. }) if what == "DATA CHANGE OPERATION" && !matches!(c.type_spec.data_type, DataType::Char(1)) => {
             Err(err(-574, "42894", format!("column {} must be CHAR(1) to record the data change operation", c.name.value)))
@@ -111,7 +110,7 @@ pub fn check_generated(c: &ast::ColumnDef) -> Result<()> {
 pub fn entry_of(c: &ast::ColumnDef, f: &FieldDef) -> Result<Option<SqlColumn>> {
     let kind = if let Some(id) = &c.identity {
         let range = type_range(&c.type_spec.data_type).ok_or_else(|| {
-            err(-574, "42894", format!("identity column {} must be an integer or DECIMAL(n, 0)", c.name.value))
+            err(-846, "42815", format!("identity column {} must be an integer or DECIMAL(n, 0)", c.name.value))
         })?;
         ColumnKind::Identity(attrs(id, range, &format!("identity column {}", c.name.value))?)
     } else {
