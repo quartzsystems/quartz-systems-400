@@ -681,6 +681,13 @@ help = "The cast between these two data types is not allowed. Cast through an in
 vars = ["*CHAR 128", "*CHAR 128"]
 
 [[msg]]
+id = "SQL0462"
+sev = 10
+text = "Routine &1 in &2 ended with a warning."
+help = "The procedure or function finished, but reported a condition worth checking, such as finding nothing to work on. The SQLSTATE says which."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
 id = "SQ20365"
 sev = 30
 text = "A signaling NaN was met, or a DECFLOAT operation failed."
