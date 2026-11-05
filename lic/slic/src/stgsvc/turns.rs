@@ -323,6 +323,9 @@ fn start_sql(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
         entered: Cell::new(entered),
     });
     engine.ctx.yielder = Some(yielder(Rc::clone(&turn)));
+    // BLOCKED(sql): engine.ctx.triggers, the fiber's trigger caller
+    // (docs/STORAGE_SERVICE.md "Trigger programs"); without it a change
+    // of a table with triggers is refused.
     let req = sql::embed::Request {
         scope,
         desc,

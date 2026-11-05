@@ -368,6 +368,54 @@ every other request, and with the other statements in progress.
   between two of a commit cycle's requests would.
 
 
+## Trigger programs
+
+A trigger program (`ADDPFTRG`, `docs/DB_FORMAT.md` §8.1 and §8.3) runs in
+the job that changes or reads the record, as on IBM i: its own requests,
+its activation group and its job log are that job's. The change itself
+is made in the service. The open data path never calls a program; it
+makes its calls through its trigger mode (`db::trg::Mode`):
+
+- `Refuse` (a new path's): a change or read any trigger of the file fires
+  for is refused before anything changes (`CPF502B`; SQL `SQL0084`).
+  Functions that run wholly in the service use it: the console, `CPYF`,
+  `DFU`, `FTP`, the DDM server, a statement not on a fiber (all
+  BLOCKED(sql) until each can reach its job).
+- `Defer`, record I/O (`mi::io::trigger`): the job's open says it calls
+  triggers (`OpenSpec.triggers`). An operation with before triggers
+  answers status `TRIGGERS_DUE` with their buffers and changes nothing;
+  the record read for update stays held. The job calls the programs in
+  order, a before trigger with `ALWREPCHG(*YES)` passing its new record
+  on, and gives the same operation again with the answer
+  (`TriggerResume`): the last changed buffer, or the call that failed.
+  The path takes the answer only for the operation it handed the calls
+  out for. The constraints are checked on the record the triggers left,
+  the change is made and its transaction ends with the request; the
+  reply carries the after calls, which the job makes then. A before
+  failure is status 01023, an after one 01024 (the change stays, as on
+  the primary without commitment control), both `CPF502B`. Nothing of
+  the service waits on the job meanwhile, so the program's own requests
+  (other files, the same file through another open) are ordinary ones.
+- `Call`, SQL (`SqlContext::triggers`): a statement fires triggers row by
+  row, so the calls are made in the middle of it through a
+  `db::trg::Caller`. The service's caller commits what the statement
+  wrote so far (`Txn::commit_part`, as a yield does), suspends the
+  statement's fiber and answers the job's request with a call plan of
+  style trigger (the buffer and its length); the connection is read
+  again, so the program's own requests are served; the job's
+  `Op::Called` with the buffer back resumes the fiber, the member is read
+  again, and the statement goes on. BLOCKED(sql): the service's caller
+  and the job's side of it are not built yet; until they are, an SQL
+  change of a table with triggers is refused with `SQL0084`. The engine's
+  side is: `tests/trigger.rs` of `database/sql` runs it with a caller in
+  memory (`SQL0443`/38501 for a refusal, `SQL0204` for a program not
+  found, as the primary).
+
+Read triggers fire for record I/O of a physical file; a query of a table
+with read triggers and a read through a logical file over one are
+refused (BLOCKED(sql)). `ALWREPCHG(*NO)` on an after trigger does not
+yet refuse the program's own change of the same record (BLOCKED(sql)).
+
 ## The service console
 
 `slic` keeps the serial line. After the IPL it starts `QSVCJOB` and
