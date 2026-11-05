@@ -4,10 +4,10 @@
 
 //! The statement prompts F4 shows: Specify SELECT, INSERT, UPDATE,
 //! DELETE, CREATE TABLE, CREATE VIEW and CREATE INDEX Statement, each
-//! a table of items placed as the goldens place them, and the second
-//! displays some of them lead to (the values to insert, the columns to
-//! set, the index's key). Field names are the ones
-//! [`crate::assemble`] reads.
+//! a table of items placed as the goldens place them (the displays
+//! after them are [`super::columns`]'s, the other statements'
+//! [`super::stmt`]'s). Field names are the ones [`crate::assemble`]
+//! reads.
 
 use uim::Screen;
 use uim::render::Attr;
@@ -141,8 +141,6 @@ const NAME_KEYS: &[(usize, usize, &str)] = &[
     (22, 50, "F20=Display entire name"),
     (23, 2, "F21=Display statement"),
 ];
-
-const SHORT_KEYS: &[(usize, usize, &str)] = &[(23, 2, "F3=Exit"), (23, 12, "F12=Cancel")];
 
 const YES_NO: &[(usize, &str)] = &[(60, "Y=Yes, N=No")];
 
@@ -620,121 +618,11 @@ pub const CREATE_INDEX: Prompt = Prompt {
     bottom: None,
 };
 
-/// The second INSERT display: the columns and the values (or the
-/// subselect).
-pub const INSERT_VALUES: Prompt = Prompt {
-    title_col: 29,
-    title: "Specify INSERT Statement",
-    items: &[
-        Item::Text {
-            row: 3,
-            col: 2,
-            attr: Attr::Blue,
-            text: same("Type the values to insert, press Enter."),
-        },
-        Item::Text {
-            row: 5,
-            col: 2,
-            attr: Attr::HighIntensity,
-            text: named("Fields, in order", "Columns, in order"),
-        },
-        Item::Lines {
-            row: 6,
-            col: 4,
-            width: 73,
-            count: 3,
-            name: "COLUMNS",
-        },
-        Item::Text {
-            row: 10,
-            col: 2,
-            attr: Attr::HighIntensity,
-            text: same("VALUES, or a subselect"),
-        },
-        Item::Lines {
-            row: 11,
-            col: 4,
-            width: 73,
-            count: 6,
-            name: "VALUES",
-        },
-    ],
-    keys: SHORT_KEYS,
-    bottom: None,
-};
-
-/// The second UPDATE display: what to set and where.
-pub const UPDATE_SET: Prompt = Prompt {
-    title_col: 29,
-    title: "Specify UPDATE Statement",
-    items: &[
-        Item::Text {
-            row: 3,
-            col: 2,
-            attr: Attr::Blue,
-            text: same("Type the changes as NAME = value, press Enter."),
-        },
-        Item::Text {
-            row: 5,
-            col: 2,
-            attr: Attr::HighIntensity,
-            text: same("SET"),
-        },
-        Item::Lines {
-            row: 6,
-            col: 4,
-            width: 73,
-            count: 5,
-            name: "SET",
-        },
-        Item::Text {
-            row: 12,
-            col: 2,
-            attr: Attr::HighIntensity,
-            text: same("WHERE conditions"),
-        },
-        Item::Lines {
-            row: 13,
-            col: 4,
-            width: 73,
-            count: 4,
-            name: "WHERE",
-        },
-    ],
-    keys: SHORT_KEYS,
-    bottom: None,
-};
-
-/// The second CREATE INDEX display: the key.
-pub const INDEX_KEY: Prompt = Prompt {
-    title_col: 26,
-    title: "Specify CREATE INDEX Statement",
-    items: &[
-        Item::Text {
-            row: 3,
-            col: 2,
-            attr: Attr::Blue,
-            text: named(
-                "Type the key fields, each with ASC or DESC, press Enter.",
-                "Type the key columns, each with ASC or DESC, press Enter.",
-            ),
-        },
-        Item::Lines {
-            row: 5,
-            col: 4,
-            width: 73,
-            count: 4,
-            name: "COLUMNS",
-        },
-    ],
-    keys: SHORT_KEYS,
-    bottom: None,
-};
-
 /// The prompt a statement opens with.
+/// `None` for those of [`super::stmt`].
 #[must_use]
-pub fn of(kind: Kind) -> &'static Prompt {
-    match kind {
+pub fn of(kind: Kind) -> Option<&'static Prompt> {
+    Some(match kind {
         Kind::Select => &SELECT,
         Kind::Insert => &INSERT,
         Kind::Update => &UPDATE,
@@ -742,7 +630,8 @@ pub fn of(kind: Kind) -> &'static Prompt {
         Kind::CreateTable => &CREATE_TABLE,
         Kind::CreateView => &CREATE_VIEW,
         Kind::CreateIndex => &CREATE_INDEX,
-    }
+        _ => return None,
+    })
 }
 
 /// The columns of CREATE TABLE's column table: name, column, width.

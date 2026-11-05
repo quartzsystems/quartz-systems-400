@@ -613,7 +613,6 @@ devtools/isql/src/screen/prompt.rs	2=Specify names
 devtools/isql/src/screen/prompt.rs	2=Subselect
 devtools/isql/src/screen/prompt.rs	Column
 devtools/isql/src/screen/prompt.rs	Column names for view
-devtools/isql/src/screen/prompt.rs	Columns, in order
 devtools/isql/src/screen/prompt.rs	Correlation
 devtools/isql/src/screen/prompt.rs	Correlation
 devtools/isql/src/screen/prompt.rs	DISTINCT records in result file
@@ -625,7 +624,6 @@ devtools/isql/src/screen/prompt.rs	F11=Display more attributes
 devtools/isql/src/screen/prompt.rs	F12=Cancel
 devtools/isql/src/screen/prompt.rs	F12=Cancel
 devtools/isql/src/screen/prompt.rs	F12=Cancel
-devtools/isql/src/screen/prompt.rs	F12=Cancel
 devtools/isql/src/screen/prompt.rs	F14=Delete line
 devtools/isql/src/screen/prompt.rs	F14=Delete line
 devtools/isql/src/screen/prompt.rs	F15=Split line
@@ -633,7 +631,6 @@ devtools/isql/src/screen/prompt.rs	F20=Display entire name
 devtools/isql/src/screen/prompt.rs	F21=Display statement
 devtools/isql/src/screen/prompt.rs	F24=More keys
 devtools/isql/src/screen/prompt.rs	F24=More keys
-devtools/isql/src/screen/prompt.rs	F3=Exit
 devtools/isql/src/screen/prompt.rs	F3=Exit
 devtools/isql/src/screen/prompt.rs	F3=Exit
 devtools/isql/src/screen/prompt.rs	F3=Exit
@@ -654,7 +651,6 @@ devtools/isql/src/screen/prompt.rs	FROM files
 devtools/isql/src/screen/prompt.rs	FROM tables
 devtools/isql/src/screen/prompt.rs	Field
 devtools/isql/src/screen/prompt.rs	Field names for view
-devtools/isql/src/screen/prompt.rs	Fields, in order
 devtools/isql/src/screen/prompt.rs	File
 devtools/isql/src/screen/prompt.rs	File
 devtools/isql/src/screen/prompt.rs	File
@@ -702,14 +698,11 @@ devtools/isql/src/screen/prompt.rs	Scale
 devtools/isql/src/screen/prompt.rs	Select columns to insert
 devtools/isql/src/screen/prompt.rs	Select fields to insert
 devtools/isql/src/screen/prompt.rs	Specify CREATE INDEX Statement
-devtools/isql/src/screen/prompt.rs	Specify CREATE INDEX Statement
 devtools/isql/src/screen/prompt.rs	Specify CREATE TABLE Statement
 devtools/isql/src/screen/prompt.rs	Specify CREATE VIEW Statement
 devtools/isql/src/screen/prompt.rs	Specify DELETE Statement
 devtools/isql/src/screen/prompt.rs	Specify INSERT Statement
-devtools/isql/src/screen/prompt.rs	Specify INSERT Statement
 devtools/isql/src/screen/prompt.rs	Specify SELECT Statement
-devtools/isql/src/screen/prompt.rs	Specify UPDATE Statement
 devtools/isql/src/screen/prompt.rs	Specify UPDATE Statement
 devtools/isql/src/screen/prompt.rs	Specify additional options
 devtools/isql/src/screen/prompt.rs	Table
@@ -726,14 +719,8 @@ devtools/isql/src/screen/prompt.rs	Type choices, press Enter.
 devtools/isql/src/screen/prompt.rs	Type choices, press Enter.
 devtools/isql/src/screen/prompt.rs	Type information, press Enter.
 devtools/isql/src/screen/prompt.rs	Type of Index
-devtools/isql/src/screen/prompt.rs	Type the changes as NAME = value, press Enter.
-devtools/isql/src/screen/prompt.rs	Type the key columns, each with ASC or DESC, press Enter.
-devtools/isql/src/screen/prompt.rs	Type the key fields, each with ASC or DESC, press Enter.
-devtools/isql/src/screen/prompt.rs	Type the values to insert, press Enter.
 devtools/isql/src/screen/prompt.rs	UNION with another SELECT
-devtools/isql/src/screen/prompt.rs	VALUES, or a subselect
 devtools/isql/src/screen/prompt.rs	View
-devtools/isql/src/screen/prompt.rs	WHERE conditions
 devtools/isql/src/screen/prompt.rs	WHERE conditions
 devtools/isql/src/screen/prompt.rs	WITH isolation level
 devtools/isql/src/screen/prompt.rs	WITH isolation level
@@ -3569,7 +3556,6 @@ work/qsjob/src/devtools/dfu/temp.rs	{} the file {} could not be opened.
 work/qsjob/src/devtools/isql/mod.rs	Place the cursor on an input line for this key.
 work/qsjob/src/devtools/isql/prompts.rs	the file
 work/qsjob/src/devtools/isql/prompts.rs	the index
-work/qsjob/src/devtools/isql/prompts.rs	the key
 work/qsjob/src/devtools/isql/prompts.rs	the name
 work/qsjob/src/devtools/isql/prompts.rs	the view
 work/qsjob/src/devtools/isql/run.rs	Cause . . . . . :   

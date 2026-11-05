@@ -7,12 +7,14 @@
 //! `uim::Screen` the job puts on its display; input fields name what
 //! they hold with their `Target`.
 
+pub mod columns;
 pub mod data;
 pub mod enter;
 pub mod lists;
 pub mod menus;
 pub mod prompt;
 pub mod services;
+pub mod stmt;
 
 pub use uim::Screen;
 use uim::model::{Shift, Usage};

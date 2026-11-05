@@ -164,7 +164,7 @@ fn files(host: &Host, libs: &[String]) -> Vec<Entry> {
 }
 
 /// The fields of the chosen files.
-fn fields(host: &Host, files: &[(String, String)]) -> Vec<Entry> {
+pub(super) fn fields(host: &Host, files: &[(String, String)]) -> Vec<Entry> {
     let mut out = Vec::new();
     for (lib, file) in files {
         let q = format!(

@@ -32,6 +32,58 @@ pub enum Kind {
     CreateView,
     /// `CREATE INDEX`.
     CreateIndex,
+    /// `ALTER TABLE`.
+    AlterTable,
+    /// `CALL`.
+    Call,
+    /// `COMMENT ON`.
+    CommentOn,
+    /// `COMMIT`.
+    Commit,
+    /// `CONNECT`.
+    Connect,
+    /// `CREATE ALIAS`.
+    CreateAlias,
+    /// `CREATE COLLECTION`.
+    CreateCollection,
+    /// `CREATE PROCEDURE`.
+    CreateProcedure,
+    /// `DISCONNECT`.
+    Disconnect,
+    /// `DROP ALIAS`.
+    DropAlias,
+    /// `DROP COLLECTION`.
+    DropCollection,
+    /// `DROP INDEX`.
+    DropIndex,
+    /// `DROP PACKAGE`.
+    DropPackage,
+    /// `DROP TABLE`.
+    DropTable,
+    /// `DROP VIEW`.
+    DropView,
+    /// `GRANT` on a package.
+    GrantPackage,
+    /// `GRANT` on a table.
+    GrantTable,
+    /// `LABEL ON`.
+    LabelOn,
+    /// `LOCK TABLE`.
+    LockTable,
+    /// `RENAME`.
+    Rename,
+    /// `RELEASE`.
+    Release,
+    /// `REVOKE` on a package.
+    RevokePackage,
+    /// `REVOKE` on a table.
+    RevokeTable,
+    /// `ROLLBACK`.
+    Rollback,
+    /// `SET CONNECTION`.
+    SetConnection,
+    /// `SET TRANSACTION`.
+    SetTransaction,
 }
 
 /// The statements the prompt list offers, in its order.
@@ -64,10 +116,49 @@ pub fn kind_of(text: &str) -> Option<Kind> {
             ("TABLE", _) => Kind::CreateTable,
             ("VIEW", _) => Kind::CreateView,
             ("INDEX", _) | ("UNIQUE", "INDEX") => Kind::CreateIndex,
+            ("ALIAS", _) => Kind::CreateAlias,
+            ("COLLECTION" | "SCHEMA", _) => Kind::CreateCollection,
+            ("PROCEDURE", _) => Kind::CreateProcedure,
             _ => return None,
         },
+        "DROP" => match w(1) {
+            "ALIAS" => Kind::DropAlias,
+            "COLLECTION" | "SCHEMA" => Kind::DropCollection,
+            "INDEX" => Kind::DropIndex,
+            "PACKAGE" => Kind::DropPackage,
+            "TABLE" => Kind::DropTable,
+            "VIEW" => Kind::DropView,
+            _ => return None,
+        },
+        "ALTER" if w(1) == "TABLE" => Kind::AlterTable,
+        "LOCK" if w(1) == "TABLE" => Kind::LockTable,
+        "COMMENT" if w(1) == "ON" => Kind::CommentOn,
+        "LABEL" if w(1) == "ON" => Kind::LabelOn,
+        "SET" if w(1) == "CONNECTION" => Kind::SetConnection,
+        "SET" if w(1) == "TRANSACTION" => Kind::SetTransaction,
+        "CALL" => Kind::Call,
+        "COMMIT" => Kind::Commit,
+        "ROLLBACK" => Kind::Rollback,
+        "CONNECT" => Kind::Connect,
+        "DISCONNECT" => Kind::Disconnect,
+        "RELEASE" => Kind::Release,
+        "RENAME" => Kind::Rename,
+        // GRANT and REVOKE are prompted from the list only: typed, F4
+        // checks them (pub400 says SQL0104 for `grant package`).
         _ => return None,
     })
+}
+
+/// The statement an entry of Select SQL Statement names.
+#[must_use]
+pub fn listed(entry: &str) -> Option<Kind> {
+    match entry {
+        "GRANT PACKAGE" => Some(Kind::GrantPackage),
+        "GRANT TABLE" => Some(Kind::GrantTable),
+        "REVOKE PACKAGE" => Some(Kind::RevokePackage),
+        "REVOKE TABLE" => Some(Kind::RevokeTable),
+        other => kind_of(other),
+    }
 }
 
 fn get(v: &Values, k: &str) -> String {
@@ -229,6 +320,7 @@ pub fn build(kind: Kind, v: &Values, sql_naming: bool) -> Result<String, IsqlErr
             s.push_str(&qualified(&get(v, "TABLELIB"), &table, sql_naming));
             let _ = write!(s, " ({cols})");
         }
+        _ => return crate::stmts::build(kind, v, sql_naming),
     }
     Ok(s)
 }
@@ -465,6 +557,7 @@ pub fn fields_of(kind: Kind, text: &str) -> Values {
                 put("UNIQUE", "Y".into());
             }
         }
+        _ => return crate::stmts::fields_of(kind, text),
     }
     v
 }
@@ -485,7 +578,9 @@ mod tests {
         assert_eq!(kind_of("create unique index x"), Some(Kind::CreateIndex));
         assert_eq!(kind_of("create table"), Some(Kind::CreateTable));
         assert_eq!(kind_of(""), None);
-        assert_eq!(kind_of("drop table x"), None);
+        assert_eq!(kind_of("drop table x"), Some(Kind::DropTable));
+        assert_eq!(kind_of("grant package"), None);
+        assert_eq!(listed("GRANT PACKAGE"), Some(Kind::GrantPackage));
     }
 
     #[test]

@@ -22,6 +22,7 @@ pub mod print;
 pub mod result;
 pub mod saved;
 pub mod screen;
+pub mod stmts;
 
 pub use attrs::Attrs;
 pub use history::History;

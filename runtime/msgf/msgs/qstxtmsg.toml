@@ -902,3 +902,413 @@ help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): that no statement failed
 id = "TXT096A"
 text = "Position &1 &2"
 help = "Text of the RUNSQLSTM listing (OUTPUT(*PRINT)): a statement's message: where in the statement, and the message's text."
+
+[[msg]]
+id = "TXT0A01"
+text = "Specify &1 Statement"
+help = "Text of the interactive SQL displays and reports (STRSQL): the title of a statement's prompt: the statement's words."
+
+[[msg]]
+id = "TXT0A02"
+text = "Type information, press Enter."
+help = "Text of the interactive SQL displays and reports (STRSQL): the instruction over a prompt's information."
+
+[[msg]]
+id = "TXT0A03"
+text = "Type choices, press Enter."
+help = "Text of the interactive SQL displays and reports (STRSQL): the instruction over a prompt's choices."
+
+[[msg]]
+id = "TXT0A04"
+text = "Type choice, press Enter."
+help = "Text of the interactive SQL displays and reports (STRSQL): the instruction over a prompt's one choice."
+
+[[msg]]
+id = "TXT0A05"
+text = "Type one choice per line, press Enter to select privileges."
+help = "Text of the interactive SQL displays and reports (STRSQL): the instruction of the GRANT and REVOKE prompts: a name on each line."
+
+[[msg]]
+id = "TXT0A06"
+text = "Type values to insert, press Enter."
+help = "Text of the interactive SQL displays and reports (STRSQL): the instruction over the values INSERT's prompt inserts."
+
+[[msg]]
+id = "TXT0A07"
+text = "Type sequence numbers (1-999) to select columns, press Enter."
+help = "Text of the interactive SQL displays and reports (STRSQL): the instruction over the key columns of CREATE INDEX's prompt."
+
+[[msg]]
+id = "TXT0A08"
+text = "Order:  A=Ascending, D=Descending"
+help = "Text of the interactive SQL displays and reports (STRSQL): the orders a key column of CREATE INDEX's prompt takes."
+
+[[msg]]
+id = "TXT0A09"
+text = "File"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of a file (system naming)."
+
+[[msg]]
+id = "TXT0A0A"
+text = "Table"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of a table (SQL naming)."
+
+[[msg]]
+id = "TXT0A0B"
+text = "Library"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of a library."
+
+[[msg]]
+id = "TXT0A0C"
+text = "Action"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of what ALTER TABLE's prompt does."
+
+[[msg]]
+id = "TXT0A0D"
+text = "Name, F4 for list"
+help = "Text of the interactive SQL displays and reports (STRSQL): the values a name field takes, F4 listing them."
+
+[[msg]]
+id = "TXT0A0E"
+text = "Name"
+help = "Text of the interactive SQL displays and reports (STRSQL): the value a name field takes."
+
+[[msg]]
+id = "TXT0A0F"
+text = "1=ADD constraint"
+help = "Text of the interactive SQL displays and reports (STRSQL): ALTER TABLE's choice that adds a constraint."
+
+[[msg]]
+id = "TXT0A10"
+text = "2=DROP constraint"
+help = "Text of the interactive SQL displays and reports (STRSQL): ALTER TABLE's choice that drops a constraint."
+
+[[msg]]
+id = "TXT0A11"
+text = "3=ADD field"
+help = "Text of the interactive SQL displays and reports (STRSQL): ALTER TABLE's choice that adds a field (system naming)."
+
+[[msg]]
+id = "TXT0A12"
+text = "3=ADD column"
+help = "Text of the interactive SQL displays and reports (STRSQL): ALTER TABLE's choice that adds a column (SQL naming)."
+
+[[msg]]
+id = "TXT0A13"
+text = "4=ALTER field"
+help = "Text of the interactive SQL displays and reports (STRSQL): ALTER TABLE's choice that changes a field (system naming)."
+
+[[msg]]
+id = "TXT0A14"
+text = "4=ALTER column"
+help = "Text of the interactive SQL displays and reports (STRSQL): ALTER TABLE's choice that changes a column (SQL naming)."
+
+[[msg]]
+id = "TXT0A15"
+text = "5=DROP field"
+help = "Text of the interactive SQL displays and reports (STRSQL): ALTER TABLE's choice that drops a field (system naming)."
+
+[[msg]]
+id = "TXT0A16"
+text = "5=DROP column"
+help = "Text of the interactive SQL displays and reports (STRSQL): ALTER TABLE's choice that drops a column (SQL naming)."
+
+[[msg]]
+id = "TXT0A17"
+text = "Procedure"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of a procedure."
+
+[[msg]]
+id = "TXT0A18"
+text = "Parameter"
+help = "Text of the interactive SQL displays and reports (STRSQL): the heading over CALL's parameter numbers."
+
+[[msg]]
+id = "TXT0A19"
+text = "Value"
+help = "Text of the interactive SQL displays and reports (STRSQL): the heading over the values typed."
+
+[[msg]]
+id = "TXT0A1A"
+text = "Comment on"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of what COMMENT ON's prompt comments."
+
+[[msg]]
+id = "TXT0A1B"
+text = "1=File"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice of a file (system naming)."
+
+[[msg]]
+id = "TXT0A1C"
+text = "1=Table"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice of a table (SQL naming)."
+
+[[msg]]
+id = "TXT0A1D"
+text = "2=Field"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice of a field (system naming)."
+
+[[msg]]
+id = "TXT0A1E"
+text = "2=Column"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice of a column (SQL naming)."
+
+[[msg]]
+id = "TXT0A1F"
+text = "3=Package"
+help = "Text of the interactive SQL displays and reports (STRSQL): the choice of an SQL package."
+
+[[msg]]
+id = "TXT0A20"
+text = "4=Index"
+help = "Text of the interactive SQL displays and reports (STRSQL): COMMENT ON's choice of an index."
+
+[[msg]]
+id = "TXT0A21"
+text = "5=Procedure"
+help = "Text of the interactive SQL displays and reports (STRSQL): COMMENT ON's choice of a procedure."
+
+[[msg]]
+id = "TXT0A22"
+text = "6=Parameter"
+help = "Text of the interactive SQL displays and reports (STRSQL): COMMENT ON's choice of a procedure's parameter."
+
+[[msg]]
+id = "TXT0A23"
+text = "7=Alias"
+help = "Text of the interactive SQL displays and reports (STRSQL): COMMENT ON's choice of an alias."
+
+[[msg]]
+id = "TXT0A24"
+text = "Hold"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of COMMIT's and ROLLBACK's HOLD."
+
+[[msg]]
+id = "TXT0A25"
+text = "Y=Yes, N=No"
+help = "Text of the interactive SQL displays and reports (STRSQL): the values a yes-or-no field takes."
+
+[[msg]]
+id = "TXT0A26"
+text = "Connection"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of which connection the statement names."
+
+[[msg]]
+id = "TXT0A27"
+text = "1=Remote"
+help = "Text of the interactive SQL displays and reports (STRSQL): CONNECT's choice of a remote server."
+
+[[msg]]
+id = "TXT0A28"
+text = "2=Local (RESET)"
+help = "Text of the interactive SQL displays and reports (STRSQL): CONNECT's choice of the local server."
+
+[[msg]]
+id = "TXT0A29"
+text = "3=Status"
+help = "Text of the interactive SQL displays and reports (STRSQL): CONNECT's choice that shows the current connection."
+
+[[msg]]
+id = "TXT0A2A"
+text = "Alias"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of an alias."
+
+[[msg]]
+id = "TXT0A2B"
+text = "Member"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of a member."
+
+[[msg]]
+id = "TXT0A2C"
+text = "Name, blank,"
+help = "Text of the interactive SQL displays and reports (STRSQL): the first line of the values a member field takes."
+
+[[msg]]
+id = "TXT0A2D"
+text = "F4 for list"
+help = "Text of the interactive SQL displays and reports (STRSQL): the second line of the values a member field takes."
+
+[[msg]]
+id = "TXT0A2E"
+text = "1-32, ASP device name"
+help = "Text of the interactive SQL displays and reports (STRSQL): the values the auxiliary storage pool field takes."
+
+[[msg]]
+id = "TXT0A2F"
+text = "Number or blank"
+help = "Text of the interactive SQL displays and reports (STRSQL): the values a number that may be left out takes."
+
+[[msg]]
+id = "TXT0A30"
+text = "Language"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of a procedure's language."
+
+[[msg]]
+id = "TXT0A31"
+text = "JAVA, or blank"
+help = "Text of the interactive SQL displays and reports (STRSQL): the last line of the languages a procedure takes."
+
+[[msg]]
+id = "TXT0A32"
+text = "1=Relational"
+help = "Text of the interactive SQL displays and reports (STRSQL): the first line of the choice of a relational database by name."
+
+[[msg]]
+id = "TXT0A33"
+text = "database"
+help = "Text of the interactive SQL displays and reports (STRSQL): the second line of the choice of a relational database by name."
+
+[[msg]]
+id = "TXT0A34"
+text = "Index"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of an index."
+
+[[msg]]
+id = "TXT0A35"
+text = "DROP option"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of how DROP treats what depends on the object."
+
+[[msg]]
+id = "TXT0A36"
+text = "Package"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of an SQL package."
+
+[[msg]]
+id = "TXT0A37"
+text = "View"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of a view."
+
+[[msg]]
+id = "TXT0A38"
+text = "User"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of the users a privilege goes to or from."
+
+[[msg]]
+id = "TXT0A39"
+text = "Name, PUBLIC"
+help = "Text of the interactive SQL displays and reports (STRSQL): the values a user field takes."
+
+[[msg]]
+id = "TXT0A3A"
+text = "Label on"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of what LABEL ON's prompt labels."
+
+[[msg]]
+id = "TXT0A3B"
+text = "4=Alias"
+help = "Text of the interactive SQL displays and reports (STRSQL): LABEL ON's choice of an alias."
+
+[[msg]]
+id = "TXT0A3C"
+text = "Mode"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of LOCK TABLE's mode."
+
+[[msg]]
+id = "TXT0A3D"
+text = "Rename"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of what RENAME's prompt renames."
+
+[[msg]]
+id = "TXT0A3E"
+text = "2=Index"
+help = "Text of the interactive SQL displays and reports (STRSQL): RENAME's choice of an index."
+
+[[msg]]
+id = "TXT0A3F"
+text = "Relational database"
+help = "Text of the interactive SQL displays and reports (STRSQL): the label of a relational database's name."
+
+[[msg]]
+id = "TXT0A40"
+text = "Field"
+help = "Text of the interactive SQL displays and reports (STRSQL): the heading over the fields listed (system naming)."
+
+[[msg]]
+id = "TXT0A41"
+text = "Column"
+help = "Text of the interactive SQL displays and reports (STRSQL): the heading over the columns listed (SQL naming)."
+
+[[msg]]
+id = "TXT0A42"
+text = "Seq  Field"
+help = "Text of the interactive SQL displays and reports (STRSQL): the heading over the fields a sequence number picks (system naming)."
+
+[[msg]]
+id = "TXT0A43"
+text = "Seq  Column"
+help = "Text of the interactive SQL displays and reports (STRSQL): the heading over the columns a sequence number picks (SQL naming)."
+
+[[msg]]
+id = "TXT0A44"
+text = "Order"
+help = "Text of the interactive SQL displays and reports (STRSQL): the heading over a key column's order."
+
+[[msg]]
+id = "TXT0A45"
+text = "F3=Exit"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that leaves the prompt."
+
+[[msg]]
+id = "TXT0A46"
+text = "F4=Prompt"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that lists the values of a field."
+
+[[msg]]
+id = "TXT0A47"
+text = "F5=Refresh"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that shows the prompt as it opened."
+
+[[msg]]
+id = "TXT0A48"
+text = "F6=Insert line"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that inserts a line."
+
+[[msg]]
+id = "TXT0A49"
+text = "F10=Copy line"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that copies a line."
+
+[[msg]]
+id = "TXT0A4A"
+text = "F11=Display type"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that shows each column's type."
+
+[[msg]]
+id = "TXT0A4B"
+text = "F12=Cancel"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that goes back."
+
+[[msg]]
+id = "TXT0A4C"
+text = "F14=Delete line"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that deletes a line."
+
+[[msg]]
+id = "TXT0A4D"
+text = "F15=Split line"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that splits a line."
+
+[[msg]]
+id = "TXT0A4E"
+text = "F19=Display system field names"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that shows the system names of the fields (system naming)."
+
+[[msg]]
+id = "TXT0A4F"
+text = "F19=Display system column names"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that shows the system names of the columns (SQL naming)."
+
+[[msg]]
+id = "TXT0A50"
+text = "F20=Display entire name"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that shows a long name whole."
+
+[[msg]]
+id = "TXT0A51"
+text = "F21=Display statement"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that shows the statement built so far."
+
+[[msg]]
+id = "TXT0A52"
+text = "F24=More keys"
+help = "Text of the interactive SQL displays and reports (STRSQL): the key that shows the other function keys."
