@@ -254,10 +254,20 @@ pub fn import_sqlinf(txn: &mut Txn<'_>, job: store::obj::JobHandle, id: ObjectId
     let head = b.get(..entry::ATTR_LEN).ok_or_else(|| db::DbError::Corrupt { what: "saved SQL information".into() })?;
     let (kind, count, len) = entry::decode_attr(head)?;
     let body = b.get(entry::ATTR_LEN..entry::ATTR_LEN + usize::try_from(len).unwrap_or(usize::MAX)).ok_or_else(|| db::DbError::Corrupt { what: "saved SQL information".into() })?;
-    let info = sqlinf::SqlInfo { kind, entries: entry::decode(body, count)? };
+    let mut info = sqlinf::SqlInfo { kind, entries: entry::decode(body, count)? };
+    let (_, h) = ops::read_header(txn, id)?;
+    // Routines are found by their specific names; an SQL routine's
+    // program is the object itself, in the library it is restored to.
+    let lib_name = ops::read_header(txn, h.library)?.1.name.to_string();
+    for mut r in sqlinf::routine::Routine::all(&info)? {
+        if (r.def.body == 1 || r.def.routine_type == 2) && r.def.program_library != lib_name {
+            r.def.program_library.clone_from(&lib_name);
+            sqlinf::routine::Routine::replace(&mut info, &r.def.specific.clone(), Some(&r))?;
+        }
+        names::put(txn, h.library, names::Space::Specific, &r.def.specific, names::Target { id, system: h.name })?;
+    }
     sqlinf::save(txn, id, &info, now)?;
     if let Some(name) = info.name() {
-        let (_, h) = ops::read_header(txn, id)?;
         names::put(txn, h.library, kind.space(), &name, names::Target { id, system: h.name })?;
     }
     Ok(())
