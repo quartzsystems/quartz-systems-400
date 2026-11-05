@@ -133,6 +133,13 @@ help = "Two or more rows have the same values in the index's key columns. Change
 vars = ["*CHAR 30"]
 
 [[msg]]
+id = "SQL0798"
+sev = 30
+text = "Column &1 is GENERATED ALWAYS; a value for it cannot be given."
+help = "The system makes the value of a GENERATED ALWAYS column. Leave the column out of the INSERT or UPDATE, give DEFAULT, or use OVERRIDING SYSTEM VALUE where it is allowed."
+vars = ["*CHAR 128"]
+
+[[msg]]
 id = "SQL0802"
 sev = 30
 text = "Arithmetic overflow or division by zero."
