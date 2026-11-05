@@ -300,6 +300,7 @@ pub fn apyjrnchg(
     let j = check_journal(txn, journal)?;
     let map = resolve_members(txn, &j, files)?;
     let entries = select(txn, journal, range, cmtbdy)?;
+    check_files(txn, &map, &entries, "file.apply-journal")?;
     let ctx = JrnCtx {
         job,
         commit_cycle: 0,
@@ -308,6 +309,21 @@ pub fn apyjrnchg(
         applied: true,
     };
     apply(txn, &entries, &map, ctx)
+}
+
+/// `op` on each file whose changes `entries` hold.
+fn check_files(txn: &mut Txn<'_>, map: &MemberMap, entries: &[Entry], op: &'static str) -> Result<()> {
+    let mut done: Vec<ObjectId> = Vec::new();
+    for e in entries {
+        let Some(o) = &e.object else { continue };
+        let Some(m) = o.member else { continue };
+        let Some((d, _)) = map.get(&(o.library, o.object, m)) else { continue };
+        if !done.contains(&d.id) {
+            crate::auth::check(txn, op, d.id)?;
+            done.push(d.id);
+        }
+    }
+    Ok(())
 }
 
 /// `RMVJRNCHG`: undo the changes to `files` backward over the range.
@@ -324,6 +340,7 @@ pub fn rmvjrnchg(
     let j = check_journal(txn, journal)?;
     let map = resolve_members(txn, &j, files)?;
     let entries = select(txn, journal, range, cmtbdy)?;
+    check_files(txn, &map, &entries, "file.remove-journal")?;
     let ctx = JrnCtx {
         job,
         commit_cycle: 0,
