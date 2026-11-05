@@ -393,14 +393,13 @@ impl Member {
         } else {
             m.load_dependents(txn)?;
             m.csts = crate::cst::Active::load(txn, file)?;
-            if !file.header.sql.is_none() {
-                if let Some((a, be)) = crate::sqlinf::seq::columns(txn, file.id)?.into_iter().find_map(|c| match c.kind {
+            if !file.header.sql.is_none()
+                && let Some((a, be)) = crate::sqlinf::seq::columns(txn, file.id)?.into_iter().find_map(|c| match c.kind {
                     crate::sqlinf::seq::ColumnKind::Identity(a) => Some((a, c.block_end)),
                     _ => None,
                 }) {
                     m.identity = Some(a);
                     m.identity_block = be;
-                }
             }
         }
         if m.core.attr.path_invalid && m.file.attr.maint == Maint::Dly {

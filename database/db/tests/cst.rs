@@ -112,12 +112,13 @@ fn keys_checks_and_referential_rules() {
     assert_eq!(e.msgid(), Some("CPF502D"));
     assert_eq!(c.fb.status, status::CONSTRAINT);
     c.close(&mut t);
-    // A parent key changed under dependents: CPF503A (RESTRICT).
+    // A parent whose dependents cascade is changed only while journaled:
+    // CPF4328 whatever the rows, as the primary refuses.
     let mut q = Odp::open(&mut t, locks.clone(), par, OpenOpts { usage: Usage::ALL, keyed: false, ..OpenOpts::input(JobHandle(1)) }).unwrap();
     let got = q.read(&mut t, true).unwrap().unwrap();
     assert_eq!(got.rrn, 1);
     let e = q.update(&mut t, &par_rec(5, "1.00"), &[]).unwrap_err();
-    assert_eq!(e.msgid(), Some("CPF503A"));
+    assert_eq!(e.msgid(), Some("CPF4328"));
     // Delete with CASCADE needs both files journaled.
     q.read(&mut t, true).unwrap();
     let mut q2 = Odp::open(&mut t, locks.clone(), par, OpenOpts { usage: Usage::ALL, keyed: false, ..OpenOpts::input(JobHandle(1)) }).unwrap();
@@ -141,6 +142,11 @@ fn keys_checks_and_referential_rules() {
     }
     c.close(&mut t);
     p.close(&mut t);
+    // A parent key changed under dependents: CPF503A (RESTRICT).
+    let mut u = open(&mut t, &locks, par);
+    u.read(&mut t, true).unwrap().unwrap();
+    assert_eq!(u.update(&mut t, &par_rec(5, "1.00"), &[]).unwrap_err().msgid(), Some("CPF503A"));
+    u.close(&mut t);
     let mut q = open(&mut t, &locks, par);
     q.read(&mut t, true).unwrap().unwrap();
     q.delete(&mut t).unwrap();

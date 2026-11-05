@@ -142,11 +142,11 @@ pub fn alter(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &ObjectName, o: &Ide
             Some(n) => s.next = n,
             None => s.exhausted = true,
         }
-    } else if s.exhausted {
-        if let Some(n) = s.attrs.after(s.next) {
-            s.next = n;
-            s.exhausted = false;
-        }
+    } else if s.exhausted
+        && let Some(n) = s.attrs.after(s.next)
+    {
+        s.next = n;
+        s.exhausted = false;
     }
     if let Some(r) = o.restart {
         s.next = r.unwrap_or(s.attrs.start);
