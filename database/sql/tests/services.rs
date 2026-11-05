@@ -667,6 +667,49 @@ fn qcmdexc_and_procedures() {
     t.abort();
 }
 
+/// Create `lib/name` of `ty` holding `payload`.
+fn put_object(db: &mut Db, lib: &str, name: &str, ty: u16, payload: &[u8]) {
+    let mut t = db.store.begin().unwrap();
+    let lib = ops::find_library(&mut t, db.ctx.qsys, Name::parse(lib).unwrap()).unwrap().id;
+    let id = ops::create(
+        &mut t,
+        &CreateParams {
+            library: lib,
+            name: Name::parse(name).unwrap(),
+            type_code: ty,
+            attribute: String::new(),
+            text: String::new(),
+            owner: "QSYS".into(),
+            system: "QS400".into(),
+            now: 1_767_225_600,
+            by_system: true,
+        },
+    )
+    .unwrap();
+    wm::obj::write(&mut t, id, payload).unwrap();
+    t.commit().unwrap();
+}
+
+#[test]
+fn job_queues_and_subsystems() {
+    let mut db = Db::new(true);
+    let mut q = wm::obj::jobq::JobQ { text: "Interactive queue".into(), autchk: "*OWNER".into(), ..wm::obj::jobq::JobQ::default() };
+    q.jobs.push(wm::obj::jobq::QJob { number: 50, name: "NIGHTLY".into(), user: "CODY".into(), jobpty: 5, held: true, ..wm::obj::jobq::QJob::default() });
+    put_object(&mut db, "QGPL", "QINTER", types::JOBQ, &q.encode());
+    let mut s = wm::obj::sbsd::Sbsd { text: "Interactive".into(), ..wm::obj::sbsd::Sbsd::default() };
+    s.jobqes.push(wm::obj::sbsd::Jobqe { jobq: ("QINTER".into(), "QGPL".into()), seq: 10, maxact: 1, maxpty: [0; 9] });
+    put_object(&mut db, "QGPL", "QINTER", types::SBSD, &s.encode());
+    assert_eq!(
+        db.rows("SELECT JOB_QUEUE_NAME, JOB_QUEUE_STATUS, NUMBER_OF_JOBS, HELD_JOBS, HELD_JOBS_PRIORITY_5, SUBSYSTEM_NAME, SEQUENCE_NUMBER FROM QSYS2.JOB_QUEUE_INFO"),
+        vec![row(&["QINTER", "RELEASED", "1", "1", "1", "QINTER", "10"])]
+    );
+    assert_eq!(
+        db.rows("SELECT SUBSYSTEM_DESCRIPTION, STATUS, CURRENT_ACTIVE_JOBS, SUBSYSTEM_MONITOR_JOB FROM QSYS2.SUBSYSTEM_INFO"),
+        vec![row(&["QINTER", "ACTIVE", "1", "000005/QSYS/QINTER"])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM QSYS2.SUBSYSTEM_POOL_INFO"), vec![row(&[&s.pools.len().to_string()])]);
+}
+
 #[test]
 fn job_description_info() {
     let mut db = Db::new(true);
