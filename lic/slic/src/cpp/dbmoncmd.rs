@@ -127,11 +127,12 @@ fn start(system: &mut System, parms: &Parms) -> Result<(String, String), String>
     {
         return not_kept("JOB", &op.source(), Why::Filter);
     }
-    // TYPE(*DETAIL), the default since IBM i 7.2, is refused whether
-    // given or defaulted: its 3019 records are not written.
+    // TYPE(*DETAIL), the default since IBM i 7.2, writes the same records
+    // as *SUMMARY: its 3019 records are among those not written yet
+    // (docs/SQL.md lists the record types kept).
     let typ = parms.name("TYPE");
-    if !matches!(typ.as_str(), "*BASIC" | "*SUMMARY") {
-        return not_kept("TYPE", if typ.is_empty() { "*DETAIL" } else { &typ }, Why::Detail);
+    if !matches!(typ.as_str(), "*BASIC" | "*SUMMARY" | "*DETAIL" | "") {
+        return not_kept("TYPE", &typ, Why::Detail);
     }
     let (file, lib) = parms.qual("OUTFILE");
     let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib.to_ascii_uppercase() };
