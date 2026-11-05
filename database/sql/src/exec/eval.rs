@@ -515,6 +515,10 @@ impl Evaluator<'_> {
                 {
                     return Ok(self.ctx.registers.value(n));
                 }
+                // Not a column: a global variable.
+                if let Some(v) = super::var::reference(txn, self.ctx, table, name, c.column.delimited)? {
+                    return Ok(v);
+                }
                 Err(SqlError::ColumnNotFound {
                     name: match table {
                         Some(t) => format!("{t}.{name}"),
@@ -623,9 +627,13 @@ impl Evaluator<'_> {
             }),
             Expr::NextValue(n) => super::seq::next_value(txn, self.ctx, n),
             Expr::PrevValue(n) => super::seq::previous_value(txn, self.ctx, n),
-            Expr::Default => Err(SqlError::Unsupported {
-                what: "DEFAULT outside an INSERT or UPDATE value".into(),
-            }),
+            // A column named DEFAULT (SYSVARIABLES has one), else refused.
+            Expr::Default => match env.frames.iter().rev().find_map(|(schema, row)| schema.find(None, "DEFAULT").ok().flatten().map(|i| row[i].clone())) {
+                Some(v) => Ok(v),
+                None => Err(SqlError::Unsupported {
+                    what: "DEFAULT outside an INSERT or UPDATE value".into(),
+                }),
+            },
             Expr::Over(o) => self.ctx.windows.get(&o.slot).cloned().ok_or_else(|| SqlError::Misplaced {
                 what: "an OLAP specification outside the select list and ORDER BY".into(),
             }),

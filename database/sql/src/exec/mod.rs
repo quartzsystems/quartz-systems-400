@@ -47,6 +47,8 @@ pub mod seq;
 mod sort;
 pub mod spill;
 pub mod table;
+pub mod udt;
+pub mod var;
 pub mod view;
 
 use db::file::{self, FileDesc, MemberEntry};
@@ -140,6 +142,8 @@ pub struct SqlContext {
     /// The data mapping error a result column took as null (`+802`,
     /// `+420`, `+180` ...): the statement's warning code and state.
     pub mapping_warning: Option<(i32, &'static str)>,
+    /// The job's values of global variables.
+    pub vars: var::Values,
     /// Whether result columns take data mapping errors as null (a
     /// `SELECT` statement's select list).
     pub map_errors: bool,
@@ -283,6 +287,7 @@ impl SqlContext {
             nulls_eliminated: false,
             decfloat_rounding: qdecimal::DfRounding::HalfEven,
             mapping_warning: None,
+            vars: var::Values::default(),
             map_errors: false,
             locators: locator::Locators::default(),
             host: None,
@@ -934,6 +939,11 @@ impl Prepared {
             Statement::CreateSequence(s) => seq::create(txn, ctx, s).map(|()| Outcome::Done),
             Statement::AlterSequence { name, options } => seq::alter(txn, ctx, name, options).map(|()| Outcome::Done),
             Statement::DropSequence { name } => seq::drop(txn, ctx, name).map(|()| Outcome::Done),
+            Statement::CreateVariable(v) => var::create(txn, ctx, v).map(|()| Outcome::Done),
+            Statement::DropVariable { name } => var::drop(txn, ctx, name).map(|()| Outcome::Done),
+            Statement::SetVariables { targets, values } => var::set(txn, ctx, params, targets, values).map(|()| Outcome::Done),
+            Statement::CreateType(t) => udt::create(txn, ctx, t).map(|()| Outcome::Done),
+            Statement::DropType { name } => udt::drop(txn, ctx, name).map(|()| Outcome::Done),
             Statement::DropTable { name, restrict, .. } | Statement::DropView { name, restrict, .. } => {
                 drop::drop(txn, ctx, name, *restrict).map(|()| Outcome::Done)
             }
@@ -1077,6 +1087,10 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::CreateSequence(_) => "CREATE SEQUENCE",
         Statement::AlterSequence { .. } => "ALTER SEQUENCE",
         Statement::DropSequence { .. } => "DROP SEQUENCE",
+        Statement::CreateVariable(_) => "CREATE VARIABLE",
+        Statement::DropVariable { .. } => "DROP VARIABLE",
+        Statement::CreateType(_) => "CREATE TYPE",
+        Statement::DropType { .. } => "DROP TYPE",
         Statement::DropTable { .. } => "DROP TABLE",
         Statement::CreateIndex(_) => "CREATE INDEX",
         Statement::DropIndex(_) => "DROP INDEX",
@@ -1109,7 +1123,7 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::Grant(_) => "GRANT",
         Statement::Revoke(_) => "REVOKE",
         Statement::Truncate(_) => "TRUNCATE",
-        Statement::SetRegister { .. } => "SET",
+        Statement::SetRegister { .. } | Statement::SetVariables { .. } => "SET",
         Statement::CreateRoutine(r) if r.kind == crate::ast::RoutineKind::Procedure => "CREATE PROCEDURE",
         Statement::CreateRoutine(_) => "CREATE FUNCTION",
         Statement::Call(_) => "CALL",

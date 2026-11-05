@@ -83,19 +83,22 @@ pub struct Scope<'a> {
     pub frames: Vec<&'a Schema>,
     /// `NEXT VALUE` and `PREVIOUS VALUE` of each sequence: its type.
     pub sequences: Vec<(crate::ast::ObjectName, DataType)>,
+    /// The global variables its unresolved column references name:
+    /// qualifier, name, type.
+    pub variables: Vec<(Option<String>, String, SqlType)>,
 }
 
 impl<'a> Scope<'a> {
     /// The scope of one row's columns.
     #[must_use]
     pub fn of(schema: &'a Schema) -> Self {
-        Self { frames: vec![schema], sequences: Vec::new() }
+        Self { frames: vec![schema], ..Self::default() }
     }
 
     /// The scope of an environment's frames.
     #[must_use]
     pub fn of_env(env: &'a super::eval::Env) -> Self {
-        Self { frames: env.frames.iter().map(|(s, _)| s.as_ref()).collect(), sequences: Vec::new() }
+        Self { frames: env.frames.iter().map(|(s, _)| s.as_ref()).collect(), ..Self::default() }
     }
 
     /// A column's type: `Ok(None)` when it is found without a type or not
@@ -112,7 +115,7 @@ impl<'a> Scope<'a> {
                 return Ok(col.field.as_ref().map(|f| of_field(f).or_null(col.nullable)));
             }
         }
-        Ok(None)
+        Ok(self.variables.iter().find(|(q, n, _)| q.as_deref() == table && n == name).map(|(_, _, t)| t.clone()))
     }
 
     /// Whether a column of that name is in scope.
@@ -254,6 +257,7 @@ pub fn type_in(e: &Expr, scope: &Scope<'_>) -> Result<Option<SqlType>> {
             Literal::Timestamp(s) => Ok(crate::value::Timestamp::parse(s).map(|t| SqlType::not_null(DataType::Timestamp(t.precision)))),
         },
         Expr::Column(c) => scope.column(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value),
+        Expr::Default => scope.column(None, "DEFAULT"),
         Expr::Register(r) => match r {
             Register::Date => nn(DataType::Date),
             Register::Time => nn(DataType::Time),
@@ -558,6 +562,39 @@ pub fn union_types(left: &mut [super::eval::ColInfo], right: &[&super::eval::Col
 /// The columns of a `VALUES`: each the rows' common type.
 pub fn values_types(rows: &[Vec<Expr>], width: usize, scope: &Scope<'_>) -> Result<Vec<Option<SqlType>>> {
     (0..width).map(|i| unify::all(rows.iter().filter_map(|r| r.get(i)), scope, false)).collect()
+}
+
+/// The global variables `exprs` name where `scope` has no such column.
+pub fn variables<'e>(
+    txn: &mut store::txn::Txn<'_>,
+    ctx: &super::SqlContext,
+    scope: &Scope<'_>,
+    exprs: impl Iterator<Item = &'e Expr>,
+) -> Vec<(Option<String>, String, SqlType)> {
+    fn refs<'a>(e: &'a Expr, out: &mut Vec<&'a crate::ast::ColumnRef>) {
+        if let Expr::Column(c) = e {
+            out.push(c);
+        }
+        for c in crate::ast::visit::children(e) {
+            refs(c, out);
+        }
+    }
+    let mut found: Vec<&crate::ast::ColumnRef> = Vec::new();
+    for e in exprs {
+        refs(e, &mut found);
+    }
+    let mut out: Vec<(Option<String>, String, SqlType)> = Vec::new();
+    for c in found {
+        let q = c.table.as_ref().map(|t| t.value.clone());
+        if scope.has(q.as_deref(), &c.column.value) || out.iter().any(|(a, b, _)| *a == q && *b == c.column.value) {
+            continue;
+        }
+        let name = crate::ast::ObjectName { schema: c.table.clone(), name: c.column.clone() };
+        if let Ok(Some(f)) = super::var::find(txn, ctx, &name) {
+            out.push((q, c.column.value.clone(), SqlType::not_null(f.data_type.data_type.clone()).or_null(true)));
+        }
+    }
+    out
 }
 
 /// The types of the sequences `exprs` name, for their `NEXT VALUE` and

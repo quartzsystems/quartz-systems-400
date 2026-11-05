@@ -10,6 +10,7 @@ mod change;
 mod ddl;
 mod integrity;
 mod sequence;
+mod variable;
 mod from;
 mod dml;
 mod expr;
@@ -498,6 +499,10 @@ impl Parser {
             "XML" => return Err(Self::unsupported("the XML data type for a column or a CAST (XMLPARSE and XMLSERIALIZE take XML text)")),
             "ROWID" => return Err(Self::unsupported("ROWID columns (generated row identifiers)")),
             "DATALINK" => return Err(Self::unsupported("the DATALINK data type")),
+            // BLOCKED(sql): a distinct type in a column, variable or CAST
+            // needs strong typing through the engine; CREATE TYPE makes
+            // the type only.
+            _ if self.is_sym(".") => return Err(Self::unsupported("a user-defined type as a data type")),
             _ => return Err(self.expected("a data type")),
         };
         let mut spec = TypeSpec {
@@ -849,6 +854,9 @@ impl Parser {
         }
         if self.eat_words(&["TRANSACTION", "ISOLATION"]) || self.eat_word("OPTION") {
             return Err(Self::unsupported("SET TRANSACTION / SET OPTION"));
+        }
+        if let Some(st) = self.set_variables()? {
+            return Ok(st);
         }
         Err(Self::unsupported("SET of that register or variable"))
     }

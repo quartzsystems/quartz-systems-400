@@ -1,0 +1,108 @@
+-- captured from primary
+> CREATE VARIABLE {lib}.GVINT INTEGER DEFAULT 7
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VARIABLE {lib}.GVCHR VARCHAR(20) DEFAULT 'start'
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VARIABLE {lib}.GVDEC DECIMAL(9,2)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VARIABLE {lib}.GVDATE DATE DEFAULT CURRENT DATE
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VARIABLE {lib}.GVINT INTEGER
+sqlcode -601 sqlstate 42710 msgid SQL0601
+> VALUES {lib}.GVINT
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 7 |
+> VALUES {lib}.GVCHR
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(20)
+| 'start' |
+> VALUES {lib}.GVDEC
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 DECIMAL(9,2)
+| NULL |
+> SET {lib}.GVINT = 42
+sqlcode 0 sqlstate 00000 msgid -
+> VALUES {lib}.GVINT + 1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 43 |
+> SET {lib}.GVCHR = 'changed', {lib}.GVDEC = 12.345
+sqlcode 0 sqlstate 00000 msgid -
+> VALUES ({lib}.GVCHR, {lib}.GVDEC)
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 VARCHAR(20)
+# 00002 DECIMAL(9,2)
+| 'changed' | 12.34 |
+> SET {lib}.GVINT = 'abc'
+sqlcode 0 sqlstate 00000 msgid -
+warning 420 01565 SQL0420
+> VALUES {lib}.GVINT
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| NULL |
+> SET {lib}.GVINT = NULL
+sqlcode 0 sqlstate 00000 msgid -
+> VALUES {lib}.GVINT
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| NULL |
+> VALUES GVINT
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| NULL |
+> SET GVINT = 5
+sqlcode 0 sqlstate 00000 msgid -
+> VALUES GVINT
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 5 |
+> CREATE TABLE {lib}.GVT (N INTEGER, C VARCHAR(20))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.GVT VALUES ({lib}.GVINT, {lib}.GVCHR)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT N, C FROM {lib}.GVT WHERE N = GVINT
+sqlcode 0 sqlstate 00000 msgid -
+# N INTEGER
+# C VARCHAR(20)
+| 5 | 'changed' |
+> VALUES {lib}.GVNONE
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> SET {lib}.GVNONE = 1
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> CREATE OR REPLACE VARIABLE {lib}.GVDEC DECIMAL(5,1) DEFAULT 1.5
+sqlcode 0 sqlstate 00000 msgid -
+> VALUES {lib}.GVDEC + 0
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 DECIMAL(13,1)
+| 1.5 |
+> SELECT VARIABLE_NAME, DATA_TYPE, LENGTH, NUMERIC_SCALE, NUMERIC_PRECISIO
+sqlcode 0 sqlstate 00000 msgid -
+# VARIABLE_NAME VARCHAR(128) NOT NULL
+# DATA_TYPE VARCHAR(128) NOT NULL
+# LENGTH INTEGER
+# NUMERIC_SCALE INTEGER
+# NUMERIC_PRECISION INTEGER
+# CCSID INTEGER
+# DEFAULT NCLOB(2097152)
+# SYSTEM_VAR_NAME CHAR(10) NOT NULL
+# SYSTEM_VAR_SCHEMA CHAR(10) NOT NULL
+# SCOPE CHAR(1) NOT NULL
+# OWNER_TYPE CHAR(1) NOT NULL
+| 'GVCHR' | 'VARCHAR' | 20 | NULL | NULL | 0 | '''start''' | 'GVCHR     ' | '{lib}    ' | 'S' | 'U' |
+| 'GVDATE' | 'DATE' | 4 | NULL | NULL | NULL | 'CURRENT DATE' | 'GVDATE    ' | '{lib}    ' | 'S' | 'U' |
+| 'GVDEC' | 'DECIMAL' | 5 | 1 | 5 | NULL | '1.5' | 'GVDEC     ' | '{lib}    ' | 'S' | 'U' |
+| 'GVINT' | 'INTEGER' | 4 | 0 | 9 | NULL | '7' | 'GVINT     ' | '{lib}    ' | 'S' | 'U' |
+> DROP TABLE {lib}.GVT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VARIABLE {lib}.GVINT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VARIABLE {lib}.GVCHR
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VARIABLE {lib}.GVDEC
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VARIABLE {lib}.GVDATE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VARIABLE {lib}.GVINT
+sqlcode -204 sqlstate 42704 msgid SQL0204

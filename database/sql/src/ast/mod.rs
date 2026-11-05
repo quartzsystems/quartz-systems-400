@@ -123,6 +123,28 @@ pub enum Statement {
     AlterTable(AlterTable),
     /// `CREATE SEQUENCE`.
     CreateSequence(CreateSequence),
+    /// `CREATE VARIABLE`.
+    CreateVariable(ddl::CreateVariable),
+    /// `DROP VARIABLE`.
+    DropVariable {
+        /// The variable.
+        name: ObjectName,
+    },
+    /// `SET` of global variables: each target its value, `None` for
+    /// `DEFAULT`.
+    SetVariables {
+        /// The variables.
+        targets: Vec<ObjectName>,
+        /// Their values.
+        values: Vec<Option<Expr>>,
+    },
+    /// `CREATE TYPE` of a distinct type.
+    CreateType(ddl::CreateType),
+    /// `DROP TYPE`.
+    DropType {
+        /// The type.
+        name: ObjectName,
+    },
     /// `ALTER SEQUENCE`.
     AlterSequence {
         /// The sequence.

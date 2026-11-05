@@ -317,3 +317,27 @@ pub struct CreateSequence {
     /// `OR REPLACE`.
     pub replace: bool,
 }
+
+/// `CREATE VARIABLE`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateVariable {
+    /// The variable.
+    pub name: ObjectName,
+    /// Its type.
+    pub data_type: TypeSpec,
+    /// `DEFAULT` or `CONSTANT`: the expression and its text.
+    pub default: Option<(Expr, String)>,
+    /// `CONSTANT`.
+    pub constant: bool,
+    /// `OR REPLACE`.
+    pub replace: bool,
+}
+
+/// `CREATE TYPE ... AS` a source type: a distinct type.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateType {
+    /// The type.
+    pub name: ObjectName,
+    /// The source type.
+    pub source: TypeSpec,
+}

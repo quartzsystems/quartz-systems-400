@@ -38,11 +38,13 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::cst::model::LAYOUT,
         &crate::sqlinf::seq::COLUMN_LAYOUT,
         &crate::sqlinf::seq::SEQUENCE_LAYOUT,
+        &crate::trg::model::LAYOUT,
+        &crate::sqlinf::var::VARIABLE_LAYOUT,
+        &crate::sqlinf::var::TYPE_LAYOUT,
+        &crate::trg::buffer::LAYOUT,
         &crate::sqlinf::routine::ROUTINE_LAYOUT,
         &crate::sqlinf::routine::PARM_LAYOUT,
         &crate::sqlinf::routine::OPTIONS_LAYOUT,
-        &crate::trg::model::LAYOUT,
-        &crate::trg::buffer::LAYOUT,
     ]
     .into_iter()
     .chain(jrn::spec::layouts())

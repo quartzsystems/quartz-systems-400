@@ -266,6 +266,7 @@ fn body(
             let width = rows.first().map_or(0, Vec::len);
             let mut scope = Scope::of_env(outer);
             scope.sequences = super::restype::sequences(txn, ev.ctx, rows.iter().flatten());
+            scope.variables = super::restype::variables(txn, ev.ctx, &scope, rows.iter().flatten());
             let types = super::restype::values_types(rows, width, &scope)?;
             for r in rows {
                 if r.len() != width {
@@ -1240,6 +1241,7 @@ fn item_name(e: &Expr, alias: Option<&crate::ast::Ident>, n: usize) -> String {
     }
     match e {
         Expr::Column(c) => c.column.value.clone(),
+        Expr::Default => "DEFAULT".into(),
         _ => format!("{n:05}"),
     }
 }
@@ -1427,6 +1429,12 @@ fn select(
     scope.sequences = super::restype::sequences(
         txn,
         ev.ctx,
+        sel.items.iter().filter_map(|i| if let SelectItem::Expr(e, _) = i { Some(e) } else { None }),
+    );
+    scope.variables = super::restype::variables(
+        txn,
+        ev.ctx,
+        &scope,
         sel.items.iter().filter_map(|i| if let SelectItem::Expr(e, _) = i { Some(e) } else { None }),
     );
     let mut out_cols: Vec<ColInfo> = Vec::new();

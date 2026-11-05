@@ -66,6 +66,12 @@ impl Parser {
         if self.eat_word("SEQUENCE") {
             return self.create_sequence(replace);
         }
+        if self.eat_word("VARIABLE") {
+            return self.create_variable(replace);
+        }
+        if self.eat_word("TYPE") {
+            return self.create_type(replace);
+        }
         if self.eat_word("SCHEMA") || self.eat_word("COLLECTION") {
             let name = self.ident()?;
             if self.is_word("AUTHORIZATION") {
@@ -375,6 +381,13 @@ impl Parser {
             "INDEX" => Ok(Statement::DropIndex(name)),
             "ALIAS" => Ok(Statement::DropAlias(name)),
             "SEQUENCE" => Ok(Statement::DropSequence { name }),
+            "VARIABLE" => Ok(Statement::DropVariable { name }),
+            "TYPE" => {
+                if self.eat_word("CASCADE") || self.eat_word("RESTRICT") {
+                    return Err(Self::unsupported("DROP TYPE CASCADE or RESTRICT"));
+                }
+                Ok(Statement::DropType { name })
+            }
             _ => Err(self.expected("TABLE, INDEX, VIEW, ALIAS, SEQUENCE or SCHEMA")),
         }
     }

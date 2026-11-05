@@ -438,6 +438,13 @@ help = "A declared global temporary table lives in QTEMP; qualify it with SESSIO
 vars = ["*CHAR 128", "*CHAR 128"]
 
 [[msg]]
+id = "SQL0151"
+sev = 30
+text = "&1 cannot be changed."
+help = "The variable is a constant: its value is its definition's and cannot be set."
+vars = ["*CHAR 128"]
+
+[[msg]]
 id = "SQL0153"
 sev = 30
 text = "A column list is needed."

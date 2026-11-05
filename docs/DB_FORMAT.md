@@ -967,6 +967,38 @@ written, UTF-8.
 | 2 | 2 | reserved | 0 |
 | 4 | variable | options | |
 
+### `SqlVariable` (variable)
+
+The `VARIABLE` entry of a global variable's `*SRVPGM` (kind 9; the
+object has no program, and is only the variable's name and authority).
+The parts follow the fixed 16 bytes: `type_len` bytes of the type as SQL
+writes it (`DECIMAL(9, 2)`), `default_len` bytes of the `DEFAULT`
+expression as written (both UTF-8). A job's value lives in its SQL
+session, made from the default the first time the job reads it.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | flags | bit 0 `CONSTANT`, bit 1 a `DEFAULT` is given |
+| 1 | 1 | reserved | 0 |
+| 2 | 2 | type_len | |
+| 4 | 4 | default_len | |
+| 8 | 8 | reserved2 | 0 |
+| 16 | variable | parts | as above |
+
+### `SqlType` (variable)
+
+The `TYPE` entry of a user-defined type's `*SQLUDT` (kind 10): its
+source type as SQL writes it, `source_len` bytes of UTF-8 after the fixed
+16.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | metatype | `T` (x'54') a distinct type |
+| 1 | 1 | reserved | 0 |
+| 2 | 2 | source_len | |
+| 4 | 12 | reserved2 | 0 |
+| 16 | variable | parts | the source type |
+
 ### 8.2 The SQL name index
 
 A B+tree in a library header's tree root slot 0, keyed by `SqlNameKey`
