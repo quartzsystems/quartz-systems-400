@@ -690,7 +690,7 @@ The attribute area holds `SqlInfAttr`; the byte space holds
 |---|---|---|---|
 | 0 | 8 | magic | `QS400SQI` |
 | 8 | 2 | version | 1 |
-| 10 | 1 | kind | 1 table, 2 view, 3 index, 4 alias, 5 procedure, 6 function, 7 trigger, 8 sequence, 9 global variable, 10 user-defined type, 11 materialized query table, 12 schema (only in a saved library's `sqlinf` part) |
+| 10 | 1 | kind | 1 table, 2 view, 3 index, 4 alias, 5 procedure, 6 function, 7 trigger, 8 sequence, 9 global variable, 10 user-defined type, 11 materialized query table, 12 schema (only in a saved library's `sqlinf` part), 13 program made with embedded SQL |
 | 11 | 1 | reserved | 0 |
 | 12 | 4 | entry_count | |
 | 16 | 8 | body_len | bytes of the byte space in use |
@@ -719,7 +719,8 @@ The attribute area holds `SqlInfAttr`; the byte space holds
 | 11 `INDEX` | an index's sparse condition, key expressions and `INCLUDE` columns |
 | 12 `DEPENDENCY` | one object this one depends on |
 | 13 `VIEW` | a view's attributes and query text |
-| 14 `OPTIONS` | the `SET OPTION` values a routine or trigger was made with |
+| 14 `OPTIONS` | the `SET OPTION` values a routine or trigger was made with; a program's precompile options |
+| 15 `STATEMENT` | one embedded statement of a program (kind 13 `PROGRAM`) |
 
 A schema keeps its SQL name only in QSYS's name index (a `*LIB` owns
 no `*SQLINF`). An object keeps a `NAME` entry only when its SQL
@@ -1018,6 +1019,20 @@ source type (an array type's element type) as SQL writes it,
 A B+tree in a library header's tree root slot 0, keyed by `SqlNameKey`
 (513 bytes), valued by the system object's `ObjectId` and its 10-byte
 CP037 name. Schemas' SQL names are in QSYS's index.
+
+### `SqlStatement` (variable)
+
+The `STATEMENT` entry of a program made with embedded SQL (kind 13,
+owned by the `*PGM` or `*SRVPGM`; `CRTSQLRPGI` writes it): one per
+statement, in source order, as `PRTSQLINF` prints it. The program's
+`OPTIONS` entry holds the precompile options, keyword and value.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 4 | line | the statement's first source line |
+| 4 | 1 | kind | 0 planned (a query or change), 1 plain, 2 a cursor's declaration |
+| 5 | 3 | reserved | 0 |
+| 8 | variable | text | tokens apart, host variables `:H`, UTF-8 |
 
 ### `SqlNameKey` (513 bytes)
 

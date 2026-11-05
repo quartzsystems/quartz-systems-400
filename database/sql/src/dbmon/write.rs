@@ -86,7 +86,7 @@ pub(super) fn prepare_file(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &Start
                 return Err(err("CPF9898", format!("Member {m} is not the first member of {}: records go to the first member.", spec.file)));
             }
             if !spec.add {
-                db::util::clrpfm(txn, ctx.job, t.id, qsname::MemberSpec::First).map_err(|e| err("CPF3130", e.to_string()))?;
+                db::util::clrpfm(txn, ctx.job, t.id, qsname::MemberSpec::First).map_err(|e| err("CPF9898", e.to_string()))?;
             }
             t
         }
@@ -105,7 +105,7 @@ pub(super) fn prepare_file(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &Start
                 && *m != spec.file
             {
                 let to = Name::parse(m).map_err(|e| err("CPD0078", format!("OUTMBR({m}): {e}")))?;
-                db::file::rename_member(txn, t.id, t.member.name, to, ctx.clock()).map_err(|e| err("CPF3130", e.to_string()))?;
+                db::file::rename_member(txn, t.id, t.member.name, to, ctx.clock()).map_err(|e| err("CPF9898", e.to_string()))?;
             }
             t
         }

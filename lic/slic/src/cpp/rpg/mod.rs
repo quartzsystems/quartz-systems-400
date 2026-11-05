@@ -168,6 +168,9 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
     if let Err(e) = stored {
         return refused.reply(&format!("{out}{e}\n"));
     }
+    if let Err(e) = keep_sql(system, &compiled, shape, (lib_name, &name), src, stmf, &options.text) {
+        let _ = writeln!(out, "{e}");
+    }
     let (date, time) = stamp(now_unix());
     let fields = [
         (name.as_str(), 10),
@@ -258,6 +261,37 @@ impl Refused<'_> {
 }
 
 /// A time as `yy/mm/dd` and `hh:mm:ss` (UTC).
+/// A program made with embedded SQL keeps its statements and options
+/// for `PRTSQLINF`.
+fn keep_sql(system: &mut System, compiled: &rpgc::Compiled, shape: Shape, (lib_name, name): (&str, &str), src: &Source, stmf: bool, text: &str) -> Result<(), String> {
+    let Some(pre) = &compiled.precompiled else { return Ok(()) };
+    if shape == Shape::Module {
+        // BLOCKED(sql): CRTPGM does not carry a module's statements.
+        return Ok(());
+    }
+    let p = sql::prtsqlinf::Precompile {
+        command: "CRTSQLRPGI".into(),
+        object: format!("{lib_name}/{name}"),
+        srcfile: if stmf { String::new() } else { format!("{}/{}", src.member.lib, src.member.file) },
+        srcmbr: if stmf { String::new() } else { src.member.name.clone() },
+        commit: pre.options.commit.clone(),
+        naming: pre.options.naming.clone(),
+        dates: [pre.options.datfmt.clone(), pre.options.datsep.clone(), pre.options.timfmt.clone(), pre.options.timsep.clone()],
+        closqlcsr: pre.options.closqlcsr.clone(),
+        text: text.to_string(),
+        other: pre.options.other.clone(),
+        release: release::RELEASE.to_string(),
+    };
+    let ty = if shape == Shape::SrvPgm { store::obj::types::SRVPGM } else { store::obj::types::PGM };
+    super::sqlinfcmd::keep(system, lib_name, name, ty, pre, &p)
+}
+
+/// `yy-mm-dd` and `hh:mm:ss`, as `PRTSQLINF` heads its pages.
+pub(super) fn stamp_dashed(unix: u64) -> (String, String) {
+    let (d, t) = stamp(unix);
+    (d.replace('/', "-"), t)
+}
+
 fn stamp(unix: u64) -> (String, String) {
     let days = i64::try_from(unix / 86_400).unwrap_or(0);
     let secs = unix % 86_400;

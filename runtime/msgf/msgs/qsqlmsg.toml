@@ -1130,3 +1130,24 @@ sev = 10
 text = "Program &1 of the routine is not there."
 help = "The routine was made or dropped, but the program or service program it names cannot be found. Create the program before the routine is called."
 vars = ["*CHAR 21"]
+
+# PRTSQLINF.
+
+[[msg]]
+id = "SQL5062"
+sev = 30
+text = "&1 in &2 type &3 has no SQL statements."
+help = "PRTSQLINF prints the statements a program was precompiled with; this object was made without embedded SQL."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 7"]
+
+[[msg]]
+id = "SQL5065"
+sev = 0
+text = "No access plan is kept for the statement."
+help = "QS/400 plans each statement as it runs; a program keeps no access plans between runs."
+
+[[msg]]
+id = "SQL9011"
+sev = 30
+text = "The SQL information was not printed."
+help = "The messages before this one say why."

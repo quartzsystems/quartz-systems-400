@@ -159,7 +159,8 @@ impl crate::sqlinf::Kind {
         match self {
             K::Table | K::View | K::Alias | K::Mqt => Space::Table,
             K::Index => Space::Index,
-            K::Procedure | K::Function => Space::Specific,
+            // A program keeps no SQL name; the space is never asked for.
+            K::Procedure | K::Function | K::Program => Space::Specific,
             K::Sequence => Space::Sequence,
             K::Variable => Space::Variable,
             K::Type => Space::Type,

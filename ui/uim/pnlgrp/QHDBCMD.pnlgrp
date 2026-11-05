@@ -7619,6 +7619,41 @@ database file at its start or end.
 :EPARML.
 :P.Also accepted&colon. *START.
 :EHELP.
+:HELP NAME=PRTSQLINF.Print SQL Information (PRTSQLINF)
+:P.Use the Print SQL Information (PRTSQLINF) command to print the SQL
+information of a program.
+:EHELP.
+:HELP NAME='PRTSQLINF/OBJ'.Object (OBJ)
+:P.The object or objects the command works on, by name and library.
+:P.A value is required.
+:PARML.
+:PT.:PK.*JOB:EPK.
+:PD.The value of the job.
+:EPARML.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='PRTSQLINF/OBJTYPE'.Object type (OBJTYPE)
+:P.The type or types of the objects the command works on.
+:PARML.
+:PT.:PK DEF.*PGM:EPK.
+:PD.The value of the program.
+:PT.:PK.*SRVPGM:EPK.
+:PD.The value of the service program.
+:EPARML.
+:P.Also accepted&colon. *SQLPKG.
+:EHELP.
 :HELP NAME=RGZPFM.Reorganize Physical File Mbr (RGZPFM)
 :P.Use the Reorganize Physical File Mbr (RGZPFM) command to reorganize a
 physical file member, dropping deleted records and optionally reordering

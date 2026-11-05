@@ -201,6 +201,8 @@ pub struct Precompiled {
     pub max_severity: u8,
     /// Whether the compile goes on.
     pub ok: bool,
+    /// Every statement as written, with its line, for `PRTSQLINF`.
+    pub texts: Vec<(u32, String)>,
 }
 
 /// A declared cursor.
@@ -250,6 +252,7 @@ pub fn precompile(srcs: &[Source], env: &mut dyn Env, opts: &Options) -> Precomp
     let max_severity = diags.iter().map(|d| d.sev).max().unwrap_or(0);
     Precompiled {
         stmts,
+        texts: srcs.iter().map(|s| (s.line, s.text.clone())).collect(),
         diags,
         ok: max_severity <= st.opts.genlvl,
         options: st.opts,

@@ -77,6 +77,7 @@ files = [
     "database/db/src/trg/model.rs",
     "database/db/src/sqlinf/var.rs",
     "database/db/src/sqlinf/routine.rs",
+    "database/db/src/sqlinf/program.rs",
 ]
 
 # SQL packages (*SQLPKG): a draft until the SQL completion work freezes it.

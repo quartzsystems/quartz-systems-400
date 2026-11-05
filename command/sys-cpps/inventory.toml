@@ -568,6 +568,9 @@ note = "writes what the monitor holds and the 3018 end record"
 [cmd.CHGQRYA]
 note = "DEGREE, ASYNCJ and APYRMT are hints without effect; the governors and QRYOPTLIB keep *SAME or *NOMAX"
 
+[cmd.PRTSQLINF]
+note = "programs and service programs CRTSQLRPGI made; OBJ(*JOB) and OBJTYPE(*SQLPKG) refused"
+
 # --- DDM and DRDA (work/qsjob/src/command/ddm.rs, net/ddm)
 [cmd.ADDRDBDIRE]
 site = "job"

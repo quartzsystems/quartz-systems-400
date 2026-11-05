@@ -20,6 +20,7 @@ pub(crate) mod cstcmd;
 mod trgcmd;
 mod dbcmd;
 mod dbmoncmd;
+mod sqlinfcmd;
 mod hwcmd;
 mod direct;
 pub(crate) mod dspout;
@@ -112,6 +113,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| trgcmd::run(system, name, parms))
             .or_else(|| dbcmd::run(system, name, parms))
             .or_else(|| dbmoncmd::run(system, name, parms))
+            .or_else(|| sqlinfcmd::run(system, name, parms))
             .or_else(|| objcmd::run(system, name, parms))
             .or_else(|| cmncmd::run(system, name, parms))
             .or_else(|| cmntrc::run(system, name, parms))

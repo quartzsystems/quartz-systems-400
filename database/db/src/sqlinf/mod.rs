@@ -10,6 +10,7 @@
 pub mod body;
 pub mod entry;
 pub mod names;
+pub mod program;
 pub mod seq;
 pub mod var;
 pub mod routine;

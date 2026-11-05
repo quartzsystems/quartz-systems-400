@@ -68,6 +68,8 @@ pub enum Kind {
     /// A schema: only in a saved library's `sqlinf` part (a `*LIB` owns no
     /// `*SQLINF`; its SQL name is in QSYS's name index).
     Schema = 12,
+    /// A program or service program made with embedded SQL.
+    Program = 13,
 }
 
 impl Kind {
@@ -87,6 +89,7 @@ impl Kind {
             10 => Self::Type,
             11 => Self::Mqt,
             12 => Self::Schema,
+            13 => Self::Program,
             _ => return None,
         })
     }
@@ -123,6 +126,8 @@ pub mod tag {
     pub const VIEW: u16 = 13;
     /// The `SET OPTION` values a routine or trigger was created with.
     pub const OPTIONS: u16 = 14;
+    /// One embedded statement of a program.
+    pub const STATEMENT: u16 = 15;
 }
 
 /// One tagged entry.

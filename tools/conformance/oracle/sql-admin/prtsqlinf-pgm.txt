@@ -1,0 +1,69 @@
+15770SS1 V7R5M0 220415     Print SQL information          Program {user}1/QS15SQL                   26-11-05 19:52:10  Page   001
+-Object name...............{user}1/QS15SQL
+ Object type...............*PGM
+-
+   CRTSQLRPGI
+       OBJ(QTEMP/QS15SQL)
+       SRCFILE({user}1/QRPGLESRC)
+       SRCMBR(QS15SQL)
+       COMMIT(*NONE)
+       OPTION(*SYS *NOEXTIND *SYSTIME   *PERIOD)
+       TGTRLS(V7R5M0)
+       ALWCPYDTA(*OPTIMIZE)
+       CLOSQLCSR(*ENDACTGRP)
+       RDB(*LOCAL)
+       DATFMT(*ISO)
+       DATSEP('-')
+       TIMFMT(*HMS)
+       TIMSEP(':')
+       DFTRDBCOL(*NONE)
+       DYNDFTCOL(*NO)
+       SQLPKG({user}1/QS15SQL)
+       MONITOR(*USER)
+       SQLCURRULE(*DB2)
+       ALWBLK(*ALLREAD)
+       DLYPRP(*NO)
+       DYNUSRPRF(*USER)
+       USRPRF(*NAMING)
+       SRTSEQ(*HEX)
+       LANGID(ENU)
+       RDBCNNMTH(*DUW)
+       TEXT('                                                  ')
+       SQLPATH(*LIBL)
+       DECRESULT(31 31 0)
+       DECFLTRND(*HALFEVEN)
+       CONACC(*DFT)
+       STATEMENT TEXT CCSID(273)
+-DECLARE C1 CURSOR FOR SELECT TABLE_NAME FROM QSYS2 / SYSTABLES WHERE
+     TABLE_SCHEMA = : H
+   SQL5065  Access plan not found.
+-SELECT COUNT ( * ) INTO : H FROM SYSIBM / SYSDUMMY1
+   SQL5065  Access plan not found.
+-OPEN C1
+-FETCH C1 INTO : H
+-CLOSE C1
+-PREPARE S1 FROM : H
+0                                                   -=* https://pub400.com *=-
+15770SS1 V7R5M0 220415     Print SQL information          Program {user}1/QS15SQL                   26-11-05 19:52:10  Page   002
+-
+0VALUES CURRENT DATE INTO : H
+   SQL5065  Access plan not found.
+                                * * * * *  E N D  O F  L I S T I N G  * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-                                                   -=* https://pub400.com *=-

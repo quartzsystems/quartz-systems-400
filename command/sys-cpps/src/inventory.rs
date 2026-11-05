@@ -301,6 +301,7 @@ pub const DIRECT: &[&str] = &[
     "STRDBMON",
     "ENDDBMON",
     "CHGQRYA",
+    "PRTSQLINF",
     "SNDJRNE",
     "UPDSRVPGM",
     "VRYCFG",
