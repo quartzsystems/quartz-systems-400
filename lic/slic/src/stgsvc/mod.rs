@@ -61,6 +61,7 @@ pub(crate) mod wtr;
 
 pub use jobs::chgjob;
 mod served;
+mod sqlhost;
 mod fiber;
 mod turns;
 #[cfg(test)]

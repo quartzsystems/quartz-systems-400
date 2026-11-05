@@ -144,6 +144,9 @@ pub struct SqlContext {
     pub map_errors: bool,
     /// The unit of work's LOB locators.
     pub locators: locator::Locators,
+    /// The system outside the store, for the `QSYS2` services; `None`
+    /// where there is none (tools, tests).
+    pub host: Option<std::rc::Rc<dyn catalog::services::host::SystemHost>>,
     /// Changes are not under commitment control even when the job has
     /// it (a program precompiled with `COMMIT(*NONE)`).
     pub no_commit: bool,
@@ -278,6 +281,7 @@ impl SqlContext {
             mapping_warning: None,
             map_errors: false,
             locators: locator::Locators::default(),
+            host: None,
             no_commit: false,
             isolation: None,
             interrupt: None,

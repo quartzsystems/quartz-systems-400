@@ -1265,3 +1265,47 @@ pub fn interval_data(system: &mut System, now: &Sample, base: &Sample, number: u
         lines,
     }
 }
+
+/// `QSYS2.SYSTEM_STATUS_INFO`: `WRKSYSSTS`'s figures over its interval,
+/// which stays where the display left it.
+#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)] // counts far below 2^32
+pub fn sql_status(system: &mut System) -> sql::exec::catalog::services::host::SystemStatus {
+    let (now, base) = interval(system, |s| &mut s.syssts, false);
+    let d = Delta {
+        now: &now,
+        base: &base,
+    };
+    let (asp_mb, asp_pct, temp_mb) = asp_figures(system);
+    let jobs = system.jobs.all();
+    let sv = |n: &str| crate::stgsvc::security::sysval_text(system, n);
+    let max_jobs: u32 = sv("QMAXJOB").trim().parse().unwrap_or(0);
+    let interactive = jobs.iter().filter(|j| j.kind == 'I').count() as u32;
+    let batch = |code: &str| jobs.iter().filter(|j| j.kind == 'B' && j.job_status().code() == code).count() as u32;
+    let running = jobs.iter().filter(|j| j.kind == 'B').count() as u32;
+    let threads = now.procs.values().map(|p| p.threads.max(1)).sum();
+    let ipl_mode = if system.mode == licpart::IplMode::Manual { "MANUAL" } else { "NORMAL" };
+    sql::exec::catalog::services::host::SystemStatus {
+        total_jobs: (jobs.len() + system.queued.len() + system.joblog_pending.len()) as u32,
+        max_jobs,
+        active_jobs: jobs.len() as u32,
+        interactive_pct: if max_jobs == 0 { 0.0 } else { f64::from(interactive) * 100.0 / f64::from(max_jobs) },
+        signed_on: interactive,
+        batch: [running, system.queued.len() as u32, 0, batch("MSGW"), 0, 0, 0, 0],
+        elapsed_ms: d.whole_secs() * 1000,
+        cpu_pct: d.cpu_used(),
+        cpus: std::thread::available_parallelism().map_or(1, |n| n.get() as u32),
+        main_storage_kb: now.main_kb,
+        asp_mb,
+        asp_used_pct: asp_pct,
+        temp_mb,
+        temp_max_mb: temp_mb,
+        threads,
+        restricted: system.sbs.is_empty(),
+        host_name: read("/proc/sys/kernel/hostname").map(|h| h.trim().to_string()).unwrap_or_default(),
+        machine: (String::new(), sv("QMODEL").trim().to_string(), sv("QSRLNBR").trim().to_string()),
+        ipl_mode: ipl_mode.into(),
+        ipl_type: sv("QIPLTYPE").trim().to_string(),
+        table: [system.queued.len() as u32, 0, system.joblog_pending.len() as u32],
+        scheduler_active: jobs.iter().any(|j| j.name == "QEJSCHED"),
+    }
+}

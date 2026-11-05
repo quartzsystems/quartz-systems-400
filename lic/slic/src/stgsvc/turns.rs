@@ -64,6 +64,12 @@ fn park(svc: Box<Svc>) {
     PARKED.with(|p| *p.borrow_mut() = Some(svc));
 }
 
+/// Run `f` over the parked service's system: while a statement takes
+/// its turn on a fiber. `None` when nothing is parked.
+pub fn with_parked<T>(f: impl FnOnce(&mut System) -> T) -> Option<T> {
+    PARKED.with(|p| p.try_borrow_mut().ok().and_then(|mut b| b.as_mut().map(|svc| f(&mut svc.system))))
+}
+
 fn unpark() -> Box<Svc> {
     PARKED
         .with(|p| p.borrow_mut().take())

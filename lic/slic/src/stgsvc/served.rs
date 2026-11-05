@@ -611,7 +611,8 @@ pub fn sql_session<'c>(
     };
     let handle = JobHandle(c.job.handle);
     let s = c.sql.get_or_insert_with(|| {
-        let ctx = sql::SqlContext::with_locks(qsys, handle, names.clone(), locks);
+        let mut ctx = sql::SqlContext::with_locks(qsys, handle, names.clone(), locks);
+        ctx.host = Some(Rc::new(super::sqlhost::SqlHost { job: c.job.number }));
         Session::with_ctx(Box::new(MainStore::new(Rc::clone(shared))), ctx)
     });
     s.ctx.names = names;
