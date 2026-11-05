@@ -667,7 +667,7 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
         desc,
         inputs: pending.inputs,
     };
-    let Some(session) = job.sql.as_mut() else {
+    if job.sql.is_none() {
         let none = Sqlca::from_error(&sql::SqlError::Database {
             what: "no database for embedded SQL in this job".into(),
             msgid: None,
@@ -676,7 +676,7 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
             write_sqlca(ca.cast_unsigned(), &none);
         }
         return;
-    };
+    }
     // A blocked INSERT: every row's values, then the count.
     if blocked {
         let n = req.inputs.last().and_then(|v| v.as_i64().ok()).unwrap_or(0).max(0);
@@ -684,7 +684,7 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
         all.push(Value::int(n));
         req.inputs = all;
     }
-    let reply = session.run(&req);
+    let reply = mi::io::trigger::sql_run(job, &req).unwrap_or_default();
     let reply = match reply.call.clone() {
         Some(plan) => call(job, &req.scope, &plan, &pending.in_vars),
         None => reply,
@@ -741,11 +741,10 @@ fn call(job: &mut mi::Job, scope: &str, plan: &sql::exec::routine::CallPlan, var
         inputs: called.inputs(),
     };
     let ok = called.sqlcode >= 0;
-    let Some(s) = job.sql.as_mut() else { return sql::embed::Reply::default() };
-    let r = s.run(&req);
+    let Some(r) = mi::io::trigger::sql_run(job, &req) else { return sql::embed::Reply::default() };
     if ok && plan.commit_on_return {
         let commit = Request { scope: scope.to_string(), desc: SqlDesc { op: sql::embed::Op::Exec, text: "COMMIT".into(), ..SqlDesc::default() }, inputs: Vec::new() };
-        let c = s.run(&commit);
+        let c = mi::io::trigger::sql_run(job, &commit).unwrap_or_default();
         if c.sqlca.is_error() && c.sqlca.sqlcode != -7007 {
             return c;
         }

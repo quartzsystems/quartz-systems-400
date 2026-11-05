@@ -12,6 +12,13 @@
 //! each statement in progress once, in turn, whichever started first.
 //! While a fiber runs the service is parked here, so its yielder can
 //! reach it. `docs/STORAGE_SERVICE.md` "Long statements" has the rules.
+//!
+//! A statement that needs a program called in its middle (a trigger
+//! program) answers its job with the call plan and waits, not taking
+//! turns, while the job's connection is read again: the program's own
+//! requests are served, its own statements on fibers of their own. The
+//! job's `Op::Called` named `midcall::ANSWER` resumes the latest
+//! statement of that job waiting for one ("Trigger programs").
 
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
@@ -49,10 +56,15 @@ pub struct Svc {
     deferred: Vec<(u64, Request)>,
     /// Long statements waiting for a fiber.
     queued: VecDeque<(u64, Request)>,
-    /// Statements in progress, each with its connection.
-    fibers: Vec<(u64, Fiber)>,
+    /// Statements in progress, each with its turn.
+    fibers: Vec<(Rc<Turn>, Fiber)>,
     /// A close waits: statements in progress end at their next yield.
     closing: bool,
+    /// Connections that went while statements of theirs were in
+    /// progress: ended when the last of them has.
+    doomed: Vec<u64>,
+    /// The number of the next turn.
+    next_turn: u64,
 }
 
 thread_local! {
@@ -115,6 +127,8 @@ impl Svc {
             queued: VecDeque::new(),
             fibers: Vec::new(),
             closing: false,
+            doomed: Vec::new(),
+            next_turn: 0,
         })
     }
 
@@ -139,10 +153,12 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
         }
     }
     // With statements in progress the loop does not wait, unless every
-    // one waits for a record another job holds: then a little.
-    let wait = if top {
+    // one waits for a record another job holds (then a little) or for
+    // its job's answer (then as long as at the top).
+    let runnable = svc.fibers.iter().filter(|(t, _)| !t.waiting.get()).count();
+    let wait = if top || runnable == 0 {
         wait
-    } else if sql::exec::record_waits() >= svc.fibers.len() {
+    } else if sql::exec::record_waits() >= runnable {
         Duration::from_millis(10).min(wait)
     } else {
         Duration::ZERO
@@ -174,6 +190,17 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
         };
         let frame = svc.conns[i].chan.recv_raw();
         let Ok(req) = frame.and_then(|b| ipc::decode::<Request>(&b)) else {
+            if svc.fibers.iter().any(|(t, _)| t.id == id) {
+                // Its statements waiting for it end first.
+                for (t, _) in &svc.fibers {
+                    if t.id == id {
+                        t.waiting.set(false);
+                    }
+                }
+                svc.busy.push(id);
+                svc.doomed.push(id);
+                continue;
+            }
             let c = svc.conns.remove(i);
             if !grouped {
                 served::group(&mut svc.system, true);
@@ -194,6 +221,15 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
             svc.deferred.push((id, req));
             continue;
         }
+        if let Some(t) = waiting_for(&svc, id, &req) {
+            // The answer to a call made in a statement's middle.
+            if let Request::SqlRun { inputs, .. } = req {
+                *t.answer.borrow_mut() = Some(inputs.iter().map(sql::embed::from_wire).collect());
+            }
+            t.waiting.set(false);
+            svc.busy.push(id);
+            continue;
+        }
         if long(&svc, i, &req) {
             svc.busy.push(id);
             svc.queued.push_back((id, req));
@@ -205,12 +241,44 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
         served::group(&mut svc.system, false);
     }
     super::census::refresh(&svc.conns);
+    end_doomed(&mut svc);
     while svc.fibers.len() < MAX_FIBERS
         && let Some((id, req)) = svc.queued.pop_front()
     {
         svc = start(svc, id, req);
     }
     turns(svc)
+}
+
+/// The statement of connection `id` that `req` answers: the latest of
+/// those waiting for their job.
+fn waiting_for(svc: &Svc, id: u64, req: &Request) -> Option<Rc<Turn>> {
+    let Request::SqlRun { desc, .. } = req else { return None };
+    let d = Desc::decode(desc)?;
+    if d.op != Op::Called || d.name != sql::exec::routine::midcall::ANSWER {
+        return None;
+    }
+    svc.fibers
+        .iter()
+        .filter(|(t, _)| t.id == id && t.waiting.get())
+        .max_by_key(|(t, _)| t.seq)
+        .map(|(t, _)| Rc::clone(t))
+}
+
+/// End the connections that went once none of their statements is in
+/// progress.
+fn end_doomed(svc: &mut Svc) {
+    for id in std::mem::take(&mut svc.doomed) {
+        if svc.fibers.iter().any(|(t, _)| t.id == id) {
+            svc.doomed.push(id);
+            continue;
+        }
+        svc.busy.retain(|b| *b != id);
+        if let Some(i) = svc.index(id) {
+            let c = svc.conns.remove(i);
+            served::vanished(&mut svc.system, c);
+        }
+    }
 }
 
 /// Answer one request in the ordinary way.
@@ -243,14 +311,19 @@ fn long(svc: &Svc, i: usize, req: &Request) -> bool {
 /// its end.
 fn turns(mut svc: Box<Svc>) -> Box<Svc> {
     for _ in 0..svc.fibers.len() {
-        let (id, mut f) = svc.fibers.remove(0);
+        let (t, mut f) = svc.fibers.remove(0);
+        if t.waiting.get() && !svc.closing {
+            // Its job has not answered yet.
+            svc.fibers.push((t, f));
+            continue;
+        }
         park(svc);
         let ended = f.resume();
         svc = unpark();
         if ended {
             f.recycle();
         } else {
-            svc.fibers.push((id, f));
+            svc.fibers.push((t, f));
         }
     }
     svc
@@ -262,6 +335,19 @@ struct Turn {
     id: u64,
     /// What setting its job up changed.
     entered: Cell<served::Entered>,
+    /// The order turns began in.
+    seq: u64,
+    /// It waits for its job to answer a call made in its middle.
+    waiting: Cell<bool>,
+    /// The answer: the inputs of the job's `Op::Called`.
+    answer: RefCell<Option<Vec<sql::Value>>>,
+}
+
+impl Turn {
+    fn new(svc: &mut Svc, id: u64, entered: served::Entered) -> Rc<Self> {
+        svc.next_turn += 1;
+        Rc::new(Self { id, entered: Cell::new(entered), seq: svc.next_turn, waiting: Cell::new(false), answer: RefCell::new(None) })
+    }
 }
 
 /// Start a long request on a fiber with the yielder letting the others
@@ -318,14 +404,11 @@ fn start_sql(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
             return svc;
         }
     };
-    let turn = Rc::new(Turn {
-        id,
-        entered: Cell::new(entered),
-    });
+    let turn = Turn::new(&mut svc, id, entered);
+    let t2 = Rc::clone(&turn);
     engine.ctx.yielder = Some(yielder(Rc::clone(&turn)));
-    // BLOCKED(sql): engine.ctx.triggers, the fiber's trigger caller
-    // (docs/STORAGE_SERVICE.md "Trigger programs"); without it a change
-    // of a table with triggers is refused.
+    // Trigger programs are called in the job, the statement waiting.
+    engine.ctx.midcall = Some(mid_caller(Rc::clone(&turn)));
     let req = sql::embed::Request {
         scope,
         desc,
@@ -338,20 +421,21 @@ fn start_sql(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
             engine.run(&req)
         };
         engine.ctx.yielder = None;
+        engine.ctx.midcall = None;
         park(finish(unpark(), &turn, engine, &reply));
     };
-    first_turn(svc, id, Fiber::on(stack, body))
+    first_turn(svc, t2, Fiber::on(stack, body))
 }
 
 /// A fiber's first turn; one that has not ended goes with the others.
-fn first_turn(mut svc: Box<Svc>, id: u64, mut f: Fiber) -> Box<Svc> {
+fn first_turn(mut svc: Box<Svc>, turn: Rc<Turn>, mut f: Fiber) -> Box<Svc> {
     park(svc);
     let ended = f.resume();
     svc = unpark();
     if ended {
         f.recycle();
     } else {
-        svc.fibers.push((id, f));
+        svc.fibers.push((turn, f));
     }
     svc
 }
@@ -412,12 +496,10 @@ fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
             return svc;
         }
     };
-    let turn = Rc::new(Turn {
-        id,
-        entered: Cell::new(entered),
-    });
-    let y = yielder(Rc::clone(&turn));
     let shared = Rc::clone(&system.lent);
+    let turn = Turn::new(&mut svc, id, entered);
+    let t2 = Rc::clone(&turn);
+    let y = yielder(Rc::clone(&turn));
     let mut work = Some(work);
     let body = move || {
         let lender = MainStore::new(shared);
@@ -431,7 +513,7 @@ fn start_cmd(mut svc: Box<Svc>, id: u64, i: usize, req: Request) -> Box<Svc> {
         drop(lender);
         park(finish_cmd(unpark(), &turn, (finish, segments), user.then_some(&session)));
     };
-    first_turn(svc, id, Fiber::on(stack, body))
+    first_turn(svc, t2, Fiber::on(stack, body))
 }
 
 /// Run a command's work, once.
@@ -513,6 +595,49 @@ fn yielder(turn: Rc<Turn>) -> sql::exec::Yielder {
         let stop = svc.closing;
         park(svc);
         stop
+    })
+}
+
+/// A statement's calls in its middle: the service as between requests,
+/// the plan sent to its job as the reply to its request, and the fiber
+/// suspended, not taking turns, until the job's answer (or a close)
+/// lets it go on; then its job set up again. The answer, `None` when
+/// there is none.
+fn mid_caller(turn: Rc<Turn>) -> sql::exec::routine::midcall::MidCaller {
+    Rc::new(move |plan| {
+        let mut svc = PARKED.with(|p| p.borrow_mut().take())?;
+        served::leave(&mut svc.system, turn.entered.get());
+        let sent = match svc.index(turn.id) {
+            Some(i) if !svc.closing && !svc.doomed.contains(&turn.id) => {
+                if let Some(ctx) = svc.conns[i].ctx.as_ref() {
+                    let who = served::charged(ctx);
+                    super::security::flush(&mut svc.system, Some(who));
+                }
+                let reply = sql::embed::Reply { call: Some(Box::new(plan)), ..sql::embed::Reply::default() };
+                svc.conns[i].chan.send_raw(&ipc::encode(&reply.to_wire())).is_ok()
+            }
+            _ => false,
+        };
+        *turn.answer.borrow_mut() = None;
+        if sent {
+            // The job's connection is read again meanwhile.
+            svc.busy.retain(|b| *b != turn.id);
+            turn.waiting.set(true);
+        }
+        park(svc);
+        if sent {
+            sec::guard::as_system(fiber::suspend);
+        }
+        let mut svc = unpark();
+        turn.waiting.set(false);
+        if let Some(i) = svc.index(turn.id) {
+            let Svc { system, conns, .. } = &mut *svc;
+            if let Some(ctx) = conns[i].ctx.as_ref() {
+                turn.entered.set(served::enter(system, ctx));
+            }
+        }
+        park(svc);
+        turn.answer.borrow_mut().take()
     })
 }
 

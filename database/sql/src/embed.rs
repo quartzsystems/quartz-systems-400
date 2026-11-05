@@ -787,6 +787,10 @@ impl Session {
     /// procedure's cursor, its column count, the procedure);
     /// `SQLERRD(1)` is the return status.
     fn called(&mut self, req: &Request) -> Reply {
+        if req.desc.name == crate::exec::routine::midcall::ANSWER {
+            // Only the storage service has statements waiting for one.
+            return Reply::of(code(-84, "42612"));
+        }
         let Some(c) = crate::exec::routine::Called::from_inputs(&req.inputs) else {
             return Reply::of(code(-84, "42612"));
         };

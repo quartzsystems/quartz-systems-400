@@ -396,20 +396,28 @@ makes its calls through its trigger mode (`db::trg::Mode`):
   the primary without commitment control), both `CPF502B`. Nothing of
   the service waits on the job meanwhile, so the program's own requests
   (other files, the same file through another open) are ordinary ones.
-- `Call`, SQL (`SqlContext::triggers`): a statement fires triggers row by
-  row, so the calls are made in the middle of it through a
-  `db::trg::Caller`. The service's caller commits what the statement
-  wrote so far (`Txn::commit_part`, as a yield does), suspends the
-  statement's fiber and answers the job's request with a call plan of
-  style trigger (the buffer and its length); the connection is read
-  again, so the program's own requests are served; the job's
-  `Op::Called` with the buffer back resumes the fiber, the member is read
-  again, and the statement goes on. BLOCKED(sql): the service's caller
-  and the job's side of it are not built yet; until they are, an SQL
-  change of a table with triggers is refused with `SQL0084`. The engine's
-  side is: `tests/trigger.rs` of `database/sql` runs it with a caller in
-  memory (`SQL0443`/38501 for a refusal, `SQL0204` for a program not
-  found, as the primary).
+- `Call`, SQL (`SqlContext::midcall`, `sql::exec::routine::midcall`): a
+  statement fires triggers row by row, so the calls are made in the
+  middle of it through a `db::trg::Caller`. The engine's caller commits
+  what the statement wrote so far (`Txn::commit_part`, as a yield does)
+  and gives the store back; the service's mid caller (`turns.rs`) answers
+  the job's request with a call plan of style trigger (the buffer) and
+  suspends the statement's fiber, which takes no turns until its job
+  answers. The job's connection is read again meanwhile, so the
+  program's own requests are served, its statements on fibers of their
+  own. The job (`mi::io::trigger::sql_run`, which every embedded
+  statement of the runtime goes through) calls the program and sends
+  `Op::Called` named `*MIDCALL` with the buffer back, or the failure;
+  that resumes the latest statement of the job waiting for an answer,
+  the member is read again, and the statement goes on. A job that goes
+  while a statement of its waits ends after the statement does. The
+  engine's side runs in memory in `tests/trigger.rs` of `database/sql`
+  (`SQL0443`/38501 for a refusal, `SQL0204` for a program not found, as
+  the primary). The same plan and answer carry any call a statement
+  needs made in its middle (`MidCaller`); a statement run where there is
+  no fiber or no job to call (the service console, `STRSQL`'s and the
+  servers' statements run in the service) still refuses a change of a
+  table with triggers with `SQL0084` (BLOCKED(sql)).
 
 Read triggers fire for record I/O of a physical file; a query of a table
 with read triggers and a read through a logical file over one are

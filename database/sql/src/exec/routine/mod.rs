@@ -13,6 +13,7 @@
 mod call;
 mod create;
 pub mod find;
+pub mod midcall;
 pub mod udf;
 pub mod model;
 
@@ -48,6 +49,9 @@ pub enum CallStyle {
     Sql,
     /// An SQL routine of QS/400's: `SQL` and its SQLCA after them.
     SqlRoutine,
+    /// A trigger program in the middle of a statement: the trigger
+    /// buffer and its length ([`midcall`]).
+    Trigger,
 }
 
 impl CallStyle {
@@ -57,6 +61,7 @@ impl CallStyle {
             Self::GeneralNulls => 'N',
             Self::Sql => 'S',
             Self::SqlRoutine => 'Q',
+            Self::Trigger => 'T',
         }
     }
 
@@ -65,6 +70,7 @@ impl CallStyle {
             'N' => Self::GeneralNulls,
             'S' => Self::Sql,
             'Q' => Self::SqlRoutine,
+            'T' => Self::Trigger,
             _ => Self::General,
         }
     }

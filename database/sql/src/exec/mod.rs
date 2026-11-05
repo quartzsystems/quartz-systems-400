@@ -170,6 +170,10 @@ pub struct SqlContext {
     /// Calls trigger programs in the job running the statement; `None`
     /// refuses a change a trigger fires for (`SQL0084`).
     pub triggers: Option<db::trg::fire::CallerRef>,
+    /// Makes calls in the middle of a statement for the requester
+    /// (`routine::midcall`); trigger programs go through it when
+    /// [`Self::triggers`] is `None`.
+    pub midcall: Option<routine::midcall::MidCaller>,
     /// The least time between two yields.
     pub yield_every: std::time::Duration,
     /// Files and members a statement that may yield holds `*SHRRD` on,
@@ -297,6 +301,7 @@ impl SqlContext {
             interrupt_ticks: 0,
             yielder: None,
             triggers: None,
+            midcall: None,
             yield_every: YIELD_EVERY,
             held: Vec::new(),
             open: 0,
@@ -742,6 +747,8 @@ impl SqlContext {
         }
         if let Some(c) = &self.triggers {
             o.set_trigger_mode(db::trg::Mode::Call(c.clone()));
+        } else if let Some(m) = &self.midcall {
+            o.set_trigger_mode(db::trg::Mode::Call(routine::midcall::Triggers::shared(m.clone())));
         }
         Ok(o)
     }

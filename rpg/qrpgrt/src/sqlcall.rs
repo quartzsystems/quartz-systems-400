@@ -93,7 +93,7 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
     crate::sql::write_sqlca_at(&mut ca, &Sqlca::default());
     let mut args: Vec<u64> = bufs.iter_mut().map(|b| b.as_mut_ptr() as u64).collect();
     match plan.style {
-        CallStyle::General => {}
+        CallStyle::General | CallStyle::Trigger => {}
         CallStyle::GeneralNulls => args.push(ind_array.as_mut_ptr() as u64),
         CallStyle::Sql | CallStyle::SqlRoutine => {
             args.extend(ind_bufs.iter_mut().map(|b| b.as_mut_ptr() as u64));
@@ -164,8 +164,7 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
 /// made here, its `OUT` and `INOUT` values given back by marker.
 pub fn run_request(job: &mut mi::Job, mut req: sql::embed::Request) -> (sql::embed::Reply, Vec<(usize, Value)>) {
     req.desc.calls = true;
-    let Some(s) = job.sql.as_mut() else { return (sql::embed::Reply::default(), Vec::new()) };
-    let reply = s.run(&req);
+    let Some(reply) = mi::io::trigger::sql_run(job, &req) else { return (sql::embed::Reply::default(), Vec::new()) };
     let Some(plan) = reply.call.clone() else { return (reply, Vec::new()) };
     let out = perform(job, &plan);
     let req2 = sql::embed::Request {
@@ -173,8 +172,7 @@ pub fn run_request(job: &mut mi::Job, mut req: sql::embed::Request) -> (sql::emb
         desc: sql::embed::Desc { op: sql::embed::Op::Called, ..sql::embed::Desc::default() },
         inputs: out.called.inputs(),
     };
-    let Some(s) = job.sql.as_mut() else { return (sql::embed::Reply::default(), Vec::new()) };
-    let r = s.run(&req2);
+    let Some(r) = mi::io::trigger::sql_run(job, &req2) else { return (sql::embed::Reply::default(), Vec::new()) };
     let outs = if r.sqlca.is_error() { Vec::new() } else { out.outs };
     (r, outs)
 }

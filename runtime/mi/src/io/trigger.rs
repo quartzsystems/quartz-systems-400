@@ -10,6 +10,10 @@
 //! operation again with a [`TriggerResume`]. An operation done answers
 //! the after calls for the job to make; one that fails gives status
 //! 01024. `docs/STORAGE_SERVICE.md` "Trigger programs".
+//!
+//! An SQL statement makes its calls in its middle instead: the database
+//! answers with a call plan and waits; [`sql_run`] makes the call and
+//! gives the answer back until the statement ends.
 
 use super::{IoRequest, IoResult};
 use crate::Job;
@@ -141,6 +145,33 @@ pub fn run(j: &mut Job, req: &IoRequest<'_>, io: &mut dyn FnMut(&mut Job, &IoReq
         }
     }
     r
+}
+
+/// Run one SQL statement through the job's session, making the calls
+/// the database asks for in the middle of it (trigger programs, style
+/// `Trigger`) and answering each, until it ends. Any other plan (a
+/// `CALL`'s) is the caller's. `None` when the job has no SQL session.
+pub fn sql_run(j: &mut Job, req: &sql::embed::Request) -> Option<sql::embed::Reply> {
+    use sql::exec::routine::{CallStyle, midcall};
+    let mut reply = j.sql.as_mut()?.run(req);
+    while let Some(plan) = reply.call.take_if(|p| p.style == CallStyle::Trigger) {
+        let mut c = TriggerCall {
+            trigger: plan.routine.clone(),
+            lib: plan.library.clone(),
+            pgm: plan.program.clone(),
+            file: plan.specific.clone(),
+            buffer: midcall::plan_buffer(&plan),
+            ..TriggerCall::default()
+        };
+        let failed = call(j, &mut c).err().map(|f| db::trg::Failure { msgid: f.msgid, text: f.text, not_found: f.not_found });
+        let answer = sql::embed::Request {
+            scope: req.scope.clone(),
+            desc: sql::embed::Desc { op: sql::embed::Op::Called, name: midcall::ANSWER.into(), ..sql::embed::Desc::default() },
+            inputs: midcall::trigger_inputs(&c.buffer, failed.as_ref()),
+        };
+        reply = j.sql.as_mut()?.run(&answer);
+    }
+    Some(reply)
 }
 
 impl TriggerCall {
