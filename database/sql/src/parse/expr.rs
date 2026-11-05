@@ -467,6 +467,14 @@ impl Parser {
             {
                 return Ok(Expr::Register(Register::Named(n)));
             }
+            // A qualified function: SYSIBM's are the built-ins.
+            if self.is_sym("(") && !first.delimited && !column.delimited {
+                match first.value.as_str() {
+                    "SYSIBM" => return self.call(column.value),
+                    "QSYS2" | "SYSTOOLS" => return self.call(format!("{}.{}", first.value, column.value)),
+                    _ => {}
+                }
+            }
             if self.is_sym(".") {
                 return Err(crate::error::SqlError::ThreePartName {
                     name: format!("{first}.{column}..."),

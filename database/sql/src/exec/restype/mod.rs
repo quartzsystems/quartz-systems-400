@@ -70,6 +70,7 @@ pub const FUNCTION_TYPES: &[FunctionType] = &[
     super::func::datetime::result_type,
     super::func::math::result_type,
     super::func::misc::result_type,
+    super::func::services::result_type,
     rules::builtin,
     super::routine::udf::result_type,
 ];

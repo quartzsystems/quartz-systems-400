@@ -10,6 +10,7 @@
 //! and those are nullable in its description.
 
 pub mod host;
+pub mod http;
 pub mod shape;
 
 mod args;
@@ -63,6 +64,16 @@ const VIEWS: &[View] = &[
 const FUNCTIONS: &[Function] = &[
     Function { schema: "QSYS2", specific: "QSQACTJOB", no_value: &[], rows: jobs::active },
     Function { schema: "QSYS2", specific: "QSQJOBINFO", no_value: &[], rows: jobs::job_info },
+    Function { schema: "QSYS2", specific: "HTTP_GETV", no_value: &[], rows: http::get_v },
+    Function { schema: "QSYS2", specific: "HTTP_GETBV", no_value: &[], rows: http::get_bv },
+    Function { schema: "QSYS2", specific: "HTTP_POSTV", no_value: &[], rows: http::post_v },
+    Function { schema: "QSYS2", specific: "HTTP_POSTBV", no_value: &[], rows: http::post_bv },
+    Function { schema: "QSYS2", specific: "HTTP_PUTV", no_value: &[], rows: http::put_v },
+    Function { schema: "QSYS2", specific: "HTTP_PUTBV", no_value: &[], rows: http::put_bv },
+    Function { schema: "QSYS2", specific: "HTTP_PATCHV", no_value: &[], rows: http::patch_v },
+    Function { schema: "QSYS2", specific: "HTTP_PTCBV", no_value: &[], rows: http::patch_bv },
+    Function { schema: "QSYS2", specific: "HTTP_DELV", no_value: &[], rows: http::delete_v },
+    Function { schema: "QSYS2", specific: "HTTP_DELBV", no_value: &[], rows: http::delete_bv },
 ];
 
 fn schema_of(name: &ObjectName) -> Option<&str> {
@@ -106,7 +117,7 @@ fn missing(name: &str) -> SqlError {
 
 /// A table function's columns and rows for `args` (positional, or
 /// `name => value`), `None` when `name` is not a service table
-/// function. The `TABLE(f(...))` reference calls it.
+/// function.
 pub fn table_function(
     txn: &mut Txn<'_>,
     ctx: &SqlContext,
@@ -128,6 +139,30 @@ pub fn table_function(
         return Ok(Some(out.finish()));
     }
     Ok(None)
+}
+
+/// The `TABLE (f(args))` hook ([`super::FunctionProvider`]): the
+/// arguments' names from their `name => value` markers.
+pub(crate) fn call(
+    txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &ObjectName,
+    args: &[crate::value::Value],
+    exprs: &[crate::ast::Expr],
+    alias: &str,
+) -> Result<Option<Table>> {
+    let named = args
+        .iter()
+        .zip(exprs.iter().map(Some).chain(std::iter::repeat(None)))
+        .map(|(v, e)| {
+            let n = match e {
+                Some(crate::ast::Expr::Function(f)) => f.name.strip_prefix("=>").map(str::to_string),
+                _ => None,
+            };
+            (n, v.clone())
+        })
+        .collect();
+    table_function(txn, ctx, name, named, alias)
 }
 
 /// Whether `name` is a service table function.
@@ -193,7 +228,22 @@ pub fn self_check(txn: &mut Txn<'_>, ctx: &SqlContext) -> Vec<String> {
     }
     for f in FUNCTIONS {
         let r = shape::index_specific(f.schema, f.specific).ok_or_else(|| missing(f.specific)).and_then(|shape| {
-            let bound = Args::bind(shape, Vec::new(), ctx)?;
+            // A parameter with no default gets a sample: a path or URL
+            // for text, 1 for a number.
+            let sample = shape
+                .parms
+                .iter()
+                .filter(|p| p.mode != "OUT" && (p.default.is_empty() || p.default == "-"))
+                .map(|p| {
+                    let v = if matches!(p.ty.as_str(), "INTEGER" | "SMALLINT" | "BIGINT" | "DECIMAL") {
+                        crate::value::Value::int(1)
+                    } else {
+                        crate::value::Value::Str("/".into())
+                    };
+                    (Some(p.name.clone()), v)
+                })
+                .collect();
+            let bound = Args::bind(shape, sample, ctx)?;
             let mut out = Out::new(shape, f.specific, f.no_value);
             (f.rows)(txn, ctx, &bound, &mut out)?;
             Ok(out.finish_noting())

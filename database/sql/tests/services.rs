@@ -113,6 +113,15 @@ impl SystemHost for Mock {
         ])
     }
 
+    fn http(&self, req: &host::HttpRequest) -> Option<Result<host::HttpResponse, String>> {
+        if req.url.contains("missing") {
+            return Some(Ok(host::HttpResponse { status: 404, headers: Vec::new(), body: b"gone".to_vec() }));
+        }
+        let auth = req.headers.iter().find(|(n, _)| n == "Authorization").map_or(String::new(), |(_, v)| v.clone());
+        let body = format!("{} {} [{}] {}", req.method, req.url, auth, String::from_utf8_lossy(&req.body));
+        Some(Ok(host::HttpResponse { status: 200, headers: vec![("Content-Type".into(), "text/plain".into())], body: body.into_bytes() }))
+    }
+
     fn system_status(&self) -> Option<SystemStatus> {
         Some(SystemStatus {
             total_jobs: 40,
@@ -321,4 +330,44 @@ fn shapes_load() {
     assert_eq!(s.cols.len(), 8);
     assert!(services::shape::routine("QSYS2", "ACTIVE_JOB_INFO", 'T').is_some());
     let _ = host::HttpRequest::default();
+}
+
+#[test]
+fn table_functions_by_sql_with_named_arguments() {
+    let mut db = Db::new(true);
+    assert_eq!(db.rows("SELECT JOB_NAME FROM TABLE(QSYS2.ACTIVE_JOB_INFO(JOB_NAME_FILTER => '*')) X"), vec![row(&["000009/CODY/QPADEV0001"])]);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.ACTIVE_JOB_INFO()) X WHERE JOB_TYPE = 'SBS'"), vec![row(&["1"])]);
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(ACTIVE_JOB_INFO('NO', 'QINTER')) X"), vec![row(&["2"])]);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.ACTIVE_JOB_INFO(BOGUS => 1)) X"), -440);
+}
+
+#[test]
+fn base64_and_url_as_pub400() {
+    let mut db = Db::new(true);
+    assert_eq!(db.rows("SELECT QSYS2.BASE64_ENCODE(X'00FF10'), BASE64_ENCODE('x') FROM SYSIBM.SYSDUMMY1"), vec![row(&["AP8Q", "pw=="])]);
+    assert_eq!(db.rows("SELECT HEX(QSYS2.BASE64_DECODE('SGVsbG8sIFFTLzQwMA==')) FROM SYSIBM.SYSDUMMY1"), vec![row(&["48656C6C6F2C2051532F343030"])]);
+    assert_eq!(db.code("SELECT QSYS2.BASE64_DECODE('not base64!') FROM SYSIBM.SYSDUMMY1"), -443);
+    assert_eq!(
+        db.rows("SELECT QSYS2.URL_ENCODE('a b&c=d/e?f~g.h-i_j*k+l%') FROM SYSIBM.SYSDUMMY1"),
+        vec![row(&["a+b%26c%3Dd%2Fe%3Ff%7Eg.h-i_j%2Ak%2Bl%25"])]
+    );
+    assert_eq!(db.rows("SELECT QSYS2.URL_DECODE('caf%C3%A9'), QSYS2.URL_DECODE('a+b%26c') FROM SYSIBM.SYSDUMMY1"), vec![row(&["café", "a b&c"])]);
+    assert_eq!(db.code("SELECT QSYS2.URL_DECODE('bad%zz') FROM SYSIBM.SYSDUMMY1"), -443);
+    assert_eq!(db.code("SELECT QSYS2.URL_ENCODE('a b', '%20') FROM SYSIBM.SYSDUMMY1"), -171);
+}
+
+#[test]
+fn http_functions_through_the_host() {
+    let mut db = Db::new(true);
+    assert_eq!(db.rows("SELECT QSYS2.HTTP_GET('http://h/x') FROM SYSIBM.SYSDUMMY1"), vec![row(&["GET http://h/x []"])]);
+    assert_eq!(
+        db.rows("SELECT QSYS2.HTTP_POST('http://h/x', 'hi', '{\"basicAuth\":\"u,p\"}') FROM SYSIBM.SYSDUMMY1"),
+        vec![row(&["POST http://h/x [Basic dTpw] hi"])]
+    );
+    assert_eq!(db.code("SELECT QSYS2.HTTP_GET('http://h/missing') FROM SYSIBM.SYSDUMMY1"), -443);
+    assert_eq!(db.code("SELECT QSYS2.HTTP_GET('http://h/x', '{\"proxy\":\"p:1\"}') FROM SYSIBM.SYSDUMMY1"), -443);
+    assert_eq!(
+        db.rows("SELECT RESPONSE_HTTP_HEADER FROM TABLE(QSYS2.HTTP_GET_VERBOSE('http://h/missing')) X"),
+        vec![row(&["{\"HTTP_STATUS_CODE\":404}"])]
+    );
 }

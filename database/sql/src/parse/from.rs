@@ -7,7 +7,8 @@
 //! TABLE (change)`.
 
 use super::Parser;
-use crate::ast::{ChangeRows, Ident, Statement, TableRef};
+use crate::ast::{ChangeRows, Expr, Ident, Statement, TableRef};
+use crate::lex::Tok;
 use crate::error::Result;
 
 impl Parser {
@@ -66,9 +67,9 @@ impl Parser {
         self.expect_sym("(")?;
         let mut args = Vec::new();
         if !self.eat_sym(")") {
-            args.push(self.expr()?);
+            args.push(self.table_arg()?);
             while self.eat_sym(",") {
-                args.push(self.expr()?);
+                args.push(self.table_arg()?);
             }
             self.expect_sym(")")?;
         }
@@ -76,5 +77,20 @@ impl Parser {
         let (alias, columns) = self.correlation()?;
         let alias = alias.ok_or_else(|| self.expected("a correlation name"))?;
         Ok(Some(TableRef::Lateral(Box::new(TableRef::Function { name, args, alias, columns }))))
+    }
+
+    /// A table function's argument: an expression, or `name => expr`,
+    /// kept as the function `=>NAME` of the expression
+    /// ([`crate::exec::catalog::named_arg`]).
+    fn table_arg(&mut self) -> Result<Expr> {
+        if let Tok::Word(w) = self.tok().clone()
+            && self.is_sym_at(1, "=>")
+        {
+            self.advance();
+            self.advance();
+            let e = self.expr()?;
+            return Ok(Expr::Function(crate::ast::Function { name: format!("=>{w}"), distinct: false, star: false, args: vec![e] }));
+        }
+        self.expr()
     }
 }

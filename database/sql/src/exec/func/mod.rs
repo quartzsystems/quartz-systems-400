@@ -11,6 +11,7 @@ mod format;
 pub(crate) mod math;
 pub(crate) mod misc;
 mod regexp;
+pub(crate) mod services;
 pub(crate) mod string;
 
 use std::fmt::Write as _;
@@ -130,6 +131,7 @@ const FAMILIES: &[Family] = &[
     Family { call: datetime::call },
     Family { call: math::call },
     Family { call: misc::call },
+    Family { call: services::call },
 ];
 
 /// Call a scalar function; `args` are already evaluated.

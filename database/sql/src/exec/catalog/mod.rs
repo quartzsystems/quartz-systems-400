@@ -83,6 +83,7 @@ pub(crate) struct FunctionProvider {
 const FUNCTIONS: &[FunctionProvider] = &[
     FunctionProvider { has: systools::has, call: systools::call },
     FunctionProvider { has: super::json::table::has, call: super::json::table::call },
+    FunctionProvider { has: services::is_table_function, call: services::call },
 ];
 
 /// Whether `name` names a table function.
