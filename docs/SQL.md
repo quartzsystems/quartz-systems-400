@@ -148,9 +148,9 @@ Aggregates: `COUNT`, `COUNT_BIG`, `SUM`, `AVG`, `MIN`, `MAX`. Any other
 function is refused with SQL0084 (to become SQL0204 or SQL0440 as IBM
 gives them).
 
-Result types of expressions: refused detail. Today an expression's
-result column describes as `VARCHAR(32767)`; IBM describes the real type
-(`kit/BASIC`).
+Result types: an expression's result column describes with its real
+type and its values are fitted to it (§7). Some functions still describe
+as `VARCHAR(32767)` until the query work registers their types.
 
 The 7.5 reference list (the brief, Section 2) is the target; rows are
 added here as families land in `database/sql/src/exec/func/`.
@@ -165,20 +165,41 @@ added here as families land in `database/sql/src/exec/func/`.
 
 ## 7. Data types
 
-| Type | Status | Oracle | Test |
+| Type or rule | Status | Oracle | Test |
 |---|---|---|---|
-| `SMALLINT`, `INTEGER`, `BIGINT`, `DECIMAL`, `NUMERIC` | supported | primary | `kit/BASIC` |
-| `REAL`, `DOUBLE`, `FLOAT` | supported | primary | `kit/BASIC` |
-| `DECFLOAT` | partial | primary | |
+| `SMALLINT`, `INTEGER`, `BIGINT`, `DECIMAL`, `NUMERIC` | supported | primary | `kit/BASIC`, `types/FLOATFMT` |
+| `REAL`, `DOUBLE`, `FLOAT`; their text in `CHAR`, `VARCHAR`, `CAST`, `\|\|` (17 digits, `1.5E0`) | supported | primary | `types/FLOATFMT` |
+| `DECFLOAT(16)`, `DECFLOAT(34)`: values, specials, DPD encoding, arithmetic (NaN, SQL0802, SQ20365) | supported | primary | `types/DECFLT1`, `types/DECFLT2` |
+| `CURRENT DECFLOAT ROUNDING MODE` and `SET` (7 modes) | supported; a mode from a host variable refused SQL0084 | primary | `types/DECFLT1` |
+| `QUANTIZE`, `NORMALIZE_DECFLOAT`, `TOTALORDER`, `COMPARE_DECFLOAT`, `DECFLOAT()` | supported | primary | `types/DECFLT1` |
+| `DECFLOAT_FORMAT` | partial: elements `9 0 . , $ S MI PR` | pub400 | `types/DECFLT3` |
+| `DECFLOAT` result type mixed with other numerics | partial: right where the select list is typed statically; values carry no declared type | primary | `types/DECFLT1` |
+| `SQL_DECFLOAT_WARNINGS` | refused: the 7.1 default is fixed until QAQQINI | primary | |
+| Casting matrix (SQL0461, 0420, 0802, 0180, 0181, 0433, 0189, 0332, 0171) | supported | primary | `types/CASTSTR`, `types/DECFLT2` |
+| Data mapping errors in the select list: NULL with warning +802/+420/+180/+20365 | supported | primary | `types/CASTSTR` |
+| Assignment errors (SQL0404, 0406, 0408, 0420) | supported | primary | `types/CASTSTR` |
+| Result types of constants, `CAST`, arithmetic, `\|\|`, `CASE`, `COALESCE`, `VALUES`, `UNION` | supported | primary | `types/*` |
 | `CHAR`, `VARCHAR` | supported | primary | `kit/BASIC` |
-| `GRAPHIC`, `VARGRAPHIC` | partial | primary | |
-| `BINARY`, `VARBINARY` | partial | primary | |
-| `CLOB`, `BLOB`, `DBCLOB` | partial | primary | |
-| `DATE`, `TIME`, `TIMESTAMP` | supported | primary | `kit/BASIC` |
-| `TIMESTAMP(p)` | partial | primary | |
-| `BOOLEAN` | partial | pub400 | |
-| `ROWID`, `XML`, `DATALINK` | refused SQL0084 | primary | |
-| JSON functions | refused SQL0084 | pub400 | |
+| `GRAPHIC`, `VARGRAPHIC`, `DBCLOB` in CCSID 1200 and 13488; `NCHAR`, `NVARCHAR`, `NCLOB`; `CCSID` on columns and `CAST`; `FOR SBCS DATA` | supported | primary | `types/LOB1`, `types/CASTSTR` |
+| `FOR MIXED DATA` | refused SQL0604 | primary | `types/LOB1` |
+| `BINARY`, `VARBINARY` (binary vs character comparison SQL0401) | supported | primary | `types/CASTSTR` |
+| `CLOB`, `BLOB`, `DBCLOB`: functions, comparisons, `ORDER BY`, `GROUP BY`, `DISTINCT` | supported | primary | `types/LOB1` |
+| A LOB as an index key | refused SQL0350 | primary | `types/LOB1` |
+| `CLOB ... FOR BIT DATA` | refused SQL0683 | primary | `types/LOB1` |
+| `INLINE LENGTH` | no-op: values up to 24 bytes already sit in the record's LOB reference | pub400 | `types/DECFLT3` |
+| LOB locators, file reference variables, `FREE LOCATOR` | refused: BLOCKED(sql), the engine's locator table exists; the statements come with dynamic and embedded SQL | none | |
+| `DATE`, `TIME`, `TIMESTAMP`, `TIMESTAMP(p)` 0 to 12 | supported | primary | `kit/BASIC` |
+| `BOOLEAN`: literals, `IS [NOT] TRUE/FALSE/UNKNOWN`, text casts; numeric casts SQL0461, arithmetic SQL0402 | supported | pub400 | `types/BOOL1` |
+| `XMLPARSE(DOCUMENT)`, `XMLSERIALIZE` (parse error SQ20398) | supported | primary | `types/XML1` |
+| `XML` as a column or `CAST` type, `XMLPARSE(CONTENT)`, `XMLQUERY`, `XMLTABLE`, `XMLEXISTS`, `XMLVALIDATE`, `XMLAGG` and the rest | refused SQL0084 | primary | `types/XML1` |
+| `ROWID`, `DATALINK` | refused SQL0084 | primary | `types/LOB1` |
+| `JSON_OBJECT`, `JSON_ARRAY` (incl. a fullselect), `FORMAT JSON/BSON`, `RETURNING`, `ABSENT/NULL ON NULL`, `WITH UNIQUE KEYS` | supported | pub400 | `types/JSON1` |
+| `JSON_VALUE`, `JSON_QUERY`, `JSON_EXISTS`, `IS JSON`, lax and strict paths, `ON EMPTY`, `ON ERROR` | supported | pub400 | `types/JSON1` |
+| SQL/JSON path filters, item methods, `**`, `@`, variables, `PASSING` | refused SQL0084 | pub400 | |
+| `JSON_TO_BSON`, `BSON_TO_JSON` | supported, byte-exact | pub400 | `types/JSON1` |
+| `JSON_ARRAYAGG`, `JSON_OBJECTAGG` | supported | pub400 | `types/JSON1` |
+| `JSON_TABLE` | partial: the evaluator is done; its use in `FROM` waits on the query work merging | pub400 | `sql::table` |
+| `JSON_UPDATE` | refused SQL0204, as pub400 (7.5 has none) | pub400 | `types/JSON1` |
 
 ## 8. Catalogs
 
