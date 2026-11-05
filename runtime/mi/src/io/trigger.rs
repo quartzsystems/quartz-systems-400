@@ -152,17 +152,29 @@ pub fn run(j: &mut Job, req: &IoRequest<'_>, io: &mut dyn FnMut(&mut Job, &IoReq
 /// `Trigger`) and answering each, until it ends. Any other plan (a
 /// `CALL`'s) is the caller's. `None` when the job has no SQL session.
 pub fn sql_run(j: &mut Job, req: &sql::embed::Request) -> Option<sql::embed::Reply> {
-    use sql::exec::routine::{CallStyle, midcall};
+    use sql::exec::routine::midcall;
     let mut reply = j.sql.as_mut()?.run(req);
-    while let Some(plan) = reply.call.take_if(|p| p.style == CallStyle::Trigger) {
+    while let Some(plan) = reply.call.take_if(|p| sql::exec::routine::extfunc::is_mid(p)) {
         let answer = sql::embed::Request {
             scope: req.scope.clone(),
             desc: sql::embed::Desc { op: sql::embed::Op::Called, name: midcall::ANSWER.into(), ..sql::embed::Desc::default() },
-            inputs: answer_plan(j, &plan),
+            inputs: answer_mid(j, &plan),
         };
         reply = j.sql.as_mut()?.run(&answer);
     }
     Some(reply)
+}
+
+/// Answer a call the database asks for in the middle of a statement: a
+/// trigger program here, an external function by [`Job::function_calls`].
+pub fn answer_mid(j: &mut Job, plan: &sql::exec::routine::CallPlan) -> Vec<sql::Value> {
+    if plan.style == sql::exec::routine::CallStyle::Function {
+        return match j.function_calls {
+            Some(f) => f(j, plan),
+            None => sql::exec::routine::extfunc::answer(sql::Value::Null, "42724", "this job cannot call external functions", None, -444),
+        };
+    }
+    answer_plan(j, plan)
 }
 
 /// Make the trigger call a plan of style `Trigger` describes; the

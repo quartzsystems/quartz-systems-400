@@ -132,6 +132,9 @@ pub(crate) enum QueueTarget {
     SysOpr,
 }
 
+/// Make an external function's call and give the database its answer.
+pub type FunctionCaller = fn(&mut Job, &sql::exec::routine::CallPlan) -> Vec<sql::Value>;
+
 /// The job. The `abi` header comes first so the pointer generated code
 /// holds is also a pointer to the whole record.
 #[repr(C)]
@@ -195,6 +198,9 @@ pub struct Job {
     pub data: Option<Box<dyn crate::io::DataSource>>,
     /// Where embedded SQL statements run; none until a job sets it.
     pub sql: Option<Box<dyn sql::embed::Embedded>>,
+    /// Who makes an external function's call a statement asks for in
+    /// its middle (the RPG runtime's, as it installs).
+    pub function_calls: Option<FunctionCaller>,
     /// Open files by activation, module and file index.
     pub files: HashMap<FileKey, FileState>,
     /// Files passed to procedures: what each handle names.
@@ -292,6 +298,7 @@ impl Job {
             display: None,
             data: None,
             sql: None,
+            function_calls: None,
             files: HashMap::new(),
             file_handles: Vec::new(),
             file_binds: Vec::new(),

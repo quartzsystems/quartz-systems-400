@@ -163,7 +163,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &CreateRoutine) -> Res
     };
     let routine_options = o.set_options.clone();
     let (owner, deps) = match &r.body {
-        _ if func => {
+        _ if func && !matches!(r.body, RoutineBody::External) => {
             let program = program_name_of(txn, lib, &r.name.name, types::SRVPGM)?;
             def.program_library = lib_name.to_string();
             def.program = program.to_string();
@@ -506,13 +506,15 @@ pub(super) fn remove(txn: &mut Txn<'_>, ctx: &mut SqlContext, f: &Found) -> Resu
 
 
 /// What `CREATE FUNCTION` takes: SQL scalar functions whose bodies the
-/// database runs (`udf`) and sourced functions.
+/// database runs (`udf`), sourced functions, and external scalar ones,
+/// programs in the job called in the middle of the statement (`extfunc`).
 fn check_function(r: &CreateRoutine) -> Result<()> {
     match (&r.returns, &r.body) {
-        (_, RoutineBody::External) => {
-            // BLOCKED(sql): an external function runs a program inside the
-            // query, and programs run in the job, not the database.
-            Err(unsupported("external functions"))
+        // BLOCKED(sql): an external table function is called for each row
+        // to fetch, with open and close calls around them.
+        (Some(Returns::Table(_)), RoutineBody::External) => Err(unsupported("external table functions")),
+        (_, RoutineBody::External) if matches!(r.options.style, Some(ParmStyle::General | ParmStyle::GeneralNulls)) => {
+            Err(unsupported("external functions of PARAMETER STYLE GENERAL"))
         }
         (_, RoutineBody::Sql(b)) => super::udf::check_body(b),
         _ => Ok(()),

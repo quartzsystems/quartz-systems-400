@@ -35,11 +35,96 @@ pub struct Outcome {
 /// Make a call a statement asked for in its middle and answer it: the
 /// statement goes on (`midcall::ANSWER`). `None` for a `CALL`'s plan.
 pub fn answer(job: &mut mi::Job, plan: &CallPlan) -> Option<Outcome> {
-    (plan.style == CallStyle::Trigger).then(|| Outcome {
-        called: Called::default(),
-        outs: Vec::new(),
-        answer: Some(mi::io::trigger::answer_plan(job, plan)),
-    })
+    let answer = match plan.style {
+        CallStyle::Trigger => mi::io::trigger::answer_plan(job, plan),
+        CallStyle::Function => function_answer(job, plan),
+        _ => return None,
+    };
+    Some(Outcome { called: Called::default(), outs: Vec::new(), answer: Some(answer) })
+}
+
+/// Make an external function's call (`PARAMETER STYLE SQL`): its
+/// arguments, the result, their indicators, the SQLSTATE, the names, the
+/// message, then the scratchpad and the call type when it has them; the
+/// answer for the database (`extfunc::answer`).
+pub fn function_answer(job: &mut mi::Job, plan: &CallPlan) -> Vec<Value> {
+    use sql::exec::routine::extfunc;
+    let fail = |code: i32, state: &str, text: String| extfunc::answer(Value::Null, state, &text, None, code);
+    let mut bufs: Vec<Vec<u8>> = Vec::new();
+    let mut inds: Vec<Vec<u8>> = Vec::new();
+    let mut result = None;
+    let mut pad: Option<Vec<u8>> = None;
+    let mut call_type: Option<Vec<u8>> = None;
+    for p in &plan.parms {
+        match p.mode {
+            3 => {
+                let b = match &p.value {
+                    Value::Bin(b) => b.clone(),
+                    _ => Vec::new(),
+                };
+                let mut s = u32::try_from(b.len()).unwrap_or(0).to_be_bytes().to_vec();
+                s.extend_from_slice(&b);
+                pad = Some(s);
+            }
+            1 if p.extra == 1 && p.desc == 0 => {
+                call_type = Some(i32::try_from(p.value.as_i64().unwrap_or(0)).unwrap_or(0).to_be_bytes().to_vec());
+            }
+            _ => {
+                let d = Desc::of(p.desc);
+                let (b, ind) = if p.value.is_null() {
+                    (crate::sql::empty_image(&d, p.extra), -1i16)
+                } else {
+                    match crate::sql::value_image(&p.value, &d, p.extra) {
+                        Ok(b) => (b, 0),
+                        Err((code, state)) => return fail(code, state, "an argument does not fit its parameter".into()),
+                    }
+                };
+                if p.mode == 2 {
+                    result = Some((bufs.len(), d, p.extra));
+                }
+                bufs.push(b);
+                inds.push(ind.to_be_bytes().to_vec());
+            }
+        }
+    }
+    let Some((at, rd, rextra)) = result else { return fail(-84, "42612", "a function call with no result".into()) };
+    let mut state = ebcdic("00000");
+    let mut fname = varchar(&plan.routine, 517);
+    let mut sname = varchar(&plan.specific, 128);
+    let mut diag = varchar("", 70);
+    let mut args: Vec<u64> = bufs.iter_mut().map(|b| b.as_mut_ptr() as u64).collect();
+    args.extend(inds.iter_mut().map(|b| b.as_mut_ptr() as u64));
+    args.push(state.as_mut_ptr() as u64);
+    args.push(fname.as_mut_ptr() as u64);
+    args.push(sname.as_mut_ptr() as u64);
+    args.push(diag.as_mut_ptr() as u64);
+    if let Some(s) = pad.as_mut() {
+        args.push(s.as_mut_ptr() as u64);
+    }
+    if let Some(c) = call_type.as_mut() {
+        args.push(c.as_mut_ptr() as u64);
+    }
+    DEPTH.with(|d| d.set(d.get() + 1));
+    let r = if plan.entry.is_empty() {
+        job.call_program(&plan.program, &plan.library, &args).map_err(|c| (-444, format!("program {}/{} could not be called: {}", plan.library, plan.program, c.msgid())))
+    } else {
+        call_procedure(job, plan, &args).map_err(|(c, m)| (if c == -204 { -444 } else { c }, m))
+    };
+    DEPTH.with(|d| d.set(d.get() - 1));
+    if let Err((code, text)) = r {
+        return fail(code, if code == -444 { "42724" } else { "42612" }, text);
+    }
+    if let Some(e) = job.clear() {
+        return fail(-443, "38501", format!("function {} ended with {}", plan.routine, e.msgid));
+    }
+    let st = ccsid::from_ebcdic(&state);
+    let pad = pad.map(|s| s[4..].to_vec());
+    if !st.starts_with("00") && !st.starts_with("01") {
+        return extfunc::answer(Value::Null, &st, &read_varchar(&diag), pad, -443);
+    }
+    let null = i16::from_be_bytes([inds[at][0], inds[at][1]]) < 0;
+    let v = if null { Value::Null } else { crate::sql::value_of(&bufs[at], &rd, rextra) };
+    extfunc::answer(v, &st, &read_varchar(&diag), pad, 0)
 }
 
 fn varchar(s: &str, cap: usize) -> Vec<u8> {
@@ -120,7 +205,7 @@ pub fn perform(job: &mut mi::Job, plan: &CallPlan) -> Outcome {
     crate::sql::write_sqlca_at(&mut ca, &Sqlca::default());
     let mut args: Vec<u64> = bufs.iter_mut().map(|b| b.as_mut_ptr() as u64).collect();
     match plan.style {
-        CallStyle::General | CallStyle::Trigger => {}
+        CallStyle::General | CallStyle::Trigger | CallStyle::Function => {}
         CallStyle::GeneralNulls => args.push(ind_array.as_mut_ptr() as u64),
         CallStyle::Sql | CallStyle::SqlRoutine => {
             args.extend(ind_bufs.iter_mut().map(|b| b.as_mut_ptr() as u64));

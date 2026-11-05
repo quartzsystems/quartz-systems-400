@@ -224,6 +224,8 @@ pub struct SqlContext {
     /// Routines: whether the requester runs the calls `CALL` plans,
     /// and the plan the last one left.
     pub routine: routine::State,
+    /// The external functions the statement called that keep state.
+    pub(crate) ext_functions: routine::extfunc::State,
     /// Savepoints set without commitment control: names only.
     pub(crate) loose_savepoints: Vec<(String, bool)>,
     /// The statement is an SQL procedure's: arrays may be used.
@@ -335,6 +337,7 @@ impl SqlContext {
             registers: registers::Registers::default(),
             routine: routine::State::default(),
             loose_savepoints: Vec::new(),
+            ext_functions: routine::extfunc::State::default(),
             arrays: false,
         }
     }
@@ -348,6 +351,11 @@ impl SqlContext {
     /// under it but its own ([`SqlContext::own_point`]).
     pub(crate) fn hold_open(&mut self) {
         self.open += 1;
+    }
+
+    /// Whether a frame holds what it read from the store now.
+    pub(crate) fn holds_open(&self) -> bool {
+        self.open > 0
     }
 
     /// The frame of [`SqlContext::hold_open`] lets go.
@@ -945,6 +953,7 @@ impl Prepared {
         let later = ctx.later_triggers.clone();
         let r = r.and_then(|o| routine::midcall::fire_deferred(txn, ctx.midcall.as_ref(), &later).map(|()| o));
         later.borrow_mut().clear();
+        routine::extfunc::finish(txn, ctx);
         ctx.release_stmt_reads();
         r
     }

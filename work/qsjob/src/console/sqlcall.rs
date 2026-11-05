@@ -44,8 +44,8 @@ pub fn run(link: &Shared, req: &Request, mut perform: impl FnMut(&CallPlan) -> O
 /// The calls a statement makes in its middle, made and answered until
 /// its reply is its end (or a `CALL`'s plan).
 fn answered(sql: &mut RemoteSql, scope: &str, mut reply: Reply, perform: &mut impl FnMut(&CallPlan) -> Outcome) -> Reply {
-    use sql::exec::routine::{CallStyle, midcall};
-    while let Some(plan) = reply.call.take_if(|p| p.style == CallStyle::Trigger) {
+    use sql::exec::routine::{extfunc, midcall};
+    while let Some(plan) = reply.call.take_if(|p| extfunc::is_mid(p)) {
         let answer = perform(&plan).answer.unwrap_or_default();
         reply = sql.run(&Request {
             scope: scope.to_string(),

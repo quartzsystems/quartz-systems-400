@@ -13,6 +13,7 @@
 mod call;
 mod alter;
 pub(crate) mod create;
+pub mod extfunc;
 pub mod find;
 pub mod midcall;
 pub mod udf;
@@ -53,6 +54,9 @@ pub enum CallStyle {
     /// A trigger program in the middle of a statement: the trigger
     /// buffer and its length ([`midcall`]).
     Trigger,
+    /// An external function in the middle of a statement, `PARAMETER
+    /// STYLE SQL` ([`extfunc`]).
+    Function,
 }
 
 impl CallStyle {
@@ -63,6 +67,7 @@ impl CallStyle {
             Self::Sql => 'S',
             Self::SqlRoutine => 'Q',
             Self::Trigger => 'T',
+            Self::Function => 'F',
         }
     }
 
@@ -72,6 +77,7 @@ impl CallStyle {
             'S' => Self::Sql,
             'Q' => Self::SqlRoutine,
             'T' => Self::Trigger,
+            'F' => Self::Function,
             _ => Self::General,
         }
     }

@@ -103,6 +103,7 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
 /// Put the runtime library into a job: the procedures, and the
 /// parsers and generators QS/400 ships for `DATA-INTO` and `DATA-GEN`.
 pub fn install(job: &mut mi::Job) {
+    job.function_calls = Some(sqlcall::function_answer);
     for (name, addr) in procedures() {
         job.act.system.insert(name.to_string(), addr);
     }

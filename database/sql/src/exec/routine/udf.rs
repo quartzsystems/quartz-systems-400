@@ -119,6 +119,9 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, args: &[Value],
         }
     }
     let (_, f) = best?;
+    if f.routine.def.body == 2 {
+        return Some(super::extfunc::call(txn, ctx, &f, args));
+    }
     if let Ok(d) = parsed(&f.routine.def.text) {
         remember(&d, &f.schema);
     }

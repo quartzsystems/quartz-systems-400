@@ -76,7 +76,7 @@ pub fn run(c: &Case) -> Result<String, String> {
     tctx.user = "QSECOFR".into();
     let tsession = Rc::new(RefCell::new(Session::with_ctx(Box::new(Rc::clone(&store)), tctx)));
     let tjob = Rc::new(RefCell::new(new_job(&store, &tsession, lib)));
-    ctx.midcall = Some(Rc::new(move |plan| Some(mi::io::trigger::answer_plan(&mut tjob.borrow_mut(), &plan))));
+    ctx.midcall = Some(Rc::new(move |plan| Some(mi::io::trigger::answer_mid(&mut tjob.borrow_mut(), &plan))));
     let session = Rc::new(RefCell::new(Session::with_ctx(Box::new(Rc::clone(&store)), ctx)));
     let mut job: Option<Box<mi::Job>> = None;
 
