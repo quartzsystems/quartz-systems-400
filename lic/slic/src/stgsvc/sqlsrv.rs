@@ -56,8 +56,9 @@ pub fn ticket(ctx: &JobCtx) -> Vec<u8> {
     t
 }
 
-fn refused(msgid: &str, text: &str) -> HostRefused {
-    HostRefused { rc: 1, msgid: msgid.into(), text: text.into() }
+/// A refusal with its message's text.
+fn refused(system: &mut System, msgid: &str, values: &[&str]) -> HostRefused {
+    HostRefused { rc: 1, msgid: msgid.into(), text: super::msgs::text(system, msgid, values) }
 }
 
 /// `sqlsrv_assume`: the calling `QSQSRVR` prestart job takes the
@@ -65,11 +66,13 @@ fn refused(msgid: &str, text: &str) -> HostRefused {
 /// client's qualified name back.
 pub fn assume(system: &mut System, ctx: &mut JobCtx, ticket: &[u8], user: &str, password: &str) -> Result<String, HostRefused> {
     if ctx.job.name.trim() != SERVER_JOB || ctx.job.subtype != 'J' {
-        return Err(refused("CPF2217", "Only a QSQSRVR prestart job serves SQL connections."));
+        // Only a QSQSRVR prestart job serves SQL connections.
+        let user = ctx.job.user.clone();
+        return Err(refused(system, "CPF2217", &[&user]));
     }
     let t = tickets().lock().unwrap_or_else(PoisonError::into_inner).remove(ticket);
     let Some(t) = t.filter(|t| t.until > now()) else {
-        return Err(refused("CPF2204", "The connection's ticket is not valid."));
+        return Err(refused(system, "CPF4AB8", &[]));
     };
     if user.trim().is_empty() {
         super::hostsvr::become_user(system, ctx, &t.user);
