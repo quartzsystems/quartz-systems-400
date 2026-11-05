@@ -383,6 +383,30 @@ impl SystemHost for Mock {
         Some(if name == "localhost" { Ok(vec!["127.0.0.1".parse().unwrap(), "::1".parse().unwrap()]) } else { Err("no such host".into()) })
     }
 
+    fn ifs_authorities(&self, path: &str) -> Option<Result<host::IfsAuthorities, String>> {
+        use store::obj::header::Authority as A;
+        if path != "/home/a.txt" {
+            return Some(Err("ENOENT".into()));
+        }
+        Some(Ok(host::IfsAuthorities {
+            kind: "*STMF".into(),
+            owner: "CODY".into(),
+            group: String::new(),
+            autl: String::new(),
+            entries: vec![
+                ("*PUBLIC".into(), "*R".into(), A::OBJOPR | A::READ),
+                ("CODY".into(), "*RWX".into(), A::OBJOPR | A::READ | A::ADD | A::UPD | A::DLT | A::EXECUTE | A::OBJMGT | A::OBJEXIST | A::OBJALTER | A::OBJREF),
+            ],
+        }))
+    }
+
+    fn ifs_opens(&self, _path: &str) -> Option<Result<Vec<host::IfsOpen>, String>> {
+        Some(Ok(vec![
+            host::IfsOpen { job: "000009/CODY/QPADEV0001".into(), access: (true, false), share: "RW".into() },
+            host::IfsOpen { job: "000009/CODY/QPADEV0001".into(), access: (true, true), share: "NONE".into() },
+        ]))
+    }
+
     fn system_status(&self) -> Option<SystemStatus> {
         Some(SystemStatus {
             total_jobs: 40,
@@ -1315,4 +1339,19 @@ fn override_qaqqini() {
     assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(3)"), 0);
     assert_eq!(db.ctx.qaqqini.get("PARALLEL_DEGREE"), "*DEFAULT");
     assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(4)"), -443);
+}
+
+#[test]
+fn ifs_privileges_and_locks() {
+    let mut db = Db::new(true);
+    assert_eq!(
+        db.rows("SELECT AUTHORIZATION_NAME, DATA_AUTHORITY, OBJECT_EXISTENCE, DATA_READ, DATA_ADD FROM TABLE(QSYS2.IFS_OBJECT_PRIVILEGES('/home/a.txt')) X"),
+        vec![row(&["*PUBLIC", "*R", "NO", "YES", "NO"]), row(&["CODY", "*RWX", "YES", "YES", "YES"])]
+    );
+    assert_eq!(db.rows("SELECT COUNT(*) FROM TABLE(QSYS2.IFS_OBJECT_PRIVILEGES('/nope')) X"), vec![row(&["0"])]);
+    assert_eq!(db.code("SELECT * FROM TABLE(QSYS2.IFS_OBJECT_PRIVILEGES('/nope', IGNORE_ERRORS => 'NO')) X"), -443);
+    assert_eq!(
+        db.rows("SELECT JOB_NAME, RO_COUNT, RW_COUNT, RO_SHARE_RW_COUNT, RW_SHARE_NONE_COUNT, SHARE_NONE_COUNT, SAVE_LOCK FROM TABLE(QSYS2.IFS_OBJECT_LOCK_INFO('/home/a.txt')) X"),
+        vec![row(&["000009/CODY/QPADEV0001", "1", "1", "1", "1", "1", "NO"])]
+    );
 }

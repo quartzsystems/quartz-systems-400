@@ -465,6 +465,43 @@ impl SystemHost for SqlHost {
             Err(e) => Err(format!("{name}: {e}")),
         })
     }
+
+    fn ifs_authorities(&self, path: &str) -> Option<Result<host::IfsAuthorities, String>> {
+        self.with_ifs(|c| {
+            let a = c.dspaut(path).map_err(|e| e.to_string())?;
+            Ok(host::IfsAuthorities {
+                kind: a.objtype,
+                owner: a.owner,
+                group: a.group.unwrap_or_default(),
+                autl: a.autl.unwrap_or_default(),
+                entries: a.entries.into_iter().map(|e| (e.who, e.data, e.auth.0)).collect(),
+            })
+        })
+    }
+
+    fn ifs_opens(&self, path: &str) -> Option<Result<Vec<host::IfsOpen>, String>> {
+        use ifs::lock::share::Share;
+        self.with_ifs(|c| {
+            let locks = c.object_locks(path).map_err(|e| e.to_string())?;
+            Ok(locks
+                .into_iter()
+                .filter_map(|l| match l.what {
+                    ifs::lock::Held::Open(a, s) => Some(host::IfsOpen {
+                        job: jrn::JobInfo::from_handle(store::obj::JobHandle(l.owner.0)).qualified(),
+                        access: (a.read, a.write),
+                        share: match s {
+                            Share::ReadOnly => "R",
+                            Share::WriteOnly => "W",
+                            Share::ReadWrite => "RW",
+                            Share::None => "NONE",
+                        }
+                        .into(),
+                    }),
+                    ifs::lock::Held::Range(_) => None,
+                })
+                .collect())
+        })
+    }
 }
 
 impl SqlHost {

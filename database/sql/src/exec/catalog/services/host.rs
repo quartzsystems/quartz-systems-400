@@ -453,6 +453,35 @@ pub struct Connection {
     pub server: Option<std::net::SocketAddr>,
 }
 
+/// An IFS object's authorities as `DSPAUT` shows them.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct IfsAuthorities {
+    /// `*STMF`, `*DIR` ...
+    pub kind: String,
+    /// Owner.
+    pub owner: String,
+    /// Primary group, empty for none.
+    pub group: String,
+    /// Authorization list, empty for none.
+    pub autl: String,
+    /// `*PUBLIC`, the owner, the group, then the private authorities:
+    /// who, the data authority name (`*RWX`, `*EXCLUDE` ...), the
+    /// authority bits (`store::obj::header::Authority`).
+    pub entries: Vec<(String, String, u32)>,
+}
+
+/// An open of an IFS object: the job (qualified name), its access
+/// (read, write) and share mode (`R`, `W`, `RW`, `NONE`).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct IfsOpen {
+    /// The job.
+    pub job: String,
+    /// Reads, writes.
+    pub access: (bool, bool),
+    /// The share mode.
+    pub share: String,
+}
+
 /// The system outside the store, as the storage service reaches it.
 pub trait SystemHost {
     /// The asking job's library list.
@@ -581,6 +610,16 @@ pub trait SystemHost {
 
     /// Resolve a host name, through `server` when given.
     fn dns_lookup(&self, _name: &str, _server: Option<&str>) -> Option<Result<Vec<std::net::IpAddr>, String>> {
+        None
+    }
+
+    /// An IFS object's authorities.
+    fn ifs_authorities(&self, _path: &str) -> Option<Result<IfsAuthorities, String>> {
+        None
+    }
+
+    /// The opens of an IFS object.
+    fn ifs_opens(&self, _path: &str) -> Option<Result<Vec<IfsOpen>, String>> {
         None
     }
 }

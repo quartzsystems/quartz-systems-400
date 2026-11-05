@@ -178,6 +178,8 @@ const FUNCTIONS: &[Function] = &[
     Function { schema: "QSYS2", specific: "TCPIP_INFO_FUNC", no_value: &[], rows: sysconf::tcpip_function },
     Function { schema: "QSYS2", specific: "QSQDNSLKUP", no_value: &[], rows: sysconf::dns },
     Function { schema: "SYSTOOLS", specific: "CHGUSRPRF", no_value: &[], rows: admin::change_user_profile },
+    Function { schema: "QSYS2", specific: "QSQIFSOBJP", no_value: &[], rows: ifs::privileges },
+    Function { schema: "QSYS2", specific: "QSQIFSOBJL", no_value: &[], rows: ifs::locks },
     Function { schema: "SYSTOOLS", specific: "AUDIT_AD", no_value: &[], rows: jrnent::audit::<b'A', b'D'> },
     Function { schema: "SYSTOOLS", specific: "AUDIT_AF", no_value: &[], rows: jrnent::audit::<b'A', b'F'> },
     Function { schema: "SYSTOOLS", specific: "AUDIT_AP", no_value: &[], rows: jrnent::audit::<b'A', b'P'> },

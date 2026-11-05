@@ -200,3 +200,91 @@ mod tests {
         assert_eq!(lines(b"abcde", Eol::None, 2, b'\n'), vec![b"ab".to_vec(), b"cd".to_vec(), b"e".to_vec()]);
     }
 }
+
+/// `IFS_OBJECT_PRIVILEGES(PATH_NAME, IGNORE_ERRORS)`: one row for
+/// `*PUBLIC`, the owner, the primary group and each private authority,
+/// as `DSPAUT` lists them.
+pub fn privileges(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
+    use store::obj::header::Authority as A;
+    let path = args.text("PATH_NAME").unwrap_or_default();
+    let a = match ask(txn, ctx, "the IFS", |h| h.ifs_authorities(path.trim()))? {
+        Ok(a) => a,
+        Err(_) if ignore(args) => return Ok(()),
+        Err(e) => return Err(failed(format!("{}: {e}", path.trim()))),
+    };
+    for (who, data, bits) in &a.entries {
+        out.row();
+        out.text("PATH_NAME", path.trim());
+        out.text("OBJECT_TYPE", a.kind.as_str());
+        out.text("OWNER", a.owner.as_str());
+        out.text_or_null("PRIMARY_GROUP", &a.group);
+        out.text_or_null("AUTHORIZATION_LIST", &a.autl);
+        out.text("AUTHORIZATION_NAME", who.as_str());
+        out.text("DATA_AUTHORITY", data.as_str());
+        for (col, bit) in [
+            ("OBJECT_OPERATIONAL", A::OBJOPR),
+            ("OBJECT_MANAGEMENT", A::OBJMGT),
+            ("OBJECT_EXISTENCE", A::OBJEXIST),
+            ("OBJECT_ALTER", A::OBJALTER),
+            ("OBJECT_REFERENCE", A::OBJREF),
+            ("DATA_READ", A::READ),
+            ("DATA_ADD", A::ADD),
+            ("DATA_UPDATE", A::UPD),
+            ("DATA_DELETE", A::DLT),
+            ("DATA_EXECUTE", A::EXECUTE),
+        ] {
+            out.yes(col, bits & bit != 0);
+        }
+    }
+    Ok(())
+}
+
+/// `IFS_OBJECT_LOCK_INFO(PATH_NAME, IGNORE_ERRORS)`: one row per job
+/// with the object open, its opens counted by access and share mode.
+/// QS/400 has no attribute, save or check-out locks and no file or
+/// NFS server references: those columns are `NO`.
+pub fn locks(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
+    let path = args.text("PATH_NAME").unwrap_or_default();
+    let opens = match ask(txn, ctx, "the IFS", |h| h.ifs_opens(path.trim()))? {
+        Ok(o) => o,
+        Err(_) if ignore(args) => return Ok(()),
+        Err(e) => return Err(failed(format!("{}: {e}", path.trim()))),
+    };
+    let mut jobs: Vec<&str> = opens.iter().map(|o| o.job.as_str()).collect();
+    jobs.sort_unstable();
+    jobs.dedup();
+    for job in jobs {
+        let mine: Vec<&super::host::IfsOpen> = opens.iter().filter(|o| o.job == job).collect();
+        out.row();
+        out.text("PATH_NAME", path.trim());
+        out.text("JOB_NAME", job);
+        let access = |o: &super::host::IfsOpen| match o.access {
+            (true, false) => "RO",
+            (false, true) => "WO",
+            _ => "RW",
+        };
+        let share = |o: &super::host::IfsOpen| match o.share.as_str() {
+            "R" => "SHARE_R",
+            "W" => "SHARE_W",
+            "NONE" => "SHARE_NONE",
+            _ => "SHARE_RW",
+        };
+        for a in ["RO", "WO", "RW"] {
+            out.int(&format!("{a}_COUNT"), mine.iter().filter(|o| access(o) == a).count());
+            for s in ["SHARE_R", "SHARE_W", "SHARE_RW", "SHARE_NONE"] {
+                out.int(&format!("{a}_{s}_COUNT"), mine.iter().filter(|o| access(o) == a && share(o) == s).count());
+            }
+        }
+        for s in ["SHARE_R", "SHARE_W", "SHARE_RW", "SHARE_NONE"] {
+            out.int(&format!("{s}_COUNT"), mine.iter().filter(|o| share(o) == s).count());
+            // QS/400 opens nothing for execution alone.
+            out.int(&format!("XO_{s}_COUNT"), 0);
+            out.int(&format!("XR_{s}_COUNT"), 0);
+        }
+        out.int("XO_COUNT", 0);
+        for col in ["ATTRIBUTE_LOCK", "SAVE_LOCK", "INTERNAL_SAVE_LOCK", "LINK_CHANGES_LOCK", "CHECKED_OUT", "CURRENT_DIRECTORY", "ROOT_DIRECTORY", "FILE_SERVER_REFERENCE", "FILE_SERVER_WORKING_DIRECTORY", "NFS_SERVER_REFERENCE"] {
+            out.yes(col, false);
+        }
+    }
+    Ok(())
+}
