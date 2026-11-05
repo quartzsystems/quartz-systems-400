@@ -45,7 +45,7 @@ rows the work has not reached as refused, as the code does today.
 | `SELECT`, `VALUES`, subselect, fullselect | supported (Phase 3 subset, §3) | primary | `kit/BASIC` |
 | `INSERT` (values, multi-row, subselect) | supported | primary | `kit/BASIC` |
 | `UPDATE`, `DELETE` (searched, positioned) | supported | primary | `kit/BASIC` |
-| `MERGE` | partial: no joined source | primary | |
+| `MERGE` (joined sources, every clause) | supported | pub400 | `query/CHANGES` |
 | `DECLARE CURSOR`, `OPEN`, `FETCH`, `CLOSE` | supported | primary | |
 | `CREATE TABLE` | partial: see §4 | primary | `kit/BASIC` |
 | `CREATE INDEX` | partial: see §4 | primary | |
@@ -62,7 +62,7 @@ rows the work has not reached as refused, as the code does today.
 | `LABEL ON`, `COMMENT ON` | partial: tables, columns, indexes, aliases | primary | |
 | `RENAME TABLE/INDEX` (`TO SYSTEM NAME`, `FOR SYSTEM NAME`) | supported; refused SQL0084 for an object other views read | primary, pub400 | `ddl/RENAME`, `ddl/SYSNAME` |
 | `COMMIT`, `ROLLBACK` | supported | primary | |
-| `SET SCHEMA`, `SET PATH`, `SET CURRENT DEGREE`, `SET TRANSACTION` | partial | primary | |
+| `SET SCHEMA`, `SET PATH`, `SET CURRENT ...`, `SET TRANSACTION` | supported (§6) | pub400 | `query/REGISTERS` |
 | `EXPLAIN` | partial: a query only | none: our own plan text | |
 | `CREATE SEQUENCE`, `ALTER SEQUENCE`, `DROP SEQUENCE`, `NEXT VALUE FOR`, `PREVIOUS VALUE FOR` | supported, IBM's cache blocks matched; `ALTER SEQUENCE AS` refused SQL0084; a failed statement gives back the value it used, where IBM keeps it used | primary | `integrity/SEQUENCE` |
 | `GRANT` on sequences | refused SQL0084 | none | |
@@ -74,7 +74,7 @@ rows the work has not reached as refused, as the code does today.
 | `PREPARE`, `EXECUTE`, `EXECUTE IMMEDIATE`, `DESCRIBE` (dynamic) | refused SQL0084 outside embedded SQL | primary | |
 | `CONNECT`, `DISCONNECT`, `RELEASE`, `SET CONNECTION` | refused SQL0084 | primary | |
 | `SAVEPOINT`, `RELEASE SAVEPOINT`, `ROLLBACK TO SAVEPOINT` | refused SQL0084 | primary | |
-| `TRUNCATE` | refused SQL0084 | pub400 | |
+| `TRUNCATE` (all options) | supported; SQL0100 on an empty table; `RESTART IDENTITY` on an identity table refused SQL0084 (BLOCKED(sql), joins identity state) | pub400 | `query/CHANGES` |
 | `REFRESH TABLE` | refused SQL0084 | primary | |
 | `DECLARE GLOBAL TEMPORARY TABLE`; any SQL object in QTEMP | refused SQL0084: BLOCKED(sql), QTEMP is the temporary ASP and a statement runs in one ASP transaction | pub400 | `ddl/DGTT` |
 | SQL PL compound statements | refused SQL0084 | primary | |
@@ -83,26 +83,35 @@ rows the work has not reached as refused, as the code does today.
 
 | Clause | Status | Oracle | Test |
 |---|---|---|---|
-| Joins `INNER`, `LEFT`, `RIGHT`, `EXCEPTION`, `CROSS` | supported | primary | |
-| `FULL OUTER JOIN` | refused SQL0084 | primary | |
-| `JOIN ... USING`, `LATERAL`, `TABLE(...)` | refused SQL0084 | primary | |
-| Derived tables | supported | primary | |
+| Joins `INNER`, `LEFT`, `RIGHT`, `EXCEPTION`, `CROSS`, `FULL OUTER` | supported | pub400 | `query/JOINS` |
+| `JOIN ... USING` | supported; `ORDER BY` an unqualified USING column resolves here where pub400 gives SQL0203 | pub400 | `query/JOINS` |
+| `LATERAL`, `TABLE(fullselect)`, `TABLE(f(args)) AS x` | supported; a RIGHT or FULL lateral join, and a lateral or USING join as a MERGE source, refused SQL0084 | pub400 | `query/JOINS` |
+| Derived tables and nested table expressions anywhere; `ORDER BY`, `FETCH FIRST` in subselects | supported | pub400 | `query/LIMITS` |
 | `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`, `DISTINCT` | supported | primary | `kit/BASIC` |
-| `GROUPING SETS`, `ROLLUP`, `CUBE` | refused SQL0084 | primary | |
+| `GROUPING SETS`, `ROLLUP`, `CUBE`, `GROUPING()` | supported | pub400 | `query/GROUPSETS` |
 | `UNION`, `EXCEPT`, `INTERSECT` | supported | primary | |
-| `FETCH FIRST n ROWS ONLY`, `LIMIT` | supported | primary | |
-| `OFFSET` | refused SQL0084 | pub400 | |
-| Common table expressions, recursive | refused SQL0084 | primary | |
-| OLAP specifications (`ROW_NUMBER`, `RANK`, ... `OVER`) | refused SQL0084 | primary | |
-| Subqueries: scalar, `EXISTS`, `IN`, quantified | supported | primary | |
-| `CASE`, `CAST`, `BETWEEN`, `LIKE`, `IS NULL` | supported | primary | |
-| `LIKE ... ESCAPE`, `IS DISTINCT FROM`, row-value predicates | refused SQL0084 | primary | |
-| Labeled durations | partial: no `MICROSECONDS`, `WEEKS` | primary | |
-| Date and time subtraction without a labeled duration | refused SQL0084 | primary | |
+| `FETCH FIRST n ROWS ONLY`, `LIMIT`, `OFFSET`, `LIMIT n OFFSET m`, `LIMIT m,n` | supported | pub400 | `query/LIMITS` |
+| `FETCH FIRST n PERCENT` | refused SQL0104, as pub400 | pub400 | `query/LIMITS` |
+| `ORDER BY` column number (SQL0125 past the list), `ORDER OF` | supported | pub400 | `query/LIMITS` |
+| `NULLS FIRST`, `NULLS LAST` | refused SQL0199, as pub400 | pub400 | `query/LIMITS` |
+| Common table expressions, chained and recursive, `CYCLE` | supported; `CYCLE ... USING` refused SQL0084 | pub400 | `query/CTE` |
+| `SEARCH DEPTH/BREADTH FIRST ... SET` | partial: the `SET` column can be selected here, pub400 gives SQL0901 | pub400 | `query/CTE` |
+| Recursion without end | ends at 100,000 levels or the memory limit with SQL0904; `FETCH FIRST` does not stop it; no SQL0347 (pub400 shows none over JDBC) | pub400 | `query/CTE` |
+| OLAP: `ROW_NUMBER`, `RANK`, `DENSE_RANK`, `NTILE`, `PERCENT_RANK`, `CUME_DIST`, `LAG`/`LEAD` with `RESPECT/IGNORE NULLS`, `FIRST_VALUE`/`LAST_VALUE`/`NTH_VALUE`, `RATIO_TO_REPORT`, aggregates `OVER` with `ROWS` and `RANGE` frames | supported; `NTH_VALUE ... FROM LAST` refused SQL0084 | pub400 | `query/OLAP` |
+| Subqueries: scalar, `EXISTS` at any depth, `IN`, quantified | supported | pub400 | `query/PREDS` |
+| `IN` with row values, row `=` and `<>`, `IS [NOT] DISTINCT FROM`, `LIKE ... ESCAPE`, `BETWEEN` with expressions | supported; row `<`/`>` SQL0115 as IBM | pub400 | `query/PREDS` |
+| `LIKE_REGEX` | refused SQL0104, as pub400 | pub400 | `query/PREDS` |
+| `ARRAY_EXISTS`, `XMLEXISTS` | refused SQL0084 | none | |
+| `CASE`, `CAST`, `IS NULL` | supported | primary | |
+| Date and time arithmetic: date - date, time - time, timestamp - timestamp, durations `DECIMAL(8,0)`, `(6,0)`, `(14+s,s)`, labeled durations, `TIMESTAMP(p)` to 12 | supported; date + integer SQL0182, a unit on the wrong type SQL0187, `WEEKS` SQL0104 (pub400 has none) | pub400 | `query/DATEARITH` |
 | Isolation clauses `WITH NC/UR/CS/RS/RR` | supported | primary | |
-| `USE AND KEEP ... LOCKS` | accepted and ignored: to be implemented or refused (honesty rule) | primary | |
-| `FOR UPDATE OF`, `FOR READ ONLY`, `OPTIMIZE FOR n ROWS` | partial | primary | |
-| `SELECT ... FROM FINAL TABLE` | refused SQL0084 | primary | |
+| `SKIP LOCKED DATA` on queries | supported; on other statements refused SQL0084 | pub400 | |
+| `USE AND KEEP ... LOCKS`, `WAIT FOR OUTCOME`, `USE CURRENTLY COMMITTED` | refused SQL0084 | pub400 | |
+| `FOR UPDATE OF`, `FOR READ ONLY` | supported | pub400 | `query/LIMITS` |
+| `OPTIMIZE FOR n ROWS` | no-op: a hint, as on IBM | pub400 | `query/LIMITS` |
+| `FINAL TABLE`, `NEW TABLE` of `INSERT` | supported; of `UPDATE/DELETE/MERGE` SQL0199, as pub400 | pub400 | `query/CHANGES` |
+| `MERGE` with a joined source, `DELETE` with a correlated subquery | supported | pub400 | `query/CHANGES` |
+| `UPDATE ... FROM` | refused SQL0199, as pub400 | pub400 | `query/CHANGES` |
 
 ## 4. DDL details
 
@@ -139,37 +148,38 @@ rows the work has not reached as refused, as the code does today.
 
 ## 5. Functions
 
-Scalar functions supported today (Phase 3): `ABS`/`ABSVAL`, `ADD_MONTHS`,
-`BIGINT`, `BINARY`, `BOOLEAN`, `CEIL`/`CEILING`, `CHAR`,
-`CHAR_LENGTH`/`CHARACTER_LENGTH`, `COALESCE`/`VALUE`/`IFNULL`, `CONCAT`,
-`DATE`, `DAY`, `DAYNAME`, `DAYOFMONTH`, `DAYOFWEEK`, `DAYOFWEEK_ISO`,
-`DAYOFYEAR`, `DAYS`, `DEC`/`DECIMAL`, `DECFLOAT`, `DIGITS`,
-`DOUBLE`/`DOUBLE_PRECISION`, `FLOAT`, `FLOOR`, `HEX`, `HOUR`, `INT`/`INTEGER`,
-`JULIAN_DAY`, `LAST_DAY`, `LCASE`/`LOWER`, `LEFT`, `LEN`/`LENGTH`, `LOCATE`,
-`LTRIM`, `MAX`, `MICROSECOND`, `MIN`, `MINUTE`, `MOD`, `MONTH`, `MONTHNAME`,
-`NEXT_DAY`, `NORMALIZE_DECFLOAT`, `NOW`, `NULLIF`, `OCTET_LENGTH`,
-`POSITION`/`POSSTR`, `POW`/`POWER`, `REAL`, `REPLACE`, `RIGHT`, `ROUND`,
-`RRN`, `RTRIM`, `SECOND`, `SMALLINT`, `SQRT`, `STRIP`, `SUBSTR`/`SUBSTRING`,
-`TIME`, `TIMESTAMP`, `TIMESTAMPDIFF`, `TRIM`, `TRUNC`/`TRUNCATE`,
-`UCASE`/`UPPER`, `VARBINARY`, `VARCHAR`, `WEEK`, `YEAR`, `ZONED`.
-Aggregates: `COUNT`, `COUNT_BIG`, `SUM`, `AVG`, `MIN`, `MAX`. Any other
-function is refused with SQL0084 (to become SQL0204 or SQL0440 as IBM
-gives them).
+Scalar functions are families in `database/sql/src/exec/func/`; result
+types are in `exec/restype/`. Functions IBM does not have answer SQL0204;
+a known function with the wrong arguments SQL0170 or SQL0440.
 
-Result types: an expression's result column describes with its real
-type and its values are fitted to it (§7). Some functions still describe
-as `VARCHAR(32767)` until the query work registers their types.
-
-The 7.5 reference list (the brief, Section 2) is the target; rows are
-added here as families land in `database/sql/src/exec/func/`.
+| Functions | Status | Oracle | Test |
+|---|---|---|---|
+| Phase 3 set: `ABS`, `ADD_MONTHS`, `BIGINT`, `CEIL`, `CHAR`, `COALESCE`, `CONCAT`, `DATE`, `DAY`..., `DEC`, `DIGITS`, `DOUBLE`, `FLOOR`, `HEX`, `INT`, `LCASE`, `LEFT`, `LENGTH`, `LOCATE`, `LTRIM`, `MOD`, `NULLIF`, `POSSTR`, `POWER`, `REPLACE`, `RIGHT`, `ROUND`, `RRN`, `SUBSTR`, `TIME`, `TIMESTAMP`, `TRIM`, `TRUNC`, `UCASE`, `VARCHAR`, `ZONED` and the rest of PHASE3's list | supported | primary | `kit/BASIC` |
+| Strings: `TRANSLATE`, `OVERLAY`, `INSERT`, `REPEAT`, `SPACE`, `LPAD`, `RPAD`, `INSTR`, `LOCATE_IN_STRING`, `ASCII`, `CHR`, `SOUNDEX`, `DIFFERENCE`, `STRIP`/`LTRIM` with characters, `GREATEST`, `LEAST`, `NVL`, `DECODE`, `CHAR` with `ISO/USA/EUR/JIS/LOCAL` | supported (`DECODE` though pub400 answers SQL0204: the brief asks for it) | pub400 | `query/STRFUNCS` |
+| `REGEXP_COUNT`, `REGEXP_INSTR`, `REGEXP_SUBSTR`, `REGEXP_REPLACE`; `REGEXP_LIKE` as a predicate | supported | pub400 | `query/REGEXP` |
+| Dates: `TIMESTAMP_FORMAT`/`TO_DATE`, `VARCHAR_FORMAT`/`TO_CHAR`, `EXTRACT`, `TIMESTAMPDIFF`, `TIMESTAMPDIFF_BIG`, `TIMESTAMP_ISO`, `ROUND_TIMESTAMP`, `TRUNC_TIMESTAMP`, `WEEK_ISO`, `DAYOFWEEK_ISO`, `QUARTER`, `MIDNIGHT_SECONDS`, `MONTHS_BETWEEN`, `ADD_DAYS/HOURS/MINUTES/SECONDS/YEARS` | supported | pub400 | `query/DTFUNCS` |
+| Numbers and bits: `EXP`, `LN`, `LOG10`, trigonometric and hyperbolic functions, `SIGN`, `PI`, `RADIANS`, `DEGREES`, `BITAND`, `BITOR`, `BITXOR`, `BITNOT`, `MULTIPLY_ALT` | supported | pub400 | `query/NUMFUNCS` |
+| `HEX`, `HASH_MD5`, `HASH_SHA1`, `HASH_SHA256`, `HASH_SHA512`, `HASH`, `INTERPRET`, `HEXTORAW`, `VARCHAR_BIT_FORMAT`, `VARCHAR_FORMAT_BINARY` | supported, byte-exact | pub400 | `query/NUMFUNCS` |
+| `RAND`, `GENERATE_UNIQUE` | partial: RAND's sequence is not IBM's; GENERATE_UNIQUE is 13 bytes and rising but not IBM's layout | none | |
+| `SYSTOOLS.SPLIT` | supported | pub400 | `query/JOINS` |
+| `ENCRYPT_AES`, `ENCRYPT_RC2`, `ENCRYPT_TDES`, `DECRYPT_*`, `GETHINT` | refused SQL0084: IBM's encrypted layout is unpublished, so nothing made here could be read there | pub400 | |
+| `VERIFY_GROUP_FOR_USER` | refused SQL0084 | pub400 | |
+| `TRIM_ARRAY`, `CARDINALITY`, `MAX_CARDINALITY` | refused: wait for the array type (routines work) | none | |
+| `ASINH`, `ACOSH`, `DATE_TRUNC`, `DATE_PART`, `DAYS_BETWEEN` and the other `_BETWEEN`, `INITCAP`, `LEN`, `TO_MULTI_BYTE`, `RAWTOHEX`, `EBCDIC_CHR` | SQL0204, as pub400 answers | pub400 | |
+| Aggregates `COUNT`, `COUNT_BIG`, `SUM`, `AVG`, `MIN`, `MAX`, with `DISTINCT` everywhere | supported, typed as IBM (AVG of DEC(9,2) is scale 24) | primary | `kit/BASIC` |
+| `STDDEV`, `STDDEV_SAMP`, `STDDEV_POP`, `VARIANCE`, `VAR`, `VAR_SAMP`, `VAR_POP`, `COVARIANCE`, `COVARIANCE_SAMP`, `CORRELATION`, `REGR_*` | supported, to the last digit | pub400 | `query/STATAGG` |
+| `MEDIAN`, `PERCENTILE_CONT`, `PERCENTILE_DISC`, `LISTAGG` (`WITHIN GROUP`, `ON OVERFLOW`, SQL0137) | supported | pub400 | `query/ORDAGG` |
+| `ARRAY_AGG` | refused SQL0084 (pub400 gives SQ20441) until the array type | pub400 | |
+| `XMLAGG` | refused SQL0084 | pub400 | |
+| Aggregate or OLAP function where none may be | SQL0120 | pub400 | |
 
 ## 6. Special registers and global variables
 
 | Item | Status | Oracle | Test |
 |---|---|---|---|
-| `CURRENT DATE/TIME/TIMESTAMP`, `CURRENT SCHEMA`, `CURRENT PATH`, `USER`, `CURRENT USER` | supported | primary | |
-| Other `CURRENT` registers | refused SQL0084 | primary | |
-| `QSYS2.*` and `SYSIBM.*` built-in global variables | refused SQL0084 | pub400 | |
+| `CURRENT DATE/TIME/TIMESTAMP`, `CURRENT SCHEMA`, `CURRENT PATH`, `USER`, `CURRENT USER`, `SESSION_USER`, `SYSTEM_USER` | supported | pub400 | `query/REGISTERS` |
+| `CURRENT SERVER`, `CURRENT TIMEZONE`, `CURRENT DEGREE`, `CURRENT DECFLOAT ROUNDING MODE`, `CURRENT IMPLICIT XMLPARSE OPTION`, `CURRENT CLIENT_*`; `SET` of `DEGREE`, `DECFLOAT ROUNDING MODE`, `IMPLICIT XMLPARSE OPTION`, `PATH` | supported; `CURRENT TIMEZONE` is 0 until the job's offset is set | pub400 | `query/REGISTERS` |
+| `QSYS2.JOB_NAME`, `QSYS2.PROCESS_ID`, `QSYS2.SERVER_MODE_JOB_NAME`, `QSYS2.THREAD_ID`, `SYSIBM.CLIENT_*` | partial: null until the job fills them (wired with the job's SQL session) | pub400 | `query/REGISTERS` |
 
 ## 7. Data types
 
@@ -205,8 +215,8 @@ added here as families land in `database/sql/src/exec/func/`.
 | `JSON_VALUE`, `JSON_QUERY`, `JSON_EXISTS`, `IS JSON`, lax and strict paths, `ON EMPTY`, `ON ERROR` | supported | pub400 | `types/JSON1` |
 | SQL/JSON path filters, item methods, `**`, `@`, variables, `PASSING` | refused SQL0084 | pub400 | |
 | `JSON_TO_BSON`, `BSON_TO_JSON` | supported, byte-exact | pub400 | `types/JSON1` |
-| `JSON_ARRAYAGG`, `JSON_OBJECTAGG` | supported | pub400 | `types/JSON1` |
-| `JSON_TABLE` | partial: the evaluator is done; its use in `FROM` waits on the query work merging | pub400 | `sql::table` |
+| `JSON_ARRAYAGG`, `JSON_OBJECTAGG` (also over windows) | supported | pub400 | `types/JSON1` |
+| `JSON_TABLE` (in `FROM`, as a table function) | supported | pub400 | `types/JSON1` |
 | `JSON_UPDATE` | refused SQL0204, as pub400 (7.5 has none) | pub400 | `types/JSON1` |
 
 ## 8. Catalogs
