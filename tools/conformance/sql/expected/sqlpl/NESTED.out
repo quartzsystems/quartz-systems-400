@@ -1,0 +1,34 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPM_RES (WHO VARCHAR(10) NOT NULL, A INTEGER, B VARCH
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPM_CALC (IN P_X INTEGER, OUT P_SQ INTEGER, INOUT
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPM_DRIVER (IN P_N INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPM_NULLS ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPM_DRIVER(4)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPM_NULLS
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT WHO, A, B FROM {lib}.QPM_RES ORDER BY WHO, A
+sqlcode 0 sqlstate 00000 msgid -
+# WHO VARCHAR(10) NOT NULL
+# A INTEGER
+# B VARCHAR(20)
+| 'NULLACC' | -1 | NULL |
+| 'NULLS' | NULL | 'null text' |
+| 'STEP' | 1 | 'x=1' |
+| 'STEP' | 4 | 'x=2' |
+| 'STEP' | 9 | 'x=3' |
+| 'STEP' | 16 | 'x=4' |
+| 'TOTAL' | 30 | NULL |
+> DROP PROCEDURE {lib}.QPM_DRIVER
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPM_NULLS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPM_CALC
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPM_RES
+sqlcode 0 sqlstate 00000 msgid -

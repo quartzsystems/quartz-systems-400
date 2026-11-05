@@ -1,0 +1,21 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPY_T (ID INTEGER NOT NULL PRIMARY KEY)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPY_ALL_OR_NONE (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_UNDO ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPY_BADUNDO ()
+sqlcode -780 sqlstate 428D6 msgid SQL0780
+> CALL {lib}.QPY_ALL_OR_NONE(1)
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> SELECT ID FROM {lib}.QPY_T ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+> DROP PROCEDURE {lib}.QPY_ALL_OR_NONE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPY_UNDO
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPY_T
+sqlcode 0 sqlstate 00000 msgid -

@@ -1,0 +1,24 @@
+-- captured from primary
+> CREATE PROCEDURE {lib}.QPZ_BUILD (IN P_ROWS INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPZ_SHOW ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPZ_BUILD(3)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPZ_BUILD(5)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPZ_SHOW
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# N INTEGER NOT NULL
+# SQUARE INTEGER
+# LABEL VARCHAR(12)
+| 5 | 25 | 'row 5' |
+| 4 | 16 | 'row 4' |
+| 3 | 9 | 'row 3' |
+> DROP PROCEDURE {lib}.QPZ_BUILD
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPZ_SHOW
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPZ_WORK
+sqlcode 0 sqlstate 00000 msgid -

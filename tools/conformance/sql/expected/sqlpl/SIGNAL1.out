@@ -1,0 +1,33 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPI_ACCT (ACCT INTEGER NOT NULL PRIMARY KEY, BAL DECI
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QPI_ACCT VALUES (100, 500.00), (200, 20.00)
+sqlcode 0 sqlstate 00000 msgid - count 2
+> CREATE PROCEDURE {lib}.QPI_WITHDRAW (IN P_ACCT INTEGER, IN P_AMT DECIMAL
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPI_WARN ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPI_WITHDRAW(100, 50.25)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPI_WITHDRAW(100, -1)
+sqlcode -438 sqlstate 75001 msgid SQL0438
+> CALL {lib}.QPI_WITHDRAW(300, 1)
+sqlcode -438 sqlstate 75002 msgid SQL0438
+> CALL {lib}.QPI_WITHDRAW(200, 25)
+sqlcode -438 sqlstate 75003 msgid SQL0438
+> CALL {lib}.QPI_WARN()
+sqlcode 0 sqlstate 00000 msgid -
+warning 438 01H01 SQL0438
+> SELECT ACCT, BAL FROM {lib}.QPI_ACCT ORDER BY ACCT
+sqlcode 0 sqlstate 00000 msgid -
+# ACCT INTEGER NOT NULL
+# BAL DECIMAL(11,2) NOT NULL
+| 100 | 449.75 |
+| 200 | 20.00 |
+> DROP PROCEDURE {lib}.QPI_WITHDRAW
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPI_WARN
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPI_ACCT
+sqlcode 0 sqlstate 00000 msgid -

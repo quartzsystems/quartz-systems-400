@@ -1,0 +1,35 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPC_LOG (CODE CHAR(2) NOT NULL, TXT VARCHAR(20))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPC_STATUS (IN P_CODE CHAR(2))
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPC_SIZE (IN P_N INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPC_STATUS('OP')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPC_STATUS('HD')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPC_STATUS('XX')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPC_SIZE(5)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPC_SIZE(500)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPC_SIZE(5000)
+sqlcode -773 sqlstate 20000 msgid SQL0773
+> SELECT CODE, TXT FROM {lib}.QPC_LOG ORDER BY CODE, TXT
+sqlcode 0 sqlstate 00000 msgid -
+# CODE CHAR(2) NOT NULL
+# TXT VARCHAR(20)
+| 'HD' | 'held' |
+| 'OP' | 'open' |
+| 'SZ' | 'large' |
+| 'SZ' | 'small' |
+| 'XX' | 'unknown' |
+> DROP PROCEDURE {lib}.QPC_STATUS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPC_SIZE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPC_LOG
+sqlcode 0 sqlstate 00000 msgid -

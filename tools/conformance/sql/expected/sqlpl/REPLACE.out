@@ -1,0 +1,28 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPV_T (V VARCHAR(20) NOT NULL)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE OR REPLACE PROCEDURE {lib}.QPV_P (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPV_P(1)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE OR REPLACE PROCEDURE {lib}.QPV_P (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPV_P (IN P INTEGER)
+sqlcode -454 sqlstate 42723 msgid SQL0454
+> CALL {lib}.QPV_P(2)
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT V FROM {lib}.QPV_T ORDER BY V
+sqlcode 0 sqlstate 00000 msgid -
+# V VARCHAR(20) NOT NULL
+| 'first 1' |
+| 'second 4' |
+> SELECT ROUTINE_NAME, EXTERNAL_NAME FROM QSYS2.SYSROUTINES WHERE ROUTINE_
+sqlcode 0 sqlstate 00000 msgid -
+# ROUTINE_NAME VARCHAR(128) NOT NULL
+# EXTERNAL_NAME VARCHAR(279)
+| 'QPV_P' | '{lib}/QPV_P' |
+> DROP PROCEDURE {lib}.QPV_P
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPV_T
+sqlcode 0 sqlstate 00000 msgid -

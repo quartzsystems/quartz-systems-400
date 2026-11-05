@@ -1,0 +1,25 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPX_T (ID INTEGER NOT NULL PRIMARY KEY)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QPX_LOG (STEP INTEGER NOT NULL, ST CHAR(5), CODE INTE
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPX_STATES ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPX_STATES
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT STEP, ST, CODE FROM {lib}.QPX_LOG ORDER BY STEP
+sqlcode 0 sqlstate 00000 msgid -
+# STEP INTEGER NOT NULL
+# ST CHAR(5)
+# CODE INTEGER
+| 1 | '00000' | 0 |
+| 2 | '23505' | -803 |
+| 3 | '02000' | 100 |
+> DROP PROCEDURE {lib}.QPX_STATES
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPX_LOG
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPX_T
+sqlcode 0 sqlstate 00000 msgid -

@@ -1,0 +1,58 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPH_KEYS (ID INTEGER NOT NULL PRIMARY KEY, NAME VARCH
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QPH_LOG (STEP VARCHAR(10) NOT NULL, INFO VARCHAR(40))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPH_LOAD (IN P_FROM INTEGER, IN P_TO INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPH_LOAD2 (IN P_FROM INTEGER, IN P_TO INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPH_STOP (IN P_ID INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPH_LOAD(1, 3)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPH_LOAD(2, 5)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPH_LOAD2(4, 7)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPH_STOP(9)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPH_STOP(1)
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ID, NAME FROM {lib}.QPH_KEYS ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# NAME VARCHAR(10)
+| 1 | 'row 1' |
+| 2 | 'row 2' |
+| 3 | 'row 3' |
+| 4 | 'row 4' |
+| 5 | 'row 5' |
+| 6 | 'again' |
+| 7 | 'again' |
+| 9 | 'stop' |
+> SELECT STEP, INFO FROM {lib}.QPH_LOG ORDER BY STEP, INFO
+sqlcode 0 sqlstate 00000 msgid -
+# STEP VARCHAR(10) NOT NULL
+# INFO VARCHAR(40)
+| 'DUP' | 'key 4' |
+| 'DUP' | 'key 5' |
+| 'LOAD' | 'dups 0' |
+| 'LOAD' | 'dups 2' |
+| 'LOAD2' | 'dups 2' |
+| 'STOP' | 'after 9' |
+| 'STOP' | 'before' |
+| 'STOP' | 'before' |
+| 'STOP' | 'failed at 1' |
+> DROP PROCEDURE {lib}.QPH_LOAD
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPH_LOAD2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPH_STOP
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPH_LOG
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPH_KEYS
+sqlcode 0 sqlstate 00000 msgid -

@@ -1,0 +1,28 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPB_SCORE (ID INTEGER NOT NULL, SCORE INTEGER, GRADE 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QPB_SCORE (ID, SCORE) VALUES (1, 95), (2, 82), (3, 71)
+sqlcode 0 sqlstate 00000 msgid - count 5
+> CREATE PROCEDURE {lib}.QPB_GRADE (IN P_ID INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPB_ALL ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPB_ALL()
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ID, SCORE, GRADE FROM {lib}.QPB_SCORE ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# SCORE INTEGER
+# GRADE CHAR(1)
+| 1 | 95 | 'A' |
+| 2 | 82 | 'B' |
+| 3 | 71 | 'C' |
+| 4 | 40 | 'F' |
+| 5 | NULL | '-' |
+> DROP PROCEDURE {lib}.QPB_ALL
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPB_GRADE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPB_SCORE
+sqlcode 0 sqlstate 00000 msgid -

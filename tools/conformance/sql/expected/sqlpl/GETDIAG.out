@@ -1,0 +1,46 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPK_STOCK (ITEM CHAR(3) NOT NULL, QTY INTEGER NOT NUL
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QPK_LOG (WHAT VARCHAR(20) NOT NULL, N INTEGER, TXT VA
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QPK_STOCK VALUES ('AAA', 1), ('BBB', 2), ('CCC', 3), (
+sqlcode 0 sqlstate 00000 msgid - count 4
+> CREATE PROCEDURE {lib}.QPK_ADJUST (IN P_MIN INTEGER, IN P_BY INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPK_FAIL ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPK_ADJUST(3, 10)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPK_ADJUST(1000, 1)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPK_FAIL
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT WHAT, N FROM {lib}.QPK_LOG ORDER BY WHAT, N
+sqlcode 0 sqlstate 00000 msgid -
+# WHAT VARCHAR(20) NOT NULL
+# N INTEGER
+| 'deleted' | 0 |
+| 'deleted' | 0 |
+| 'error 21000' | -811 |
+| 'error 22001' | -404 |
+| 'error 23502' | -407 |
+| 'updated' | 0 |
+| 'updated' | 2 |
+> SELECT ITEM, QTY FROM {lib}.QPK_STOCK ORDER BY ITEM
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(3) NOT NULL
+# QTY INTEGER NOT NULL
+| 'AAA' | 1 |
+| 'BBB' | 2 |
+| 'CCC' | 13 |
+| 'DDD' | 14 |
+> DROP PROCEDURE {lib}.QPK_ADJUST
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPK_FAIL
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPK_LOG
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPK_STOCK
+sqlcode 0 sqlstate 00000 msgid -

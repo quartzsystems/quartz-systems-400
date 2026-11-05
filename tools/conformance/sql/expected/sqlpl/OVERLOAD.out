@@ -1,0 +1,37 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPW_T (WHICH VARCHAR(10) NOT NULL, N INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPW_LOG (IN P_N INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPW_LOG (IN P_N INTEGER, IN P_M INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPW_LOG (IN P_X CHAR(1))
+sqlcode -454 sqlstate 42723 msgid SQL0454
+> CALL {lib}.QPW_LOG(5)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPW_LOG(5, 6)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPW_LOG(5, 6, 7)
+sqlcode -440 sqlstate 42884 msgid SQL0440
+> SELECT WHICH, N FROM {lib}.QPW_T ORDER BY WHICH
+sqlcode 0 sqlstate 00000 msgid -
+# WHICH VARCHAR(10) NOT NULL
+# N INTEGER
+| 'one' | 5 |
+| 'two' | 11 |
+> SELECT SPECIFIC_NAME, ROUTINE_NAME, IN_PARMS FROM QSYS2.SYSROUTINES WHER
+sqlcode 0 sqlstate 00000 msgid -
+# SPECIFIC_NAME VARCHAR(128) NOT NULL
+# ROUTINE_NAME VARCHAR(128) NOT NULL
+# IN_PARMS SMALLINT NOT NULL
+| 'QPW_LOG1' | 'QPW_LOG' | 1 |
+| 'QPW_LOG2' | 'QPW_LOG' | 2 |
+> DROP PROCEDURE {lib}.QPW_LOG
+sqlcode -476 sqlstate 42725 msgid SQL0476
+> DROP PROCEDURE {lib}.QPW_LOG (INTEGER, INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> DROP SPECIFIC PROCEDURE {lib}.QPW_LOG1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPW_T
+sqlcode 0 sqlstate 00000 msgid -

@@ -1,0 +1,37 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPR_TXT (K VARCHAR(10) NOT NULL, V VARCHAR(60))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPR_REVERSE (IN P_IN VARCHAR(40))
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPR_WORDS (IN P_IN VARCHAR(60))
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPR_PAD (IN P_NAME CHAR(10), IN P_N INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPR_REVERSE('stressed')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPR_WORDS('  the quick  brown fox ')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPR_PAD('Abc', 42)
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT K, V FROM {lib}.QPR_TXT ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K VARCHAR(10) NOT NULL
+# V VARCHAR(60)
+| 'DIGITS' | '0000042' |
+| 'PAD' | '[Abc         ]' |
+| 'REVERSE' | 'desserts' |
+| 'RTRIM' | '[Abc]' |
+| 'UPPER' | 'ABC       abc       ' |
+| 'WORD1' | 'the' |
+| 'WORD2' | 'quick' |
+| 'WORD3' | 'brown' |
+| 'WORD4' | 'fox' |
+> DROP PROCEDURE {lib}.QPR_REVERSE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPR_WORDS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPR_PAD
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPR_TXT
+sqlcode 0 sqlstate 00000 msgid -

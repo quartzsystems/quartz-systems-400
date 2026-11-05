@@ -1,0 +1,38 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPN_RC (P INTEGER, RC INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPN_CHECK (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPN_CALLER ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPN_EARLY (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPN_CALLER
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPN_EARLY(0)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPN_EARLY(1)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPN_CHECK(50)
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT P, RC FROM {lib}.QPN_RC ORDER BY P, RC
+sqlcode 0 sqlstate 00000 msgid -
+# P INTEGER
+# RC INTEGER
+| 0 | 100 |
+| 1 | 100 |
+| 1 | 200 |
+| 5 | 0 |
+| 25 | 1 |
+| 125 | 2 |
+| 625 | 2 |
+| NULL | -1 |
+> DROP PROCEDURE {lib}.QPN_CALLER
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPN_CHECK
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPN_EARLY
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPN_RC
+sqlcode 0 sqlstate 00000 msgid -

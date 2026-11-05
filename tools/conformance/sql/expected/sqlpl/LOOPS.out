@@ -1,0 +1,54 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPD_SEQ (KIND CHAR(6) NOT NULL, N INTEGER NOT NULL)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPD_WHILE (IN P_MAX INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPD_REPEAT (IN P_START INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPD_LOOP ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPD_WHILE(4)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPD_REPEAT(6)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPD_LOOP
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT KIND, N FROM {lib}.QPD_SEQ ORDER BY KIND, N
+sqlcode 0 sqlstate 00000 msgid -
+# KIND CHAR(6) NOT NULL
+# N INTEGER NOT NULL
+| 'LOOP  ' | 3 |
+| 'LOOP  ' | 6 |
+| 'LOOP  ' | 9 |
+| 'LOOP  ' | 12 |
+| 'LOOP  ' | 15 |
+| 'LOOP  ' | 18 |
+| 'REPEAT' | 2 |
+| 'REPEAT' | 3 |
+| 'REPEAT' | 4 |
+| 'REPEAT' | 5 |
+| 'REPEAT' | 6 |
+| 'REPEAT' | 8 |
+| 'REPEAT' | 10 |
+| 'REPEAT' | 16 |
+| 'WHILE ' | 1 |
+| 'WHILE ' | 4 |
+| 'WHILE ' | 9 |
+| 'WHILE ' | 16 |
+> SELECT KIND, COUNT(*), SUM(N) FROM {lib}.QPD_SEQ GROUP BY KIND ORDER BY 
+sqlcode 0 sqlstate 00000 msgid -
+# KIND CHAR(6) NOT NULL
+# 00002 INTEGER NOT NULL
+# 00003 INTEGER
+| 'LOOP  ' | 6 | 63 |
+| 'REPEAT' | 8 | 54 |
+| 'WHILE ' | 4 | 30 |
+> DROP PROCEDURE {lib}.QPD_WHILE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPD_REPEAT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPD_LOOP
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPD_SEQ
+sqlcode 0 sqlstate 00000 msgid -

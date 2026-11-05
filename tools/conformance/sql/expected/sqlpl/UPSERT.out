@@ -1,0 +1,32 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPP_CUST (CUSTNO INTEGER NOT NULL PRIMARY KEY, NAME V
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPP_SAVE (IN P_NO INTEGER, IN P_NAME VARCHAR(30))
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPP_SAVE2 (IN P_NO INTEGER, IN P_NAME VARCHAR(30)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPP_SAVE(1, 'Alpha Ltd')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPP_SAVE(2, 'Bravo plc')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPP_SAVE(1, 'Alpha Limited')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPP_SAVE2(2, 'ignored')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPP_SAVE2(3, 'Charlie inc')
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT CUSTNO, NAME, ORDERS FROM {lib}.QPP_CUST ORDER BY CUSTNO
+sqlcode 0 sqlstate 00000 msgid -
+# CUSTNO INTEGER NOT NULL
+# NAME VARCHAR(30) NOT NULL
+# ORDERS INTEGER NOT NULL
+| 1 | 'Alpha Limited' | 2 |
+| 2 | 'Bravo plc' | 11 |
+| 3 | 'CHARLIE INC' | 0 |
+> DROP PROCEDURE {lib}.QPP_SAVE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPP_SAVE2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPP_CUST
+sqlcode 0 sqlstate 00000 msgid -

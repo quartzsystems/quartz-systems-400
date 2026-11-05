@@ -1,0 +1,40 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPO_TRACE (SEQ INTEGER NOT NULL, TXT VARCHAR(30))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPO_NEST (IN P_STOP INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPO_GOTO (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPO_PARMQ (IN COUNT INTEGER)
+sqlcode -590 sqlstate 42734 msgid SQL0590
+> CALL {lib}.QPO_NEST(0)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPO_NEST(1)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPO_GOTO(1)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPO_GOTO(0)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPO_PARMQ(3)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> SELECT SEQ, TXT FROM {lib}.QPO_TRACE ORDER BY SEQ, TXT
+sqlcode 0 sqlstate 00000 msgid -
+# SEQ INTEGER NOT NULL
+# TXT VARCHAR(30)
+| 1 | 'inner n 101' |
+| 1 | 'inner n 101' |
+| 2 | 'inner continued' |
+| 3 | 'outer n 5' |
+| 10 | 'not positive' |
+| 21 | 'positive' |
+| 30 | 'done' |
+| 31 | 'done' |
+> DROP PROCEDURE {lib}.QPO_NEST
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPO_GOTO
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPO_PARMQ
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE {lib}.QPO_TRACE
+sqlcode 0 sqlstate 00000 msgid -

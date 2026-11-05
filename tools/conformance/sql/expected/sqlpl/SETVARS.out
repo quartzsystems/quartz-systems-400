@@ -1,0 +1,29 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPA_OUT (K VARCHAR(10) NOT NULL, N DECIMAL(11,2), S V
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPA_SET1 (IN P_QTY INTEGER, IN P_PRICE DECIMAL(9,
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_SET2 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_SET1(3, 12.50)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_SET1(10, 1.99)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_SET2
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT K, N, S FROM {lib}.QPA_OUT ORDER BY K, N
+sqlcode 0 sqlstate 00000 msgid -
+# K VARCHAR(10) NOT NULL
+# N DECIMAL(11,2)
+# S VARCHAR(40)
+| 'SET1' | 17.91 | 'qty 10          at 1.99       ' |
+| 'SET1' | 33.75 | 'qty 3           at 12.50      ' |
+| 'SET2' | 21.00 | 'swapped 21' |
+| 'SET2N' | NULL | 'was null' |
+> DROP PROCEDURE {lib}.QPA_SET1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_SET2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPA_OUT
+sqlcode 0 sqlstate 00000 msgid -

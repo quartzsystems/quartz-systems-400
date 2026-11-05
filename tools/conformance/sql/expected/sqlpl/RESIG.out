@@ -1,0 +1,42 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPJ_T (ID INTEGER NOT NULL PRIMARY KEY)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QPJ_LOG (TXT VARCHAR(60) NOT NULL)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QPJ_T VALUES (1)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> CREATE PROCEDURE {lib}.QPJ_INNER (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPJ_OUTER (IN P INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPJ_BARE ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPJ_OUTER(2)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPJ_OUTER(1)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPJ_INNER(1)
+sqlcode -438 sqlstate 75100 msgid SQL0438
+> CALL {lib}.QPJ_BARE
+sqlcode -803 sqlstate 23505 msgid SQL0803
+> SELECT TXT FROM {lib}.QPJ_LOG ORDER BY TXT
+sqlcode 0 sqlstate 00000 msgid -
+# TXT VARCHAR(60) NOT NULL
+| 'bare resignal' |
+| 'inner saw a duplicate' |
+| 'inner saw a duplicate' |
+| 'outer caught 75100: duplicate order' |
+| 'outer done 1' |
+| 'outer done 2' |
+> DROP PROCEDURE {lib}.QPJ_OUTER
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPJ_INNER
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPJ_BARE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPJ_LOG
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPJ_T
+sqlcode 0 sqlstate 00000 msgid -

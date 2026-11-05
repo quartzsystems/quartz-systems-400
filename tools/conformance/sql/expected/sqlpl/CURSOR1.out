@@ -1,0 +1,38 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPF_ITEM (ITEM CHAR(5) NOT NULL, ONHAND INTEGER NOT N
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QPF_PO (ITEM CHAR(5) NOT NULL, QTY INTEGER NOT NULL)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QPF_ITEM VALUES ('A0001', 5, 10), ('A0002', 50, 10), (
+sqlcode 0 sqlstate 00000 msgid - count 5
+> CREATE PROCEDURE {lib}.QPF_REORDER ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPF_COUNT (IN P_MIN INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPF_REORDER
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ITEM, QTY FROM {lib}.QPF_PO ORDER BY ITEM
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(5) NOT NULL
+# QTY INTEGER NOT NULL
+| 'A0001' | 15 |
+| 'A0003' | 50 |
+| 'A0005' | 5 |
+> CALL {lib}.QPF_COUNT(20)
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ITEM, QTY FROM {lib}.QPF_PO WHERE ITEM IN ('TOTAL', 'COUNT') ORDE
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(5) NOT NULL
+# QTY INTEGER NOT NULL
+| 'COUNT' | 1 |
+| 'TOTAL' | 50 |
+> DROP PROCEDURE {lib}.QPF_REORDER
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPF_COUNT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPF_PO
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPF_ITEM
+sqlcode 0 sqlstate 00000 msgid -

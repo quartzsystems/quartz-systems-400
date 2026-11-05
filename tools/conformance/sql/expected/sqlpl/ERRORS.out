@@ -1,0 +1,33 @@
+-- captured from primary
+> CREATE PROCEDURE {lib}.QPU_E1 (IN P_A INTEGER, OUT P_B INTEGER) LANGUAGE
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPU_E1 (IN P_X INTEGER, OUT P_Y INTEGER) LANGUAGE
+sqlcode -454 sqlstate 42723 msgid SQL0454
+> CREATE PROCEDURE {lib}.QPU_E2 () LANGUAGE SQL BEGIN SIGNAL SQLSTATE '000
+sqlcode -435 sqlstate 428B3 msgid SQL0435
+> CREATE PROCEDURE {lib}.QPU_E3 (IN P INTEGER, IN P INTEGER) LANGUAGE SQL 
+sqlcode -590 sqlstate 42734 msgid SQL0590
+> CREATE PROCEDURE {lib}.QPU_E4 () LANGUAGE SQL BEGIN LEAVE NOWHERE; END
+sqlcode -779 sqlstate 42736 msgid SQL0779
+> CREATE PROCEDURE {lib}.QPU_E5 () LANGUAGE SQL BEGIN DECLARE C1 CURSOR FO
+sqlcode -504 sqlstate 34000 msgid SQL0504
+> CREATE PROCEDURE {lib}.QPU_E6 () LANGUAGE SQL BEGIN DECLARE X INTEGER; S
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CALL {lib}.QPU_E1(1, 2)
+sqlcode -469 sqlstate 42886 msgid SQL0469
+> CALL {lib}.QPU_E1(1)
+sqlcode -440 sqlstate 42884 msgid SQL0440
+> CALL {lib}.QPU_E1(1, 2, 3)
+sqlcode -440 sqlstate 42884 msgid SQL0440
+> CALL {lib}.QPU_NOSUCH
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CALL {lib}.QPU_NOSUCH(1)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP PROCEDURE {lib}.QPU_NOSUCH
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP SPECIFIC PROCEDURE {lib}.QPU_NOSUCH
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP PROCEDURE {lib}.QPU_E1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPU_E1
+sqlcode -204 sqlstate 42704 msgid SQL0204

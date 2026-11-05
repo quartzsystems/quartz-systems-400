@@ -1,0 +1,45 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPE_ORD (ORDNO INTEGER NOT NULL, CUST CHAR(4) NOT NUL
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QPE_TOT (CUST CHAR(4) NOT NULL, ORDERS INTEGER, TOTAL
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QPE_ORD VALUES (1, 'ACME', 10.00), (2, 'ACME', 250.50)
+sqlcode 0 sqlstate 00000 msgid - count 6
+> CREATE PROCEDURE {lib}.QPE_TOTALS ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPE_RAISE (IN P_PCT DECIMAL(5,2))
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPE_TOTALS()
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT CUST, ORDERS, TOTAL, BIGGEST FROM {lib}.QPE_TOT ORDER BY CUST
+sqlcode 0 sqlstate 00000 msgid -
+# CUST CHAR(4) NOT NULL
+# ORDERS INTEGER
+# TOTAL DECIMAL(11,2)
+# BIGGEST INTEGER
+| 'ACME' | 3 | 265.75 | 2 |
+| 'BETA' | 2 | 200.00 | 5 |
+| 'CORP' | 1 | 1.00 | 6 |
+> CALL {lib}.QPE_RAISE(10)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPE_TOTALS()
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT CUST, ORDERS, TOTAL, BIGGEST FROM {lib}.QPE_TOT ORDER BY CUST
+sqlcode 0 sqlstate 00000 msgid -
+# CUST CHAR(4) NOT NULL
+# ORDERS INTEGER
+# TOTAL DECIMAL(11,2)
+# BIGGEST INTEGER
+| 'ACME' | 3 | 265.75 | 2 |
+| 'BETA' | 2 | 219.99 | 5 |
+| 'CORP' | 1 | 1.00 | 6 |
+> DROP PROCEDURE {lib}.QPE_TOTALS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPE_RAISE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPE_TOT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPE_ORD
+sqlcode 0 sqlstate 00000 msgid -

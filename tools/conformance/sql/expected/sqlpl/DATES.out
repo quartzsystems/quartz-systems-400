@@ -1,0 +1,38 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPQ_DUE (INV INTEGER NOT NULL, ISSUED DATE NOT NULL, 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QPQ_DUE (INV, ISSUED, TERMS) VALUES (1, '2026-01-15', 
+sqlcode 0 sqlstate 00000 msgid - count 3
+> CREATE PROCEDURE {lib}.QPQ_DUEDATES (IN P_TODAY DATE)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPQ_MONTHS (IN P_START DATE, IN P_N INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPQ_DUEDATES('2026-02-25')
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT INV, ISSUED, TERMS, DUE, LATE FROM {lib}.QPQ_DUE ORDER BY INV
+sqlcode 0 sqlstate 00000 msgid -
+# INV INTEGER NOT NULL
+# ISSUED DATE NOT NULL
+# TERMS INTEGER NOT NULL
+# DUE DATE
+# LATE CHAR(1)
+| 1 | '2026-01-15' | 30 | '2026-02-14' | 'Y' |
+| 2 | '2026-02-20' | 10 | '2026-03-02' | 'N' |
+| 3 | '2025-12-31' | 60 | '2026-03-01' | 'N' |
+> CALL {lib}.QPQ_MONTHS('2026-01-01', 2)
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# INV INTEGER NOT NULL
+# DUE DATE
+# DAYS_LEFT INTEGER
+# Y INTEGER
+# M INTEGER
+| 1 | '2026-02-14' | 44 | 2026 | 2 |
+| 3 | '2026-03-01' | 59 | 2026 | 3 |
+> DROP PROCEDURE {lib}.QPQ_DUEDATES
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPQ_MONTHS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPQ_DUE
+sqlcode 0 sqlstate 00000 msgid -

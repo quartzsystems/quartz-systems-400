@@ -1,0 +1,30 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPS_LOAN (MONTH INTEGER NOT NULL, BAL DECIMAL(11,2), 
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPS_SCHEDULE (IN P_PRINCIPAL DECIMAL(11,2), IN P_
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPS_MIXED ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPS_SCHEDULE(1000.00, 6.5, 260.00)
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPS_MIXED
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT MONTH, BAL, INTEREST, PAID FROM {lib}.QPS_LOAN ORDER BY MONTH
+sqlcode 0 sqlstate 00000 msgid -
+# MONTH INTEGER NOT NULL
+# BAL DECIMAL(11,2)
+# INTEREST DECIMAL(9,2)
+# PAID DECIMAL(9,2)
+| 1 | 745.42 | 5.42 | 260.00 |
+| 2 | 489.46 | 4.04 | 260.00 |
+| 3 | 232.11 | 2.65 | 260.00 |
+| 4 | 0.00 | 1.26 | 233.37 |
+| 100 | 3.00 | 100.00 | 1.00 |
+| 101 | 18000.00 | 5.00 | NULL |
+> DROP PROCEDURE {lib}.QPS_SCHEDULE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPS_MIXED
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPS_LOAN
+sqlcode 0 sqlstate 00000 msgid -

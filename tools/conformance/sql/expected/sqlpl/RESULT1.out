@@ -1,0 +1,53 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPG_EMP (EMPNO CHAR(4) NOT NULL, NAME VARCHAR(20) NOT
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QPG_EMP VALUES ('0001', 'Hardy', 'ACC', 52000.00), ('0
+sqlcode 0 sqlstate 00000 msgid - count 5
+> CREATE PROCEDURE {lib}.QPG_BY_DEPT (IN P_DEPT CHAR(3))
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPG_SUMMARY ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPG_NONE ()
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> CALL {lib}.QPG_BY_DEPT('DEV')
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# EMPNO CHAR(4) NOT NULL
+# NAME VARCHAR(20) NOT NULL
+# SALARY DECIMAL(9,2)
+| '0002' | 'Lopez' | 61000.00 |
+| '0003' | 'Ng' | 58500.50 |
+> CALL {lib}.QPG_BY_DEPT('ACC')
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# EMPNO CHAR(4) NOT NULL
+# NAME VARCHAR(20) NOT NULL
+# SALARY DECIMAL(9,2)
+| '0001' | 'Hardy' | 52000.00 |
+| '0005' | 'Smith' | 47250.00 |
+> CALL {lib}.QPG_BY_DEPT('XXX')
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# EMPNO CHAR(4) NOT NULL
+# NAME VARCHAR(20) NOT NULL
+# SALARY DECIMAL(9,2)
+> CALL {lib}.QPG_SUMMARY
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# DEPT CHAR(3) NOT NULL
+# HEADS INTEGER NOT NULL
+# PAYROLL DECIMAL(31,2)
+| 'ACC' | 2 | 99250.00 |
+| 'DEV' | 2 | 119500.50 |
+| 'OPS' | 1 | NULL |
+> CALL {lib}.QPG_NONE
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP PROCEDURE {lib}.QPG_BY_DEPT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPG_SUMMARY
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPG_NONE
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE {lib}.QPG_EMP
+sqlcode 0 sqlstate 00000 msgid -

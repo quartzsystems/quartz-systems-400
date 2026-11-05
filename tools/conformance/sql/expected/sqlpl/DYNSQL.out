@@ -1,0 +1,35 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPL_CFG (KEYNAME VARCHAR(10) NOT NULL, VAL VARCHAR(20
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPL_PUT (IN P_KEY VARCHAR(10), IN P_VAL VARCHAR(2
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPL_FIX (IN P_TABLE VARCHAR(20), IN P_KEY VARCHAR
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPL_LIST (IN P_LIKE VARCHAR(10))
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPL_PUT('COLOR', 'blue')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPL_PUT('CITY', 'oslo')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPL_PUT('SIZE', 'large')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPL_FIX('QPL_CFG', 'CITY')
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPL_LIST('C%')
+sqlcode 0 sqlstate 00000 msgid -
+warning 466 0100C SQL0466
+# KEYNAME VARCHAR(10) NOT NULL
+# VAL VARCHAR(20)
+| 'CITY' | 'OSLO' |
+| 'COLOR' | 'blue' |
+> CALL {lib}.QPL_FIX('QPL_NONE', 'X')
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP PROCEDURE {lib}.QPL_PUT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPL_FIX
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPL_LIST
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPL_CFG
+sqlcode 0 sqlstate 00000 msgid -
