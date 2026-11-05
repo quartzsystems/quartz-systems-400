@@ -1,0 +1,118 @@
+-- captured from primary
+> CREATE TYPE {lib}.QPA_INTS AS INTEGER ARRAY[5]
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TYPE {lib}.QPA_STRS AS VARCHAR(10) ARRAY[3]
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TYPE {lib}.QPA_BIG AS DECIMAL(9,2) ARRAY[]
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TYPE {lib}.QPA_NOMAX AS INTEGER ARRAY
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CREATE TYPE {lib}.QPA_DT AS DATE ARRAY[2]
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TABLE {lib}.QPA_OUT (K VARCHAR(10), N INTEGER, S VARCHAR(40))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QPA_SRC (ID INTEGER, NAME VARCHAR(10))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QPA_SRC VALUES (3, 'c'), (1, 'a'), (2, 'b')
+sqlcode 0 sqlstate 00000 msgid - count 3
+> SELECT TYPE_NAME, METATYPE, SOURCE_TYPE, LENGTH, NUMERIC_SCALE, MAXIMUM_
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> CREATE PROCEDURE {lib}.QPA_P1 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_P2 (IN P INTEGER)
+sqlcode -20440 sqlstate 2202F msgid SQ20440
+> CREATE PROCEDURE {lib}.QPA_P3 (IN A {lib}.QPA_INTS, OUT N INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_P4 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_P5 ()
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> CREATE PROCEDURE {lib}.QPA_P6 ()
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> CREATE FUNCTION {lib}.QPA_F1 (A {lib}.QPA_INTS) RETURNS INTEGER
+sqlcode -20441 sqlstate 428H2 msgid SQ20441
+> CALL {lib}.QPA_P1()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_P2(1)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CALL {lib}.QPA_P2(2)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CALL {lib}.QPA_P2(3)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CALL {lib}.QPA_P2(4)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CALL {lib}.QPA_P2(5)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CALL {lib}.QPA_P2(6)
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CALL {lib}.QPA_P4()
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT K, N, S FROM {lib}.QPA_OUT
+sqlcode 0 sqlstate 00000 msgid -
+# K VARCHAR(10)
+# N INTEGER
+# S VARCHAR(40)
+| 'NULLCARD' | NULL | NULL |
+| 'CARD' | 3 | NULL |
+| 'MAXC' | 5 | NULL |
+| 'E2' | 20 | NULL |
+| 'CARD5' | 5 | NULL |
+| 'E4' | NULL | NULL |
+| 'TRIM' | 3 | NULL |
+| 'B' | 10 | NULL |
+| 'B' | 20 | NULL |
+| 'B' | 30 | NULL |
+| 'AGG' | 3 | 'abc' |
+| 'UNNEST' | 10 | '1                   ' |
+| 'UNNEST' | 20 | '2                   ' |
+| 'UNNEST' | 30 | '3                   ' |
+| 'UNNEST' | NULL | '4                   ' |
+| 'UNNEST' | 50 | '5                   ' |
+| 'UN2' | 10 | 'a' |
+| 'UN2' | 20 | 'b' |
+| 'UN2' | 30 | 'c' |
+| 'UN2' | NULL | NULL |
+| 'UN2' | 50 | NULL |
+| 'COPY' | 10 | '99         ' |
+| 'EMPTY' | 0 | NULL |
+| 'NULL' | NULL | NULL |
+| 'SUBQ' | 3 | '3          ' |
+| 'P3' | 2 | NULL |
+> VALUES CARDINALITY(ARRAY[1,2])
+sqlcode -20441 sqlstate 428H2 msgid SQ20441
+> SELECT ARRAY_AGG(ID) FROM {lib}.QPA_SRC
+sqlcode -20441 sqlstate 428H2 msgid SQ20441
+> VALUES ARRAY[1,2]
+sqlcode -20441 sqlstate 428H2 msgid SQ20441
+> SELECT * FROM UNNEST(ARRAY[1,2]) AS U(X)
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DROP PROCEDURE {lib}.QPA_P1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_P2
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP PROCEDURE {lib}.QPA_P3
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_P4
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_P5
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP PROCEDURE {lib}.QPA_P6
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP FUNCTION {lib}.QPA_F1
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TYPE {lib}.QPA_INTS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.QPA_STRS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.QPA_BIG
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.QPA_NOMAX
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TYPE {lib}.QPA_DT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPA_OUT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPA_SRC
+sqlcode 0 sqlstate 00000 msgid -

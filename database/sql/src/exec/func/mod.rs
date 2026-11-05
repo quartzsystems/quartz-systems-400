@@ -124,6 +124,7 @@ pub(crate) struct Family {
 
 /// The families, asked in order before the first set.
 const FAMILIES: &[Family] = &[
+    Family { call: super::array::call },
     Family { call: decfloat::call },
     Family { call: super::json::plain },
     Family { call: integrity::call },
@@ -260,6 +261,7 @@ pub fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
                 Value::Real(_) | Value::Date(_) => 4,
                 Value::Time(_) => 3,
                 Value::Timestamp(_) => 10,
+                Value::Array(_) => return Err(crate::exec::array::misplaced()),
                 Value::Null => 0,
             })
         }

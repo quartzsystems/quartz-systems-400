@@ -384,11 +384,12 @@ fn udts(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
         for (sys, name, u, created, owner) in super::super::udt::in_library(txn, l)? {
             let Ok(t) = crate::pl::types::parse_type(&u.source) else { continue };
             let sh = shape(&t);
+            let array = u.metatype == b'A';
             rows.push(vec![
                 s(sch.clone()),
                 s(name),
                 s(owner),
-                Value::Null,
+                if array { s("QSYS2") } else { Value::Null },
                 s(sh.name),
                 ten(&lib),
                 ten(&sys.to_string()),
@@ -406,10 +407,10 @@ fn udts(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
                 stamp(created),
                 Value::Null,
                 Value::int(0),
-                stamp(created),
+                if array { Value::Null } else { stamp(created) },
                 Value::Null,
                 Value::Null,
-                Value::Null,
+                if array { Value::int(i64::try_from(u.cardinality).unwrap_or(i64::MAX)) } else { Value::Null },
             ]);
         }
     }

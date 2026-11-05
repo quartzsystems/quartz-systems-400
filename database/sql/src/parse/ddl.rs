@@ -23,10 +23,6 @@ impl Parser {
         if self.is_word("TRIGGER") {
             return self.create_trigger(replace);
         }
-        if self.is_word("TYPE") && self.toks.iter().skip(self.at).take(12).any(|t| matches!(&t.tok, Tok::Word(w) if w == "ARRAY")) {
-            // BLOCKED(sql): array types and array variables in SQL PL.
-            return Err(Self::unsupported("CREATE TYPE ... AS ARRAY: array types"));
-        }
         if self.eat_word("TABLE") {
             return self.create_table(replace);
         }

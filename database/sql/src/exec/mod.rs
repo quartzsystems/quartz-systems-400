@@ -7,6 +7,7 @@
 //! changes in `dml`, definitions in `ddl`, expressions in `eval`.
 
 pub mod alter;
+pub mod array;
 mod column;
 pub mod agg;
 pub mod alias;
@@ -225,6 +226,8 @@ pub struct SqlContext {
     pub routine: routine::State,
     /// Savepoints set without commitment control: names only.
     pub(crate) loose_savepoints: Vec<(String, bool)>,
+    /// The statement is an SQL procedure's: arrays may be used.
+    pub arrays: bool,
 }
 
 /// See [`SqlContext::yielder`].
@@ -332,6 +335,7 @@ impl SqlContext {
             registers: registers::Registers::default(),
             routine: routine::State::default(),
             loose_savepoints: Vec::new(),
+            arrays: false,
         }
     }
 

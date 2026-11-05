@@ -38,3 +38,26 @@ in QSTEST and dropped after.
 - Over a table that is not journaled, a change in an ATOMIC compound is
   SQL7008 (the kit case `sqlpl/ATOMIC`).
 - Without an ATOMIC compound, a failing procedure's earlier changes stay (B5).
+
+## Arrays (ar1, ar2, and the kit cases `sqlpl/ARRAYS`, `sqlpl/ARRAYERR`)
+
+- `CREATE TYPE t AS type ARRAY[n]` and `ARRAY[]` (cardinality 2147483647);
+  `ARRAY` without brackets is SQL0104. SYSTYPES: METATYPE `A`, SOURCE_SCHEMA
+  `QSYS2`, MAXIMUM_CARDINALITY, LAST_ALTERED null.
+- Arrays live in SQL procedures only: an array parameter of a function, and
+  `ARRAY[...]`, `CARDINALITY(ARRAY[...])`, `ARRAY_AGG` outside a routine are
+  SQ20441 (428H2). `DECLARE a INTEGER ARRAY[3]` is SQL0199: a variable needs
+  a type made by CREATE TYPE. `ARRAY_EXISTS` is not on 7.1 (SQL0199).
+- A declared array is null (`CARDINALITY` null, elements null). `SET a[5]`
+  past the cardinality extends it with nulls. `TRIM_ARRAY(a, n)` drops the
+  last n. `ARRAY_AGG` of no rows is an empty array. `UNNEST(a, b)` pads the
+  shorter with nulls; `WITH ORDINALITY` adds the ordinal (BIGINT). Assigning
+  an array copies it.
+- SQ20439 (2202E): reading past the cardinality, assigning at 0 or past the
+  type's cardinality, `TRIM_ARRAY` of more than there are, an
+  `ARRAY[fullselect]` longer than the type; at `CREATE PROCEDURE` time for a
+  constant index. A null index: null when read, SQ20439 with 2200E when
+  assigned at. A fractional index is truncated. A constructor longer than
+  the type is SQ20440 (2202F) at `CREATE PROCEDURE`.
+- An element out of the element type's range: SQL0304 (22003); a string
+  element into an INTEGER array converts.

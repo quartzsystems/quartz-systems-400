@@ -229,10 +229,15 @@ pub(super) fn table_function(
             values.push(ev.eval(txn, a, outer)?);
         }
     }
-    let found = match super::catalog::table_function(txn, ctx, name, &values, args, &alias.value)? {
-        Some(t) => Some(t),
-        // A user table function (`routine::udf`).
-        None => super::routine::udf::table(txn, ctx, name, &values, &alias.value).transpose()?,
+    let unnest = name.schema.is_none() && matches!(name.name.value.as_str(), "*UNNEST" | "*UNNESTO");
+    let found = if unnest {
+        Some(super::array::unnest(ctx, &values, name.name.value == "*UNNESTO")?)
+    } else {
+        match super::catalog::table_function(txn, ctx, name, &values, args, &alias.value)? {
+            Some(t) => Some(t),
+            // A user table function (`routine::udf`).
+            None => super::routine::udf::table(txn, ctx, name, &values, &alias.value).transpose()?,
+        }
     };
     let Some((mut schema, rows)) = found else {
         return Err(SqlError::ObjectNotFound { name: name.to_string(), kind: "function" });

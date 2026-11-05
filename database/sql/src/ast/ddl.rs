@@ -338,6 +338,8 @@ pub struct CreateVariable {
 pub struct CreateType {
     /// The type.
     pub name: ObjectName,
-    /// The source type.
+    /// The source type; the element type of an array type.
     pub source: TypeSpec,
+    /// `ARRAY[n]`: the largest cardinality (`ARRAY[]` the most there is).
+    pub array: Option<u64>,
 }

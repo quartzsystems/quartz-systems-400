@@ -41,6 +41,9 @@ impl Parser {
                 return Ok(Some(TableRef::DataChange { kind, statement: Box::new(statement), alias, columns }));
             }
         }
+        if self.is_word("UNNEST") && self.is_sym_at(1, "(") {
+            return self.unnest().map(Some);
+        }
         if self.is_word("JSON_TABLE") && self.is_sym_at(1, "(") {
             self.advance();
             self.advance();

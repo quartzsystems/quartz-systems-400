@@ -46,6 +46,9 @@ pub enum Value {
     Time(Time),
     /// A timestamp.
     Timestamp(Timestamp),
+    /// An array (`CREATE TYPE ... AS ARRAY`): its elements, in SQL PL
+    /// only.
+    Array(Vec<Value>),
 }
 
 // Floats compare by value.
@@ -316,6 +319,7 @@ impl Value {
             Self::Date(_) => "date",
             Self::Time(_) => "time",
             Self::Timestamp(_) => "timestamp",
+            Self::Array(_) => "array",
         }
     }
 
@@ -419,6 +423,16 @@ impl fmt::Display for Value {
             Self::Date(d) => f.write_str(&d.render(DateFmt::Iso, None)),
             Self::Time(t) => f.write_str(&t.render(TimeFmt::Iso, None)),
             Self::Timestamp(t) => write!(f, "{t}"),
+            Self::Array(a) => {
+                f.write_str("[")?;
+                for (i, v) in a.iter().enumerate() {
+                    if i > 0 {
+                        f.write_str(", ")?;
+                    }
+                    write!(f, "{v}")?;
+                }
+                f.write_str("]")
+            }
         }
     }
 }

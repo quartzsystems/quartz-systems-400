@@ -6,6 +6,7 @@
 //! families live in their own modules; this one has the cursor, the
 //! names and types, and the statement dispatch.
 
+mod array;
 mod change;
 mod ddl;
 mod integrity;

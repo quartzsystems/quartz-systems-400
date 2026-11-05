@@ -416,6 +416,15 @@ impl Catalog for Cat<'_, '_> {
         }
         Ok(out)
     }
+
+    fn array_type(&mut self, name: &ObjectName) -> Result<Option<(TypeSpec, u64)>> {
+        let Some((_, u)) = crate::exec::udt::find(self.txn, self.ctx, name)? else { return Ok(None) };
+        if u.metatype != b'A' {
+            // BLOCKED(sql): distinct types need strong typing in the engine.
+            return Err(unsupported(&format!("a variable of distinct type {name}")));
+        }
+        Ok(Some((crate::pl::types::parse_type(&u.source)?, u.cardinality)))
+    }
 }
 
 /// `DROP PROCEDURE|FUNCTION|SPECIFIC ...`.

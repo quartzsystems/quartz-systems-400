@@ -217,7 +217,7 @@ impl Parser {
             "SESSION", "ENCRYPTION", "CONNECTION",
         ];
         match self.tok_at(1) {
-            Tok::Sym("(") | Tok::Delimited(_) => true,
+            Tok::Sym("(" | "[") | Tok::Delimited(_) => true,
             Tok::Word(w) => !REGS.contains(&w.as_str()) || matches!(self.tok_at(2), Tok::Sym("=")),
             _ => false,
         }
@@ -253,9 +253,6 @@ impl Parser {
             let v = self.ident()?;
             t = Ident { value: format!("{}.{}", t.value, v.value), delimited: false };
         }
-        if self.is_sym("[") {
-            return Err(Self::unsupported("assignment to an array element"));
-        }
         Ok(t)
     }
 
@@ -271,10 +268,10 @@ impl Parser {
                     self.advance();
                     let q = self.pl_sql_until(&[")"])?;
                     self.expect_sym(")")?;
-                    out.push(Assign { targets, source: AssignSource::Row(q) });
+                    out.push(Assign { targets, source: AssignSource::Row(q), element: None });
                 } else if self.is_word("VALUES") || self.is_word("SELECT") {
                     let q = self.pl_sql()?;
-                    out.push(Assign { targets, source: AssignSource::Row(q) });
+                    out.push(Assign { targets, source: AssignSource::Row(q), element: None });
                 } else {
                     self.expect_sym("(")?;
                     let es = self.pl_exprs()?;
@@ -286,12 +283,19 @@ impl Parser {
                             what: "the number of values differs from the number of variables".into(),
                         });
                     }
-                    out.push(Assign { targets, source: AssignSource::Exprs(es) });
+                    out.push(Assign { targets, source: AssignSource::Exprs(es), element: None });
                 }
             } else {
                 let t = self.target()?;
+                let element = if self.eat_sym("[") {
+                    let i = self.pl_expr()?;
+                    self.expect_sym("]")?;
+                    Some(i)
+                } else {
+                    None
+                };
                 self.expect_sym("=")?;
-                out.push(Assign { targets: vec![t], source: AssignSource::Exprs(vec![self.pl_expr()?]) });
+                out.push(Assign { targets: vec![t], source: AssignSource::Exprs(vec![self.pl_expr()?]), element });
             }
             if !self.eat_sym(",") {
                 return Ok(out);
@@ -413,8 +417,23 @@ impl Parser {
             c.cursors.push(cur);
             return Ok(());
         }
-        let ty = self.type_spec()?;
-        let mut v = PlVar { names, ty, default: None, constant: false };
+        // A type of the database's: an array type (a distinct type is
+        // refused as it is used).
+        let builtin = self.mark();
+        let (ty, array) = match self.type_spec() {
+            // An array type is declared with CREATE TYPE, not here.
+            Ok(_) if self.is_word("ARRAY") => return Err(self.keyword()),
+            Ok(t) => (t, None),
+            Err(e) => {
+                self.at = builtin;
+                if !matches!(self.tok(), Tok::Word(_) | Tok::Delimited(_)) {
+                    return Err(e);
+                }
+                let name = self.object_name()?;
+                (crate::ast::TypeSpec { data_type: crate::ast::DataType::Integer, ccsid: None, bit_data: false }, Some(name))
+            }
+        };
+        let mut v = PlVar { names, ty, array, default: None, constant: false };
         if self.eat_word("DEFAULT") {
             v.default = Some(self.pl_expr()?);
         } else if self.eat_word("CONSTANT") {

@@ -1,0 +1,159 @@
+-- captured from primary
+> CREATE TYPE {lib}.QPA_INTS AS INTEGER ARRAY[5]
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TYPE {lib}.QPA_DEC AS DECIMAL(5,2) ARRAY[]
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TABLE {lib}.QPA_OUT (K VARCHAR(10), N BIGINT, S VARCHAR(40))
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.QPA_SIX (N INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.QPA_SIX VALUES 1, 2, 3, 4, 5, 6
+sqlcode 0 sqlstate 00000 msgid - count 6
+> CREATE PROCEDURE {lib}.QPA_Q1 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q2 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q3 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q4 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q5 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q6 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q7 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q8 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q9 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q10 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q11 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q12 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q13 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q14 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q15 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q16 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q18 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q19 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPA_Q20 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q1()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q2()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q3()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q4()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q5()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q6()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q7()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q8()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q9()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q10()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q11()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q12()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q13()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q14()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q15()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q16()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q18()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q19()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPA_Q20()
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT K, N, S FROM {lib}.QPA_OUT
+sqlcode 0 sqlstate 00000 msgid -
+# K VARCHAR(10)
+# N BIGINT
+# S VARCHAR(40)
+| 'ERR1' | -20439 | '2202E' |
+| 'ERR2' | -20439 | '2202E' |
+| 'ERR3' | -20439 | '2202E' |
+| 'ERR4' | -20439 | '2202E' |
+| 'ERR5' | -20439 | '2202E' |
+| 'ERR6' | -20439 | '2200E' |
+| 'NULLIX' | NULL | NULL |
+| 'ERR8' | -304 | '22003' |
+| 'DEC' | 2 | '1.55   ' |
+| 'NULLE' | NULL | NULL |
+| 'AGG0' | 0 | NULL |
+| 'ERR12' | -206 | '42703' |
+| 'ERR13' | -206 | '42703' |
+| 'STRS' | 2 | NULL |
+| 'FRAC' | 9 | '2                   ' |
+| 'CMP' | 1 | NULL |
+| 'TRALL' | 0 | NULL |
+| 'TYPECARD' | 3 | NULL |
+| 'ERR20' | -206 | '42703' |
+> DROP PROCEDURE {lib}.QPA_Q1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q3
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q4
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q5
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q6
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q7
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q8
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q9
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q10
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q11
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q12
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q13
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q14
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q15
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q16
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q18
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q19
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPA_Q20
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.QPA_INTS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.QPA_DEC
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPA_OUT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPA_SIX
+sqlcode 0 sqlstate 00000 msgid -

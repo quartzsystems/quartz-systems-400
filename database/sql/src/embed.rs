@@ -26,6 +26,7 @@ use crate::exec::{Outcome, SqlContext, prepare};
 use crate::sqlca::Sqlca;
 use crate::value::Value;
 
+mod arrays;
 mod atomic;
 pub mod describe;
 mod package;
@@ -161,6 +162,9 @@ pub struct Desc {
     /// A statement of an `ATOMIC` compound in a routine without
     /// commitment control: run under the routine's own definition.
     pub atomic: bool,
+    /// An SQL procedure's statement: arrays may be used
+    /// (`crate::exec::array`).
+    pub arrays: bool,
     /// The statement text (the cursor's query for `OPEN`).
     pub text: String,
 }
@@ -198,6 +202,7 @@ impl Desc {
             (self.calls, 'L'),
             (self.sensitive, 'Y'),
             (self.atomic, 'M'),
+            (self.arrays, 'Q'),
         ] {
             if on {
                 flags.push(c);
@@ -244,6 +249,7 @@ impl Desc {
             calls: rest.contains('L'),
             sensitive: rest.contains('Y'),
             atomic: rest.contains('M'),
+            arrays: rest.contains('Q'),
             commit: if rest.contains('G') {
                 Some(LckLvl::Chg)
             } else if rest.contains('T') {
@@ -308,7 +314,8 @@ pub type WireReply = (i32, String, Vec<i32>, String, String, (Vec<Vec<WireValue>
 #[must_use]
 pub fn to_wire(v: &Value) -> WireValue {
     match v {
-        Value::Null => (0, String::new()),
+        // An array stays in the database: programs hold a handle.
+        Value::Null | Value::Array(_) => (0, String::new()),
         Value::Num(d) => (1, d.to_string()),
         Value::Str(s) => (2, s.clone()),
         Value::DecFloat(d) if d.format() == qdecimal::DfFormat::D16 => (6, format!("16:{d}")),
@@ -936,10 +943,13 @@ impl Embedded for Session {
         let kept = if may_yield(&req.desc) { None } else { self.ctx.yielder.take() };
         self.ctx.routine.can_call = req.desc.calls;
         self.ctx.routine.pending = None;
+        self.ctx.arrays = req.desc.arrays;
         let mut r = match self.commitment(req) {
             Some(r) => r,
+            None if arrays::has_arrays(&req.desc.locs) => self.with_arrays(req),
             None => self.with_locators(req),
         };
+        self.ctx.arrays = false;
         if !r.sqlca.is_error() {
             r.call = self.ctx.routine.pending.take();
             if req.desc.atomic
@@ -954,7 +964,9 @@ impl Embedded for Session {
         if kept.is_some() {
             self.ctx.yielder = kept;
         }
-        if req.desc.op != Op::Diag && !req.desc.quiet {
+        // A routine's own evaluation leaves the diagnostics alone, unless
+        // it fails: then the handler that takes it sees its condition.
+        if req.desc.op != Op::Diag && (!req.desc.quiet || r.sqlca.is_error()) {
             self.last = r.sqlca.clone();
             self.last_cmd = command_function(&req.desc);
         }

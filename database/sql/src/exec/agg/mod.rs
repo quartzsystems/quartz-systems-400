@@ -155,12 +155,8 @@ fn overflow(e: impl std::fmt::Display) -> SqlError {
 /// Fold the rows of a group or frame. `nulls` is set when a null value
 /// was left out (SQLSTATE `01003`).
 pub fn finish(call: &Call<'_>, mut rows: Vec<Input>, nulls: &mut bool) -> Result<Value> {
-    match call.name {
-        "ARRAY_AGG" => {
-            return Err(SqlError::Unsupported { what: "ARRAY_AGG: array types come with SQL procedures".into() });
-        }
-        "XMLAGG" => return Err(SqlError::Unsupported { what: "XMLAGG: the XML type".into() }),
-        _ => {}
+    if call.name == "XMLAGG" {
+        return Err(SqlError::Unsupported { what: "XMLAGG: the XML type".into() });
     }
     if !call.order.is_empty() {
         let specs: Vec<super::sort::KeySpec> = call
@@ -179,6 +175,11 @@ pub fn finish(call: &Call<'_>, mut rows: Vec<Input>, nulls: &mut bool) -> Result
         if let Some(e) = failure {
             return Err(e);
         }
+    }
+    // ARRAY_AGG keeps the nulls, in order (arrays are checked for where
+    // the call is evaluated).
+    if call.name == "ARRAY_AGG" {
+        return Ok(Value::Array(rows.into_iter().map(|r| r.args.into_iter().next().unwrap_or(Value::Null)).collect()));
     }
     for fam in FAMILIES {
         if (fam.is)(call.name, rows.first().map_or(1, |r| r.args.len()))

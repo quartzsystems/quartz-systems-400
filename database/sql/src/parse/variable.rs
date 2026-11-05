@@ -96,11 +96,27 @@ impl Parser {
         }
         self.expect_word("AS")?;
         let source = self.type_spec()?;
+        if self.eat_word("ARRAY") {
+            self.expect_sym("[")?;
+            let max = if self.eat_sym("]") {
+                crate::exec::array::UNBOUNDED
+            } else {
+                let n = match self.tok().clone() {
+                    crate::lex::Tok::Num(n) => n.parse::<u64>().ok().filter(|n| (1..=crate::exec::array::UNBOUNDED).contains(n)),
+                    _ => None,
+                };
+                let Some(n) = n else { return Err(self.expected("the largest cardinality, 1 to 2147483647")) };
+                self.advance();
+                self.expect_sym("]")?;
+                n
+            };
+            return Ok(Statement::CreateType(CreateType { name, source, array: Some(max) }));
+        }
         // The comparisons are generated either way, as on IBM i.
         let _ = self.eat_words(&["WITH", "COMPARISONS"]);
         if self.eat_words(&["NOT", "FINAL"]) || self.is_word("UNDER") {
             return Err(Self::unsupported("structured types"));
         }
-        Ok(Statement::CreateType(CreateType { name, source }))
+        Ok(Statement::CreateType(CreateType { name, source, array: None }))
     }
 }

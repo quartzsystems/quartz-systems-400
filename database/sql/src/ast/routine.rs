@@ -385,6 +385,8 @@ pub struct PlVar {
     pub names: Vec<Ident>,
     /// Their type.
     pub ty: TypeSpec,
+    /// An array type's name instead (`ty` unused).
+    pub array: Option<super::ObjectName>,
     /// `DEFAULT expr` (`None`: null).
     pub default: Option<PlExpr>,
     /// `CONSTANT`.
@@ -418,6 +420,8 @@ pub struct Assign {
     /// The values, one per target; or one row query (`(SELECT ...)`
     /// or `VALUES`).
     pub source: AssignSource,
+    /// `SET a[i] = v`: the index of the element assigned.
+    pub element: Option<PlExpr>,
 }
 
 /// What a `SET` assigns from.

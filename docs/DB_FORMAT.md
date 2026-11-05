@@ -999,15 +999,16 @@ session, made from the default the first time the job reads it.
 ### `SqlType` (variable)
 
 The `TYPE` entry of a user-defined type's `*SQLUDT` (kind 10): its
-source type as SQL writes it, `source_len` bytes of UTF-8 after the fixed
-16.
+source type (an array type's element type) as SQL writes it,
+`source_len` bytes of UTF-8 after the fixed 16.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
-| 0 | 1 | metatype | `T` (x'54') a distinct type |
+| 0 | 1 | metatype | `T` (x'54') a distinct type, `A` (x'41') an array type |
 | 1 | 1 | reserved | 0 |
 | 2 | 2 | source_len | |
-| 4 | 12 | reserved2 | 0 |
+| 4 | 4 | reserved2 | 0 |
+| 8 | 8 | cardinality | an array type's largest cardinality (2147483647 for `ARRAY[]`); 0 otherwise |
 | 16 | variable | parts | the source type |
 
 ### 8.2 The SQL name index

@@ -21,6 +21,8 @@ use crate::ast::{
 use crate::embed::{Desc, Op};
 use crate::error::{Result, SqlError};
 
+mod array;
+
 fn unsupported(what: &str) -> SqlError {
     SqlError::Unsupported { what: what.into() }
 }
@@ -37,6 +39,9 @@ struct Var {
     ty: HostType,
     sql: TypeSpec,
     constant: bool,
+    /// An array: its element type and largest cardinality; the storage
+    /// holds its handle (`crate::embed` arrays).
+    array: Option<(TypeSpec, u64)>,
 }
 
 /// A cursor of a compound statement.
@@ -301,6 +306,7 @@ impl Gen<'_> {
                 ty,
                 sql: p.ty.clone(),
                 constant: false,
+                array: None,
             });
             frame.vars.push((p.name.clone(), i));
         }
@@ -341,6 +347,8 @@ impl Gen<'_> {
         self.place(&fail);
         self.term(format!("br {out}"));
         self.place(&out);
+        let all: Vec<usize> = (0..self.vars.len()).collect();
+        self.free_arrays(&all);
         self.ins("mov $state, [%pca +131]:char(5)");
         self.ins("%np = parms");
         let n = 2 * self.sig.parms.len() + 5;
@@ -389,6 +397,10 @@ impl Gen<'_> {
                         }
                     }
                     match &a.source {
+                        AssignSource::Exprs(es) if a.element.is_some() => {
+                            let k = self.var(&a.targets[0].value)?;
+                            self.assign_element(k, a.element.as_ref().expect("an element"), &es[0])?;
+                        }
                         AssignSource::Exprs(es) => {
                             let ks: Vec<usize> = a.targets.iter().map(|t| self.var(&t.value)).collect::<Result<_>>()?;
                             self.assign(&ks, es)?;
@@ -514,6 +526,11 @@ impl Gen<'_> {
                 let text = format!("CALL {name}({})", texts.join(", "));
                 let text = if args.is_empty() { format!("CALL {name}") } else { text };
                 let r = self.rewrite(&text, &HashSet::new())?;
+                if r.vars.iter().any(|&k| self.vars[k].array.is_some()) {
+                    // BLOCKED(sql): a CALL passes values, and an array
+                    // lives in the database behind its handle.
+                    return Err(unsupported("an array argument in CALL"));
+                }
                 self.run_vars(Op::Exec, &r.text, &r.vars, &[], Flags::default())?;
             }
             PlKind::Signal(sg) => self.signal(sg)?,
@@ -577,6 +594,7 @@ impl Gen<'_> {
             sql_naming: self.sig.naming == crate::ast::Naming::Sql,
             commit: self.sig.commit,
             atomic: self.sig.commit.is_none() && self.frames.iter().any(|f| f.atomic.is_some()),
+            arrays: self.sig.role == Role::Procedure,
             ..Desc::default()
         }
     }
@@ -635,7 +653,7 @@ impl Gen<'_> {
         let ty = host_type(sql)?;
         let place = self.auto(&ty.qir);
         let ind = self.auto("i16");
-        self.vars.push(Var { place, ind, ty, sql: sql.clone(), constant });
+        self.vars.push(Var { place, ind, ty, sql: sql.clone(), constant, array: None });
         Ok(self.vars.len() - 1)
     }
 
@@ -643,13 +661,14 @@ impl Gen<'_> {
     fn temp_var(&mut self, place: &str, ind: &str, ty: &str) -> Result<usize> {
         let sql = super::types::parse_type(ty)?;
         let ty = host_type(&sql)?;
-        self.vars.push(Var { place: place.into(), ind: ind.into(), ty, sql, constant: false });
+        self.vars.push(Var { place: place.into(), ind: ind.into(), ty, sql, constant: false, array: None });
         Ok(self.vars.len() - 1)
     }
 
     /// Rewrite statement text with the variables in scope as markers.
     fn rewrite<S: std::hash::BuildHasher>(&self, text: &str, columns: &HashSet<String, S>) -> Result<rewrite::Rewritten> {
-        rewrite::rewrite(text, self, columns)
+        let text = self.max_cardinality(text)?;
+        rewrite::rewrite(&text, self, columns)
     }
 
     /// The column names of the tables a statement names.
@@ -735,7 +754,9 @@ impl Gen<'_> {
         let mut parts = Vec::new();
         let mut outs = Vec::new();
         for (k, e) in ks.iter().zip(es) {
-            if let Expr::Literal(Literal::Null) = &e.expr {
+            if self.vars[*k].array.is_some() {
+                self.assign_array(*k, e)?;
+            } else if let Expr::Literal(Literal::Null) = &e.expr {
                 let ind = self.vars[*k].ind.clone();
                 self.ins(format!("store {ind}, -1"));
             } else {
@@ -811,6 +832,12 @@ impl Gen<'_> {
 
     /// The calls for one statement, then the look at its outcome.
     fn run_desc(&mut self, d: &Desc, ins: &[usize], outs: &[usize]) -> Result<()> {
+        let (ins, d) = self.array_io(d, ins, outs);
+        self.emit(&d, &ins, outs)
+    }
+
+    /// The calls of [`Self::run_desc`] as they are.
+    fn emit(&mut self, d: &Desc, ins: &[usize], outs: &[usize]) -> Result<()> {
         for &k in ins {
             let v = self.vars[k].clone();
             self.ins(format!("callb _QRNX_SQLIN({}, {}, {}, {}, 1)", v.place, v.ty.desc, v.ty.extra, v.ind));
@@ -1097,12 +1124,17 @@ impl Gen<'_> {
         self.frames.push(frame);
         // Variables, in order: each default sees the ones before it.
         for v in &c.vars {
+            let array = match &v.array {
+                Some(t) => Some(self.cat.array_type(t)?.ok_or_else(|| SqlError::Coded { code: -204, state: "42704", what: format!("type {t} not found") })?),
+                None => None,
+            };
             for n in &v.names {
                 // The routine's own compound may not reuse a parameter's name.
                 if self.frames.len() == 2 && self.sig.parms.iter().any(|p| p.name == n.value) {
                     return Err(SqlError::Coded { code: -590, state: "42734", what: format!("name {} is not unique in the routine", n.value) });
                 }
                 let k = self.new_var(&v.ty, v.constant)?;
+                self.vars[k].array.clone_from(&array);
                 match n.value.as_str() {
                     "SQLSTATE" => self.sqlstate_var = Some(k),
                     "SQLCODE" => self.sqlcode_var = Some(k),
@@ -1160,8 +1192,11 @@ impl Gen<'_> {
                 HandlerKind::Exit | HandlerKind::Undo => self.term(format!("br {end}")),
             }
         }
-        let atomic = self.frames.pop().and_then(|f| f.atomic);
+        let frame = self.frames.pop().expect("frame");
+        let atomic = frame.atomic;
         self.place(&end);
+        let mine: Vec<usize> = frame.vars.iter().map(|(_, k)| *k).collect();
+        self.free_arrays(&mine);
         if let Some(sp) = atomic {
             self.internal(&format!("RELEASE SAVEPOINT {sp}"));
         }

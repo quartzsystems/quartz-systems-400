@@ -37,7 +37,8 @@ pub static TYPE_LAYOUT: Layout = Layout {
         field("metatype", 0, 1),
         field("reserved", 1, 1),
         field("source_len", 2, 2),
-        field("reserved2", 4, 12),
+        field("reserved2", 4, 4),
+        field("cardinality", 8, 8),
         Field { name: "parts", offset: Some(16), size: None },
     ],
 };
@@ -92,10 +93,12 @@ impl Variable {
 /// A user-defined type.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Udt {
-    /// `T` distinct (IBM's `METATYPE`).
+    /// `T` distinct, `A` array (IBM's `METATYPE`).
     pub metatype: u8,
-    /// The source type, as SQL writes it.
+    /// The source type, as SQL writes it; an array's element type.
     pub source: String,
+    /// An array's largest cardinality; 0 for a distinct type.
+    pub cardinality: u64,
 }
 
 impl Udt {
@@ -105,6 +108,7 @@ impl Udt {
         let mut b = vec![0u8; TYPE_FIXED];
         b[0] = self.metatype;
         b[2..4].copy_from_slice(&len16(self.source.len()));
+        b[8..16].copy_from_slice(&self.cardinality.to_le_bytes());
         b.extend_from_slice(self.source.as_bytes());
         b
     }
@@ -119,7 +123,8 @@ impl Udt {
             .get(TYPE_FIXED..TYPE_FIXED + n)
             .and_then(|s| String::from_utf8(s.to_vec()).ok())
             .ok_or_else(|| bad("type entry"))?;
-        Ok(Self { metatype: b[0], source })
+        let cardinality = u64::from_le_bytes(b[8..16].try_into().expect("8 bytes"));
+        Ok(Self { metatype: b[0], source, cardinality })
     }
 }
 
@@ -136,7 +141,8 @@ mod tests {
         ] {
             assert_eq!(Variable::decode(&v.encode()).unwrap(), v);
         }
-        let u = Udt { metatype: b'T', source: "CHARACTER(4)".into() };
-        assert_eq!(Udt::decode(&u.encode()).unwrap(), u);
+        for u in [Udt { metatype: b'T', source: "CHARACTER(4)".into(), cardinality: 0 }, Udt { metatype: b'A', source: "INTEGER".into(), cardinality: 5 }] {
+            assert_eq!(Udt::decode(&u.encode()).unwrap(), u);
+        }
     }
 }

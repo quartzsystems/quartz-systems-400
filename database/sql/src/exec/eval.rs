@@ -638,6 +638,9 @@ impl Evaluator<'_> {
                 what: "an OLAP specification outside the select list and ORDER BY".into(),
             }),
             Expr::WithinGroup(w) => {
+                if w.func.name == "ARRAY_AGG" && !self.ctx.arrays {
+                    return Err(super::array::misplaced());
+                }
                 let Some(group) = env.group.clone() else {
                     return Err(SqlError::Misplaced { what: format!("{} where no group is being formed", w.func.name) });
                 };
@@ -699,6 +702,17 @@ impl Evaluator<'_> {
             return r;
         }
         let name = f.name.as_str();
+        if name == "ARRAY_AGG" && !self.ctx.arrays {
+            return Err(super::array::misplaced());
+        }
+        if name == "*ARRAYQ" {
+            if !self.ctx.arrays {
+                return Err(super::array::misplaced());
+            }
+            let Some(Expr::Subquery(q)) = f.args.first() else { unreachable!("ARRAY[fullselect]") };
+            let rows = self.subquery(txn, q, env)?;
+            return Ok(super::array::from_rows(&rows));
+        }
         if super::agg::is_aggregate(f) {
             let Some(group) = env.group.clone() else {
                 return Err(SqlError::Misplaced {

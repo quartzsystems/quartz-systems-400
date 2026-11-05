@@ -83,6 +83,7 @@ fn family(v: &Value) -> &'static str {
         Value::Date(_) => "DATE",
         Value::Time(_) => "TIME",
         Value::Timestamp(_) => "TIMESTAMP",
+        Value::Array(_) => "array",
         Value::Null => "null",
     }
 }

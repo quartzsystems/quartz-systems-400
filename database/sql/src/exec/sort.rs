@@ -309,6 +309,10 @@ fn encode_value(v: &Value, out: &mut Vec<u8>) {
             out.push(10);
             out.extend_from_slice(&x.to_le_bytes());
         }
+        Value::Array(a) => {
+            out.push(11);
+            encode_row(a, out);
+        }
     }
 }
 
@@ -434,6 +438,7 @@ fn decode_value(c: &mut Cursor<'_>) -> Result<Value> {
         }
         9 => Value::Double(f64::from_le_bytes(c.take(8)?.try_into().expect("8 bytes"))),
         10 => Value::Real(f32::from_le_bytes(c.take(4)?.try_into().expect("4 bytes"))),
+        11 => Value::Array(decode_row(c)?),
         _ => return Err(bad("an unknown value tag")),
     })
 }

@@ -106,7 +106,8 @@ pub fn value(v: &Value, data_type: &str) -> String {
             h
         }
         Value::Bool(b) => if *b { "true" } else { "false" }.into(),
-        Value::Date(_) | Value::Time(_) => format!("'{v}'"),
+        // No result set holds an array (SQ20441 first).
+        Value::Date(_) | Value::Time(_) | Value::Array(_) => format!("'{v}'"),
         // JDBC's form, then IBM's separators, as SqlKit.java does.
         Value::Timestamp(_) => v.to_string().replacen(' ', "-", 1).replace(':', "."),
     }

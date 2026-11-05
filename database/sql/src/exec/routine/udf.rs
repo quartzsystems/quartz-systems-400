@@ -51,6 +51,9 @@ pub fn check_body(s: &PlStmt) -> Result<()> {
     match &s.kind {
         PlKind::Compound(c) => {
             // ATOMIC changes nothing here: a function's body only reads.
+            if c.vars.iter().any(|v| v.array.is_some()) {
+                return Err(crate::exec::array::misplaced());
+            }
             if !c.cursors.is_empty() || !c.handlers.is_empty() {
                 return Err(unsupported("cursors and handlers in an SQL function"));
             }

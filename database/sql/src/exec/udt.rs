@@ -2,7 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Distinct types: `CREATE TYPE ... AS` a source type makes a `*SQLUDT`
+//! Distinct and array types: `CREATE TYPE ... AS` a source type (`ARRAY[n]`
+//! after it for an array type, which SQL procedures use) makes a `*SQLUDT`
 //! holding the source in its `TYPE` entry (`docs/DB_FORMAT.md` §8.1,
 //! `SqlType`); `DROP TYPE` deletes it; `SYSTYPES` lists them.
 //! BLOCKED(sql): using a distinct type (a column, a variable, `CAST`, the
@@ -82,7 +83,8 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &CreateType) -> Result
     if long {
         info.set(tag::NAME, c.name.name.value.as_bytes().to_vec());
     }
-    info.set(tag::TYPE, Udt { metatype: b'T', source: crate::pl::types::type_text(&c.source) }.encode());
+    let (metatype, cardinality) = c.array.map_or((b'T', 0), |n| (b'A', n));
+    info.set(tag::TYPE, Udt { metatype, source: crate::pl::types::type_text(&c.source), cardinality }.encode());
     sqlinf::save(txn, id, &info, now)?;
     names::put(txn, lib, Space::Type, &c.name.name.value, Target { id, system: sys })?;
     Ok(())

@@ -98,4 +98,14 @@ pub trait Catalog {
     ///
     /// The query does not describe.
     fn describe(&mut self, query: &str) -> Result<Vec<(String, TypeSpec)>>;
+    /// An array type: its element type and largest cardinality; `None`
+    /// when there is no array type of that name.
+    ///
+    /// # Errors
+    ///
+    /// The type cannot be read.
+    fn array_type(&mut self, name: &ObjectName) -> Result<Option<(TypeSpec, u64)>> {
+        let _ = name;
+        Ok(None)
+    }
 }

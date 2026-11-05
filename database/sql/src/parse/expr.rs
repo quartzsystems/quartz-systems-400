@@ -200,6 +200,7 @@ impl Parser {
             return self.nested(Self::factor);
         }
         let e = self.primary()?;
+        let e = self.subscripts(e)?;
         // A labeled duration: `e DAYS`.
         let unit = match self.tok() {
             Tok::Word(w) => match w.as_str() {
@@ -292,6 +293,7 @@ impl Parser {
                 self.expect_sym(")")?;
                 Ok(first)
             }
+            Tok::Word(w) if w == "ARRAY" && self.is_sym_at(1, "[") => self.array_ctor(),
             Tok::Word(w) => self.word_primary(&w),
             Tok::Delimited(_) => self.column_or_call(),
             _ => Err(self.expected("an expression")),
@@ -566,6 +568,9 @@ impl Parser {
         // DB2 for i takes no USING OCTETS or CODEUNITS here.
         if self.is_word("USING") {
             return Err(self.keyword());
+        }
+        if f.name == "ARRAY_AGG" && self.is_words(&["ORDER", "BY"]) {
+            return self.array_agg_order(f);
         }
         let overflow = self.listagg_overflow(&f.name)?;
         self.expect_sym(")")?;

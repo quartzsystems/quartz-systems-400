@@ -1096,3 +1096,30 @@ sev = 30
 text = "&1 in &2 is not a table."
 help = "The statement works on tables only, and the object named is a view, an index or another kind of file. A BEFORE or AFTER trigger is on a table."
 vars = ["*CHAR 128", "*CHAR 128"]
+[[msg]]
+id = "SQL0304"
+sev = 30
+text = "A value does not fit variable &1."
+help = "The value is out of the range of the variable's type, or of the element type of an array variable. Use a type that holds it."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQ20439"
+sev = 30
+text = "Array index &1 is not valid."
+help = "An array index must be from 1 to the array's cardinality to read an element, and from 1 to its type's largest cardinality to assign one. A null index cannot be assigned at."
+vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQ20440"
+sev = 30
+text = "An array of &1 elements does not fit an array of at most &2."
+help = "The array assigned has more elements than the target's type allows. Declare a type with a larger cardinality, or assign fewer elements."
+vars = ["*CHAR 20", "*CHAR 20"]
+
+[[msg]]
+id = "SQ20441"
+sev = 30
+text = "An array is not valid here."
+help = "Array types, array constructors, ARRAY_AGG and UNNEST are used in SQL procedures only: in their variables and the statements that read or assign them."
+vars = []

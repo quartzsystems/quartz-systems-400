@@ -442,6 +442,8 @@ fn image(v: &Value, d: &Desc, extra: i64) -> Result<(Vec<u8>, Put), (i32, &'stat
                 Value::Bin(b) => ccsid::from_ebcdic(b),
                 Value::Bool(b) => if *b { "1" } else { "0" }.into(),
                 Value::Null => String::new(),
+                // Arrays reach programs as handles, never as values.
+                Value::Array(_) => return Err((-20_441, "428H2")),
             };
             let e = ebcdic(&text);
             let cap = if d.kind == Kind::VarChar { d.len as usize } else { n };
