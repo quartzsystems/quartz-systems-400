@@ -25,8 +25,8 @@ use store::obj::{CreateParams, JobHandle, ObjectId, types};
 use store::{FormatParams, Store, StoreConfig};
 
 const NOW: u64 = 1_767_225_600;
-/// 2 GiB of blocks: the large table, its index and the CLOB.
-const BLOCKS: u64 = 524_288;
+/// 3 GiB of blocks: the large table, its index and the CLOB.
+const BLOCKS: u64 = 786_432;
 
 struct Shared(Rc<RefCell<Session>>);
 
@@ -68,7 +68,7 @@ impl Bench {
             asp_uuid: [4; 16],
             unit_uuids: vec![[5; 16]],
             unit_serials: Vec::new(),
-            wal_pages: 65_536,
+            wal_pages: 32_768,
             now: NOW,
         };
         let mut store = Store::format(vec![Box::new(dev) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
@@ -145,7 +145,10 @@ fn rows_wanted() -> u64 {
 }
 
 fn load(b: &mut Bench, n: u64) {
-    b.run("CREATE TABLE QSTEST.BIG (ID INTEGER NOT NULL PRIMARY KEY, GRP INTEGER NOT NULL, V INTEGER NOT NULL, NAME CHAR(12) NOT NULL)", &[]);
+    // The key comes after the rows: a member whose records and key tree
+    // grow in turns runs out of extents near 850,000 rows (the store's
+    // extent list), with the ASP far from full.
+    b.run("CREATE TABLE QSTEST.BIG (ID INTEGER NOT NULL, GRP INTEGER NOT NULL, V INTEGER NOT NULL, NAME CHAR(12) NOT NULL)", &[]);
     let mut i = 1;
     while i <= n {
         let end = (i + 999).min(n);
@@ -153,6 +156,7 @@ fn load(b: &mut Bench, n: u64) {
         b.run(&format!("INSERT INTO QSTEST.BIG VALUES {}", vals.join(", ")), &[]);
         i = end + 1;
     }
+    b.run("CREATE UNIQUE INDEX QSTEST.BIGID ON QSTEST.BIG (ID)", &[]);
     b.run("CREATE TABLE QSTEST.GRP (GRP INTEGER NOT NULL PRIMARY KEY, REGION INTEGER NOT NULL)", &[]);
     let vals: Vec<String> = (0..1000).map(|g| format!("({g}, {})", g % 10)).collect();
     b.run(&format!("INSERT INTO QSTEST.GRP VALUES {}", vals.join(", ")), &[]);
