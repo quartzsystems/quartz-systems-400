@@ -149,12 +149,6 @@ pub fn request(cmdname: &str, parms: &Parms) -> Result<Request, String> {
             "CPF0006 TGTRLS({tgtrls}) is not a release this compiler targets"
         ));
     }
-    // RDBCNNMTH: a program's connections follow *DUW rules.
-    if name_is(parms, "RDBCNNMTH", "*RUW")
-        && let sql::options::Check::Unsupported(what) = sql::options::check("RDBCNNMTH", "*RUW")
-    {
-        return Err(format!("CPF0006 {what}"));
-    }
     sql.then(|| check_sql_options(parms)).transpose()?;
     let genlvl = parms
         .int("GENLVL")
@@ -236,6 +230,12 @@ const UNAPPLIED: &[&str] = &[
 ];
 
 fn check_sql_options(parms: &Parms) -> Result<(), String> {
+    // RDBCNNMTH: a program's connections follow *DUW rules.
+    if name_is(parms, "RDBCNNMTH", "*RUW")
+        && let sql::options::Check::Unsupported(what) = sql::options::check("RDBCNNMTH", "*RUW")
+    {
+        return Err(format!("CPF0006 {what}"));
+    }
     for name in UNAPPLIED {
         if !parms.specified(name) {
             continue;
