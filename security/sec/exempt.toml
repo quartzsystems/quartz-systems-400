@@ -4,8 +4,8 @@
 # and is not here, and on an entry here that no longer needs to be.
 
 [file."database/db/src/cmt/mod.rs"]
-reason = "commitment control acts on the job's own commitment definition; the files were checked when opened"
-fns = ["start", "begin_change", "commit", "rollback", "end"]
+reason = "commitment control acts on the job's own commitment definition; the files were checked when opened; savepoints and their rollbacks are the job's own, as IBM needs no authority for SAVEPOINT, RELEASE and ROLLBACK TO SAVEPOINT"
+fns = ["start", "begin_change", "commit", "rollback", "end", "rollback_paused", "set_savepoint", "nest_savepoint", "rollback_to_savepoint"]
 
 [file."database/db/src/chg/mod.rs"]
 reason = "chgpf_srcfile only calls chgpf_srcfile_paused, which checks the file (file.change)"
@@ -16,8 +16,8 @@ reason = "called by CHGPF/CHGLF after they check the file (file.change)"
 fns = ["change_attr", "replace_formats"]
 
 [file."database/db/src/file/mod.rs"]
-reason = "creation is checked by the store's create (lib.create-in on the library); describe and dependents are called after the caller's check; prune_dependents only from RSTOBJ/RSTLIB on a file the restore just made, after the hooks allowed it (obj.restore or lib.create-in)"
-fns = ["create_pf", "create_pf_rcdlen", "create_pf_fields", "create_srcpf", "describe", "add_lf_member", "add_dependent", "prune_dependents"]
+reason = "creation is checked by the store's create (lib.create-in on the library); describe and dependents are called after the caller's check; prune_dependents only from RSTOBJ/RSTLIB on a file the restore just made, after the hooks allowed it (obj.restore or lib.create-in); add_lf_member_paused is called by add_lf_member and by CRTLF (svc/db/files.rs build_lf_member) and CREATE INDEX/VIEW (sql exec/ddl.rs) right after create_lf, which checked lib.create-in and file.base-on on each based-on file"
+fns = ["create_pf", "create_pf_rcdlen", "create_pf_fields", "create_srcpf", "describe", "add_lf_member", "add_dependent", "prune_dependents", "add_lf_member_paused"]
 
 [file."database/db/src/journal/mod.rs"]
 reason = "journal entries written on behalf of an operation already checked"
@@ -28,12 +28,12 @@ reason = "IPL recovery runs as the system"
 fns = ["recover_journal", "recover_all"]
 
 [file."database/db/src/journal/undo.rs"]
-reason = "APYJRNCHG/RMVJRNCHG check the journal and files before they call these"
-fns = ["resolve_members", "undo", "apply"]
+reason = "APYJRNCHG/RMVJRNCHG check the journal and files before they call these; undo_paused is undo's, and commitment control's rollback of the job's own changes (cmt), which needs none; apyjrnchg and rmvjrnchg check jrn.read and file.apply-journal or file.remove-journal on each file their entries change"
+fns = ["resolve_members", "undo", "apply", "undo_paused"]
 
 [file."database/db/src/member/mod.rs"]
-reason = "members are reached through a file the caller checked (open, CLRPFM, RGZPFM, ADDPFM)"
-fns = ["load", "base_members", "read_slot", "invalidate", "create", "create_logical", "destroy", "open", "open_by", "open_base", "next_identity", "read", "scan", "delete", "clear", "set_reuse_deleted", "set_limits", "refresh", "keys", "keys_back", "read_entry", "ensure_path", "rebuild_path", "read_entries", "reformat"]
+reason = "members are reached through a file the caller checked (open, CLRPFM, RGZPFM, ADDPFM); reopen after a pause of a checked operation; clear_keeping_lobs only from RGZPFM (file.reorganize); rebuild_cst_tree from ADDPFCST/RMVPFCST (file.constraint); rebuild_path_paused from ADDLFM/CRTLF (file.base-on, file.member) and an open's rebuild"
+fns = ["load", "base_members", "read_slot", "invalidate", "create", "create_logical", "destroy", "open", "open_by", "open_base", "next_identity", "read", "scan", "delete", "clear", "set_reuse_deleted", "set_limits", "refresh", "keys", "keys_back", "read_entry", "ensure_path", "rebuild_path", "read_entries", "reformat", "reopen", "clear_keeping_lobs", "rebuild_cst_tree", "rebuild_path_paused"]
 
 [file."database/db/src/member/join.rs"]
 reason = "a join is read through the logical member the caller opened and checked"
@@ -45,7 +45,7 @@ fns = ["allocate", "deallocate", "close", "after_commit", "setll", "setgt", "rea
 
 [file."database/db/src/odp/session.rs"]
 reason = "the job's own session: its opens were checked"
-fns = ["close", "clof", "strcmtctl", "commit", "rollbck", "endcmtctl", "end", "reclaim_in", "strcmtctl_in"]
+fns = ["close", "clof", "strcmtctl", "commit", "rollbck", "endcmtctl", "end", "reclaim_in", "strcmtctl_in", "rollbck_paused", "rollback_to_savepoint"]
 
 [file."database/db/src/source/mod.rs"]
 reason = "source reads for a member the caller checked"
@@ -56,8 +56,8 @@ reason = "access path verification runs as the system at IPL and in RCLSTG"
 fns = ["verify_all", "verify_file"]
 
 [file."database/db/src/util/mod.rs"]
-reason = "helpers of CPYF and the import commands, which check their files"
-fns = ["take", "release", "each_record"]
+reason = "helpers of CPYF, RGZPFM and the import commands, which check their files"
+fns = ["take", "release", "each_record", "each_record_paused"]
 
 [file."database/jrn/src/dsp/mod.rs"]
 reason = "a cursor over receivers the caller checked (jrn.read)"
@@ -128,5 +128,85 @@ reason = "the first IPL's objects, as the system"
 fns = ["install"]
 
 [file."work/wm/src/obj/splf.rs"]
-reason = "spooled file data: the storage service checks the queue and the file (may_spool)"
-fns = ["init", "read_attrs", "write_attrs", "append", "read_data"]
+reason = "spooled file data: the storage service checks the queue and the file (may_spool); upgrade and version run once at the storage service's start, as the system (stgsvc/spool.rs load)"
+fns = ["init", "read_attrs", "write_attrs", "append", "read_data", "version", "upgrade"]
+
+[file."database/db/src/cst/enforce.rs"]
+reason = "constraint enforcement inside record I/O through an open data path (check_open); IBM needs no authority to the parent or dependent file for the system's own checks"
+fns = ["before_write", "before_update", "before_delete"]
+
+[file."database/db/src/cst/mod.rs"]
+reason = "a file's constraint list and tree: written by cst::ops after file.constraint, read by DSPFD (file.describe), WRKPFCST (each operation checks its own, as IBM's), the QSYS2 catalog and the member as it opens (check_open)"
+fns = ["list", "store", "load", "find"]
+
+[file."database/db/src/cst/ops.rs"]
+reason = "dependents_of only from remove (file.constraint); on_delete_file only from delete_file after obj.delete; using_column from ALTER TABLE after file.change (sql exec/alter.rs)"
+fns = ["dependents_of", "on_delete_file", "using_column"]
+
+[file."database/db/src/file/alias.rs"]
+reason = "create_alias goes through the store's create (lib.create-in); alias_of reads only what an alias names: the file it names is checked when opened, DROP ALIAS checks obj.delete (delete_file)"
+fns = ["create_alias", "alias_of"]
+
+[file."database/db/src/lib.rs"]
+reason = "no_pause does nothing with the transaction"
+fns = ["no_pause"]
+
+[file."database/db/src/member/lob.rs"]
+reason = "LOB values of a member whose records the caller reads or writes after its check: SQL queries (check_open), DML through an open data path, CPYF and CPYTOIMPF (file.open-input), CPYFRMIMPF (file.open-output), RGZPFM (file.reorganize)"
+fns = ["owner", "put", "read_part", "read", "free", "sweep", "ids", "clear"]
+
+[file."database/db/src/member/rebuild.rs"]
+reason = "a member rebuilt beside itself: only from CHGPF and ALTER TABLE (chg, file.change) and a member's destroy (RMVM file.remove-member, DLTF obj.delete)"
+fns = ["begin", "abandon", "finish"]
+
+[file."database/db/src/odp/trigger.rs"]
+reason = "trigger calls a record change or read through an open data path makes (check_open); the program is called in the job (mi Job::call_program), and IBM needs no authority to it from the user whose change fires it"
+fns = ["before", "after"]
+
+[file."database/db/src/path/load.rs"]
+reason = "the bulk load of an access path whose build the caller checked"
+fns = ["load"]
+
+[file."database/db/src/sqlinf/mod.rs"]
+reason = "an object's SQL information, written by the SQL statement or command that made or changed the object after its check (CREATE through the store's create, ALTER, LABEL and COMMENT file.change, ALTER SEQUENCE sequence.alter, DROP obj.delete) and read for an object the caller found and checked"
+fns = ["load", "save", "clear"]
+
+[file."database/db/src/sqlinf/names.rs"]
+reason = "a library's SQL name index: the SQL engine checks lib.search on a named library before it looks a name up (SqlContext::resolve_file), and changes it only beside a create, rename or drop the store or the statement checked"
+fns = ["find", "put", "remove", "list", "forget"]
+
+[file."database/db/src/sqlinf/seq.rs"]
+reason = "an identity or generated column's attributes: ALTER TABLE and CREATE TABLE write them after their checks (file.change, the store's create); a write through an open data path (check_open) advances the counter"
+fns = ["columns", "store_columns"]
+
+[file."database/db/src/sqlpkg/mod.rs"]
+reason = "callers check (sql embed/package.rs): create through the store's create (lib.create-in), load for RETURN after sqlpkg.use and for ADD and CLEAR after sqlpkg.change, save after sqlpkg.change or on a package BIND just made, delete through the store's delete (obj.delete) after obj.delete; find checks lib.search"
+fns = ["create", "load", "save", "delete"]
+
+[file."database/db/src/trg/fire.rs"]
+reason = "the trigger calls of odp::trigger, inside record I/O through a checked open"
+fns = ["call_all"]
+
+[file."database/db/src/trg/mod.rs"]
+reason = "a file's trigger list: written by trg::ops and by LABEL ON TRIGGER after file.change; read by DSPFD (file.describe), the QSYS2 catalog, and the member as it opens (check_open)"
+fns = ["list", "store", "load"]
+
+[file."database/db/src/trg/ops.rs"]
+reason = "ADDPFTRG calls authorize_add first (file.trigger-add, file.open-update for ALWREPCHG(*YES), pgm.trigger and lib.search on the program), RMVPFTRG and CHGPFTRG authorize_change (file.trigger-change), in slic cpp/trgcmd.rs; CREATE TRIGGER, DROP TRIGGER and CREATE OR REPLACE check the table's ALTER privilege (file.change, sql exec/trigger)"
+fns = ["add", "remove", "set_state"]
+
+[file."database/db/src/util/cpyf/mod.rs"]
+reason = "cpyf only calls cpyf_paused, which checks"
+fns = ["cpyf"]
+
+[file."database/db/src/util/impf/from.rs"]
+reason = "cpyfrmimpf only calls cpyfrmimpf_paused, which checks"
+fns = ["cpyfrmimpf"]
+
+[file."database/db/src/util/impf/to.rs"]
+reason = "cpytoimpf only calls cpytoimpf_paused, which checks; render formats a record cpytoimpf_paused read"
+fns = ["cpytoimpf", "render"]
+
+[file."database/db/src/util/rgzpfm.rs"]
+reason = "rgzpfm only calls rgzpfm_paused, which checks"
+fns = ["rgzpfm"]
