@@ -156,7 +156,11 @@ fn sqlpkg() {
     };
     let (store, qsys, names) = common::mem::store();
     let ours = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
-    let diffs = replay(&t, &masks(), &mut || {
+    // A statement's name is made from the package's token, the time it
+    // was made: not the oracle's, and not the same from run to run.
+    let mut m = masks();
+    m.param.push((0x380B, 45..63));
+    let diffs = replay(&t, &m, &mut || {
         let s = sql::embed::Session::new(Box::new(store.clone()), qsys, store::obj::JobHandle(1), names.clone());
         let db = Box::new(Database::new(auth.clone(), s, NoExits, cfg.clone()));
         Box::new(Renamer { inner: db, ours: ours.clone() }) as Box<dyn Handler>

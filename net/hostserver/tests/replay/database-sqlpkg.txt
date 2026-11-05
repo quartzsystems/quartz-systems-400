@@ -26,10 +26,10 @@ conn 2 req 45 e004/180e corr 43 reply 1: template 20 bytes, oracle 20, differ at
 conn 2 req 45 e004/180e corr 43 reply 1: 3807 136 bytes, oracle 136, differ at 109-111,115
 conn 2 req 45 e004/180e corr 43 reply 1: 380e 98252 bytes, oracle 60, differ at 17-19,24-25,27-98251
 conn 3 req 2 e004/7002 corr 0 reply 1: 111f 27 bytes, oracle 27, differ at 8-9
-conn 3 req 5 e004/1815 corr 3 reply 1: 380b 314 bytes, oracle 410, differ at 3,47-59,105,314-409
+conn 3 req 5 e004/1815 corr 3 reply 1: 380b 314 bytes, oracle 410, differ at 3,105,314-409
 conn 3 req 7 e004/1803 corr 5 reply 1: 3807 136 bytes, oracle 136, differ at 115
 conn 3 req 8 e004/1f00 corr 6 reply 1: 3807 136 bytes, oracle 136, differ at 115
-conn 4 req 5 e004/1815 corr 3 reply 1: 380b 314 bytes, oracle 410, differ at 3,47-59,105,314-409
+conn 4 req 5 e004/1815 corr 3 reply 1: 380b 314 bytes, oracle 410, differ at 3,105,314-409
 conn 4 req 8 e004/180e corr 6 reply 1: template 20 bytes, oracle 20, differ at 19
 conn 4 req 14 e004/1803 corr 12 reply 1: 3812 73 bytes, oracle 73, differ at 32
 conn 4 req 14 e004/1803 corr 12 reply 1: 3813 72 bytes, oracle 72, differ at 32
