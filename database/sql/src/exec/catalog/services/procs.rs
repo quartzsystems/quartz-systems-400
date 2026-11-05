@@ -33,6 +33,7 @@ const PROCEDURES: &[(&str, &str, ProcFn)] = &[
     ("SYSTOOLS", "LPRINTF", super::admin::lprintf),
     ("QSYS2", "QSQGENSQL", super::gensql::generate_sql),
     ("QSYS2", "QSQGENSQLO", super::gensql::generate_sql_objects),
+    ("QSYS2", "OVERRIDE_QAQQINI", super::qaqqini::override_qaqqini),
 ];
 
 /// Whether `schema.name` is one of the engine's procedures.

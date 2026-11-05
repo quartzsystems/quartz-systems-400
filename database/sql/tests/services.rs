@@ -1299,3 +1299,20 @@ fn generate_sql_of_views_privileges_and_object_lists() {
     assert!(g.iter().any(|l| l.starts_with("CREATE TABLE GS.T1")), "{g:#?}");
     assert_eq!(db.code("CALL QSYS2.GENERATE_SQL_OBJECTS('OBJS')"), -84);
 }
+
+#[test]
+fn override_qaqqini() {
+    let mut db = Db::new(true);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'PARALLEL_DEGREE', '*MAX')"), -443);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(1)"), 0);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'PARALLEL_DEGREE', '*MAX')"), 0);
+    assert_eq!(db.ctx.qaqqini.get("PARALLEL_DEGREE"), "*MAX");
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'ALLOW_TEMPORARY_INDEXES', '*ONLY_REQUIRED')"), 0);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'QUERY_TIME_LIMIT', '30')"), -84);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'SQL_DECFLOAT_WARNINGS', '*DEFAULT')"), 0);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'NO_SUCH_OPTION', '*YES')"), -443);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'PARALLEL_DEGREE', '*SOMETIMES')"), -443);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(3)"), 0);
+    assert_eq!(db.ctx.qaqqini.get("PARALLEL_DEGREE"), "*DEFAULT");
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(4)"), -443);
+}

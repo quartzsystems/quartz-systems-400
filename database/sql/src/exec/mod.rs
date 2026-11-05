@@ -153,6 +153,8 @@ pub struct SqlContext {
     /// The system outside the store, for the `QSYS2` services; `None`
     /// where there is none (tools, tests).
     pub host: Option<std::rc::Rc<dyn catalog::services::host::SystemHost>>,
+    /// The job's query options (`OVERRIDE_QAQQINI`).
+    pub qaqqini: catalog::services::qaqqini::Overrides,
     /// Changes are not under commitment control even when the job has
     /// it (a program precompiled with `COMMIT(*NONE)`).
     pub no_commit: bool,
@@ -298,6 +300,7 @@ impl SqlContext {
             map_errors: false,
             locators: locator::Locators::default(),
             host: None,
+            qaqqini: catalog::services::qaqqini::Overrides::default(),
             no_commit: false,
             isolation: None,
             interrupt: None,

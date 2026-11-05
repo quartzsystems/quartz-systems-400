@@ -37,6 +37,7 @@ mod libl;
 mod netstat;
 mod objects;
 pub mod procs;
+pub mod qaqqini;
 mod products;
 mod security;
 mod spool;
