@@ -1,0 +1,13 @@
+The DRDA client (net/drdar over net/ddm's requester) against the primary (V7R1M0) as the
+remote server, 2026-11-05: tools/conformance/tests/drda_client.rs.
+
+CONNECT TO S062B175 USER {user} USING ...     SQLCODE 0 (EXCSAT, ACCSEC, SECCHK, ACCRDB)
+VALUES CURRENT SERVER                        'S062B175' (the primary's *LOCAL RDB entry)
+SELECT COUNT(*) FROM QSTEST.DBM1             3
+SELECT K, V FROM QSTEST.DBM1 ORDER BY K      (1, 'one') (2, 'two') (3, 'three'), then +100
+SELECT * FROM QSTEST.NOSUCH                  -204 (the server's SQLCA)
+The server wants the package (SQL0805) before a statement: the client binds one with four
+sections in the RDB's collection and reuses section 1 for each statement it closes.
+DROP PACKAGE of the package the connection uses   -615 55006 (in use); DLTSQLPKG through
+S38CMD on a second, record-access connection removes it.
+DISCONNECT of a server that is not current       the current connection stays (local).

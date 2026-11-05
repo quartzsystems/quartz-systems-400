@@ -1,0 +1,15 @@
+[package]
+name = "drdar"
+description = "The DRDA application requester's SQL connections: CONNECT, SET CONNECTION, RELEASE, DISCONNECT and a job's statements routed to the current server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ddm = { path = "../ddm", version = "0.1.0" }
+sql = { path = "../../database/sql", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+
+[lints]
+workspace = true

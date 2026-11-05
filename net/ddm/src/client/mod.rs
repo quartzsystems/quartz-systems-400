@@ -257,6 +257,12 @@ impl<S: Read + Write> Connection<S> {
         s
     }
 
+    /// Start numbering sections again from `n`: a requester that closes
+    /// each statement before the next reuses the package's first ones.
+    pub fn reuse_sections(&mut self, n: u16) {
+        self.next_section = n.max(1);
+    }
+
     /// Send a chain and read the replies, one chain per correlation ID
     /// that wants a reply.
     pub fn exchange(&mut self, mut list: Vec<Dss>) -> Result<Vec<Dss>, Error> {

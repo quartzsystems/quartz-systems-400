@@ -77,7 +77,7 @@ pub fn destination(f: &DdmFile, dir: &RdbDirectory) -> Result<(String, u16, Stri
 }
 
 /// The user and password for `rdb` from the job user's entries.
-fn credentials(link: &Shared, rdb: &str) -> Option<(String, String)> {
+pub(crate) fn credentials(link: &Shared, rdb: &str) -> Option<(String, String)> {
     for server in [rdb, "QDDMDRDASERVER", "QDDMSERVER"] {
         let got = link.borrow_mut().with(|l| l.svraute_get(server.to_string()));
         if let Some((u, p)) = got

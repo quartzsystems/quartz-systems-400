@@ -149,6 +149,12 @@ pub fn request(cmdname: &str, parms: &Parms) -> Result<Request, String> {
             "CPF0006 TGTRLS({tgtrls}) is not a release this compiler targets"
         ));
     }
+    // RDBCNNMTH: a program's connections follow *DUW rules.
+    if name_is(parms, "RDBCNNMTH", "*RUW")
+        && let sql::options::Check::Unsupported(what) = sql::options::check("RDBCNNMTH", "*RUW")
+    {
+        return Err(format!("CPF0006 {what}"));
+    }
     let genlvl = parms
         .int("GENLVL")
         .and_then(|n| u8::try_from(n).ok())
@@ -299,4 +305,9 @@ impl Request {
             sql: self.sqlopts.clone(),
         }
     }
+}
+
+/// Whether `kwd` was given as `value`.
+fn name_is(parms: &Parms, kwd: &str, value: &str) -> bool {
+    parms.specified(kwd) && parms.name(kwd).eq_ignore_ascii_case(value)
 }

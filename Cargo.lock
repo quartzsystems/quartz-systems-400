@@ -498,6 +498,7 @@ dependencies = [
  "ddm",
  "dds",
  "diskimg",
+ "drdar",
  "dspf",
  "ed25519-dalek",
  "ftp",
@@ -974,6 +975,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.7",
+]
+
+[[package]]
+name = "drdar"
+version = "0.1.0"
+dependencies = [
+ "ddm",
+ "qdecimal",
+ "sql",
 ]
 
 [[package]]
@@ -2526,6 +2536,7 @@ dependencies = [
  "ddm",
  "dds",
  "dfu",
+ "drdar",
  "dspf",
  "edtf",
  "ftp",

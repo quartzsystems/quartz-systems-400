@@ -23,6 +23,10 @@ use super::Console;
 /// at once, the statement going on). The reply, and the `OUT` and
 /// `INOUT` values by marker.
 pub fn run(link: &Shared, req: &Request, mut perform: impl FnMut(&CallPlan) -> Outcome) -> (Reply, Vec<(usize, Value)>) {
+    // A connection statement, or any while a remote server is current.
+    if let Some(r) = super::drda::route(link, req) {
+        return (r, Vec::new());
+    }
     let mut req = req.clone();
     req.desc.calls = true;
     let mut sql = RemoteSql::new(link.clone());

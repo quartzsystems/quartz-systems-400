@@ -53,6 +53,7 @@ svctools = { path = "../../lic/svctools", version = "0.1.0" }
 isql = { path = "../../devtools/isql", version = "0.1.0" }
 sda = { path = "../../devtools/sda", version = "0.1.0" }
 ddm = { path = "../../net/ddm", version = "0.1.0" }
+drdar = { path = "../../net/drdar", version = "0.1.0" }
 servers = { path = "../../net/servers", version = "0.1.0" }
 ntp = { path = "../../net/ntp", version = "0.1.0" }
 lpd = { path = "../../net/lpd", version = "0.1.0" }
