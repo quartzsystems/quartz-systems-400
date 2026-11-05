@@ -46,3 +46,4 @@ sqlpl/PLTYPES   # HEX of CCSID-tagged strings; a character DEFAULT for a VARGRAP
 sqlpl/PARMDFT   # SYSPARMS.DEFAULT is NCLOB at IBM, VARCHAR(2000) here (no LOB catalog columns)
 ddl/DGTTCLS   # ALTER TABLE of a table with an index or view over it refused (SQL0084, BLOCKED(sql) in alter)
 trigger/DLTFTRG   # the kit's in-memory store runs no commands (QSYS.QCMDEXC is SQL0204 there); DLTF's dropping of SQL trigger programs runs in the service (svc/db/files.rs)
+objects2/GRANTUDT   # the kit store has no QUSER/QPGMR profiles (SQL0204) and runs no commands (DSPOBJAUT through QSYS.QCMDEXC); the authorities are checked in sql::objects grant_on_types_and_variables_as_the_primary

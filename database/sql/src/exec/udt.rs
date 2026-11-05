@@ -6,9 +6,15 @@
 //! after it for an array type, which SQL procedures use) makes a `*SQLUDT`
 //! holding the source in its `TYPE` entry (`docs/DB_FORMAT.md` §8.1,
 //! `SqlType`); `DROP TYPE` deletes it; `SYSTYPES` lists them.
+//! `GRANT`/`REVOKE` on a type are `exec::grant_obj`'s.
 //! BLOCKED(sql): using a distinct type (a column, a variable, `CAST`, the
-//! generated cast functions) needs strong typing through the engine and
-//! is refused with `SQL0084`.
+//! generated cast functions) is refused with `SQL0084`: values and result
+//! columns carry only their source type (`Value`, `ColInfo`), a column's
+//! link to its type needs a place in the table's `*SQLINF` (a tag no
+//! brief has assigned), and the strong typing the primary applies
+//! (`SQL0401` comparing with the source type, `SQL0402` in arithmetic,
+//! `SQL0171` for a source-type function, `SQL0478` dropping a type in
+//! use: `objects2/TYPES`) needs that type through every expression.
 
 use db::sqlinf::names::{self, Space, Target};
 use db::sqlinf::var::Udt;

@@ -1,0 +1,106 @@
+-- captured from primary
+> CREATE TYPE {lib}.GTYP AS DECIMAL(5,2)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VARIABLE {lib}.GVAR INTEGER DEFAULT 1
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VARIABLE {lib}.GVAR2 INTEGER DEFAULT 1
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE VARIABLE {lib}.GVAR3 INTEGER DEFAULT 1
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT USAGE ON TYPE {lib}.GTYP TO QUSER
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT ALL ON TYPE {lib}.GTYP TO QPGMR
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT SELECT ON TYPE {lib}.GTYP TO QUSER
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> GRANT READ ON VARIABLE {lib}.GVAR TO QUSER
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT WRITE ON VARIABLE {lib}.GVAR TO QPGMR
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT ALL ON VARIABLE {lib}.GVAR2 TO QUSER
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT ALTER ON VARIABLE {lib}.GVAR2 TO QPGMR WITH GRANT OPTION
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT READ, WRITE ON VARIABLE {lib}.GVAR3 TO PUBLIC
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT USAGE ON VARIABLE {lib}.GVAR TO QUSER
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CALL QSYS.QCMDEXC('DSPOBJAUT OBJ({lib}/GTYP) OBJTYPE(*SQLUDT) OUTPUT(*OU
+sqlcode 0 sqlstate 00000 msgid -
+> CALL QSYS.QCMDEXC('DSPOBJAUT OBJ({lib}/GVAR) OBJTYPE(*SRVPGM) OUTPUT(*OU
+sqlcode 0 sqlstate 00000 msgid -
+> CALL QSYS.QCMDEXC('DSPOBJAUT OBJ({lib}/GVAR2) OBJTYPE(*SRVPGM) OUTPUT(*O
+sqlcode 0 sqlstate 00000 msgid -
+> CALL QSYS.QCMDEXC('DSPOBJAUT OBJ({lib}/GVAR3) OBJTYPE(*SRVPGM) OUTPUT(*O
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT OANAME, OAUSR, OAOBJA, OAOPR, OAOMGT, OAEXS, OAALT, OAREF, OAREAD
+sqlcode 0 sqlstate 00000 msgid -
+# OANAME CHAR(10) NOT NULL
+# OAUSR CHAR(10) NOT NULL
+# OAOBJA CHAR(8) NOT NULL
+# OAOPR CHAR(1) NOT NULL
+# OAOMGT CHAR(1) NOT NULL
+# OAEXS CHAR(1) NOT NULL
+# OAALT CHAR(1) NOT NULL
+# OAREF CHAR(1) NOT NULL
+# OAREAD CHAR(1) NOT NULL
+# OAADD CHAR(1) NOT NULL
+# OAUPD CHAR(1) NOT NULL
+# OADLT CHAR(1) NOT NULL
+# OAEXEC CHAR(1) NOT NULL
+| 'GTYP      ' | '*PUBLIC   ' | '*EXCLUDE' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' |
+| 'GTYP      ' | 'QPGMR     ' | 'USER DEF' | 'X' | ' ' | ' ' | 'X' | ' ' | ' ' | ' ' | ' ' | ' ' | 'X' |
+| 'GTYP      ' | 'QUSER     ' | 'USER DEF' | 'X' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | 'X' |
+| 'GVAR      ' | '*PUBLIC   ' | '*EXCLUDE' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' |
+| 'GVAR      ' | 'QPGMR     ' | 'USER DEF' | 'X' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | 'X' | ' ' | 'X' |
+| 'GVAR      ' | 'QUSER     ' | '*USE    ' | 'X' | ' ' | ' ' | ' ' | ' ' | 'X' | ' ' | ' ' | ' ' | 'X' |
+| 'GVAR2     ' | '*PUBLIC   ' | '*EXCLUDE' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' |
+| 'GVAR2     ' | 'QPGMR     ' | 'USER DEF' | ' ' | 'X' | ' ' | 'X' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' |
+| 'GVAR2     ' | 'QUSER     ' | 'USER DEF' | 'X' | ' ' | ' ' | 'X' | ' ' | 'X' | ' ' | 'X' | ' ' | 'X' |
+| 'GVAR3     ' | '*PUBLIC   ' | 'USER DEF' | 'X' | ' ' | ' ' | ' ' | ' ' | 'X' | ' ' | 'X' | ' ' | 'X' |
+> REVOKE USAGE ON TYPE {lib}.GTYP FROM QUSER
+sqlcode 0 sqlstate 00000 msgid -
+> REVOKE WRITE ON VARIABLE {lib}.GVAR FROM QPGMR
+sqlcode 0 sqlstate 00000 msgid -
+> REVOKE ALL ON VARIABLE {lib}.GVAR2 FROM QUSER
+sqlcode 0 sqlstate 00000 msgid -
+> REVOKE READ ON VARIABLE {lib}.GVAR FROM QSYSOPR
+sqlcode 0 sqlstate 00000 msgid -
+warning 569 01006 SQL0569
+> CALL QSYS.QCMDEXC('DSPOBJAUT OBJ({lib}/GTYP) OBJTYPE(*SQLUDT) OUTPUT(*OU
+sqlcode 0 sqlstate 00000 msgid -
+> CALL QSYS.QCMDEXC('DSPOBJAUT OBJ({lib}/GVAR) OBJTYPE(*SRVPGM) OUTPUT(*OU
+sqlcode 0 sqlstate 00000 msgid -
+> CALL QSYS.QCMDEXC('DSPOBJAUT OBJ({lib}/GVAR2) OBJTYPE(*SRVPGM) OUTPUT(*O
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT OANAME, OAUSR, OAOBJA, OAOPR, OAOMGT, OAEXS, OAALT, OAREF, OAREAD
+sqlcode 0 sqlstate 00000 msgid -
+# OANAME CHAR(10) NOT NULL
+# OAUSR CHAR(10) NOT NULL
+# OAOBJA CHAR(8) NOT NULL
+# OAOPR CHAR(1) NOT NULL
+# OAOMGT CHAR(1) NOT NULL
+# OAEXS CHAR(1) NOT NULL
+# OAALT CHAR(1) NOT NULL
+# OAREF CHAR(1) NOT NULL
+# OAREAD CHAR(1) NOT NULL
+# OAADD CHAR(1) NOT NULL
+# OAUPD CHAR(1) NOT NULL
+# OADLT CHAR(1) NOT NULL
+# OAEXEC CHAR(1) NOT NULL
+| 'GTYP      ' | '*PUBLIC   ' | '*EXCLUDE' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' |
+| 'GTYP      ' | 'QPGMR     ' | 'USER DEF' | 'X' | ' ' | ' ' | 'X' | ' ' | ' ' | ' ' | ' ' | ' ' | 'X' |
+| 'GVAR      ' | '*PUBLIC   ' | '*EXCLUDE' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' |
+| 'GVAR      ' | 'QUSER     ' | '*USE    ' | 'X' | ' ' | ' ' | ' ' | ' ' | 'X' | ' ' | ' ' | ' ' | 'X' |
+| 'GVAR2     ' | '*PUBLIC   ' | '*EXCLUDE' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' |
+| 'GVAR2     ' | 'QPGMR     ' | 'USER DEF' | ' ' | 'X' | ' ' | 'X' | ' ' | ' ' | ' ' | ' ' | ' ' | ' ' |
+> DROP TABLE {lib}.GAUT
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VARIABLE {lib}.GVAR
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VARIABLE {lib}.GVAR2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VARIABLE {lib}.GVAR3
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TYPE {lib}.GTYP
+sqlcode 0 sqlstate 00000 msgid -

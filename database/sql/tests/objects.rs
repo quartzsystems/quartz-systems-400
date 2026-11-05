@@ -436,3 +436,47 @@ fn grant_and_revoke_map_to_object_authorities() {
     assert_eq!(db.code("GRANT USAGE ON SEQUENCE QSTEST.SEQ1 TO GSEL"), -84);
     assert_eq!(db.rows("SELECT COUNT(*) FROM QSYS2.SYSCOLAUTH"), [row(&["0"])]);
 }
+
+/// A user's authority bits to an object of QSTEST of a type.
+fn obj_bits(db: &mut Db, name: &str, ty: u16, user: &str) -> Option<u32> {
+    let mut t = db.store.begin().unwrap();
+    let lib = ops::find_library(&mut t, db.ctx.qsys, Name::parse("QSTEST").unwrap()).unwrap().id;
+    let id = store::obj::library::Library::load(&mut t, lib).unwrap().lookup(&mut t, ty, Name::parse(name).unwrap()).unwrap().unwrap();
+    let h = sec::auth::grant::header(&mut t, id).unwrap();
+    let b = sec::auth::grant::private(&mut t, &h, user).unwrap().map(|a| a.0);
+    t.abort();
+    b
+}
+
+#[test]
+fn grant_on_types_and_variables_as_the_primary() {
+    use store::obj::header::Authority as A;
+    let mut db = Db::new();
+    users(&mut db, &["GUSE", "GALL", "GWRT"]);
+    db.ok("CREATE TYPE QSTEST.GTYP AS DECIMAL(5,2)");
+    db.ok("CREATE VARIABLE QSTEST.GVAR INTEGER DEFAULT 1");
+    db.ok("CREATE VARIABLE QSTEST.GVAR2 INTEGER DEFAULT 1");
+    db.ok("GRANT USAGE ON TYPE QSTEST.GTYP TO GUSE");
+    db.ok("GRANT ALL ON TYPE QSTEST.GTYP TO GALL");
+    assert_eq!(obj_bits(&mut db, "GTYP", types::SQLUDT, "GUSE"), Some(A::OBJOPR | A::EXECUTE));
+    assert_eq!(obj_bits(&mut db, "GTYP", types::SQLUDT, "GALL"), Some(A::OBJOPR | A::OBJALTER | A::EXECUTE));
+    assert_eq!(db.code("GRANT SELECT ON TYPE QSTEST.GTYP TO GUSE"), -104);
+    db.ok("GRANT READ ON VARIABLE QSTEST.GVAR TO GUSE");
+    db.ok("GRANT READ, WRITE ON VARIABLE QSTEST.GVAR TO GWRT");
+    db.ok("GRANT ALL ON VARIABLE QSTEST.GVAR2 TO GALL");
+    db.ok("GRANT ALTER ON VARIABLE QSTEST.GVAR2 TO GWRT WITH GRANT OPTION");
+    assert_eq!(obj_bits(&mut db, "GVAR", types::SRVPGM, "GUSE"), Some(A::OBJOPR | A::READ | A::EXECUTE));
+    assert_eq!(obj_bits(&mut db, "GVAR2", types::SRVPGM, "GALL"), Some(A::OBJOPR | A::OBJALTER | A::READ | A::UPD | A::EXECUTE));
+    assert_eq!(obj_bits(&mut db, "GVAR2", types::SRVPGM, "GWRT"), Some(A::OBJMGT | A::OBJALTER));
+    assert_eq!(db.code("GRANT USAGE ON VARIABLE QSTEST.GVAR TO GUSE"), -104);
+    // REVOKE: the use goes with its last privilege; one not held warns.
+    db.ok("REVOKE WRITE ON VARIABLE QSTEST.GVAR FROM GWRT");
+    assert_eq!(obj_bits(&mut db, "GVAR", types::SRVPGM, "GWRT"), Some(A::OBJOPR | A::READ | A::EXECUTE));
+    db.ok("REVOKE USAGE ON TYPE QSTEST.GTYP FROM GUSE");
+    assert_eq!(obj_bits(&mut db, "GTYP", types::SQLUDT, "GUSE"), None);
+    db.ok("REVOKE ALL ON VARIABLE QSTEST.GVAR2 FROM GALL");
+    assert_eq!(obj_bits(&mut db, "GVAR2", types::SRVPGM, "GALL"), None);
+    let (ca, _) = db.run("REVOKE READ ON VARIABLE QSTEST.GVAR2 FROM GUSE");
+    assert_eq!((ca.sqlcode, ca.sqlstate.as_str()), (569, "01006"));
+    assert_eq!(db.code("GRANT USAGE ON TYPE QSTEST.NOTYPE TO GUSE"), -204);
+}

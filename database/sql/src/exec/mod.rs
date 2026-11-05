@@ -28,6 +28,7 @@ mod from;
 pub use from::ORDER_COLUMN;
 pub mod func;
 pub mod grant;
+mod grant_obj;
 pub mod index;
 pub mod json;
 pub mod locator;

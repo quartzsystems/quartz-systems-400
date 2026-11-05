@@ -48,10 +48,13 @@ fn held_bit(p: &str) -> u32 {
 pub fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, g: &Grant, revoke: bool) -> Result<()> {
     let names_ = match &g.object {
         GrantObject::Tables(n) => n,
+        GrantObject::Other { kind, names } if matches!(kind.as_str(), "TYPE" | "VARIABLE") => {
+            return super::grant_obj::run(txn, ctx, g, kind, names, revoke);
+        }
         GrantObject::Other { kind, .. } => {
-            // BLOCKED(sql): routines, sequences, variables, types and
-            // schemas as objects come with SQL-2 and Section 3; the
-            // statement is parsed for them.
+            // BLOCKED(sql): routines, sequences, schemas and packages as
+            // objects come with SQL-2 and Section 3; the statement is
+            // parsed for them.
             return Err(SqlError::Unsupported { what: format!("GRANT and REVOKE on a {kind}") });
         }
     };
@@ -105,7 +108,7 @@ fn insertable(txn: &mut Txn<'_>, id: ObjectId) -> bool {
     db::file::describe(txn, *base).is_ok_and(|b| b.formats.first().is_some_and(|bf| bf.format.fields.len() == fmt.format.fields.len()))
 }
 
-fn grant_one(txn: &mut Txn<'_>, ctx: &SqlContext, id: ObjectId, who: &Grantee, bits: u32) -> Result<()> {
+pub(super) fn grant_one(txn: &mut Txn<'_>, ctx: &SqlContext, id: ObjectId, who: &Grantee, bits: u32) -> Result<()> {
     match who {
         Grantee::Public => {
             let cur = Auth::of(grant::header(txn, id).map_err(sec_err)?.public_authority);
@@ -171,7 +174,7 @@ fn revoke_one(
 }
 
 /// A security failure as SQL sees it: an unknown profile is `SQL0204`.
-fn sec_err(e: sec::SecError) -> SqlError {
+pub(super) fn sec_err(e: sec::SecError) -> SqlError {
     match e {
         sec::SecError::Store(s) => s.into(),
         sec::SecError::Msg { msgid: "CPF2204", text } => SqlError::ObjectNotFound { name: text, kind: "*USRPRF" },
