@@ -1333,7 +1333,10 @@ fn override_qaqqini() {
     assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'PARALLEL_DEGREE', '*MAX')"), 0);
     assert_eq!(db.ctx.qaqqini.get("PARALLEL_DEGREE"), "*MAX");
     assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'ALLOW_TEMPORARY_INDEXES', '*ONLY_REQUIRED')"), 0);
-    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'QUERY_TIME_LIMIT', '30')"), -84);
+    // The governor's limits are honoured (`plan::govern`); options that
+    // change results are not yet.
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'QUERY_TIME_LIMIT', '30')"), 0);
+    assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'SQL_DECFLOAT_WARNINGS', '*YES')"), -84);
     assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'SQL_DECFLOAT_WARNINGS', '*DEFAULT')"), 0);
     assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'NO_SUCH_OPTION', '*YES')"), -443);
     assert_eq!(db.code("CALL QSYS2.OVERRIDE_QAQQINI(2, 'PARALLEL_DEGREE', '*SOMETIMES')"), -443);

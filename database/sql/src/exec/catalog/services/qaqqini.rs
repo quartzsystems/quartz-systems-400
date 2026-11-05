@@ -8,7 +8,9 @@
 //! indexes, parallelism or plan cache to tune, so an option that only
 //! tunes those is checked and kept without effect; one that would
 //! change a result or a message is refused (SQL0084) at any value but
-//! its default until the engine honours it.
+//! its default until the engine honours it. The query governor's
+//! limits (`QUERY_TIME_LIMIT`, `QUERY_STORAGE_LIMIT`, `STORAGE_LIMIT`)
+//! are honoured (`plan::govern`).
 
 use std::collections::BTreeMap;
 
@@ -41,6 +43,8 @@ enum Effect {
     Tuning,
     /// Would change results or messages: only `*DEFAULT`.
     NotYet,
+    /// Honoured by the engine (`plan::govern`).
+    Honoured,
 }
 
 /// The options and their values: `*` before a word, `#` for a number.
@@ -64,8 +68,8 @@ const OPTIONS: &[(&str, &[&str], Effect)] = &[
     ("OPTIMIZE_STATISTIC_LIMITATION", &["*NO", "*PERCENTAGE", "*MAX_NUMBER_OF_RECORDS_ALLOWED"], Effect::Tuning),
     ("PARALLEL_DEGREE", &["*NONE", "*IO", "*OPTIMIZE", "*MAX", "*SYSVAL", "*NBRTASKS"], Effect::Tuning),
     ("PARAMETER_MARKER_CONVERSION", &["*YES", "*NO"], Effect::Tuning),
-    ("QUERY_TIME_LIMIT", &["*NOMAX", "#"], Effect::NotYet),
-    ("QUERY_STORAGE_LIMIT", &["*NOMAX", "#"], Effect::NotYet),
+    ("QUERY_TIME_LIMIT", &["*NOMAX", "#"], Effect::Honoured),
+    ("QUERY_STORAGE_LIMIT", &["*NOMAX", "#"], Effect::Honoured),
     ("REOPTIMIZE_ACCESS_PLAN", &["*NO", "*YES", "*FORCE", "*ONLY_REQUIRED", "*REBUILD"], Effect::Tuning),
     ("SQL_CONCURRENT_ACCESS_RESOLUTION", &["*USECURCMT", "*WAIT"], Effect::NotYet),
     ("SQL_DECFLOAT_WARNINGS", &["*YES", "*NO"], Effect::NotYet),
@@ -75,7 +79,7 @@ const OPTIONS: &[(&str, &[&str], Effect)] = &[
     ("SQL_SUPPRESS_WARNINGS", &["*YES", "*NO"], Effect::NotYet),
     ("SQL_TRANSLATE_ASCII_TO_JOB", &["*YES", "*NO"], Effect::NotYet),
     ("STAR_JOIN", &["*NO", "*COST", "*FORCE"], Effect::Tuning),
-    ("STORAGE_LIMIT", &["*NOMAX", "#"], Effect::NotYet),
+    ("STORAGE_LIMIT", &["*NOMAX", "#"], Effect::Honoured),
     ("SYSTEM_SQL_STATEMENT_CACHE", &["*YES", "*NO"], Effect::Tuning),
     ("UDF_TIME_OUT", &["*MAX", "#"], Effect::NotYet),
     ("VISUAL_EXPLAIN_DIAGRAM", &["*DETAIL", "*BASIC"], Effect::Tuning),

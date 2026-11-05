@@ -1,0 +1,7 @@
+-- oracle: pub400
+-- The query options' governor: QUERY_TIME_LIMIT 0 stops a query; dropping the options lets it run.
+CALL QSYS2.OVERRIDE_QAQQINI(1, '', '');
+CALL QSYS2.OVERRIDE_QAQQINI(2, 'QUERY_TIME_LIMIT', '0');
+SELECT COUNT(*) FROM SYSIBM.SYSDUMMY1;
+CALL QSYS2.OVERRIDE_QAQQINI(3, '', '');
+SELECT COUNT(*) FROM SYSIBM.SYSDUMMY1;

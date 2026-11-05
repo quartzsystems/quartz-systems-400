@@ -1241,3 +1241,17 @@ sev = 30
 text = "Name &1 is not valid for this kind of object."
 help = "QTEMP holds tables, views, indexes and aliases only. Make the sequence or global variable in a schema."
 vars = ["*CHAR 128"]
+
+[[msg]]
+id = "SQL0405"
+sev = 30
+text = "The number &1 is outside the range allowed here."
+help = "A row count such as the one of OPTIMIZE FOR must be 1 or more, and other numeric constants must fit their use. Give a number in the range and run the statement again."
+vars = ["*CHAR 63"]
+
+[[msg]]
+id = "SQL0666"
+sev = 30
+text = "The query passed the limit the query options set."
+help = "The query's estimated run time or temporary storage passed QUERY_TIME_LIMIT or QUERY_STORAGE_LIMIT of the job's query options (QAQQINI), so it was not run. Narrow the query, or raise the limit with QSYS2.OVERRIDE_QAQQINI."
+vars = []
