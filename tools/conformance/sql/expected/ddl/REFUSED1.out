@@ -1,0 +1,55 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4F_P (ID INTEGER NOT NULL PRIMARY KEY, V INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.D4F_C (ID INTEGER NOT NULL, PID INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> ALTER TABLE {lib}.D4F_C ADD CONSTRAINT D4F_FK1 FOREIGN KEY (PID) REFEREN
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> ALTER TABLE {lib}.D4F_C ADD CONSTRAINT D4F_CK1 CHECK (ID > 0) NOT DEFERR
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> ALTER TABLE {lib}.D4F_C ADD CONSTRAINT D4F_CK2 CHECK (ID > 0) ENFORCED E
+sqlcode 0 sqlstate 00000 msgid -
+warning 20367 01680 SQ20367
+> ALTER TABLE {lib}.D4F_C ADD CONSTRAINT D4F_FK2 FOREIGN KEY (PID) REFEREN
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CREATE TABLE {lib}.D4F_V (ID INTEGER) VOLATILE
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE INDEX {lib}.D4F_IX ON {lib}.D4F_P (V) PAGESIZE 64
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.D4F_IX2 ON {lib}.D4F_P (V + 1)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.D4F_IX3 ON {lib}.D4F_P (V) INCLUDE (ID)
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CREATE SEQUENCE {lib}.D4FSEQ
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT USAGE ON SEQUENCE {lib}.D4FSEQ TO QPGMR
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT EXECUTE ON PROCEDURE {lib}.D4F_NONE TO QPGMR
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> REFRESH TABLE {lib}.D4F_P
+sqlcode -159 sqlstate 42809 msgid SQL0159
+> SELECT COUNT(*) FROM OTHERSYS.{lib}.D4F_P
+sqlcode -950 sqlstate 42705 msgid SQL0950
+> CREATE ALIAS {lib}.D4F_AL FOR OTHERSYS.{lib}.D4F_P
+sqlcode 0 sqlstate 00000 msgid -
+> EXPLAIN PLAN FOR SELECT * FROM {lib}.D4F_P
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DROP SEQUENCE {lib}.D4FSEQ
+sqlcode 0 sqlstate 00000 msgid -
+> DROP INDEX {lib}.D4F_IX
+sqlcode 0 sqlstate 00000 msgid -
+> DROP INDEX {lib}.D4F_IX2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP INDEX {lib}.D4F_IX3
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP TABLE {lib}.D4F_V
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4F_C
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4F_P
+sqlcode 0 sqlstate 00000 msgid -
+> DROP ALIAS {lib}.D4F_AL
+sqlcode 0 sqlstate 00000 msgid -

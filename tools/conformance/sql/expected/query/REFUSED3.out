@@ -1,0 +1,37 @@
+-- captured from pub400
+> CREATE TABLE {lib}.D4H_T (ID INTEGER NOT NULL, P INTEGER, V INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4H_T VALUES (1, NULL, 10), (2, 1, 20), (3, 2, 30), (4
+sqlcode 0 sqlstate 00000 msgid - count 4
+> SELECT ID, NTH_VALUE(V, 2) FROM LAST OVER (ORDER BY ID ROWS BETWEEN UNBO
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# 00002 INTEGER
+| 1 | 30 |
+| 2 | 30 |
+| 3 | 30 |
+| 4 | 30 |
+> WITH R (ID, P) AS (SELECT ID, P FROM {lib}.D4H_T WHERE ID = 4 UNION ALL 
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+| 3 |
+| 4 |
+> SELECT A.ID, X.V FROM {lib}.D4H_T A RIGHT JOIN LATERAL (SELECT V FROM {l
+sqlcode -5001 sqlstate 42703 msgid SQL5001
+> VALUES JSON_QUERY('{"a":[1,2,3]}', '$.a[*]?(@ > 1)' WITH WRAPPER)
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| NULL |
+> VALUES JSON_VALUE('{"a":5}', '$.a.double()')
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 CLOB(2147483647)
+| NULL |
+> VALUES JSON_VALUE('{"a":5}', '$.b' PASSING 1 AS "x")
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> SELECT ID FROM {lib}.D4H_T FETCH FIRST 50 PERCENT ROWS ONLY
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DROP TABLE {lib}.D4H_T
+sqlcode 0 sqlstate 00000 msgid -

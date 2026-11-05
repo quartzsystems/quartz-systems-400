@@ -1,0 +1,58 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4W_CUST (ID INTEGER NOT NULL, PHONE CHAR(10), CARD C
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4W_CUST VALUES (1, '5125550100', '4111111111111111', 
+sqlcode 0 sqlstate 00000 msgid - count 3
+> CREATE FUNCTION {lib}.D4W_PHONE (P CHAR(10)) RETURNS VARCHAR(14) LANGUAG
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.D4W_MASK (P CHAR(16)) RETURNS CHAR(16) LANGUAGE SQ
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.D4W_NICKEL (P DECIMAL(9, 2)) RETURNS DECIMAL(9, 2)
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.D4W_FY (D DATE) RETURNS SMALLINT LANGUAGE SQL DETE
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE FUNCTION {lib}.D4W_BYFY (P_FY SMALLINT) RETURNS TABLE (ID INTEGER
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT ID, {lib}.D4W_PHONE(PHONE), {lib}.D4W_MASK(CARD), {lib}.D4W_NICKE
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# 00002 VARCHAR(14)
+# 00003 CHAR(16)
+# 00004 DECIMAL(9,2)
+# 00005 SMALLINT
+| 1 | '(512) 555-0100' | '************1111' | 12.35 | 2026 |
+| 2 | NULL | '************0004' | 0.05 | 2026 |
+| 3 | '(999) 555-1234' | NULL | -5.05 | 2027 |
+> SELECT ID FROM {lib}.D4W_CUST WHERE {lib}.D4W_FY(OPENED) = 2026 ORDER BY
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+| 1 |
+| 2 |
+> SELECT T.ID, T.BAL FROM TABLE({lib}.D4W_BYFY(2027)) AS T ORDER BY T.ID
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CREATE VIEW {lib}.D4W_V AS SELECT ID, {lib}.D4W_PHONE(PHONE) AS PHONE_TE
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT * FROM {lib}.D4W_V ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# PHONE_TEXT VARCHAR(14)
+| 1 | '(512) 555-0100' |
+| 2 | NULL |
+| 3 | '(999) 555-1234' |
+> DROP FUNCTION {lib}.D4W_PHONE
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VIEW {lib}.D4W_V
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.D4W_PHONE
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP FUNCTION {lib}.D4W_BYFY
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.D4W_FY
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.D4W_NICKEL
+sqlcode 0 sqlstate 00000 msgid -
+> DROP FUNCTION {lib}.D4W_MASK
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4W_CUST
+sqlcode 0 sqlstate 00000 msgid -

@@ -1,0 +1,69 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4D_T (
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4D_T (ID) VALUES (1)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.D4D_T (ID, C2, N2) VALUES (2, DEFAULT, DEFAULT)
+sqlcode 0 sqlstate 00000 msgid - count 1
+> INSERT INTO {lib}.D4D_T VALUES (3, 'abc', NULL, 1.5, 7, 8, '2026-01-01',
+sqlcode 0 sqlstate 00000 msgid - count 1
+> UPDATE {lib}.D4D_T SET C2 = DEFAULT, N2 = DEFAULT WHERE ID = 3
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT ID, C1, C2, N1, N2, N3, D1, T1, TS1, CASE WHEN U1 = USER THEN 'us
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# C1 CHAR(5) NOT NULL
+# C2 VARCHAR(10)
+# N1 DECIMAL(7,2) NOT NULL
+# N2 INTEGER
+# N3 SMALLINT
+# D1 DATE NOT NULL
+# T1 TIME NOT NULL
+# TS1 TIMESTAMP NOT NULL
+# 00010 VARCHAR(18)
+# 00011 VARCHAR(10)
+| 1 | '     ' | 'none' | 0.00 | -1 | NULL | '2026-11-05' | '05.42.27' | 2026-11-05-05.42.27.709077 | 'user' | 'today' |
+| 2 | '     ' | 'none' | 0.00 | -1 | NULL | '2026-11-05' | '05.42.27' | 2026-11-05-05.42.27.755506 | 'user' | 'today' |
+> SELECT ID, C1, C2, N1, N2, N3, D1, T1, TS1, U1, CD, CT, CTS FROM {lib}.D
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# C1 CHAR(5) NOT NULL
+# C2 VARCHAR(10)
+# N1 DECIMAL(7,2) NOT NULL
+# N2 INTEGER
+# N3 SMALLINT
+# D1 DATE NOT NULL
+# T1 TIME NOT NULL
+# TS1 TIMESTAMP NOT NULL
+# U1 VARCHAR(18)
+# CD DATE
+# CT TIME
+# CTS TIMESTAMP
+| 3 | 'abc  ' | 'none' | 1.50 | -1 | 8 | '2026-01-01' | '01.02.03' | 2026-01-01-01.02.03.000000 | 'ME' | '2026-02-02' | '02.02.02' | 2026-02-02-02.02.02.000000 |
+> SELECT COLUMN_NAME, HAS_DEFAULT, COLUMN_DEFAULT FROM QSYS2.SYSCOLUMNS WH
+sqlcode 0 sqlstate 00000 msgid -
+# COLUMN_NAME VARCHAR(128) NOT NULL
+# HAS_DEFAULT CHAR(1) NOT NULL
+# COLUMN_DEFAULT NVARCHAR(2000)
+| 'ID' | 'N' | NULL |
+| 'C1' | 'Y' | ''' ''' |
+| 'C2' | 'Y' | '''none''' |
+| 'N1' | 'Y' | '0' |
+| 'N2' | 'Y' | '-1' |
+| 'N3' | 'Y' | 'NULL' |
+| 'D1' | 'Y' | 'CURRENT_DATE' |
+| 'T1' | 'Y' | 'CURRENT_TIME' |
+| 'TS1' | 'Y' | 'CURRENT_TIMESTAMP' |
+| 'U1' | 'Y' | 'USER' |
+| 'CD' | 'Y' | 'CURRENT_DATE' |
+| 'CT' | 'Y' | 'CURRENT_TIME' |
+| 'CTS' | 'Y' | 'CURRENT_TIMESTAMP' |
+> INSERT INTO {lib}.D4D_T (ID, C1) VALUES (4, NULL)
+sqlcode -407 sqlstate 23502 msgid SQL0407
+> CREATE TABLE {lib}.D4D_BAD (A INTEGER DEFAULT 'x')
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> CREATE TABLE {lib}.D4D_BAD (A CHAR(2) DEFAULT 'toolong')
+sqlcode -574 sqlstate 42894 msgid SQL0574
+> DROP TABLE {lib}.D4D_T
+sqlcode 0 sqlstate 00000 msgid -

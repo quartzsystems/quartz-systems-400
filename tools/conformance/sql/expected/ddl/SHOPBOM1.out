@@ -1,0 +1,43 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4B_PART (PART CHAR(6) NOT NULL PRIMARY KEY, DESCR VA
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.D4B_COMP (PARENT CHAR(6) NOT NULL REFERENCES {lib}.D4
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4B_PART VALUES ('BIKE', 'Bicycle', NULL), ('WHEEL', '
+sqlcode 0 sqlstate 00000 msgid - count 6
+> INSERT INTO {lib}.D4B_COMP VALUES ('BIKE', 'WHEEL', 2), ('BIKE', 'FRAME'
+sqlcode 0 sqlstate 00000 msgid - count 6
+> INSERT INTO {lib}.D4B_COMP VALUES ('RIM', 'RIM', 1)
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> INSERT INTO {lib}.D4B_COMP VALUES ('BIKE', 'MOTOR', 1)
+sqlcode -530 sqlstate 23503 msgid SQL0530
+> WITH X (PART, QTY, LVL) AS (SELECT CHILD, QTY, 1 FROM {lib}.D4B_COMP WHE
+sqlcode 0 sqlstate 00000 msgid -
+# PART CHAR(6) NOT NULL
+# 00002 DECIMAL(31,0)
+# 00003 INTEGER
+| 'BOLT  ' | 10 | 2 |
+| 'FRAME ' | 1 | 1 |
+| 'RIM   ' | 2 | 2 |
+| 'SPOKE ' | 64 | 2 |
+| 'WHEEL ' | 2 | 1 |
+> WITH X (PART, QTY) AS (SELECT CHILD, QTY FROM {lib}.D4B_COMP WHERE PAREN
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 DECIMAL(31,2)
+| 110.90 |
+> DELETE FROM {lib}.D4B_PART WHERE PART = 'BOLT'
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> DELETE FROM {lib}.D4B_COMP WHERE CHILD = 'BOLT'
+sqlcode 0 sqlstate 00000 msgid - count 2
+> DELETE FROM {lib}.D4B_PART WHERE PART = 'BOLT'
+sqlcode -7008 sqlstate 55019 msgid SQL7008
+> SELECT COUNT(*) FROM {lib}.D4B_COMP
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 4 |
+> DROP TABLE {lib}.D4B_COMP
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4B_PART
+sqlcode 0 sqlstate 00000 msgid -

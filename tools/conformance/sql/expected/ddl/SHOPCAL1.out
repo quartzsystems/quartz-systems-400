@@ -1,0 +1,44 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4K_CAL (CAL_DATE DATE NOT NULL PRIMARY KEY, DOW SMAL
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4K_CAL
+sqlcode 0 sqlstate 00000 msgid - count 90
+> SELECT COUNT(*), MIN(CAL_DATE), MAX(CAL_DATE) FROM {lib}.D4K_CAL
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+# 00002 DATE
+# 00003 DATE
+| 90 | '2026-01-01' | '2026-03-31' |
+> SELECT FISCAL_PERIOD, COUNT(*), SUM(CASE IS_WEEKEND WHEN 'N' THEN 1 ELSE
+sqlcode 0 sqlstate 00000 msgid -
+# FISCAL_PERIOD SMALLINT NOT NULL
+# 00002 INTEGER NOT NULL
+# 00003 INTEGER
+| 1 | 31 | 22 |
+| 2 | 28 | 20 |
+| 3 | 31 | 22 |
+> CREATE VIEW {lib}.D4K_WEEKS AS SELECT WEEK(CAL_DATE) AS WK, MIN(CAL_DATE
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT WK, FIRST_DAY, LAST_DAY, DAYS(LAST_DAY) - DAYS(FIRST_DAY) FROM {l
+sqlcode 0 sqlstate 00000 msgid -
+# WK INTEGER NOT NULL
+# FIRST_DAY DATE
+# LAST_DAY DATE
+# 00004 INTEGER
+| 1 | '2026-01-01' | '2026-01-03' | 2 |
+| 2 | '2026-01-04' | '2026-01-10' | 6 |
+| 3 | '2026-01-11' | '2026-01-17' | 6 |
+> SELECT CAL_DATE, DAYNAME(CAL_DATE), DAYOFYEAR(CAL_DATE), QUARTER(CAL_DAT
+sqlcode 0 sqlstate 00000 msgid -
+# CAL_DATE DATE NOT NULL
+# 00002 VARCHAR(100)
+# 00003 INTEGER NOT NULL
+# 00004 INTEGER NOT NULL
+| '2026-01-01' | 'Thursday' | 1 | 1 |
+| '2026-02-28' | 'Saturday' | 59 | 1 |
+| '2026-03-31' | 'Tuesday' | 90 | 1 |
+> DROP VIEW {lib}.D4K_WEEKS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4K_CAL
+sqlcode 0 sqlstate 00000 msgid -

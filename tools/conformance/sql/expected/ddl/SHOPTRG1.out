@@ -1,0 +1,55 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4T_ITEM (ITEM CHAR(6) NOT NULL PRIMARY KEY, PRICE DE
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.D4T_HIST (ITEM CHAR(6) NOT NULL, ACTION CHAR(1) NOT N
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TRIGGER {lib}.D4T_BI BEFORE INSERT ON {lib}.D4T_ITEM REFERENCING 
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TRIGGER {lib}.D4T_AU AFTER UPDATE OF PRICE ON {lib}.D4T_ITEM REFE
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE TRIGGER {lib}.D4T_AD AFTER DELETE ON {lib}.D4T_ITEM REFERENCING O
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.D4T_ITEM VALUES ('A1', 10.00, NULL), ('B2', 20.00, 'TO
+sqlcode 0 sqlstate 00000 msgid - count 2
+> UPDATE {lib}.D4T_ITEM SET PRICE = PRICE * 1.10
+sqlcode 0 sqlstate 00000 msgid - count 2
+> UPDATE {lib}.D4T_ITEM SET CATEGORY = 'X' WHERE ITEM = 'A1'
+sqlcode 0 sqlstate 00000 msgid - count 1
+> DELETE FROM {lib}.D4T_ITEM WHERE ITEM = 'B2'
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT ITEM, PRICE, CATEGORY FROM {lib}.D4T_ITEM ORDER BY ITEM
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(6) NOT NULL
+# PRICE DECIMAL(7,2) NOT NULL
+# CATEGORY CHAR(3)
+| 'A1    ' | 11.00 | 'X  ' |
+> SELECT ITEM, ACTION, OLD_PRICE, NEW_PRICE FROM {lib}.D4T_HIST ORDER BY I
+sqlcode 0 sqlstate 00000 msgid -
+# ITEM CHAR(6) NOT NULL
+# ACTION CHAR(1) NOT NULL
+# OLD_PRICE DECIMAL(7,2)
+# NEW_PRICE DECIMAL(7,2)
+| 'A1    ' | 'U' | 10.00 | 11.00 |
+| 'B2    ' | 'D' | 22.00 | NULL |
+| 'B2    ' | 'U' | 20.00 | 22.00 |
+> SELECT TRIGGER_NAME, EVENT_MANIPULATION, ACTION_TIMING, ACTION_ORIENTATI
+sqlcode 0 sqlstate 00000 msgid -
+# TRIGGER_NAME VARCHAR(128) NOT NULL
+# EVENT_MANIPULATION VARCHAR(6) NOT NULL
+# ACTION_TIMING VARCHAR(7) NOT NULL
+# ACTION_ORIENTATION VARCHAR(9) NOT NULL
+| 'D4T_AD' | 'DELETE' | 'AFTER' | 'ROW' |
+| 'D4T_AU' | 'UPDATE' | 'AFTER' | 'ROW' |
+| 'D4T_BI' | 'INSERT' | 'BEFORE' | 'ROW' |
+> DROP TRIGGER {lib}.D4T_BI
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TRIGGER {lib}.D4T_AU
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TRIGGER {lib}.D4T_AD
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4T_HIST
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4T_ITEM
+sqlcode 0 sqlstate 00000 msgid -

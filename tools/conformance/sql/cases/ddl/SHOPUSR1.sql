@@ -1,0 +1,15 @@
+-- oracle: primary
+-- An application user table: identity key, unique login, checks on formats, a view without the secret column, privileges on the view only.
+CREATE TABLE {lib}.D4U_USER (USER_ID INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY, LOGIN VARCHAR(20) NOT NULL UNIQUE, EMAIL VARCHAR(60) NOT NULL CHECK (EMAIL LIKE '%_@_%._%'), PIN CHAR(4) NOT NULL CHECK (PIN BETWEEN '0000' AND '9999'), STATUS CHAR(1) NOT NULL DEFAULT 'A' CHECK (STATUS IN ('A', 'L', 'X')));
+INSERT INTO {lib}.D4U_USER (LOGIN, EMAIL, PIN) VALUES ('ann', 'ann@shop.example', '1234'), ('bob', 'bob@shop.example', '0000');
+INSERT INTO {lib}.D4U_USER (LOGIN, EMAIL, PIN) VALUES ('ann', 'ann2@shop.example', '1111');
+INSERT INTO {lib}.D4U_USER (LOGIN, EMAIL, PIN) VALUES ('cal', 'not-an-email', '1111');
+INSERT INTO {lib}.D4U_USER (LOGIN, EMAIL, PIN, STATUS) VALUES ('dee', 'dee@shop.example', '1111', 'Q');
+CREATE VIEW {lib}.D4U_PUBLIC AS SELECT USER_ID, LOGIN, STATUS FROM {lib}.D4U_USER;
+GRANT SELECT ON {lib}.D4U_PUBLIC TO PUBLIC;
+UPDATE {lib}.D4U_PUBLIC SET STATUS = 'L' WHERE LOGIN = 'bob';
+SELECT USER_ID, LOGIN, STATUS FROM {lib}.D4U_PUBLIC ORDER BY USER_ID;
+SELECT LOGIN, PIN FROM {lib}.D4U_PUBLIC;
+REVOKE SELECT ON {lib}.D4U_PUBLIC FROM PUBLIC;
+DROP VIEW {lib}.D4U_PUBLIC;
+DROP TABLE {lib}.D4U_USER;

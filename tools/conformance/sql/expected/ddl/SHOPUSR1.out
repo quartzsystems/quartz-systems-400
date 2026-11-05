@@ -1,0 +1,33 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4U_USER (USER_ID INTEGER GENERATED ALWAYS AS IDENTIT
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4U_USER (LOGIN, EMAIL, PIN) VALUES ('ann', 'ann@shop.
+sqlcode 0 sqlstate 00000 msgid - count 2
+> INSERT INTO {lib}.D4U_USER (LOGIN, EMAIL, PIN) VALUES ('ann', 'ann2@shop
+sqlcode -803 sqlstate 23505 msgid SQL0803
+> INSERT INTO {lib}.D4U_USER (LOGIN, EMAIL, PIN) VALUES ('cal', 'not-an-em
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> INSERT INTO {lib}.D4U_USER (LOGIN, EMAIL, PIN, STATUS) VALUES ('dee', 'd
+sqlcode -545 sqlstate 23513 msgid SQL0545
+> CREATE VIEW {lib}.D4U_PUBLIC AS SELECT USER_ID, LOGIN, STATUS FROM {lib}
+sqlcode 0 sqlstate 00000 msgid -
+> GRANT SELECT ON {lib}.D4U_PUBLIC TO PUBLIC
+sqlcode 0 sqlstate 00000 msgid -
+> UPDATE {lib}.D4U_PUBLIC SET STATUS = 'L' WHERE LOGIN = 'bob'
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT USER_ID, LOGIN, STATUS FROM {lib}.D4U_PUBLIC ORDER BY USER_ID
+sqlcode 0 sqlstate 00000 msgid -
+# USER_ID INTEGER NOT NULL
+# LOGIN VARCHAR(20) NOT NULL
+# STATUS CHAR(1) NOT NULL
+| 1 | 'ann' | 'A' |
+| 2 | 'bob' | 'L' |
+> SELECT LOGIN, PIN FROM {lib}.D4U_PUBLIC
+sqlcode -206 sqlstate 42703 msgid SQL0206
+> REVOKE SELECT ON {lib}.D4U_PUBLIC FROM PUBLIC
+sqlcode 0 sqlstate 00000 msgid -
+> DROP VIEW {lib}.D4U_PUBLIC
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4U_USER
+sqlcode 0 sqlstate 00000 msgid -

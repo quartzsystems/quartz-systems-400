@@ -1,0 +1,38 @@
+-- captured from primary
+> CREATE TABLE {lib}.D4G_T (K INTEGER)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.D4G_T VALUES (1), (2)
+sqlcode 0 sqlstate 00000 msgid - count 2
+> CREATE PROCEDURE {lib}.D4G_RS () LANGUAGE SQL DYNAMIC RESULT SETS 1
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4G_LOC (OUT P_K INTEGER) LANGUAGE SQL
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4G_AUT () LANGUAGE SQL AUTONOMOUS
+sqlcode -199 sqlstate 42601 msgid SQL0199
+> CREATE FUNCTION {lib}.D4G_FCUR () RETURNS INTEGER LANGUAGE SQL
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.D4G_EXI (OUT P_N INTEGER) LANGUAGE SQL
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CALL {lib}.D4G_AUT()
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> VALUES {lib}.D4G_FCUR()
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER
+| 1 |
+> SELECT COUNT(*) FROM {lib}.D4G_T
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 2 |
+> DROP PROCEDURE {lib}.D4G_EXI
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP FUNCTION {lib}.D4G_FCUR
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.D4G_AUT
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP PROCEDURE {lib}.D4G_LOC
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.D4G_RS
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.D4G_T
+sqlcode 0 sqlstate 00000 msgid -
