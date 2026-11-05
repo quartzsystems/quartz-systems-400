@@ -140,7 +140,7 @@ pub fn to_type(v: &Value, elem: &TypeSpec, max: u64) -> Result<Value> {
     for e in a {
         // Out of the element type's range: SQL0304, as for a variable.
         out.push(super::eval::cast(e, elem).map_err(|e| match e {
-            SqlError::Overflow { what } => SqlError::Coded { code: -304, state: "22003", what },
+            SqlError::Overflow { what } | SqlError::Coded { code: -802, state: "22003", what } => SqlError::Coded { code: -304, state: "22003", what },
             e => e,
         })?);
     }
@@ -166,7 +166,8 @@ pub fn unnest(ctx: &SqlContext, values: &[Value], ordinality: bool) -> Result<(S
         .map(|i| ColInfo { name: format!("{i}"), table: None, field: None, nullable: true, hidden: false })
         .collect();
     if ordinality {
-        cols.push(ColInfo { name: "ORDINALITY".into(), table: None, field: None, nullable: false, hidden: false });
+        let field = Some(super::restype::field_of(&super::restype::SqlType::bigint(false)));
+        cols.push(ColInfo { name: "ORDINALITY".into(), table: None, field, nullable: false, hidden: false });
     }
     let rows = (0..n)
         .map(|k| {

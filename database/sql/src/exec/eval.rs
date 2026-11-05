@@ -822,6 +822,26 @@ impl Evaluator<'_> {
         {
             return Ok(Value::Str(format!("{s:0>len$}")));
         }
+        // CHAR of a number fills to its type's width, as a CHAR(n) of
+        // that length: SMALLINT 6, INTEGER 11, BIGINT 20, DECIMAL(p, s) p + 2.
+        if name == "CHAR"
+            && let [a] = f.args.as_slice()
+            && matches!(args.first(), Some(Value::Num(_)))
+            && let Value::Str(s) = &v
+        {
+            use super::restype::Kind;
+            let t = super::restype::infer(a, &super::restype::Scope::of_env(env));
+            let width = match t.kind() {
+                Kind::SmallInt => Some(6),
+                Kind::Integer => Some(11),
+                Kind::BigInt => Some(20),
+                Kind::Decimal | Kind::Numeric => usize::try_from(t.len()).ok().map(|p| p + 2),
+                _ => None,
+            };
+            if let Some(w) = width {
+                return Ok(Value::Str(format!("{s:<w$}")));
+            }
+        }
         // DIGITS of an expression fills to its type's precision.
         if name == "DIGITS"
             && let Some(a) = f.args.first()

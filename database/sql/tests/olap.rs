@@ -369,7 +369,7 @@ fn aggregates() {
         db.types("select count(distinct grp), sum(distinct v), avg(distinct id), min(distinct v), count_big(distinct s), stddev(v), median(v), percentile_disc(0.5) within group (order by v), listagg(s), regr_count(v, id) from q3t"),
         v(&["INTEGER NN", "DECIMAL(31,2)", "INTEGER", "DECIMAL(7,2)", "BIGINT NN", "DOUBLE", "DECFLOAT(34)", "DECIMAL(7,2)", "VARCHAR(4000)", "BIGINT"])
     );
-    assert_eq!(db.code("select array_agg(id) from q3t"), -84);
+    assert_eq!(db.code("select array_agg(id) from q3t"), -20_441);
     assert_eq!(db.code("select xmlagg(id) from q3t"), -84);
 }
 

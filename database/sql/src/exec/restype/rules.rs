@@ -95,6 +95,7 @@ pub fn builtin(name: &str, given: &[Option<SqlType>], exprs: &[Expr]) -> Option<
         "TIME" => SqlType::time(null),
         "TIMESTAMP" => SqlType::timestamp(num(1).and_then(|p| u8::try_from(p).ok()).unwrap_or(6), null),
         "NOW" => SqlType::timestamp(6, false),
+        "CARDINALITY" | "MAX_CARDINALITY" => SqlType::bigint(true),
         "LENGTH" | "CHAR_LENGTH" | "CHARACTER_LENGTH" | "OCTET_LENGTH" | "YEAR" | "MONTH" | "DAY" | "DAYOFMONTH"
         | "HOUR" | "MINUTE" | "SECOND" | "MICROSECOND" | "DAYS" | "POSSTR" | "LOCATE" | "POSITION" | "DAYOFWEEK"
         | "DAYOFWEEK_ISO" | "DAYOFYEAR" | "WEEK" | "LEAP" | "JULIAN_DAY" => SqlType::int(null),

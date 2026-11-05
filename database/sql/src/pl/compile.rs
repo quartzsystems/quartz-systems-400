@@ -115,6 +115,15 @@ impl Names for Gen<'_> {
         self.frames.iter().rev().find_map(|f| f.vars.iter().rev().find(|(n, _)| n == name).map(|(_, k)| *k))
     }
 
+    fn type_of(&self, k: usize) -> Option<String> {
+        let v = &self.vars[k];
+        if v.array.is_some() { None } else { Some(super::types::type_text(&v.sql)) }
+    }
+
+    fn element_type(&self, k: usize) -> Option<String> {
+        self.vars[k].array.as_ref().map(|(t, _)| super::types::type_text(t))
+    }
+
     fn qualified(&self, label: &str, name: &str) -> Option<usize> {
         self.frames
             .iter()
@@ -1023,7 +1032,8 @@ impl Gen<'_> {
     fn get_diag(&mut self, d: &GetDiag) -> Result<()> {
         let items: Vec<String> = d.items.iter().map(|(_, i)| i.clone()).collect();
         let ks: Vec<usize> = d.items.iter().map(|(t, _)| self.var(&t.value)).collect::<Result<_>>()?;
-        let desc = Desc { op: Op::Diag, text: items.join(","), ..self.desc() };
+        let text = if d.stacked { format!("*STACKED,{}", items.join(",")) } else { items.join(",") };
+        let desc = Desc { op: Op::Diag, text, ..self.desc() };
         // GET DIAGNOSTICS raises nothing: only the outputs are written.
         for &k in &ks {
             let v = self.vars[k].clone();
@@ -1033,6 +1043,17 @@ impl Gen<'_> {
         self.ins("mov $hca, $sqlca");
         self.ins(format!("callb _QRNX_SQLRUN($sqlca, {t}, {len}, $scope, {})", self.sig.program.len()));
         self.ins("mov $sqlca, $hca");
+        Ok(())
+    }
+
+    /// A handler's entry (`*STACK`): the condition it took becomes the
+    /// stacked one; its end (`*UNSTACK`): none is.
+    fn stack_condition(&mut self, what: &str) -> Result<()> {
+        let desc = Desc { op: Op::Diag, text: what.into(), ..self.desc() };
+        let (t, len) = self.text_const(&desc.encode())?;
+        self.ins("mov $uca, $sqlca");
+        self.ins(format!("callb _QRNX_SQLRUN($sqlca, {t}, {len}, $scope, {})", self.sig.program.len()));
+        self.ins("mov $sqlca, $uca");
         Ok(())
     }
 
@@ -1177,7 +1198,9 @@ impl Gen<'_> {
         for (i, h) in c.handlers.iter().enumerate() {
             let entry = self.frames.last().expect("frame").handlers[i].entry.clone();
             self.place(&entry);
+            self.stack_condition("*STACK")?;
             self.stmt(&h.body)?;
+            self.stack_condition("*UNSTACK")?;
             match h.kind {
                 HandlerKind::Continue => {
                     let resumes = self.frames.last().expect("frame").handlers[i].resumes.clone();

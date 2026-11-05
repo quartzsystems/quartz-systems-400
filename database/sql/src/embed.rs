@@ -438,6 +438,8 @@ pub struct Session {
     pub ctx: SqlContext,
     scopes: HashMap<String, Scope>,
     last: Sqlca,
+    /// The condition the running handler took (`GET STACKED DIAGNOSTICS`).
+    stacked: Sqlca,
     /// The last statement's kind, as `GET DIAGNOSTICS` `COMMAND_FUNCTION` gives it.
     last_cmd: String,
 }
@@ -519,6 +521,7 @@ impl Session {
             ctx,
             scopes: HashMap::new(),
             last: Sqlca::default(),
+            stacked: Sqlca::default(),
             last_cmd: String::new(),
         }
     }
@@ -896,8 +899,21 @@ impl Session {
     }
 
     /// `GET DIAGNOSTICS`: the items of the last statement.
-    fn diagnostics(&self, items: &str) -> Reply {
-        let ca = &self.last;
+    fn diagnostics(&mut self, items: &str) -> Reply {
+        // A handler starts: its condition is stacked.
+        if items == "*STACK" {
+            self.stacked = self.last.clone();
+            return Reply::default();
+        }
+        // It ends: no condition is stacked.
+        if items == "*UNSTACK" {
+            self.stacked = Sqlca::default();
+            return Reply::default();
+        }
+        let (ca, items) = match items.strip_prefix("*STACKED,") {
+            Some(rest) => (&self.stacked, rest),
+            None => (&self.last, items),
+        };
         let row = items
             .split(',')
             .map(|i| match i.trim() {

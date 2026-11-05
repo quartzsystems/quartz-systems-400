@@ -567,10 +567,10 @@ impl Parser {
     /// `GET [CURRENT|STACKED] DIAGNOSTICS [CONDITION|EXCEPTION n] v = ITEM, ...`.
     fn get_diagnostics(&mut self) -> Result<GetDiag> {
         self.expect_word("GET")?;
-        if self.eat_word("STACKED") {
-            return Err(Self::unsupported("GET STACKED DIAGNOSTICS"));
+        let stacked = self.eat_word("STACKED");
+        if !stacked {
+            self.eat_word("CURRENT");
         }
-        self.eat_word("CURRENT");
         self.expect_word("DIAGNOSTICS")?;
         let condition = if self.eat_word("CONDITION") || self.eat_word("EXCEPTION") {
             let n = u32::try_from(self.integer()?).map_err(|_| self.expected("a condition number"))?;
@@ -590,7 +590,7 @@ impl Parser {
                 break;
             }
         }
-        Ok(GetDiag { condition, items })
+        Ok(GetDiag { stacked, condition, items })
     }
 
     /// An SQL statement, to the `;` that ends it.

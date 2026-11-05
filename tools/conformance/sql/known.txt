@@ -20,7 +20,7 @@ integrity/AUDITCOL   # IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
 query/JOINS   # ORDER BY an unqualified USING column is SQL0203 on DB2 for i, resolved here
 query/OLAP   # the 01003 warning (SQLCODE 0) is not reported by the local runner
 query/STATAGG   # 01003 warnings (SQLCODE 0) not reported by the local runner
-query/ORDAGG   # 01003 not reported; ARRAY_AGG is SQ20441 there, SQL0084 here (no array types yet)
+query/ORDAGG   # 01003 not reported
 query/DATEARITH   # the 01506 warning (date adjusted to month end, SQLCODE 0) not reported
 query/DTFUNCS   # 01506 not reported; TIMESTAMP_FORMAT's SQ20448 comes at fetch there, SQL0302 at run here
 query/STRFUNCS   # DECODE is SQL0204 on pub400 but in the brief's must-have list
@@ -28,7 +28,6 @@ query/NUMFUNCS   # ENCRYPT_AES refused: DB2 for i's encrypted layout is not publ
 query/REGISTERS   # CURRENT DEGREE is pub400's system setting (ANY); NONE here
 sqlpl/CATALOG   # PARM_SIGNATURE is LONG VARCHAR FOR BIT DATA at IBM (no such catalog type here)
 sqlpl/EXTERN   # an external procedure over a program not made yet refused SQL0084
-sqlpl/SETVARS   # CHAR(integer) is not blank padded to its length here
 sqlpl/FUNCS   # a function's error comes at fetch at IBM (an empty result first), at run here; catalog LOB columns
 services/SVCCOLS   # a probe of pub400's catalog; QS/400's catalogs do not list the QSYS2 services (sql tests/service_shapes.rs holds the shapes to it)
 services/SVCVALS   # pub400's own jobs, users and values; the value forms are settled in sql tests/services.rs
@@ -41,5 +40,5 @@ objects2/TYPES   # distinct types as column types, casts and their strong typing
 trigger/TRGDEFS   # TRIGGER_TEXT is NVARCHAR and LONG_COMMENT DBCLOB at IBM, VARGRAPHIC here (no LOB catalog columns)
 trigger/TRGCAT   # ACTION_CONDITION and ACTION_STATEMENT are DBCLOB at IBM, VARGRAPHIC(2000) here (no LOB catalog columns)
 services/GENSQL    # QTEMP/Q_GENSQL is not written (the result set is); pub400 CCSID 273; QS/400 keeps COMMENT ON as the label; generated constraint names differ
-sqlpl/ARRAYS   # array parameters and array arguments in CALL refused SQL0084 (BLOCKED(sql)); ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; CHAR(integer) is not blank padded to its length here; UNNEST of a constructor is SQL0104 there, SQ20441 here
-sqlpl/ARRAYERR   # CHAR(integer) is not blank padded to its length here; the primary cannot see a one-column UNNEST correlation's column (SQL0206), QS/400 can
+sqlpl/ARRAYS   # array parameters and array arguments in CALL refused SQL0084 (BLOCKED(sql)); ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here
+sqlpl/ARRAYERR   # the primary cannot see a one-column UNNEST correlation's column (SQL0206), QS/400 can

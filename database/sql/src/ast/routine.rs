@@ -437,6 +437,8 @@ pub enum AssignSource {
 /// `GET DIAGNOSTICS`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GetDiag {
+    /// `STACKED`: the condition the running handler took.
+    pub stacked: bool,
     /// `CONDITION n` / `EXCEPTION n`: the condition's items; `None` for
     /// the statement items.
     pub condition: Option<u32>,

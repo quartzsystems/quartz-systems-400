@@ -1,0 +1,30 @@
+-- captured from primary
+> CREATE TABLE {lib}.QPS_LOG (WHAT VARCHAR(20) NOT NULL, N INTEGER, ST CHA
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPS_P1 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPS_P2 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPS_P1()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPS_P2()
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT WHAT, N, ST FROM {lib}.QPS_LOG ORDER BY WHAT
+sqlcode 0 sqlstate 00000 msgid -
+# WHAT VARCHAR(20) NOT NULL
+# N INTEGER
+# ST CHAR(5)
+| 'current' | 1 | NULL |
+| 'current' | 1 | NULL |
+| 'outside' | 0 | NULL |
+| 'stacked1' | -407 | '23502' |
+| 'stacked1' | -802 | '22012' |
+| 'stacked2' | -407 | '23502' |
+| 'stacked2' | -802 | '22012' |
+> DROP PROCEDURE {lib}.QPS_P1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPS_P2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPS_LOG
+sqlcode 0 sqlstate 00000 msgid -

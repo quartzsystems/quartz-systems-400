@@ -21,6 +21,17 @@ pub trait Names {
     /// The variable `name` of the compound or loop labelled `label`
     /// (or of the routine named `label`).
     fn qualified(&self, label: &str, name: &str) -> Option<usize>;
+    /// A scalar variable's type as SQL writes it: `CHAR(v)` takes it, so
+    /// the result has the type's width.
+    fn type_of(&self, k: usize) -> Option<String> {
+        let _ = k;
+        None
+    }
+    /// An array variable's element type: `v[i]` is cast to it.
+    fn element_type(&self, k: usize) -> Option<String> {
+        let _ = k;
+        None
+    }
 }
 
 /// The statement text with markers, and the variables in marker order.
@@ -80,6 +91,10 @@ pub fn rewrite<S: std::hash::BuildHasher>(text: &str, names: &dyn Names, columns
     let mut out = Rewritten::default();
     let mut i = 0;
     let mut prev: Option<&Tok> = None;
+    let mut before: Option<&Tok> = None;
+    // `v[i]` of an array: the bracket depth of each open CAST, its type.
+    let mut depth = 0usize;
+    let mut casts: Vec<(usize, String)> = Vec::new();
     while i < toks.len() {
         let t = &toks[i];
         if matches!(t, Tok::End) {
@@ -110,12 +125,34 @@ pub fn rewrite<S: std::hash::BuildHasher>(text: &str, names: &dyn Names, columns
             out.text.push(' ');
         }
         if let Some((k, n)) = replaced {
-            out.text.push('?');
+            let after = toks.get(i + n);
+            let char_arg = matches!(prev, Some(Tok::Sym("("))) && matches!(before, Some(Tok::Word(w)) if w == "CHAR") && matches!(after, Some(Tok::Sym(")")));
+            if matches!(after, Some(Tok::Sym("["))) && let Some(t) = names.element_type(k) {
+                out.text.push_str("CAST(?");
+                casts.push((depth, t));
+            } else if char_arg && let Some(t) = names.type_of(k) {
+                let _ = write!(out.text, "CAST(? AS {t})");
+            } else {
+                out.text.push('?');
+            }
             out.vars.push(k);
+            before = prev;
             prev = Some(&PARAM);
             i += n;
         } else {
             render(t, &mut out.text);
+            match t {
+                Tok::Sym("[") => depth += 1,
+                Tok::Sym("]") => {
+                    depth = depth.saturating_sub(1);
+                    if casts.last().is_some_and(|(d, _)| *d == depth) && !matches!(toks.get(i + 1), Some(Tok::Sym("["))) {
+                        let (_, ty) = casts.pop().expect("an open CAST");
+                        let _ = write!(out.text, " AS {ty})");
+                    }
+                }
+                _ => {}
+            }
+            before = prev;
             prev = Some(t);
             i += 1;
         }
