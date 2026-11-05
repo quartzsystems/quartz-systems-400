@@ -813,6 +813,8 @@ sev = 30
 text = "The attributes of identity column or sequence &1 are not valid."
 help = "An identity column or sequence is an integer, or DECIMAL or NUMERIC with no scale; MINVALUE is not above MAXVALUE, and START WITH and RESTART WITH lie between them, all within the data type."
 vars = ["*CHAR 128"]
+
+[[msg]]
 id = "SQL0113"
 sev = 30
 text = "Name &1 is not a valid name here."
