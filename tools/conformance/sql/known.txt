@@ -42,3 +42,5 @@ trigger/TRGCAT   # ACTION_CONDITION and ACTION_STATEMENT are DBCLOB at IBM, VARG
 services/GENSQL    # QTEMP/Q_GENSQL is not written (the result set is); pub400 CCSID 273; QS/400 keeps COMMENT ON as the label; generated constraint names differ
 sqlpl/ARRAYS   # array parameters and array arguments in CALL refused SQL0084 (BLOCKED(sql)); ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here
 sqlpl/ARRAYERR   # the primary cannot see a one-column UNNEST correlation's column (SQL0206), QS/400 can
+sqlpl/PLBOOL   # BOOLEAN shown as 1/0 by JTOpen
+sqlpl/PLTYPES   # HEX of CCSID-tagged strings; a character DEFAULT for a VARGRAPHIC variable is SQL0408 there, converted here; 1E400 into DECFLOAT(16) is SQL0304 there, SQL0302 here

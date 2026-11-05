@@ -108,6 +108,8 @@ struct Gen<'a> {
     pca: bool,
     /// `ATOMIC` compounds so far.
     atomics: u32,
+    /// Markers stay bare (a `CALL`'s arguments, which may be outputs).
+    uncast: bool,
 }
 
 impl Names for Gen<'_> {
@@ -118,6 +120,10 @@ impl Names for Gen<'_> {
     fn type_of(&self, k: usize) -> Option<String> {
         let v = &self.vars[k];
         if v.array.is_some() { None } else { Some(super::types::type_text(&v.sql)) }
+    }
+
+    fn cast_type(&self, k: usize) -> Option<String> {
+        if self.uncast { None } else { super::types::marker_type(&self.vars[k].sql) }
     }
 
     fn element_type(&self, k: usize) -> Option<String> {
@@ -161,6 +167,7 @@ pub fn compile(sig: &Signature, body: &PlStmt, cat: &mut dyn Catalog) -> Result<
         for_count: 0,
         pca: false,
         atomics: 0,
+        uncast: false,
     };
     g.fail = g.label();
     g.done = g.label();
@@ -534,7 +541,10 @@ impl Gen<'_> {
                 }
                 let text = format!("CALL {name}({})", texts.join(", "));
                 let text = if args.is_empty() { format!("CALL {name}") } else { text };
-                let r = self.rewrite(&text, &HashSet::new())?;
+                self.uncast = true;
+                let r = self.rewrite(&text, &HashSet::new());
+                self.uncast = false;
+                let r = r?;
                 if r.vars.iter().any(|&k| self.vars[k].array.is_some()) {
                     // BLOCKED(sql): a CALL passes values, and an array
                     // lives in the database behind its handle.

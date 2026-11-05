@@ -27,6 +27,12 @@ pub trait Names {
         let _ = k;
         None
     }
+    /// The type every marker of a variable is cast to (its storage
+    /// holds another).
+    fn cast_type(&self, k: usize) -> Option<String> {
+        let _ = k;
+        None
+    }
     /// An array variable's element type: `v[i]` is cast to it.
     fn element_type(&self, k: usize) -> Option<String> {
         let _ = k;
@@ -130,7 +136,7 @@ pub fn rewrite<S: std::hash::BuildHasher>(text: &str, names: &dyn Names, columns
             if matches!(after, Some(Tok::Sym("["))) && let Some(t) = names.element_type(k) {
                 out.text.push_str("CAST(?");
                 casts.push((depth, t));
-            } else if char_arg && let Some(t) = names.type_of(k) {
+            } else if let Some(t) = names.cast_type(k).or_else(|| if char_arg { names.type_of(k) } else { None }) {
                 let _ = write!(out.text, "CAST(? AS {t})");
             } else {
                 out.text.push('?');

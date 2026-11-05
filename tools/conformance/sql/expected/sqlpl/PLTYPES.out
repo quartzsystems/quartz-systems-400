@@ -1,0 +1,78 @@
+-- captured from pub400
+> CREATE TABLE {lib}.QPT_OUT (K VARCHAR(10) NOT NULL, D DECFLOAT(34), G VA
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPT_ADD (IN A DECFLOAT(16), INOUT T DECFLOAT(34),
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPT_D ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPT_D16 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPT_G ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPT_VG ()
+sqlcode -408 sqlstate 42821 msgid SQL0408
+> CREATE PROCEDURE {lib}.QPT_BN ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPT_VB ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPT_BL ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPT_IN ()
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE PROCEDURE {lib}.QPT_CL ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPT_D()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPT_D16()
+sqlcode -304 sqlstate 22003 msgid SQL0304
+> CALL {lib}.QPT_G()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPT_VG()
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> CALL {lib}.QPT_BN()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPT_VB()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPT_BL()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPT_IN()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPT_CL()
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT K, D, HEX(G), B, N FROM {lib}.QPT_OUT ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K VARCHAR(10) NOT NULL
+# D DECFLOAT(34)
+# 00003 VARCHAR(40)
+# B VARBINARY(10)
+# N INTEGER
+| 'BL' | NULL | NULL | X'ABCD' | 2 |
+| 'BN' | NULL | NULL | X'010200' | 3 |
+| 'CALL' | '2.5' | NULL | X'C1C2' | NULL |
+| 'D' | '3.30' | NULL | NULL | NULL |
+| 'G' | NULL | '0078007900200020' | NULL | 4 |
+| 'INTO' | '3.30' | NULL | NULL | NULL |
+| 'VB' | NULL | NULL | X'FF00EE' | 3 |
+> DROP PROCEDURE {lib}.QPT_D
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPT_D16
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPT_G
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPT_VG
+sqlcode -204 sqlstate 42704 msgid SQL0204
+> DROP PROCEDURE {lib}.QPT_BN
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPT_VB
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPT_BL
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPT_IN
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPT_CL
+sqlcode 0 sqlstate 00000 msgid -
+> DROP PROCEDURE {lib}.QPT_ADD
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPT_OUT
+sqlcode 0 sqlstate 00000 msgid -

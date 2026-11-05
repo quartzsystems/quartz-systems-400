@@ -1,0 +1,22 @@
+-- captured from pub400
+> CREATE TABLE {lib}.QPB_OUT (K VARCHAR(10) NOT NULL, B BOOLEAN, N INTEGER
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE PROCEDURE {lib}.QPB_P1 ()
+sqlcode 0 sqlstate 00000 msgid -
+> CALL {lib}.QPB_P1()
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT K, B, N FROM {lib}.QPB_OUT ORDER BY K
+sqlcode 0 sqlstate 00000 msgid -
+# K VARCHAR(10) NOT NULL
+# B BOOLEAN
+# N INTEGER
+| 'F' | 1 | NULL |
+| 'IF' | 1 | 1 |
+| 'NO' | 0 | NULL |
+| 'NULL' | NULL | NULL |
+| 'T' | 1 | NULL |
+> DROP PROCEDURE {lib}.QPB_P1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.QPB_OUT
+sqlcode 0 sqlstate 00000 msgid -

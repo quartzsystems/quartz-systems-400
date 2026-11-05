@@ -29,6 +29,17 @@ fn word(kind: i64, len: i64, dec: i64) -> i64 {
     (kind << 56) | (len << 8) | dec
 }
 
+/// The runtime's mark of an `SQLTYPE` (LOB) host variable's extra word
+/// (`rpg/qrpgrt/src/sql.rs`).
+const SQLTYPE: i64 = 1 << 40;
+
+/// The type a routine's statements read a variable of `t` as, when its
+/// storage is not that type's: `CAST(? AS type)` around its marker.
+#[must_use]
+pub fn marker_type(t: &TypeSpec) -> Option<String> {
+    matches!(t.data_type, DataType::DecFloat(_) | DataType::Boolean).then(|| type_text(t))
+}
+
 /// The longest character variable a routine holds.
 pub const MAX_CHAR: u32 = 16_773_104;
 
@@ -42,7 +53,8 @@ pub fn host_type(t: &TypeSpec) -> Result<HostType> {
     if t.bit_data {
         return Err(unsupported("FOR BIT DATA"));
     }
-    if t.ccsid.is_some_and(|c| c != 37) {
+    let graphic = matches!(t.data_type, DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_));
+    if t.ccsid.is_some_and(|c| c != 37 && !(graphic && matches!(c, 1200 | 13488))) {
         return Err(unsupported("a CCSID other than 37"));
     }
     let h = |qir: String, desc: i64, extra: i64, size: u32| HostType { qir, desc, extra, size };
@@ -66,10 +78,23 @@ pub fn host_type(t: &TypeSpec) -> Result<HostType> {
             let n = if *p == 0 { 19 } else { 20 + u32::from(*p) };
             h(format!("timestamp({p})"), word(11, n.into(), 0), 0, n)
         }
-        DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_) => return Err(unsupported("GRAPHIC")),
-        DataType::Binary(_) | DataType::Varbinary(_) | DataType::Blob(_) => return Err(unsupported("BINARY")),
-        DataType::DecFloat(_) => return Err(unsupported("DECFLOAT")),
-        DataType::Boolean => return Err(unsupported("BOOLEAN")),
+        // Double-byte and binary strings as the runtime's LOB host
+        // variables: a 4-byte length, then UTF-16 or the bytes.
+        DataType::Graphic(n) | DataType::Vargraphic(n) | DataType::Dbclob(n) if *n <= MAX_CHAR / 2 => {
+            let size = 4 + 2 * n;
+            h(format!("bytes({size})"), word(1, size.into(), 0), SQLTYPE | (3 << 4) | 1, size)
+        }
+        DataType::Binary(n) | DataType::Varbinary(n) | DataType::Blob(n) if *n <= MAX_CHAR => {
+            let size = 4 + n;
+            h(format!("bytes({size})"), word(1, size.into(), 0), SQLTYPE | (2 << 4) | 1, size)
+        }
+        DataType::Graphic(_) | DataType::Vargraphic(_) | DataType::Dbclob(_) | DataType::Binary(_) | DataType::Varbinary(_) | DataType::Blob(_) => {
+            return Err(unsupported("a string longer than 16773104 bytes"));
+        }
+        // DECFLOAT and BOOLEAN as their text; the statements read them
+        // through a CAST to the type (`marker_type`).
+        DataType::DecFloat(_) => h("varchar(45)".into(), word(2, 45, 0), 0, 47),
+        DataType::Boolean => h("char(1)".into(), word(1, 1, 0), 0, 1),
     })
 }
 
@@ -161,6 +186,8 @@ mod tests {
         }
         let h = host_type(&parse_type("DECIMAL(9, 2)").unwrap()).unwrap();
         assert_eq!((h.qir.as_str(), h.size), ("packed(9,2)", 5));
-        assert!(host_type(&parse_type("BLOB(1K)").unwrap()).is_err());
+        assert_eq!(host_type(&parse_type("BLOB(1K)").unwrap()).unwrap().size, 1028);
+        assert_eq!(host_type(&parse_type("GRAPHIC(3)").unwrap()).unwrap().qir, "bytes(10)");
+        assert_eq!(marker_type(&parse_type("DECFLOAT(16)").unwrap()).as_deref(), Some("DECFLOAT(16)"));
     }
 }
