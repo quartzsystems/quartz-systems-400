@@ -12,14 +12,21 @@ pub mod catalog;
 pub mod cursor;
 pub mod ddl;
 pub mod dml;
+pub mod drop;
 pub mod eval;
 pub mod func;
+pub mod index;
 mod join;
 pub mod mem;
+pub mod names;
 pub mod opnqryf;
 pub mod query;
+pub mod rename;
+pub mod schema;
 mod sort;
 pub mod spill;
+pub mod table;
+pub mod view;
 
 use db::file::{self, FileDesc, MemberEntry};
 use db::format::FormatDef;
@@ -144,6 +151,8 @@ pub struct SqlContext {
     meter: mem::Meter,
     /// When the last yield ended.
     last_yield: Option<std::time::Instant>,
+    /// The warning the last statement left (`SQL7905`, `SQL0569`).
+    pub warning: Option<crate::sqlca::Warning>,
 }
 
 /// See [`SqlContext::yielder`].
@@ -232,6 +241,7 @@ impl SqlContext {
             memory_limit: mem::STATEMENT_MEMORY,
             meter: mem::Meter::default(),
             last_yield: None,
+            warning: None,
         }
     }
 
@@ -513,9 +523,35 @@ impl SqlContext {
         })
     }
 
+    /// The library a schema name means, by its system name or its SQL
+    /// name.
+    pub fn schema_library(&self, txn: &mut Txn<'_>, schema: &crate::ast::Ident) -> Result<ObjectId> {
+        names::schema(txn, self.qsys, schema)?.ok_or_else(|| SqlError::ObjectNotFound {
+            name: schema.value.clone(),
+            kind: "schema",
+        })
+    }
+
+    /// The system name of the library a schema name means.
+    pub fn schema_system_name(&self, txn: &mut Txn<'_>, schema: &crate::ast::Ident) -> Result<Name> {
+        if let Some(n) = names::direct(schema) {
+            return Ok(n);
+        }
+        let lib = self.schema_library(txn, schema)?;
+        Ok(ops::read_header(txn, lib)?.1.name)
+    }
+
+    /// The library spec of an object name, a long schema name resolved.
+    pub fn lib_spec_in(&self, txn: &mut Txn<'_>, name: &ObjectName) -> Result<LibSpec> {
+        match &name.schema {
+            Some(s) => Ok(LibSpec::Name(self.schema_system_name(txn, s)?)),
+            None => Ok(self.default_library()),
+        }
+    }
+
     /// The library to create an object in.
     pub fn library_for(&self, txn: &mut Txn<'_>, name: &ObjectName) -> Result<ObjectId> {
-        match self.lib_spec(name)? {
+        match self.lib_spec_in(txn, name)? {
             LibSpec::Name(n) => ops::find_library(txn, self.qsys, n)
                 .map(|f| f.id)
                 .map_err(|_| SqlError::ObjectNotFound {
@@ -535,14 +571,35 @@ impl SqlContext {
 
     /// Resolve a table, view or index name to a file.
     pub fn resolve_file(&self, txn: &mut Txn<'_>, name: &ObjectName) -> Result<ObjectId> {
-        let lib = self.lib_spec(name)?;
-        let n = Self::sys_name(&name.name)?;
-        ops::resolve(txn, self.qsys, &self.names, lib, n, types::FILE)
-            .map(|f| f.id)
-            .map_err(|_| SqlError::ObjectNotFound {
-                name: name.to_string(),
-                kind: "table",
-            })
+        let not_found = || SqlError::ObjectNotFound {
+            name: name.to_string(),
+            kind: "table",
+        };
+        let lib = self.lib_spec_in(txn, name).map_err(|_| not_found())?;
+        if let Some(n) = names::direct(&name.name) {
+            return ops::resolve(txn, self.qsys, &self.names, lib, n, types::FILE)
+                .map(|f| f.id)
+                .map_err(|_| not_found());
+        }
+        // A long SQL name: the name index of each library searched.
+        names::check_length(&name.name)?;
+        let libs = match lib {
+            LibSpec::Name(n) => {
+                let l = ops::find_library(txn, self.qsys, n).map_err(|_| not_found())?.id;
+                store::obj::guard::check_id(txn, "lib.search", l).map_err(|_| not_found())?;
+                vec![l]
+            }
+            LibSpec::Curlib => self.names.curlib.into_iter().collect(),
+            LibSpec::Libl => self.names.libl.clone(),
+        };
+        for l in libs {
+            for space in [db::sqlinf::names::Space::Table, db::sqlinf::names::Space::Index] {
+                if let Some(id) = names::find(txn, l, space, &name.name.value)? {
+                    return Ok(id);
+                }
+            }
+        }
+        Err(not_found())
     }
 
     /// Resolve a table to its first member.
@@ -756,6 +813,7 @@ impl Prepared {
         params: &[Value],
     ) -> Result<Outcome> {
         ctx.naming = self.naming;
+        ctx.warning = None;
         // Queries, changes and the long definitions take turns at their
         // safe points; any other statement runs to its end.
         let r = match &self.statement {
@@ -783,16 +841,15 @@ impl Prepared {
             Statement::Insert(i) => dml::insert(txn, ctx, params, i).map(Outcome::Count),
             Statement::Update(u) => dml::update(txn, ctx, params, u).map(Outcome::Count),
             Statement::Delete(d) => dml::delete(txn, ctx, params, d).map(Outcome::Count),
-            Statement::CreateTable(t) => ddl::create_table(txn, ctx, t).map(|()| Outcome::Done),
-            Statement::CreateIndex(i) => ddl::create_index(txn, ctx, i).map(|()| Outcome::Done),
-            Statement::CreateSchema(name) => ddl::create_schema(txn, ctx, name).map(|()| Outcome::Done),
+            Statement::CreateTable(t) => table::create(txn, ctx, t, params).map(|n| if n == 0 { Outcome::Done } else { Outcome::Count(n) }),
+            Statement::CreateIndex(i) => index::create(txn, ctx, i).map(|()| Outcome::Done),
+            Statement::CreateSchema(name) => schema::create(txn, ctx, name).map(|()| Outcome::Done),
+            Statement::DropSchema { name, restrict, .. } => schema::drop(txn, ctx, name, *restrict).map(|()| Outcome::Done),
             Statement::AlterTable(a) => ddl::alter_table(txn, ctx, a).map(|()| Outcome::Done),
-            Statement::DropTable { name, cascade } => {
-                ddl::drop(txn, ctx, name, *cascade).map(|()| Outcome::Done)
+            Statement::DropTable { name, restrict, .. } | Statement::DropView { name, restrict, .. } => {
+                drop::drop(txn, ctx, name, *restrict).map(|()| Outcome::Done)
             }
-            Statement::DropIndex(name) | Statement::DropView(name) => {
-                ddl::drop(txn, ctx, name, false).map(|()| Outcome::Done)
-            }
+            Statement::DropIndex(name) => drop::drop(txn, ctx, name, false).map(|()| Outcome::Done),
             st @ (Statement::CreateAlias { .. } | Statement::DropAlias(_)) => alias::run(txn, ctx, st).map(|()| Outcome::Done),
             Statement::Commit { hold } => {
                 if ctx.session.commit_def().is_some() {
@@ -830,14 +887,14 @@ impl Prepared {
             }
             Statement::Fetch(f) => cursor::fetch(ctx, f, params),
             Statement::Close(c) => cursor::close(ctx, &c.value),
-            Statement::CreateView(v) => ddl::create_view(txn, ctx, v).map(|()| Outcome::Done),
+            Statement::CreateView(v) => view::create(txn, ctx, v).map(|()| Outcome::Done),
             Statement::LabelOn(l) | Statement::CommentOn(l) => {
                 ddl::label(txn, ctx, l).map(|()| Outcome::Done)
             }
             Statement::Merge(m) => dml::merge(txn, ctx, params, m).map(Outcome::Count),
             Statement::SetSchema(target) => {
                 ctx.current_schema = match target {
-                    crate::ast::SchemaTarget::Name(n) => Some(SqlContext::sys_name(n)?),
+                    crate::ast::SchemaTarget::Name(n) => Some(ctx.schema_system_name(txn, n)?),
                     crate::ast::SchemaTarget::User => Name::parse(&ctx.user).ok(),
                     crate::ast::SchemaTarget::Default => None,
                     crate::ast::SchemaTarget::Host(_) => {
@@ -868,9 +925,7 @@ impl Prepared {
                     rows: lines.into_iter().map(|l| vec![Value::Str(l)]).collect(),
                 }))
             }
-            other @ Statement::Rename(_) => Err(SqlError::Unsupported {
-                what: format!("running {}", statement_name(other)),
-            }),
+            Statement::Rename(r) => rename::run(txn, ctx, r).map(|()| Outcome::Done),
         }
     }
 }
@@ -884,7 +939,10 @@ impl Prepared {
         params: &[Value],
     ) -> (crate::sqlca::Sqlca, Option<Outcome>) {
         match self.execute(txn, ctx, params) {
-            Ok(o) => (crate::sqlca::Sqlca::from_outcome(&o), Some(o)),
+            Ok(o) => {
+                let ca = crate::sqlca::Sqlca::from_outcome(&o);
+                (ctx.warning.as_ref().map_or_else(|| ca.clone(), |w| w.apply(ca.clone())), Some(o))
+            }
             Err(e) => (crate::sqlca::Sqlca::from_error(&e), None),
         }
     }
@@ -900,7 +958,8 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::CreateIndex(_) => "CREATE INDEX",
         Statement::DropIndex(_) => "DROP INDEX",
         Statement::CreateView(_) => "CREATE VIEW",
-        Statement::DropView(_) => "DROP VIEW",
+        Statement::DropView { .. } => "DROP VIEW",
+        Statement::DropSchema { .. } => "DROP SCHEMA",
         Statement::CreateSchema(_) => "CREATE SCHEMA",
         Statement::CreateAlias { .. } => "CREATE ALIAS",
         Statement::DropAlias(_) => "DROP ALIAS",

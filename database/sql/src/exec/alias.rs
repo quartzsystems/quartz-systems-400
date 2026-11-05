@@ -33,26 +33,33 @@ pub fn create(
     member: Option<&Ident>,
     replace: bool,
 ) -> Result<()> {
-    let sys = SqlContext::sys_name(&name.name)?;
     let library = ctx.library_for(txn, name)?;
     // The table's library as the statement says it, the library list
-    // when it says none: the alias is resolved each time it is used.
+    // when it says none: the alias is resolved each time it is used. A
+    // long table name is kept as the system name it has now.
+    let file_name = if let Some(n) = super::names::direct(&table.name) {
+        n
+    } else {
+        let id = ctx.resolve_file(txn, table)?;
+        store::obj::ops::read_header(txn, id)?.1.name
+    };
     let def = AliasDef {
-        library: match ctx.lib_spec(table)? {
+        library: match ctx.lib_spec_in(txn, table)? {
             LibSpec::Name(n) => Some(n),
             LibSpec::Curlib | LibSpec::Libl => None,
         },
-        file: SqlContext::sys_name(&table.name)?,
+        file: file_name,
         member: member.map(SqlContext::sys_name).transpose()?,
     };
-    let lib = LibSpec::Name(library_name(txn, library)?);
-    if replace && let Ok(found) = store::obj::ops::resolve(txn, ctx.qsys, &ctx.names, lib, sys, store::obj::types::FILE) {
-        if file::alias_of(txn, found.id)?.is_none() {
-            return Err(SqlError::Database { what: format!("{sys} exists and is not an alias"), msgid: None });
+    let qualified = ObjectName { schema: Some(super::view::ident_of(library_name(txn, library)?)), name: name.name.clone() };
+    if let Ok(found) = ctx.resolve_file(txn, &qualified) {
+        if !replace || file::alias_of(txn, found)?.is_none() {
+            return Err(SqlError::Exists { name: name.name.value.clone(), kind: "*FILE" });
         }
-        file::delete_alias(txn, ctx.job, found.id)?;
+        file::delete_alias(txn, ctx.job, found)?;
     }
-    file::create_alias(
+    let (sys, sql) = super::names::new_object(txn, library, &name.name, None)?;
+    let id = file::create_alias(
         txn,
         library,
         sys,
@@ -63,6 +70,7 @@ pub fn create(
             ..CreateFileOpts::default()
         },
     )?;
+    super::names::record(txn, library, id, db::sqlinf::Kind::Alias, sql.as_deref(), ctx.clock())?;
     Ok(())
 }
 

@@ -7,6 +7,7 @@
 //! type) in a `*SQLINF` it owns, named by its header's `sql` link; and a
 //! library's SQL name index. See `docs/DB_FORMAT.md` §8.
 
+pub mod body;
 pub mod entry;
 pub mod names;
 

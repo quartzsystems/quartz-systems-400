@@ -128,14 +128,16 @@ fn alias_rows(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
             let (count, len) = ctx
                 .resolve_table(txn, &crate::exec::alias::target(&def))
                 .map_or((0, 0), |t| (t.format.format.fields.len() as u64, u64::from(t.desc.attr.record_len)));
+            let sql = crate::exec::names::sql_name(txn, id);
+            let schema = crate::exec::names::schema_name(txn, lib);
             rows.push(vec![
-                s(h.name.to_string()),
+                s(sql),
                 s(ccsid::decode_trimmed(&h.owner)),
                 s("A"),
                 n(count),
                 n(len),
                 s(ccsid::decode_trimmed(&h.text)),
-                s(lh.name.to_string()),
+                s(schema),
                 stamp(h.changed.max(h.created)),
                 s(h.name.to_string()),
                 s(lh.name.to_string()),
@@ -146,7 +148,55 @@ fn alias_rows(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<Vec<Row>> {
     Ok(rows)
 }
 
-/// How SQL sees a file: table (`T`), view (`V`), index (`I`), logical (`L`).
+/// What SQL knows of a file: its SQL name, its schema's, its kind.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Meta {
+    /// The SQL name.
+    pub sql: String,
+    /// The schema's SQL name.
+    pub schema: String,
+    /// The kind SQL made it as.
+    pub kind: Option<db::sqlinf::Kind>,
+}
+
+/// The SQL names and kinds of every file listed, by file.
+pub(crate) fn metas(txn: &mut Txn<'_>, all: &[(Name, FileDesc)]) -> std::collections::HashMap<ObjectId, Meta> {
+    let mut schemas: std::collections::HashMap<ObjectId, String> = std::collections::HashMap::new();
+    let mut out = std::collections::HashMap::new();
+    for (_, d) in all {
+        let lib = d.header.library;
+        let schema = if let Some(s) = schemas.get(&lib) {
+            s.clone()
+        } else {
+            let s = crate::exec::names::schema_name(txn, lib);
+            schemas.insert(lib, s.clone());
+            s
+        };
+        let (sql, kind) = if d.header.sql.is_none() {
+            (d.name().to_string(), None)
+        } else {
+            (crate::exec::names::sql_name(txn, d.id), crate::exec::names::kind_of(txn, d.id))
+        };
+        out.insert(d.id, Meta { sql, schema, kind });
+    }
+    out
+}
+
+/// How SQL sees a file, by its kind when SQL made it.
+fn type_of(m: Option<&Meta>, desc: &FileDesc) -> &'static str {
+    use db::sqlinf::Kind as K;
+    match m.and_then(|m| m.kind) {
+        Some(K::Table) => "T",
+        Some(K::View) => "V",
+        Some(K::Index) => "I",
+        Some(K::Alias) => "A",
+        Some(K::Mqt) => "M",
+        _ => table_type(desc),
+    }
+}
+
+/// How SQL sees a file made before SQL kept kinds: table (`T`), view
+/// (`V`), index (`I`) by its text, else physical (`P`) or logical (`L`).
 fn table_type(desc: &FileDesc) -> &'static str {
     let text = ccsid::decode_trimmed(&desc.header.text);
     match desc.attr.kind {
@@ -158,10 +208,12 @@ fn table_type(desc: &FileDesc) -> &'static str {
     }
 }
 
-fn is_index(desc: &FileDesc) -> bool {
-    desc.attr.kind == FileKind::Logical
-        && desc.formats.iter().any(|f| f.key_len > 0)
-        && table_type(desc) != "V"
+fn is_index(m: Option<&Meta>, desc: &FileDesc) -> bool {
+    match type_of(m, desc) {
+        "I" => true,
+        "L" => desc.formats.iter().any(|f| f.key_len > 0),
+        _ => false,
+    }
 }
 
 /// Whether `name` is one of the views here (`QSYS2` or no schema).
@@ -195,6 +247,8 @@ pub fn virtual_table(
         return Ok(None);
     }
     let all = files(txn, ctx)?;
+    let meta = metas(txn, &all);
+    let m = |d: &FileDesc| meta.get(&d.id).cloned().unwrap_or_default();
     let c = |nm: &str, ty: DataType, len: u32, dec: u8, nullable: bool| {
         col(alias, nm, ty, len, dec, nullable)
     };
@@ -216,16 +270,17 @@ pub fn virtual_table(
             let mut rows: Vec<Row> = all
                 .iter()
                 .map(|(lib, d)| {
+                    let md = m(d);
                     vec![
-                        s(d.name().to_string()),
+                        s(md.sql.clone()),
                         s(ccsid::decode_trimmed(&d.header.owner)),
-                        s(table_type(d)),
+                        s(type_of(Some(&md), d)),
                         n(d.formats
                             .first()
                             .map_or(0, |f| f.format.fields.len() as u64)),
                         n(u64::from(d.attr.record_len)),
                         s(ccsid::decode_trimmed(&d.header.text)),
-                        s(lib.to_string()),
+                        s(md.schema.clone()),
                         stamp(d.header.changed.max(d.header.created)),
                         s(d.name().to_string()),
                         s(lib.to_string()),
@@ -261,7 +316,7 @@ pub fn virtual_table(
                 c("HAS_DEFAULT", DataType::Char, 1, 0, false),
             ];
             let mut rows = Vec::new();
-            for (lib, d) in &all {
+            for (_, d) in &all {
                 let Some(fmt) = d.formats.first() else {
                     continue;
                 };
@@ -292,7 +347,7 @@ pub fn virtual_table(
                     };
                     rows.push(vec![
                         s(f.alias.clone().unwrap_or_else(|| f.name.to_string())),
-                        s(d.name().to_string()),
+                        s(m(d).sql),
                         s(ccsid::decode_trimmed(&d.header.owner)),
                         n(i as u64 + 1),
                         s(data_type_name(f)),
@@ -308,7 +363,7 @@ pub fn virtual_table(
                         f.text.clone().map_or(Value::Null, s),
                         s(f.name.to_string()),
                         s(d.name().to_string()),
-                        s(lib.to_string()),
+                        s(m(d).schema),
                         f.default
                             .as_ref()
                             .map_or(Value::Null, |dft| s(format!("{dft:?}"))),
@@ -333,24 +388,40 @@ pub fn virtual_table(
                 c("SYSTEM_TABLE_NAME", DataType::Char, 10, 0, false),
                 c("SYSTEM_TABLE_SCHEMA", DataType::Char, 10, 0, false),
                 c("INDEX_TEXT", DataType::Char, 50, 0, true),
+                c("INDEX_HAS_SEARCH_CONDITION", DataType::Char, 1, 0, false),
+                c("SEARCH_CONDITION", DataType::Char, 2000, 0, true),
+                c("INDEX_HAS_INCLUDE_EXPRESSION", DataType::Char, 1, 0, false),
+                c("INCLUDE_EXPRESSION", DataType::Char, 2000, 0, true),
             ];
             let mut rows = Vec::new();
             for (lib, d) in &all {
-                if !is_index(d) {
+                let md = m(d);
+                if !is_index(Some(&md), d) {
                     continue;
                 }
                 let fmt = &d.formats[0];
-                let (tlib, tname) = base_of(txn, fmt);
+                let (tlib, tname, tid) = base_of(txn, fmt);
+                let (tsql, tschema) = match tid {
+                    Some(id) => {
+                        let tl = ops::read_header(txn, id).map_or(id, |(_, h)| h.library);
+                        (crate::exec::names::sql_name(txn, id), crate::exec::names::schema_name(txn, tl))
+                    }
+                    None => (tname.clone(), tlib.clone()),
+                };
+                let def = crate::exec::index::definition(txn, d.id);
+                let search = def.as_ref().map(|x| x.where_text.clone()).filter(|w| !w.is_empty());
+                let include = def.as_ref().filter(|x| !x.includes.is_empty()).map(|x| x.includes.join(", "));
                 rows.push(vec![
-                    s(d.name().to_string()),
+                    s(md.sql.clone()),
                     s(ccsid::decode_trimmed(&d.header.owner)),
-                    s(lib.to_string()),
-                    s(tname.clone()),
-                    s(tlib.clone()),
-                    s(match fmt.unique {
-                        None => "D",
-                        Some(dds::NullKeys::Exclude) => "V",
-                        Some(_) => "U",
+                    s(md.schema.clone()),
+                    s(tsql),
+                    s(tschema),
+                    s(match (fmt.unique, def.as_ref().is_some_and(|x| x.encoded_vector)) {
+                        (_, true) => "E",
+                        (None, _) => "D",
+                        (Some(dds::NullKeys::Exclude), _) => "V",
+                        (Some(_), _) => "U",
                     }),
                     n(fmt.format.keys.len() as u64),
                     s(d.name().to_string()),
@@ -358,6 +429,10 @@ pub fn virtual_table(
                     s(tname),
                     s(tlib),
                     s(ccsid::decode_trimmed(&d.header.text)),
+                    s(if search.is_some() { "Y" } else { "N" }),
+                    search.map_or(Value::Null, s),
+                    s(if include.is_some() { "Y" } else { "N" }),
+                    include.map_or(Value::Null, s),
                 ]);
             }
             (cols, rows)
@@ -372,22 +447,31 @@ pub fn virtual_table(
                 c("ORDERING", DataType::Char, 1, 0, false),
                 c("SYSTEM_INDEX_NAME", DataType::Char, 10, 0, false),
                 c("SYSTEM_INDEX_SCHEMA", DataType::Char, 10, 0, false),
+                c("SYSTEM_COLUMN_NAME", DataType::Char, 10, 0, false),
+                c("COLUMN_IS_EXPRESSION", DataType::Char, 1, 0, false),
+                c("KEY_EXPRESSION", DataType::Char, 2000, 0, true),
             ];
             let mut rows = Vec::new();
             for (lib, d) in &all {
-                if !is_index(d) {
+                let md = m(d);
+                if !is_index(Some(&md), d) {
                     continue;
                 }
-                for (i, k) in d.formats[0].format.keys.iter().enumerate() {
+                let fmt = &d.formats[0].format;
+                for (i, k) in fmt.keys.iter().enumerate() {
+                    let sql = fmt.fields.get(k.field).and_then(|f| f.alias.clone()).unwrap_or_else(|| k.name.to_string());
                     rows.push(vec![
-                        s(d.name().to_string()),
-                        s(lib.to_string()),
-                        s(k.name.to_string()),
+                        s(md.sql.clone()),
+                        s(md.schema.clone()),
+                        s(sql.clone()),
                         n(k.field as u64 + 1),
                         n(i as u64 + 1),
                         s(if k.descend { "D" } else { "A" }),
                         s(d.name().to_string()),
                         s(lib.to_string()),
+                        s(k.name.to_string()),
+                        s("N"),
+                        s(sql),
                     ]);
                 }
             }
@@ -395,63 +479,128 @@ pub fn virtual_table(
         }
         "SYSVIEWS" => {
             let cols = vec![
-                c("VIEW_NAME", DataType::Char, 128, 0, false),
-                c("VIEW_SCHEMA", DataType::Char, 128, 0, false),
-                c("VIEW_DEFINITION", DataType::Char, 2000, 0, true),
-                c("CHECK_OPTION", DataType::Char, 8, 0, false),
+                c("TABLE_NAME", DataType::Char, 128, 0, false),
+                c("VIEW_OWNER", DataType::Char, 128, 0, false),
+                c("SEQNO", DataType::Binary, 9, 0, false),
+                c("CHECK_OPTION", DataType::Char, 1, 0, false),
+                c("VIEW_DEFINITION", DataType::Char, 5000, 0, true),
                 c("IS_UPDATABLE", DataType::Char, 1, 0, false),
+                c("TABLE_SCHEMA", DataType::Char, 128, 0, false),
                 c("SYSTEM_VIEW_NAME", DataType::Char, 10, 0, false),
                 c("SYSTEM_VIEW_SCHEMA", DataType::Char, 10, 0, false),
+                c("IS_INSERTABLE_INTO", DataType::Char, 3, 0, false),
+                c("IASP_NUMBER", DataType::Binary, 4, 0, false),
+                c("IS_DELETABLE", DataType::Char, 1, 0, true),
+                c("VIEW_DEFINER", DataType::Char, 128, 0, true),
+                c("ROUNDING_MODE", DataType::Char, 1, 0, true),
             ];
-            let rows = all
-                .iter()
-                .filter(|(_, d)| table_type(d) == "V")
-                .map(|(lib, d)| {
-                    vec![
-                        s(d.name().to_string()),
-                        s(lib.to_string()),
-                        Value::Null,
-                        s("NONE"),
-                        s(if d.formats[0].logical.as_ref().is_some_and(|l| l.join) {
-                            "N"
-                        } else {
-                            "Y"
-                        }),
-                        s(d.name().to_string()),
-                        s(lib.to_string()),
-                    ]
-                })
-                .collect();
+            let mut rows = Vec::new();
+            for (lib, d) in &all {
+                let md = m(d);
+                if type_of(Some(&md), d) != "V" {
+                    continue;
+                }
+                let def = crate::exec::view::definition(txn, d.id).map(|(v, _)| v);
+                let updatable = match &def {
+                    Some(v) => !v.read_only,
+                    None => !d.formats[0].logical.as_ref().is_some_and(|l| l.join),
+                };
+                let owner = ccsid::decode_trimmed(&d.header.owner);
+                rows.push(vec![
+                    s(md.sql.clone()),
+                    s(owner.clone()),
+                    n(1),
+                    s(match def.as_ref().map(|v| v.check) {
+                        Some(db::sqlinf::body::CheckOption::Cascaded) => "C",
+                        Some(db::sqlinf::body::CheckOption::Local) => "Y",
+                        _ => "N",
+                    }),
+                    def.as_ref().map_or(Value::Null, |v| s(v.query.clone())),
+                    s(if updatable { "Y" } else { "N" }),
+                    s(md.schema.clone()),
+                    s(d.name().to_string()),
+                    s(lib.to_string()),
+                    s(if updatable { "YES" } else { "NO" }),
+                    n(0),
+                    s(if updatable { "Y" } else { "N" }),
+                    s(owner),
+                    Value::Null,
+                ]);
+            }
             (cols, rows)
         }
         "SYSVIEWDEP" => {
             let cols = vec![
                 c("VIEW_NAME", DataType::Char, 128, 0, false),
-                c("VIEW_SCHEMA", DataType::Char, 128, 0, false),
+                c("VIEW_OWNER", DataType::Char, 128, 0, false),
                 c("OBJECT_NAME", DataType::Char, 128, 0, false),
                 c("OBJECT_SCHEMA", DataType::Char, 128, 0, false),
                 c("OBJECT_TYPE", DataType::Char, 24, 0, false),
+                c("VIEW_SCHEMA", DataType::Char, 128, 0, false),
+                c("SYSTEM_VIEW_NAME", DataType::Char, 10, 0, false),
+                c("SYSTEM_VIEW_SCHEMA", DataType::Char, 10, 0, false),
+                c("SYSTEM_TABLE_NAME", DataType::Char, 10, 0, true),
+                c("SYSTEM_TABLE_SCHEMA", DataType::Char, 10, 0, true),
+                c("TABLE_NAME", DataType::Char, 128, 0, true),
+                c("TABLE_OWNER", DataType::Char, 128, 0, true),
+                c("TABLE_SCHEMA", DataType::Char, 128, 0, true),
+                c("TABLE_TYPE", DataType::Char, 1, 0, true),
+                c("IASP_NUMBER", DataType::Binary, 4, 0, false),
             ];
             let mut rows = Vec::new();
             for (lib, d) in &all {
-                if table_type(d) != "V" {
+                let md = m(d);
+                if type_of(Some(&md), d) != "V" {
                     continue;
                 }
-                for fmt in &d.formats {
-                    let Some(l) = &fmt.logical else { continue };
-                    for (id, _) in &l.based_on {
-                        let (blib, bname) = name_of(txn, *id);
-                        rows.push(vec![
-                            s(d.name().to_string()),
-                            s(lib.to_string()),
-                            s(bname),
-                            s(blib),
-                            s("TABLE"),
-                        ]);
+                // What it depends on: its DEPENDENCY entries, else the
+                // files a logical view is based on.
+                let mut on: Vec<ObjectId> = Vec::new();
+                if let Some((_, deps)) = crate::exec::view::definition(txn, d.id) {
+                    for dep in deps {
+                        if let Some(id) = crate::exec::view::dependency_object(txn, ctx.qsys, &dep) {
+                            on.push(id);
+                        }
                     }
                 }
+                if on.is_empty() {
+                    for fmt in &d.formats {
+                        if let Some(l) = &fmt.logical {
+                            on.extend(l.based_on.iter().map(|(id, _)| *id));
+                        }
+                    }
+                }
+                on.dedup();
+                let owner = ccsid::decode_trimmed(&d.header.owner);
+                for id in on {
+                    let (blib, bname) = name_of(txn, id);
+                    let (obj_sql, obj_schema, obj_type, obj_owner) = match all.iter().find(|(_, f)| f.id == id) {
+                        Some((_, f)) => {
+                            let om = m(f);
+                            let t = type_of(Some(&om), f);
+                            (om.sql, om.schema, t, ccsid::decode_trimmed(&f.header.owner))
+                        }
+                        None => (bname.clone(), blib.clone(), "T", String::new()),
+                    };
+                    rows.push(vec![
+                        s(md.sql.clone()),
+                        s(owner.clone()),
+                        s(obj_sql.clone()),
+                        s(obj_schema.clone()),
+                        s(if obj_type == "V" { "VIEW" } else { "TABLE" }),
+                        s(md.schema.clone()),
+                        s(d.name().to_string()),
+                        s(lib.to_string()),
+                        s(bname),
+                        s(blib),
+                        s(obj_sql),
+                        s(obj_owner),
+                        s(obj_schema),
+                        s(obj_type),
+                        n(0),
+                    ]);
+                }
             }
-            rows.dedup();
             (cols, rows)
         }
         "SYSCST" | "SYSCSTCOL" | "SYSKEYCST" => constraints(which, alias, &all),
@@ -487,7 +636,7 @@ pub fn virtual_table(
                     continue;
                 };
                 rows.push(vec![
-                    s(h.name.to_string()),
+                    s(crate::exec::names::schema_name(txn, id)),
                     s(ccsid::decode_trimmed(&h.owner)),
                     s(h.name.to_string()),
                     s(ccsid::decode_trimmed(&h.text)),
@@ -610,11 +759,14 @@ fn name_of(txn: &mut Txn<'_>, id: ObjectId) -> (String, String) {
 }
 
 /// The first based-on file of a logical format.
-fn base_of(txn: &mut Txn<'_>, fmt: &db::format::FormatDef) -> (String, String) {
-    fmt.logical
-        .as_ref()
-        .and_then(|l| l.based_on.first())
-        .map_or((String::new(), String::new()), |(id, _)| name_of(txn, *id))
+fn base_of(txn: &mut Txn<'_>, fmt: &db::format::FormatDef) -> (String, String, Option<ObjectId>) {
+    match fmt.logical.as_ref().and_then(|l| l.based_on.first()) {
+        Some((id, _)) => {
+            let (l, n) = name_of(txn, *id);
+            (l, n, Some(*id))
+        }
+        None => (String::new(), String::new(), None),
+    }
 }
 
 /// `SYSCST`, `SYSCSTCOL` and `SYSKEYCST`: the primary keys, which are

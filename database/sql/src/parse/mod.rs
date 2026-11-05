@@ -9,6 +9,7 @@
 mod ddl;
 mod dml;
 mod expr;
+mod objects;
 mod query;
 
 use crate::ast::{
@@ -82,6 +83,8 @@ pub struct Parser {
     params: usize,
     /// Expressions and queries open around the current token.
     depth: u16,
+    /// The statement text, for the parts kept as written (a view's query).
+    src: String,
 }
 
 impl Parser {
@@ -93,6 +96,7 @@ impl Parser {
             naming,
             params: 0,
             depth: 0,
+            src: text.to_string(),
         })
     }
 
@@ -579,6 +583,11 @@ impl Parser {
 
     fn declare(&mut self) -> Result<Statement> {
         self.expect_word("DECLARE")?;
+        if self.is_words(&["GLOBAL", "TEMPORARY"]) {
+            // BLOCKED(sql): QTEMP is in the temporary ASP, and a statement
+            // runs in one ASP's transaction.
+            return Err(Self::unsupported("DECLARE GLOBAL TEMPORARY TABLE: tables in QTEMP"));
+        }
         let name = self.ident()?;
         self.eat_word("DYNAMIC");
         let scroll = self.eat_word("SCROLL");

@@ -127,6 +127,9 @@ fn run_body(
     outer: &Env,
     explain_only: bool,
 ) -> Result<(Rc<Schema>, Vec<Produced>)> {
+    // Views that run their query come in as derived tables.
+    let expanded = super::view::expand(txn, ctx, q)?;
+    let q = expanded.as_ref().unwrap_or(q);
     let (schema, mut produced) = body(txn, ctx, params, &q.body, outer, q, explain_only)?;
     if !q.order_by.is_empty() && !matches!(q.body, QueryBody::Select(_)) {
         order_rows(txn, ctx, params, &schema, &mut produced, &q.order_by)?;
@@ -1495,4 +1498,33 @@ pub fn describe_table(t: &TableInfo) -> Vec<ColumnDesc> {
             nullable: f.allow_null,
         })
         .collect()
+}
+
+/// The visible result columns of a query and its rows, as `CREATE TABLE
+/// AS` takes them.
+pub(crate) fn columns_and_rows(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    q: &Query,
+) -> Result<(Vec<ColInfo>, Vec<Row>)> {
+    let (schema, produced) = run_body(txn, ctx, params, q, &Env::default(), false)?;
+    let visible: Vec<usize> = schema.cols.iter().enumerate().filter(|(_, c)| !c.hidden).map(|(i, _)| i).collect();
+    let cols = visible.iter().map(|&i| schema.cols[i].clone()).collect();
+    let rows = produced.into_iter().map(|p| visible.iter().map(|&i| p.out[i].clone()).collect()).collect();
+    Ok((cols, rows))
+}
+
+/// The result columns of a query as planned, without reading its rows.
+pub(crate) fn columns_and_rows_planned(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    q: &Query,
+) -> Result<(Vec<ColInfo>, Vec<Row>)> {
+    let kept = std::mem::take(&mut ctx.explain);
+    let r = run_body(txn, ctx, params, q, &Env::default(), true);
+    ctx.explain = kept;
+    let (schema, _) = r?;
+    Ok((schema.cols.iter().filter(|c| !c.hidden).cloned().collect(), Vec::new()))
 }

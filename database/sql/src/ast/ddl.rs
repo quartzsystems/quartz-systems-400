@@ -105,6 +105,12 @@ pub struct CreateTable {
     pub as_query: Option<(Box<Query>, bool)>,
     /// `OR REPLACE`.
     pub replace: bool,
+    /// `LIKE table`, or `(LIKE table)` (true: every column nullable).
+    pub like: Option<(ObjectName, bool)>,
+    /// `ON REPLACE PRESERVE ROWS` (the default) or `DELETE ROWS`.
+    pub preserve_rows: bool,
+    /// The column names of `CREATE TABLE t (a, b) AS (query)`.
+    pub column_names: Vec<Ident>,
 }
 
 /// One `ALTER TABLE` action.
@@ -157,6 +163,12 @@ pub struct CreateIndex {
     pub columns: Vec<(Ident, bool)>,
     /// `RCDFMT`.
     pub rcdfmt: Option<Ident>,
+    /// `WHERE`: the sparse condition and its text as written.
+    pub sparse: Option<(Expr, String)>,
+    /// `ENCODED VECTOR`.
+    pub encoded_vector: bool,
+    /// `INCLUDE` aggregates of an encoded vector index, as written.
+    pub includes: Vec<String>,
 }
 
 /// `CREATE VIEW`.
@@ -170,6 +182,14 @@ pub struct CreateView {
     pub query: Box<Query>,
     /// `WITH CHECK OPTION`.
     pub check_option: bool,
+    /// `WITH LOCAL CHECK OPTION` (else `CASCADED`).
+    pub local: bool,
     /// `OR REPLACE`.
     pub replace: bool,
+    /// `FOR SYSTEM NAME`.
+    pub system_name: Option<Ident>,
+    /// The query as written.
+    pub query_text: String,
+    /// `RCDFMT`.
+    pub rcdfmt: Option<Ident>,
 }

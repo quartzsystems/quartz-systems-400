@@ -20,7 +20,7 @@ use crate::ast::{
 use crate::error::{Result, SqlError};
 
 /// One DDS line: positional columns 6, 17, 19, 30-34, 35, 36-37 and 45.
-fn dds(name_type: &str, name: &str, len: &str, ty: &str, dec: &str, kw: &str) -> String {
+pub(crate) fn dds(name_type: &str, name: &str, len: &str, ty: &str, dec: &str, kw: &str) -> String {
     let mut s = vec![' '; 80];
     let put = |s: &mut Vec<char>, col: usize, text: &str| {
         for (i, ch) in text.chars().enumerate() {
@@ -40,7 +40,7 @@ fn dds(name_type: &str, name: &str, len: &str, ty: &str, dec: &str, kw: &str) ->
 }
 
 /// A keyword line alone.
-fn kw(k: &str) -> String {
+pub(crate) fn kw(k: &str) -> String {
     dds("", "", "", "", "", k)
 }
 
@@ -217,10 +217,14 @@ fn sql_only_shape(t: &DataType) -> (u32, bool) {
 
 /// The DDS field line(s) of a column.
 fn column_lines(c: &ColumnDef) -> Result<Vec<String>> {
+    column_lines_as(c, sys_name(&c.name, c.system_name.as_ref())?)
+}
+
+/// The DDS field line(s) of a column whose system name is `name`.
+pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> {
     if c.name.value.chars().count() > db::format::sections::ALIAS_MAX {
         return Err(SqlError::NameTooLong { name: c.name.value.clone(), max: db::format::sections::ALIAS_MAX });
     }
-    let name = sys_name(&c.name, c.system_name.as_ref())?;
     let (len, ty, dec, mut kws): (String, &str, String, Vec<String>) = match &c.type_spec.data_type
     {
         DataType::Char(n) => (n.to_string(), "A", String::new(), vec![]),
@@ -284,19 +288,22 @@ fn column_lines(c: &ColumnDef) -> Result<Vec<String>> {
     Ok(lines)
 }
 
-/// `CREATE TABLE`: a physical file from the generated DDS.
-pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) -> Result<()> {
-    if t.as_query.is_some() {
-        return Err(SqlError::Unsupported {
-            what: "CREATE TABLE AS".into(),
-        });
-    }
-    let name = sys_name(&t.name.name, t.system_name.as_ref())?;
+/// `CREATE TABLE` of columns: a physical file from the generated DDS,
+/// its SQL names kept. `AS`, `LIKE` and `OR REPLACE` are `table`'s.
+pub fn create_table_def(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) -> Result<store::obj::ObjectId> {
     let library = ctx.library_for(txn, &t.name)?;
+    let (name, sql) = super::names::new_object(txn, library, &t.name.name, t.system_name.as_ref())?;
+    let col_names = super::table::column_names(&t.columns)?;
+    let col_sys = |i: &Ident| -> Result<Name> {
+        t.columns
+            .iter()
+            .position(|c| c.name.value == i.value)
+            .map_or_else(|| SqlContext::sys_name(i), |p| Ok(col_names[p]))
+    };
     let rcdfmt = match &t.rcdfmt {
         Some(r) => SqlContext::sys_name(r)?,
         // IBM names the format after the table.
-        None => name,
+        None => super::names::format_name(name),
     };
     // Keys: the primary key, from the table or a column; UNIQUE
     // constraints become unique indexes afterwards.
@@ -307,7 +314,7 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
             Constraint::PrimaryKey { columns, .. } => {
                 keys = columns
                     .iter()
-                    .map(SqlContext::sys_name)
+                    .map(col_sys)
                     .collect::<Result<_>>()?;
             }
             Constraint::Unique { name, columns } => {
@@ -316,9 +323,9 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
             Constraint::ForeignKey { .. } | Constraint::Check { .. } => {}
         }
     }
-    for c in &t.columns {
+    for (c, n) in t.columns.iter().zip(&col_names) {
         if c.primary_key {
-            keys.push(sys_name(&c.name, c.system_name.as_ref())?);
+            keys.push(*n);
         }
         if c.unique && !c.primary_key {
             uniques.push((None, vec![c.name.clone()]));
@@ -329,8 +336,8 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
         lines.push(kw("UNIQUE"));
     }
     lines.push(dds("R", &rcdfmt.to_string(), "", "", "", ""));
-    for c in &t.columns {
-        lines.extend(column_lines(c)?);
+    for (c, n) in t.columns.iter().zip(&col_names) {
+        lines.extend(column_lines_as(c, *n)?);
     }
     for k in &keys {
         lines.push(dds("K", &k.to_string(), "", "", "", ""));
@@ -348,16 +355,15 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
         &def,
         &CreateFileOpts {
             now: ctx.clock(),
-            text: format!(
-                "SQL table {}",
-                t.name.name.value.chars().take(40).collect::<String>()
-            ),
+            // IBM leaves an SQL table's text blank; its kind is in its
+            // `*SQLINF`.
+            text: String::new(),
             // An SQL table has no size limit: SIZE(*NOMAX).
             size: file::Size::NOMAX,
             ..CreateFileOpts::default()
         },
     )?;
-    journal_in_schema(txn, ctx, library, id)?;
+    finish_table(txn, ctx, library, id, sql.as_deref(), &t.name.name.value)?;
     let mut anon = 0;
     for (cname, columns) in uniques {
         if cname.is_none() {
@@ -365,7 +371,7 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
         }
         add_unique(txn, ctx, &t.name, &name, anon, cname.as_ref(), &columns)?;
     }
-    Ok(())
+    Ok(id)
 }
 
 /// The journal a schema keeps for its tables.
@@ -418,19 +424,40 @@ pub fn create_schema(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &Ident) -> R
     Ok(())
 }
 
-/// A table made in a library with `QSQJRN` (a schema) is journaled to it.
+/// What every new SQL table gets: its SQL name kept, journaling in a
+/// schema, else the `SQL7905` warning (none in QTEMP).
+pub(crate) fn finish_table(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    library: store::obj::ObjectId,
+    id: store::obj::ObjectId,
+    sql: Option<&str>,
+    shown: &str,
+) -> Result<()> {
+    super::names::record(txn, library, id, db::sqlinf::Kind::Table, sql, ctx.clock())?;
+    if !journal_in_schema(txn, ctx, library, id)? {
+        let lib = store::obj::ops::read_header(txn, library)?.1.name.to_string();
+        if lib != "QTEMP" {
+            ctx.warning = Some(crate::sqlca::Warning::not_journaled(shown, &lib));
+        }
+    }
+    Ok(())
+}
+
+/// A table made in a library with `QSQJRN` (a schema) is journaled to it;
+/// false when the library has none.
 fn journal_in_schema(
     txn: &mut Txn<'_>,
     ctx: &SqlContext,
     library: store::obj::ObjectId,
     file: store::obj::ObjectId,
-) -> Result<()> {
+) -> Result<bool> {
     let lib = store::obj::library::Library::load(txn, library)?;
     let Some(journal) = lib.lookup(txn, jrn::JRN, Name::parse(SCHEMA_JOURNAL).expect("valid"))? else {
-        return Ok(());
+        return Ok(false);
     };
     db::journal::strjrnpf(txn, ctx.job, file, journal, true, false, ctx.clock())?;
-    Ok(())
+    Ok(true)
 }
 
 /// A `UNIQUE` constraint: a unique index over the columns, its file
@@ -463,6 +490,9 @@ pub fn add_unique(
         table: table.clone(),
         columns: columns.iter().map(|c| (c.clone(), false)).collect(),
         rcdfmt: None,
+        sparse: None,
+        encoded_vector: false,
+        includes: Vec::new(),
     };
     create_index_with_text(txn, ctx, &i, &format!("{UNIQUE_TEXT}{cname}"))
 }
@@ -825,14 +855,14 @@ fn create_index_with_text(
             msgid: None,
         });
     };
-    build_index(txn, ctx, &table, library, name, &def, text)
+    build_index(txn, ctx, &table, library, name, &def, text).map(|_| ())
 }
 
 /// The index file over `table`, its path built taking turns: the table
 /// held `*SHRNUP` throughout (read, never changed, by others), the new
 /// file `*EXCL` from its creation, and the file gone again when the
 /// build fails or is ended.
-fn build_index(
+pub(crate) fn build_index(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
     table: &TableInfo,
@@ -840,7 +870,7 @@ fn build_index(
     name: Name,
     def: &dds::LfDefinition,
     text: &str,
-) -> Result<()> {
+) -> Result<store::obj::ObjectId> {
     let base = table.id;
     let job = ctx.job;
     let now = ctx.clock();
@@ -876,7 +906,7 @@ fn build_index(
     }
     base_hold.release(txn);
     built?;
-    Ok(())
+    Ok(lf)
 }
 
 /// `DROP TABLE`, `DROP INDEX`, `DROP VIEW`: the file and, for a table,
@@ -915,7 +945,7 @@ fn selomit_literal(e: &Expr) -> Result<String> {
 
 /// The `S` lines of a view's `WHERE`: `AND`ed comparisons of a column
 /// with a literal, `BETWEEN` and `IN` lists.
-fn select_lines(
+pub(crate) fn select_lines(
     e: &Expr,
     out: &mut Vec<String>,
     renames: &std::collections::HashMap<Name, Name>,
@@ -1005,7 +1035,9 @@ pub fn create_view(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
     v: &crate::ast::CreateView,
-) -> Result<()> {
+    library: store::obj::ObjectId,
+    name: Name,
+) -> Result<store::obj::ObjectId> {
     use crate::ast::{QueryBody, SelectItem, TableRef};
     let QueryBody::Select(sel) = &v.query.body else {
         return Err(SqlError::Unsupported {
@@ -1028,8 +1060,6 @@ pub fn create_view(
         });
     };
     let table = ctx.resolve_table(txn, tname)?;
-    let name = SqlContext::sys_name(&v.name.name)?;
-    let library = ctx.library_for(txn, &v.name)?;
     let lib_name = table.desc.library_name;
     let file_name = table.desc.name();
     let mut lines = vec![dds(
@@ -1127,22 +1157,16 @@ pub fn create_view(
         });
     };
     let base_id = table.id;
-    file::create_lf(
+    Ok(file::create_lf(
         txn,
         library,
         name,
         &def,
         &mut |_| Ok(base_id),
-        &CreateFileOpts {
-            now: ctx.clock(),
-            text: format!(
-                "SQL view {}",
-                v.name.name.value.chars().take(41).collect::<String>()
-            ),
-            ..CreateFileOpts::default()
-        },
-    )?;
-    Ok(())
+        // IBM leaves an SQL view's text blank; its kind is in its
+        // `*SQLINF`.
+        &CreateFileOpts { now: ctx.clock(), text: String::new(), ..CreateFileOpts::default() },
+    )?)
 }
 
 /// `LABEL ON` and `COMMENT ON`: the object's text, or a column's

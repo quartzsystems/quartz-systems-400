@@ -861,6 +861,7 @@ pub fn delete_file(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId) -> Result<
     for m in &desc.members {
         member::destroy(txn, job, m.object)?;
     }
+    crate::sqlinf::names::forget(txn, file)?;
     ops::delete(txn, job, file)?;
     Ok(())
 }

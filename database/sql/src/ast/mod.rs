@@ -120,8 +120,10 @@ pub enum Statement {
     DropTable {
         /// The table.
         name: ObjectName,
-        /// `CASCADE` (else `RESTRICT`).
+        /// `CASCADE`.
         cascade: bool,
+        /// `RESTRICT`.
+        restrict: bool,
     },
     /// `CREATE INDEX`.
     CreateIndex(CreateIndex),
@@ -130,7 +132,23 @@ pub enum Statement {
     /// `CREATE VIEW`.
     CreateView(CreateView),
     /// `DROP VIEW`.
-    DropView(ObjectName),
+    DropView {
+        /// The view.
+        name: ObjectName,
+        /// `CASCADE`.
+        cascade: bool,
+        /// `RESTRICT`.
+        restrict: bool,
+    },
+    /// `DROP SCHEMA`.
+    DropSchema {
+        /// The schema.
+        name: Ident,
+        /// `CASCADE`.
+        cascade: bool,
+        /// `RESTRICT`.
+        restrict: bool,
+    },
     /// `CREATE SCHEMA`.
     CreateSchema(Ident),
     /// `CREATE ALIAS`.

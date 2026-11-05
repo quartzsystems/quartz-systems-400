@@ -150,3 +150,38 @@ pub fn list(txn: &mut Txn<'_>, lib: ObjectId, space: Space) -> Result<Vec<(Strin
     }
     Ok(out)
 }
+
+impl crate::sqlinf::Kind {
+    /// The namespace an object of this kind's SQL name lives in.
+    #[must_use]
+    pub fn space(self) -> Space {
+        use crate::sqlinf::Kind as K;
+        match self {
+            K::Table | K::View | K::Alias | K::Mqt => Space::Table,
+            K::Index => Space::Index,
+            K::Procedure | K::Function => Space::Specific,
+            K::Sequence => Space::Sequence,
+            K::Variable => Space::Variable,
+            K::Type => Space::Type,
+            K::Trigger => Space::Trigger,
+        }
+    }
+}
+
+/// Forget the SQL name `owner` has in its library's index (or QSYS's,
+/// for a schema), as the object goes. Nothing when it has none.
+pub fn forget(txn: &mut Txn<'_>, owner: ObjectId) -> Result<()> {
+    let Some(info) = crate::sqlinf::load(txn, owner)? else {
+        return Ok(());
+    };
+    let Some(name) = info.name() else {
+        return Ok(());
+    };
+    let (_, h) = ops::read_header(txn, owner)?;
+    if let Some(t) = find(txn, h.library, info.kind.space(), &name)?
+        && t.id == owner
+    {
+        remove(txn, h.library, info.kind.space(), &name)?;
+    }
+    Ok(())
+}

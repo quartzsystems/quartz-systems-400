@@ -155,6 +155,13 @@ pub fn build_record(
             record::set_null(&mut nulls, ni, matches!(dbv, DbValue::Null));
         }
     }
+    // A view made WITH CHECK OPTION takes only rows it would show.
+    if let Some(view) = super::view::check_option(txn, t)
+        && let Some(log) = &fmt.logical
+        && !db::lf::selected(fmt, log, &rec, &nulls)?
+    {
+        return Err(SqlError::CheckOption { view });
+    }
     Ok((rec, nulls))
 }
 
@@ -242,6 +249,20 @@ pub fn insert(
             }
         }
     }
+    write_rows(txn, ctx, params, &t, &idx, rows)
+}
+
+/// Write rows of values for the fields `idx` into `t`, `None` for a
+/// field's default: rows written.
+pub(crate) fn write_rows(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    t: &TableInfo,
+    idx: &[usize],
+    rows: Vec<Vec<Option<Value>>>,
+) -> Result<u64> {
+    let t = t.clone();
     let mut o = ctx.open(txn, &t, Usage::OUTPUT)?;
     let mut n = 0u64;
     let mut result = Ok(());

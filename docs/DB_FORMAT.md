@@ -716,6 +716,58 @@ The attribute area holds `SqlInfAttr`; the byte space holds
 | 13 `VIEW` | a view's attributes and query text |
 | 14 `OPTIONS` | the `SET OPTION` values a routine or trigger was made with |
 
+A schema keeps its SQL name only in QSYS's name index (a `*LIB` owns
+no `*SQLINF`). An object keeps a `NAME` entry only when its SQL
+name is not its system name; it is the key of its entry in the name
+index (§8.2), which the database drops as the object goes.
+
+### `SqlView` (variable)
+
+The `VIEW` entry of a view whose query runs as a query (a view the
+select/omit rules of a logical file can say keeps none: its logical
+format is the definition). `columns` are `column_count` names, each a
+2-byte length and UTF-8.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | check_option | 0 none, 1 `CASCADED`, 2 `LOCAL` |
+| 1 | 1 | flags | bit 0 read only, bit 1 the query is in system naming |
+| 2 | 2 | column_count | |
+| 4 | 4 | query_len | |
+| 8 | variable | query | the query after `AS`, UTF-8 |
+| 8 + query_len | variable | columns | the view's column names |
+
+### `SqlIndex` (variable)
+
+The `INDEX` entry. `keys` are `key_count` entries of a 1-byte kind (0 a
+column, 1 an expression), a 1-byte `DESC` flag, a 2-byte length and the
+column's SQL name or the expression's text; `includes` are
+`include_count` 2-byte lengths and texts.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | flags | bit 0 `UNIQUE WHERE NOT NULL`, bit 1 `ENCODED VECTOR` |
+| 1 | 1 | reserved | 0 |
+| 2 | 2 | key_count | |
+| 4 | 2 | include_count | |
+| 6 | 2 | reserved2 | 0 |
+| 8 | 4 | where_len | 0 for no `WHERE` |
+| 12 | variable | where | the sparse condition, UTF-8 |
+| 12 + where_len | variable | keys | the keys as written |
+| — | variable | includes | `INCLUDE` aggregates |
+
+### `SqlDependency` (32 bytes)
+
+The `DEPENDENCY` entry: one object a view depends on, by name.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | type_code | the store's type |
+| 2 | 2 | reserved | 0 |
+| 4 | 10 | library | CP037 |
+| 14 | 10 | name | CP037 system name |
+| 24 | 8 | reserved2 | 0 |
+
 ### 8.2 The SQL name index
 
 A B+tree in a library header's tree root slot 0, keyed by `SqlNameKey`

@@ -113,3 +113,41 @@ impl Sqlca {
         )
     }
 }
+
+/// A warning a statement that succeeded leaves: a positive `SQLCODE`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Warning {
+    /// The `SQLCODE`, positive.
+    pub sqlcode: i32,
+    /// The `SQLSTATE`, class `01`.
+    pub sqlstate: &'static str,
+    /// The message tokens, here the text.
+    pub text: String,
+}
+
+impl Warning {
+    /// `SQL7905`: a table made in a library that is not a schema is not
+    /// journaled.
+    #[must_use]
+    pub fn not_journaled(table: &str, library: &str) -> Self {
+        Self { sqlcode: 7905, sqlstate: "01567", text: format!("table {table} in {library} was made but is not journaled") }
+    }
+
+    /// `SQL0569`: a privilege the user did not have was not revoked.
+    #[must_use]
+    pub fn not_all_revoked(object: &str) -> Self {
+        Self { sqlcode: 569, sqlstate: "01006", text: format!("not every privilege named was revoked from {object}") }
+    }
+
+    /// The SQLCA of a statement that succeeded with this warning.
+    #[must_use]
+    pub fn apply(&self, mut ca: Sqlca) -> Sqlca {
+        if ca.sqlcode == 0 || ca.sqlcode == 100 {
+            ca.sqlcode = self.sqlcode;
+            ca.sqlstate = self.sqlstate.into();
+            ca.sqlerrmc.clone_from(&self.text);
+            ca.sqlwarn[0] = 'W';
+        }
+        ca
+    }
+}

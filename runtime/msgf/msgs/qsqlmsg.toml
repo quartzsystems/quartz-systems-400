@@ -367,3 +367,74 @@ sev = 30
 text = "&1 is not valid for the naming in use."
 help = "The qualified name uses the separator of the other naming convention. Qualify it with . under SQL naming or / under system naming."
 vars = ["*CHAR 256"]
+
+# Objects and names (SQL completion, DDL).
+
+[[msg]]
+id = "SQL0079"
+sev = 30
+text = "Schema &1 cannot hold &2."
+help = "A declared global temporary table lives in QTEMP; qualify it with SESSION or QTEMP, or leave it unqualified."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0153"
+sev = 30
+text = "A column list is needed."
+help = "A column of the query has no name of its own (an expression without AS). Name it with AS or give the column names in the statement."
+
+[[msg]]
+id = "SQL0161"
+sev = 30
+text = "The row does not satisfy the definition of view &1 in &2."
+help = "The view was made WITH CHECK OPTION and the inserted or updated row would not be seen through it. Change the values so that the row meets the view's condition."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0557"
+sev = 30
+text = "The privilege is not valid for &1 in &2."
+help = "A view cannot be given the INDEX privilege, and a column privilege names a privilege columns do not have. Grant a privilege the object has."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0569"
+sev = 10
+text = "Not every privilege named was revoked from &1 in &2."
+help = "The user did not hold some of the privileges named, so there was nothing to take away for them. The others were revoked."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL0601"
+sev = 30
+text = "&1 in &2 type &3 already exists."
+help = "An object of that name and type is in the schema. Choose another name, drop the object first, or use OR REPLACE where the statement allows it."
+vars = ["*CHAR 128", "*CHAR 128", "*CHAR 7"]
+
+[[msg]]
+id = "SQL0616"
+sev = 30
+text = "&1 in &2 cannot be dropped with RESTRICT."
+help = "Views, indexes or other objects depend on it. Drop them first, or drop it without RESTRICT so that they go with it."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL7027"
+sev = 30
+text = "The privileges named cannot be granted on &1 in &2."
+help = "A read-only view takes SELECT, ALTER and REFERENCES only. Grant a privilege the view can have."
+vars = ["*CHAR 128", "*CHAR 128"]
+
+[[msg]]
+id = "SQL7029"
+sev = 30
+text = "System name &1 cannot be given."
+help = "FOR SYSTEM NAME is for an SQL name that is not itself a valid system name, and the system name must be a valid one. Leave the clause out or correct the name."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "SQL7905"
+sev = 10
+text = "Table &1 in &2 was made but is not journaled."
+help = "The library is not an SQL schema, so it has no QSQJRN journal to start journaling to. The table works; changes to it under commitment control need journaling started with STRJRNPF."
+vars = ["*CHAR 128", "*CHAR 128"]

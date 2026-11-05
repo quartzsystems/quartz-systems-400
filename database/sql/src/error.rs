@@ -195,6 +195,66 @@ pub enum SqlError {
         what: String,
     },
 
+    /// An object of that name exists (`SQL0601`).
+    #[error("{name} type {kind} already exists")]
+    Exists {
+        /// The name.
+        name: String,
+        /// Its type, `*FILE`, `*LIB`, ...
+        kind: &'static str,
+    },
+
+    /// `FOR SYSTEM NAME` that cannot be given (`SQL7029`).
+    #[error("system name {name} cannot be given here")]
+    SystemName {
+        /// The system name.
+        name: String,
+    },
+
+    /// `RESTRICT` with dependents (`SQL0616`).
+    #[error("{name} cannot be dropped with RESTRICT: {what} depend on it")]
+    Restrict {
+        /// The object.
+        name: String,
+        /// What depends on it.
+        what: String,
+    },
+
+    /// A result column with no name where one is needed (`SQL0153`).
+    #[error("a column list is needed: a result column has no name")]
+    ColumnListRequired,
+
+    /// The object is not valid where it was named (`SQL0079`, a declared
+    /// temporary table outside `SESSION`/`QTEMP`).
+    #[error("schema {schema} is not valid for {name}")]
+    SchemaNotValid {
+        /// The schema.
+        schema: String,
+        /// The object.
+        name: String,
+    },
+
+    /// A row a view's check option refuses (`SQL0161`).
+    #[error("the row does not satisfy the definition of view {view}")]
+    CheckOption {
+        /// The view.
+        view: String,
+    },
+
+    /// A privilege the object does not have (`SQL0557`).
+    #[error("privilege not valid for {name}")]
+    PrivilegeNotValid {
+        /// The object.
+        name: String,
+    },
+
+    /// A privilege that cannot be granted on the object (`SQL7027`).
+    #[error("the privileges cannot be granted on {name}")]
+    CannotGrant {
+        /// The object.
+        name: String,
+    },
+
     /// The database failed in a way SQL has no code for.
     #[error("database error: {what}")]
     Database {
@@ -233,6 +293,14 @@ impl SqlError {
             Self::TooComplex => -101,
             Self::ResourceLimit { .. } => -904,
             Self::UnitOfWork { .. } => -428,
+            Self::Exists { .. } => -601,
+            Self::SystemName { .. } => -7029,
+            Self::Restrict { .. } => -616,
+            Self::ColumnListRequired => -153,
+            Self::SchemaNotValid { .. } => -79,
+            Self::CheckOption { .. } => -161,
+            Self::PrivilegeNotValid { .. } => -557,
+            Self::CannotGrant { .. } => -7027,
             Self::Database { .. } => -901,
         }
     }
@@ -264,6 +332,14 @@ impl SqlError {
             Self::TooComplex => "54001",
             Self::ResourceLimit { .. } => "57011",
             Self::UnitOfWork { .. } => "25001",
+            Self::Exists { .. } => "42710",
+            Self::SystemName { .. } => "428B8",
+            Self::Restrict { .. } => "42893",
+            Self::ColumnListRequired => "42908",
+            Self::SchemaNotValid { .. } => "58020",
+            Self::CheckOption { .. } => "44000",
+            Self::PrivilegeNotValid { .. } => "42852",
+            Self::CannotGrant { .. } => "42984",
             Self::Database { .. } => "58004",
         }
     }

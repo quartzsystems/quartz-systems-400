@@ -227,7 +227,7 @@ fn catalogs() {
         [row(&["1", "Alice"]), row(&["3", "Carol"])]
     );
     assert_eq!(
-        db.rows("SELECT VIEW_NAME, IS_UPDATABLE FROM qsys2/sysviews"),
+        db.rows("SELECT TABLE_NAME, IS_UPDATABLE FROM qsys2/sysviews"),
         [row(&["ACTIVE", "Y"])]
     );
     assert_eq!(
@@ -240,18 +240,14 @@ fn catalogs() {
     );
     db.ok("CREATE VIEW bigs AS SELECT * FROM cust WHERE bal BETWEEN 100 AND 1000 AND name IN ('Carol', 'Zed')");
     assert_eq!(db.rows("SELECT name FROM bigs"), [row(&["Carol"])]);
-    assert_eq!(
-        db.code("CREATE VIEW bad AS SELECT c.cusno FROM cust c JOIN orders o ON c.cusno = o.cusno"),
-        -84
-    );
+    // Views the select/omit rules cannot say run their queries.
+    db.ok("CREATE VIEW joined AS SELECT c.cusno FROM cust c JOIN orders o ON c.cusno = o.cusno");
     assert_eq!(
         db.code("CREATE VIEW bad AS SELECT cusno + 1 FROM cust"),
-        -84
+        -153
     );
-    assert_eq!(
-        db.code("CREATE VIEW nosel AS SELECT cusno FROM cust WHERE bal > 0"),
-        -84
-    );
+    db.ok("CREATE VIEW nosel AS SELECT cusno FROM cust WHERE bal > 0");
+    assert_eq!(db.rows("SELECT cusno FROM nosel ORDER BY cusno"), [row(&["1"]), row(&["3"])]);
     db.ok("DROP VIEW active");
     assert_eq!(db.code("SELECT * FROM active"), -204);
 }
@@ -386,7 +382,7 @@ fn statement_files() {
         (5, 1, 30)
     );
     assert!(
-        report.listing.contains("CREATE TABLE: SQLCODE 0"),
+        report.listing.contains("CREATE TABLE: SQL7905 SQLCODE 7905"),
         "{}",
         report.listing
     );
