@@ -42,6 +42,8 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::sqlinf::var::VARIABLE_LAYOUT,
         &crate::sqlinf::var::TYPE_LAYOUT,
         &crate::sqlinf::var::COLTYPE_LAYOUT,
+        &crate::sqlinf::colstats::COLSTATS_LAYOUT,
+        &crate::sqlinf::colstats::VALUE_LAYOUT,
         &crate::trg::buffer::LAYOUT,
         &crate::sqlinf::routine::ROUTINE_LAYOUT,
         &crate::sqlinf::routine::PARM_LAYOUT,

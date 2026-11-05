@@ -179,6 +179,10 @@ fns = ["find", "put", "remove", "list", "forget"]
 reason = "an identity or generated column's attributes: ALTER TABLE and CREATE TABLE write them after their checks (file.change, the store's create); a write through an open data path (check_open) advances the counter"
 fns = ["columns", "store_columns"]
 
+[file."database/db/src/sqlinf/colstats.rs"]
+reason = "a physical file's column statistics: written by CREATE INDEX after its checks and by the collection job (QDBFSTCCOL, a system job), read by the planner and SYSCOLUMNSTAT for a file the statement found and checked"
+fns = ["load", "store"]
+
 [file."database/db/src/sqlpkg/mod.rs"]
 reason = "callers check (sql embed/package.rs): create through the store's create (lib.create-in), load for RETURN after sqlpkg.use and for ADD and CLEAR after sqlpkg.change, save after sqlpkg.change or on a package BIND just made, delete through the store's delete (obj.delete) after obj.delete; find checks lib.search"
 fns = ["create", "load", "save", "delete"]

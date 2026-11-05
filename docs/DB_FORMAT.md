@@ -296,7 +296,7 @@ At offset 0 of the attribute area of a `*MBR`.
 | 24 | 8 | deleted_count | deleted records still holding a slot |
 | 32 | 8 | slots | slots used; the next new record is RRN `slots + 1` unless a slot is reused |
 | 40 | 8 | max_records | from `SIZE`, 0 for `*NOMAX` |
-| 48 | 8 | increment_slots | slots added when the space grows |
+| 48 | 8 | increment_slots | slots added when the space grows, or an eighth of `slots` when that is more (the extents stay few) |
 | 56 | 8 | path_entries | entries in the access path |
 | 64 | 2 | key_len | encoded key bytes without the format tag and RRN tail, 0 for arrival sequence |
 | 66 | 2 | format | index of the format the access path serves, 0xFFFF for a multi-format path |
@@ -722,6 +722,7 @@ The attribute area holds `SqlInfAttr`; the byte space holds
 | 14 `OPTIONS` | the `SET OPTION` values a routine or trigger was made with; a program's precompile options |
 | 15 `STATEMENT` | one embedded statement of a program (kind 13 `PROGRAM`) |
 | 16 `COLTYPE` | one column of a distinct type: the field and its type (a table's or view's) |
+| 17 `COLSTATS` | one column's statistics of one member of a physical file |
 
 A schema keeps its SQL name only in QSYS's name index (a `*LIB` owns
 no `*SQLINF`). An object keeps a `NAME` entry only when its SQL
@@ -1032,6 +1033,55 @@ field keeps the source type; the entry makes the column the type's
 | 38 | 2 | name_len | |
 | 40 | 8 | reserved2 | 0 |
 | 48 | variable | name | the type's SQL name, UTF-8 |
+
+### `SqlColStats` (variable)
+
+The `COLSTATS` entry of a physical file (kinds 1 and 11; a file made
+by DDS gets a kind 1 `*SQLINF` for it, as for constraints): one per
+member and column whose statistics were collected (`QSYS2.SYSCOLUMNSTAT`,
+the collection job `QDBFSTCCOL`), so they outlive an IPL. The planner
+reads a file's entries the first time it weighs the file. `column` is
+the column's SQL name (UTF-8); `bounds` are `bound_count`
+`SqlStatValue`s, the upper bounds of the histogram's equal-depth ranges
+in ascending order; `frequent` are `frequent_count` pairs of an 8-byte
+little-endian IEEE double (the value's share of the rows) and an
+`SqlStatValue`.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 16 | member | `ObjectId` of the `*MBR` |
+| 16 | 10 | field | the column's system name, CP037 |
+| 26 | 2 | column_len | |
+| 28 | 2 | bound_count | |
+| 30 | 2 | frequent_count | |
+| 32 | 8 | distinct | distinct non-null values |
+| 40 | 8 | nulls | null values |
+| 48 | 4 | avg_len | average length of the values' text |
+| 52 | 4 | max_len | longest |
+| 56 | 8 | rows | the member's records when collected |
+| 64 | 8 | deleted | its deleted records then |
+| 72 | 8 | slots | its slots then |
+| 80 | 8 | created | Unix seconds, first collected |
+| 88 | 8 | updated | Unix seconds, last collected |
+| 96 | variable | column | then `bounds`, then `frequent` |
+
+### `SqlStatValue` (variable)
+
+One value of a `COLSTATS` entry. `kind`: 0 null (no bytes), 1 a number
+(decimal text, `-12.50`), 2 a character string (UTF-8), 3 `DOUBLE` (8
+bytes, little-endian IEEE), 4 `REAL` (4 bytes), 5 `DECFLOAT` (text,
+read as `DECFLOAT(34)`), 6 a date (a 2-byte little-endian year, the
+month, the day), 7 a time (hour, minute, second), 8 a timestamp (the
+date's 4 bytes, the time's 3, the precision, then the picoseconds as an
+8-byte little-endian integer), 9 a binary string (its bytes), 10
+`BOOLEAN` (1 byte, 0 or 1).
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | kind | above |
+| 1 | 3 | reserved | 0 |
+| 4 | 4 | len | bytes that follow |
+| 8 | variable | bytes | |
 
 ### 8.2 The SQL name index
 

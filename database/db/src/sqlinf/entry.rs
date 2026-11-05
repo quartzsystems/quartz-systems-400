@@ -130,6 +130,8 @@ pub mod tag {
     pub const STATEMENT: u16 = 15;
     /// One column of a distinct type: the field and its type.
     pub const COLTYPE: u16 = 16;
+    /// One column's statistics of one member (a physical file's).
+    pub const COLSTATS: u16 = 17;
 }
 
 /// One tagged entry.

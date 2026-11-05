@@ -9,10 +9,11 @@
 //! planner asked for them and the collection job (`QDBFSTCCOL`) next
 //! runs, and again when the member has changed by a tenth since.
 //!
-//! They live in the storage service's memory, one table for every job
-//! (the service runs SQL on one thread): an IPL starts without them and
-//! the planner asks again. BLOCKED(sql): kept in the object store they
-//! would outlive an IPL; that needs a `*SQLINF` entry tag of its own.
+//! They are kept on the file's `*SQLINF` (`COLSTATS` entries,
+//! `statsave`), so they outlive an IPL, and in the storage service's
+//! memory, one table for every job (the service runs SQL on one
+//! thread), which reads a file's entries the first time it is weighed
+//! ([`prime`]).
 
 use std::cell::RefCell;
 use std::cmp::Ordering;
@@ -158,6 +159,8 @@ struct Registry {
     stats: HashMap<Key, (ObjectId, ColumnStats)>,
     /// Columns the planner asked for: file, member, system column name.
     requests: Vec<(ObjectId, ObjectId, String)>,
+    /// Files whose kept statistics have been read.
+    loaded: HashSet<ObjectId>,
 }
 
 thread_local! {
@@ -168,6 +171,24 @@ thread_local! {
 #[must_use]
 pub fn get(member: ObjectId, column: &str) -> Option<ColumnStats> {
     REGISTRY.with(|r| r.borrow().stats.get(&(member, column.to_string())).map(|(_, s)| s.clone()))
+}
+
+/// Read the statistics kept on `file` the first time it is asked for:
+/// after an IPL they come back from its `*SQLINF`. One that cannot be
+/// read is left to be collected again.
+pub fn prime(txn: &mut Txn<'_>, file: ObjectId) {
+    if REGISTRY.with(|r| !r.borrow_mut().loaded.insert(file)) {
+        return;
+    }
+    let Ok(kept) = db::sqlinf::colstats::load(txn, file) else { return };
+    REGISTRY.with(|r| {
+        let mut r = r.borrow_mut();
+        for c in &kept {
+            if let Some(s) = super::statsave::from_stored(c) {
+                r.stats.entry((c.member, s.system_column.clone())).or_insert((file, s));
+            }
+        }
+    });
 }
 
 /// Ask the collection job for `column` of `member` of `file`.
@@ -189,6 +210,7 @@ pub fn forget(file: Option<ObjectId>) {
             Some(f) => {
                 r.stats.retain(|_, (x, _)| *x != f);
                 r.requests.retain(|(x, _, _)| *x != f);
+                r.loaded.remove(&f);
             }
             None => *r = Registry::default(),
         }
@@ -216,6 +238,7 @@ pub fn collect(txn: &mut Txn<'_>, file_id: ObjectId, columns: &[String], now: u6
     if fields.is_empty() {
         return Ok(0);
     }
+    prime(txn, file_id);
     let m = Member::open(txn, &desc, &entry)?;
     let attr = m.attr().clone();
     let stride = usize::try_from(attr.record_count / SAMPLE as u64).unwrap_or(usize::MAX).max(1);
@@ -236,6 +259,7 @@ pub fn collect(txn: &mut Txn<'_>, file_id: ObjectId, columns: &[String], now: u6
         from = end + 1;
     }
     let n = fields.len();
+    let mut kept = Vec::with_capacity(n);
     REGISTRY.with(|r| {
         let mut r = r.borrow_mut();
         for ((_, f), a) in fields.iter().zip(acc) {
@@ -248,10 +272,13 @@ pub fn collect(txn: &mut Txn<'_>, file_id: ObjectId, columns: &[String], now: u6
             s.slots = attr.slots;
             s.created = created;
             s.updated = now;
+            kept.extend(super::statsave::to_stored(entry.object, &s));
             r.stats.insert(key, (file_id, s));
             r.requests.retain(|(_, m, c)| !(*m == entry.object && *c == f.name.to_string()));
         }
     });
+    let members: Vec<ObjectId> = desc.members.iter().map(|e| e.object).collect();
+    db::sqlinf::colstats::store(txn, file_id, &members, &kept, now)?;
     Ok(n)
 }
 

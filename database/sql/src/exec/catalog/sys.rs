@@ -777,6 +777,7 @@ pub fn virtual_table(
                 let tl = ops::read_header(txn, d.id).map_or(d.id, |(_, h)| h.library);
                 let schema = crate::exec::names::schema_name(txn, tl);
                 let table = crate::exec::names::sql_name(txn, d.id);
+                crate::exec::plan::stats::prime(txn, d.id);
                 for m in &d.members {
                     let now = db::member::Member::open(txn, d, m).ok().map(|x| x.attr().clone());
                     let (rc, dc, sl) = now.as_ref().map_or((0, 0, 0), |a| (a.record_count, a.deleted_count, a.slots));

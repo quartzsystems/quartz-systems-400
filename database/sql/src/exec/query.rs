@@ -1086,6 +1086,10 @@ fn scan_table_in(
     let cands = candidates(txn, t);
     let rows_now = Member::open(txn, &t.desc, &t.member).map_or(0, |m| m.attr().record_count);
     let physical = t.desc.attr.kind != FileKind::Logical;
+    if physical {
+        // Statistics kept on the file come back the first time it is weighed.
+        super::plan::stats::prime(txn, t.id);
+    }
     let weigh = Weigh { rows: rows_now, member: physical.then_some(t.member.object), goal: ev.ctx.plan.goal };
     if physical && rows_now >= super::plan::stats::ASK_FLOOR {
         // Columns the planner would weigh: ask the collection job for them.
@@ -1655,6 +1659,7 @@ fn estimated(txn: &mut Txn<'_>, ctx: &SqlContext, t: &TableRef, scans: &[Scan]) 
             let Some(info) = &scan.info else {
                 return scan.rows.as_ref().map_or(1, |r| r.len() as u64);
             };
+            stats::prime(txn, info.id);
             let rows = Member::open(txn, &info.desc, &info.member).map_or(0, |m| m.attr().record_count);
             let mut share = 1.0;
             for (col, op, v) in simple_predicates(&scan.preds) {

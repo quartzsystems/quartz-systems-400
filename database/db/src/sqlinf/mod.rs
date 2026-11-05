@@ -8,6 +8,7 @@
 //! library's SQL name index. See `docs/DB_FORMAT.md` §8.
 
 pub mod body;
+pub mod colstats;
 pub mod entry;
 pub mod names;
 pub mod program;

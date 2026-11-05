@@ -14,6 +14,7 @@ pub mod govern;
 pub mod keyonly;
 pub mod pushdown;
 pub mod stats;
+pub mod statsave;
 pub mod subq;
 
 use super::join::Method;

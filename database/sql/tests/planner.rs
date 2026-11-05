@@ -313,3 +313,60 @@ fn explain_plan_cache_and_query_options() {
     assert_eq!(db.rows("SELECT COUNT(*) FROM big"), [row(&["100"])]);
     db.ok("CALL QSYS2.OVERRIDE_QAQQINI(3, '', '')");
 }
+
+#[test]
+fn statistics_outlive_an_ipl() {
+    // The store on a device kept for the second run.
+    let d = Arc::new(MemBlockDev::with_seed(16384, 12));
+    let params = FormatParams {
+        asp_number: 1,
+        asp_uuid: [4; 16],
+        unit_uuids: vec![[5; 16]],
+        unit_serials: Vec::new(),
+        wal_pages: 128,
+        now: 1_767_225_600,
+    };
+    let mut store = Store::format(vec![Box::new(d.clone()) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut t = store.begin().unwrap();
+    let qsys = ops::bootstrap(&mut t, 1_767_225_600, "QS400").unwrap();
+    let lib = ops::create(
+        &mut t,
+        &CreateParams {
+            library: qsys,
+            name: Name::parse("QSTEST").unwrap(),
+            type_code: types::LIB,
+            attribute: String::new(),
+            text: String::new(),
+            owner: "QSECOFR".into(),
+            system: "QS400".into(),
+            now: 1_767_225_600,
+            by_system: false,
+        },
+    )
+    .unwrap();
+    t.commit().unwrap();
+    let ctx = move || {
+        let mut c = SqlContext::new(qsys, JobHandle(1), NameContext { curlib: Some(lib), libl: vec![lib] });
+        c.now = Some(1_767_225_600);
+        c
+    };
+    let q = "SELECT COLUMN_NAME, NUMBER_DISTINCT_VALUES, NUMBER_NULLS, STATISTICS_ROWS, STATISTICS_NAME FROM qsys2/syscolumnstat WHERE TABLE_NAME = 'BIG' AND STATISTICS_NAME IS NOT NULL ORDER BY COLUMN_NAME";
+    let mut db = Db { store, ctx: ctx() };
+    big(&mut db, 2000);
+    db.ok("CREATE INDEX qstest/bigv ON big (v, grp)");
+    let before = db.rows(q);
+    assert_eq!(before.len(), 2, "{before:?}");
+    let plan = db.plan("SELECT * FROM qstest/big WHERE v = 3");
+    drop(db);
+    // A new thread is a new service: its statistics table starts empty
+    // and reads the kept ones from the reopened store.
+    let (after, replan) = std::thread::spawn(move || {
+        let store = Store::open(vec![Box::new(d) as Box<dyn BlockDev>], StoreConfig::default()).unwrap().0;
+        let mut db = Db { store, ctx: ctx() };
+        (db.rows(q), db.plan("SELECT * FROM qstest/big WHERE v = 3"))
+    })
+    .join()
+    .unwrap();
+    assert_eq!(after, before);
+    assert_eq!(replan, plan);
+}
