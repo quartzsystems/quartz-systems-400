@@ -3,14 +3,15 @@
 // root directory of this project.
 
 //! Table references that start with a keyword: `LATERAL (...)`,
-//! `TABLE (query)`, `TABLE (f(args))` and `FINAL|NEW|OLD TABLE (change)`.
+//! `TABLE (query)`, `TABLE (f(args))`, `JSON_TABLE (...)` and `FINAL|NEW
+//! TABLE (change)`.
 
 use super::Parser;
 use crate::ast::{ChangeRows, Ident, Statement, TableRef};
 use crate::error::Result;
 
 impl Parser {
-    fn correlation(&mut self) -> Result<(Option<Ident>, Vec<Ident>)> {
+    pub(crate) fn correlation(&mut self) -> Result<(Option<Ident>, Vec<Ident>)> {
         let alias = self.alias()?;
         let columns = if alias.is_some() && self.is_sym("(") { self.ident_list()? } else { Vec::new() };
         Ok((alias, columns))
@@ -38,6 +39,11 @@ impl Parser {
                 };
                 return Ok(Some(TableRef::DataChange { kind, statement: Box::new(statement), alias, columns }));
             }
+        }
+        if self.is_word("JSON_TABLE") && self.is_sym_at(1, "(") {
+            self.advance();
+            self.advance();
+            return self.json_table().map(Some);
         }
         let lateral = self.is_word("LATERAL");
         if !(lateral || self.is_word("TABLE")) || !self.is_sym_at(1, "(") {

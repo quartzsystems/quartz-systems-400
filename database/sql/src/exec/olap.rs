@@ -21,7 +21,7 @@ use super::agg;
 use crate::ast::visit::children;
 use super::eval::{Env, Evaluator, binary, compare};
 use super::sort::{KeySpec, cmp_keys};
-use super::rtype::{Scope, SqlType, infer};
+use super::restype::{Scope, SqlType, infer};
 use crate::ast::{BinOp, CmpOp, Expr, FrameBound, Function, OrderItem, Over, Overflow};
 use crate::error::{Result, SqlError};
 use crate::value::{Value, decfloat_error};
@@ -302,7 +302,7 @@ fn one(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, envs: &[Env], o: &Over) -> Res
                                 .iter()
                                 .map(|&r| agg::Input { args: data[r].args.clone(), keys: data[r].within.clone() })
                                 .collect();
-                            let call = agg::Call { name, distinct: f.distinct, star: f.star, order: within_order, overflow };
+                            let call = agg::Call { name, distinct: f.distinct, star: f.star, order: within_order, overflow, exprs: &f.args };
                             let mut nulls = false;
                             let v = agg::finish(&call, inputs, &mut nulls)?;
                             if nulls {

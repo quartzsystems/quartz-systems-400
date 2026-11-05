@@ -290,7 +290,6 @@ fn expand_ref(txn: &mut Txn<'_>, ctx: &SqlContext, t: &mut TableRef) -> Result<b
             *t = TableRef::Subquery { query: Box::new(query), alias, columns: cols };
             Ok(true)
         }
-        TableRef::Subquery { .. } => Ok(false),
         TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => {
             Ok(expand_ref(txn, ctx, left)? | expand_ref(txn, ctx, right)?)
         }
@@ -302,7 +301,7 @@ fn expand_ref(txn: &mut Txn<'_>, ctx: &SqlContext, t: &mut TableRef) -> Result<b
             }
             Ok(any)
         }
-        TableRef::Function { .. } | TableRef::DataChange { .. } => Ok(false),
+        TableRef::Subquery { .. } | TableRef::Function { .. } | TableRef::DataChange { .. } => Ok(false),
     }
 }
 
@@ -333,7 +332,6 @@ fn qualify(txn: &mut Txn<'_>, qsys: ObjectId, b: &mut QueryBody, deps: &[Depende
                     }
                 }
             }
-            TableRef::Table { .. } => {}
             TableRef::Subquery { query, .. } => qualify(txn, qsys, &mut query.body, deps),
             TableRef::Join { left, right, .. } | TableRef::JoinUsing { left, right, .. } => {
                 walk(txn, qsys, left, deps);
@@ -345,7 +343,7 @@ fn qualify(txn: &mut Txn<'_>, qsys: ObjectId, b: &mut QueryBody, deps: &[Depende
                     qualify(txn, qsys, b, deps);
                 }
             }
-            TableRef::Function { .. } | TableRef::DataChange { .. } => {}
+            TableRef::Table { .. } | TableRef::Function { .. } | TableRef::DataChange { .. } => {}
         }
     }
     match b {

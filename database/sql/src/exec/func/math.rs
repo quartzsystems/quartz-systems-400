@@ -11,9 +11,8 @@ use std::cell::Cell;
 use qdecimal::{Decimal, Rounding};
 
 use super::super::SqlContext;
-use super::super::rtype::{Kind, SqlType};
+use super::super::restype::{Kind, SqlType};
 use super::{arity, int, overflow};
-use crate::ast::Function;
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
@@ -141,9 +140,10 @@ pub(crate) fn call(name: &str, args: &[Value], _ctx: &SqlContext) -> Option<Resu
 }
 
 /// The result type of `name` when this family has it.
-pub(crate) fn result_type(name: &str, args: &[SqlType], _f: &Function) -> Option<SqlType> {
-    let null = args.iter().any(|a| a.null);
-    let first = args.first().copied().unwrap_or_else(|| SqlType::int(null));
+pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], _exprs: &[crate::ast::Expr]) -> Option<SqlType> {
+    let args = &super::super::restype::rules::known(given)[..];
+    let null = args.iter().any(|a| a.nullable);
+    let first = args.first().cloned().unwrap_or_else(|| SqlType::int(null));
     Some(match name {
         "EXP" | "LN" | "LOG" | "LOG10" | "SIN" | "COS" | "TAN" | "COT" | "ASIN" | "ACOS" | "ATAN" | "ATAN2" | "SINH"
         | "COSH" | "TANH" | "ATANH" | "RADIANS" | "DEGREES" | "POWER" | "POW" | "SQRT" => SqlType::double(null),
@@ -151,7 +151,7 @@ pub(crate) fn result_type(name: &str, args: &[SqlType], _f: &Function) -> Option
         "SIGN" => first.nullable(null),
         "BITAND" | "BITOR" | "BITXOR" | "BITANDNOT" | "BITNOT" => {
             // The wider of the integer types; decimals as BIGINT.
-            let rank = |t: &SqlType| match t.kind {
+            let rank = |t: &SqlType| match t.kind() {
                 Kind::SmallInt => 0,
                 Kind::Integer => 1,
                 _ => 2,
@@ -178,11 +178,11 @@ pub(crate) fn result_type(name: &str, args: &[SqlType], _f: &Function) -> Option
             let p = (p1 - u32::from(s1)).min(p2 - u32::from(s2)) + u32::from(s);
             SqlType::decimal(p.max(1), s, null)
         }
-        "ROUND" if first.kind == Kind::Decimal || first.kind == Kind::Numeric => {
-            SqlType::new(first.kind, (first.len + 1).min(63), first.scale, null)
+        "ROUND" if first.kind() == Kind::Decimal || first.kind() == Kind::Numeric => {
+            SqlType::new(first.kind(), (first.len() + 1).min(63), first.scale(), null)
         }
-        "CEILING" | "CEIL" | "FLOOR" if first.kind == Kind::Decimal || first.kind == Kind::Numeric => {
-            SqlType::new(first.kind, (first.len - u32::from(first.scale) + 1).clamp(1, 63), 0, null)
+        "CEILING" | "CEIL" | "FLOOR" if first.kind() == Kind::Decimal || first.kind() == Kind::Numeric => {
+            SqlType::new(first.kind(), (first.len() - u32::from(first.scale()) + 1).clamp(1, 63), 0, null)
         }
         _ => return None,
     })

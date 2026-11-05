@@ -39,7 +39,6 @@ pub mod query;
 pub mod rename;
 pub mod schema;
 pub mod registers;
-pub mod rtype;
 pub mod restype;
 pub mod xml;
 pub mod seq;

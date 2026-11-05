@@ -17,7 +17,7 @@ use std::cmp::Ordering;
 use qdecimal::Decimal;
 
 use super::eval::binary;
-use super::rtype::{Kind, SqlType};
+use super::restype::{Kind, SqlType};
 use crate::ast::{BinOp, Expr, Function, OrderItem, Overflow};
 use crate::error::{Result, SqlError};
 use crate::value::Value;
@@ -43,21 +43,25 @@ pub struct Call<'a> {
     pub order: &'a [OrderItem],
     /// `LISTAGG ... ON OVERFLOW`.
     pub overflow: Option<&'a Overflow>,
+    /// The argument expressions, for a family that reads its clauses
+    /// from them.
+    pub exprs: &'a [Expr],
 }
 
 /// A family of aggregates in its own module.
 pub(crate) struct AggFamily {
     /// Whether the family has `name` with this many arguments.
     pub is: fn(&str, usize) -> bool,
-    /// The result type, by the argument types.
-    pub ty: fn(&str, &[SqlType]) -> Option<SqlType>,
+    /// The result type, by the argument types and expressions.
+    pub ty: super::restype::FunctionType,
     /// Fold the rows; the rows are in `WITHIN GROUP` order, nulls are
-    /// the family's to handle.
-    pub fold: fn(&Call<'_>, &[Input]) -> Option<Result<Value>>,
+    /// the family's to handle (`nulls` set when one is left out).
+    pub fold: fn(&Call<'_>, &[Input], &mut bool) -> Option<Result<Value>>,
 }
 
 /// The families, asked before the built-in aggregates.
-pub(crate) const FAMILIES: &[AggFamily] = &[];
+pub(crate) const FAMILIES: &[AggFamily] =
+    &[AggFamily { is: super::json::agg::is, ty: super::json::types, fold: super::json::agg::fold }];
 
 /// Built-in aggregates of one argument (or `*`).
 const ONE: &[&str] = &[
@@ -102,27 +106,28 @@ pub fn call_of(e: &Expr) -> Option<(&Function, &[OrderItem], Option<&Overflow>)>
 
 /// The result type of an aggregate call; `None` when it is not one.
 #[must_use]
-pub fn result_type(f: &Function, args: &[SqlType]) -> Option<SqlType> {
+pub fn result_type(f: &Function, given: &[Option<SqlType>]) -> Option<SqlType> {
     if !is_aggregate(f) {
         return None;
     }
     for fam in FAMILIES {
-        if (fam.is)(&f.name, args.len()) {
-            return (fam.ty)(&f.name, args);
+        if (fam.is)(&f.name, given.len()) {
+            return (fam.ty)(&f.name, given, &f.args);
         }
     }
-    let a = args.first().copied().unwrap_or_else(|| SqlType::int(true));
+    let args = super::restype::rules::known(given);
+    let a = args.first().cloned().unwrap_or_else(|| SqlType::int(true));
     Some(match f.name.as_str() {
         "COUNT" => SqlType::int(false),
         "COUNT_BIG" => SqlType::bigint(false),
-        "SUM" => sum_type(a),
-        "AVG" => match a.kind {
+        "SUM" => sum_type(&a),
+        "AVG" => match a.kind() {
             Kind::Decimal | Kind::Numeric => {
-                let mp = if a.len > 31 { 63 } else { 31 };
-                let s = (mp + u32::from(a.scale)).saturating_sub(a.len);
+                let mp = if a.len() > 31 { 63 } else { 31 };
+                let s = (mp + u32::from(a.scale())).saturating_sub(a.len());
                 SqlType::decimal(mp, u8::try_from(s).unwrap_or(0), true)
             }
-            _ => sum_type(a),
+            _ => sum_type(&a),
         },
         "MIN" | "MAX" | "PERCENTILE_DISC" => a.nullable(true),
         "MEDIAN" | "PERCENTILE_CONT" => SqlType::decfloat(true),
@@ -133,11 +138,11 @@ pub fn result_type(f: &Function, args: &[SqlType]) -> Option<SqlType> {
 }
 
 /// `SUM`'s type: integers stay integers, decimals widen to 31 (or 63).
-fn sum_type(a: SqlType) -> SqlType {
-    match a.kind {
+fn sum_type(a: &SqlType) -> SqlType {
+    match a.kind() {
         Kind::SmallInt | Kind::Integer => SqlType::int(true),
         Kind::BigInt => SqlType::bigint(true),
-        Kind::Decimal | Kind::Numeric => SqlType::decimal(if a.len > 31 { 63 } else { 31 }, a.scale, true),
+        Kind::Decimal | Kind::Numeric => SqlType::decimal(if a.len() > 31 { 63 } else { 31 }, a.scale(), true),
         Kind::DecFloat => SqlType::decfloat(true),
         _ => SqlType::double(true),
     }
@@ -177,7 +182,7 @@ pub fn finish(call: &Call<'_>, mut rows: Vec<Input>, nulls: &mut bool) -> Result
     }
     for fam in FAMILIES {
         if (fam.is)(call.name, rows.first().map_or(1, |r| r.args.len()))
-            && let Some(r) = (fam.fold)(call, &rows)
+            && let Some(r) = (fam.fold)(call, &rows, nulls)
         {
             return r;
         }

@@ -107,22 +107,19 @@ pub(crate) fn not_json(what: &str) -> SqlError {
     coded(-16402, "22032", format!("{what} is not valid JSON"))
 }
 
-/// Whether `f` is one of the JSON aggregates.
-#[must_use]
-pub fn is_aggregate(f: &Function) -> bool {
-    matches!(f.name.as_str(), "JSON_ARRAYAGG" | "JSON_OBJECTAGG") && matches!(f.args.first(), Some(Expr::Literal(_)))
-}
-
 /// Evaluate `f` when it is a JSON call the parser wrote; `None` for any
 /// other function.
 pub fn call(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, f: &Function, env: &Env) -> Option<Result<Value>> {
-    if !CLAUSED.contains(&f.name.as_str()) || !matches!(f.args.first(), Some(Expr::Literal(Literal::Str(_)))) {
+    // The aggregates are a family of `exec::agg`.
+    if !CLAUSED.contains(&f.name.as_str())
+        || agg::is(&f.name, f.args.len())
+        || !matches!(f.args.first(), Some(Expr::Literal(Literal::Str(_))))
+    {
         return None;
     }
     let opts = Opts::of(f);
     let ret = returning(f).cloned();
     Some(match f.name.as_str() {
-        "JSON_ARRAYAGG" | "JSON_OBJECTAGG" => agg::call(ev, txn, f, &opts, ret.as_ref(), env),
         "XMLPARSE" | "XMLSERIALIZE" => xml(ev, txn, f, &opts, ret.as_ref(), env),
         _ => funcs::call(ev, txn, f, &opts, ret.as_ref(), env),
     })

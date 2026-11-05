@@ -16,9 +16,9 @@ use qdecimal::{Decimal, Rounding};
 
 use super::super::SqlContext;
 use super::super::eval::{add_months, date_from_days, days_of};
-use super::super::rtype::{Kind, SqlType};
+use super::super::restype::{Kind, SqlType};
 use super::{arity, day_of_week, int, overflow};
-use crate::ast::{DurationUnit, Function};
+use crate::ast::DurationUnit;
 use crate::error::{Result, SqlError};
 use crate::value::{PICOS, Timestamp, Value};
 
@@ -344,10 +344,11 @@ fn from_secs(d: Date, s: i64) -> Result<Timestamp> {
 }
 
 /// The result type of `name` when this family has it.
-pub(crate) fn result_type(name: &str, args: &[SqlType], f: &Function) -> Option<SqlType> {
-    let null = args.iter().any(|a| a.null);
-    let first = args.first().copied().unwrap_or_else(SqlType::unknown);
-    let lit = |i: usize| match f.args.get(i) {
+pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], exprs: &[crate::ast::Expr]) -> Option<SqlType> {
+    let args = &super::super::restype::rules::known(given)[..];
+    let null = args.iter().any(|a| a.nullable);
+    let first = args.first().cloned().unwrap_or_else(SqlType::unknown);
+    let lit = |i: usize| match exprs.get(i) {
         Some(crate::ast::Expr::Literal(crate::ast::Literal::Num(n))) => n.parse::<u8>().ok(),
         _ => None,
     };
@@ -355,13 +356,13 @@ pub(crate) fn result_type(name: &str, args: &[SqlType], f: &Function) -> Option<
         "TIMESTAMP_FORMAT" | "TO_DATE" | "TO_TIMESTAMP" => SqlType::timestamp(lit(2).unwrap_or(6), null),
         "VARCHAR_FORMAT" | "TO_CHAR" => SqlType::varchar(if first.is_numeric() { 254 } else { 255 }, null),
         "EXTRACT" => {
-            let part = match f.args.first() {
+            let part = match exprs.first() {
                 Some(crate::ast::Expr::Column(c)) => c.column.value.clone(),
                 _ => String::new(),
             };
             match part.as_str() {
                 "SECOND" | "SECONDS" => {
-                    let p = if first.kind == Kind::Timestamp { first.scale.max(6) } else { 6 };
+                    let p = if first.kind() == Kind::Timestamp { first.scale().max(6) } else { 6 };
                     SqlType::decimal(2 + u32::from(p), p, null)
                 }
                 "EPOCH" => SqlType::bigint(null),
@@ -370,12 +371,12 @@ pub(crate) fn result_type(name: &str, args: &[SqlType], f: &Function) -> Option<
         }
         "TIMESTAMPDIFF" | "WEEK_ISO" | "QUARTER" | "MIDNIGHT_SECONDS" => SqlType::int(null),
         "TIMESTAMPDIFF_BIG" => SqlType::bigint(null),
-        "TIMESTAMP_ISO" => SqlType::timestamp(if first.kind == Kind::Timestamp { first.scale } else { 6 }, null),
-        "ROUND_TIMESTAMP" | "TRUNC_TIMESTAMP" => SqlType::timestamp(if first.kind == Kind::Date { 0 } else if first.kind == Kind::Timestamp { first.scale } else { 6 }, null),
+        "TIMESTAMP_ISO" => SqlType::timestamp(if first.kind() == Kind::Timestamp { first.scale() } else { 6 }, null),
+        "ROUND_TIMESTAMP" | "TRUNC_TIMESTAMP" => SqlType::timestamp(if first.kind() == Kind::Date { 0 } else if first.kind() == Kind::Timestamp { first.scale() } else { 6 }, null),
         "MONTHS_BETWEEN" => SqlType::decimal(31, 15, null),
         "ADD_DAYS" | "ADD_YEARS" => first.nullable(null),
         "ADD_HOURS" | "ADD_MINUTES" | "ADD_SECONDS" => {
-            if first.kind == Kind::Timestamp { first.nullable(null) } else { SqlType::timestamp(6, null) }
+            if first.kind() == Kind::Timestamp { first.nullable(null) } else { SqlType::timestamp(6, null) }
         }
         _ => return None,
     })

@@ -13,7 +13,7 @@ use store::txn::Txn;
 
 use super::eval::{ColInfo, Env, Evaluator, Row, Schema};
 use super::query::{Scan, from_rows};
-use super::rtype::SqlType;
+use super::restype::SqlType;
 use super::{SqlContext, join};
 use crate::ast::{ChangeRows, CmpOp, ColumnRef, Expr, Ident, JoinKind, ObjectName, OrderItem, Statement, TableRef};
 use crate::error::{Result, SqlError};
@@ -229,7 +229,7 @@ pub(super) fn table_function(
             values.push(ev.eval(txn, a, outer)?);
         }
     }
-    let Some((mut schema, rows)) = super::catalog::table_function(txn, ctx, name, &values, &alias.value)? else {
+    let Some((mut schema, rows)) = super::catalog::table_function(txn, ctx, name, &values, args, &alias.value)? else {
         return Err(SqlError::ObjectNotFound { name: name.to_string(), kind: "function" });
     };
     if !columns.is_empty() {

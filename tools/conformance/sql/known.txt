@@ -1,39 +1,28 @@
 # Cases known to differ from their oracle capture: area/NAME, one per line.
 # A new difference fails the kit; remove a line when the case agrees.
-kit/BASIC   # expression result types, SQL7905, AVG scale
-ddl/ALIAS   # COUNT(*) described as VARCHAR: expression result types (SQL-3, SQL-4)
-ddl/DROPRES   # COUNT(*) described as VARCHAR: expression result types
-ddl/TABLEAS   # COUNT(*) described as VARCHAR: expression result types
-ddl/VIEWQRY   # SUM and COUNT described as VARCHAR: expression result types
+ddl/VIEWQRY   # VIEW_DEFINITION described as VARCHAR, NVARCHAR at IBM (no NVARCHAR type name)
 ddl/INDEXEXT   # SEARCH_CONDITION is NCLOB at IBM, CHAR here (no LOB catalog columns)
 ddl/DGTT   # DECLARE GLOBAL TEMPORARY TABLE refused: QTEMP is in the temporary ASP
 ddl/GRANT   # the kit store has no QUSER/QSYSOPR/QPGMR profiles (SQL0204); USAGE ON SCHEMA refused SQL0084 where 7.1 says SQL0104
-types/CASTSTR   # errors the primary raises at fetch (SQL0433), 01004 truncation warnings, HEX of CCSID-tagged strings, NCHAR and FOR BIT DATA type names, a hex constant into VARBINARY (SQL0301), SQL7905
-types/DECFLT1   # DECFLOAT values quoted in the oracle capture, DECFLOAT_FORMAT absent on 7.1 (SQL0204), SYSCOLUMNS column types, SQL7905
-types/DECFLT2   # errors at fetch, HEX of CCSID-tagged strings, FOR SBCS/MIXED DATA in CAST (SQL0604), DECFLOAT values quoted, CAST('abc' AS INTEGER) in WHERE (SQL0802 22023)
+types/CASTSTR   # errors the primary raises at fetch (SQL0433), 01004 truncation warnings, HEX of CCSID-tagged strings, NCHAR and FOR BIT DATA type names, a hex constant into VARBINARY (SQL0301)
+types/DECFLT1   # DECFLOAT_FORMAT absent on 7.1 (SQL0204), SYSCOLUMNS column types
+types/DECFLT2   # errors at fetch, HEX of CCSID-tagged strings, FOR SBCS/MIXED DATA in CAST (SQL0604), CAST('abc' AS INTEGER) in WHERE (SQL0802 22023)
 types/FLOATFMT  # errors at fetch (SQL0433); the primary makes CHAR(4.9E-324) a CHAR(42)
-types/JSON1     # BOOLEAN shown as 1/0 by JTOpen, 01003 warnings, JSON_TABLE waits for TABLE(...) in FROM, a predicate as a JSON_ARRAY value (SQL0104 on 7.5), FORMAT in JSON_UPDATE (SQL0199), SQL7905
+types/JSON1     # BOOLEAN shown as 1/0 by JTOpen, 01003 warnings, a predicate as a JSON_ARRAY value (SQL0104 on 7.5), FORMAT in JSON_UPDATE (SQL0199)
 types/XML1      # XMLPARSE describes as XML on the primary (QS/400 has no XML type), errors at fetch, 01004 warnings, XMLELEMENT refused (SQL0084)
-types/BOOL1     # BOOLEAN shown as 1/0 by JTOpen, NOT on a null BOOLEAN column is true on pub400, 01003 warnings, catalog and function column types, SQL7905
-types/LOB1      # NCLOB/NVARCHAR type names, function result types (SQL-3), OCTET_LENGTH of a DBCLOB, SYSCOLUMNS column types, SQL7905
-types/DECFLT3   # errors at fetch, SQL7905
-integrity/CSTBASIC   # NVARCHAR catalog columns described as VARGRAPHIC; COUNT(*) described as VARCHAR (expression result types)
+types/BOOL1     # BOOLEAN shown as 1/0 by JTOpen, NOT on a null BOOLEAN column is true on pub400, 01003 warnings, catalog and function column types
+types/LOB1      # NCLOB/NVARCHAR type names, OCTET_LENGTH of a DBCLOB, SYSCOLUMNS column types
+types/DECFLT3   # errors at fetch
+integrity/CSTBASIC   # NVARCHAR catalog columns described as VARGRAPHIC
 integrity/CSTALTER   # NVARCHAR catalog columns described as VARGRAPHIC
-integrity/CSTREF     # COUNT(*) described as VARCHAR (expression result types)
-integrity/IDENTITY   # IDENTITY_VAL_LOCAL() described as VARCHAR (expression result types)
-integrity/SEQUENCE   # NEXT/PREVIOUS VALUE described as VARCHAR; an error after the row description; a column named ORDER in a select list (SQL0104)
+integrity/SEQUENCE   # an error after the row description; a column named ORDER in a select list (SQL0104)
 integrity/AUDITCOL   # IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
-query/CTE   # SQL7905 on CREATE TABLE (no QSQJRN here)
-query/JOINS   # SQL7905; ORDER BY an unqualified USING column is SQL0203 on DB2 for i, resolved here
-query/LIMITS   # SQL7905 on CREATE TABLE
-query/OLAP   # SQL7905; the 01003 warning (SQLCODE 0) is not reported by the local runner
-query/GROUPSETS   # SQL7905 on CREATE TABLE
-query/STATAGG   # SQL7905; 01003 warnings (SQLCODE 0) not reported
-query/ORDAGG   # SQL7905; 01003; ARRAY_AGG is SQL20441 there, SQL0084 here (no array types yet)
-query/PREDS   # SQL7905; 01003 warnings not reported
+query/JOINS   # ORDER BY an unqualified USING column is SQL0203 on DB2 for i, resolved here
+query/OLAP   # the 01003 warning (SQLCODE 0) is not reported by the local runner
+query/STATAGG   # 01003 warnings (SQLCODE 0) not reported by the local runner
+query/ORDAGG   # 01003 not reported; ARRAY_AGG is SQ20441 there, SQL0084 here (no array types yet)
 query/DATEARITH   # the 01506 warning (date adjusted to month end, SQLCODE 0) not reported
 query/DTFUNCS   # 01506 not reported; TIMESTAMP_FORMAT's SQ20448 comes at fetch there, SQL0302 at run here
 query/STRFUNCS   # DECODE is SQL0204 on pub400 but in the brief's must-have list
 query/NUMFUNCS   # ENCRYPT_AES refused: DB2 for i's encrypted layout is not published
 query/REGISTERS   # CURRENT DEGREE is pub400's system setting (ANY); NONE here
-query/CHANGES   # SQL7905 on CREATE TABLE

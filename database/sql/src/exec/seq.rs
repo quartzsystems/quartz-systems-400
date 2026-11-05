@@ -59,6 +59,12 @@ fn sql_type(code: u8, p: u8) -> DataType {
     }
 }
 
+/// The type of the values the sequence `name` gives; `None` when there
+/// is none of that name.
+pub fn data_type(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName) -> Option<DataType> {
+    resolve(txn, ctx, name).ok().map(|(_, s)| sql_type(s.data_type, s.precision))
+}
+
 /// The sequence `name` names, with its state.
 pub fn resolve(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName) -> Result<(ObjectId, Sequence)> {
     let lib = ctx.library_for(txn, name)?;

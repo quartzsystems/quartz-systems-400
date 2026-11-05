@@ -399,9 +399,8 @@ impl SqlError {
             Self::RowComparison { .. } => -115,
             Self::DateTimeExpr { .. } => -182,
             Self::Duration { .. } => -187,
-            Self::Recursion { code, .. } => *code,
             Self::Database { .. } => -901,
-            Self::Coded { code, .. } => *code,
+            Self::Coded { code, .. } | Self::Recursion { code, .. } => *code,
         }
     }
 
@@ -435,7 +434,7 @@ impl SqlError {
             Self::Exists { .. } => "42710",
             Self::SystemName { .. } => "428B8",
             Self::Restrict { .. } => "42893",
-            Self::ColumnListRequired => "42908",
+            Self::ColumnListRequired | Self::Recursion { code: -343, .. } => "42908",
             Self::SchemaNotValid { .. } => "58020",
             Self::CheckOption { .. } => "44000",
             Self::PrivilegeNotValid { .. } => "42852",
@@ -445,7 +444,6 @@ impl SqlError {
             Self::Misplaced { .. } => "42903",
             Self::OrderByNumber { .. } => "42805",
             Self::DateTimeExpr { .. } | Self::Duration { .. } => "42816",
-            Self::Recursion { code: -343, .. } => "42908",
             Self::Recursion { code: -346, .. } => "42836",
             Self::Recursion { .. } => "42925",
             Self::Database { .. } => "58004",

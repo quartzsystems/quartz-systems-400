@@ -5,18 +5,21 @@
 //! `JSON_TABLE`'s rows: one per item of the row path, a column per
 //! `COLUMNS` entry (`FOR ORDINALITY`, a value by its path with `ON
 //! EMPTY` and `ON ERROR`, or `FORMAT JSON` text).
-//!
-//! BLOCKED(sql): `JSON_TABLE` in `FROM` waits for the table-function
-//! reference SQL-3 is adding (`TABLE(...)` in `FROM`); `rows` is the
-//! evaluator that reference calls. Until then `JSON_TABLE` in `FROM` is
-//! a syntax error (`SQL0104`).
+//! `JSON_TABLE` in `FROM` is a table function of `exec::catalog`: the
+//! parser writes its columns as arguments (`parse::json`), `call` reads
+//! them back.
 
 use qdecimal::DfRounding;
+use store::txn::Txn;
 
 use super::path;
 use super::value::Json;
 use super::{coded, document};
-use crate::ast::TypeSpec;
+use crate::ast::{Expr, ObjectName, TypeSpec};
+use crate::exec::SqlContext;
+use crate::exec::catalog::Table;
+use crate::exec::eval::{ColInfo, Schema};
+use crate::exec::restype::SqlType;
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
@@ -111,6 +114,63 @@ pub fn rows(item: &Value, row_path: &str, columns: &[Column], mode: DfRounding) 
         out.push(row);
     }
     Ok(out)
+}
+
+/// Whether `name` is `JSON_TABLE`.
+pub(crate) fn has(name: &ObjectName) -> bool {
+    name.schema.is_none() && name.name.value == "JSON_TABLE"
+}
+
+fn fallback_of(how: Option<&str>, default: &Value) -> Fallback {
+    match how {
+        Some("error") => Fallback::Error,
+        Some("default") => Fallback::Default(default.clone()),
+        _ => Fallback::Null,
+    }
+}
+
+/// The columns and rows of a `JSON_TABLE` the parser wrote.
+pub(crate) fn call(
+    _txn: &mut Txn<'_>,
+    ctx: &SqlContext,
+    name: &ObjectName,
+    args: &[Value],
+    exprs: &[Expr],
+    alias: &str,
+) -> Result<Option<Table>> {
+    if !has(name) {
+        return Ok(None);
+    }
+    let (Some(item), Some(row_path)) = (args.first(), args.get(1)) else { return Ok(None) };
+    let mut columns = Vec::new();
+    let mut cols = Vec::new();
+    for (i, c) in args[2..].chunks(6).enumerate() {
+        let [opts, cname, path, _, empty, error] = c else { return Ok(None) };
+        let opts = super::Opts::parse(&opts.as_text());
+        let (column, t) = if opts.get("k") == Some("ord") {
+            (Column::Ordinality, SqlType::bigint(false))
+        } else {
+            let Some(Expr::Cast(_, spec)) = exprs.get(2 + i * 6 + 3) else { return Ok(None) };
+            let column = Column::Value {
+                spec: spec.clone(),
+                path: path.as_text(),
+                json: opts.get("fmt") == Some("J"),
+                empty: fallback_of(opts.get("empty"), empty),
+                error: fallback_of(opts.get("error"), error),
+            };
+            (column, SqlType { spec: spec.clone(), nullable: true })
+        };
+        columns.push(column);
+        cols.push(ColInfo {
+            name: cname.as_text(),
+            table: Some(alias.into()),
+            nullable: t.nullable,
+            field: Some(t.to_field()),
+            hidden: false,
+        });
+    }
+    let rows = rows(item, &row_path.as_text(), &columns, ctx.decfloat_rounding)?;
+    Ok(Some((Schema { cols }, rows)))
 }
 
 #[cfg(test)]

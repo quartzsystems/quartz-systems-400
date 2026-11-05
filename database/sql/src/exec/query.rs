@@ -23,7 +23,7 @@ use store::txn::Txn;
 
 use super::eval::{ColInfo, Env, Evaluator, Row, Schema, has_aggregate, sql_type};
 use super::grouping;
-use super::rtype::{Scope, SqlType, conform, infer};
+use super::restype::{Scope, SqlType, type_in};
 use super::join::{self, Item};
 use super::sort::{KeySpec, Sorter};
 use super::{ColumnDesc, ResultSet, SqlContext, TableInfo};
@@ -264,7 +264,9 @@ fn body(
             let mut ev = Evaluator { ctx, params };
             let mut out = Vec::new();
             let width = rows.first().map_or(0, Vec::len);
-            let types = super::restype::values_types(rows, width)?;
+            let mut scope = Scope::of_env(outer);
+            scope.sequences = super::restype::sequences(txn, ev.ctx, rows.iter().flatten());
+            let types = super::restype::values_types(rows, width, &scope)?;
             for r in rows {
                 if r.len() != width {
                     return Err(SqlError::ValueCount {
@@ -1405,9 +1407,13 @@ fn select(
             .collect();
     }
     // The select list, its columns typed in the scope of the rows.
-    let scope = Scope {
-        frames: outer.frames.iter().map(|(s, _)| s.as_ref()).chain(std::iter::once(schema.as_ref())).collect(),
-    };
+    let mut scope = Scope::of_env(outer);
+    scope.frames.push(schema.as_ref());
+    scope.sequences = super::restype::sequences(
+        txn,
+        ev.ctx,
+        sel.items.iter().filter_map(|i| if let SelectItem::Expr(e, _) = i { Some(e) } else { None }),
+    );
     let mut out_cols: Vec<ColInfo> = Vec::new();
     let mut plan: Vec<(Expr, usize, Option<SqlType>)> = Vec::new();
     let mut n = 0;
@@ -1448,21 +1454,23 @@ fn select(
                 n += 1;
                 // A grouping expression another set leaves out is null.
                 let absent = with_sets && sets.iter().any(|s| s.absent.contains(e));
-                let (field, nullable, ty) = if let Expr::Column(c) = e {
-                        let table = c.table.as_ref().map(|t| t.value.as_str());
-                        let found = schema.find(table, &c.column.value)?;
-                        let field = found.and_then(|i| schema.cols[i].field.clone());
-                        let null = found.is_none_or(|i| schema.cols[i].nullable);
-                        if field.is_some() {
-                            (field, null || absent, None)
-                        } else {
-                            let t = infer(e, &scope);
-                            (Some(t.to_field()), t.null || absent, Some(t))
+                let found = match e {
+                    Expr::Column(c) => schema.find(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value)?,
+                    _ => None,
+                };
+                let (field, nullable, ty) = match found {
+                    // A column of the row keeps its field.
+                    Some(i) if schema.cols[i].field.is_some() => {
+                        (schema.cols[i].field.clone(), schema.cols[i].nullable || absent, None)
+                    }
+                    _ => match type_in(e, &scope)? {
+                        Some(t) => {
+                            let null = t.nullable || absent;
+                            let t = t.nullable(null);
+                            (Some(super::restype::field_of(&t)), t.nullable, Some(t))
                         }
-                } else {
-                    let t = infer(e, &scope);
-                    let t = t.nullable(t.null || absent);
-                    (Some(t.to_field()), t.null, Some(t))
+                        None => (None, true, None),
+                    },
                 };
                 out_cols.push(ColInfo {
                     name: item_name(e, alias.as_ref(), n),
@@ -1525,9 +1533,10 @@ fn select(
             for (pi, (e, direct, ty)) in plan.iter().enumerate() {
                 if *direct == usize::MAX {
                     let e = if with_sets { &set_plans[si][pi] } else { e };
-                    let v = ev.eval(txn, e, &env).map(|v| match ty {
-                        Some(t) => conform(v, t),
-                        None => v,
+                    let mode = ev.ctx.decfloat_rounding;
+                    let v = ev.eval(txn, e, &env).and_then(|v| match ty {
+                        Some(t) => super::restype::conform(v, t, mode),
+                        None => Ok(v),
                     });
                     row.push(super::cast::mapped(ev.ctx, v)?);
                 } else {

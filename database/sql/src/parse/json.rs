@@ -8,7 +8,7 @@
 //! `CAST` of `NULL`, and whose others are its operands.
 
 use super::Parser;
-use crate::ast::{Expr, Function, Literal, TypeSpec};
+use crate::ast::{Expr, Function, Ident, Literal, ObjectName, TableRef, TypeSpec};
 use crate::error::Result;
 use crate::exec::json::Opts;
 
@@ -390,5 +390,44 @@ impl Parser {
         }
         self.expect_sym(")")?;
         Ok(made("XMLSERIALIZE", &opts, Some(t), vec![e]))
+    }
+
+    /// `JSON_TABLE(item, 'row path' COLUMNS (...)) [AS] x` after its `(`:
+    /// a table function of `exec::json::table` whose arguments are the
+    /// item and row path, then six for each column (its clauses, name,
+    /// path, type as a `CAST` of `NULL`, and the `ON EMPTY` and `ON
+    /// ERROR` defaults). It may name the columns before it.
+    pub(crate) fn json_table(&mut self) -> Result<TableRef> {
+        let mut opts = Opts::default();
+        let mut args = self.json_context(&mut opts)?;
+        self.expect_word("COLUMNS")?;
+        self.expect_sym("(")?;
+        loop {
+            let name = self.ident()?;
+            let mut col = Opts::default();
+            let lit = |s: String| Expr::Literal(Literal::Str(s));
+            if self.eat_words(&["FOR", "ORDINALITY"]) {
+                col.set("k", "ord");
+                args.extend([lit(col.text()), lit(name.value), null(), null(), null(), null()]);
+            } else {
+                let t = self.type_spec()?;
+                if self.eat_words(&["FORMAT", "JSON"]) {
+                    col.set("fmt", "J");
+                }
+                let path = if self.eat_word("PATH") { self.string()? } else { format!("$.{}", name.value.to_lowercase()) };
+                let [empty, error] = self.json_behaviors(&mut col)?;
+                col.set("k", "val");
+                args.extend([lit(col.text()), lit(name.value), lit(path), Expr::Cast(Box::new(null()), t), empty, error]);
+            }
+            if !self.eat_sym(",") {
+                break;
+            }
+        }
+        self.expect_sym(")")?;
+        self.expect_sym(")")?;
+        let (alias, columns) = self.correlation()?;
+        let alias = alias.ok_or_else(|| self.expected("a correlation name"))?;
+        let name = ObjectName { schema: None, name: Ident::new("JSON_TABLE") };
+        Ok(TableRef::Lateral(Box::new(TableRef::Function { name, args, alias, columns })))
     }
 }

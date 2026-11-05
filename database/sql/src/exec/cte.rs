@@ -17,7 +17,7 @@ use store::txn::Txn;
 
 use super::eval::{ColInfo, Env, Row, Schema};
 use super::query::run_body;
-use super::rtype::SqlType;
+use super::restype::SqlType;
 use super::sort::{KeySpec, cmp_keys};
 use super::SqlContext;
 use crate::ast::{Query, RecursiveCte};

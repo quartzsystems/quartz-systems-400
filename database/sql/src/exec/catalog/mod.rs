@@ -61,9 +61,10 @@ pub fn virtual_table(
     Ok(None)
 }
 
-/// A table function call: the function, its arguments' values, the
-/// correlation name.
-pub(crate) type FunctionCall = fn(&mut Txn<'_>, &SqlContext, &ObjectName, &[crate::value::Value], &str) -> Result<Option<Table>>;
+/// A table function call: the function, its arguments' values and
+/// expressions, the correlation name.
+pub(crate) type FunctionCall =
+    fn(&mut Txn<'_>, &SqlContext, &ObjectName, &[crate::value::Value], &[crate::ast::Expr], &str) -> Result<Option<Table>>;
 
 /// One provider of table functions: `TABLE (name(args)) AS x`.
 pub(crate) struct FunctionProvider {
@@ -75,7 +76,10 @@ pub(crate) struct FunctionProvider {
 }
 
 /// The table function providers, asked in order.
-const FUNCTIONS: &[FunctionProvider] = &[FunctionProvider { has: systools::has, call: systools::call }];
+const FUNCTIONS: &[FunctionProvider] = &[
+    FunctionProvider { has: systools::has, call: systools::call },
+    FunctionProvider { has: super::json::table::has, call: super::json::table::call },
+];
 
 /// Whether `name` names a table function.
 #[must_use]
@@ -90,11 +94,12 @@ pub fn table_function(
     ctx: &SqlContext,
     name: &ObjectName,
     args: &[crate::value::Value],
+    exprs: &[crate::ast::Expr],
     alias: &str,
 ) -> Result<Option<Table>> {
     for p in FUNCTIONS {
         if (p.has)(name)
-            && let Some(t) = (p.call)(txn, ctx, name, args, alias)?
+            && let Some(t) = (p.call)(txn, ctx, name, args, exprs, alias)?
         {
             return Ok(Some(t));
         }

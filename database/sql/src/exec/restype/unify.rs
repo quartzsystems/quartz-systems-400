@@ -9,10 +9,9 @@
 
 #![allow(clippy::many_single_char_names)]
 
-use super::{SqlType, char_length, type_of};
+use super::{Scope, SqlType, char_length, type_in};
 use crate::ast::{BinOp, DataType, Expr, TypeSpec};
 use crate::error::{Result, SqlError};
-use crate::exec::eval::Schema;
 
 /// The largest decimal precision of a result (`QAQQINI`'s default 31).
 const MAX_PRECISION: u8 = 31;
@@ -223,7 +222,7 @@ pub fn unify(a: &SqlType, b: &SqlType) -> Option<SqlType> {
 
 /// The common type of several results; `None` when one is unknown. In a
 /// `CASE`, results with no common type are `SQL0581`.
-pub fn all<'a>(es: impl Iterator<Item = &'a Expr>, schema: &Schema, case: bool) -> Result<Option<SqlType>> {
+pub fn all<'a>(es: impl Iterator<Item = &'a Expr>, scope: &Scope<'_>, case: bool) -> Result<Option<SqlType>> {
     let mut acc: Option<SqlType> = None;
     let mut nulls = false;
     for e in es {
@@ -231,7 +230,7 @@ pub fn all<'a>(es: impl Iterator<Item = &'a Expr>, schema: &Schema, case: bool) 
             nulls = true;
             continue;
         }
-        let Some(t) = type_of(e, schema)? else { return Ok(None) };
+        let Some(t) = type_in(e, scope)? else { return Ok(None) };
         acc = match acc {
             None => Some(t),
             Some(a) => match unify(&a, &t) {

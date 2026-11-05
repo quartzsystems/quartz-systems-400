@@ -198,6 +198,21 @@ fn joins_and_derived_tables() {
         v(&["6", "4", "5", "1", "2", "3"])
     );
     assert_eq!(db.rows("select x.* from table(systools.split('a,b,c', ',')) x"), v(&["1|a", "2|b", "3|c"]));
+    // A view runs as a derived table: its order column stays hidden.
+    db.ok("create view q3v as select id, grp from q3t");
+    assert_eq!(db.rows("select * from q3v where id < 3"), v(&["1|A", "2|A"]));
+    assert_eq!(db.rows("select id from (select id from q3v order by id desc) x order by order of x fetch first 1 rows only"), v(&["6"]));
+    assert_eq!(db.rows("select v.id, u.w from q3v v join q3u u using (id) order by 1"), v(&["1|100", "3|300"]));
+    // JSON_TABLE is a table function (JSON1 on pub400).
+    assert_eq!(
+        db.rows(r#"select t.* from json_table('{"r":[{"a":1,"b":"x"},{"a":2}]}', '$.r[*]' columns(a integer path '$.a', b varchar(5) path '$.b', n for ordinality)) as t"#),
+        v(&["1|x|1", "2|-|2"])
+    );
+    // The JSON aggregates are a family of the aggregates.
+    assert_eq!(
+        db.rows("select grp, json_arrayagg(id order by id desc) from q3t where grp is not null group by grp order by grp"),
+        v(&["A|[2,1]", "B|[4,3]", "C|[5]"])
+    );
 }
 
 #[test]

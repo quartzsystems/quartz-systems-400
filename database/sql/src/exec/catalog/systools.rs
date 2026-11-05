@@ -11,7 +11,7 @@ use crate::ast::ObjectName;
 use crate::error::{Result, SqlError};
 use crate::exec::SqlContext;
 use crate::exec::eval::{ColInfo, Schema};
-use crate::exec::rtype::{Kind, SqlType};
+use crate::exec::restype::{Kind, SqlType};
 use crate::value::Value;
 
 /// Whether `name` is a `SYSTOOLS` table function.
@@ -19,13 +19,13 @@ pub(crate) fn has(name: &ObjectName) -> bool {
     name.schema.as_ref().is_some_and(|s| s.value == "SYSTOOLS") && name.name.value == "SPLIT"
 }
 
-fn col(name: &str, t: SqlType, alias: &str) -> ColInfo {
-    ColInfo { name: name.into(), table: Some(alias.into()), nullable: t.null, field: Some(t.to_field()), hidden: false }
+fn col(name: &str, t: &SqlType, alias: &str) -> ColInfo {
+    ColInfo { name: name.into(), table: Some(alias.into()), nullable: t.nullable, field: Some(t.to_field()), hidden: false }
 }
 
 /// `SYSTOOLS.SPLIT(list, delimiter [, escape])`: the list's elements in
 /// order, as `ORDINAL_POSITION` and `ELEMENT`.
-pub(crate) fn call(_txn: &mut Txn<'_>, _ctx: &SqlContext, name: &ObjectName, args: &[Value], alias: &str) -> Result<Option<Table>> {
+pub(crate) fn call(_txn: &mut Txn<'_>, _ctx: &SqlContext, name: &ObjectName, args: &[Value], _exprs: &[crate::ast::Expr], alias: &str) -> Result<Option<Table>> {
     if !has(name) {
         return Ok(None);
     }
@@ -34,8 +34,8 @@ pub(crate) fn call(_txn: &mut Txn<'_>, _ctx: &SqlContext, name: &ObjectName, arg
     }
     let schema = Schema {
         cols: vec![
-            col("ORDINAL_POSITION", SqlType::bigint(true), alias),
-            col("ELEMENT", SqlType::new(Kind::Clob, 1 << 20, 0, true), alias),
+            col("ORDINAL_POSITION", &SqlType::bigint(true), alias),
+            col("ELEMENT", &SqlType::new(Kind::Clob, 1 << 20, 0, true), alias),
         ],
     };
     if args[0].is_null() || args[1].is_null() {

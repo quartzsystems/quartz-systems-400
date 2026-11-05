@@ -5,13 +5,16 @@
 //! Result types of expressions, worked out before any row is read: what
 //! a result column describes as, and what its values are fitted to.
 //! Constants, `CAST`, arithmetic, concatenation, `CASE` and `COALESCE`
-//! follow IBM's rules (`tools/conformance/sql/cases/types/`); a function
-//! family may give its own through [`FUNCTION_TYPES`]. `None` is a type
-//! not worked out: the column describes as `VARCHAR(32767)` and its
-//! values stay as computed.
+//! follow IBM's rules (`tools/conformance/sql/cases/types/`); aggregates,
+//! OLAP specifications, special registers and date arithmetic theirs
+//! (`rules`, `exec::agg`, `exec::olap`); a function family gives its own
+//! through [`FUNCTION_TYPES`]. `None` is a type not worked out: the
+//! column describes as `VARCHAR(32767)` and its values stay as computed.
 
 #![allow(clippy::many_single_char_names)]
 
+pub mod rules;
+pub mod shape;
 pub mod unify;
 
 use dds::{FieldDef, FloatPrecision, VarLen};
@@ -22,6 +25,8 @@ use crate::ast::{BinOp, DataType, Expr, Function, Literal, Register, TypeSpec};
 use crate::error::Result;
 use crate::value::Value;
 
+pub use rules::infer;
+pub use shape::Kind;
 pub use unify::{arith, unify};
 
 /// A result type: the type and whether it may be null.
@@ -58,7 +63,62 @@ impl SqlType {
 pub type FunctionType = fn(&str, &[Option<SqlType>], &[Expr]) -> Option<SqlType>;
 
 /// The families' result types, asked in order.
-pub const FUNCTION_TYPES: &[FunctionType] = &[cast_functions, super::json::types];
+pub const FUNCTION_TYPES: &[FunctionType] = &[
+    cast_functions,
+    super::json::types,
+    super::func::string::result_type,
+    super::func::datetime::result_type,
+    super::func::math::result_type,
+    super::func::misc::result_type,
+    rules::builtin,
+];
+
+/// The frames an expression's columns are looked up in, innermost last,
+/// and the types of the sequences it names.
+#[derive(Default)]
+pub struct Scope<'a> {
+    /// The frames.
+    pub frames: Vec<&'a Schema>,
+    /// `NEXT VALUE` and `PREVIOUS VALUE` of each sequence: its type.
+    pub sequences: Vec<(crate::ast::ObjectName, DataType)>,
+}
+
+impl<'a> Scope<'a> {
+    /// The scope of one row's columns.
+    #[must_use]
+    pub fn of(schema: &'a Schema) -> Self {
+        Self { frames: vec![schema], sequences: Vec::new() }
+    }
+
+    /// The scope of an environment's frames.
+    #[must_use]
+    pub fn of_env(env: &'a super::eval::Env) -> Self {
+        Self { frames: env.frames.iter().map(|(s, _)| s.as_ref()).collect(), sequences: Vec::new() }
+    }
+
+    /// A column's type: `Ok(None)` when it is found without a type or not
+    /// found; an error when the innermost frame finds it twice.
+    pub fn column(&self, table: Option<&str>, name: &str) -> Result<Option<SqlType>> {
+        for (k, s) in self.frames.iter().rev().enumerate() {
+            let found = match s.find(table, name) {
+                Ok(f) => f,
+                Err(e) if k == 0 => return Err(e),
+                Err(_) => continue,
+            };
+            if let Some(i) = found {
+                let col = &s.cols[i];
+                return Ok(col.field.as_ref().map(|f| of_field(f).or_null(col.nullable)));
+            }
+        }
+        Ok(None)
+    }
+
+    /// Whether a column of that name is in scope.
+    #[must_use]
+    pub fn has(&self, table: Option<&str>, name: &str) -> bool {
+        self.frames.iter().any(|s| !matches!(s.find(table, name), Ok(None)))
+    }
+}
 
 /// The type of a field.
 #[must_use]
@@ -172,6 +232,12 @@ fn number_literal(n: &str) -> Option<DataType> {
 /// The type of an expression over `schema`; an error for operands IBM
 /// refuses to combine (`SQL0581` in a `CASE`).
 pub fn type_of(e: &Expr, schema: &Schema) -> Result<Option<SqlType>> {
+    type_in(e, &Scope::of(schema))
+}
+
+/// The type of an expression in a scope.
+#[allow(clippy::too_many_lines)]
+pub fn type_in(e: &Expr, scope: &Scope<'_>) -> Result<Option<SqlType>> {
     let nn = |t: DataType| Ok(Some(SqlType::not_null(t)));
     match e {
         Expr::Literal(l) => match l {
@@ -185,13 +251,7 @@ pub fn type_of(e: &Expr, schema: &Schema) -> Result<Option<SqlType>> {
             Literal::Time(_) => nn(DataType::Time),
             Literal::Timestamp(s) => Ok(crate::value::Timestamp::parse(s).map(|t| SqlType::not_null(DataType::Timestamp(t.precision)))),
         },
-        Expr::Column(c) => {
-            let table = c.table.as_ref().map(|t| t.value.as_str());
-            Ok(schema.find(table, &c.column.value)?.and_then(|i| {
-                let col = &schema.cols[i];
-                col.field.as_ref().map(|f| of_field(f).or_null(col.nullable))
-            }))
-        }
+        Expr::Column(c) => scope.column(c.table.as_ref().map(|t| t.value.as_str()), &c.column.value),
         Expr::Register(r) => match r {
             Register::Date => nn(DataType::Date),
             Register::Time => nn(DataType::Time),
@@ -199,11 +259,11 @@ pub fn type_of(e: &Expr, schema: &Schema) -> Result<Option<SqlType>> {
             Register::User | Register::Server => nn(DataType::Varchar(18)),
             Register::Schema | Register::DecfloatRounding => nn(DataType::Varchar(128)),
             Register::Path => nn(DataType::Varchar(3483)),
-            Register::Named(_) => Ok(None),
+            Register::Named(n) => Ok(Some(super::registers::result_type(n))),
             Register::Timezone => nn(DataType::Decimal(6, 0)),
         },
         Expr::Cast(a, t) => {
-            let inner = type_of(a, schema)?;
+            let inner = type_in(a, scope)?;
             let mut spec = t.clone();
             if let Some(i) = &inner {
                 check_cast(i, t)?;
@@ -217,12 +277,20 @@ pub fn type_of(e: &Expr, schema: &Schema) -> Result<Option<SqlType>> {
             }
             Ok(Some(SqlType { spec, nullable: inner.is_none_or(|i| i.nullable) }))
         }
-        Expr::Neg(a) => Ok(type_of(a, schema)?.filter(|t| unify::is_number(t.data_type()))),
+        Expr::Neg(a) => Ok(type_in(a, scope)?.filter(|t| unify::is_number(t.data_type()))),
+        Expr::Duration(a, _) => type_in(a, scope),
         Expr::Binary(a, op, b) => {
-            if matches!(**a, Expr::Duration(..)) || matches!(**b, Expr::Duration(..)) {
-                return Ok(None);
+            // A labeled duration takes the type of the other side.
+            if matches!(**b, Expr::Duration(..)) {
+                return type_in(a, scope);
             }
-            let (Some(x), Some(y)) = (type_of(a, schema)?, type_of(b, schema)?) else { return Ok(None) };
+            if matches!(**a, Expr::Duration(..)) {
+                return type_in(b, scope);
+            }
+            let (Some(x), Some(y)) = (type_in(a, scope)?, type_in(b, scope)?) else { return Ok(None) };
+            if let Some(t) = rules::datetime(&x, *op, &y) {
+                return Ok(Some(t));
+            }
             Ok(if *op == BinOp::Concat { unify::concat(&x, &y) } else { arith(&x, *op, &y) })
         }
         Expr::Case { whens, otherwise, .. } => {
@@ -233,10 +301,25 @@ pub fn type_of(e: &Expr, schema: &Schema) -> Result<Option<SqlType>> {
             if let Some(o) = otherwise {
                 results.push(o);
             }
-            let t = unify::all(results.into_iter(), schema, true)?;
+            let t = unify::all(results.into_iter(), scope, true)?;
             Ok(t.map(|t| t.or_null(otherwise.is_none())))
         }
-        Expr::Function(f) => function(f, schema),
+        Expr::Function(f) => function(f, scope),
+        Expr::WithinGroup(w) => {
+            if w.func.name == "PERCENTILE_DISC"
+                && let Some(o) = w.order.first()
+            {
+                return Ok(type_in(&o.expr, scope)?.map(|t| t.nullable(true)));
+            }
+            function(&w.func, scope)
+        }
+        Expr::Over(o) => Ok(Some(super::olap::result_type(o, scope))),
+        Expr::Row(items) if items.len() == 1 => type_in(&items[0], scope),
+        Expr::NextValue(n) | Expr::PrevValue(n) => Ok(scope
+            .sequences
+            .iter()
+            .find(|(s, _)| s == n)
+            .map(|(_, t)| SqlType::not_null(t.clone()))),
         // A predicate as a value is a BOOLEAN (IBM i 7.5).
         Expr::IsNull(..) | Expr::Exists(..) => nn(DataType::Boolean),
         Expr::Compare(..) | Expr::And(..) | Expr::Or(..) | Expr::Not(_) | Expr::Between(..) | Expr::InList(..) | Expr::InSubquery(..) | Expr::Like(..) => {
@@ -246,24 +329,35 @@ pub fn type_of(e: &Expr, schema: &Schema) -> Result<Option<SqlType>> {
     }
 }
 
-fn function(f: &Function, schema: &Schema) -> Result<Option<SqlType>> {
+fn function(f: &Function, scope: &Scope<'_>) -> Result<Option<SqlType>> {
     if matches!(f.name.as_str(), "COALESCE" | "VALUE" | "IFNULL") && !f.args.is_empty() {
-        let t = unify::all(f.args.iter(), schema, false)?;
+        let t = unify::all(f.args.iter(), scope, false)?;
         let mut all_null = true;
         for a in &f.args {
-            all_null &= type_of(a, schema)?.is_none_or(|t| t.nullable);
+            all_null &= type_in(a, scope)?.is_none_or(|t| t.nullable);
         }
         return Ok(t.map(|mut t| {
             t.nullable = all_null;
             t
         }));
     }
-    if f.star || f.distinct {
-        return Ok(None);
-    }
+    // A name that is no column is a keyword argument (EXTRACT's part,
+    // CHAR's format, STRIP's end); INTERPRET's type is a CAST of null.
     let mut args = Vec::with_capacity(f.args.len());
     for a in &f.args {
-        args.push(type_of(a, schema)?);
+        args.push(match a {
+            Expr::Column(c) if c.table.is_none() && !scope.has(None, &c.column.value) => Some(SqlType::varchar(10, false)),
+            Expr::Cast(x, t) if matches!(**x, Expr::Literal(Literal::Null)) && f.name == "INTERPRET" => {
+                Some(SqlType::of_data_type(&t.data_type, false))
+            }
+            a => type_in(a, scope)?,
+        });
+    }
+    if super::agg::is_aggregate(f) {
+        return Ok(super::agg::result_type(f, &args));
+    }
+    if f.star || f.distinct {
+        return Ok(None);
     }
     Ok(FUNCTION_TYPES.iter().find_map(|g| g(&f.name, &args, &f.args)))
 }
@@ -371,6 +465,8 @@ pub fn conform(v: Value, t: &SqlType, mode: qdecimal::DfRounding) -> Result<Valu
             let _ = s;
             Ok(Value::Bin(b))
         }
+        // A timestamp to the column's precision.
+        (DataType::Timestamp(p), Value::Timestamp(ts)) if ts.precision != *p => Ok(Value::Timestamp(ts.with_precision(*p))),
         (DataType::Char(n) | DataType::Graphic(n), Value::Str(s)) => {
             let have = s.chars().count();
             let n = usize::try_from(*n).unwrap_or(usize::MAX);
@@ -458,7 +554,30 @@ pub fn union_types(left: &mut [super::eval::ColInfo], right: &[&super::eval::Col
 }
 
 /// The columns of a `VALUES`: each the rows' common type.
-pub fn values_types(rows: &[Vec<Expr>], width: usize) -> Result<Vec<Option<SqlType>>> {
-    let bare = Schema::default();
-    (0..width).map(|i| unify::all(rows.iter().filter_map(|r| r.get(i)), &bare, false)).collect()
+pub fn values_types(rows: &[Vec<Expr>], width: usize, scope: &Scope<'_>) -> Result<Vec<Option<SqlType>>> {
+    (0..width).map(|i| unify::all(rows.iter().filter_map(|r| r.get(i)), scope, false)).collect()
+}
+
+/// The types of the sequences `exprs` name, for their `NEXT VALUE` and
+/// `PREVIOUS VALUE`; a sequence not found is left out.
+pub fn sequences<'e>(
+    txn: &mut store::txn::Txn<'_>,
+    ctx: &super::SqlContext,
+    exprs: impl Iterator<Item = &'e Expr>,
+) -> Vec<(crate::ast::ObjectName, DataType)> {
+    fn names(e: &Expr, out: &mut Vec<crate::ast::ObjectName>) {
+        if let Expr::NextValue(n) | Expr::PrevValue(n) = e
+            && !out.contains(n)
+        {
+            out.push(n.clone());
+        }
+        for c in crate::ast::visit::children(e) {
+            names(c, out);
+        }
+    }
+    let mut found = Vec::new();
+    for e in exprs {
+        names(e, &mut found);
+    }
+    found.into_iter().filter_map(|n| super::seq::data_type(txn, ctx, &n).map(|t| (n, t))).collect()
 }

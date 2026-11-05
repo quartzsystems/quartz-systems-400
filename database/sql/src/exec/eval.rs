@@ -181,7 +181,7 @@ pub const AGGREGATES: &[&str] = &["COUNT", "SUM", "AVG", "MIN", "MAX", "COUNT_BI
 #[must_use]
 pub fn has_aggregate(e: &Expr) -> bool {
     match e {
-        Expr::Function(f) => super::agg::is_aggregate(f) || super::json::is_aggregate(f) || f.args.iter().any(has_aggregate),
+        Expr::Function(f) => super::agg::is_aggregate(f) || f.args.iter().any(has_aggregate),
         Expr::WithinGroup(_) => true,
         // A window function is not the group's aggregate; its arguments
         // may hold one.
@@ -793,8 +793,8 @@ impl Evaluator<'_> {
             && let Some(a) = f.args.first()
             && let Value::Str(s) = &v
         {
-            let scope = super::rtype::Scope { frames: env.frames.iter().map(|(s, _)| s.as_ref()).collect() };
-            if let Some((p, _)) = super::rtype::infer(a, &scope).digits() {
+            let scope = super::restype::Scope::of_env(env);
+            if let Some((p, _)) = super::restype::infer(a, &scope).digits() {
                 let len = usize::try_from(if p == 11 { 10 } else { p }).expect("small");
                 return Ok(Value::Str(format!("{s:0>len$}")));
             }
@@ -829,7 +829,7 @@ impl Evaluator<'_> {
             }
             rows.push(super::agg::Input { args, keys });
         }
-        let call = super::agg::Call { name: &f.name, distinct: f.distinct, star: f.star, order, overflow };
+        let call = super::agg::Call { name: &f.name, distinct: f.distinct, star: f.star, order, overflow, exprs: &f.args };
         let mut nulls = false;
         let v = super::agg::finish(&call, rows, &mut nulls)?;
         if nulls {
@@ -1179,12 +1179,12 @@ impl Evaluator<'_> {
             (Value::Num(d), Value::Date(_) | Value::Time(_) | Value::Timestamp(_)) if op == BinOp::Add => (y, d, a, false),
             _ => return None,
         };
-        let scope = super::rtype::Scope { frames: env.frames.iter().map(|(s, _)| s.as_ref()).collect() };
-        let t = super::rtype::infer(de, &scope);
-        if !matches!(t.kind, super::rtype::Kind::Decimal | super::rtype::Kind::Numeric) {
+        let scope = super::restype::Scope::of_env(env);
+        let t = super::restype::infer(de, &scope);
+        if !matches!(t.kind(), super::restype::Kind::Decimal | super::restype::Kind::Numeric) {
             return None;
         }
-        let kind = match (v, t.len, t.scale) {
+        let kind = match (v, t.len(), t.scale()) {
             (Value::Date(_) | Value::Timestamp(_), 8, 0) => K::Date,
             (Value::Time(_) | Value::Timestamp(_), 6, 0) => K::Time,
             (Value::Timestamp(_), p, s) if p == 14 + u32::from(s) => K::Timestamp,

@@ -7,7 +7,7 @@
 //! change, and their result types. The job fills what it knows (its
 //! name, process and thread); what QS/400 has no value for is null.
 
-use super::rtype::SqlType;
+use super::restype::SqlType;
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 

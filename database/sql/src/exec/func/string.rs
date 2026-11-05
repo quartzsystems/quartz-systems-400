@@ -8,9 +8,9 @@
 //! `REGEXP_*` family, `GREATEST`/`LEAST`, `NVL` and `DECODE`.
 
 use super::super::SqlContext;
-use super::super::rtype::{Kind, SqlType, unify};
+use super::super::restype::shape::unify_or;
+use super::super::restype::{Kind, SqlType};
 use super::{arity, int, text};
-use crate::ast::Function;
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
@@ -277,20 +277,21 @@ fn soundex(s: &str) -> String {
 }
 
 /// The result type of `name` when this family has it.
-pub(crate) fn result_type(name: &str, args: &[SqlType], f: &Function) -> Option<SqlType> {
-    let null = args.iter().any(|a| a.null);
-    let first = args.first().copied().unwrap_or_else(SqlType::unknown);
-    let lit = |i: usize| match f.args.get(i) {
+pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], exprs: &[crate::ast::Expr]) -> Option<SqlType> {
+    let args = &super::super::restype::rules::known(given)[..];
+    let null = args.iter().any(|a| a.nullable);
+    let first = args.first().cloned().unwrap_or_else(SqlType::unknown);
+    let lit = |i: usize| match exprs.get(i) {
         Some(crate::ast::Expr::Literal(crate::ast::Literal::Num(n))) => n.parse::<u32>().ok(),
         _ => None,
     };
-    let len = |t: &SqlType| t.len.max(1);
+    let len = |t: &SqlType| t.len().max(1);
     Some(match name {
         "DECODE" => {
             let mut t: Option<SqlType> = None;
             for (i, a) in args.iter().enumerate().skip(1) {
                 if i % 2 == 0 || i == args.len() - 1 {
-                    t = Some(t.map_or(*a, |t| unify(t, *a)));
+                    t = Some(t.map_or_else(|| a.clone(), |t| unify_or(t, a)));
                 }
             }
             t.unwrap_or_else(SqlType::unknown).nullable(true)
@@ -298,7 +299,7 @@ pub(crate) fn result_type(name: &str, args: &[SqlType], f: &Function) -> Option<
         "GREATEST" | "LEAST" => {
             let mut t = first;
             for a in &args[1.min(args.len())..] {
-                t = unify(t, *a);
+                t = unify_or(t, a);
             }
             t.nullable(null)
         }
@@ -306,15 +307,15 @@ pub(crate) fn result_type(name: &str, args: &[SqlType], f: &Function) -> Option<
         "SUBSTRING" if args.len() == 4 && lit(2).is_some() => SqlType::char(lit(2).unwrap_or(1), null),
         "TRANSLATE" => SqlType::varchar(len(&first), null),
         "OVERLAY" => {
-            let t = args.get(1).map_or(0, |t| t.len);
-            let cut = if args.len() > 3 { lit(3).unwrap_or(0) } else { u32::from(lit(2).is_none_or(|s| s <= first.len)) };
-            SqlType::varchar((first.len + t).saturating_sub(cut).max(1), null)
+            let t = args.get(1).map_or(0, SqlType::len);
+            let cut = if args.len() > 3 { lit(3).unwrap_or(0) } else { u32::from(lit(2).is_none_or(|s| s <= first.len())) };
+            SqlType::varchar((first.len() + t).saturating_sub(cut).max(1), null)
         }
         "INSERT" => {
-            let t = args.get(3).map_or(0, |t| t.len);
-            SqlType::varchar((first.len + t).saturating_sub(lit(2).unwrap_or(0)).max(1), null)
+            let t = args.get(3).map_or(0, SqlType::len);
+            SqlType::varchar((first.len() + t).saturating_sub(lit(2).unwrap_or(0)).max(1), null)
         }
-        "REPEAT" => SqlType::varchar(lit(1).map_or(4000, |n| first.len * n).clamp(1, 32740), null),
+        "REPEAT" => SqlType::varchar(lit(1).map_or(4000, |n| first.len() * n).clamp(1, 32740), null),
         "SPACE" => SqlType::varchar(lit(0).unwrap_or(4000).clamp(1, 32740), null),
         "LPAD" | "RPAD" => SqlType::varchar(lit(1).unwrap_or(4000).clamp(1, 32740), null),
         "INSTR" | "LOCATE_IN_STRING" | "ASCII" | "DIFFERENCE" => SqlType::int(null),
@@ -323,8 +324,8 @@ pub(crate) fn result_type(name: &str, args: &[SqlType], f: &Function) -> Option<
         "REGEXP_COUNT" | "REGEXP_INSTR" => SqlType::int(true),
         "REGEXP_SUBSTR" => SqlType::varchar(len(&first), true),
         "REGEXP_REPLACE" => {
-            let r = args.get(2).map_or(0, |t| t.len);
-            SqlType::varchar((first.len * (r + 1) + r).clamp(1, 32740), true)
+            let r = args.get(2).map_or(0, SqlType::len);
+            SqlType::varchar((first.len() * (r + 1) + r).clamp(1, 32740), true)
         }
         "REGEXP_LIKE" => SqlType::new(Kind::Boolean, 1, 0, true),
         _ => return None,

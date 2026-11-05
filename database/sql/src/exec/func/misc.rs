@@ -16,9 +16,8 @@ use std::fmt::Write as _;
 use sha1::Digest as _;
 
 use super::super::SqlContext;
-use super::super::rtype::{Kind, SqlType};
+use super::super::restype::{Kind, SqlType};
 use super::arity;
-use crate::ast::Function;
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
@@ -181,16 +180,17 @@ pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Resul
 }
 
 /// The result type of `name` when this family has it.
-pub(crate) fn result_type(name: &str, args: &[SqlType], f: &Function) -> Option<SqlType> {
-    let null = args.iter().any(|a| a.null);
-    let first = args.first().copied().unwrap_or_else(SqlType::unknown);
+pub(crate) fn result_type(name: &str, given: &[Option<SqlType>], exprs: &[crate::ast::Expr]) -> Option<SqlType> {
+    let args = &super::super::restype::rules::known(given)[..];
+    let null = args.iter().any(|a| a.nullable);
+    let first = args.first().cloned().unwrap_or_else(SqlType::unknown);
     Some(match name {
         "HASH_MD5" => SqlType::new(Kind::Binary, 16, 0, null),
         "HASH_SHA1" => SqlType::new(Kind::Binary, 20, 0, null),
         "HASH_SHA256" => SqlType::new(Kind::Binary, 32, 0, null),
         "HASH_SHA512" => SqlType::new(Kind::Binary, 64, 0, null),
         "HASH" => {
-            let n = match f.args.get(1) {
+            let n = match exprs.get(1) {
                 Some(crate::ast::Expr::Literal(crate::ast::Literal::Num(n))) => match n.as_str() {
                     "1" => 20,
                     "2" => 32,
@@ -203,7 +203,7 @@ pub(crate) fn result_type(name: &str, args: &[SqlType], f: &Function) -> Option<
             SqlType::new(Kind::Varbinary, n, 0, null)
         }
         "GENERATE_UNIQUE" => SqlType::new(Kind::Binary, 13, 0, false),
-        "HEXTORAW" | "VARCHAR_BIT_FORMAT" => SqlType::new(Kind::Varbinary, (first.len / 2).max(1), 0, null),
+        "HEXTORAW" | "VARCHAR_BIT_FORMAT" => SqlType::new(Kind::Varbinary, (first.len() / 2).max(1), 0, null),
         "VARCHAR_FORMAT_BINARY" => SqlType::varchar(40, null),
         _ => return None,
     })
