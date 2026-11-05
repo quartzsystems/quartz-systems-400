@@ -111,6 +111,16 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
 
 /// The C-style procedures alone: those `ile::SYSTEM_SRVPGM_PROCS`
 /// names a service program for.
+///
+/// BLOCKED(sql): the SQL CLI (`QSQCLI` and its binding directory) is not
+/// here. It needs handles whose bound columns and parameters are the
+/// caller's storage, written at `SQLFetch` and read at `SQLExecute` long
+/// after the call that named them (pointers kept across calls into the
+/// job's spaces), the job's SQL session reachable from a bound procedure,
+/// and for `SQL_ATTR_SERVER_MODE` a `QSQSRVR` prestart entry in
+/// `QSYSWRK` with a job role that runs a connection's statements for
+/// another job. A program that binds to `QSQCLI` fails to bind (the
+/// service program does not exist), so nothing is accepted half-done.
 #[must_use]
 pub fn c_procedures() -> Vec<(&'static str, usize)> {
     let mut v = net::procedures();
