@@ -133,6 +133,18 @@ pub fn idle(path: &str, pool: &JobId) -> Result<u32, Errno> {
     if n == 4 { Ok(u32::from_be_bytes(b)) } else { Err(Errno::EINVAL) }
 }
 
+/// How many descriptors wait for `target` (a pool with no idle taker
+/// yet: its subsystem starts jobs for them).
+pub fn queued(path: &str, target: &JobId) -> Result<u32, Errno> {
+    let s = UnixStream::connect(path).map_err(|e| io(&e))?;
+    let mut m = vec![op::QUEUED];
+    m.extend_from_slice(target);
+    send(s.as_fd(), &m, None)?;
+    let mut b = [0u8; 4];
+    let (n, _) = recv(s.as_fd(), &mut b)?;
+    if n == 4 { Ok(u32::from_be_bytes(b)) } else { Err(Errno::EINVAL) }
+}
+
 /// One connection's request.
 fn answer(s: &UnixStream, st: &State<OwnedFd>) -> Result<(), Errno> {
     let mut b = [0u8; 300];
@@ -165,6 +177,10 @@ fn answer(s: &UnixStream, st: &State<OwnedFd>) -> Result<(), Errno> {
             }
         }
         Some(op::IDLE) if n >= 17 => send(s.as_fd(), &st.idle(&id(&b[1..17])).to_be_bytes(), None),
+        Some(op::QUEUED) if n >= 17 => {
+            let q = u32::try_from(st.queued(&id(&b[1..17]))).unwrap_or(u32::MAX);
+            send(s.as_fd(), &q.to_be_bytes(), None)
+        }
         _ => send(s.as_fd(), &[status::BAD], None),
     }
 }

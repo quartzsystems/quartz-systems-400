@@ -2588,6 +2588,7 @@ dependencies = [
  "sockets",
  "spool",
  "sql",
+ "sqlcli",
  "sst",
  "stg",
  "store",

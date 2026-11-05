@@ -156,14 +156,19 @@ impl Monitor {
     /// Keep each prestart job entry's jobs: `INLJOBS` of them, and
     /// `ADLJOBS` more when fewer than `THRESHOLD` wait for work (never
     /// past `MAXJOBS`). A new batch waits until the last one could ask.
+    /// An entry with `STRJOBS(*NO)` starts when a request waits for its
+    /// pool and none of its jobs is active.
     fn prestart(&mut self) {
         for p in self.sbsd.pjes.clone() {
-            if !p.strjobs {
-                continue;
-            }
             let program = format!("{}/{}", p.pgm.1, p.pgm.0);
             let live = self.jobs.iter().filter(|s| s.start.role == "PRESTART" && s.start.program == program).count();
             let live = u16::try_from(live).unwrap_or(u16::MAX);
+            if !p.strjobs
+                && live == 0
+                && sockets::relay::queued(sockets::relay::SOCKET, &sockets::relay::pool(&p.pgm.0)).unwrap_or(0) == 0
+            {
+                continue;
+            }
             let recent = self.prestarted.get(&program).is_some_and(|t| t.elapsed() < Duration::from_secs(3));
             let want = if live < p.inljobs {
                 p.inljobs - live

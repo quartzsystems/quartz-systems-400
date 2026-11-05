@@ -952,6 +952,14 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
                     jobd: q("QSYSSCD", "QSYS"),
                 }],
                 jobqes: vec![jq("QSYSNOMAX", "QSYS", 10, 0)],
+                // The SQL CLI's server-mode jobs, started at the first
+                // request (pub400's entry, QSYS2.PRESTART_JOB_INFO).
+                pjes: vec![Pje {
+                    strjobs: false,
+                    inljobs: 5,
+                    threshold: 2,
+                    ..host_pje("QSQSRVR", q("QDFTSVR", "QGPL"), q("QSYSCLS20", "QSYS"), 200)
+                }],
                 ..Sbsd::default()
             },
         ),

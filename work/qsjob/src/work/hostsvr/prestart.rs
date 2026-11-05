@@ -135,6 +135,9 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     if program == crate::work::ddm::listener::SERVER_PROGRAM {
         crate::work::ddm::server::run(ctl, link, start);
     }
+    if program == crate::console::clisrv::PROGRAM {
+        crate::work::sqlsrvr::run(ctl, link, start);
+    }
     let Some(server) = hostserver::jobs::server_of_prestart(&program) else {
         crate::start::end(&mut ctl, &format!("{program} serves no host server"));
     };

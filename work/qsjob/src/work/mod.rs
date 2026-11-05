@@ -27,6 +27,7 @@ pub mod pwdpgm;
 pub mod qap;
 pub mod scheduler;
 pub mod spawn;
+pub mod sqlsrvr;
 pub mod sysjob;
 pub mod telnet;
 pub mod tls;

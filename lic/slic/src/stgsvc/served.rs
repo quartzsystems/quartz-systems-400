@@ -86,6 +86,9 @@ pub struct JobCtx {
     pub handles: std::collections::HashMap<Vec<u8>, String>,
     /// Its programs' embedded SQL: cursors and prepared statements.
     pub sql: Option<sql::embed::Session>,
+    /// For a `QSQSRVR` job serving a CLI connection: the client job
+    /// (`QSYS2.SERVER_MODE_JOB_NAME`).
+    pub sql_client: Option<String>,
     /// A secondary thread's link (`hello_thread`): closing it ends
     /// nothing.
     pub thread: bool,
@@ -127,6 +130,7 @@ impl JobCtx {
             session: Rc::new(RefCell::new(sec::auth::cache::Session::default())),
             handles: std::collections::HashMap::new(),
             sql: None,
+            sql_client: None,
             thread: false,
             job,
         }
@@ -635,6 +639,8 @@ pub fn sql_session<'c>(
         s.ctx.dbmon.ident = Some(sql::dbmon::JobIdent { name: c.job.name.clone(), user: c.job.user.clone(), number: c.job.number });
     }
     s.ctx.qtemp = c.svc.qtemp.clone();
+    s.ctx.registers.job_name = Some(super::sqlsrv::qualified(&c.job));
+    s.ctx.registers.server_mode_job_name.clone_from(&c.sql_client);
     // The job's own thread can be asked to end a statement.
     if !c.thread {
         let flag = stg::sql_cancel_path(c.job.number);
@@ -2278,6 +2284,18 @@ impl Service for Served<'_> {
 
     fn acgcde(&mut self) -> String {
         super::acg::code(self.system, self.ctx.job.number)
+    }
+
+    fn sqlsrv_ticket(&mut self) -> Vec<u8> {
+        super::sqlsrv::ticket(self.ctx)
+    }
+
+    fn sqlsrv_assume(&mut self, ticket: Vec<u8>, user: String, password: String) -> Result<String, stg::HostRefused> {
+        super::sqlsrv::assume(self.system, self.ctx, &ticket, &user, &password)
+    }
+
+    fn sqlsrv_end(&mut self) {
+        super::sqlsrv::end(self.system, self.ctx);
     }
 
     fn machine(&mut self) -> stg::proto::MachineInfo {

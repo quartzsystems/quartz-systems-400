@@ -59,6 +59,10 @@ pub enum Status {
     End,
     /// Waiting for an activity level.
     Inel,
+    /// A prestart job waiting for a program start request.
+    Psrw,
+    /// Waiting on a condition (a server-mode SQL job between requests).
+    Cndw,
 }
 
 impl Status {
@@ -79,6 +83,8 @@ impl Status {
             Self::Hld => "HLD",
             Self::End => "END",
             Self::Inel => "INEL",
+            Self::Psrw => "PSRW",
+            Self::Cndw => "CNDW",
         }
     }
 
@@ -89,7 +95,7 @@ impl Status {
     }
 
     /// Every status.
-    pub const ALL: [Self; 13] = [
+    pub const ALL: [Self; 15] = [
         Self::Run,
         Self::Deqw,
         Self::Msgw,
@@ -103,6 +109,8 @@ impl Status {
         Self::Hld,
         Self::End,
         Self::Inel,
+        Self::Psrw,
+        Self::Cndw,
     ];
 
     /// The byte a job's shared status word carries.

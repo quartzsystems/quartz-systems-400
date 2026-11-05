@@ -854,6 +854,16 @@ ipc::rpc! {
     1440 => fn ws_end_requests / WsEndRequests (jobs: Vec<u32>) -> Vec<(u32, bool)>;
     /// The job's accounting code (`RTVJOBA ACGCDE`); blank for none.
     1470 => fn acgcde / Acgcde () -> String;
+    // --- SQL CLI server mode (1480-1489; stgsvc/sqlsrv.rs)
+    /// A ticket for a `QSQSRVR` job to serve one of this job's CLI
+    /// connections as its user.
+    1480 => fn sqlsrv_ticket / SqlsrvTicket () -> Vec<u8>;
+    /// A `QSQSRVR` prestart job takes a ticket's connection: it runs as
+    /// the client's user, or as `user` (the password checked as a
+    /// sign-on). The client's qualified name.
+    1481 => fn sqlsrv_assume / SqlsrvAssume (ticket: Vec<u8>, user: String, password: String) -> Result<String, HostRefused>;
+    /// The connection ended: the job's SQL goes, its own user again.
+    1482 => fn sqlsrv_end / SqlsrvEnd () -> ();
 }
 
 /// What `machine` answers. Each string is empty when unknown.

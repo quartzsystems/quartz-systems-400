@@ -14,6 +14,7 @@ pub mod drda;
 pub mod host;
 pub mod jobcmd;
 pub mod log;
+pub mod clisrv;
 pub mod sqlcall;
 
 use std::cell::RefCell;
@@ -366,6 +367,9 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
     sysapi::mail::set_mailer(Some(Rc::new(move |req| crate::command::netcmd::qtmm(&mail_link, req))));
     // Programs compiled from RPG call its runtime library.
     qrpgrt::install(&mut job);
+    // The SQL CLI; its server-mode connections go to QSQSRVR jobs.
+    sqlcli::install(&mut job);
+    sqlcli::server::set_connector(Some(clisrv::connector(link, crate::work::hostsvr::daemon::internal_id(&host.start))));
     // Domain and state are enforced at the level of this IPL.
     job.act.qsecurity = link.borrow_mut().with(Client::whoami).qsecurity;
     let ctl = host.ctl.clone();
