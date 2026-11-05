@@ -7,7 +7,6 @@
 //! `CHAR`/`VARCHAR` of a number in IBM's text. Results round in
 //! `CURRENT DECFLOAT ROUNDING MODE`.
 
-use std::cmp::Ordering;
 
 use qdecimal::{DecFloat, DfFormat};
 
@@ -94,11 +93,8 @@ fn compare(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
 fn total_order(name: &str, args: &[Value], ctx: &SqlContext) -> Result<Value> {
     arity(name, args, 2, 2)?;
     let (a, b) = (df(&args[0], ctx)?, df(&args[1], ctx)?);
-    Ok(Value::int(match a.total_cmp(&b) {
-        Ordering::Less => -1,
-        Ordering::Equal => 0,
-        Ordering::Greater => 1,
-    }))
+    // Ordering is -1, 0 or 1.
+    Ok(Value::int(i64::from(a.total_cmp(&b) as i8)))
 }
 
 /// `DECFLOAT_FORMAT(text [, format])`: the format's `9`, `0`, `.`, `,`,
