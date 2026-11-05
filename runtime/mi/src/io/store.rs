@@ -190,6 +190,7 @@ impl StoreIo {
             member: ccsid::decode_trimmed(o.fb.member.as_bytes()),
             record: record.map(|r| r.data),
             nulls,
+            triggers: Vec::new(),
         }
     }
 }
@@ -288,6 +289,10 @@ impl IoSource for StoreIo {
                 return Err(fail_of(&e));
             }
         };
+        // Trigger programs are the job's to call (`trigger`).
+        if spec.triggers {
+            odp.borrow_mut().set_trigger_mode(db::trg::Mode::Defer);
+        }
         let id = odp.borrow().file;
         let desc = db::file::describe(&mut txn, id).map_err(|e| fail_of(&e))?;
         txn.commit().map_err(|e| fail_of(&DbError::Store(e)))?;
@@ -344,6 +349,9 @@ impl IoSource for StoreIo {
         };
         let odp = Rc::clone(&entry.odp);
         let mut o = odp.borrow_mut();
+        if let Some(r) = req.resume {
+            o.resume_triggers(r.to_db());
+        }
         let rec_len = fmt.format.record_len as usize;
         // The request's null map (a byte per field) as the record's bits.
         let mut null_map = vec![0u8; usize::from(fmt.null_map_len)];
@@ -381,7 +389,12 @@ impl IoSource for StoreIo {
             IoOp::Unlock => o.unlock_op(&mut txn).map(|()| None),
             IoOp::Feod => o.feod(&mut txn).map(|()| None),
         };
+        let due = o.take_due();
         drop(o);
+        let before = match &result {
+            Err(DbError::TriggersDue { calls }) => Some(calls.iter().map(super::trigger::TriggerCall::of).collect::<Vec<_>>()),
+            _ => None,
+        };
         // A read refused its record lock names no format (blank in the
         // INFDS on the machine).
         let refused = matches!(result, Err(DbError::RecordLocked { .. } | DbError::RecordLockedInJob { .. }));
@@ -389,6 +402,12 @@ impl IoSource for StoreIo {
         let mut out = Self::result_of(&odp, record, fmt);
         if refused {
             out.format = " ".into();
+        }
+        if let Some(calls) = before {
+            out.status = super::trigger::TRIGGERS_DUE;
+            out.triggers = calls;
+        } else {
+            out.triggers = due.iter().map(super::trigger::TriggerCall::of).collect();
         }
         if let Err(e) = txn.commit() {
             out.status = db::odp::status::OTHER;

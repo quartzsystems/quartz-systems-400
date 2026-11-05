@@ -378,6 +378,7 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
         return open_display(j, key, &fr, infds.cast_unsigned(), infds_len, rpg);
     }
     let spec = OpenSpec {
+        triggers: true,
         file: fr.file.clone(),
         lib: fr.lib.clone(),
         usage: fr.usage,
@@ -591,14 +592,19 @@ pub extern "sysv64" fn db_io(
         format: format.as_deref(),
         nolock: nolock != 0,
         nulls: null_map.as_deref(),
+        resume: None,
     };
     let r = if let Some(oa) = j.oa_files.get(&fkey).cloned() {
         oa.borrow_mut().io(j, &req)
     } else {
-        let Some(io) = j.io.as_mut() else {
+        if j.io.is_none() {
             return CLOSED;
-        };
-        io.io(handle, &req)
+        }
+        // Trigger programs run here, in the job.
+        crate::io::trigger::run(j, &req, &mut |j, rq| match j.io.as_mut() {
+            Some(io) => io.io(handle, rq),
+            None => crate::io::IoResult { status: db::odp::status::CLOSED, ..crate::io::IoResult::default() },
+        })
     };
     if let Some(data) = &r.record
         && rec != 0

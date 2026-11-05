@@ -14,6 +14,7 @@ pub mod infds;
 pub mod oa;
 pub mod spool;
 pub mod store;
+pub mod trigger;
 mod wire;
 
 pub use wire::{OwnedKey, OwnedRequest};
@@ -22,6 +23,9 @@ pub use wire::{OwnedKey, OwnedRequest};
 /// runtime hands it over.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenSpec {
+    /// The opener calls the file's trigger programs (`trigger::run`);
+    /// otherwise a change or read a trigger fires for is refused.
+    pub triggers: bool,
     /// Object name.
     pub file: String,
     /// Library, `*LIBL` by default.
@@ -244,6 +248,9 @@ pub enum KeyRef<'a> {
 /// A request to an open file.
 #[derive(Clone, Copy, Debug)]
 pub struct IoRequest<'a> {
+    /// The answer to the before trigger calls this same operation
+    /// returned (`trigger::TRIGGERS_DUE`).
+    pub resume: Option<&'a trigger::TriggerResume>,
     /// The operation.
     pub op: IoOp,
     /// The record to write or update.
@@ -262,6 +269,9 @@ pub struct IoRequest<'a> {
 /// What an operation reported: the feedback of the open data path.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct IoResult {
+    /// Trigger programs to call: before ones when `status` is
+    /// `trigger::TRIGGERS_DUE`, else after ones (the operation is done).
+    pub triggers: Vec<trigger::TriggerCall>,
     /// Five-digit RPG status, as a number.
     pub status: u16,
     /// Message identifier of a failure.

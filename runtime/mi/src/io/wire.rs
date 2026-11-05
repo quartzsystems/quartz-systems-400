@@ -7,6 +7,7 @@
 
 use ipc::{Dec, Wire, WireError, wire_enum, wire_struct};
 
+use super::trigger::{TriggerCall, TriggerFail, TriggerResume};
 use super::{
     DataAreaKind, DataAreaValue, FileInfo, IoFail, IoOp, IoRequest, IoResult, KeyRef, OpenSpec,
 };
@@ -74,6 +75,7 @@ impl Wire for OpenSpec {
         self.member.put(out);
         self.actgrp.put(out);
         self.commit.put(out);
+        self.triggers.put(out);
     }
     fn get(d: &mut Dec<'_>) -> Result<Self, WireError> {
         Ok(Self {
@@ -85,6 +87,7 @@ impl Wire for OpenSpec {
             member: Wire::get(d)?,
             actgrp: Wire::get(d)?,
             commit: Wire::get(d)?,
+            triggers: Wire::get(d)?,
         })
     }
 }
@@ -102,7 +105,24 @@ wire_struct!(FileInfo {
     rec_len,
     wait_ms
 });
+wire_struct!(TriggerCall {
+    trigger,
+    lib,
+    pgm,
+    before,
+    alwrepchg,
+    file,
+    buffer
+});
+wire_struct!(TriggerFail {
+    trigger,
+    msgid,
+    text,
+    not_found
+});
+wire_struct!(TriggerResume { buffer, failed });
 wire_struct!(IoResult {
+    triggers,
     status,
     msgid,
     eof,
@@ -171,9 +191,12 @@ pub struct OwnedRequest {
     pub nolock: bool,
     /// The null map to write.
     pub nulls: Option<Vec<u8>>,
+    /// The answer to the before trigger calls.
+    pub resume: Option<TriggerResume>,
 }
 
 wire_struct!(OwnedRequest {
+    resume,
     op,
     record,
     key,
@@ -201,6 +224,7 @@ impl OwnedRequest {
             format: r.format.map(str::to_string),
             nolock: r.nolock,
             nulls: r.nulls.map(<[u8]>::to_vec),
+            resume: r.resume.cloned(),
         }
     }
 
@@ -224,6 +248,7 @@ impl OwnedRequest {
             format: self.format.as_deref(),
             nolock: self.nolock,
             nulls: self.nulls.as_deref(),
+            resume: self.resume.as_ref(),
         }
     }
 }

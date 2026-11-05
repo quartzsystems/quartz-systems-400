@@ -308,6 +308,7 @@ fn request(op: IoOp) -> IoRequest<'static> {
         format: None,
         nolock: true,
         nulls: None,
+        resume: None,
     }
 }
 
@@ -354,6 +355,9 @@ impl FileBackend for JobFiles {
         let lib = if req.library.trim().is_empty() { "*LIBL".to_string() } else { req.library.trim().to_string() };
         let member = req.member.trim();
         let spec = OpenSpec {
+            // BLOCKED(sql): no trigger programs called here; a file with
+            // triggers refuses the change.
+            triggers: false,
             file: req.file.trim().to_string(),
             lib,
             usage,

@@ -163,6 +163,9 @@ impl Open {
     pub fn new(host: &Host, f: &DataFile, member: Option<String>, read_only: bool) -> Result<Self, IoFail> {
         let mut io = RemoteIo::new(host.link.clone());
         let spec = OpenSpec {
+            // BLOCKED(sql): no trigger programs called here; a file with
+            // triggers refuses the change.
+            triggers: false,
             file: f.name.clone(),
             lib: f.lib.clone(),
             usage: if read_only {
@@ -190,6 +193,7 @@ impl Open {
                 format,
                 nolock,
                 nulls: None,
+                resume: None,
             },
         )
     }
