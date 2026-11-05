@@ -742,7 +742,8 @@ connection.
 :EPARML.
 :EHELP.
 :HELP NAME='CRTDEVDSP/PRTFILE'.Printer file (PRTFILE)
-:P.The printer file for this command.
+:P.The printer file the printed output is written with, by name and
+library.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PV.name:EPV.

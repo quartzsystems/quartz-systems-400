@@ -1,0 +1,24 @@
+                         Run SQL Statements (RUNSQLSTM)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Source margins:                  MARGINS                                       
+   Right margin . . . . . . . . .                80                             
+ Default collection . . . . . . . DFTRDBCOL      *NONE                          
+ IBM SQL flagging . . . . . . . . SAAFLAG        *NOFLAG                        
+ ANS flagging . . . . . . . . . . FLAGSTD        *NONE                          
+ Decimal point  . . . . . . . . . DECMPT         *JOB                           
+ Sort sequence  . . . . . . . . . SRTSEQ         *JOB                           
+   Library  . . . . . . . . . . .                                               
+ Language id  . . . . . . . . . . LANGID         *JOB                           
+ Source listing options . . . . . OPTION         *LIST                          
+ Print file . . . . . . . . . . . PRTFILE        QSYSPRT                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Statement processing . . . . . . PROCESS        *RUN                           
+ Second level text  . . . . . . . SECLVLTXT      *NO                            
+ Allow copy of data . . . . . . . ALWCPYDTA      *OPTIMIZE                      
+ Allow blocking . . . . . . . . . ALWBLK         *ALLREAD                       
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

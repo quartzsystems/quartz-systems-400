@@ -1,0 +1,24 @@
+                         Delete SQL Package (DLTSQLPKG)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ SQL package  . . . . . . . . . . SQLPKG                                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

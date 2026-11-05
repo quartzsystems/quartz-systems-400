@@ -1,0 +1,24 @@
+                        Start Database Monitor (STRDBMON)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Filter by local port number  . . FTRLCLPORT     *NONE                          
+ Filter by query governor . . . . FTRQRYGOVR     *NONE                          
+ Filter by accounting string  . . FTRCLTACG      *NONE                          
+                                                                                
+                                                                                
+ Filter by application name . . . FTRCLTAPP      *NONE                          
+                                                                                
+                                                                                
+ Filter by program name . . . . . FTRCLTPGM      *NONE                          
+                                                                                
+                                                                                
+ Filter by client user ID . . . . FTRCLTUSR      *NONE                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

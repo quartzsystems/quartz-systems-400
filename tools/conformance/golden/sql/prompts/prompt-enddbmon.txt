@@ -1,0 +1,24 @@
+                         End Database Monitor (ENDDBMON)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Job name . . . . . . . . . . . . JOB            *                              
+   User . . . . . . . . . . . . .                                               
+   Number . . . . . . . . . . . .                                               
+ Monitor ID . . . . . . . . . . . MONID                                         
+ Comment  . . . . . . . . . . . . COMMENT        *BLANK                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

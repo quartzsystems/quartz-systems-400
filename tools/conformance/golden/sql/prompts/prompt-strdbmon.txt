@@ -1,0 +1,24 @@
+                        Start Database Monitor (STRDBMON)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File to receive output . . . . . OUTFILE                                       
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Output member options:           OUTMBR                                        
+   Member to receive output . . .                *FIRST                         
+   Replace or add records . . . .                *REPLACE                       
+ Job name:                        JOB                                           
+   Name . . . . . . . . . . . . .                *                              
+     User . . . . . . . . . . . .                                               
+     Number . . . . . . . . . . .                                               
+   Filter operator  . . . . . . .                *EQ                            
+ Type of records  . . . . . . . . TYPE           *DETAIL                        
+ Force record write . . . . . . . FRCRCD         *CALC                          
+ Initial number of records  . . . INLNBRRCD      *NONE                          
+ Run time threshold . . . . . . . RUNTHLD        *NONE                          
+ Storage threshold  . . . . . . . STGTHLD        *NONE                          
+ Include system SQL . . . . . . . INCSYSSQL      *NO                            
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

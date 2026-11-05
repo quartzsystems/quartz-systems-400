@@ -1,0 +1,24 @@
+                        Start Database Monitor (STRDBMON)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Filter by work station . . . . . FTRCLTWS       *NONE                          
+                                                                                
+                                                                                
+ Filter by SQLCODE  . . . . . . . FTRSQLCODE     *NONE                          
+ Host Variable Values . . . . . . HOSTVAR        *BASIC                         
+ Comment  . . . . . . . . . . . . COMMENT        *BLANK                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

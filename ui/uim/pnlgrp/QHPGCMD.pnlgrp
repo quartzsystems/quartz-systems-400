@@ -3530,12 +3530,14 @@ whose sort sequence is used.
 :EPARML.
 :EHELP.
 :HELP NAME='CRTRPGPGM/SAAFLAG'.SAA flagging (SAAFLAG)
-:P.The SAA flagging for this command.
+:P.Whether the listing marks statements that are not part of the IBM SQL
+language standard.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :P.Also accepted&colon. *NOFLAG, *FLAG.
 :EHELP.
 :HELP NAME='CRTRPGPGM/PRTFILE'.Print file (PRTFILE)
-:P.The print file for this command.
+:P.The printer file the printed output is written with, by name and
+library.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PV.name:EPV.
@@ -3747,8 +3749,8 @@ the program commits or rolls back, and which records are locked.
 :EPARML.
 :P.Also accepted&colon. *UR, *RS, *NC.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/RDB'.Database to connect (RDB)
-:P.The database to connect for this command.
+:HELP NAME='CRTSQLRPGI/RDB'.Relational database (RDB)
+:P.The relational database for this command.
 :PARML.
 :PT.:PK DEF.*LOCAL:EPK.
 :PD.This system.
@@ -3756,7 +3758,7 @@ the program commits or rolls back, and which records are locked.
 :PD.Type up to 18 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/OBJTYPE'.Kind of object (OBJTYPE)
+:HELP NAME='CRTSQLRPGI/OBJTYPE'.Compile type (OBJTYPE)
 :P.The type or types of the objects the command works on.
 :PARML.
 :PT.:PK DEF.*PGM:EPK.
@@ -3767,7 +3769,7 @@ the program commits or rolls back, and which records are locked.
 :PD.The value of the module.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/OUTPUT'.Precompiler listing (OUTPUT)
+:HELP NAME='CRTSQLRPGI/OUTPUT'.Listing output (OUTPUT)
 :P.Where the command sends what it produces&colon. to the display of an
 interactive job, or to a spooled file of the job's printer file. Some
 commands can also write it to a database file.
@@ -3778,7 +3780,7 @@ commands can also write it to a database file.
 :PD.The output is printed with the job's spooled output.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/TEXT'.Description (TEXT)
+:HELP NAME='CRTSQLRPGI/TEXT'.Text 'description' (TEXT)
 :P.A short description of the object, up to 50 characters, shown by the
 work-with and display commands next to its name.
 :PARML.
@@ -3790,8 +3792,8 @@ work-with and display commands next to its name.
 :PD.Type up to 50 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/OPTION'.Precompile options (OPTION)
-:P.The precompile options for this command.
+:HELP NAME='CRTSQLRPGI/OPTION'.Precompiler options (OPTION)
+:P.The precompiler options for this command.
 :P.Up to 12 values can be given.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
@@ -3825,6 +3827,17 @@ work-with and display commands next to its name.
 :P.When no value is given, *XREF *GEN *NOSECLVL *SYS *JOB *NOCVTDT
 *NOEVENTF *NOEXTIND is used.
 :EHELP.
+:HELP NAME='CRTSQLRPGI/RPGPPOPT'.RPG preprocessor options (RPGPPOPT)
+:P.Whether the RPG compiler's preprocessor runs over the source
+(expanding /COPY and /INCLUDE and the conditional directives) before the
+SQL precompile reads it.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *LVL1, *LVL2.
+:EHELP.
 :HELP NAME='CRTSQLRPGI/TGTRLS'.Target release (TGTRLS)
 :P.The release of the operating system the object is created for.
 *CURRENT is this release; *PRV is the previous one.
@@ -3838,15 +3851,13 @@ work-with and display commands next to its name.
 :PD.Type up to 8 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/INCFILE'.Include file (INCFILE)
+:HELP NAME='CRTSQLRPGI/INCFILE'.INCLUDE file (INCFILE)
 :P.The source file that /COPY and /INCLUDE directives without a file
 name search.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*SRCFILE:EPK.
 :PD.The source file of the object.
-:EPARML.
-:PARML.
 :PT.:PV.name:EPV.
 :PD.Type a name of up to 10 characters.
 :EPARML.
@@ -3860,8 +3871,8 @@ name search.
 :PD.Type a name of up to 10 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/INCDIR'.Include directory (INCDIR)
-:P.The include directory for this command.
+:HELP NAME='CRTSQLRPGI/INCDIR'.SQL INCLUDE directory (INCDIR)
+:P.The SQL INCLUDE directory for this command.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
@@ -3870,17 +3881,7 @@ name search.
 :PD.Type a path name of up to 1024 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/COMPILEOPT'.Parameters for the RPG compile (COMPILEOPT)
-:P.The parameters for the RPG compile for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:PARML.
-:PT.:PK DEF.*NONE:EPK.
-:PD.None.
-:PT.:PV.character-value:EPV.
-:PD.Type up to 5000 characters.
-:EPARML.
-:EHELP.
-:HELP NAME='CRTSQLRPGI/ALWCPYDTA'.Copies of data allowed (ALWCPYDTA)
+:HELP NAME='CRTSQLRPGI/ALWCPYDTA'.Allow copy of data (ALWCPYDTA)
 :P.Whether a copy of the data may be used to answer a query.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
@@ -3892,13 +3893,15 @@ name search.
 :PD.No.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/CLOSQLCSR'.Cursors close at (CLOSQLCSR)
-:P.The cursors close at for this command.
+:HELP NAME='CRTSQLRPGI/CLOSQLCSR'.Close SQL cursor (CLOSQLCSR)
+:P.When the SQL cursors the program opens are closed and its prepared
+statements discarded&colon. when the module ends or when the activation
+group ends.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :P.Also accepted&colon. *ENDACTGRP, *ENDMOD.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/ALWBLK'.Blocking allowed (ALWBLK)
-:P.The blocking allowed for this command.
+:HELP NAME='CRTSQLRPGI/ALWBLK'.Allow blocking (ALWBLK)
+:P.The allow blocking for this command.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK.*NONE:EPK.
@@ -3908,8 +3911,8 @@ name search.
 :EPARML.
 :P.Also accepted&colon. *ALLREAD.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/DLYPRP'.Prepare statements late (DLYPRP)
-:P.Whether to prepare statements late.
+:HELP NAME='CRTSQLRPGI/DLYPRP'.Delay PREPARE (DLYPRP)
+:P.Whether to delay PREPARE.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NO:EPK.
@@ -3918,7 +3921,18 @@ name search.
 :PD.Yes.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/GENLVL'.Severity that stops creation (GENLVL)
+:HELP NAME='CRTSQLRPGI/CONACC'.Concurrent access resolution (CONACC)
+:P.What a statement does when a row it reads is locked by another job's
+uncommitted change&colon. the default for the isolation level, use the
+currently committed value, or wait for the lock.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*DFT:EPK.
+:PD.The default value.
+:EPARML.
+:P.Also accepted&colon. *CURCMT, *WAIT.
+:EHELP.
+:HELP NAME='CRTSQLRPGI/GENLVL'.Severity level (GENLVL)
 :P.The severity of the compile messages at or above which the object is
 not created.
 :P.The prompt shows this parameter after F10 (Additional parameters).
@@ -3953,7 +3967,7 @@ hh&colon.mm&colon.ss.
 :PD.Julian&colon. year and day of the year.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/DATSEP'.Date separator (DATSEP)
+:HELP NAME='CRTSQLRPGI/DATSEP'.Date separator character (DATSEP)
 :P.The character between the parts of a date.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
@@ -3982,7 +3996,7 @@ hh&colon.mm&colon.ss.
 hh&colon.mm&colon.ss.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/TIMSEP'.Time separator (TIMSEP)
+:HELP NAME='CRTSQLRPGI/TIMSEP'.Time separator character (TIMSEP)
 :P.The character between the parts of a time.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
@@ -3994,7 +4008,7 @@ hh&colon.mm&colon.ss.
 :PD.Type up to 4 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/REPLACE'.Replace object (REPLACE)
+:HELP NAME='CRTSQLRPGI/REPLACE'.Replace (REPLACE)
 :P.Whether an existing object of the same name is replaced. A replaced
 object is moved to library QRPLOBJ when it is in use.
 :P.The prompt shows this parameter after F10 (Additional parameters).
@@ -4006,8 +4020,8 @@ object is moved to library QRPLOBJ when it is in use.
 exists.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/RDBCNNMTH'.Connection method (RDBCNNMTH)
-:P.The connection method for this command.
+:HELP NAME='CRTSQLRPGI/RDBCNNMTH'.RDB connect method (RDBCNNMTH)
+:P.The RDB connect method for this command.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :P.Also accepted&colon. *DUW, *RUW.
 :EHELP.
@@ -4032,8 +4046,8 @@ naming.
 :PD.Yes.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/SQLPKG'.SQL package (SQLPKG)
-:P.The SQL package for this command.
+:HELP NAME='CRTSQLRPGI/SQLPKG'.Package (SQLPKG)
+:P.The package for this command.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :EPARML.
@@ -4071,7 +4085,68 @@ statements.
 :EPARML.
 :P.Also accepted&colon. *DB2.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/USRPRF'.Run under profile (USRPRF)
+:HELP NAME='CRTSQLRPGI/SAAFLAG'.IBM SQL flagging (SAAFLAG)
+:P.Whether the listing marks statements that are not part of the IBM SQL
+language standard.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.Also accepted&colon. *NOFLAG, *FLAG.
+:EHELP.
+:HELP NAME='CRTSQLRPGI/FLAGSTD'.ANS flagging (FLAGSTD)
+:P.Whether the listing marks statements that do not conform to the ANSI
+SQL standard.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *ANS.
+:EHELP.
+:HELP NAME='CRTSQLRPGI/PRTFILE'.Print file (PRTFILE)
+:P.The printer file the printed output is written with, by name and
+library.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.When no value is given, QSYSPRT is used.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CRTSQLRPGI/DBGVIEW'.Debugging view (DBGVIEW)
+:P.The debug view kept in the object&colon. none, the statements, the
+source, a listing, or all of them.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*SOURCE:EPK.
+:PD.The source.
+:PT.:PK.*STMT:EPK.
+:PD.The statement view.
+:PT.:PK.*LIST:EPK.
+:PD.A list is shown.
+:EPARML.
+:EHELP.
+:HELP NAME='CRTSQLRPGI/DBGENCKEY'.Debug encryption key (DBGENCKEY)
+:P.A key that protects the debug view stored in the object; the same key
+must be given to debug it.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 16 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CRTSQLRPGI/USRPRF'.User profile (USRPRF)
 :P.The user profile the command uses.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
@@ -4082,8 +4157,9 @@ statements.
 :EPARML.
 :P.Also accepted&colon. *NAMING.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/DYNUSRPRF'.Profile for dynamic statements (DYNUSRPRF)
-:P.The profile for dynamic statements for this command.
+:HELP NAME='CRTSQLRPGI/DYNUSRPRF'.Dynamic user profile (DYNUSRPRF)
+:P.The user profile dynamic SQL statements run under&colon. the user's,
+or the program owner's.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*USER:EPK.
@@ -4126,7 +4202,7 @@ lower case compare equal.
 :PD.Type a name of up to 10 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/LANGID'.Language ID (LANGID)
+:HELP NAME='CRTSQLRPGI/LANGID'.Language id (LANGID)
 :P.The language identifier&colon. three letters naming the language
 whose sort sequence is used.
 :P.The prompt shows this parameter after F10 (Additional parameters).
@@ -4139,40 +4215,27 @@ whose sort sequence is used.
 :PD.Type a name of up to 7 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/DBGVIEW'.Debugging view (DBGVIEW)
-:P.The debug view kept in the object&colon. none, the statements, the
-source, a listing, or all of them.
+:HELP NAME='CRTSQLRPGI/CVTCCSID'.Conversion CCSID (CVTCCSID)
+:P.The conversion CCSID for this command.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
-:PT.:PK.*SOURCE:EPK.
-:PD.The source.
-:PT.:PK.*STMT:EPK.
-:PD.The statement view.
-:PT.:PK.*LIST:EPK.
-:PD.A list is shown.
+:PT.:PK.*JOB:EPK.
+:PD.The value of the job.
+:PT.:PV.number:EPV.
+:PD.Type a whole number.
 :EPARML.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/DBGENCKEY'.Debug encryption key (DBGENCKEY)
-:P.A key that protects the debug view stored in the object; the same key
-must be given to debug it.
+:HELP NAME='CRTSQLRPGI/TOSRCFILE'.To source file (TOSRCFILE)
+:P.The to source file for this command.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
-:PT.:PK DEF.*NONE:EPK.
-:PD.None.
-:PT.:PV.character-value:EPV.
-:PD.Type up to 16 characters.
-:EPARML.
-:EHELP.
-:HELP NAME='CRTSQLRPGI/TOSRCFILE'.Precompiled source file (TOSRCFILE)
-:P.The precompiled source file for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:PARML.
+:PT.:PK DEF.*CALC:EPK.
+:PD.The system calculates the value.
 :PT.:PV.name:EPV.
 :PD.Type a name of up to 10 characters.
 :EPARML.
-:P.When no value is given, QSQLTEMP1 is used.
 :P.Library&colon. the name can be qualified by it.
 :PARML.
 :PT.:PK.*LIBL:EPK.
@@ -4184,52 +4247,45 @@ must be given to debug it.
 :EPARML.
 :P.When no value is given, QTEMP is used.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/DECRESULT'.Decimal result limits (DECRESULT)
+:HELP NAME='CRTSQLRPGI/DECRESULT'.Decimal result options (DECRESULT)
 :P.The precision and scale of decimal results the program's SQL
 statements compute.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :P.The value has 3 parts, given in order&colon.
-:H4.Part 1&colon. Most digits
+:H4.Part 1&colon. Maximum precision
 :PARML.
 :PT.:PV.number:EPV.
 :PD.Type a whole number. The value must be from 31 to 63.
 :EPARML.
 :P.When no value is given, 31 is used.
-:H4.Part 2&colon. Most digits in a division
+:H4.Part 2&colon. Maximum scale
 :PARML.
 :PT.:PV.number:EPV.
 :PD.Type a whole number. The value must be from 31 to 63.
 :EPARML.
 :P.When no value is given, 31 is used.
-:H4.Part 3&colon. Fewest decimals in a division
+:H4.Part 3&colon. Minimum divide scale
 :PARML.
 :PT.:PV.number:EPV.
 :PD.Type a whole number. The value must be from 0 to 9.
 :EPARML.
 :P.When no value is given, 0 is used.
 :EHELP.
-:HELP NAME='CRTSQLRPGI/CVTCCSID'.CCSID to convert the source to (CVTCCSID)
-:P.The CCSID to convert the source to for this command.
+:HELP NAME='CRTSQLRPGI/DECFLTRND'.Decimal float rounding mode (DECFLTRND)
+:P.How DECFLOAT results are rounded when they have more digits than the
+type holds.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.Also accepted&colon. *HALFEVEN, *UP, *DOWN, *CEILING, *FLOOR,
+*HALFUP, *HALFDOWN.
+:EHELP.
+:HELP NAME='CRTSQLRPGI/COMPILEOPT'.Compiler options (COMPILEOPT)
+:P.The compiler options for this command.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
-:PT.:PK.*JOB:EPK.
-:PD.The value of the job.
-:PT.:PV.number:EPV.
-:PD.Type a whole number.
-:EPARML.
-:EHELP.
-:HELP NAME='CRTSQLRPGI/TGTCCSID'.CCSID to compile in (TGTCCSID)
-:P.The CCSID to compile in for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:PARML.
-:PT.:PK DEF.*SRC:EPK.
-:PD.The source.
-:PT.:PK.*JOB:EPK.
-:PD.The value of the job.
-:PT.:PV.number:EPV.
-:PD.Type a whole number.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 5000 characters.
 :EPARML.
 :EHELP.
 :HELP NAME=CRTSRVPGM.Create Service Program (CRTSRVPGM)

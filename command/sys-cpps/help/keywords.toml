@@ -3,6 +3,17 @@
 # word is Quartz-written; IBM's keyword names are the interface.
 
 [keywords]
+RPGPPOPT = "Whether the RPG compiler's preprocessor runs over the source (expanding /COPY and /INCLUDE and the conditional directives) before the SQL precompile reads it."
+CONACC = "What a statement does when a row it reads is locked by another job's uncommitted change: the default for the isolation level, use the currently committed value, or wait for the lock."
+SAAFLAG = "Whether the listing marks statements that are not part of the IBM SQL language standard."
+FLAGSTD = "Whether the listing marks statements that do not conform to the ANSI SQL standard."
+PRTFILE = "The printer file the printed output is written with, by name and library."
+DECFLTRND = "How DECFLOAT results are rounded when they have more digits than the type holds."
+SECLVLTXT = "Whether the listing shows the second-level text of each message after its first-level text."
+CLOSQLCSR = "When the SQL cursors the program opens are closed and its prepared statements discarded: when the module ends or when the activation group ends."
+DYNUSRPRF = "The user profile dynamic SQL statements run under: the user's, or the program owner's."
+LISTTYPE = "Which objects the selection lists (F16, F17 and F18) show: every one, or only those created by SQL."
+REFRESH = "When Display Data reads the rows again: every time the display is scrolled, or only when scrolling forward past rows not yet read."
 OUTPUT = "Where the command sends what it produces: to the display of an interactive job, or to a spooled file of the job's printer file. Some commands can also write it to a database file."
 TEXT = "A short description of the object, up to 50 characters, shown by the work-with and display commands next to its name."
 AUT = "The authority the public (users with no private authority and no group authority) gets to the new object."

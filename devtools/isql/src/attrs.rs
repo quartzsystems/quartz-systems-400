@@ -62,7 +62,7 @@ pub const FIELDS: &[Field] = &[
     f(
         "COMMIT",
         "Commitment control",
-        "*CHG",
+        "*NONE",
         Check::Set(&["*NONE", "*CHG", "*CS", "*ALL", "*RR", "*NC", "*UR", "*RS"]),
     ),
     f(
@@ -90,7 +90,7 @@ pub const FIELDS: &[Field] = &[
     f(
         "ALWCPYDTA",
         "Allow copy data",
-        "*OPTIMIZE",
+        "*YES",
         Check::Set(&["*YES", "*OPTIMIZE", "*NO"]),
     ),
     f(

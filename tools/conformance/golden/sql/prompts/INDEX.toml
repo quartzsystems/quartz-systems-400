@@ -1,0 +1,215 @@
+[[golden]]
+name = "prompt-runsql"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-runsql-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-runsqlstm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-runsqlstm-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-runsqlstm-f10-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-runsqlstm-f10-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtsqlrpgi"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtsqlrpgi-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-strsql"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-strdbmon"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-enddbmon"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-prtsqlinf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-dltsqlpkg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts"
+width = 80
+
+[[golden]]
+name = "prompt-runsql-v"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-runsql-v-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-runsql-v-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-runsql-v-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-crtsqlrpgi-v"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-crtsqlrpgi-v-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-crtsqlrpgi-v-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-crtsqlrpgi-v-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-crtsqlrpgi-v-4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-crtsqlrpgi-v-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-strdbmon-v"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-strdbmon-v-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-strdbmon-v-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80
+
+[[golden]]
+name = "prompt-strdbmon-v-4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-11-05"
+script = "prompts2"
+width = 80

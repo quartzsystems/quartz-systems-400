@@ -1,0 +1,24 @@
+                                Run SQL (RUNSQL)                                
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Time separator character . . . . TIMSEP         *JOB                           
+ Default collection . . . . . . . DFTRDBCOL      *NONE                          
+ Decimal point  . . . . . . . . . DECMPT         *JOB                           
+ Sort sequence  . . . . . . . . . SRTSEQ         *JOB                           
+   Library  . . . . . . . . . . .                                               
+ Language id  . . . . . . . . . . LANGID         *JOB                           
+ Source listing options . . . . . OPTION         *NOLIST                        
+ Print file . . . . . . . . . . . PRTFILE        QSYSPRT                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Second level text  . . . . . . . SECLVLTXT      *NO                            
+ Allow copy of data . . . . . . . ALWCPYDTA      *OPTIMIZE                      
+ Allow blocking . . . . . . . . . ALWBLK         *ALLREAD                       
+ SQL rules  . . . . . . . . . . . SQLCURRULE     *DB2                           
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

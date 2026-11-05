@@ -9,10 +9,10 @@
  Source member  . . . . . . . . .   *OBJ          Name, *OBJ                    
  Source stream file . . . . . . .                                               
  Commitment control . . . . . . .   *CHG          *CHG, *UR, *ALL, *RS, *CS...  
- Database to connect  . . . . . .   *LOCAL              *LOCAL                  
- Kind of object . . . . . . . . .   *PGM          *PGM, *SRVPGM, *MODULE        
- Precompiler listing  . . . . . .   *NONE         *NONE, *PRINT                 
- Description  . . . . . . . . . .   *SRCMBRTXT                                  
+ Relational database  . . . . . .   *LOCAL              *LOCAL                  
+ Compile type . . . . . . . . . .   *PGM          *PGM, *SRVPGM, *MODULE        
+ Listing output . . . . . . . . .   *NONE         *NONE, *PRINT                 
+ Text 'description' . . . . . . .   *SRCMBRTXT                                  
                                                                                 
                                                                                 
                                                                                 

@@ -1,0 +1,24 @@
+                     Create SQL ILE RPG Object (CRTSQLRPGI)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Precompiler options  . . . . . . OPTION         *XREF                          
+                           + for more values                                    
+ RPG preprocessor options . . . . RPGPPOPT       *NONE                          
+ Target release . . . . . . . . . TGTRLS         *CURRENT                       
+ INCLUDE file . . . . . . . . . . INCFILE        *SRCFILE                       
+   Library  . . . . . . . . . . .                  *LIBL                        
+ SQL INCLUDE directory  . . . . . INCDIR         *NONE                          
+                                                                                
+ Allow copy of data . . . . . . . ALWCPYDTA      *OPTIMIZE                      
+ Close SQL cursor . . . . . . . . CLOSQLCSR      *ENDACTGRP                     
+ Allow blocking . . . . . . . . . ALWBLK         *ALLREAD                       
+ Delay PREPARE  . . . . . . . . . DLYPRP         *NO                            
+ Concurrent access resolution . . CONACC         *DFT                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

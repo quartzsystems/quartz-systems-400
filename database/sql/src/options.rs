@@ -27,6 +27,9 @@ fn values(name: &str) -> &'static [&'static str] {
         "MONITOR" => &["USER", "SYSTEM"],
         "DECFLTRND" => &["HALFEVEN", "HALFUP", "DOWN", "CEILING", "FLOOR", "HALFDOWN", "UP"],
         "CONACC" => &["DFT", "CURCMT", "WAIT"],
+        "SAAFLAG" => &["FLAG", "NOFLAG"],
+        "FLAGSTD" => &["NONE", "ANS"],
+        "RPGPPOPT" => &["NONE", "LVL1", "LVL2"],
         _ => &[],
     }
 }
@@ -85,6 +88,9 @@ pub fn check(name: &str, value: &str) -> Check {
         // of work rules; a program does not carry its own.
         ("RDBCNNMTH", "DUW") => Check::Ok,
         ("RDBCNNMTH", _) => refuse("connections follow the distributed unit of work rules"),
+        ("SAAFLAG", "NOFLAG") | ("FLAGSTD" | "RPGPPOPT", "NONE") => Check::Ok,
+        ("SAAFLAG" | "FLAGSTD", _) => refuse("the listing flags no statements"),
+        ("RPGPPOPT", _) => refuse("the RPG preprocessor does not run before the precompile"),
         // Hints and options without an effect here: the precompile runs
         // inside the compile, the connection is the local one.
         _ => Check::Ok,

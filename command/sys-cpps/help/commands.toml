@@ -80,3 +80,10 @@ FILE = "The physical file whose triggers change, by name and library."
 TRG = "The trigger changed, by name; *ALL for every trigger of the file."
 TRGLIB = "The library of the trigger's name. A trigger name needs its library."
 STATE = "Whether the triggers are enabled or disabled. *SAME leaves them as they are."
+
+[RUNSQL]
+OPTION = "Whether a listing of the statement is printed when the statement fails."
+
+[RUNSQLSTM]
+OPTION = "Whether the listing of the statements is printed."
+USRPRF = "The user profile the statements run under: the user's, the owner's, or the one the naming convention implies."

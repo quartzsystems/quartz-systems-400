@@ -1,0 +1,24 @@
+                     Create SQL ILE RPG Object (CRTSQLRPGI)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Print file . . . . . . . . . . . PRTFILE        QSYSPRT                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Debugging view . . . . . . . . . DBGVIEW        *NONE                          
+ Debug encryption key . . . . . . DBGENCKEY      *NONE                          
+ User profile . . . . . . . . . . USRPRF         *NAMING                        
+ Dynamic user profile . . . . . . DYNUSRPRF      *USER                          
+ Sort sequence  . . . . . . . . . SRTSEQ         *JOB                           
+   Library  . . . . . . . . . . .                                               
+ Language id  . . . . . . . . . . LANGID         *JOB                           
+ Conversion CCSID . . . . . . . . CVTCCSID       *NONE                          
+ To source file . . . . . . . . . TOSRCFILE      *CALC                          
+   Library  . . . . . . . . . . .                  QTEMP                        
+ Decimal result options:          DECRESULT                                     
+   Maximum precision  . . . . . .                31                             
+   Maximum scale  . . . . . . . .                31                             
+   Minimum divide scale . . . . .                0                              
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

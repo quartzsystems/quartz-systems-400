@@ -7963,8 +7963,8 @@ transaction; takes no parameters.
 :P.Use the Run SQL (RUNSQL) command to run one SQL statement given as a
 string.
 :EHELP.
-:HELP NAME='RUNSQL/SQL'.SQL statement (SQL)
-:P.The SQL statement for this command.
+:HELP NAME='RUNSQL/SQL'.SQL (SQL)
+:P.The SQL for this command.
 :P.A value is required.
 :PARML.
 :PT.:PV.character-value:EPV.
@@ -7975,18 +7975,18 @@ string.
 :P.The commitment control level&colon. whether changes are made in units
 the program commits or rolls back, and which records are locked.
 :PARML.
-:PT.:PK DEF.*NONE:EPK.
-:PD.None.
-:PT.:PK.*CHG:EPK.
+:PT.:PK DEF.*CHG:EPK.
 :PD.Changed records are locked until committed.
-:PT.:PK.*CS:EPK.
-:PD.Cursor stability.
 :PT.:PK.*ALL:EPK.
 :PD.All of them.
+:PT.:PK.*CS:EPK.
+:PD.Cursor stability.
+:PT.:PK.*NONE:EPK.
+:PD.None.
 :PT.:PK.*RR:EPK.
 :PD.Repeatable read.
 :EPARML.
-:P.Also accepted&colon. *NC, *UR, *RS.
+:P.Also accepted&colon. *UR, *RS, *NC.
 :EHELP.
 :HELP NAME='RUNSQL/NAMING'.Naming (NAMING)
 :P.The naming for this command.
@@ -7995,6 +7995,83 @@ the program commits or rolls back, and which records are locked.
 :PD.The system's value.
 :PT.:PK.*SQL:EPK.
 :PD.SQL.
+:EPARML.
+:EHELP.
+:HELP NAME='RUNSQL/DATFMT'.Date format (DATFMT)
+:P.The format of dates&colon. the order of year, month and day.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*JOB:EPK.
+:PD.The value of the job.
+:PT.:PK.*USA:EPK.
+:PD.The USA format, mm/dd/yyyy or hh&colon.mm AM.
+:PT.:PK.*ISO:EPK.
+:PD.The ISO format, yyyy-mm-dd or hh.mm.ss.
+:PT.:PK.*EUR:EPK.
+:PD.The European format, dd.mm.yyyy or hh.mm.ss.
+:PT.:PK.*JIS:EPK.
+:PD.The Japanese industrial standard format, yyyy-mm-dd or
+hh&colon.mm&colon.ss.
+:PT.:PK.*MDY:EPK.
+:PD.Month, day, year.
+:PT.:PK.*DMY:EPK.
+:PD.Day, month, year.
+:PT.:PK.*YMD:EPK.
+:PD.Year, month, day.
+:PT.:PK.*JUL:EPK.
+:PD.Julian&colon. year and day of the year.
+:EPARML.
+:EHELP.
+:HELP NAME='RUNSQL/DATSEP'.Date separator character (DATSEP)
+:P.The character between the parts of a date.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*JOB:EPK.
+:PD.The value of the job.
+:PT.:PK.*BLANK:EPK.
+:PD.Blanks&colon. no value.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 1 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RUNSQL/TIMFMT'.Time format (TIMFMT)
+:P.The format of times.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*HMS:EPK.
+:PD.Hours, minutes and seconds.
+:PT.:PK.*USA:EPK.
+:PD.The USA format, mm/dd/yyyy or hh&colon.mm AM.
+:PT.:PK.*ISO:EPK.
+:PD.The ISO format, yyyy-mm-dd or hh.mm.ss.
+:PT.:PK.*EUR:EPK.
+:PD.The European format, dd.mm.yyyy or hh.mm.ss.
+:PT.:PK.*JIS:EPK.
+:PD.The Japanese industrial standard format, yyyy-mm-dd or
+hh&colon.mm&colon.ss.
+:EPARML.
+:EHELP.
+:HELP NAME='RUNSQL/TIMSEP'.Time separator character (TIMSEP)
+:P.The character between the parts of a time.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*JOB:EPK.
+:PD.The value of the job.
+:PT.:PK.*BLANK:EPK.
+:PD.Blanks&colon. no value.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 1 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RUNSQL/DFTRDBCOL'.Default collection (DFTRDBCOL)
+:P.The schema used for unqualified names in SQL statements with system
+naming.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
 :EPARML.
 :EHELP.
 :HELP NAME='RUNSQL/DECMPT'.Decimal point (DECMPT)
@@ -8019,6 +8096,8 @@ unique weights), or a table by name.
 :PARML.
 :PT.:PK DEF.*JOB:EPK.
 :PD.The value of the job.
+:PT.:PK.*JOBRUN:EPK.
+:PD.The value used while the job runs.
 :PT.:PK.*LANGIDSHR:EPK.
 :PD.The shared-weight sort sequence of the language&colon. upper and
 lower case compare equal.
@@ -8043,7 +8122,7 @@ and no conversion is done.
 :PD.Type a name of up to 10 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='RUNSQL/LANGID'.Language identifier (LANGID)
+:HELP NAME='RUNSQL/LANGID'.Language id (LANGID)
 :P.The language identifier&colon. three letters naming the language
 whose sort sequence is used.
 :P.The prompt shows this parameter after F10 (Additional parameters).
@@ -8056,19 +8135,39 @@ whose sort sequence is used.
 :PD.Type a name of up to 7 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='RUNSQL/DFTRDBCOL'.Default collection (DFTRDBCOL)
-:P.The schema used for unqualified names in SQL statements with system
-naming.
+:HELP NAME='RUNSQL/OPTION'.Source listing options (OPTION)
+:P.Whether a listing of the statement is printed when the statement
+fails.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
-:PT.:PK DEF.*NONE:EPK.
-:PD.None.
+:PT.:PK DEF.*NOLIST:EPK.
+:PD.No list.
+:PT.:PK.*LIST:EPK.
+:PD.A list is shown.
+:EPARML.
+:EHELP.
+:HELP NAME='RUNSQL/PRTFILE'.Print file (PRTFILE)
+:P.The printer file the printed output is written with, by name and
+library.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.When no value is given, QSYSPRT is used.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
 :PT.:PV.name:EPV.
 :PD.Type a name of up to 10 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='RUNSQL/DLYPRP'.Delay PREPARE (DLYPRP)
-:P.Whether to delay PREPARE.
+:HELP NAME='RUNSQL/SECLVLTXT'.Second level text (SECLVLTXT)
+:P.Whether the listing shows the second-level text of each message after
+its first-level text.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NO:EPK.
@@ -8130,18 +8229,14 @@ statements compute.
 :H4.Part 3&colon. Minimum divide scale
 :PARML.
 :PT.:PV.number:EPV.
-:PD.Type a whole number. The value must be from 0 to 63.
+:PD.Type a whole number. The value must be from 0 to 9.
 :EPARML.
 :P.When no value is given, 0 is used.
 :EHELP.
-:HELP NAME='RUNSQL/DECFLTRND'.DECFLOAT rounding mode (DECFLTRND)
-:P.The DECFLOAT rounding mode for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:P.Also accepted&colon. *HALFEVEN, *UP, *DOWN, *CEILING, *FLOOR,
-*HALFUP, *HALFDOWN.
-:EHELP.
-:HELP NAME='RUNSQL/CONACC'.Concurrent access (CONACC)
-:P.The concurrent access for this command.
+:HELP NAME='RUNSQL/CONACC'.Concurrent access resolution (CONACC)
+:P.What a statement does when a row it reads is locked by another job's
+uncommitted change&colon. the default for the isolation level, use the
+currently committed value, or wait for the lock.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*DFT:EPK.
@@ -8157,18 +8252,6 @@ statements compute.
 :PD.Yes.
 :PT.:PK.*NO:EPK.
 :PD.No.
-:EPARML.
-:EHELP.
-:HELP NAME='RUNSQL/OUTPUT'.Listing output (OUTPUT)
-:P.Where the command sends what it produces&colon. to the display of an
-interactive job, or to a spooled file of the job's printer file. Some
-commands can also write it to a database file.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:PARML.
-:PT.:PK DEF.*NONE:EPK.
-:PD.None.
-:PT.:PK.*PRINT:EPK.
-:PD.The output is printed with the job's spooled output.
 :EPARML.
 :EHELP.
 :HELP NAME=RUNSQLSTM.Run SQL Statements (RUNSQLSTM)
@@ -8215,10 +8298,10 @@ the program commits or rolls back, and which records are locked.
 :PARML.
 :PT.:PK DEF.*CHG:EPK.
 :PD.Changed records are locked until committed.
-:PT.:PK.*CS:EPK.
-:PD.Cursor stability.
 :PT.:PK.*ALL:EPK.
 :PD.All of them.
+:PT.:PK.*CS:EPK.
+:PD.Cursor stability.
 :PT.:PK.*NONE:EPK.
 :PD.None.
 :PT.:PK.*RR:EPK.
@@ -8237,6 +8320,7 @@ the program commits or rolls back, and which records are locked.
 :EHELP.
 :HELP NAME='RUNSQLSTM/ERRLVL'.Severity level (ERRLVL)
 :P.The severity level for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PV.number:EPV.
 :PD.Type a whole number. The value must be from 0 to 40.
@@ -8268,7 +8352,7 @@ hh&colon.mm&colon.ss.
 :PD.Julian&colon. year and day of the year.
 :EPARML.
 :EHELP.
-:HELP NAME='RUNSQLSTM/DATSEP'.Date separator (DATSEP)
+:HELP NAME='RUNSQLSTM/DATSEP'.Date separator character (DATSEP)
 :P.The character between the parts of a date.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
@@ -8297,7 +8381,7 @@ hh&colon.mm&colon.ss.
 hh&colon.mm&colon.ss.
 :EPARML.
 :EHELP.
-:HELP NAME='RUNSQLSTM/TIMSEP'.Time separator (TIMSEP)
+:HELP NAME='RUNSQLSTM/TIMSEP'.Time separator character (TIMSEP)
 :P.The character between the parts of a time.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
@@ -8309,6 +8393,17 @@ hh&colon.mm&colon.ss.
 :PD.Type up to 1 characters.
 :EPARML.
 :EHELP.
+:HELP NAME='RUNSQLSTM/MARGINS'.Source margins (MARGINS)
+:P.The source margins for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.The value has 1 parts, given in order&colon.
+:H4.Part 1&colon. Right margin
+:PARML.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 10 to 80.
+:EPARML.
+:P.When no value is given, 80 is used.
+:EHELP.
 :HELP NAME='RUNSQLSTM/DFTRDBCOL'.Default collection (DFTRDBCOL)
 :P.The schema used for unqualified names in SQL statements with system
 naming.
@@ -8319,6 +8414,22 @@ naming.
 :PT.:PV.name:EPV.
 :PD.Type a name of up to 10 characters.
 :EPARML.
+:EHELP.
+:HELP NAME='RUNSQLSTM/SAAFLAG'.IBM SQL flagging (SAAFLAG)
+:P.Whether the listing marks statements that are not part of the IBM SQL
+language standard.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.Also accepted&colon. *NOFLAG, *FLAG.
+:EHELP.
+:HELP NAME='RUNSQLSTM/FLAGSTD'.ANS flagging (FLAGSTD)
+:P.Whether the listing marks statements that do not conform to the ANSI
+SQL standard.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *ANS.
 :EHELP.
 :HELP NAME='RUNSQLSTM/DECMPT'.Decimal point (DECMPT)
 :P.The decimal point for this command.
@@ -8342,6 +8453,8 @@ unique weights), or a table by name.
 :PARML.
 :PT.:PK DEF.*JOB:EPK.
 :PD.The value of the job.
+:PT.:PK.*JOBRUN:EPK.
+:PD.The value used while the job runs.
 :PT.:PK.*LANGIDSHR:EPK.
 :PD.The shared-weight sort sequence of the language&colon. upper and
 lower case compare equal.
@@ -8366,7 +8479,7 @@ and no conversion is done.
 :PD.Type a name of up to 10 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='RUNSQLSTM/LANGID'.Language identifier (LANGID)
+:HELP NAME='RUNSQLSTM/LANGID'.Language id (LANGID)
 :P.The language identifier&colon. three letters naming the language
 whose sort sequence is used.
 :P.The prompt shows this parameter after F10 (Additional parameters).
@@ -8379,36 +8492,33 @@ whose sort sequence is used.
 :PD.Type a name of up to 7 characters.
 :EPARML.
 :EHELP.
-:HELP NAME='RUNSQLSTM/OUTPUT'.Listing output (OUTPUT)
-:P.Where the command sends what it produces&colon. to the display of an
-interactive job, or to a spooled file of the job's printer file. Some
-commands can also write it to a database file.
+:HELP NAME='RUNSQLSTM/OPTION'.Source listing options (OPTION)
+:P.Whether the listing of the statements is printed.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
-:PT.:PK DEF.*NONE:EPK.
-:PD.None.
-:PT.:PK.*PRINT:EPK.
-:PD.The output is printed with the job's spooled output.
+:PT.:PK DEF.*LIST:EPK.
+:PD.A list is shown.
+:PT.:PK.*NOLIST:EPK.
+:PD.No list.
 :EPARML.
 :EHELP.
-:HELP NAME='RUNSQLSTM/MARGINS'.Source margins (MARGINS)
-:P.The source margins for this command.
+:HELP NAME='RUNSQLSTM/PRTFILE'.Print file (PRTFILE)
+:P.The printer file the printed output is written with, by name and
+library.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
-:PT.:PK DEF.*SRCFILE:EPK.
-:PD.The source file of the object.
-:PT.:PV.number:EPV.
-:PD.Type a number of up to 3 digits. The value must be from 1 to 240.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
 :EPARML.
-:EHELP.
-:HELP NAME='RUNSQLSTM/SECLVLTXT'.Second level text (SECLVLTXT)
-:P.Whether to second level text.
-:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.When no value is given, QSYSPRT is used.
+:P.Library&colon. the name can be qualified by it.
 :PARML.
-:PT.:PK DEF.*NO:EPK.
-:PD.No.
-:PT.:PK.*YES:EPK.
-:PD.Yes.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
 :EPARML.
 :EHELP.
 :HELP NAME='RUNSQLSTM/PROCESS'.Statement processing (PROCESS)
@@ -8416,8 +8526,9 @@ commands can also write it to a database file.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :P.Also accepted&colon. *RUN, *SYN.
 :EHELP.
-:HELP NAME='RUNSQLSTM/DLYPRP'.Delay PREPARE (DLYPRP)
-:P.Whether to delay PREPARE.
+:HELP NAME='RUNSQLSTM/SECLVLTXT'.Second level text (SECLVLTXT)
+:P.Whether the listing shows the second-level text of each message after
+its first-level text.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NO:EPK.
@@ -8479,18 +8590,14 @@ statements compute.
 :H4.Part 3&colon. Minimum divide scale
 :PARML.
 :PT.:PV.number:EPV.
-:PD.Type a whole number. The value must be from 0 to 63.
+:PD.Type a whole number. The value must be from 0 to 9.
 :EPARML.
 :P.When no value is given, 0 is used.
 :EHELP.
-:HELP NAME='RUNSQLSTM/DECFLTRND'.DECFLOAT rounding mode (DECFLTRND)
-:P.The DECFLOAT rounding mode for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:P.Also accepted&colon. *HALFEVEN, *UP, *DOWN, *CEILING, *FLOOR,
-*HALFUP, *HALFDOWN.
-:EHELP.
-:HELP NAME='RUNSQLSTM/CONACC'.Concurrent access (CONACC)
-:P.The concurrent access for this command.
+:HELP NAME='RUNSQLSTM/CONACC'.Concurrent access resolution (CONACC)
+:P.What a statement does when a row it reads is locked by another job's
+uncommitted change&colon. the default for the isolation level, use the
+currently committed value, or wait for the lock.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*DFT:EPK.
@@ -8508,14 +8615,16 @@ statements compute.
 :PD.No.
 :EPARML.
 :EHELP.
-:HELP NAME='RUNSQLSTM/OPTION'.Listing option (OPTION)
-:P.The listing option for this command.
+:HELP NAME='RUNSQLSTM/OUTPUT'.Listing output (OUTPUT)
+:P.Where the command sends what it produces&colon. to the display of an
+interactive job, or to a spooled file of the job's printer file. Some
+commands can also write it to a database file.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
-:PT.:PK DEF.*NOLIST:EPK.
-:PD.No list.
-:PT.:PK.*LIST:EPK.
-:PD.A list is shown.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*PRINT:EPK.
+:PD.The output is printed with the job's spooled output.
 :EPARML.
 :EHELP.
 :HELP NAME='RUNSQLSTM/TGTRLS'.Target release (TGTRLS)
@@ -8529,6 +8638,61 @@ statements compute.
 :PD.The previous release.
 :PT.:PV.character-value:EPV.
 :PD.Type up to 8 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RUNSQLSTM/DBGVIEW'.Debugging view (DBGVIEW)
+:P.The debug view kept in the object&colon. none, the statements, the
+source, a listing, or all of them.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*SOURCE:EPK.
+:PD.The source.
+:PT.:PK.*STMT:EPK.
+:PD.The statement view.
+:PT.:PK.*LIST:EPK.
+:PD.A list is shown.
+:EPARML.
+:EHELP.
+:HELP NAME='RUNSQLSTM/CLOSQLCSR'.Close SQL cursor (CLOSQLCSR)
+:P.When the SQL cursors the program opens are closed and its prepared
+statements discarded&colon. when the module ends or when the activation
+group ends.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.Also accepted&colon. *ENDMOD, *ENDACTGRP.
+:EHELP.
+:HELP NAME='RUNSQLSTM/DLYPRP'.Delay PREPARE (DLYPRP)
+:P.Whether to delay PREPARE.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.No.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:EPARML.
+:EHELP.
+:HELP NAME='RUNSQLSTM/USRPRF'.User profile (USRPRF)
+:P.The user profile the statements run under&colon. the user's, the
+owner's, or the one the naming convention implies.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*USER:EPK.
+:PD.The user.
+:PT.:PK.*OWNER:EPK.
+:PD.The owner of the object.
+:EPARML.
+:P.Also accepted&colon. *NAMING.
+:EHELP.
+:HELP NAME='RUNSQLSTM/DYNUSRPRF'.Dynamic user profile (DYNUSRPRF)
+:P.The user profile dynamic SQL statements run under&colon. the user's,
+or the program owner's.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*USER:EPK.
+:PD.The user.
+:PT.:PK.*OWNER:EPK.
+:PD.The owner of the object.
 :EPARML.
 :EHELP.
 :HELP NAME=STRCMTCTL.Start Commitment Control (STRCMTCTL)
@@ -8881,10 +9045,10 @@ interactive SQL session.
 :P.The commitment control level&colon. whether changes are made in units
 the program commits or rolls back, and which records are locked.
 :PARML.
-:PT.:PK DEF.*CHG:EPK.
-:PD.Changed records are locked until committed.
-:PT.:PK.*NONE:EPK.
+:PT.:PK DEF.*NONE:EPK.
 :PD.None.
+:PT.:PK.*CHG:EPK.
+:PD.Changed records are locked until committed.
 :PT.:PK.*CS:EPK.
 :PD.Cursor stability.
 :PT.:PK.*ALL:EPK.
@@ -8892,10 +9056,10 @@ the program commits or rolls back, and which records are locked.
 :PT.:PK.*RR:EPK.
 :PD.Repeatable read.
 :EPARML.
-:P.Also accepted&colon. *UR, *NC, *RS.
+:P.Also accepted&colon. *UR, *RS, *NC.
 :EHELP.
-:HELP NAME='STRSQL/NAMING'.Naming (NAMING)
-:P.The naming for this command.
+:HELP NAME='STRSQL/NAMING'.Naming convention (NAMING)
+:P.The naming convention for this command.
 :PARML.
 :PT.:PK DEF.*SYS:EPK.
 :PD.The system's value.
@@ -8907,17 +9071,56 @@ the program commits or rolls back, and which records are locked.
 :P.The statement processing for this command.
 :P.Also accepted&colon. *RUN, *VLD, *SYN.
 :EHELP.
-:HELP NAME='STRSQL/LIBOPT'.List libraries (LIBOPT)
-:P.The list libraries for this command.
+:HELP NAME='STRSQL/LIBOPT'.Library option (LIBOPT)
+:P.The library option for this command.
 :PARML.
-:PT.:PK.*NONE:EPK.
-:PD.None.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PK.*USRLIBL:EPK.
+:PD.The libraries of the user part of the library list.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PK.*ALLUSR:EPK.
+:PD.Every user library&colon. libraries whose names do not start with Q,
+and the Q libraries that hold user data (QGPL, QUSRSYS and the like).
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
 :EPARML.
-:P.Also accepted&colon. *LIB.
+:EHELP.
+:HELP NAME='STRSQL/LISTTYPE'.List type (LISTTYPE)
+:P.Which objects the selection lists (F16, F17 and F18) show&colon.
+every one, or only those created by SQL.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PK.*SQL:EPK.
+:PD.SQL.
+:EPARML.
+:EHELP.
+:HELP NAME='STRSQL/REFRESH'.Data refresh (REFRESH)
+:P.When Display Data reads the rows again&colon. every time the display
+is scrolled, or only when scrolling forward past rows not yet read.
+:PARML.
+:PT.:PK DEF.*ALWAYS:EPK.
+:PD.Always.
+:EPARML.
+:P.Also accepted&colon. *FORWARD.
+:EHELP.
+:HELP NAME='STRSQL/ALWCPYDTA'.Allow copy data (ALWCPYDTA)
+:P.Whether a copy of the data may be used to answer a query.
+:PARML.
+:PT.:PK DEF.*YES:EPK.
+:PD.Yes.
+:PT.:PK.*OPTIMIZE:EPK.
+:PD.The system chooses the best way.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:EPARML.
 :EHELP.
 :HELP NAME='STRSQL/DATFMT'.Date format (DATFMT)
 :P.The format of dates&colon. the order of year, month and day.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*JOB:EPK.
 :PD.The value of the job.
@@ -8940,9 +9143,8 @@ hh&colon.mm&colon.ss.
 :PD.Julian&colon. year and day of the year.
 :EPARML.
 :EHELP.
-:HELP NAME='STRSQL/DATSEP'.Date separator (DATSEP)
+:HELP NAME='STRSQL/DATSEP'.Date separator character (DATSEP)
 :P.The character between the parts of a date.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*JOB:EPK.
 :PD.The value of the job.
@@ -8954,7 +9156,6 @@ hh&colon.mm&colon.ss.
 :EHELP.
 :HELP NAME='STRSQL/TIMFMT'.Time format (TIMFMT)
 :P.The format of times.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*HMS:EPK.
 :PD.Hours, minutes and seconds.
@@ -8969,9 +9170,8 @@ hh&colon.mm&colon.ss.
 hh&colon.mm&colon.ss.
 :EPARML.
 :EHELP.
-:HELP NAME='STRSQL/TIMSEP'.Time separator (TIMSEP)
+:HELP NAME='STRSQL/TIMSEP'.Time separator character (TIMSEP)
 :P.The character between the parts of a time.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*JOB:EPK.
 :PD.The value of the job.
@@ -8983,7 +9183,6 @@ hh&colon.mm&colon.ss.
 :EHELP.
 :HELP NAME='STRSQL/DECPNT'.Decimal point (DECPNT)
 :P.The decimal point for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*JOB:EPK.
 :PD.The value of the job.
@@ -8997,27 +9196,31 @@ hh&colon.mm&colon.ss.
 :EHELP.
 :HELP NAME='STRSQL/PGMLNG'.Program language (PGMLNG)
 :P.The program language for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*NONE:EPK.
 :PD.None.
 :EPARML.
 :P.Also accepted&colon. *C, *CBL, *PLI, *RPG, *FTN.
 :EHELP.
+:HELP NAME='STRSQL/SQLSTRDLM'.SQL string delimiter (SQLSTRDLM)
+:P.The SQL string delimiter for this command.
+:P.Also accepted&colon. *APOSTSQL, *QUOTESQL.
+:EHELP.
 :HELP NAME='STRSQL/SRTSEQ'.Sort sequence (SRTSEQ)
 :P.The sort sequence table that orders and compares character
 data&colon. the hexadecimal values, the job's, a language's (shared or
 unique weights), or a table by name.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*JOB:EPK.
 :PD.The value of the job.
-:PT.:PK.*LANGIDSHR:EPK.
-:PD.The shared-weight sort sequence of the language&colon. upper and
-lower case compare equal.
+:PT.:PK.*JOBRUN:EPK.
+:PD.The value used while the job runs.
 :PT.:PK.*LANGIDUNQ:EPK.
 :PD.The unique-weight sort sequence of the language&colon. every
 character has its own weight.
+:PT.:PK.*LANGIDSHR:EPK.
+:PD.The shared-weight sort sequence of the language&colon. upper and
+lower case compare equal.
 :PT.:PK.*HEX:EPK.
 :PD.Hexadecimal&colon. the characters are compared by their code values,
 and no conversion is done.
@@ -9039,7 +9242,6 @@ and no conversion is done.
 :HELP NAME='STRSQL/LANGID'.Language identifier (LANGID)
 :P.The language identifier&colon. three letters naming the language
 whose sort sequence is used.
-:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
 :PT.:PK DEF.*JOB:EPK.
 :PD.The value of the job.
@@ -9047,93 +9249,6 @@ whose sort sequence is used.
 :PD.The value used while the job runs.
 :PT.:PV.name:EPV.
 :PD.Type a name of up to 7 characters.
-:EPARML.
-:EHELP.
-:HELP NAME='STRSQL/SQLSTRDLM'.SQL string delimiter (SQLSTRDLM)
-:P.The SQL string delimiter for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:P.Also accepted&colon. *APOSTSQL, *QUOTESQL.
-:EHELP.
-:HELP NAME='STRSQL/ALWCPYDTA'.Allow copy of data (ALWCPYDTA)
-:P.Whether a copy of the data may be used to answer a query.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:PARML.
-:PT.:PK DEF.*OPTIMIZE:EPK.
-:PD.The system chooses the best way.
-:PT.:PK.*YES:EPK.
-:PD.Yes.
-:PT.:PK.*NO:EPK.
-:PD.No.
-:EPARML.
-:EHELP.
-:HELP NAME='STRSQL/DFTRDBCOL'.Default collection (DFTRDBCOL)
-:P.The schema used for unqualified names in SQL statements with system
-naming.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:PARML.
-:PT.:PK DEF.*NONE:EPK.
-:PD.None.
-:PT.:PV.name:EPV.
-:PD.Type a name of up to 10 characters.
-:EPARML.
-:EHELP.
-:HELP NAME='STRSQL/SQLCURRULE'.SQL rules (SQLCURRULE)
-:P.Whether DB2 or the standard SQL rules apply to the program's
-statements.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:PARML.
-:PT.:PK.*STD:EPK.
-:PD.Standard.
-:EPARML.
-:P.Also accepted&colon. *DB2.
-:EHELP.
-:HELP NAME='STRSQL/DECRESULT'.Decimal result options (DECRESULT)
-:P.The precision and scale of decimal results the program's SQL
-statements compute.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:P.The value has 3 parts, given in order&colon.
-:H4.Part 1&colon. Maximum precision
-:PARML.
-:PT.:PV.number:EPV.
-:PD.Type a whole number. The value must be from 31 to 63.
-:EPARML.
-:P.When no value is given, 31 is used.
-:H4.Part 2&colon. Maximum scale
-:PARML.
-:PT.:PV.number:EPV.
-:PD.Type a whole number. The value must be from 0 to 63.
-:EPARML.
-:P.When no value is given, 31 is used.
-:H4.Part 3&colon. Minimum divide scale
-:PARML.
-:PT.:PV.number:EPV.
-:PD.Type a whole number. The value must be from 0 to 63.
-:EPARML.
-:P.When no value is given, 0 is used.
-:EHELP.
-:HELP NAME='STRSQL/DECFLTRND'.DECFLOAT rounding mode (DECFLTRND)
-:P.The DECFLOAT rounding mode for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:P.Also accepted&colon. *HALFEVEN, *UP, *DOWN, *CEILING, *FLOOR,
-*HALFUP, *HALFDOWN.
-:EHELP.
-:HELP NAME='STRSQL/CONACC'.Concurrent access (CONACC)
-:P.The concurrent access for this command.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:PARML.
-:PT.:PK DEF.*DFT:EPK.
-:PD.The default value.
-:EPARML.
-:P.Also accepted&colon. *CURCMT, *WAIT.
-:EHELP.
-:HELP NAME='STRSQL/SYSTIME'.System time sensitive (SYSTIME)
-:P.Whether to system time sensitive.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:PARML.
-:PT.:PK DEF.*YES:EPK.
-:PD.Yes.
-:PT.:PK.*NO:EPK.
-:PD.No.
 :EPARML.
 :EHELP.
 :HELP NAME=WRKPFCST.Work with Physical File Constraints (WRKPFCST)

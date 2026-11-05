@@ -1,0 +1,24 @@
+                        Start Database Monitor (STRDBMON)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Filter by database file:         FTRFILE                                       
+   File . . . . . . . . . . . . .                *NONE                          
+                                                                                
+                                                                                
+                                                                                
+     Library  . . . . . . . . . .                                               
+   Filter operator  . . . . . . .                                               
+                           + for more values                                    
+ Filter by user profile:          FTRUSER                                       
+   User . . . . . . . . . . . . .                                               
+   Filter operator  . . . . . . .                *EQ                            
+                           + for more values                                    
+ Filter by internet address . . . FTRINTNETA     *NONE                          
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,74 @@
+# Second pass: the prompts whose required parameter stopped Page Down,
+# typed with a value so every page shows. No command is run.
+wait "Main Menu"
+continue
+timeout 30000
+type runsql sql('values 1')
+key f4
+settle 2500
+snap prompt-runsql-v
+key f10
+settle 2000
+snap prompt-runsql-v-f10
+key pgdn
+settle 1500
+snap prompt-runsql-v-2
+key pgdn
+settle 1500
+snap prompt-runsql-v-3
+key pgdn
+settle 1500
+snap prompt-runsql-v-4
+key f12
+settle 1500
+wait "Main Menu"
+key eraseinput
+type crtsqlrpgi obj(qtemp/x)
+key f4
+settle 2500
+snap prompt-crtsqlrpgi-v
+key f10
+settle 2000
+snap prompt-crtsqlrpgi-v-f10
+key pgdn
+settle 1500
+snap prompt-crtsqlrpgi-v-2
+key pgdn
+settle 1500
+snap prompt-crtsqlrpgi-v-3
+key pgdn
+settle 1500
+snap prompt-crtsqlrpgi-v-4
+key pgdn
+settle 1500
+snap prompt-crtsqlrpgi-v-5
+key pgdn
+settle 1500
+snap prompt-crtsqlrpgi-v-6
+key pgdn
+settle 1500
+snap prompt-crtsqlrpgi-v-7
+key f12
+settle 1500
+wait "Main Menu"
+key eraseinput
+type strdbmon outfile(qtemp/x)
+key f4
+settle 2500
+snap prompt-strdbmon-v
+key pgdn
+settle 1500
+snap prompt-strdbmon-v-2
+key pgdn
+settle 1500
+snap prompt-strdbmon-v-3
+key pgdn
+settle 1500
+snap prompt-strdbmon-v-4
+key pgdn
+settle 1500
+snap prompt-strdbmon-v-5
+key f12
+settle 1500
+wait "Main Menu"
+key eraseinput

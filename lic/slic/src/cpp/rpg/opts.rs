@@ -155,6 +155,7 @@ pub fn request(cmdname: &str, parms: &Parms) -> Result<Request, String> {
     {
         return Err(format!("CPF0006 {what}"));
     }
+    sql.then(|| check_sql_options(parms)).transpose()?;
     let genlvl = parms
         .int("GENLVL")
         .and_then(|n| u8::try_from(n).ok())
@@ -225,6 +226,29 @@ pub fn request(cmdname: &str, parms: &Parms) -> Result<Request, String> {
             .then(|| parms.text("INFOSTMF"))
             .filter(|s| !s.is_empty()),
     })
+}
+
+/// `CRTSQLRPGI`'s options the precompile does not apply: a value other
+/// than the one it runs with is refused (`SQL0084`), not ignored.
+const UNAPPLIED: &[&str] = &[
+    "RPGPPOPT", "CONACC", "DECFLTRND", "SQLCURRULE", "DECRESULT", "SRTSEQ", "DFTRDBCOL", "DYNDFTCOL", "SQLPATH",
+    "COMPILEOPT", "DYNUSRPRF", "SAAFLAG", "FLAGSTD",
+];
+
+fn check_sql_options(parms: &Parms) -> Result<(), String> {
+    for name in UNAPPLIED {
+        if !parms.specified(name) {
+            continue;
+        }
+        let value = match *name {
+            "DECRESULT" | "SRTSEQ" | "SQLPATH" | "COMPILEOPT" => parms.text(name),
+            _ => parms.name(name),
+        };
+        if let sql::options::Check::Unsupported(what) = sql::options::check(name, value.trim()) {
+            return Err(format!("SQL0084 {what}"));
+        }
+    }
+    Ok(())
 }
 
 /// `CRTSQLRPGI`'s precompile options: `COMMIT`, `CLOSQLCSR`, the date

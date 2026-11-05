@@ -1,0 +1,24 @@
+                     Start SQL Interactive Session (STRSQL)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Commitment control . . . . . . . COMMIT         *NONE                          
+ Naming convention  . . . . . . . NAMING         *SYS                           
+ Statement processing . . . . . . PROCESS        *RUN                           
+ Library option . . . . . . . . . LIBOPT         *LIBL                          
+ List type  . . . . . . . . . . . LISTTYPE       *ALL                           
+ Data refresh . . . . . . . . . . REFRESH        *ALWAYS                        
+ Allow copy data  . . . . . . . . ALWCPYDTA      *YES                           
+ Date format  . . . . . . . . . . DATFMT         *JOB                           
+ Date separator character . . . . DATSEP         *JOB                           
+ Time format  . . . . . . . . . . TIMFMT         *HMS                           
+ Time separator character . . . . TIMSEP         *JOB                           
+ Decimal point  . . . . . . . . . DECPNT         *JOB                           
+ Sort sequence  . . . . . . . . . SRTSEQ         *JOB                           
+   Library  . . . . . . . . . . .                                               
+ Language identifier  . . . . . . LANGID         *JOB                           
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

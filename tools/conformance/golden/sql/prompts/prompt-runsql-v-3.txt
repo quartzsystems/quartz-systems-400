@@ -1,0 +1,24 @@
+                                Run SQL (RUNSQL)                                
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Decimal result options:          DECRESULT                                     
+   Maximum precision  . . . . . .                31                             
+   Maximum scale  . . . . . . . .                31                             
+   Minimum divide scale . . . . .                0                              
+ Concurrent access resolution . . CONACC         *DFT                           
+ System time sensitive  . . . . . SYSTIME        *YES                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

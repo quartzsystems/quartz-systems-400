@@ -1,0 +1,24 @@
+                                Run SQL (RUNSQL)                                
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ SQL  . . . . . . . . . . . . . . SQL                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+  ...                                                                           
+ Commitment control . . . . . . . COMMIT         *CHG                           
+ Naming . . . . . . . . . . . . . NAMING         *SYS                           
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Date format  . . . . . . . . . . DATFMT         *JOB                           
+ Date separator character . . . . DATSEP         *JOB                           
+ Time format  . . . . . . . . . . TIMFMT         *HMS                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

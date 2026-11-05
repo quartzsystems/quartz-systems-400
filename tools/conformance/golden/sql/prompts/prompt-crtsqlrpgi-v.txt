@@ -1,0 +1,24 @@
+                     Create SQL ILE RPG Object (CRTSQLRPGI)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Object . . . . . . . . . . . . . OBJ          > X                              
+   Library  . . . . . . . . . . .              >   QTEMP                        
+ Source file  . . . . . . . . . . SRCFILE        QRPGLESRC                      
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Source member  . . . . . . . . . SRCMBR         *OBJ                           
+ Source stream file . . . . . . . SRCSTMF                                       
+                                                                                
+ Commitment control . . . . . . . COMMIT         *CHG                           
+ Relational database  . . . . . . RDB            *LOCAL                         
+ Compile type . . . . . . . . . . OBJTYPE        *PGM                           
+ Listing output . . . . . . . . . OUTPUT         *NONE                          
+ Text 'description' . . . . . . . TEXT           *SRCMBRTXT                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

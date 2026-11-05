@@ -1,0 +1,24 @@
+                     Create SQL ILE RPG Object (CRTSQLRPGI)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Severity level . . . . . . . . . GENLVL         10                             
+ Date format  . . . . . . . . . . DATFMT         *JOB                           
+ Date separator character . . . . DATSEP         *JOB                           
+ Time format  . . . . . . . . . . TIMFMT         *HMS                           
+ Time separator character . . . . TIMSEP         *JOB                           
+ Replace  . . . . . . . . . . . . REPLACE        *YES                           
+ RDB connect method . . . . . . . RDBCNNMTH      *DUW                           
+ Default collection . . . . . . . DFTRDBCOL      *NONE                          
+ Dynamic default collection . . . DYNDFTCOL      *NO                            
+ Package  . . . . . . . . . . . . SQLPKG         *OBJ                           
+   Library  . . . . . . . . . . .                  *OBJLIB                      
+ SQL path . . . . . . . . . . . . SQLPATH        *NAMING                        
+                           + for more values                                    
+ SQL rules  . . . . . . . . . . . SQLCURRULE     *DB2                           
+ IBM SQL flagging . . . . . . . . SAAFLAG        *NOFLAG                        
+ ANS flagging . . . . . . . . . . FLAGSTD        *NONE                          
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

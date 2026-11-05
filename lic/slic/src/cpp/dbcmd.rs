@@ -314,7 +314,10 @@ fn cpysrcf(system: &mut System, parms: &Parms) -> Result<String, String> {
 /// the engine does, a value it would not honour refused (`SQL0084`).
 /// `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `LANGID` (with `SRTSEQ(*HEX)`),
 /// `SYSTIME`, `TGTRLS` and the listing options have no effect here.
-const CHECKED_OPTIONS: &[&str] = &["DATFMT", "DATSEP", "TIMFMT", "TIMSEP", "DECMPT", "SRTSEQ", "SQLCURRULE", "DECRESULT", "DECFLTRND", "CONACC"];
+const CHECKED_OPTIONS: &[&str] = &[
+    "DATFMT", "DATSEP", "TIMFMT", "TIMSEP", "DECMPT", "SRTSEQ", "SQLCURRULE", "DECRESULT", "CONACC", "USRPRF", "DYNUSRPRF",
+    "SAAFLAG", "FLAGSTD",
+];
 
 fn check_run_options(parms: &Parms) -> Result<(), String> {
     for name in CHECKED_OPTIONS {
@@ -356,7 +359,12 @@ fn syntax_report(text: &str, naming: sql::Naming) -> RunReport {
 
 /// `MARGINS(n)`: each source record cut at column `n`.
 fn margins(parms: &Parms, text: String) -> String {
-    match parms.int("MARGINS") {
+    // The right margin: the group's one element.
+    let right = match parms.elems("MARGINS").first() {
+        Some(Some(cmd::Value::Num(d))) => d.mantissa_i128().and_then(|m| i64::try_from(m).ok()),
+        _ => parms.int("MARGINS"),
+    };
+    match right {
         Some(n) if parms.specified("MARGINS") && n > 0 => {
             let n = usize::try_from(n).unwrap_or(usize::MAX);
             text.lines().map(|l| l.chars().take(n).collect::<String>()).collect::<Vec<_>>().join("\n")

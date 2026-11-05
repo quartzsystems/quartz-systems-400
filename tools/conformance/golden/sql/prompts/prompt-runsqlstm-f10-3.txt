@@ -1,0 +1,24 @@
+                         Run SQL Statements (RUNSQLSTM)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ SQL rules  . . . . . . . . . . . SQLCURRULE     *DB2                           
+ Decimal result options:          DECRESULT                                     
+   Maximum precision  . . . . . .                31                             
+   Maximum scale  . . . . . . . .                31                             
+   Minimum divide scale . . . . .                0                              
+ Concurrent access resolution . . CONACC         *DFT                           
+ System time sensitive  . . . . . SYSTIME        *YES                           
+ Listing output . . . . . . . . . OUTPUT         *NONE                          
+ Target release . . . . . . . . . TGTRLS         *CURRENT                       
+ Debugging view . . . . . . . . . DBGVIEW        *NONE                          
+ Close SQL cursor . . . . . . . . CLOSQLCSR      *ENDMOD                        
+ Delay PREPARE  . . . . . . . . . DLYPRP         *NO                            
+ User profile . . . . . . . . . . USRPRF         *NAMING                        
+ Dynamic user profile . . . . . . DYNUSRPRF      *USER                          
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                
