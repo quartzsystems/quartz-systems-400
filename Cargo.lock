@@ -531,6 +531,7 @@ dependencies = [
  "servers",
  "spool",
  "sql",
+ "sqlcli",
  "store",
  "sys-cpps",
  "sysapi",
@@ -3440,6 +3441,20 @@ dependencies = [
  "thiserror",
  "tracing",
  "wm",
+]
+
+[[package]]
+name = "sqlcli"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "codegen",
+ "db",
+ "ipc",
+ "mi",
+ "qdecimal",
+ "qrpgrt",
+ "sql",
 ]
 
 [[package]]

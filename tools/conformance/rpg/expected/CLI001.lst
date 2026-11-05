@@ -1,0 +1,971 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   CLI001
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   CLI001
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; call: CALL PGM({lib}/{name}) PARM('{lib}')                                                            000000     000200
+      3 //; with: CLIH                                                                                            000000     000300
+      4 //; sqlfile: CLIT                                                                                         000000     000400
+      5 ctl-opt dftactgrp(*no);                                                                                   000000     000500
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     6 dcl-f QSYSPRT printer(132);                                                                               000000     000600
+-     7 dcl-ds line len(132) end-ds;                                                                              000000     000700
+ ======>       aaaa
+ *RNF3530 00 a      000700  Data structure LINE has no valid subfields.
+      8 /copy CLIH                                                                                                000000     000800
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+         *--------------------------------------------------------------------------------------------*
+         * RPG member name  . . . . . :  CLIH                                                         *                     1
+         * External name  . . . . . . :  {lib}/QRPGLESRC(CLIH)                                    *                     1
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+         * Last change  . . . . . . . :  dd-dd-dd  tt:tt:tt                                           *                     1
+         *--------------------------------------------------------------------------------------------*
+      9+  // The SQL CLI as RPG prototypes, the kit's own declarations: every                                     000000    1000100
+     10+  // pointer argument is passed as a pointer by value.                                                    000000    1000200
+     11+  dcl-c SQL_SUCCESS 0;                                                                                    000000    1000300
+     12+  dcl-c SQL_ERROR -1;                                                                                     000000    1000400
+     13+  dcl-c SQL_NO_DATA 100;                                                                                  000000    1000500
+     14+  dcl-c SQL_NTS -3;                                                                                       000000    1000600
+     15+  dcl-c SQL_NULL_DATA -1;                                                                                 000000    1000700
+     16+  dcl-c SQL_HANDLE_ENV 1;                                                                                 000000    1000800
+     17+  dcl-c SQL_HANDLE_DBC 2;                                                                                 000000    1000900
+     18+  dcl-c SQL_HANDLE_STMT 3;                                                                                000000    1001000
+     19+  dcl-c SQL_CLOSE 0;                                                                                      000000    1001100
+     20+  dcl-c SQL_DROP 1;                                                                                       000000    1001200
+     21+  dcl-c SQL_UNBIND 2;                                                                                     000000    1001300
+     22+  dcl-c SQL_RESET_PARAMS 3;                                                                               000000    1001400
+     23+  dcl-c SQL_COMMIT 0;                                                                                     000000    1001500
+     24+  dcl-c SQL_ROLLBACK 1;                                                                                   000000    1001600
+     25+  dcl-c SQL_CHAR 1;                                                                                       000000    1001700
+     26+  dcl-c SQL_NUMERIC 2;                                                                                    000000    1001800
+     27+  dcl-c SQL_DECIMAL 3;                                                                                    000000    1001900
+     28+  dcl-c SQL_INTEGER 4;                                                                                    000000    1002000
+     29+  dcl-c SQL_SMALLINT 5;                                                                                   000000    1002100
+     30+  dcl-c SQL_DOUBLE 8;                                                                                     000000    1002200
+     31+  dcl-c SQL_VARCHAR 12;                                                                                   000000    1002300
+     32+  dcl-c SQL_BIGINT 19;                                                                                    000000    1002400
+     33+  dcl-c SQL_DATE 91;                                                                                      000000    1002500
+     34+  dcl-c SQL_TIME 92;                                                                                      000000    1002600
+     35+  dcl-c SQL_TIMESTAMP 93;                                                                                 000000    1002700
+     36+  dcl-c SQL_ATTR_SERVER_MODE 10004;                                                                       000000    1002800
+     37+  dcl-c SQL_ATTR_OUTPUT_NTS 10001;                                                                        000000    1002900
+     38+  dcl-c SQL_ATTR_AUTOCOMMIT 10003;                                                                        000000    1003000
+     39+  dcl-c SQL_ATTR_DBC_SYS_NAMING 10004;                                                                    000000    1003100
+     40+  dcl-c SQL_ATTR_DBC_DEFAULT_LIB 10005;                                                                   000000    1003200
+     41+  dcl-c SQL_ATTR_COMMIT 0;                                                                                000000    1003300
+     42+  dcl-c SQL_ATTR_CURSOR_SCROLLABLE 10015;                                                                 000000    1003400
+     43+  dcl-c SQL_ATTR_CURSOR_HOLD 10017;                                                                       000000    1003500
+     44+  dcl-c SQL_ATTR_FOR_FETCH_ONLY 10014;                                                                    000000    1003600
+     45+  dcl-c SQL_FETCH_NEXT 1;                                                                                 000000    1003700
+     46+  dcl-c SQL_FETCH_FIRST 2;                                                                                000000    1003800
+     47+  dcl-c SQL_FETCH_LAST 3;                                                                                 000000    1003900
+     48+  dcl-c SQL_FETCH_PRIOR 4;                                                                                000000    1004000
+     49+  dcl-c SQL_FETCH_ABSOLUTE 5;                                                                             000000    1004100
+     50+  dcl-c SQL_FETCH_RELATIVE 6;                                                                             000000    1004200
+     51+  dcl-c SQL_PARAM_INPUT 1;                                                                                000000    1004300
+     52+  dcl-c SQL_DIAG_SQLSTATE 4;                                                                              000000    1004400
+     53+  dcl-c SQL_DIAG_NATIVE 5;                                                                                000000    1004500
+     54+  dcl-c SQL_DIAG_NUMBER 2;                                                                                000000    1004600
+     55+  dcl-c SQL_DIAG_ROW_COUNT 3;                                                                             000000    1004700
+     56+                                                                                                          000000    1004800
+     57+  dcl-pr SQLAllocEnv int(10) extproc('SQLAllocEnv');                                                      000000    1004900
+     58+    phenv pointer value;                                                                                  000000    1005000
+     59+  end-pr;                                                                                                 000000    1005100
+     60+  dcl-pr SQLAllocConnect int(10) extproc('SQLAllocConnect');                                              000000    1005200
+     61+    henv int(10) value;                                                                                   000000    1005300
+     62+    phdbc pointer value;                                                                                  000000    1005400
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     63+  end-pr;                                                                                                 000000    1005500
+     64+  dcl-pr SQLAllocStmt int(10) extproc('SQLAllocStmt');                                                    000000    1005600
+     65+    hdbc int(10) value;                                                                                   000000    1005700
+     66+    phstmt pointer value;                                                                                 000000    1005800
+     67+  end-pr;                                                                                                 000000    1005900
+     68+  dcl-pr SQLAllocHandle int(10) extproc('SQLAllocHandle');                                                000000    1006000
+     69+    htype int(5) value;                                                                                   000000    1006100
+     70+    ihnd int(10) value;                                                                                   000000    1006200
+     71+    ohnd pointer value;                                                                                   000000    1006300
+     72+  end-pr;                                                                                                 000000    1006400
+     73+  dcl-pr SQLSetEnvAttr int(10) extproc('SQLSetEnvAttr');                                                  000000    1006500
+     74+    henv int(10) value;                                                                                   000000    1006600
+     75+    attr int(10) value;                                                                                   000000    1006700
+     76+    val pointer value;                                                                                    000000    1006800
+     77+    len int(10) value;                                                                                    000000    1006900
+     78+  end-pr;                                                                                                 000000    1007000
+     79+  dcl-pr SQLGetEnvAttr int(10) extproc('SQLGetEnvAttr');                                                  000000    1007100
+     80+    henv int(10) value;                                                                                   000000    1007200
+     81+    attr int(10) value;                                                                                   000000    1007300
+     82+    val pointer value;                                                                                    000000    1007400
+     83+    max int(10) value;                                                                                    000000    1007500
+     84+    olen pointer value;                                                                                   000000    1007600
+     85+  end-pr;                                                                                                 000000    1007700
+     86+  dcl-pr SQLSetConnectAttr int(10) extproc('SQLSetConnectAttr');                                          000000    1007800
+     87+    hdbc int(10) value;                                                                                   000000    1007900
+     88+    attr int(10) value;                                                                                   000000    1008000
+     89+    val pointer value;                                                                                    000000    1008100
+     90+    len int(10) value;                                                                                    000000    1008200
+     91+  end-pr;                                                                                                 000000    1008300
+     92+  dcl-pr SQLGetConnectAttr int(10) extproc('SQLGetConnectAttr');                                          000000    1008400
+     93+    hdbc int(10) value;                                                                                   000000    1008500
+     94+    attr int(10) value;                                                                                   000000    1008600
+     95+    val pointer value;                                                                                    000000    1008700
+     96+    max int(10) value;                                                                                    000000    1008800
+     97+    olen pointer value;                                                                                   000000    1008900
+     98+  end-pr;                                                                                                 000000    1009000
+     99+  dcl-pr SQLSetConnectOption int(10) extproc('SQLSetConnectOption');                                      000000    1009100
+    100+    hdbc int(10) value;                                                                                   000000    1009200
+    101+    opt int(5) value;                                                                                     000000    1009300
+    102+    val pointer value;                                                                                    000000    1009400
+    103+  end-pr;                                                                                                 000000    1009500
+    104+  dcl-pr SQLSetStmtAttr int(10) extproc('SQLSetStmtAttr');                                                000000    1009600
+    105+    hstmt int(10) value;                                                                                  000000    1009700
+    106+    attr int(10) value;                                                                                   000000    1009800
+    107+    val pointer value;                                                                                    000000    1009900
+    108+    len int(10) value;                                                                                    000000    1010000
+    109+  end-pr;                                                                                                 000000    1010100
+    110+  dcl-pr SQLGetStmtAttr int(10) extproc('SQLGetStmtAttr');                                                000000    1010200
+    111+    hstmt int(10) value;                                                                                  000000    1010300
+    112+    attr int(10) value;                                                                                   000000    1010400
+    113+    val pointer value;                                                                                    000000    1010500
+    114+    max int(10) value;                                                                                    000000    1010600
+    115+    olen pointer value;                                                                                   000000    1010700
+    116+  end-pr;                                                                                                 000000    1010800
+    117+  dcl-pr SQLConnect int(10) extproc('SQLConnect');                                                        000000    1010900
+    118+    hdbc int(10) value;                                                                                   000000    1011000
+1{heading} page 5
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    119+    dsn pointer value;                                                                                    000000    1011100
+    120+    dsnl int(5) value;                                                                                    000000    1011200
+    121+    uid pointer value;                                                                                    000000    1011300
+    122+    uidl int(5) value;                                                                                    000000    1011400
+    123+    pwd pointer value;                                                                                    000000    1011500
+    124+    pwdl int(5) value;                                                                                    000000    1011600
+    125+  end-pr;                                                                                                 000000    1011700
+    126+  dcl-pr SQLDisconnect int(10) extproc('SQLDisconnect');                                                  000000    1011800
+    127+    hdbc int(10) value;                                                                                   000000    1011900
+    128+  end-pr;                                                                                                 000000    1012000
+    129+  dcl-pr SQLPrepare int(10) extproc('SQLPrepare');                                                        000000    1012100
+    130+    hstmt int(10) value;                                                                                  000000    1012200
+    131+    text pointer value;                                                                                   000000    1012300
+    132+    len int(10) value;                                                                                    000000    1012400
+    133+  end-pr;                                                                                                 000000    1012500
+    134+  dcl-pr SQLExecute int(10) extproc('SQLExecute');                                                        000000    1012600
+    135+    hstmt int(10) value;                                                                                  000000    1012700
+    136+  end-pr;                                                                                                 000000    1012800
+    137+  dcl-pr SQLExecDirect int(10) extproc('SQLExecDirect');                                                  000000    1012900
+    138+    hstmt int(10) value;                                                                                  000000    1013000
+    139+    text pointer value;                                                                                   000000    1013100
+    140+    len int(10) value;                                                                                    000000    1013200
+    141+  end-pr;                                                                                                 000000    1013300
+    142+  dcl-pr SQLNumParams int(10) extproc('SQLNumParams');                                                    000000    1013400
+    143+    hstmt int(10) value;                                                                                  000000    1013500
+    144+    pcpar pointer value;                                                                                  000000    1013600
+    145+  end-pr;                                                                                                 000000    1013700
+    146+  dcl-pr SQLDescribeParam int(10) extproc('SQLDescribeParam');                                            000000    1013800
+    147+    hstmt int(10) value;                                                                                  000000    1013900
+    148+    ipar int(5) value;                                                                                    000000    1014000
+    149+    ptype pointer value;                                                                                  000000    1014100
+    150+    pdef pointer value;                                                                                   000000    1014200
+    151+    pscale pointer value;                                                                                 000000    1014300
+    152+    pnull pointer value;                                                                                  000000    1014400
+    153+  end-pr;                                                                                                 000000    1014500
+    154+  dcl-pr SQLBindParam int(10) extproc('SQLBindParam');                                                    000000    1014600
+    155+    hstmt int(10) value;                                                                                  000000    1014700
+    156+    ipar int(5) value;                                                                                    000000    1014800
+    157+    ctype int(5) value;                                                                                   000000    1014900
+    158+    stype int(5) value;                                                                                   000000    1015000
+    159+    plen int(10) value;                                                                                   000000    1015100
+    160+    pscale int(5) value;                                                                                  000000    1015200
+    161+    pdata pointer value;                                                                                  000000    1015300
+    162+    pcb pointer value;                                                                                    000000    1015400
+    163+  end-pr;                                                                                                 000000    1015500
+    164+  dcl-pr SQLBindParameter int(10) extproc('SQLBindParameter');                                            000000    1015600
+    165+    hstmt int(10) value;                                                                                  000000    1015700
+    166+    ipar int(5) value;                                                                                    000000    1015800
+    167+    io int(5) value;                                                                                      000000    1015900
+    168+    ctype int(5) value;                                                                                   000000    1016000
+    169+    stype int(5) value;                                                                                   000000    1016100
+    170+    plen int(10) value;                                                                                   000000    1016200
+    171+    pscale int(5) value;                                                                                  000000    1016300
+    172+    pdata pointer value;                                                                                  000000    1016400
+    173+    max int(10) value;                                                                                    000000    1016500
+    174+    pcb pointer value;                                                                                    000000    1016600
+1{heading} page 6
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    175+  end-pr;                                                                                                 000000    1016700
+    176+  dcl-pr SQLNumResultCols int(10) extproc('SQLNumResultCols');                                            000000    1016800
+    177+    hstmt int(10) value;                                                                                  000000    1016900
+    178+    pccol pointer value;                                                                                  000000    1017000
+    179+  end-pr;                                                                                                 000000    1017100
+    180+  dcl-pr SQLDescribeCol int(10) extproc('SQLDescribeCol');                                                000000    1017200
+    181+    hstmt int(10) value;                                                                                  000000    1017300
+    182+    icol int(5) value;                                                                                    000000    1017400
+    183+    name pointer value;                                                                                   000000    1017500
+    184+    namemax int(5) value;                                                                                 000000    1017600
+    185+    namelen pointer value;                                                                                000000    1017700
+    186+    ptype pointer value;                                                                                  000000    1017800
+    187+    pdef pointer value;                                                                                   000000    1017900
+    188+    pscale pointer value;                                                                                 000000    1018000
+    189+    pnull pointer value;                                                                                  000000    1018100
+    190+  end-pr;                                                                                                 000000    1018200
+    191+  dcl-pr SQLBindCol int(10) extproc('SQLBindCol');                                                        000000    1018300
+    192+    hstmt int(10) value;                                                                                  000000    1018400
+    193+    icol int(5) value;                                                                                    000000    1018500
+    194+    ctype int(5) value;                                                                                   000000    1018600
+    195+    data pointer value;                                                                                   000000    1018700
+    196+    max int(10) value;                                                                                    000000    1018800
+    197+    pcb pointer value;                                                                                    000000    1018900
+    198+  end-pr;                                                                                                 000000    1019000
+    199+  dcl-pr SQLFetch int(10) extproc('SQLFetch');                                                            000000    1019100
+    200+    hstmt int(10) value;                                                                                  000000    1019200
+    201+  end-pr;                                                                                                 000000    1019300
+    202+  dcl-pr SQLFetchScroll int(10) extproc('SQLFetchScroll');                                                000000    1019400
+    203+    hstmt int(10) value;                                                                                  000000    1019500
+    204+    orient int(5) value;                                                                                  000000    1019600
+    205+    offset int(10) value;                                                                                 000000    1019700
+    206+  end-pr;                                                                                                 000000    1019800
+    207+  dcl-pr SQLGetData int(10) extproc('SQLGetData');                                                        000000    1019900
+    208+    hstmt int(10) value;                                                                                  000000    1020000
+    209+    icol int(5) value;                                                                                    000000    1020100
+    210+    ctype int(5) value;                                                                                   000000    1020200
+    211+    data pointer value;                                                                                   000000    1020300
+    212+    max int(10) value;                                                                                    000000    1020400
+    213+    pcb pointer value;                                                                                    000000    1020500
+    214+  end-pr;                                                                                                 000000    1020600
+    215+  dcl-pr SQLRowCount int(10) extproc('SQLRowCount');                                                      000000    1020700
+    216+    hstmt int(10) value;                                                                                  000000    1020800
+    217+    pcrow pointer value;                                                                                  000000    1020900
+    218+  end-pr;                                                                                                 000000    1021000
+    219+  dcl-pr SQLCloseCursor int(10) extproc('SQLCloseCursor');                                                000000    1021100
+    220+    hstmt int(10) value;                                                                                  000000    1021200
+    221+  end-pr;                                                                                                 000000    1021300
+    222+  dcl-pr SQLFreeStmt int(10) extproc('SQLFreeStmt');                                                      000000    1021400
+    223+    hstmt int(10) value;                                                                                  000000    1021500
+    224+    opt int(5) value;                                                                                     000000    1021600
+    225+  end-pr;                                                                                                 000000    1021700
+    226+  dcl-pr SQLFreeHandle int(10) extproc('SQLFreeHandle');                                                  000000    1021800
+    227+    htype int(5) value;                                                                                   000000    1021900
+    228+    hndl int(10) value;                                                                                   000000    1022000
+    229+  end-pr;                                                                                                 000000    1022100
+    230+  dcl-pr SQLFreeConnect int(10) extproc('SQLFreeConnect');                                                000000    1022200
+1{heading} page 7
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    231+    hdbc int(10) value;                                                                                   000000    1022300
+    232+  end-pr;                                                                                                 000000    1022400
+    233+  dcl-pr SQLFreeEnv int(10) extproc('SQLFreeEnv');                                                        000000    1022500
+    234+    henv int(10) value;                                                                                   000000    1022600
+    235+  end-pr;                                                                                                 000000    1022700
+    236+  dcl-pr SQLError int(10) extproc('SQLError');                                                            000000    1022800
+    237+    henv int(10) value;                                                                                   000000    1022900
+    238+    hdbc int(10) value;                                                                                   000000    1023000
+    239+    hstmt int(10) value;                                                                                  000000    1023100
+    240+    state pointer value;                                                                                  000000    1023200
+    241+    native pointer value;                                                                                 000000    1023300
+    242+    msg pointer value;                                                                                    000000    1023400
+    243+    max int(5) value;                                                                                     000000    1023500
+    244+    mlen pointer value;                                                                                   000000    1023600
+    245+  end-pr;                                                                                                 000000    1023700
+    246+  dcl-pr SQLGetDiagRec int(10) extproc('SQLGetDiagRec');                                                  000000    1023800
+    247+    htype int(5) value;                                                                                   000000    1023900
+    248+    hndl int(10) value;                                                                                   000000    1024000
+    249+    rec int(5) value;                                                                                     000000    1024100
+    250+    state pointer value;                                                                                  000000    1024200
+    251+    native pointer value;                                                                                 000000    1024300
+    252+    msg pointer value;                                                                                    000000    1024400
+    253+    max int(5) value;                                                                                     000000    1024500
+    254+    mlen pointer value;                                                                                   000000    1024600
+    255+  end-pr;                                                                                                 000000    1024700
+    256+  dcl-pr SQLGetDiagField int(10) extproc('SQLGetDiagField');                                              000000    1024800
+    257+    htype int(5) value;                                                                                   000000    1024900
+    258+    hndl int(10) value;                                                                                   000000    1025000
+    259+    rec int(5) value;                                                                                     000000    1025100
+    260+    id int(5) value;                                                                                      000000    1025200
+    261+    val pointer value;                                                                                    000000    1025300
+    262+    max int(5) value;                                                                                     000000    1025400
+    263+    vlen pointer value;                                                                                   000000    1025500
+    264+  end-pr;                                                                                                 000000    1025600
+    265+  dcl-pr SQLEndTran int(10) extproc('SQLEndTran');                                                        000000    1025700
+    266+    htype int(5) value;                                                                                   000000    1025800
+    267+    hndl int(10) value;                                                                                   000000    1025900
+    268+    kind int(5) value;                                                                                    000000    1026000
+    269+  end-pr;                                                                                                 000000    1026100
+    270+  dcl-pr SQLTransact int(10) extproc('SQLTransact');                                                      000000    1026200
+    271+    henv int(10) value;                                                                                   000000    1026300
+    272+    hdbc int(10) value;                                                                                   000000    1026400
+    273+    kind int(5) value;                                                                                    000000    1026500
+    274+  end-pr;                                                                                                 000000    1026600
+    275+  dcl-pr SQLTables int(10) extproc('SQLTables');                                                          000000    1026700
+    276+    hstmt int(10) value;                                                                                  000000    1026800
+    277+    cat pointer value;                                                                                    000000    1026900
+    278+    catl int(5) value;                                                                                    000000    1027000
+    279+    sch pointer value;                                                                                    000000    1027100
+    280+    schl int(5) value;                                                                                    000000    1027200
+    281+    tab pointer value;                                                                                    000000    1027300
+    282+    tabl int(5) value;                                                                                    000000    1027400
+    283+    typ pointer value;                                                                                    000000    1027500
+    284+    typl int(5) value;                                                                                    000000    1027600
+    285+  end-pr;                                                                                                 000000    1027700
+    286+  dcl-pr SQLColumns int(10) extproc('SQLColumns');                                                        000000    1027800
+1{heading} page 8
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+    287+    hstmt int(10) value;                                                                                  000000    1027900
+    288+    cat pointer value;                                                                                    000000    1028000
+    289+    catl int(5) value;                                                                                    000000    1028100
+    290+    sch pointer value;                                                                                    000000    1028200
+    291+    schl int(5) value;                                                                                    000000    1028300
+    292+    tab pointer value;                                                                                    000000    1028400
+    293+    tabl int(5) value;                                                                                    000000    1028500
+    294+    col pointer value;                                                                                    000000    1028600
+    295+    coll int(5) value;                                                                                    000000    1028700
+    296+  end-pr;                                                                                                 000000    1028800
+    297+  dcl-pr SQLPrimaryKeys int(10) extproc('SQLPrimaryKeys');                                                000000    1028900
+    298+    hstmt int(10) value;                                                                                  000000    1029000
+    299+    cat pointer value;                                                                                    000000    1029100
+    300+    catl int(5) value;                                                                                    000000    1029200
+    301+    sch pointer value;                                                                                    000000    1029300
+    302+    schl int(5) value;                                                                                    000000    1029400
+    303+    tab pointer value;                                                                                    000000    1029500
+    304+    tabl int(5) value;                                                                                    000000    1029600
+    305+  end-pr;                                                                                                 000000    1029700
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    306 // Server mode: a prepared statement with markers, bound parameters                                       000000     000900
+    307 // and columns, executed and fetched; then the diagnostics of an error.                                   000000     001000
+    308 dcl-pi *n;                                                                                                000000     001100
+    309   lib char(10);                                                                                           000000     001200
+    310 end-pi;                                                                                                   000000     001300
+    311 dcl-s henv int(10);                                                                                       000000     001400
+    312 dcl-s hdbc int(10);                                                                                       000000     001500
+    313 dcl-s hstmt int(10);                                                                                      000000     001600
+    314 dcl-s rc int(10);                                                                                         000000     001700
+    315 dcl-s on int(10) inz(1);                                                                                  000000     001800
+    316 dcl-s v int(10);                                                                                          000000     001900
+    317 dcl-s olen int(10);                                                                                       000000     002000
+    318 dcl-s dsn char(10) inz('*LOCAL');                                                                         000000     002100
+    319 dcl-s stmt char(200);                                                                                     000000     002200
+    320 dcl-s minid int(10);                                                                                      000000     002300
+    321 dcl-s maxamt packed(9:2);                                                                                 000000     002400
+    322 dcl-s id int(10);                                                                                         000000     002500
+    323 dcl-s name char(20);                                                                                      000000     002600
+    324 dcl-s amt packed(9:2);                                                                                    000000     002700
+    325 dcl-s d char(10);                                                                                         000000     002800
+    326 dcl-s idl int(10);                                                                                        000000     002900
+    327 dcl-s namel int(10);                                                                                      000000     003000
+    328 dcl-s amtl int(10);                                                                                       000000     003100
+    329 dcl-s dl int(10);                                                                                         000000     003200
+    330 dcl-s n int(5);                                                                                           000000     003300
+    331 dcl-s cnt int(10);                                                                                        000000     003400
+    332 dcl-s state char(6);                                                                                      000000     003500
+    333 dcl-s native int(10);                                                                                     000000     003600
+    334 dcl-s msg char(200);                                                                                      000000     003700
+    335 dcl-s mlen int(5);                                                                                        000000     003800
+    336 dcl-s job char(28);                                                                                       000000     003900
+    337 dcl-s jobl int(10);                                                                                       000000     004000
+    338                                                                                                           000000     004100
+1{heading} page 9
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+ *RNF2318 00      6 000600  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-   339 rc = SQLAllocEnv(%addr(henv));                                                                            000000     004200
+    340 say('allocenv ' + %char(rc) + ' ' + %char(henv));                                                         000000     004300
+    341 rc = SQLSetEnvAttr(henv : SQL_ATTR_SERVER_MODE : %addr(on) : 0);                                          000000     004400
+    342 say('servermode ' + %char(rc));                                                                           000000     004500
+    343 v = -9;                                                                                                   000000     004600
+    344 rc = SQLGetEnvAttr(henv : SQL_ATTR_SERVER_MODE : %addr(v) : 4 : %addr(olen));                             000000     004700
+    345 say('getenv ' + %char(rc) + ' ' + %char(v));                                                              000000     004800
+    346 rc = SQLAllocConnect(henv : %addr(hdbc));                                                                 000000     004900
+    347 say('allocconnect ' + %char(rc) + ' ' + %char(hdbc));                                                     000000     005000
+    348 rc = SQLConnect(hdbc : %addr(dsn) : 6 : *null : 0 : *null : 0);                                           000000     005100
+    349 say('connect ' + %char(rc));                                                                              000000     005200
+    350 v = -9;                                                                                                   000000     005300
+    351 rc = SQLGetConnectAttr(hdbc : SQL_ATTR_AUTOCOMMIT : %addr(v) : 4 : %addr(olen));                          000000     005400
+    352 say('autocommit ' + %char(rc) + ' ' + %char(v));                                                          000000     005500
+    353 v = -9;                                                                                                   000000     005600
+    354 rc = SQLGetConnectAttr(hdbc : SQL_ATTR_COMMIT : %addr(v) : 4 : %addr(olen));                              000000     005700
+    355 say('commit ' + %char(rc) + ' ' + %char(v));                                                              000000     005800
+    356 v = -9;                                                                                                   000000     005900
+    357 rc = SQLGetConnectAttr(hdbc : SQL_ATTR_DBC_SYS_NAMING : %addr(v) : 4 : %addr(olen));                      000000     006000
+    358 say('sysnaming ' + %char(rc) + ' ' + %char(v));                                                           000000     006100
+    359 rc = SQLAllocStmt(hdbc : %addr(hstmt));                                                                   000000     006200
+    360 say('allocstmt ' + %char(rc) + ' ' + %char(hstmt));                                                       000000     006300
+    361                                                                                                           000000     006400
+    362 // The job that runs the connection's statements.                                                         000000     006500
+    363 stmt = 'SELECT SUBSTR(QSYS2.JOB_NAME, LOCATE(''/'', QSYS2.JOB_NAME) + 1), '                               000000     006600
+    364      + 'CASE WHEN QSYS2.SERVER_MODE_JOB_NAME IS NULL THEN ''none'' ELSE ''set'' END '                     000000     006700
+    365      + 'FROM SYSIBM.SYSDUMMY1';                                                                           000000     006800
+    366 rc = SQLExecDirect(hstmt : %addr(stmt) : %len(%trimr(stmt)));                                             000000     006900
+    367 say('execdirect ' + %char(rc));                                                                           000000     007000
+    368 rc = SQLBindCol(hstmt : 1 : SQL_CHAR : %addr(job) : %size(job) : %addr(jobl));                            000000     007100
+    369 rc = SQLBindCol(hstmt : 2 : SQL_CHAR : %addr(d) : %size(d) : %addr(dl));                                  000000     007200
+    370 rc = SQLFetch(hstmt);                                                                                     000000     007300
+    371 say('job ' + %char(rc) + ' ' + %trimr(job) + ' ' + %char(jobl) + ' ' + %trimr(d) + ' ' + %char(dl));      000000     007400
+    372 rc = SQLCloseCursor(hstmt);                                                                               000000     007500
+    373 say('close ' + %char(rc));                                                                                000000     007600
+    374 rc = SQLFreeStmt(hstmt : SQL_UNBIND);                                                                     000000     007700
+    375                                                                                                           000000     007800
+    376 // A prepared statement with two markers.                                                                 000000     007900
+    377 stmt = 'SELECT ID, NAME, AMT, D FROM ' + %trim(lib)                                                       000000     008000
+    378      + '.CLIT WHERE ID >= ? AND (AMT < ? OR AMT IS NULL) ORDER BY ID';                                    000000     008100
+    379 rc = SQLPrepare(hstmt : %addr(stmt) : %len(%trimr(stmt)));                                                000000     008200
+    380 say('prepare ' + %char(rc));                                                                              000000     008300
+    381 rc = SQLNumParams(hstmt : %addr(n));                                                                      000000     008400
+    382 say('numparams ' + %char(rc) + ' ' + %char(n));                                                           000000     008500
+    383 rc = SQLNumResultCols(hstmt : %addr(n));                                                                  000000     008600
+    384 say('numcols ' + %char(rc) + ' ' + %char(n));                                                             000000     008700
+    385 rc = SQLBindParam(hstmt : 1 : SQL_INTEGER : SQL_INTEGER : 0 : 0 : %addr(minid) : *null);                  000000     008800
+    386 say('bindparam1 ' + %char(rc));                                                                           000000     008900
+    387 rc = SQLBindParam(hstmt : 2 : SQL_DECIMAL : SQL_DECIMAL : 9 : 2 : %addr(maxamt) : *null);                 000000     009000
+    388 say('bindparam2 ' + %char(rc));                                                                           000000     009100
+    389 rc = SQLBindCol(hstmt : 1 : SQL_INTEGER : %addr(id) : 4 : %addr(idl));                                    000000     009200
+    390 rc = SQLBindCol(hstmt : 2 : SQL_CHAR : %addr(name) : %size(name) : %addr(namel));                         000000     009300
+1{heading} page 10
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    391 rc = SQLBindCol(hstmt : 3 : SQL_DECIMAL : %addr(amt) : %len(amt) * 256 + %decpos(amt)                     000000     009400
+    392                 : %addr(amtl));                                                                           000000     009500
+    393 rc = SQLBindCol(hstmt : 4 : SQL_CHAR : %addr(d) : %size(d) : %addr(dl));                                  000000     009600
+    394 say('bindcol ' + %char(rc));                                                                              000000     009700
+    395 minid = 1;                                                                                                000000     009800
+    396 maxamt = 11;                                                                                              000000     009900
+    397 exsr run;                                                                                                 000000     010000
+    398 // The same statement again with new values in the bound storage.                                         000000     010100
+    399 minid = 2;                                                                                                000000     010200
+    400 maxamt = 0;                                                                                               000000     010300
+    401 exsr run;                                                                                                 000000     010400
+    402                                                                                                           000000     010500
+    403 // An undefined table: the diagnostics.                                                                   000000     010600
+    404 stmt = 'SELECT * FROM ' + %trim(lib) + '.NOSUCHT';                                                        000000     010700
+    405 rc = SQLExecDirect(hstmt : %addr(stmt) : %len(%trimr(stmt)));                                             000000     010800
+    406 say('bad ' + %char(rc));                                                                                  000000     010900
+    407 rc = SQLError(henv : hdbc : hstmt : %addr(state) : %addr(native) : %addr(msg) : %size(msg)                000000     011000
+    408               : %addr(mlen));                                                                             000000     011100
+    409 say('error ' + %char(rc) + ' ' + %subst(state : 1 : 5) + ' ' + %char(native));                            000000     011200
+    410 rc = SQLError(henv : hdbc : hstmt : %addr(state) : %addr(native) : %addr(msg) : %size(msg)                000000     011300
+    411               : %addr(mlen));                                                                             000000     011400
+    412 say('error2 ' + %char(rc));                                                                               000000     011500
+    413                                                                                                           000000     011600
+    414 rc = SQLFreeStmt(hstmt : SQL_DROP);                                                                       000000     011700
+    415 say('freestmt ' + %char(rc));                                                                             000000     011800
+    416 rc = SQLDisconnect(hdbc);                                                                                 000000     011900
+    417 say('disconnect ' + %char(rc));                                                                           000000     012000
+    418 rc = SQLFreeConnect(hdbc);                                                                                000000     012100
+    419 say('freeconnect ' + %char(rc));                                                                          000000     012200
+    420 rc = SQLFreeEnv(henv);                                                                                    000000     012300
+    421 say('freeenv ' + %char(rc));                                                                              000000     012400
+    422 *inlr = *on;                                                                                              000000     012500
+    423                                                                                                           000000     012600
+    424 begsr run;                                                                                                000000     012700
+    425   rc = SQLExecute(hstmt);                                                                                 000000     012800
+    426   say('execute ' + %char(rc));                                                                            000000     012900
+    427   cnt = 0;                                                                                                000000     013000
+    428   dow cnt < 10;                                                                                      B01  000000     013100
+    429     id = -1;                                                                                          01  000000     013200
+    430     name = *all'*';                                                                                   01  000000     013300
+    431     amt = -1;                                                                                         01  000000     013400
+    432     d = *all'*';                                                                                      01  000000     013500
+    433     rc = SQLFetch(hstmt);                                                                             01  000000     013600
+    434     if rc <> SQL_SUCCESS;                                                                            B02  000000     013700
+    435       leave;                                                                                          02  000000     013800
+    436     endif;                                                                                           E02  000000     013900
+    437     cnt += 1;                                                                                         01  000000     014000
+    438     say('row ' + %char(id) + ' ' + %char(idl) + ' ' + %trimr(name) + ' ' + %char(namel)               01  000000     014100
+    439         + ' ' + %char(amt) + ' ' + %char(amtl) + ' ' + %trimr(d) + ' ' + %char(dl));                  01  000000     014200
+    440   enddo;                                                                                             E01  000000     014300
+    441   say('fetch ' + %char(rc) + ' ' + %char(cnt));                                                           000000     014400
+    442   rc = SQLCloseCursor(hstmt);                                                                             000000     014500
+    443   say('close ' + %char(rc));                                                                              000000     014600
+    444 endsr;                                                                                                    000000     014700
+    445                                                                                                           000000     014800
+1{heading} page 11
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    446 dcl-proc say;                                                                                             000000     014900
+-   447   dcl-pi *n;                                                                                              000000     015000
+    448     text varchar(132) const;                                                                              000000     015100
+    449   end-pi;                                                                                                 000000     015200
+-   450   line = text;                                                                                            000000     015300
+    451   write QSYSPRT line;                                                                                     000000     015400
+    452 end-proc;                                                                                                 000000     015500
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 12
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                            / C o p y   M e m b e r s
+0Line   Src  RPG name   <-------- External name -------> CCSID  <- Last change ->
+0Number Id              Library    File       Member            Date     Time
+      8    1 CLIH       {lib}  QRPGLESRC  CLIH          37  dd-dd-dd tt:tt:tt
+0         * * * * *   E N D   O F   / C O P Y   M E M B E R S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 13
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 6D    451
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                  422M
+          AMT               P(9,2)                324D    391     391     391
+                                                  431M    439
+          AMTL              I(10,0)               328D    392     439
+          CNT               I(10,0)               331D    427M    428     437M
+                                                  441
+          D                 A(10)                 325D    369     369     371
+                                                  393     393     432M    439
+          DL                I(10,0)               329D    369     371     393
+                                                  439
+          DSN               A(10)                 318D    348
+          HDBC              I(10,0)               312D    346     347     348
+                                                  351     354     357     359
+                                                  407     410     416     418
+          HENV              I(10,0)               311D    339     340     341
+                                                  344     346     407     410
+                                                  420
+          HSTMT             I(10,0)               313D    359     360     366
+                                                  368     369     370     372
+                                                  374     379     381     383
+                                                  385     387     389     390
+                                                  391     393     405     407
+                                                  410     414     425     433
+                                                  442
+          ID                I(10,0)               322D    389     429M    438
+          IDL               I(10,0)               326D    389     438
+          JOB               A(28)                 336D    368     368     371
+          JOBL              I(10,0)               337D    368     371
+          LIB               A(10)                 309D    377     404
+                            BASED(_QRNL_PRM+)
+          LINE              DS(132)                 7D    450M    451
+          MAXAMT            P(9,2)                321D    387     396M    400M
+          MINID             I(10,0)               320D    385     395M    399M
+          MLEN              I(5,0)                335D    408     411
+          MSG               A(200)                334D    407     407     410
+                                                  410
+          N                 I(5,0)                330D    381     382     383
+                                                  384
+          NAME              A(20)                 323D    390     390     430M
+                                                  438
+          NAMEL             I(10,0)               327D    390     438
+          NATIVE            I(10,0)               333D    407     409     410
+          OLEN              I(10,0)               317D    344     351     354
+                                                  357
+          ON                I(10,0)               315D    341
+          RC                I(10,0)               314D    339M    340     341M
+                                                  342     344M    345     346M
+1{heading} page 14
+0                                                 347     348M    349     351M
+                                                  352     354M    355     357M
+                                                  358     359M    360     366M
+                                                  367     368M    369M    370M
+                                                  371     372M    373     374M
+                                                  379M    380     381M    382
+                                                  383M    384     385M    386
+                                                  387M    388     389M    390M
+                                                  391M    393M    394     405M
+                                                  406     407M    409     410M
+                                                  412     414M    415     416M
+                                                  417     418M    419     420M
+                                                  421     425M    426     433M
+                                                  434     441     442M    443
+          RUN               BEGSR                 397     401     424D
+          SAY               PROTOTYPE             340M    342M    345M    347M
+                                                  349M    352M    355M    358M
+                                                  360M    367M    371M    373M
+                                                  380M    382M    384M    386M
+                                                  388M    394M    406M    409M
+                                                  412M    415M    417M    419M
+                                                  421M    426M    438M    441M
+                                                  443M    446
+          SQL_ATTR_AUTOCOMMIT...
+                            CONST                  38D    351
+          SQL_ATTR_COMMIT   CONST                  41D    354
+ *RNF7031 SQL_ATTR_CURSOR_HOLD...
+                            CONST                  43D
+ *RNF7031 SQL_ATTR_CURSOR_SCROLLABLE...
+                            CONST                  42D
+ *RNF7031 SQL_ATTR_DBC_DEFAULT_LIB...
+                            CONST                  40D
+          SQL_ATTR_DBC_SYS_NAMING...
+                            CONST                  39D    357
+ *RNF7031 SQL_ATTR_FOR_FETCH_ONLY...
+                            CONST                  44D
+ *RNF7031 SQL_ATTR_OUTPUT_NTS...
+                            CONST                  37D
+          SQL_ATTR_SERVER_MODE...
+                            CONST                  36D    341     344
+ *RNF7031 SQL_BIGINT        CONST                  32D
+          SQL_CHAR          CONST                  25D    368     369     390
+                                                  393
+ *RNF7031 SQL_CLOSE         CONST                  19D
+ *RNF7031 SQL_COMMIT        CONST                  23D
+ *RNF7031 SQL_DATE          CONST                  33D
+          SQL_DECIMAL       CONST                  27D    387     387     391
+ *RNF7031 SQL_DIAG_NATIVE   CONST                  53D
+ *RNF7031 SQL_DIAG_NUMBER   CONST                  54D
+ *RNF7031 SQL_DIAG_ROW_COUNT...
+                            CONST                  55D
+ *RNF7031 SQL_DIAG_SQLSTATE CONST                  52D
+ *RNF7031 SQL_DOUBLE        CONST                  30D
+          SQL_DROP          CONST                  20D    414
+ *RNF7031 SQL_ERROR         CONST                  12D
+ *RNF7031 SQL_FETCH_ABSOLUTE...
+                            CONST                  49D
+ *RNF7031 SQL_FETCH_FIRST   CONST                  46D
+1{heading} page 15
+0*RNF7031 SQL_FETCH_LAST    CONST                  47D
+ *RNF7031 SQL_FETCH_NEXT    CONST                  45D
+ *RNF7031 SQL_FETCH_PRIOR   CONST                  48D
+ *RNF7031 SQL_FETCH_RELATIVE...
+                            CONST                  50D
+ *RNF7031 SQL_HANDLE_DBC    CONST                  17D
+ *RNF7031 SQL_HANDLE_ENV    CONST                  16D
+ *RNF7031 SQL_HANDLE_STMT   CONST                  18D
+          SQL_INTEGER       CONST                  28D    385     385     389
+ *RNF7031 SQL_NO_DATA       CONST                  13D
+ *RNF7031 SQL_NTS           CONST                  14D
+ *RNF7031 SQL_NULL_DATA     CONST                  15D
+ *RNF7031 SQL_NUMERIC       CONST                  26D
+ *RNF7031 SQL_PARAM_INPUT   CONST                  51D
+ *RNF7031 SQL_RESET_PARAMS  CONST                  22D
+ *RNF7031 SQL_ROLLBACK      CONST                  24D
+ *RNF7031 SQL_SMALLINT      CONST                  29D
+          SQL_SUCCESS       CONST                  11D    434
+ *RNF7031 SQL_TIME          CONST                  34D
+ *RNF7031 SQL_TIMESTAMP     CONST                  35D
+          SQL_UNBIND        CONST                  21D    374
+ *RNF7031 SQL_VARCHAR       CONST                  31D
+          SQLALLOCCONNECT   I(10,0)                60D    346
+                            PROTOTYPE
+          SQLALLOCENV       I(10,0)                57D    339
+                            PROTOTYPE
+ *RNF7031 SQLALLOCHANDLE    I(10,0)                68D
+                            PROTOTYPE
+          SQLALLOCSTMT      I(10,0)                64D    359
+                            PROTOTYPE
+          SQLBINDCOL        I(10,0)               191D    368     369     389
+                            PROTOTYPE             390     391     393
+          SQLBINDPARAM      I(10,0)               154D    385     387
+                            PROTOTYPE
+ *RNF7031 SQLBINDPARAMETER  I(10,0)               164D
+                            PROTOTYPE
+          SQLCLOSECURSOR    I(10,0)               219D    372     442
+                            PROTOTYPE
+ *RNF7031 SQLCOLUMNS        I(10,0)               286D
+                            PROTOTYPE
+          SQLCONNECT        I(10,0)               117D    348
+                            PROTOTYPE
+ *RNF7031 SQLDESCRIBECOL    I(10,0)               180D
+                            PROTOTYPE
+ *RNF7031 SQLDESCRIBEPARAM  I(10,0)               146D
+                            PROTOTYPE
+          SQLDISCONNECT     I(10,0)               126D    416
+                            PROTOTYPE
+ *RNF7031 SQLENDTRAN        I(10,0)               265D
+                            PROTOTYPE
+          SQLERROR          I(10,0)               236D    407     410
+                            PROTOTYPE
+          SQLEXECDIRECT     I(10,0)               137D    366     405
+                            PROTOTYPE
+          SQLEXECUTE        I(10,0)               134D    425
+                            PROTOTYPE
+          SQLFETCH          I(10,0)               199D    370     433
+                            PROTOTYPE
+1{heading} page 16
+0*RNF7031 SQLFETCHSCROLL    I(10,0)               202D
+                            PROTOTYPE
+          SQLFREECONNECT    I(10,0)               230D    418
+                            PROTOTYPE
+          SQLFREEENV        I(10,0)               233D    420
+                            PROTOTYPE
+ *RNF7031 SQLFREEHANDLE     I(10,0)               226D
+                            PROTOTYPE
+          SQLFREESTMT       I(10,0)               222D    374     414
+                            PROTOTYPE
+          SQLGETCONNECTATTR I(10,0)                92D    351     354     357
+                            PROTOTYPE
+ *RNF7031 SQLGETDATA        I(10,0)               207D
+                            PROTOTYPE
+ *RNF7031 SQLGETDIAGFIELD   I(10,0)               256D
+                            PROTOTYPE
+ *RNF7031 SQLGETDIAGREC     I(10,0)               246D
+                            PROTOTYPE
+          SQLGETENVATTR     I(10,0)                79D    344
+                            PROTOTYPE
+ *RNF7031 SQLGETSTMTATTR    I(10,0)               110D
+                            PROTOTYPE
+          SQLNUMPARAMS      I(10,0)               142D    381
+                            PROTOTYPE
+          SQLNUMRESULTCOLS  I(10,0)               176D    383
+                            PROTOTYPE
+          SQLPREPARE        I(10,0)               129D    379
+                            PROTOTYPE
+ *RNF7031 SQLPRIMARYKEYS    I(10,0)               297D
+                            PROTOTYPE
+ *RNF7031 SQLROWCOUNT       I(10,0)               215D
+                            PROTOTYPE
+ *RNF7031 SQLSETCONNECTATTR I(10,0)                86D
+                            PROTOTYPE
+ *RNF7031 SQLSETCONNECTOPTION...
+                            I(10,0)                99D
+                            PROTOTYPE
+          SQLSETENVATTR     I(10,0)                73D    341
+                            PROTOTYPE
+ *RNF7031 SQLSETSTMTATTR    I(10,0)               104D
+                            PROTOTYPE
+ *RNF7031 SQLTABLES         I(10,0)               275D
+                            PROTOTYPE
+ *RNF7031 SQLTRANSACT       I(10,0)               270D
+                            PROTOTYPE
+          STATE             A(6)                  332D    407     409     410
+          STMT              A(200)                319D    363M    366     366
+                                                  377M    379     379     404M
+                                                  405     405
+          V                 I(10,0)               316D    343M    344     345
+                                                  350M    351     352     353M
+                                                  354     355     356M    357
+                                                  358
+       Field References for subprocedure SAY
+0         Field             Attributes         References (D=Defined M=Modified)
+          TEXT              A(132)                448D    450
+                            BASED(_QRNL_PST+)
+1{heading} page 17
+0                           VARYING(2)
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                      422M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 18
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          SQLFetch                                199     370     433
+          SQLError                                236     408     411
+          SQLTables                               275
+          SQLConnect                              117     348
+          SQLPrepare                              129     379
+          SQLExecute                              134     425
+          SQLBindCol                              191     368     369     389
+                                                  390     392     393
+          SQLGetData                              207
+          SQLFreeEnv                              233     420
+          SQLEndTran                              265
+          SQLColumns                              286
+          SQLAllocEnv                              57     339
+          SQLRowCount                             215
+          SQLFreeStmt                             222     374     414
+          SQLTransact                             270
+          SQLAllocStmt                             64     359
+          SQLNumParams                            142     381
+          SQLBindParam                            154     385     387
+          SQLSetEnvAttr                            73     341
+          SQLGetEnvAttr                            79     344
+          SQLDisconnect                           126     416
+          SQLExecDirect                           137     366     405
+          SQLFreeHandle                           226
+          SQLGetDiagRec                           246
+          SQLAllocHandle                           68
+          SQLSetStmtAttr                          104
+          SQLGetStmtAttr                          110
+          SQLDescribeCol                          180
+          SQLFetchScroll                          202
+          SQLCloseCursor                          219     372     442
+          SQLFreeConnect                          230     418
+          SQLPrimaryKeys                          297
+          SQLAllocConnect                          60     346
+          SQLGetDiagField                         256
+          SQLDescribeParam                        146
+          SQLBindParameter                        164
+          SQLNumResultCols                        176     383
+          SQLSetConnectAttr                        86
+          SQLGetConnectAttr                        92     351     354     357
+          SQLSetConnectOption                      99
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+1{heading} page 19
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00     54 The name or indicator is not referenced.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 20
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :       56
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :       56
+-  Source Totals:
+0    Records . . . . . . . . . . . . :      452
+     Specifications  . . . . . . . . :      429
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :       18
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program CLI001 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

@@ -28,6 +28,7 @@ use sysapi::{LocalNow, MemProvider};
 use crate::qir::CLOCK;
 
 pub mod build;
+mod cli;
 pub use rpg_oracle::fuzz;
 
 /// How long one member may run in the kit before its request ends.
@@ -711,6 +712,7 @@ fn call_into(
         });
         sysapi::install(&mut job, Rc::new(RefCell::new(provider)));
         qrpgrt::install(&mut job);
+        cli::install(&mut job, db);
         if let Some(f) = JOB_SETUP.with(|s| s.borrow().clone()) {
             f(&mut job);
         }
@@ -751,6 +753,7 @@ fn call_into(
             *l.borrow_mut() = v;
         });
         sysapi::uninstall(&job);
+        cli::uninstall(&job);
         o.spool = spooled(&spool.0.borrow());
         if let Some(d) = display {
             o.screens.clone_from(&d.0.borrow().shown);

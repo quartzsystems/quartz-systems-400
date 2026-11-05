@@ -34,6 +34,7 @@ members = [
     "runtime/mi",
     "runtime/ile",
     "runtime/sysapi",
+    "runtime/sqlcli",
     "runtime/msgf",
     # Work management: jobs, spooling, process messages.
     "work/wm",

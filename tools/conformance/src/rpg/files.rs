@@ -32,6 +32,9 @@ use crate::qir::CLOCK;
 /// The library every member's files live in.
 pub const LIB: &str = "QGPL";
 
+/// The kit job's qualified name.
+pub const KIT_JOB: &str = "000001/QUSER/KIT";
+
 fn s(e: impl std::fmt::Display) -> String {
     e.to_string()
 }
@@ -226,6 +229,26 @@ impl KitDb {
             Arc::clone(&self.locks),
         );
         ctx.now = Some(CLOCK);
+        ctx.registers.job_name = Some(KIT_JOB.into());
+        sql::embed::Session::with_ctx(Box::new(Rc::clone(&self.store)), ctx)
+    }
+
+    /// The SQL of a `QSQSRVR` job serving one of the job's server-mode
+    /// CLI connections: a job of its own over the same store.
+    #[must_use]
+    pub fn sql_server(&self) -> sql::embed::Session {
+        let mut ctx = SqlContext::with_locks(
+            self.qsys,
+            JobHandle(2),
+            NameContext {
+                curlib: Some(self.lib),
+                libl: vec![self.lib],
+            },
+            Arc::clone(&self.locks),
+        );
+        ctx.now = Some(CLOCK);
+        ctx.registers.job_name = Some("000002/QUSER/QSQSRVR".into());
+        ctx.registers.server_mode_job_name = Some(KIT_JOB.into());
         sql::embed::Session::with_ctx(Box::new(Rc::clone(&self.store)), ctx)
     }
 

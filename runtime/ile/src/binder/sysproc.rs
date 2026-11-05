@@ -7,7 +7,7 @@
 //! descriptor and IFS calls (`QP0LLIB1`, `QP0LLIB2`, `QP0LLIB3`),
 //! `errno` (`QC2UTIL1`), C's `perror`, `rename` and `sscanf` (`QC2IO`), the
 //! C runtime calls of `crt` in `sysapi` (`QC2UTIL1`, `QC2UTIL2`,
-//! `QTQICONV`, `QC2IFS`) and the MI built-in `_CIPHER`. An import of one is a `*SYSTEM` import like `QLEAWI`'s;
+//! `QTQICONV`, `QC2IFS`), the SQL CLI (`QSQCLI`) and the MI built-in `_CIPHER`. An import of one is a `*SYSTEM` import like `QLEAWI`'s;
 //! `DSPPGM` names the service program IBM binds it from. Names are
 //! matched without regard to case: the RPG compiler upper-cases every
 //! `EXTPROC` name, C-style headers spell them in lower case.
@@ -253,6 +253,47 @@ pub const SYSTEM_SRVPGM_PROCS: &[(&str, &str)] = &[
     ("iconv_close", "QTQICONV"),
     // QC2IFS: tmpnam on the IFS.
     ("_C_IFS_tmpnam", "QC2IFS"),
+    // QSQCLI: the SQL call level interface (`sqlcli`).
+    ("SQLAllocEnv", "QSQCLI"),
+    ("SQLAllocConnect", "QSQCLI"),
+    ("SQLAllocStmt", "QSQCLI"),
+    ("SQLAllocHandle", "QSQCLI"),
+    ("SQLFreeEnv", "QSQCLI"),
+    ("SQLFreeConnect", "QSQCLI"),
+    ("SQLFreeStmt", "QSQCLI"),
+    ("SQLFreeHandle", "QSQCLI"),
+    ("SQLSetEnvAttr", "QSQCLI"),
+    ("SQLGetEnvAttr", "QSQCLI"),
+    ("SQLSetConnectAttr", "QSQCLI"),
+    ("SQLGetConnectAttr", "QSQCLI"),
+    ("SQLSetConnectOption", "QSQCLI"),
+    ("SQLSetStmtAttr", "QSQCLI"),
+    ("SQLGetStmtAttr", "QSQCLI"),
+    ("SQLConnect", "QSQCLI"),
+    ("SQLDisconnect", "QSQCLI"),
+    ("SQLPrepare", "QSQCLI"),
+    ("SQLExecute", "QSQCLI"),
+    ("SQLExecDirect", "QSQCLI"),
+    ("SQLNumParams", "QSQCLI"),
+    ("SQLNumResultCols", "QSQCLI"),
+    ("SQLDescribeParam", "QSQCLI"),
+    ("SQLBindParam", "QSQCLI"),
+    ("SQLBindParameter", "QSQCLI"),
+    ("SQLDescribeCol", "QSQCLI"),
+    ("SQLBindCol", "QSQCLI"),
+    ("SQLFetch", "QSQCLI"),
+    ("SQLFetchScroll", "QSQCLI"),
+    ("SQLGetData", "QSQCLI"),
+    ("SQLRowCount", "QSQCLI"),
+    ("SQLCloseCursor", "QSQCLI"),
+    ("SQLError", "QSQCLI"),
+    ("SQLGetDiagRec", "QSQCLI"),
+    ("SQLGetDiagField", "QSQCLI"),
+    ("SQLEndTran", "QSQCLI"),
+    ("SQLTransact", "QSQCLI"),
+    ("SQLTables", "QSQCLI"),
+    ("SQLColumns", "QSQCLI"),
+    ("SQLPrimaryKeys", "QSQCLI"),
     // An MI built-in; no service program exports it.
     ("_CIPHER", "QSYS"),
 ];

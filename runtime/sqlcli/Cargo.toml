@@ -1,0 +1,20 @@
+[package]
+name = "sqlcli"
+description = "QS/400 SQL call level interface: the QSQCLI service program's procedures over the job's SQL"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+mi = { path = "../../runtime/mi", version = "0.1.0" }
+codegen = { path = "../../runtime/codegen", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0" }
+sql = { path = "../../database/sql", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+
+[lints]
+workspace = true
