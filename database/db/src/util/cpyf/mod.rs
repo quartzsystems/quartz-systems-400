@@ -519,11 +519,11 @@ fn put(
         }
     }
     // The insert triggers, as a record write fires them.
-    let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((record, nulls)) };
+    let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((record, nulls)), set: None };
     let replaced = trg.before(txn, to_m, &row, 0)?;
     let (record, nulls) = replaced.as_ref().map_or((record, nulls), |(r, n)| (r.as_slice(), n.as_slice()));
     let rrn = to_m.write_new(txn, record, nulls)?;
-    let row = Row { event: Event::Insert, rrn, old: None, new: Some((record, nulls)) };
+    let row = Row { event: Event::Insert, rrn, old: None, new: Some((record, nulls)), set: None };
     trg.after(txn, to_m, &row, 0)
 }
 

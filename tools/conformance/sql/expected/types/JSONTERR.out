@@ -1,0 +1,32 @@
+-- captured from pub400
+> SELECT COUNT(*) FROM JSON_TABLE('not json', '$' COLUMNS(A INTEGER PATH '
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> SELECT COUNT(*) FROM JSON_TABLE('not json', '$' COLUMNS(A INTEGER PATH '
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> SELECT COUNT(*) FROM JSON_TABLE('not json', '$' COLUMNS(A INTEGER PATH '
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+sqlcode -16402 sqlstate 22032 msgid SQ16402
+> SELECT COUNT(*) FROM JSON_TABLE('{"a":1}', 'strict $.r[*]' COLUMNS(A INT
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 0 |
+> SELECT COUNT(*) FROM JSON_TABLE('{"a":1}', 'strict $.r[*]' COLUMNS(A INT
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+sqlcode -16410 sqlstate 2203A msgid SQ16410
+> SELECT T.A FROM JSON_TABLE('{"r":[{"a":1},{"a":2}]}', '$.r[*]' COLUMNS(A
+sqlcode 0 sqlstate 00000 msgid -
+# A INTEGER
+| 1 |
+| 2 |
+> SELECT T.A FROM JSON_TABLE('{"r":[{"a":"x"}]}', '$.r[*]' COLUMNS(A INTEG
+sqlcode 0 sqlstate 00000 msgid -
+# A INTEGER
+sqlcode -406 sqlstate 22023 msgid SQL0406
+> SELECT COUNT(*) FROM JSON_TABLE('{"a":1}', '$' COLUMNS(A INTEGER PATH '$
+sqlcode -199 sqlstate 42601 msgid SQL0199

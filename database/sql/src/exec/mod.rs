@@ -58,6 +58,7 @@ pub mod trigger;
 pub mod udt;
 pub mod var;
 pub mod view;
+pub mod warn;
 
 use db::file::{self, FileDesc, MemberEntry};
 use db::format::FormatDef;
@@ -1154,6 +1155,7 @@ impl Prepared {
     ) -> (crate::sqlca::Sqlca, Option<Outcome>) {
         ctx.mapping_warning = None;
         ctx.map_errors = matches!(self.statement, Statement::Select(_));
+        let _ = warn::take();
         let r = self.execute(txn, ctx, params);
         ctx.map_errors = false;
         match r {
@@ -1167,6 +1169,9 @@ impl Prepared {
                 }
                 if let Some(w) = ctx.warning.as_ref() {
                     ca = w.apply(ca);
+                }
+                if let Some(w) = warn::take() {
+                    warn::apply(w, &mut ca);
                 }
                 (ca, Some(o))
             }

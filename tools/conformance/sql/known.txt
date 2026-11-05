@@ -3,19 +3,18 @@
 ddl/VIEWQRY   # engine: SYSVIEWS.VIEW_DEFINITION is VARCHAR here, NVARCHAR (CCSID 1200) at IBM
 ddl/INDEXEXT   # engine: SYSINDEXES.SEARCH_CONDITION is NCLOB at IBM, VARCHAR(2000) here (no LOB catalog columns)
 ddl/GRANT   # engine: GRANT USAGE ON SCHEMA refused SQL0084 where 7.1 says SQL0104
-types/CASTSTR   # engine: no 01004 truncation warning; CAST(TIMESTAMP AS TIME) style casts SQL0171 on the primary; CAST(... FOR BIT DATA) result described as character; an extra SQL0420 warning; a predicate as a value (SQL0104 on 7.1); a hex constant into VARBINARY (SQL0301); an extra row
+types/CASTSTR   # engine: CAST(TIMESTAMP AS TIME) style casts SQL0171 on the primary; CAST(... FOR BIT DATA) result described as character; an extra SQL0420 warning; a predicate as a value (SQL0104 on 7.1); a hex constant into VARBINARY (SQL0301); an extra row
 types/DECFLT1   # engine: CHAR of DECFLOAT columns VARCHAR here, CHAR at IBM; SYSCOLUMNS.DATA_TYPE CHAR(8) padded here, VARCHAR(8) at IBM, NUMERIC_PRECISION of INTEGER 10 here, 9 there
-types/DECFLT2   # engine: CAST('abc' AS INTEGER) in WHERE SQL0420 here, SQL0802 22023 there; no 01004; HEX of CCSID-tagged strings; CHAR of a float's length
+types/DECFLT2   # engine: CAST('abc' AS INTEGER) in WHERE SQL0420 here, SQL0802 22023 there; HEX of CCSID-tagged strings; CHAR of a float's length
 types/FLOATFMT  # engine: the primary makes CHAR(4.9E-324) a CHAR(42)
-types/JSON1     # engine: a predicate as a JSON_ARRAY value (SQL0104 on 7.5); FORMAT in JSON_UPDATE (SQL0199 there, SQL0204 here); a JSON_TABLE ordinality column NOT NULL here
-types/XML1      # engine: XMLPARSE describes as XML on the primary (QS/400 has no XML type); no 01004; XMLELEMENT refused (SQL0084)
-types/BOOL1     # engine: no 01004; predicates in a select list described nullable here; NOT of a null BOOLEAN column is true on pub400; SYSCOLUMNS.DATA_TYPE CHAR(8) here; a CHAR result VARCHAR here
-types/LOB1      # engine: function result types (LENGTH of a LOB, CAST of a DBCLOB), a LOB index key SQL0084 here, SQL0350 there; no 01004; SYSCOLUMNS column types and CCSIDs; SQL7905
+types/JSON1     # engine: a predicate as a JSON_ARRAY value (SQL0104 on 7.5); FORMAT in JSON_UPDATE (SQL0199 there, SQL0204 here)
+types/XML1      # engine: XMLPARSE describes as XML on the primary (QS/400 has no XML type); XMLELEMENT refused (SQL0084)
+types/BOOL1     # engine: predicates in a select list described nullable here; NOT of a null BOOLEAN column is true on pub400; SYSCOLUMNS.DATA_TYPE CHAR(8) here; a CHAR result VARCHAR here
+types/LOB1      # engine: function result types (LENGTH of a LOB, CAST of a DBCLOB), a LOB index key SQL0084 here, SQL0350 there; SYSCOLUMNS column types and CCSIDs; SQL7905
 integrity/SEQUENCE   # engine: a column named ORDER in a select list (SQL0104 here)
 integrity/AUDITCOL   # engine: IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
 query/JOINS   # engine: ORDER BY an unqualified USING column is SQL0203 on DB2 for i, resolved here
-query/DATEARITH   # engine: the 01506 warning (date adjusted to month end, SQLCODE 0) is not raised
-query/DTFUNCS   # engine: 01506 not raised; TIMESTAMP_FORMAT('bad') SQL0302 here, SQ20448 there
+query/DTFUNCS   # engine: TIMESTAMP_FORMAT('bad') SQL0302 here, SQ20448 there
 query/STRFUNCS   # engine (by choice): DECODE is SQL0204 on pub400 but in the brief's must-have list
 query/NUMFUNCS   # engine (by choice): ENCRYPT_AES refused, DB2 for i's encrypted layout is not published
 query/REGISTERS   # oracle: CURRENT DEGREE is pub400's system setting (ANY); engine: CURRENT PATH is VARCHAR(3483) here, VARCHAR(8843) there
@@ -66,9 +65,7 @@ ddl/SHOPVW2   # engine: INSERT into a grouped view SQL0204 here, SQL0150 there
 ddl/SHOPCOM1   # engine: COMMENT ON and LABEL ON a table's columns in the list form without COLUMN, LABEL ON and COMMENT ON SEQUENCE refused SQL0104; SYSSEQUENCES.SEQUENCE_TEXT null; SYSCOLUMNS and SYSTABLES have no LONG_COMMENT
 ddl/SHOPSEQ2   # engine: sequences with long names refused SQL0084
 ddl/SHOPAUD2   # engine: a VARCHAR(18) audit column GENERATED ALWAYS AS (USER) SQL0574 here (pub400 takes it); SYSCOLUMNS.GENERATED column
-sqlpl/SHOPPRC2   # engine: GET DIAGNOSTICS RETURN_STATUS after a CALL in SQL PL is null here, the RETURN value there
-query/SETOPS   # engine: EXCEPT and INTERSECT with ORDER BY refused SQL0084; a select-list count mismatch SQL0117 here, SQL0421 there; UNION of INTEGER and VARCHAR converts (SQL0420 warning) here, SQL0802 there; INTERSECT ALL SQL0084 here, SQL0104 on 7.1; ORDER BY a result name of a union SQL0206 here, SQL0208 there
-query/CASECAST   # engine: no 01004 truncation warning
+query/SETOPS   # engine: UNION of INTEGER and VARCHAR converts with an SQL0420 warning and a null here; the primary fetches the rows that convert, then SQL0802 22023
 query/ISOLATE   # oracle: WITH RS on a query warns SQL0595 (escalated) on the primary; DELETE ... WITH CHG of a table not journaled SQL7008 there
 query/LOCKS   # engine: SKIP LOCKED DATA on UPDATE and DELETE, USE AND KEEP ... LOCKS, WAIT FOR OUTCOME, USE CURRENTLY COMMITTED and LOCK TABLE refused SQL0084 (pub400 runs them; WAIT FOR OUTCOME is SQL0104 there)
 query/NOFUNCS   # engine: RAND() comparisons described nullable here; an aggregate in WHERE SQL0120 here, SQL0112 (nested aggregate) first there; SYSDUMMY1.IBMREQD CHAR(1) NOT NULL here, VARCHAR(1) on pub400
@@ -79,6 +76,4 @@ sqlpl/REFUSED2   # engine (refusals): ASSOCIATE RESULT SET LOCATOR and ALLOCATE 
 query/REFUSED3   # engine (refusals): NTH_VALUE ... FROM LAST, CYCLE ... USING, SQL/JSON path filters and item methods SQL0084 (pub400 runs them); a RIGHT lateral join SQL0084 (SQL5001 there); PASSING SQL0084 (SQL0199 there)
 ddl/SHOPBOM1   # engine: DELETE from a parent under a NO ACTION rule needs both files journaled on IBM (SQL7008); here the rule is checked (SQL0532)
 ddl/SHOPDFT1   # engine: NOT NULL WITH DEFAULT on DATE, TIME and TIMESTAMP gives 0001-01-01 and midnight here, the current date and time at IBM (SYSCOLUMNS.COLUMN_DEFAULT CURRENT_DATE); a default that does not fit its column is SQL0901 here (SQL0574 there); 'CURRENT DATE' written with a blank here, CURRENT_DATE there
-ddl/SHOPTRG1   # engine: an AFTER UPDATE OF PRICE trigger fires for an UPDATE that sets only another column
 ddl/SHOPCAL1   # engine: DAYNAME's result described NOT NULL here, nullable there
-sqlpl/SHOPPRC5   # engine: in an SQL function, SET V = ROUND(P * 20, 0) / 20 (P DECIMAL(9, 2), V DECIMAL(11, 4)) gives 12.00 for 12.34 where IBM, and the same expression in a VALUES here, give 12.35; a SMALLINT parameter takes an INTEGER argument here, SQL0204 at IBM (no promotion to a shorter type)

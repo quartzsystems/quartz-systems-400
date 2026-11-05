@@ -237,6 +237,17 @@ fn overflow(e: impl std::fmt::Display) -> SqlError {
     }
 }
 
+/// Whether a cast of string `from` to `to` cut off characters other
+/// than blanks (`01004`).
+pub(crate) fn cuts_text(from: &Value, to: &Value) -> bool {
+    let text = match from {
+        Value::Str(a) => a.clone(),
+        Value::Bool(_) => from.as_text(),
+        _ => return false,
+    };
+    matches!(to, Value::Str(b) if text.trim_end_matches(' ').chars().count() > b.chars().count())
+}
+
 /// Add months to a date, clamping the day to the month.
 #[must_use]
 pub fn add_months(d: Date, months: i64) -> Option<Date> {
@@ -614,7 +625,11 @@ impl Evaluator<'_> {
             Expr::Cast(a, t) => {
                 let v = self.eval(txn, a, env)?;
                 let t = super::udt::typing::resolve(t)?;
-                super::cast::cast(&v, &t, self.ctx.decfloat_rounding)
+                let r = super::cast::cast(&v, &t, self.ctx.decfloat_rounding)?;
+                if cuts_text(&v, &r) {
+                    super::warn::note(super::warn::TRUNCATED);
+                }
+                Ok(r)
             }
             Expr::Function(f) => self.function(txn, f, env),
             Expr::Subquery(q) => {
@@ -819,8 +834,8 @@ impl Evaluator<'_> {
         let v = match func::call(name, &args, self.ctx) {
             // Not built in: a user-defined function, when there is one.
             Err(SqlError::Unsupported { what }) if what == format!("function {name}") => {
-                let literal: Vec<bool> = f.args.iter().map(|a| matches!(a, Expr::Literal(crate::ast::Literal::Str(_)))).collect();
-                match super::routine::udf::call(txn, self.ctx, name, &args, &literal) {
+                let forms: Vec<_> = f.args.iter().map(super::routine::udf::arg_form).collect();
+                match super::routine::udf::call(txn, self.ctx, name, &args, &forms) {
                     Some(r) => r?,
                     // A schema's function that is not there.
                     None if name.contains('.') => return Err(SqlError::ObjectNotFound { name: name.to_string(), kind: "function" }),
@@ -1133,11 +1148,19 @@ pub fn add_duration(v: &Value, n: i64, unit: DurationUnit) -> Result<Value> {
     let bad = || SqlError::Overflow {
         what: "the date is out of range".into(),
     };
+    // Years and months keep the day unless the month is shorter: 01506.
+    let months = |d: Date, m: i64| {
+        let r = add_months(d, m).ok_or_else(bad)?;
+        if r.day != d.day {
+            super::warn::note(super::warn::DATE_ADJUSTED);
+        }
+        Ok::<Date, SqlError>(r)
+    };
     match v {
         Value::Null => Ok(Value::Null),
         Value::Date(d) => Ok(Value::Date(match unit {
-            DurationUnit::Years => add_months(*d, n * 12).ok_or_else(bad)?,
-            DurationUnit::Months => add_months(*d, n).ok_or_else(bad)?,
+            DurationUnit::Years => months(*d, n * 12)?,
+            DurationUnit::Months => months(*d, n)?,
             DurationUnit::Days => date_from_days(days_of(*d) + n).ok_or_else(bad)?,
             _ => {
                 return Err(SqlError::Duration {
@@ -1152,8 +1175,8 @@ pub fn add_duration(v: &Value, n: i64, unit: DurationUnit) -> Result<Value> {
             let mut picos = i128::from(t.picos);
             let mut date = t.date;
             match unit {
-                DurationUnit::Years => date = add_months(date, n * 12).ok_or_else(bad)?,
-                DurationUnit::Months => date = add_months(date, n).ok_or_else(bad)?,
+                DurationUnit::Years => date = months(date, n * 12)?,
+                DurationUnit::Months => date = months(date, n)?,
                 DurationUnit::Days => date = date_from_days(days_of(date) + n).ok_or_else(bad)?,
                 DurationUnit::Hours => secs += n * 3600,
                 DurationUnit::Minutes => secs += n * 60,

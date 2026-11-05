@@ -424,6 +424,17 @@ impl Parser {
             }
         }
         self.expect_sym(")")?;
+        // `EMPTY ON ERROR` (the default) or `ERROR ON ERROR` for the table:
+        // the latter a last pseudo-column entry (`k=terr`).
+        if self.eat_words(&["ERROR", "ON", "ERROR"]) {
+            let mut t = Opts::default();
+            t.set("k", "terr");
+            let lit = |s: String| Expr::Literal(Literal::Str(s));
+            args.extend([lit(t.text()), null(), null(), null(), null(), null()]);
+        } else if !self.eat_words(&["EMPTY", "ON", "ERROR"]) && (self.is_word("NULL") || self.is_word("DEFAULT")) {
+            // Not a table's behavior: SQL0199, as pub400.
+            return Err(self.keyword());
+        }
         self.expect_sym(")")?;
         let (alias, columns) = self.correlation()?;
         let alias = alias.ok_or_else(|| self.expected("a correlation name"))?;

@@ -90,7 +90,7 @@ pub fn fire(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &TableInfo, rows: &[Row]
         if slot.deleted {
             continue;
         }
-        let row = db::trg::fire::Row { event: Event::Read, rrn, old: Some((&slot.record, &slot.null_map)), new: None };
+        let row = db::trg::fire::Row { event: Event::Read, rrn, old: Some((&slot.record, &slot.null_map)), new: None, set: None };
         db::trg::fire::call_all(txn, &caller, &active, &m, Time::After, &row, lvl)?;
         // The program's own requests may have changed the member.
         m.refresh(txn)?;

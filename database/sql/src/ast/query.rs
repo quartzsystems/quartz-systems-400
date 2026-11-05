@@ -30,6 +30,18 @@ pub struct Query {
     pub optimize_for: Option<u64>,
 }
 
+/// A set operation between two query bodies.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SetOp {
+    /// `UNION`.
+    #[default]
+    Union,
+    /// `EXCEPT`: the left rows the right lacks.
+    Except,
+    /// `INTERSECT`: the left rows the right has too.
+    Intersect,
+}
+
 /// The body of a query.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum QueryBody {
@@ -37,7 +49,7 @@ pub enum QueryBody {
     Select(Box<Select>),
     /// `VALUES (...), (...)`.
     Values(Vec<Vec<Expr>>),
-    /// `a UNION [ALL] b`.
+    /// `a UNION [ALL] b`, `a EXCEPT b`, `a INTERSECT b`.
     Union {
         /// Left side.
         left: Box<QueryBody>,
@@ -45,6 +57,8 @@ pub enum QueryBody {
         right: Box<QueryBody>,
         /// `ALL`.
         all: bool,
+        /// Which set operation.
+        op: SetOp,
     },
     /// A parenthesized body.
     Nested(Box<Query>),

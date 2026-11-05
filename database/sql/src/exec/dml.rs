@@ -442,6 +442,10 @@ fn change(
     };
     let mut o = ctx.open(txn, &t, Usage::UPDATE)?;
     o.quiet_reads();
+    if let Some(set) = set {
+        let cols = set.iter().flat_map(|a| &a.columns).filter_map(|c| t.field(&c.value).map(|(_, f)| f.name)).collect();
+        o.set_columns(cols);
+    }
     ctx.hold_open();
     let result = change_rows(txn, ctx, params, &t, &schema, rows, &mut o, set, cond);
     ctx.release_open();

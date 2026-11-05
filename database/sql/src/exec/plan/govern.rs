@@ -43,7 +43,7 @@ fn body(txn: &mut Txn<'_>, ctx: &SqlContext, b: &QueryBody, rows: &mut u64, keep
                 table(txn, ctx, t, rows, keeps, width);
             }
         }
-        QueryBody::Union { left, right, all } => {
+        QueryBody::Union { left, right, all, .. } => {
             *keeps |= !all;
             body(txn, ctx, left, rows, keeps, width);
             body(txn, ctx, right, rows, keeps, width);

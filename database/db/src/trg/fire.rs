@@ -118,12 +118,24 @@ pub struct Row<'a> {
     pub old: Option<Image<'a>>,
     /// The record as it will be.
     pub new: Option<Image<'a>>,
+    /// The columns an SQL `UPDATE` sets (system names); `None` for a
+    /// record write, which sets them all.
+    pub set: Option<&'a [Name]>,
 }
 
 /// Whether `t` fires for `row`: an update trigger with `*CHANGE` only when
-/// the record changes.
+/// the record changes; one with `UPDATE OF` columns only when the change
+/// sets one of them (`set`, the columns an SQL `UPDATE` names; a record
+/// write sets them all).
 fn applies(t: &Trigger, row: &Row<'_>) -> bool {
     if t.event != row.event {
+        return false;
+    }
+    if row.event == Event::Update
+        && !t.columns.is_empty()
+        && let Some(set) = row.set
+        && !t.columns.iter().any(|c| set.contains(c))
+    {
         return false;
     }
     if t.update_condition == UpdateCondition::Change

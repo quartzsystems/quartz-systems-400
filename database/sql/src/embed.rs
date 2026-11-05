@@ -537,12 +537,16 @@ impl Session {
         let reply = match store::txn::Txn::lent(Box::new(|| lender.store())) {
             Ok(mut txn) => {
                 self.ctx.nulls_eliminated = false;
+                let _ = crate::exec::warn::take();
                 let mut r = f(&mut txn, &mut self.ctx, &mut sc);
                 self.ctx.release_held(&mut txn);
                 if self.ctx.nulls_eliminated && r.sqlca.sqlcode == 0 {
                     r.sqlca.sqlstate = "01003".into();
                     r.sqlca.sqlwarn[0] = 'W';
                     r.sqlca.sqlwarn[2] = 'W';
+                }
+                if let Some(w) = crate::exec::warn::take() {
+                    crate::exec::warn::apply(w, &mut r.sqlca);
                 }
                 match txn.commit() {
                     Ok(()) => r,
@@ -925,7 +929,7 @@ impl Session {
                 "MESSAGE_TEXT" => Value::Str(ca.sqlerrmc.clone()),
                 "MESSAGE_LENGTH" => Value::int(i64::try_from(ca.sqlerrmc.len()).unwrap_or(0)),
                 "MORE" => Value::Str("N".into()),
-                "DB2_RETURN_STATUS" => Value::int(i64::from(ca.sqlerrd[0])),
+                "RETURN_STATUS" | "DB2_RETURN_STATUS" => Value::int(i64::from(ca.sqlerrd[0])),
                 "DB2_NUMBER_RESULT_SETS" => Value::int(i64::from(if ca.sqlcode == 466 { ca.sqlerrd[1] } else { 0 })),
                 "DB2_SQLERRD1" | "DB2_SQLERRD2" | "DB2_SQLERRD3" | "DB2_SQLERRD4" | "DB2_SQLERRD5" | "DB2_SQLERRD6" => {
                     let i = usize::from(i.trim().as_bytes()[11] - b'1');

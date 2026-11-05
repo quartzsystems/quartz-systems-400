@@ -254,9 +254,17 @@ fn xml(ev: &mut Evaluator<'_>, txn: &mut Txn<'_>, f: &Function, opts: &Opts, ret
         return Ok(Value::Null);
     }
     let text = super::xml::serialize(&v.as_text(), opts.get("decl") == Some("1"));
-    // A result longer than the type is cut off, as the primary does it.
+    // A result longer than the type is cut off with 01004, as the
+    // primary does it.
     match ret {
-        Some(t) => super::cast::cast(&Value::Str(text), t, ev.ctx.decfloat_rounding),
+        Some(t) => {
+            let from = Value::Str(text);
+            let r = super::cast::cast(&from, t, ev.ctx.decfloat_rounding)?;
+            if super::eval::cuts_text(&from, &r) {
+                super::warn::note(super::warn::TRUNCATED);
+            }
+            Ok(r)
+        }
         None => Ok(Value::Str(text)),
     }
 }

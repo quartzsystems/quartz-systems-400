@@ -7,7 +7,7 @@
 
 use super::Parser;
 use crate::ast::{
-    Expr, Ident, JoinKind, Literal, OrderItem, Query, QueryBody, Select, SelectItem, TableRef,
+    Expr, Ident, JoinKind, Literal, OrderItem, Query, QueryBody, Select, SelectItem, SetOp, TableRef,
 };
 use crate::error::{Result, SqlError};
 use crate::lex::Tok;
@@ -159,26 +159,46 @@ impl Parser {
         })
     }
 
+    /// `UNION` and `EXCEPT` left to right over `INTERSECT` terms, which
+    /// bind tighter (DB2 for i's order).
     fn union_body(&mut self) -> Result<QueryBody> {
-        let mut left = self.simple_body()?;
+        let mut left = self.intersect_body()?;
         loop {
-            if self.eat_word("UNION") {
-                let all = self.eat_word("ALL");
-                if !all {
-                    self.eat_word("DISTINCT");
-                }
-                let right = self.simple_body()?;
-                left = QueryBody::Union {
-                    left: Box::new(left),
-                    right: Box::new(right),
-                    all,
-                };
-            } else if self.is_word("EXCEPT") || self.is_word("INTERSECT") {
-                return Err(Self::unsupported("EXCEPT and INTERSECT"));
+            let op = if self.eat_word("UNION") {
+                SetOp::Union
+            } else if self.eat_word("EXCEPT") {
+                SetOp::Except
             } else {
                 return Ok(left);
-            }
+            };
+            let all = self.set_quantifier(op)?;
+            let right = self.intersect_body()?;
+            left = QueryBody::Union { left: Box::new(left), right: Box::new(right), all, op };
         }
+    }
+
+    fn intersect_body(&mut self) -> Result<QueryBody> {
+        let mut left = self.simple_body()?;
+        while self.eat_word("INTERSECT") {
+            let all = self.set_quantifier(SetOp::Intersect)?;
+            let right = self.simple_body()?;
+            left = QueryBody::Union { left: Box::new(left), right: Box::new(right), all, op: SetOp::Intersect };
+        }
+        Ok(left)
+    }
+
+    /// `ALL` or `DISTINCT` after a set operator: `EXCEPT ALL` and
+    /// `INTERSECT ALL` are not DB2 for i 7.1's (SQL0104 there too).
+    fn set_quantifier(&mut self, op: SetOp) -> Result<bool> {
+        if self.is_word("ALL") && op != SetOp::Union {
+            let t = &self.toks[self.at.min(self.toks.len() - 1)];
+            return Err(SqlError::Syntax { line: t.line, col: t.col, found: t.tok.describe(), expected: "DISTINCT or a query".into() });
+        }
+        let all = self.eat_word("ALL");
+        if !all {
+            self.eat_word("DISTINCT");
+        }
+        Ok(all)
     }
 
     fn simple_body(&mut self) -> Result<QueryBody> {

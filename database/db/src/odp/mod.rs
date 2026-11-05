@@ -395,6 +395,12 @@ impl Odp {
         self.trg.quiet_reads = true;
     }
 
+    /// The columns (system names) the SQL `UPDATE` through this path
+    /// sets: its `UPDATE OF` triggers fire only when one is listed.
+    pub fn set_columns(&mut self, cols: Vec<Name>) {
+        self.trg.set_columns = Some(cols);
+    }
+
     /// The job's answer to the before calls the last operation returned
     /// (`DbError::TriggersDue`): the same operation, given again, goes on
     /// with it.
@@ -517,14 +523,14 @@ impl Odp {
         let (mut base, lf_fmt, log, base_fmt) = self.base_for_change(txn)?;
         let (rec, nulls) = lfwrite::to_base(&lf_fmt, &log, &base_fmt, data, null_map, None)?;
         let lvl = self.trg_level();
-        let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((&rec, &nulls)) };
+        let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((&rec, &nulls)), set: None };
         let (rec, nulls) = self.trg.before(txn, &mut base, &row, lvl)?.unwrap_or((rec, nulls));
         crate::cst::enforce::before_write(txn, &base, &rec, &nulls)?;
         self.begin_change_on(txn, &mut base)?;
         let rrn = base.write_new(txn, &rec, &nulls)?;
         self.hold_new(base.id(), rrn);
         self.fb.rrn = rrn;
-        let row = Row { event: Event::Insert, rrn, old: None, new: Some((&rec, &nulls)) };
+        let row = Row { event: Event::Insert, rrn, old: None, new: Some((&rec, &nulls)), set: None };
         self.trg.after(txn, &mut base, &row, lvl)?;
         Ok(rrn)
     }
@@ -556,12 +562,13 @@ impl Odp {
             rrn,
             old: Some((&old.record, &old.null_map)),
             new: Some((&rec, &nulls)),
+            set: None,
         };
         let (rec, nulls) = self.trg.before(txn, &mut base, &row, lvl)?.unwrap_or((rec, nulls));
         crate::cst::enforce::before_update(txn, &base, rrn, &rec, &nulls)?;
         self.begin_change_on(txn, &mut base)?;
         base.update(txn, rrn, &rec, &nulls)?;
-        let row = Row { event: Event::Update, rrn, old: Some((&old.record, &old.null_map)), new: Some((&rec, &nulls)) };
+        let row = Row { event: Event::Update, rrn, old: Some((&old.record, &old.null_map)), new: Some((&rec, &nulls)), set: None };
         self.trg.after(txn, &mut base, &row, lvl)
     }
 
@@ -579,7 +586,7 @@ impl Odp {
         let mut base = self.member.open_base(txn, fi)?;
         let old = Self::old_for(txn, &base, Event::Delete, rrn)?;
         let lvl = self.trg_level();
-        let row = Row { event: Event::Delete, rrn, old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())), new: None };
+        let row = Row { event: Event::Delete, rrn, old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())), new: None, set: None };
         self.trg.before(txn, &mut base, &row, lvl)?;
         self.begin_change_on(txn, &mut base)?;
         crate::cst::enforce::before_delete(txn, &mut base, rrn, self.cmt.as_ref())?;
@@ -600,7 +607,7 @@ impl Odp {
     /// record, after triggers.
     fn write_physical(&mut self, txn: &mut Txn<'_>, data: &[u8], null_map: &[u8]) -> Result<u64> {
         let lvl = self.trg_level();
-        let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((data, null_map)) };
+        let row = Row { event: Event::Insert, rrn: 0, old: None, new: Some((data, null_map)), set: None };
         let replaced = self.trg.before(txn, &mut self.member, &row, lvl)?;
         let (data, null_map) = replaced.as_ref().map_or((data, null_map), |(d, n)| (d.as_slice(), n.as_slice()));
         self.before_row(txn, RowEvent::Insert, None, Some((data, null_map)))?;
@@ -609,7 +616,7 @@ impl Odp {
         self.fb.rrn = rrn;
         let member = self.member.id();
         self.hold_new(member, rrn);
-        let row = Row { event: Event::Insert, rrn, old: None, new: Some((data, null_map)) };
+        let row = Row { event: Event::Insert, rrn, old: None, new: Some((data, null_map)), set: None };
         self.trg.after(txn, &mut self.member, &row, lvl)?;
         Ok(rrn)
     }
@@ -623,6 +630,7 @@ impl Odp {
             rrn,
             old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())),
             new: Some((data, null_map)),
+            set: None,
         };
         let replaced = self.trg.before(txn, &mut self.member, &row, lvl)?;
         let (data, null_map) = replaced.as_ref().map_or((data, null_map), |(d, n)| (d.as_slice(), n.as_slice()));
@@ -637,7 +645,7 @@ impl Odp {
     fn delete_physical(&mut self, txn: &mut Txn<'_>, rrn: u64) -> Result<()> {
         let old = Self::old_for(txn, &self.member, Event::Delete, rrn)?;
         let lvl = self.trg_level();
-        let row = Row { event: Event::Delete, rrn, old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())), new: None };
+        let row = Row { event: Event::Delete, rrn, old: old.as_ref().map(|s| (s.record.as_slice(), s.null_map.as_slice())), new: None, set: None };
         self.trg.before(txn, &mut self.member, &row, lvl)?;
         self.begin_change(txn)?;
         self.before_row(txn, RowEvent::Delete, Some(rrn), None)?;
@@ -681,7 +689,7 @@ impl Odp {
         let mut bm = Member::open(txn, &desc, &md)?;
         let Some(slot) = bm.read(txn, rrn)? else { return Ok(()) };
         let lvl = self.trg_level();
-        let row = Row { event: Event::Read, rrn, old: Some((&slot.record, &slot.null_map)), new: None };
+        let row = Row { event: Event::Read, rrn, old: Some((&slot.record, &slot.null_map)), new: None, set: None };
         self.trg.after(txn, &mut bm, &row, lvl)
     }
 
@@ -1142,7 +1150,7 @@ impl Odp {
                     }
                 } else if !self.member.is_logical() && self.member.trgs.is_some() && !self.trg.quiet_reads {
                     let lvl = self.trg_level();
-                    let row = Row { event: Event::Read, rrn: k.rrn, old: Some((&r.data, &r.null_map)), new: None };
+                    let row = Row { event: Event::Read, rrn: k.rrn, old: Some((&r.data, &r.null_map)), new: None, set: None };
                     if let Err(e) = self.trg.after(txn, &mut self.member, &row, lvl) {
                         self.unlock();
                         self.fb.fail(&e);

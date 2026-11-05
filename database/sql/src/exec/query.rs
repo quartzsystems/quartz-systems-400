@@ -28,7 +28,7 @@ use super::join::{self, Item};
 use super::sort::{KeySpec, Sorter};
 use super::{ColumnDesc, ResultSet, SqlContext, TableInfo};
 use crate::ast::{
-    CmpOp, ColumnRef, Expr, JoinKind, Literal, OrderItem, Query, QueryBody, Select, SelectItem,
+    CmpOp, ColumnRef, Expr, JoinKind, Literal, OrderItem, Query, QueryBody, Select, SelectItem, SetOp,
     TableRef, columns_of,
 };
 use crate::error::{Result, SqlError};
@@ -176,9 +176,9 @@ fn run_limited(
     ctx.plan.limit = if matches!(q.body, QueryBody::Select(_)) { limit.and_then(|l| usize::try_from(l).ok()) } else { None };
     let r = body(txn, ctx, params, &q.body, outer, q, explain_only);
     (ctx.plan.goal, ctx.plan.limit) = saved;
-    let (schema, mut produced) = r?;
+    let (schema, mut produced) = r.map_err(|e| set_order_error(q, e))?;
     if !q.order_by.is_empty() && !matches!(q.body, QueryBody::Select(_)) {
-        order_rows(txn, ctx, params, &schema, &mut produced, &q.order_by)?;
+        order_rows(txn, ctx, params, &schema, &mut produced, &q.order_by).map_err(|e| set_order_error(q, e))?;
         if explain_only {
             ctx.explain.push("SORT".into());
         }
@@ -334,12 +334,15 @@ fn body(
                     .collect(),
             ))
         }
-        QueryBody::Union { left, right, all } => {
+        QueryBody::Union { left, right, all, op } => {
             let (ls, mut left_rows) = body(txn, ctx, params, left, outer, q, explain_only)?;
             let (rs, right_rows) = body(txn, ctx, params, right, outer, q, explain_only)?;
             if visible_count(&ls) != visible_count(&rs) {
-                return Err(SqlError::ValueCount {
-                    what: "UNION sides have different numbers of columns".into(),
+                // SQL0421, as DB2 for i.
+                return Err(SqlError::Coded {
+                    code: -421,
+                    state: "42826",
+                    what: "the operands of a set operation have different numbers of columns".into(),
                 });
             }
             // Rows of the union carry only visible columns.
@@ -359,6 +362,7 @@ fn body(
                     .collect()
             };
             left_rows = strip(&ls, left_rows);
+            let left_len = left_rows.len();
             let mut all_rows = left_rows;
             all_rows.extend(strip(&rs, right_rows));
             let mut cols: Vec<ColInfo> = ls.cols.iter().filter(|c| !c.hidden).cloned().collect();
@@ -378,6 +382,13 @@ fn body(
             for p in &all_rows {
                 charge.row(&p.out)?;
             }
+            if *op != SetOp::Union {
+                // The left rows the right has (INTERSECT) or lacks (EXCEPT).
+                let right_rows = all_rows.split_off(left_len);
+                let keys: HashSet<String> = right_rows.iter().map(|p| row_key(&p.out)).collect();
+                let keep = *op == SetOp::Intersect;
+                all_rows.retain(|p| keys.contains(&row_key(&p.out)) == keep);
+            }
             if !*all {
                 let n = all_rows.len() as u64;
                 ctx.dbmon.note(crate::dbmon::plan::PlanEvent::Sort { rows: n, reason: "F5" });
@@ -385,11 +396,33 @@ fn body(
             }
             if explain_only {
                 ctx.explain
-                    .push(format!("UNION{}", if *all { " ALL" } else { "" }));
+                    .push(format!("{}{}", set_op_word(*op), if *all { " ALL" } else { "" }));
             }
             Ok((schema, all_rows))
         }
         QueryBody::Nested(inner) => run_body(txn, ctx, params, inner, outer, explain_only),
+    }
+}
+
+/// A set operation's `ORDER BY` names its result columns: a name it
+/// does not have is SQL0208, as DB2 for i.
+fn set_order_error(q: &Query, e: SqlError) -> SqlError {
+    match e {
+        SqlError::ColumnNotFound { name }
+            if matches!(q.body, QueryBody::Union { .. })
+                && q.order_by.iter().any(|o| matches!(&o.expr, Expr::Column(c) if c.table.is_none() && c.column.value == name)) =>
+        {
+            SqlError::Coded { code: -208, state: "42707", what: format!("ORDER BY column {name} is not a column of the result") }
+        }
+        e => e,
+    }
+}
+
+fn set_op_word(op: SetOp) -> &'static str {
+    match op {
+        SetOp::Union => "UNION",
+        SetOp::Except => "EXCEPT",
+        SetOp::Intersect => "INTERSECT",
     }
 }
 

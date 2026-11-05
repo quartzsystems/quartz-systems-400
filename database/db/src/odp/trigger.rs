@@ -28,6 +28,9 @@ pub struct TrgState {
     /// Reads fire no read triggers: the path reads only to change (an
     /// SQL `UPDATE` or `DELETE`, as the primary).
     pub quiet_reads: bool,
+    /// The columns the SQL `UPDATE` through the path sets (`UPDATE OF`
+    /// triggers fire only for those); `None` for record writes.
+    pub set_columns: Option<Vec<qsname::Name>>,
 }
 
 /// The commit lock level digit of the trigger buffer.
@@ -56,6 +59,7 @@ impl TrgState {
     /// changed, when the path cannot call programs and any trigger fires
     /// for the event (after ones included).
     pub fn before(&mut self, txn: &mut Txn<'_>, m: &mut Member, row: &Row<'_>, lvl: u8) -> Result<Option<(Vec<u8>, Vec<u8>)>> {
+        let row = &Row { set: self.set_columns.as_deref(), ..*row };
         let Some(active) = m.trgs.clone() else {
             return Ok(None);
         };
@@ -93,6 +97,7 @@ impl TrgState {
 
     /// After `row` of `m` changed (or was read): its after triggers.
     pub fn after(&mut self, txn: &mut Txn<'_>, m: &mut Member, row: &Row<'_>, lvl: u8) -> Result<()> {
+        let row = &Row { set: self.set_columns.as_deref(), ..*row };
         let Some(active) = m.trgs.clone() else {
             return Ok(());
         };

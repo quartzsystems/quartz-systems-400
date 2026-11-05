@@ -232,12 +232,12 @@ pub(super) fn table_function(
     let unnest = name.schema.is_none() && matches!(name.name.value.as_str(), "*UNNEST" | "*UNNESTO");
     let found = if unnest {
         Some(super::array::unnest(ctx, &values, name.name.value == "*UNNESTO")?)
+    } else if let Some(t) = super::catalog::table_function(txn, ctx, name, &values, args, &alias.value)? {
+        Some(t)
     } else {
-        match super::catalog::table_function(txn, ctx, name, &values, args, &alias.value)? {
-            Some(t) => Some(t),
-            // A user table function (`routine::udf`).
-            None => super::routine::udf::table(txn, ctx, name, &values, &alias.value).transpose()?,
-        }
+        // A user table function (`routine::udf`).
+        let forms: Vec<_> = args.iter().map(super::routine::udf::arg_form).collect();
+        super::routine::udf::table(txn, ctx, name, &values, &forms, &alias.value).transpose()?
     };
     let Some((mut schema, rows)) = found else {
         return Err(SqlError::ObjectNotFound { name: name.to_string(), kind: "function" });

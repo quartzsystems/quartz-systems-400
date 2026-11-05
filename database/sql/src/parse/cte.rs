@@ -122,10 +122,10 @@ impl Parser {
 /// without `ALL`.
 fn leaves(b: &QueryBody, out: &mut Vec<QueryBody>) -> bool {
     match b {
-        QueryBody::Union { left, right, all } => {
+        QueryBody::Union { left, right, all, op } => {
             let l = leaves(left, out);
             let r = leaves(right, out);
-            l && r && *all
+            l && r && *all && *op == crate::ast::SetOp::Union
         }
         other => {
             out.push(other.clone());

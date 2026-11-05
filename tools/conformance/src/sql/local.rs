@@ -151,13 +151,18 @@ fn outcome_lines(out: &mut String, st: &str, sqlca: &sql::Sqlca, outcome: Option
         out.push('\n');
         let _ = writeln!(out, "warning {} {} {}", sqlca.sqlcode, sqlca.sqlstate, sqlca.msgid());
     } else {
+        // A warning with SQLCODE 0 (01506, 01004) is JDBC's SQLWarning.
+        let warned = sqlca.sqlcode == 0 && sqlca.sqlstate.starts_with("01");
         let msgid = if sqlca.sqlcode == 0 { "-".to_string() } else { sqlca.msgid() };
-        out.push_str(&render::status(sqlca.sqlcode, &sqlca.sqlstate, &msgid, count));
+        let state = if warned { "00000" } else { sqlca.sqlstate.as_str() };
+        out.push_str(&render::status(sqlca.sqlcode, state, &msgid, count));
         out.push('\n');
         // A column function left out a null: JDBC's SQLWarning with
         // SQLCODE 0.
         if sqlca.sqlcode == 0 && nulls && rows {
             out.push_str("warning 0 01003 -\n");
+        } else if warned {
+            let _ = writeln!(out, "warning 0 {} -", sqlca.sqlstate);
         }
     }
     if let Some(Outcome::Rows(rs)) = outcome {

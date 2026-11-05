@@ -79,11 +79,42 @@ pub fn check_body(s: &PlStmt) -> Result<()> {
     }
 }
 
+/// What a call knows of an argument beyond its value: a constant's
+/// type, which IBM's promotion rules read (a string constant is a
+/// `VARCHAR`, which no `CHAR` parameter takes; an integer constant an
+/// `INTEGER`, which no `SMALLINT` parameter takes).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ArgForm {
+    /// Anything else: the value decides.
+    #[default]
+    Other,
+    /// A string constant.
+    Str,
+    /// An integer constant within `INTEGER`.
+    Int,
+    /// An integer constant past `INTEGER`: a `BIGINT`.
+    Big,
+}
+
+/// The form of an argument expression.
+#[must_use]
+pub fn arg_form(e: &crate::ast::Expr) -> ArgForm {
+    use crate::ast::{Expr, Literal};
+    match e {
+        Expr::Literal(Literal::Str(_)) => ArgForm::Str,
+        Expr::Literal(Literal::Num(n)) if n.bytes().all(|b| b.is_ascii_digit()) => match n.parse::<i64>() {
+            Ok(v) if i32::try_from(v).is_ok() => ArgForm::Int,
+            Ok(_) => ArgForm::Big,
+            Err(_) => ArgForm::Other,
+        },
+        _ => ArgForm::Other,
+    }
+}
+
 /// Call a user function `name` (possibly `SCHEMA.NAME`) on `args`, or
-/// `None` when no function of that name and number of arguments is in
-/// the schema or the path. `literal[i]` says argument `i` is a string
-/// constant: a `VARCHAR`, which no `CHAR` parameter takes (IBM's promotion).
-pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, args: &[Value], literal: &[bool]) -> Option<Result<Value>> {
+/// `None` when no function of that name takes the arguments in the
+/// schema or the path. `forms` are the arguments' [`ArgForm`]s.
+pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, args: &[Value], forms: &[ArgForm]) -> Option<Result<Value>> {
     let on = match name.split_once('.') {
         Some((s, n)) => ObjectName::qualified(s, n),
         None => ObjectName::new(name),
@@ -92,8 +123,19 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, args: &[Value],
         Ok(f) => f,
         Err(e) => return Some(Err(e)),
     };
-    // The best fit: each argument scored against its parameter, the
-    // highest total wins, the first of equals.
+    let f = best_fit(found, args, forms)?;
+    if f.routine.def.body == 2 {
+        return Some(super::extfunc::call(txn, ctx, &f, args));
+    }
+    if let Ok(d) = parsed(&f.routine.def.text) {
+        remember(&d, &f.schema);
+    }
+    Some(run(txn, ctx, &f.routine.def.text, args))
+}
+
+/// The function of `found` the arguments fit best: each argument scored
+/// against its parameter, the highest total wins, the first of equals.
+fn best_fit(found: Vec<find::Found>, args: &[Value], forms: &[ArgForm]) -> Option<find::Found> {
     let score = |f: &find::Found| -> Option<u32> {
         let ps: Vec<_> = f.routine.parms.iter().filter(|p| p.role == 0).collect();
         if ps.len() != args.len() {
@@ -102,7 +144,7 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, args: &[Value],
         let mut total = 0;
         for (i, (p, a)) in ps.iter().zip(args).enumerate() {
             let t = crate::pl::types::parse_type(&p.ty).ok()?;
-            let s = fit(a, &t.data_type, literal.get(i).copied().unwrap_or(false));
+            let s = fit(a, &t.data_type, forms.get(i).copied().unwrap_or_default());
             if s == 0 {
                 return None;
             }
@@ -118,14 +160,7 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, args: &[Value],
             best = Some((s, f));
         }
     }
-    let (_, f) = best?;
-    if f.routine.def.body == 2 {
-        return Some(super::extfunc::call(txn, ctx, &f, args));
-    }
-    if let Ok(d) = parsed(&f.routine.def.text) {
-        remember(&d, &f.schema);
-    }
-    Some(run(txn, ctx, &f.routine.def.text, args))
+    best.map(|(_, f)| f)
 }
 
 /// Run a function from its definition text.
@@ -232,6 +267,12 @@ impl Names for Interp<'_, '_> {
 
     fn qualified(&self, label: &str, name: &str) -> Option<usize> {
         self.frames.iter().rev().find(|f| f.label.as_deref() == Some(label)).and_then(|f| f.vars.iter().find(|(n, _)| n == name).map(|(_, k)| *k))
+    }
+
+    // A variable's marker has the variable's type, as IBM types it:
+    // `ROUND(P * 20, 0) / 20` keeps P's scale.
+    fn cast_type(&self, k: usize) -> Option<String> {
+        self.slots.get(k).map(|(t, _)| crate::pl::types::type_text(t))
     }
 }
 
@@ -485,9 +526,13 @@ impl Interp<'_, '_> {
 
 /// How well a value fits a parameter type: 3 its own type, 2 or 1 by
 /// promotion, 0 not at all.
-fn fit(v: &Value, t: &crate::ast::DataType, literal: bool) -> u32 {
+fn fit(v: &Value, t: &crate::ast::DataType, form: ArgForm) -> u32 {
     use crate::ast::DataType as D;
+    let literal = form == ArgForm::Str;
     match (v, t) {
+        // No promotion to a shorter integer.
+        (Value::Num(_), D::SmallInt) if matches!(form, ArgForm::Int | ArgForm::Big) => 0,
+        (Value::Num(_), D::Integer) if form == ArgForm::Big => 0,
         (Value::Num(d), D::SmallInt | D::Integer | D::BigInt) => u32::from(d.scale() == 0) * 3,
         (Value::Num(d), D::Decimal(..) | D::Numeric(..)) => if d.scale() == 0 { 2 } else { 3 },
         (Value::Str(_), D::Char(_)) => if literal { 0 } else { 3 },
@@ -558,13 +603,15 @@ pub fn table(
     ctx: &mut SqlContext,
     name: &ObjectName,
     args: &[Value],
+    forms: &[ArgForm],
     alias: &str,
 ) -> Option<Result<crate::exec::catalog::Table>> {
     let found = match find::named(txn, ctx, name, 2) {
         Ok(f) => f,
         Err(e) => return Some(Err(e)),
     };
-    let f = found.into_iter().find(|f| f.routine.def.function_type == 2 && usize::from(f.routine.def.parm_count) == args.len())?;
+    let found: Vec<_> = found.into_iter().filter(|f| f.routine.def.function_type == 2).collect();
+    let f = best_fit(found, args, forms)?;
     Some(run_table(txn, ctx, &f.routine.def.text, args, alias))
 }
 

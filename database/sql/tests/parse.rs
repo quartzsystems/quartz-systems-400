@@ -416,7 +416,6 @@ fn errors() {
         "{e}"
     );
     for (text, what) in [
-        ("SELECT 1 FROM a EXCEPT SELECT 1 FROM b", "EXCEPT"),
         ("CREATE TABLE t (c XML)", "XML"),
         ("LOCK TABLE t IN SHARE MODE", "LOCK"),
         ("SET OPTION COMMIT = *CHG", "SET OPTION"),
@@ -457,4 +456,21 @@ fn set_transaction_levels() {
         assert_eq!(sys(text), Statement::SetTransaction(iso), "{text}");
     }
     assert!(parse("SET TRANSACTION ISOLATION LEVEL SOMETIMES", Naming::Sys).is_err());
+}
+
+#[test]
+fn intersect_binds_tighter_than_union_and_except() {
+    use sql::ast::SetOp;
+    let Statement::Select(q) = sqln("SELECT A FROM T UNION SELECT A FROM U INTERSECT SELECT A FROM V EXCEPT SELECT A FROM W") else {
+        panic!()
+    };
+    // ((T UNION (U INTERSECT V)) EXCEPT W)
+    let QueryBody::Union { left, op: SetOp::Except, .. } = &q.body else { panic!("{:?}", q.body) };
+    let QueryBody::Union { right, op: SetOp::Union, .. } = left.as_ref() else { panic!("{left:?}") };
+    assert!(matches!(right.as_ref(), QueryBody::Union { op: SetOp::Intersect, all: false, .. }));
+    // ALL is UNION's only: SQL0104, as DB2 for i 7.1.
+    for text in ["SELECT A FROM T EXCEPT ALL SELECT A FROM U", "SELECT A FROM T INTERSECT ALL SELECT A FROM U"] {
+        let e = parse(text, Naming::Sql).unwrap_err();
+        assert_eq!(e.sqlcode(), -104, "{text}: {e}");
+    }
 }

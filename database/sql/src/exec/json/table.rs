@@ -92,19 +92,31 @@ fn column(c: &Column, item: &Json, n: usize, mode: DfRounding) -> Result<Value> 
     let target = Value::Str(text);
     match crate::exec::cast::cast(&target, spec, mode) {
         Ok(v) => Ok(v),
-        Err(e) => fallback(error, e),
+        // SQL0406 when the error stands, as pub400.
+        Err(e) => fallback(error, coded(-406, "22023", e.to_string())),
     }
 }
 
-/// The rows of `JSON_TABLE(item, row_path COLUMNS(columns))`.
-pub fn rows(item: &Value, row_path: &str, columns: &[Column], mode: DfRounding) -> Result<Vec<Vec<Value>>> {
+/// The rows of `JSON_TABLE(item, row_path COLUMNS(columns))`. A context
+/// item that is not JSON, or a row path that fails, gives no rows
+/// (`EMPTY ON ERROR`, the default) or the error (`ERROR ON ERROR`), as
+/// pub400 (`types/JSONTERR`).
+pub fn rows(item: &Value, row_path: &str, columns: &[Column], mode: DfRounding, error_on_error: bool) -> Result<Vec<Vec<Value>>> {
     if item.is_null() {
         return Ok(Vec::new());
     }
-    let doc = document(item, "auto")?;
     let rp = path::parse(row_path)
         .map_err(|e| SqlError::Unsupported { what: format!("the JSON_TABLE row path {row_path}: {e:?}") })?;
-    let items = rp.eval(&doc).map_err(|e| coded(-16410, "2203A", format!("{e:?}")))?;
+    let doc = match document(item, "auto") {
+        Ok(d) => d,
+        Err(e) if error_on_error => return Err(e),
+        Err(_) => return Ok(Vec::new()),
+    };
+    let items = match rp.eval(&doc) {
+        Ok(i) => i,
+        Err(e) if error_on_error => return Err(coded(-16410, "2203A", format!("{e:?}"))),
+        Err(_) => return Ok(Vec::new()),
+    };
     let mut out = Vec::with_capacity(items.len());
     for (i, it) in items.into_iter().enumerate() {
         let mut row = Vec::with_capacity(columns.len());
@@ -144,11 +156,22 @@ pub(crate) fn call(
     let (Some(item), Some(row_path)) = (args.first(), args.get(1)) else { return Ok(None) };
     let mut columns = Vec::new();
     let mut cols = Vec::new();
+    // `ERROR ON ERROR` for the table: the parser's last entry. A column's
+    // own `ON ERROR` default is then ERROR too.
+    let kind = |c: &[Value]| c.first().and_then(|o| super::Opts::parse(&o.as_text()).get("k").map(str::to_string));
+    let error_on_error = args[2..].chunks(6).any(|c| kind(c).as_deref() == Some("terr"));
     for (i, c) in args[2..].chunks(6).enumerate() {
         let [opts, cname, path, _, empty, error] = c else { return Ok(None) };
         let opts = super::Opts::parse(&opts.as_text());
+        if opts.get("k") == Some("terr") {
+            continue;
+        }
+        let column_error = match opts.get("error") {
+            None if error_on_error => Fallback::Error,
+            how => fallback_of(how, error),
+        };
         let (column, t) = if opts.get("k") == Some("ord") {
-            (Column::Ordinality, SqlType::bigint(false))
+            (Column::Ordinality, SqlType::bigint(true))
         } else {
             let Some(Expr::Cast(_, spec)) = exprs.get(2 + i * 6 + 3) else { return Ok(None) };
             let column = Column::Value {
@@ -156,7 +179,7 @@ pub(crate) fn call(
                 path: path.as_text(),
                 json: opts.get("fmt") == Some("J"),
                 empty: fallback_of(opts.get("empty"), empty),
-                error: fallback_of(opts.get("error"), error),
+                error: column_error,
             };
             (column, SqlType { spec: spec.clone(), nullable: true })
         };
@@ -169,7 +192,7 @@ pub(crate) fn call(
             hidden: false,
         });
     }
-    let rows = rows(item, &row_path.as_text(), &columns, ctx.decfloat_rounding)?;
+    let rows = rows(item, &row_path.as_text(), &columns, ctx.decfloat_rounding, error_on_error)?;
     Ok(Some((Schema { cols }, rows)))
 }
 
@@ -192,7 +215,7 @@ mod tests {
     fn rows_as_pub400_gives_them() {
         let doc = Value::Str(r#"{"r":[{"a":1,"b":"x"},{"a":2}]}"#.into());
         let cols = [col(DataType::Integer, "$.a"), col(DataType::Varchar(5), "$.b"), Column::Ordinality];
-        let r = rows(&doc, "$.r[*]", &cols, DfRounding::HalfEven).unwrap();
+        let r = rows(&doc, "$.r[*]", &cols, DfRounding::HalfEven, false).unwrap();
         assert_eq!(
             r,
             vec![
@@ -217,7 +240,7 @@ mod tests {
                 error: Fallback::Null,
             },
         ];
-        let r = rows(&doc, "lax $.r[*]", &cols, DfRounding::HalfEven).unwrap();
+        let r = rows(&doc, "lax $.r[*]", &cols, DfRounding::HalfEven, false).unwrap();
         assert_eq!(r[1], vec![Value::int(-1), Value::Str(r#"{"a":"q"}"#.into())]);
     }
 }
