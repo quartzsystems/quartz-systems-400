@@ -1,0 +1,24 @@
+                 Start Service Tools (STRSST) Sign On                           
+                                                                                
+                                            SYSTEM: S062B175                    
+                                                                                
+ Type choice, press Enter.                                                      
+                                                                                
+   Service tools user ID. . . .                                                 
+   Service tools password . . .                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Note: The password is case-sensitive.                                          
+                                                                                
+                                                                                
+ F3=Exit      F9=Change Password         F12=Cancel                             
+                                                                                

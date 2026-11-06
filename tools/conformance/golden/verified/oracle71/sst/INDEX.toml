@@ -1,0 +1,8 @@
+[[golden]]
+name = "sst-signon"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "strsst-primary"
+width = 80
+

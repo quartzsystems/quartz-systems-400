@@ -1,0 +1,20 @@
+# STRSST on the primary (V7R1M0) as QSECOFR: the service tools sign-on
+# only. No service tools user ID or password is typed (none is in the
+# oracle's .env): the display is captured and left with F3 at once.
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+type STRSST
+key enter
+settle 3000
+snap sst-signon
+show
+key f3
+settle 2000
+show
