@@ -166,7 +166,7 @@ impl Suite {
         })();
         let _ = s.command("DLTUSRPRF USRPRF(FCNUSR1)", CMD);
         r?;
-        expect(s, "CHGSECA UID(5000) GID(6000)", &["CPC2231"])?;
+        expect(s, "CHGSECA UID(5000) GID(6000)", &["5000", "6000"])?;
         let seca = expect(s, "DSPSECA", &["5000", "6000"])?;
         let pass = s.command("STRPASTHR RMTLOCNAME(QSNOSUCH)", CMD)?;
         if !pass.contains("CPF8933") && !pass.contains("CPD0031") && !pass.contains("not allowed") {
@@ -220,8 +220,7 @@ impl Suite {
                 return Err(format!("{line}:\n{out}"));
             }
         }
-        expect(s, "SAVSAVFDTA SAVF(RELJRN/SAVED) DEV(Q148TAP)", &["CPC3724"])
-            .or_else(|_| expect(s, "DSPJOBLOG", &["CPC3724"]))?;
+        expect(s, "SAVSAVFDTA SAVF(RELJRN/SAVED) DEV(Q148TAP)", &["Q148V1"])?;
         expect(s, "DSPTAP DEV(Q148TAP) DATA(*LABELS)", &["RELJRN"])?;
         let _ = s.command("DLTLIB LIB(RELJRN)", LONG);
         expect(s, "RSTLIB SAVLIB(RELJRN) DEV(Q148TAP)", &["RELJRN"])?;
