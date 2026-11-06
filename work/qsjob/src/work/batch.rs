@@ -125,3 +125,26 @@ fn end_code(out: &str) -> u16 {
         0
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::command::{Fail, Outcome};
+
+    #[test]
+    fn a_refused_or_failed_call_ends_the_job_abnormally() {
+        // The analyzer's refusal of an unreadable QSTRUPPGM value.
+        let refused = Outcome {
+            text: "CPD0071 ...\nCPF0006 Errors occurred in command.\n".into(),
+            escape: Some(Fail::new("CPF0006", "")),
+            ..Outcome::default()
+        };
+        assert_eq!(ended(&refused), 20);
+        let ok = Outcome {
+            text: "Program ended.\n".into(),
+            ..Outcome::default()
+        };
+        assert_eq!(ended(&ok), 0);
+        assert_eq!(STARTUP_FAILED, "CPI0915");
+    }
+}
