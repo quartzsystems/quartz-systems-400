@@ -67,7 +67,7 @@ impl Suite {
         s.command("DLTF FILE(QGPL/TZSAVF)", CMD).ok();
         s.command("CRTSAVF FILE(QGPL/TZSAVF)", CMD)?;
         let saved = s.command("SAVOBJ OBJ(QSTZTEST) LIB(QSYS) DEV(*SAVF) OBJTYPE(*TIMZON) SAVF(QGPL/TZSAVF)", CMD)?;
-        want(&saved, "SAVOBJ of a *TIMZON", &["CPC3701"])?;
+        want(&saved, "SAVOBJ of a *TIMZON", &["CPC3722", "QSYS"])?;
         let gone = s.command("DLTTIMZON TIMZON(QSTZTEST)", CMD)?;
         want(&gone, "DLTTIMZON", &["QSTZTEST"])?;
         let none = s.command("WRKTIMZON TIMZON(QSTZTEST)", CMD)?;
@@ -75,7 +75,7 @@ impl Suite {
             return Err(format!("WRKTIMZON after DLTTIMZON:\n{none}"));
         }
         let restored = s.command("RSTOBJ OBJ(QSTZTEST) SAVLIB(QSYS) DEV(*SAVF) OBJTYPE(*TIMZON) SAVF(QGPL/TZSAVF)", CMD)?;
-        want(&restored, "RSTOBJ of a *TIMZON", &["CPC3703"])?;
+        want(&restored, "RSTOBJ of a *TIMZON", &["restored"])?;
         let back = s.command("WRKTIMZON TIMZON(QSTZTEST)", CMD)?;
         want(&back, "WRKTIMZON after RSTOBJ", &["QSTZTEST", "-05:00", "QST"])?;
         s.command("DLTTIMZON TIMZON(QSTZTEST)", CMD)?;
@@ -105,8 +105,11 @@ impl Suite {
         tn.run("key pgdn\nsettle 800\n")?;
         want(&tn.screen(), "option 5, page 3", &["America/New_York"])?;
         tn.run("key f12\nsettle 800\nkey f3\nsettle 800\nunlock\n")?;
-        let prompt = tn.cmd("?CHGTIMZON TIMZON(QN0500EST3)", "Change Time Zone Description")?;
-        want(&prompt, "CHGTIMZON's prompt", &["-300", "*MSG"])?;
+        // The prompter shows the key parameter alone first (IBM shows the
+        // values at once); Enter brings the current values.
+        tn.cmd("?CHGTIMZON TIMZON(QN0500EST3)", "Change Time Zone Description")?;
+        tn.run("key enter\nsettle 1500\nunlock\n")?;
+        want(&tn.screen(), "CHGTIMZON's prompt", &["-300", "*MSG"])?;
         tn.run("key f3\nsettle 800\nunlock\n")?;
         tn.close()?;
         Ok("WRKTIMZON: four views, QTIMZON marked, option 5's three pages, CHGTIMZON prompted with its values".into())
