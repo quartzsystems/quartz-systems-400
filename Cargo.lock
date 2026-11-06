@@ -265,6 +265,7 @@ dependencies = [
  "kcbuild",
  "lpbuild",
  "optical",
+ "pesign",
  "ptf-update",
  "release",
  "reqwest",
@@ -273,6 +274,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "textaudit",
+ "toml",
  "tracing",
  "tracing-subscriber",
 ]
@@ -2306,6 +2308,22 @@ dependencies = [
  "store",
  "thiserror",
  "tn5250",
+]
+
+[[package]]
+name = "pesign"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "certs",
+ "der",
+ "graviola",
+ "hex",
+ "sha2",
+ "signature",
+ "spki",
+ "thiserror",
+ "x509-cert",
 ]
 
 [[package]]
