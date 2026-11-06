@@ -22,6 +22,18 @@ pub const MIN_MEMORY_MIB: u64 = 512;
 pub const WARN_MEMORY_MIB: u64 = 2048;
 /// The EFI global variable `SecureBoot`.
 const SECURE_BOOT: &str = "firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c";
+/// What `QSHWQUAL` and the installer say when Secure Boot is on.
+pub const SECURE_BOOT_WARNING: &str =
+    "WARN: QS/400 V1R1M0 is not Secure Boot signed; disable Secure Boot or enrol the QS/400 key";
+
+/// Whether the firmware enforces Secure Boot, from the `SecureBoot`
+/// variable under `sys` (four attribute bytes, then the value); `None`
+/// when it cannot be read.
+#[must_use]
+pub fn secure_boot(sys: &Path) -> Option<bool> {
+    fs::read(sys.join(SECURE_BOOT)).ok().and_then(|b| b.get(4).map(|v| *v == 1))
+}
+
 /// Storage controller types with a driver QS/400 names (`QD00` is a
 /// class QS/400 recognises but has no table entry for).
 const UNKNOWN_CONTROLLER: &str = "QD00";
@@ -97,15 +109,9 @@ fn firmware(roots: &Roots) -> Vec<Check> {
     let efi = roots.sys.join("firmware/efi");
     if efi.is_dir() {
         v.push(Check::new(Grade::Pass, "UEFI", "", "UEFI firmware: QS/400 boots its UKI from the EFI system partition."));
-        let sb = fs::read(roots.sys.join(SECURE_BOOT)).ok();
-        v.push(match sb.as_deref().and_then(|b| b.get(4)) {
-            Some(1) => Check::new(Grade::Pass, "SECBOOT", "", "Secure Boot is enabled."),
-            Some(_) => Check::new(
-                Grade::Warn,
-                "SECBOOT",
-                "",
-                "Secure Boot is disabled: the firmware starts any loader. Enable it once the QS/400 keys are enrolled.",
-            ),
+        v.push(match secure_boot(&roots.sys) {
+            Some(true) => Check::new(Grade::Warn, "SECBOOT", "", SECURE_BOOT_WARNING),
+            Some(false) => Check::new(Grade::Pass, "SECBOOT", "", "Secure Boot is disabled, as QS/400 V1R1M0 boots."),
             None => Check::new(Grade::Warn, "SECBOOT", "", "The Secure Boot state cannot be read from the firmware."),
         });
     } else {
@@ -215,11 +221,20 @@ fn storage(t: &Table, roots: &Roots) -> Vec<Check> {
     for d in &disks {
         let bytes = read(&roots.sys.join("class/block").join(&d.location).join("size")).parse::<u64>().unwrap_or(0) * 512;
         v.push(if raid_volume(d) {
+            // The controller is the disk's logical parent.
+            let ctl = t
+                .resources
+                .iter()
+                .find(|c| c.kind == Kind::Storage && c.name == d.logical)
+                .map_or_else(|| "an unnamed controller".to_string(), |c| format!("controller {} ({})", c.name, c.description));
             Check::new(
                 Grade::Warn,
                 &d.name,
                 &tm(d),
-                format!("{}: a RAID volume. Put the controller in HBA mode so QS/400 sees each disk and protects them itself.", d.description),
+                format!(
+                    "{}: a RAID volume of {ctl}. Put that controller in HBA mode so QS/400 sees each disk and protects them itself.",
+                    d.description
+                ),
             )
         } else if bytes > 0 && bytes < diskimg::MIN_DISK_BYTES {
             Check::new(Grade::Warn, &d.name, &tm(d), format!("{}: too small for a load source.", d.description))

@@ -985,9 +985,49 @@ fn keep_answers(record: &mut licpart::Record, auto: bool) -> Result<(), String> 
     Ok(())
 }
 
+/// The two slot UKIs, after the Secure Boot check.
+fn read_media_ukis(system: &mut System) -> Result<(Vec<u8>, Vec<u8>), String> {
+    let (a, b) = read_ukis(system)?;
+    secure_boot_check(system, &a, &b);
+    Ok((a, b))
+}
+
+/// With Secure Boot on, the installed system boots only from UKIs the
+/// firmware's db trusts: say so, and warn when they carry no signature.
+fn secure_boot_check(system: &mut System, a: &[u8], b: &[u8]) {
+    if std::path::Path::new("/sys/firmware/efi").is_dir() {
+        let _ = crate::platform::efivar::mount_vars();
+    }
+    if hwqual::checks::secure_boot(std::path::Path::new("/sys")) != Some(true) {
+        return;
+    }
+    if pe_signed(a) && pe_signed(b) {
+        system.out.both(
+            "slic: install: Secure Boot is on: the installed system boots while the QS/400 key stays enrolled in the firmware's db\n",
+        );
+    } else {
+        system.out.both(&format!("slic: install: {}\n", hwqual::checks::SECURE_BOOT_WARNING));
+    }
+}
+
+/// Whether a PE image carries an Authenticode certificate table.
+fn pe_signed(image: &[u8]) -> bool {
+    let u32_at = |o: usize| image.get(o..o + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]));
+    let Some(pe) = u32_at(0x3c).and_then(|v| usize::try_from(v).ok()) else {
+        return false;
+    };
+    let opt = pe + 24;
+    // PE32+ only: the data directories start 112 bytes in; the
+    // certificate table is the fifth.
+    if image.get(pe..pe + 4) != Some(b"PE\0\0") || image.get(opt..opt + 2) != Some(&[0x0b, 0x02]) {
+        return false;
+    }
+    u32_at(opt + 108).is_some_and(|n| n > 4) && u32_at(opt + 112 + 4 * 8 + 4).is_some_and(|size| size > 0)
+}
+
 /// The two slot UKIs: from a `SAVSYS` medium when one is attached (the
 /// saved system's own LIC), else from the installation media.
-fn read_media_ukis(system: &mut System) -> Result<(Vec<u8>, Vec<u8>), String> {
+fn read_ukis(system: &mut System) -> Result<(Vec<u8>, Vec<u8>), String> {
     if let Some(f) = instdev::savsys(None)
         && f.contents.payloads.contains(&Payload::LicA)
     {

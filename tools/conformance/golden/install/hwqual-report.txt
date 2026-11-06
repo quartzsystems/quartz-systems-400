@@ -7,14 +7,14 @@
   Hypervisor . . . . . :   KVM/QEMU                                             
   Release  . . . . . . :   V1R1M0                                               
   Date and time  . . . :   2026-11-04 09:30:00 UTC                              
-  Result . . . . . . . :   WARN (11 passed, 3 warnings, 0 failed)               
+  Result . . . . . . . :   WARN (12 passed, 2 warnings, 0 failed)               
                                                                                 
   Firmware and security                                                         
   Result  Resource    Type      Description                                     
    PASS   UEFI                  UEFI firmware: QS/400 boots its UKI from the    
                                 EFI system partition.                           
-   WARN   SECBOOT               Secure Boot is disabled: the firmware starts    
-                                any loader.                                     
+   PASS   SECBOOT               Secure Boot is disabled, as QS/400 V1R1M0       
+                                boots.                                          
    WARN   TPM                   No TPM was found: QS/400 runs without one, but  
                                 cannot seal keys to this machine.               
                                                                                 

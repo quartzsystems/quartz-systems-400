@@ -121,7 +121,9 @@ fn a_dell_with_a_perc_in_hba_mode() {
     }
     let r = hwqual::run(&t, &roots, 1_793_664_000);
     assert_eq!(r.hypervisor, "");
-    assert_eq!(grade(&r, "SECBOOT"), Grade::Pass);
+    // Secure Boot on: V1R1M0 is not signed for the firmware's own keys.
+    assert_eq!(grade(&r, "SECBOOT"), Grade::Warn);
+    assert!(r.text().contains("not Secure Boot signed"), "{}", r.text());
     assert_eq!(grade(&r, "TPM"), Grade::Pass);
     assert_eq!(grade(&r, "DC01"), Grade::Pass);
     assert_eq!(grade(&r, "DD004"), Grade::Pass);
@@ -140,7 +142,10 @@ fn a_dell_with_a_perc_in_hba_mode() {
     t.resources.retain(|r| r.kind != Kind::Disk);
     t.resources.push(res("DD001", Kind::Disk, "sda", "sda 3815447 MiB at 0:2:0:0 on DC01 (PERC H330 Virtual Disk)", Some(("DISK", "")), "DC01"));
     let r = hwqual::run(&t, &roots, 0);
-    assert_eq!(grade(&r, "SECBOOT"), Grade::Warn);
+    assert_eq!(grade(&r, "SECBOOT"), Grade::Pass);
+    // The RAID warning names the controller.
+    let raid = r.checks.iter().flat_map(|(_, c)| c).find(|c| c.resource == "DD001").unwrap();
+    assert!(raid.text.contains("controller DC01 (PERC H330 Mini)"), "{}", raid.text);
     if pci {
         assert_eq!(grade(&r, "DC01"), Grade::Fail);
     }

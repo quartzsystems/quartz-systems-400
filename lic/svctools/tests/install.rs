@@ -234,7 +234,7 @@ fn qual_report() -> Vec<String> {
                 "Firmware and security".into(),
                 vec![
                     pass("UEFI", "", "UEFI firmware: QS/400 boots its UKI from the EFI system partition."),
-                    warn("SECBOOT", "", "Secure Boot is disabled: the firmware starts any loader."),
+                    pass("SECBOOT", "", "Secure Boot is disabled, as QS/400 V1R1M0 boots."),
                     warn("TPM", "", "No TPM was found: QS/400 runs without one, but cannot seal keys to this machine."),
                 ],
             ),
