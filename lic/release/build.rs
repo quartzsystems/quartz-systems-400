@@ -53,7 +53,7 @@ fn version_file(repo: Option<&Path>) -> (u8, u8, u8) {
     let path = repo.expect("the repository root").join("VERSION");
     println!("cargo:rerun-if-changed={}", path.display());
     let text = std::fs::read_to_string(&path).expect("VERSION at the repository root");
-    let mut parts = text.trim().split('.').map(|p| p.parse::<u8>());
+    let mut parts = text.trim().split('.').map(str::parse::<u8>);
     match (parts.next(), parts.next(), parts.next(), parts.next()) {
         (Some(Ok(v)), Some(Ok(r)), Some(Ok(m)), None) => (v, r, m),
         _ => panic!("VERSION is not MAJOR.MINOR.PATCH: {}", text.trim()),
