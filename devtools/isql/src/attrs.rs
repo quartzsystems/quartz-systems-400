@@ -323,8 +323,10 @@ impl Attrs {
     /// the job's values, as pub400 does): its date format, date and
     /// time separators, and decimal format (`J` or `I` a comma).
     pub fn resolve_job(&mut self, job: &JobFormats) {
-        if self.get("DATFMT") == "*JOB" && DateFmt::parse(&job.datfmt).is_some() {
-            let _ = self.set("DATFMT", &job.datfmt);
+        // The job keeps `QDATFMT` as the system value holds it, `MDY`.
+        let datfmt = format!("*{}", job.datfmt.trim().trim_start_matches('*'));
+        if self.get("DATFMT") == "*JOB" && DateFmt::parse(&datfmt).is_some() {
+            let _ = self.set("DATFMT", &datfmt);
         }
         for (key, value) in [("DATSEP", &job.datsep), ("TIMSEP", &job.timsep)] {
             if self.get(key) == "*JOB" && value.chars().count() == 1 {
@@ -445,6 +447,9 @@ mod tests {
         let f = Attrs::default().format(&job);
         assert_eq!(f.date, DateFmt::Ymd);
         assert_eq!(f.timsep, ':');
+        // As the job holds it: no asterisk.
+        let job = JobFormats { datfmt: "MDY".into(), datsep: "/".into(), ..job };
+        assert_eq!(Attrs::default().format(&job).date, DateFmt::Mdy);
     }
 
     #[test]
