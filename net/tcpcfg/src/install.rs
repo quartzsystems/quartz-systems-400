@@ -4,7 +4,8 @@
 
 //! An automatic install's network answers (`ip`, `gateway` in the
 //! response file) as the installed system's first IPL applies them: the
-//! `ADDTCPIFC` and `ADDTCPRTE *DFTROUTE` an operator would type. `ip`
+//! `ADDTCPIFC ... AUTOSTART(*YES)` and `ADDTCPRTE *DFTROUTE` an operator
+//! would type, so `STRTCP` in `QSTRUP` starts the interface. `ip`
 //! is `a.b.c.d/n`, or `*IP4DHCP` for an address from a DHCP server.
 
 use std::net::{IpAddr, Ipv4Addr};
@@ -20,11 +21,11 @@ use crate::{Config, Result};
 /// `gateway`.
 pub fn commands(ip: &str, gateway: Option<&str>, line: &str) -> Result<Vec<String>> {
     let mut v = if is_dhcp(ip) {
-        vec![format!("ADDTCPIFC INTNETADR(*IP4DHCP) LIND({})", line.to_ascii_uppercase())]
+        vec![format!("ADDTCPIFC INTNETADR(*IP4DHCP) LIND({}) AUTOSTART(*YES)", line.to_ascii_uppercase())]
     } else {
         let (addr, prefix) = split(ip)?;
         vec![format!(
-            "ADDTCPIFC INTNETADR('{addr}') LIND({}) SUBNETMASK('{}')",
+            "ADDTCPIFC INTNETADR('{addr}') LIND({}) SUBNETMASK('{}') AUTOSTART(*YES)",
             line.to_ascii_uppercase(),
             prefix_mask(prefix)
         )]
@@ -50,6 +51,7 @@ pub fn apply(cfg: &mut Config, ip: &str, gateway: Option<&str>, line: &str) -> R
     if cfg.ifcs.get(&a).is_none() {
         let mut i = Interface::new(a, LineRef::Line(line.to_ascii_uppercase()));
         i.mask = mask;
+        i.autostart = true;
         cfg.ifcs.add(i)?;
         changed.push(Table::Ifc);
     }
@@ -88,7 +90,7 @@ mod tests {
         assert_eq!(
             commands("10.0.2.15/24", Some("10.0.2.2"), "eth0").unwrap(),
             [
-                "ADDTCPIFC INTNETADR('10.0.2.15') LIND(ETH0) SUBNETMASK('255.255.255.0')",
+                "ADDTCPIFC INTNETADR('10.0.2.15') LIND(ETH0) SUBNETMASK('255.255.255.0') AUTOSTART(*YES)",
                 "ADDTCPRTE RTEDEST(*DFTROUTE) NEXTHOP('10.0.2.2')",
             ]
         );
@@ -115,7 +117,7 @@ mod tests {
         assert_eq!(apply(&mut cfg, "10.0.2.15/24", None, "ETH0").unwrap(), [Table::Ifc]);
         // DHCP.
         let mut cfg = Config::default();
-        assert_eq!(commands("*IP4DHCP", None, "eth0").unwrap(), ["ADDTCPIFC INTNETADR(*IP4DHCP) LIND(ETH0)"]);
+        assert_eq!(commands("*IP4DHCP", None, "eth0").unwrap(), ["ADDTCPIFC INTNETADR(*IP4DHCP) LIND(ETH0) AUTOSTART(*YES)"]);
         assert_eq!(apply(&mut cfg, "*ip4dhcp", None, "ETH0").unwrap(), [Table::Ifc]);
         assert!(cfg.ifcs.get(&IfcAddr::Dhcp4).is_some_and(|i| i.autostart));
     }

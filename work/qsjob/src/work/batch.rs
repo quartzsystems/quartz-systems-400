@@ -78,6 +78,8 @@ fn startup(c: &mut Console, link: &Shared) -> u16 {
     let (Some(pgm), lib) = (words.next(), words.next().unwrap_or("*LIBL")) else {
         return 0;
     };
+    // A value written as LIB/PGM (an install's answers before V1R1M0).
+    let (pgm, lib) = pgm.split_once('/').map_or((pgm, lib), |(l, p)| (p, l));
     if pgm == "*NONE" {
         return 0;
     }

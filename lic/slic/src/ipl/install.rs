@@ -334,7 +334,7 @@ pub fn apply_answers(system: &mut System) {
                 eprintln!("slic: install: {n}: {e}");
             }
         };
-        set("QSTRUPPGM", &rsp.qstrup);
+        set("QSTRUPPGM", &startup_value(&rsp.qstrup));
         if let Some(name) = &rsp.system_name {
             set("QSYSNAME", name);
         }
@@ -350,6 +350,15 @@ pub fn apply_answers(system: &mut System) {
         }
     }
     system.out.serial("slic: install: response file applied\n");
+}
+
+/// The response file's `qstrup` (`LIB/PGM` or `*NONE`) as `QSTRUPPGM`
+/// holds it: the program, then the library, ten characters each.
+fn startup_value(qstrup: &str) -> String {
+    match qstrup.split_once('/') {
+        Some((lib, pgm)) => format!("{pgm:<10}{lib:<10}"),
+        None => qstrup.to_string(),
+    }
 }
 
 /// The response file's `ip` and `gateway` as an operator would give
