@@ -660,6 +660,8 @@ impl Suite {
         reports.push(self.step(&mut s, "133 SQL CLI server mode", Self::sql_cli)?);
         reports.push(self.step(&mut s, "134 SQL DRDA client", Self::sql_drda)?);
         reports.push(self.step(&mut s, "135 SQL RPG triggers", Self::sql_rpg_triggers)?);
+        reports.push(self.step(&mut s, "137 SQL external procedures", Self::sql_extproc)?);
+        reports.push(self.step(&mut s, "138 SQL session across sign-on", Self::sql_session)?);
         // An IPL at its end.
         reports.push(self.step(&mut s, "136 SQL QTEMP", Self::sql_qtemp)?);
         reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);
@@ -692,6 +694,8 @@ impl Suite {
         reports.extend(self.hw_steps()?);
         #[cfg(unix)]
         reports.extend(self.guest_steps()?);
+        #[cfg(unix)]
+        reports.extend(self.two_guest_steps()?);
         if self.only.is_some() {
             return Ok(reports);
         }

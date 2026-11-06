@@ -9,7 +9,7 @@ use crate::qemu::session::Session;
 use crate::steps::Suite;
 
 /// One statement typed on Enter SQL Statements and run.
-fn stmt(tn: &mut Tn, text: &str) -> Result<String, String> {
+pub(super) fn stmt(tn: &mut Tn, text: &str) -> Result<String, String> {
     tn.run(&format!("key eraseinput\npick \"===>\" {text}\nkey enter\nsettle 1500\nunlock\n"))
         .map_err(|e| format!("{text}: {e}"))?;
     Ok(tn.screen())
@@ -157,7 +157,7 @@ impl Suite {
 
 /// STRSQL again after a save: the statements back and SQL6102; left
 /// with option 2. What happened, for the report.
-fn resume(tn: &mut Tn) -> String {
+pub(super) fn resume(tn: &mut Tn) -> String {
     let run = |tn: &mut Tn| -> Result<String, String> {
         tn.run("key eraseinput\ntype strsql\nkey enter\nwait \"Enter SQL Statements\"\nsettle 1000\n")?;
         let resumed = tn.screen();

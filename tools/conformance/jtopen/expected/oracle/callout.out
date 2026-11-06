@@ -1,0 +1,18 @@
+ok   connect
+ok   create
+     C CHAR(6) = [AB    ]
+     V VARCHAR(20) = [HELLO WORLD]
+     S SMALLINT = [-12]
+     I INTEGER = [123456]
+     B BIGINT = [9876543210]
+     D DECIMAL(11, 3) = [-1234.567]
+     N NUMERIC(9, 2) = [42.50]
+     F DOUBLE = [1500.0]
+     DT DATE = [11/06/26]
+     TM TIME = [13:45:30]
+     TS TIMESTAMP = [2026-11-06 13:45:30.123456]
+     VB VARCHAR(8) FOR BIT DATA = [C1C2C3]
+     NL VARCHAR(10) = NULL
+     IO VARCHAR(30) = [START-MORE]
+ok   call
+ok   drop

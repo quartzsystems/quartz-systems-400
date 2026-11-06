@@ -5,16 +5,21 @@
 //! The SQL steps, 130 on: what the SQL work could only check in memory,
 //! run on the booted system. STRSQL and Command Entry over a TN5250
 //! session, `JTOpen` against the host servers, the CLI in server mode,
-//! the DRDA client, QTEMP and triggers from RPG. Each step makes what
-//! it needs in library `SQLQ`.
+//! the DRDA client, QTEMP and triggers from RPG, external procedures,
+//! a saved STRSQL session across sign-ons, and DRDA between two guests.
+//! Each step makes what it needs in library `SQLQ`.
 
 mod cli;
 mod drda;
+mod extproc;
 mod jtopen;
 mod qtemp;
 mod runsql;
+mod session;
 mod strsql;
 mod trigger;
+#[cfg(unix)]
+mod twoguest;
 
 use std::time::Duration;
 
@@ -39,7 +44,11 @@ impl Tn {
     /// Connect, sign on and reach Command Entry with `SQLQ` on the
     /// library list.
     pub fn open(suite: &Suite) -> Result<Self, String> {
-        let port = suite.telnet_port().ok_or("the launch has no telnet port")?;
+        Self::open_at(suite.telnet_port().ok_or("the launch has no telnet port")?)
+    }
+
+    /// As [`Self::open`], through the telnet forward on host `port`.
+    pub fn open_at(port: u16) -> Result<Self, String> {
         let connect = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
         let options = ScriptOptions::default();
         let mut ctx = Context::new(&connect, &options);
