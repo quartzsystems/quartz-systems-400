@@ -286,7 +286,7 @@ fn start_set(env: &mut dyn DstEnv, level: u8, with_spare: bool) -> Flow {
                         match &device {
                             Some(d) => env
                                 .start_hot_spare(d)
-                                .map(|m| format!("{started}; {m}")),
+                                .map(|m| format!("{m}; {started}")),
                             None => Ok(started),
                         }
                     }),
