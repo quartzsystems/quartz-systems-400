@@ -202,7 +202,9 @@ pub fn exit(host: &Host, surface: &mut Surface, s: &mut Session) -> bool {
             Key::Enter => match option.as_str() {
                 "1" => {
                     let text = s.saved();
-                    if let Err(e) = host.link.borrow_mut().with(|l| l.isql_session_put(Some(text))) {
+                    // Bound first: the link's borrow ends before the message is read.
+                    let put = host.link.borrow_mut().with(|l| l.isql_session_put(Some(text)));
+                    if let Err(e) = put {
                         msg = Some(crate::display::msgline::text_of(host, &crate::panels::line(&e)));
                         continue;
                     }
