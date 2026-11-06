@@ -105,7 +105,7 @@ jobs:
             ~/.cargo/git
             target
           key: test-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
-      - run: cargo test --workspace --locked
+      - run: cargo test --workspace --locked --no-fail-fast
 
   fuzz:
     name: build fuzz (60 s a target)
