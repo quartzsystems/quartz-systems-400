@@ -194,8 +194,10 @@ pub fn object(txn: &mut store::Txn<'_>, qsys: ObjectId, p: &Params) -> sec::Resu
         .code;
     let (lib, name) = qual(&o);
     let names = super::ile::name_context(txn, qsys);
+    // The store's own message: a library the actor may not use is
+    // `CPF9820`, not an object that is not there.
     wm::obj::find(txn, qsys, &names, &lib, &name, code)
-        .map_err(|e| sec::SecError::msg("CPF9801", e.to_string()))
+        .map_err(|e| sec::SecError::msg(e.msgid().unwrap_or("CPF9801"), e.to_string()))
 }
 
 /// The audit commands; `None` when `cmd` is not one.
