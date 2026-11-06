@@ -8,8 +8,10 @@
 //! `docs/HOSTSVR.md`.
 
 pub mod host;
+pub mod sec;
 pub mod tcp;
 pub mod telnet;
+pub mod wm;
 
 use crate::spec::Layout;
 use crate::text;
@@ -97,6 +99,14 @@ pub static LAYOUTS: &[&Layout] = &[
     &telnet::DEVICE_DESC,
     &telnet::DSPD0100,
     &telnet::CONN_DESC,
+    &sec::PROFILE_INFO,
+    &sec::PASSWORD_INFO,
+    &wm::CHECK_INFO,
+    &wm::PRSE0200,
+    &wm::PDPF0200,
+    &wm::NTFY_JOB,
+    &wm::NTFY_JOBQ,
+    &wm::NTFY_DATA,
 ];
 
 /// Every parameter list.
@@ -105,6 +115,8 @@ pub fn lists() -> Vec<&'static ParmList> {
     let mut v: Vec<&'static ParmList> = vec![&HOST];
     v.extend(tcp::LISTS);
     v.extend(telnet::LISTS);
+    v.extend(sec::LISTS);
+    v.extend(wm::LISTS);
     v
 }
 
@@ -124,6 +136,8 @@ pub fn known() -> Vec<&'static str> {
         // No parameters: each program runs in a job of its own (`arb`).
         "STGL0100",
     ]);
+    v.extend(sec::PROFILE_FORMATS);
+    v.extend(["VLDP0100", "CHKP0100", "PRER0100", "PWRD0100", "PWRD0200", "ATTN0100", "NTFY0100"]);
     v
 }
 
@@ -151,6 +165,38 @@ pub enum ExitRequest {
     DevInit(telnet::Session),
     /// `TERM0100`.
     DevTerm(telnet::Session),
+    /// A profile notification (`CRTP0100`, `CHGP0100` ...): its point,
+    /// format and the profile.
+    Profile {
+        /// The exit point.
+        point: String,
+        /// The format.
+        format: String,
+        /// The profile.
+        user: String,
+    },
+    /// `VLDP0100` or `CHKP0100`.
+    Password(sec::Password),
+    /// `PRER0100` or `PWRD0200`.
+    Prepare(wm::Prepare),
+    /// A format called with no parameters (`PWRD0100`, `ATTN0100`).
+    Bare {
+        /// The format.
+        format: String,
+    },
+}
+
+/// What a program that cannot be called, or ends in an exception,
+/// means for the request.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OnFailure {
+    /// It refuses, and no later program is called (the host servers,
+    /// the password checks).
+    Refuse,
+    /// It allows (`PRER0100`, `PWRD0200`); the rest are called.
+    Allow,
+    /// The point ignores it (the notifications); the rest are called.
+    Ignore,
 }
 
 impl ExitRequest {
@@ -167,10 +213,25 @@ impl ExitRequest {
     #[must_use]
     pub fn format(&self) -> &str {
         match self {
-            Self::Host { format, .. } | Self::Logon { format, .. } => format,
+            Self::Host { format, .. }
+            | Self::Logon { format, .. }
+            | Self::Profile { format, .. }
+            | Self::Bare { format } => format,
             Self::Validate(_) => "VLRQ0100",
             Self::DevInit(_) => "INIT0100",
             Self::DevTerm(_) => "TERM0100",
+            Self::Password(p) => &p.format,
+            Self::Prepare(p) => &p.format,
+        }
+    }
+
+    /// What a failed program means.
+    #[must_use]
+    pub fn on_failure(&self) -> OnFailure {
+        match self {
+            Self::Prepare(_) => OnFailure::Allow,
+            Self::Profile { .. } | Self::Bare { .. } => OnFailure::Ignore,
+            _ => OnFailure::Refuse,
         }
     }
 
@@ -185,6 +246,10 @@ impl ExitRequest {
             Self::Logon { format, logon } => tcp::tcpl(format, logon),
             Self::DevInit(s) => telnet::init0100(s),
             Self::DevTerm(s) => telnet::term0100(s),
+            Self::Profile { point, format, user } => vec![sec::profile_info(point, format, user)],
+            Self::Password(p) => sec::password_parms(p),
+            Self::Prepare(p) => wm::prepare_parms(p),
+            Self::Bare { .. } => Vec::new(),
         }
     }
 
@@ -197,7 +262,9 @@ impl ExitRequest {
             Self::Validate(_) => text::bin4(get(7), 0) >= 1,
             Self::Logon { format, .. } => tcp::logon_out(format, parms).rc != 0,
             Self::DevInit(_) => telnet::init_out(parms).allow,
-            Self::DevTerm(_) => true,
+            Self::DevTerm(_) | Self::Profile { .. } | Self::Bare { .. } => true,
+            Self::Password(_) => get(1) == text::fixed("0", 1).as_slice(),
+            Self::Prepare(p) => p.action != wm::action::CHECK || wm::check_answer(parms).0,
         }
     }
 
@@ -214,7 +281,9 @@ impl ExitRequest {
             Self::Validate(_) => digit(text::bin4(get(7), 0)),
             Self::Logon { format, .. } => digit(tcp::logon_out(format, parms).rc),
             Self::DevInit(_) => text::field(get(5)),
-            Self::DevTerm(_) => String::new(),
+            Self::DevTerm(_) | Self::Profile { .. } | Self::Bare { .. } => String::new(),
+            Self::Password(_) => text::field(get(1)),
+            Self::Prepare(_) => digit(text::bin4(get(0), 4)),
         }
     }
 }

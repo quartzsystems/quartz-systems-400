@@ -12,6 +12,7 @@
 //! own console table (the development commands).
 
 pub mod ddm;
+pub mod exits;
 pub mod hostsvr;
 pub mod ftp;
 pub mod jobsite;
@@ -306,7 +307,7 @@ fn dispatch(job: &mut Job, host: &Host, r: &Resolved, mut out: Outcome) -> Outco
     let result = match entry.map(|e| e.site) {
         Some(_) if lda::is_lda(r) => lda::command(host, r),
         Some(Site::Job) => jobsite::run(job, host, r, &mut out),
-        Some(Site::Service | Site::Stub) => service(job, host, r, &mut out),
+        Some(Site::Service | Site::Stub) => exits::service_with_exits(job, host, r, &mut out),
         None => user_cpp(job, host, r),
     };
     libs.leave(host);
@@ -609,6 +610,12 @@ pub(crate) fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcom
     // procedure or trigger program), made here and answered.
     while let Some(plan) = reply.call.take() {
         reply = call_for_service(job, host, &plan);
+    }
+    for n in &reply.notify {
+        let mut w = n.split_whitespace();
+        if let (Some(point), Some(format), Some(user)) = (w.next(), w.next(), w.next()) {
+            exits::profile(job, host, point, format, user);
+        }
     }
     for m in &reply.messages {
         log(job, &m.msgid, &m.data, kind_of(m.kind), None);

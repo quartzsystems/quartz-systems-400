@@ -98,13 +98,9 @@ fn chgpwd(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
         return Err("CPD0071 NEWPWD is required".into());
     }
     if !crate::work::pwdpgm::validate(job, &host.link, &user, &new, &current)? {
-        return Err(
-            "CPF22C6 The password validation program did not accept the new password.".into(),
-        );
+        return Err("CPF22D3 The password approval program refused the new password.".into());
     }
-    host.link
-        .borrow_mut()
-        .with(|l| stg::Client::chg_pwd(l, current, new, true))?;
+    crate::command::exits::chgpwd(job, host, &user, current, new)?;
     Ok("Password changed successfully.\n".into())
 }
 

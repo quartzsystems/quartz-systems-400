@@ -120,6 +120,23 @@ pub enum Query {
         /// What `QSYRUPWD` returned.
         data: Vec<u8>,
     },
+    /// `QWTRTVPX`: a profile's exit program flags for `ATTN0100` or
+    /// `SREQ0100`; the answer's bytes are eight 0s and 1s.
+    ProfileExits {
+        /// The user, `*CURRENT` for the asker.
+        user: String,
+        /// The format.
+        format: String,
+    },
+    /// `QWTSETPX`: set them; each byte 1 call, 0 do not, 0xFF keep.
+    SetProfileExits {
+        /// The user, `*CURRENT` for the asker.
+        user: String,
+        /// The format.
+        format: String,
+        /// The values, one per program from the first.
+        values: Vec<u8>,
+    },
 }
 
 wire_enum!(Query {
@@ -137,6 +154,8 @@ wire_enum!(Query {
     11 => ChangePassword { user, current, new },
     12 => GetPassword { user },
     13 => SetPassword { user, data },
+    14 => ProfileExits { user, format },
+    15 => SetProfileExits { user, format, values },
 });
 
 /// One object an answer lists.
@@ -499,6 +518,30 @@ pub fn answer(
             p.pwd_none = p.hashes.is_empty();
             objects::write(txn, id, &p)?;
             Answer::Done
+        }
+        Query::ProfileExits { user, format } | Query::SetProfileExits { user, format, .. } => {
+            let u = who(user);
+            if !crate::prfexit::FORMATS.contains(&format.as_str()) {
+                return Err(SecError::msg("CPF3C21", format!("Format {format} is not valid.")));
+            }
+            if other(user) && !me.has(SpecialAuth::SECADM) {
+                return Err(SecError::msg("CPF2217", format!("Not authorized to user profile {u}.")));
+            }
+            objects::read(txn, qsys, &u)?;
+            let mut flags = crate::prfexit::load(txn, qsys)?;
+            if let Query::SetProfileExits { values, .. } = q {
+                let v: Vec<i32> = values.iter().map(|b| i32::from(i8::from_ne_bytes([*b]))).collect();
+                crate::prfexit::set(&mut flags, &u, format, &v);
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map_or(0, |d| d.as_secs());
+                crate::prfexit::save(txn, qsys, &flags, now)?;
+                Answer::Done
+            } else {
+                Answer::Bytes {
+                    data: crate::prfexit::of(&flags, &u, format).iter().map(|b| u8::from(*b)).collect(),
+                }
+            }
         }
         Query::GetHandle { .. }
         | Query::SetHandle { .. }

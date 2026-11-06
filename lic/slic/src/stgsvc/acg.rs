@@ -208,6 +208,11 @@ fn close_segment(system: &mut System, number: u32, completion: u16) {
     }
 }
 
+/// The processor milliseconds job `number` has used.
+pub fn cpu_ms(system: &System, number: u32) -> u64 {
+    figures(system, number).cpu_ms
+}
+
 /// A job ended with `completion`: its last `JB` entry, and it is
 /// forgotten.
 pub fn job_ended(system: &mut System, number: u32, completion: u16) {

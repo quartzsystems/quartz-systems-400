@@ -213,6 +213,7 @@ pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String),
     })?;
     system.queued.insert(number, real.clone());
     super::acg::submitted(system, number, me, &user, &r.changes);
+    super::jobntfy::queued(system, (&name, &user, number), &real);
     let (lib, qname) = qualified(&real);
     let data = wm::joblog::data(&[
         (&name, 10),

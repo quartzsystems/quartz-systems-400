@@ -58,7 +58,7 @@ pub mod uiapi;
 mod usrspc;
 mod wire;
 
-pub use job::Civil;
+pub use job::{Civil, to_dts};
 pub use provider::{
     ApiFail, ApiResult, CommitInfo, DataArea, DataAreaType, DepInfo, DtaqEntry, DtaqInfo,
     FieldInfo, FileInfo, FormatInfo, IdxAttr, LocalNow, MemDtaq, MemFile, MemIndex, MemProvider,

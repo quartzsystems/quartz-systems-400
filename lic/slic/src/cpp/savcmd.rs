@@ -1464,6 +1464,13 @@ fn rstusrprf(system: &mut System, parms: &Parms) -> CmdReply {
         reply.messages.push(message(id, 5, &[(&o.name, 10), (&o.library, 10)]));
         let _ = writeln!(reply.text, "{id} {} not restored", o.name);
     }
+    // The job calls QIBM_QSY_RST_PROFILE for each profile restored.
+    reply.notify = rep
+        .objects
+        .iter()
+        .filter(|o| o.msgid.is_none() && o.type_code == store::obj::types::USRPRF)
+        .map(|o| format!("QIBM_QSY_RST_PROFILE RSTP0100 {}", o.name))
+        .collect();
     let n = rep.profiles().to_string();
     let not = rep.profiles_not().to_string();
     let _ = writeln!(

@@ -7,10 +7,32 @@
 //! password, the old one, a one-character return code (`0` accepts)
 //! and the profile name. At password levels 0 and 1 the passwords are
 //! `CHAR(10)`; at 2 and 3 each is a four-byte length, a four-byte CCSID
-//! (37) and the characters.
+//! (37) and the characters. `*REGFAC` calls the programs of
+//! `QIBM_QSY_VLD_PASSWRD` (`VLDP0100`) instead.
 
 use mi::Job;
 use stg::{Client, Shared};
+
+/// Whether `QPWDVLDPGM` is `*REGFAC`.
+pub fn regfac(link: &Shared) -> bool {
+    link.borrow_mut()
+        .with(|l| l.sysval("QPWDVLDPGM".into()))
+        .is_some_and(|v| ccsid::from_ebcdic(&v.data).trim().eq_ignore_ascii_case("*REGFAC"))
+}
+
+/// The programs of `QIBM_QSY_VLD_PASSWRD`: whether all accepted.
+fn validate_regfac(j: &mut Job, link: &Shared, user: &str, new: &str, old: &str) -> bool {
+    let req = regfac::ExitRequest::Password(regfac::formats::sec::Password {
+        format: "VLDP0100".into(),
+        point: "QIBM_QSY_VLD_PASSWRD".into(),
+        level: i32::from(level(link)),
+        user: user.into(),
+        old: Some(old.into()),
+        new: new.into(),
+    });
+    let mut reg = stg::remote::RemoteRegistry::new(std::rc::Rc::clone(link));
+    regfac::call_exit(&mut reg, j, "QIBM_QSY_VLD_PASSWRD", &req).allow
+}
 
 /// The program `QPWDVLDPGM` names, `(lib, name)`; `None` for `*NONE`
 /// and `*REGFAC`.
@@ -28,7 +50,8 @@ pub fn program(link: &Shared) -> Option<(String, String)> {
     Some((lib, name))
 }
 
-fn level(link: &Shared) -> u8 {
+/// `QPWDLVL`.
+pub fn level(link: &Shared) -> u8 {
     link.borrow_mut()
         .with(|l| l.sysval("QPWDLVL".into()))
         .and_then(|v| {
@@ -64,6 +87,9 @@ pub fn validate(
     new: &str,
     old: &str,
 ) -> Result<bool, String> {
+    if regfac(link) {
+        return Ok(validate_regfac(j, link, user, new, old));
+    }
     let Some((lib, name)) = program(link) else {
         return Ok(true);
     };

@@ -35,6 +35,7 @@ pub(crate) mod dumps;
 pub(crate) mod liclog;
 mod svcop;
 pub(crate) mod trace;
+pub(crate) mod jobntfy;
 pub(crate) mod jobqs;
 mod jobs;
 pub(crate) mod jobscd;

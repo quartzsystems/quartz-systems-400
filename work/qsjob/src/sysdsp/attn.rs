@@ -111,8 +111,38 @@ pub fn target(value: &str) -> Target {
     }
 }
 
+/// `QIBM_QWT_PREATTNPGMS` (`ATTN0100`): the programs `QWTSETPX` turned
+/// on for the job's user, by number, each called with no parameters
+/// before the attention program; what they do or fail at is ignored.
+fn preattention(host: &Host) {
+    use regfac::ExitRegistry as _;
+    let q = sec::api::Query::ProfileExits {
+        user: "*CURRENT".into(),
+        format: "ATTN0100".into(),
+    };
+    let Ok(sec::api::Answer::Bytes { data: on }) = host.link.borrow_mut().with(|l| l.sec_api(q)) else {
+        return;
+    };
+    if !on.contains(&1) {
+        return;
+    }
+    let mut reg = stg::remote::RemoteRegistry::new(std::rc::Rc::clone(&host.link));
+    let Ok(programs) = reg.programs("QIBM_QWT_PREATTNPGMS", "ATTN0100") else {
+        return;
+    };
+    for p in programs {
+        let n = usize::try_from(p.number).unwrap_or(0);
+        if n == 0 || on.get(n - 1) != Some(&1) {
+            continue;
+        }
+        let lib = if p.lib.is_empty() { "*LIBL" } else { p.lib.as_str() };
+        let _ = keys::command(host, &format!("CALL PGM({lib}/{})", p.pgm), RunMode::Run);
+    }
+}
+
 /// The Attention key was pressed.
 pub fn run(host: &Host) -> Act {
+    preattention(host);
     let Some(p) = program(host) else {
         return Act::Back;
     };

@@ -2103,6 +2103,159 @@ Every format starts with `EXTIHeader`; `CONTH` is blank when every entry fit, el
 | 1 | Input | `CHAR(*)` | Device description information |
 | 2 | Input | `CHAR(*)` | Connection description information |
 
+### Security and work management points
+
+The points the primary oracle has at V7R1M0 (`tools/conformance/oracle/rel/README.md`),
+with the structures of IBM's `QSYSINC/H` members `ECHGPRF1`, `ECRTPRF1`, `EDLTPRF1`,
+`EDLTPRF2`, `ERSTPRF1`, `EVLDPWD1`, `ECHKPWD1`, `EWCPRSEP`, `EWCPWRD` and `EJOBNTFY`
+(`tools/conformance/oracle/qsysinc/H/`). Every program runs in the job that ran the command
+(IBM's synchronous direct call), and none in a system or subsystem job:
+
+| Point | Format | When | The answer |
+|---|---|---|---|
+| `QIBM_QSY_CRT_PROFILE` | `CRTP0100` | after `CRTUSRPRF` | ignored |
+| `QIBM_QSY_CHG_PROFILE` | `CHGP0200`, `CHGP0100` | before and after `CHGUSRPRF`, `CHGUSRAUD`, `CHGPRF`, `CHGPWD`, `QSYCHGPW` | ignored |
+| `QIBM_QSY_DLT_PROFILE` | `DLTP0200`, `DLTP0100` | before and after `DLTUSRPRF` | ignored |
+| `QIBM_QSY_RST_PROFILE` | `RSTP0100` | after `RSTUSRPRF`, for each profile restored | ignored |
+| `QIBM_QSY_VLD_PASSWRD` | `VLDP0100` | before `CHGPWD` and `QSYCHGPW` change the password, when `QPWDVLDPGM` is `*REGFAC` | `0` accepts; anything else, an exception or a missing program refuses (`CPF22D3`) and no later program is called |
+| `QIBM_QSY_CHK_PASSWRD` | `CHKP0100` | after `CRTUSRPRF`, `CHGUSRPRF`, `CHGPWD` or `QSYCHGPW` set a password | recorded (`GR` audit entry when not `0`); the password stays |
+| `QIBM_QWC_PRERESTRICT` | `PRER0100` | `ENDSYS`, `ENDSBS SBS(*ALL)`: check, then execute or cancel | a check of 0 ends the command (`CPF1E3A`); failures count as 1 |
+| `QIBM_QWC_PWRDWNSYS` | `PWRD0200`, then `PWRD0100` | `PWRDWNSYS` (`PWRD0100` also `ENDSYS`) | a `PWRD0200` check of 0 ends it (`CPF1E3A`) |
+| `QIBM_QWT_PREATTNPGMS` | `ATTN0100` | the Attention key, before the job's attention program | ignored |
+| `QIBM_QWT_JOBNOTIFY` | `NTFY0100` | job start, job end, a job placed on a job queue: an entry on each registered data queue (the "program" is the data queue, its data `QwtNotifyData`) | none |
+
+Passwords reach `VLDP0100` and `CHKP0100` in UCS-2 (CCSID 13488), the old one as `*NOPWD`
+when the interface has none. `PRER0100` and `PWRD0200` pass the return information, its
+format (`PRSE0100`/`PDPF0100` for a check, `PRSE0200`/`PDPF0200` after), the action
+(`1` check, `2` execute, `3` cancel) and the delay (`-1` `*IMMED`, `-2` `*NOLIMIT`, else
+seconds). The job notification entries go on a keyed data queue (key length 4: `0001` start,
+`0002` end, `0004` job queue), cut to the queue's entry length.
+
+<!-- regfac: QsyProfileInfo -->
+#### `QsyProfileInfo` (38 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 20 | `EXITPNT` |
+| 20 | 8 | `EXITFMT` |
+| 28 | 10 | `USRPRF` |
+
+<!-- regfac: QsyPasswordInfo -->
+#### `QsyPasswordInfo` (68 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 20 | `EXITPNT` |
+| 20 | 8 | `EXITFMT` |
+| 28 | 4 | `PWDLVL` |
+| 32 | 10 | `USRPRF` |
+| 42 | 2 | `RSV` |
+| 44 | 4 | `OFFOLD` |
+| 48 | 4 | `LENOLD` |
+| 52 | 4 | `CCSIDOLD` |
+| 56 | 4 | `OFFNEW` |
+| 60 | 4 | `LENNEW` |
+| 64 | 4 | `CCSIDNEW` |
+
+<!-- regfac: QwcCheckInfo -->
+#### `QwcCheckInfo` (12 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `LEN` |
+| 4 | 4 | `STATUS` |
+| 8 | 4 | `WAIT` |
+
+<!-- regfac: PRSE0200 -->
+#### `PRSE0200` (4 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `LEN` |
+
+<!-- regfac: PDPF0200 -->
+#### `PDPF0200` (8 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `LEN` |
+| 4 | 4 | `EXECWAIT` |
+
+<!-- regfac: QwtJobNotify -->
+#### `QwtJobNotify` (144 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `MSGID` |
+| 10 | 2 | `MSGFMT` |
+| 12 | 16 | `INTJOBID` |
+| 28 | 26 | `JOB` |
+| 54 | 20 | `JOBQ` |
+| 74 | 8 | `ENTERED` |
+| 82 | 8 | `STARTED` |
+| 90 | 8 | `ENDED` |
+| 98 | 1 | `TYPE` |
+| 99 | 1 | `SUBTYPE` |
+| 100 | 4 | `ENDSEV` |
+| 104 | 8 | `CPUMS` |
+| 112 | 10 | `JOBQASP` |
+| 122 | 22 | `RSV2` |
+
+<!-- regfac: QwtJobqNotify -->
+#### `QwtJobqNotify` (144 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 10 | `MSGID` |
+| 10 | 2 | `MSGFMT` |
+| 12 | 16 | `INTJOBID` |
+| 28 | 26 | `JOB` |
+| 54 | 20 | `JOBQ` |
+| 74 | 8 | `ENTERED` |
+| 82 | 16 | `RSV` |
+| 98 | 1 | `TYPE` |
+| 99 | 1 | `SUBTYPE` |
+| 100 | 12 | `RSV2` |
+| 112 | 10 | `JOBQASP` |
+| 122 | 22 | `RSV3` |
+
+<!-- regfac: QwtNotifyData -->
+#### `QwtNotifyData` (24 bytes)
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | `NTFYTYPE` |
+| 4 | 10 | `SBSD` |
+| 14 | 10 | `SBSDLIB` |
+
+<!-- regfac-parms: PROFILE -->
+#### `PROFILE` parameters
+
+| Parm | Usage | Type | Field |
+|---|---|---|---|
+| 1 | Input | `CHAR(*)` | Profile exit information |
+
+<!-- regfac-parms: PASSWORD -->
+#### `PASSWORD` parameters
+
+| Parm | Usage | Type | Field |
+|---|---|---|---|
+| 1 | Input | `CHAR(*)` | Password exit information |
+| 2 | Output | `CHAR(1)` | Return indicator |
+
+<!-- regfac-parms: PREPARE -->
+#### `PREPARE` parameters
+
+| Parm | Usage | Type | Field |
+|---|---|---|---|
+| 1 | I/O | `CHAR(*)` | Return information |
+| 2 | Input | `CHAR(8)` | Format of return information |
+| 3 | Input | `CHAR(1)` | Action |
+| 4 | Input | `BINARY(4)` | Delay time |
+
+.
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
 ## Frozen at V1R1M0
 
 IBM defines these datastreams; what is frozen is QS/400's codec of them: the 20-byte header, LL/CP parameters, the templates, RLE, and the database server's formats, data, parameters and SQLCA (`net/hostsvr`, `FORMAT_VERSION`). A change of what QS/400 sends or accepts bumps it.

@@ -275,7 +275,7 @@ mod tests {
         assert!(!pol.expired(&p, 10));
         assert!(pol.expired(&p, 10 + 90 * DAY));
         assert_eq!(pol.warn(&p, 10 + 85 * DAY), Some(5));
-        let mut deny = |_: &UsrPrf, _: &str, _: Option<&str>| Err(SecError::msg("CPF22C6", "no"));
+        let mut deny = |_: &UsrPrf, _: &str, _: Option<&str>| Err(SecError::msg("CPF22D3", "no"));
         let strict = Policy {
             vldpgm: "QGPL/CHECKPW".into(),
             ..pol
@@ -289,6 +289,6 @@ mod tests {
             &mut deny,
         )
         .unwrap_err();
-        assert_eq!(e.msgid(), Some("CPF22C6"));
+        assert_eq!(e.msgid(), Some("CPF22D3"));
     }
 }

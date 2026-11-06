@@ -22,6 +22,7 @@ pub mod formats;
 pub mod mem;
 pub mod model;
 pub mod payload;
+pub mod prepare;
 pub mod query;
 pub mod registry;
 pub mod shipped;

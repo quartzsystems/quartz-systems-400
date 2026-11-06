@@ -6406,6 +6406,20 @@ help = "Correct what the message names and try the request again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
+id = "CPF18C3"
+sev = 40
+text = "Exit program &1 said the restricted state cannot be reached now."
+help = "A program of exit point QIBM_QWC_PRERESTRICT answered the check with status 0, so ENDSYS or ENDSBS *ALL ended without ending any subsystem. Find out from the program's owner why, then try the command again."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF18C7"
+sev = 40
+text = "An exit program did not allow PWRDWNSYS to go on."
+help = "A program of exit point QIBM_QWC_PWRDWNSYS format PWRD0200 answered the check with status 0, so the system was not powered down. Find out from the program's owner why, then try the command again."
+vars = []
+
+[[msg]]
 id = "CPF2103"
 sev = 40
 text = "Library &1 is already in the library list."
@@ -6637,13 +6651,6 @@ help = "Correct what the message names and try the request again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
-id = "CPF22C6"
-sev = 40
-text = "The password validation program was not run."
-help = "Correct what the message names and try the request again."
-vars = []
-
-[[msg]]
 id = "CPF22C7"
 sev = 40
 text = "The password of this profile is not managed here (LCLPWDMGT(*NO))."
@@ -6655,6 +6662,20 @@ id = "CPF22C8"
 sev = 40
 text = "The password data is not valid."
 help = "Correct what the message names and try the request again."
+vars = []
+
+[[msg]]
+id = "CPF22D2"
+sev = 40
+text = "The password approval program &1 was not found."
+help = "QPWDVLDPGM names a program that does not exist or cannot be called. Correct the system value or restore the program."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF22D3"
+sev = 40
+text = "The password approval program refused the new password."
+help = "The program QPWDVLDPGM names, or a program of exit point QIBM_QSY_VLD_PASSWRD, did not accept the new password, ended in an exception or could not be called. Choose another password."
 vars = []
 
 [[msg]]

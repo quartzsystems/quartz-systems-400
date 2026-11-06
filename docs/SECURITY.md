@@ -199,7 +199,7 @@ The other refusals:
 | `CPF2362` | `CHGPWD`: the current password typed is wrong |
 | `CPF22C3` | the new password is the current one, or one of the last `QPWDRQDDIF` passwords (1-8 keep 32, 24, 18, 12, 10, 8, 6, 4) |
 | `CPF22C5` | `PWDCHGBLK`/`QPWDCHGBLK` hours have not passed since the last change (an expired password may always change) |
-| `CPF22C6` | `QPWDVLDPGM` refused it |
+| `CPF22D3` | `QPWDVLDPGM`, or a program of `QIBM_QSY_VLD_PASSWRD` when it is `*REGFAC`, refused it |
 | `CPF22E2` | an API's password is wrong for the profile |
 | `CPF22E3` | the profile is disabled |
 | `CPF22E4` | the password has expired |

@@ -688,7 +688,7 @@ pub fn chg_pwd(
     let program = sysval_text(system, "QPWDVLDPGM");
     let program = program.split_whitespace().next().unwrap_or("*NONE");
     if !program.starts_with('*') && !validated {
-        return Err("CPF22C6 The password validation program was not run.".into());
+        return Err("CPF22D3 The password approval program was not run.".into());
     }
     let vals = crate::svc::security::sysvals(system);
     let get = |n: &str| vals.get(n).cloned().unwrap_or_default();

@@ -17,6 +17,7 @@ mod error;
 pub mod guard;
 pub mod level;
 pub mod password;
+pub mod prfexit;
 pub mod profile;
 pub mod rec;
 pub mod signon;

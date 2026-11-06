@@ -55,7 +55,7 @@ pub fn show(job: &mut Job, host: &Host, user: &str, mut message: String) -> bool
             }
         }
         // The answer first: the message's text borrows the link again.
-        let changed = host.link.borrow_mut().with(|l| l.chg_pwd(current, new, true));
+        let changed = crate::command::exits::chgpwd(job, host, user, current, new);
         match changed {
             Ok(()) => return true,
             Err(e) => message = crate::display::msgline::text_of(host, &crate::panels::line(&e)),

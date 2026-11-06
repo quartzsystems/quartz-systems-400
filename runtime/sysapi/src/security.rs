@@ -34,6 +34,8 @@ pub const APIS: &[(&str, crate::ApiFn)] = &[
     ("QSYCHGPW", qsychgpw),
     ("QSYRUPWD", qsyrupwd),
     ("QSYSUPWD", qsysupwd),
+    ("QWTSETPX", qwtsetpx),
+    ("QWTRTVPX", qwtrtvpx),
 ];
 
 fn bad_format(format: &str) -> ApiFail {
@@ -704,7 +706,7 @@ fn qsychgpw(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     match validation(j, p, &user, &new, &current) {
         Ok(true) => {}
         Ok(false) => {
-            errc.fail(j, &ApiFail::id("CPF22C6"));
+            errc.fail(j, &ApiFail::id("CPF22D3"));
             return;
         }
         Err(f) => {
@@ -712,10 +714,64 @@ fn qsychgpw(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
             return;
         }
     }
-    let q = Query::ChangePassword { user, current, new };
+    notify(j, p, "CHGP0200", &user);
+    let (old, set) = (current.clone(), new.clone());
+    let q = Query::ChangePassword { user: user.clone(), current, new };
     if ask(j, p, errc, q).is_some() {
+        notify(j, p, "CHGP0100", &user);
+        let level = pwd_level(p);
+        let req = regfac::ExitRequest::Password(regfac::formats::sec::Password {
+            format: "CHKP0100".into(),
+            point: "QIBM_QSY_CHK_PASSWRD".into(),
+            level,
+            user,
+            old: Some(old),
+            new: set,
+        });
+        let _ = regfac::call_exit(&mut ProviderRegistry(p), j, "QIBM_QSY_CHK_PASSWRD", &req);
         errc.ok();
     }
+}
+
+/// The registration facility through the provider, for the exit points
+/// an API calls in the job.
+struct ProviderRegistry<'p>(&'p mut dyn Provider);
+
+impl regfac::ExitRegistry for ProviderRegistry<'_> {
+    fn programs(&mut self, point: &str, format: &str) -> regfac::RegResult<Vec<regfac::ExitProgram>> {
+        match self.0.regfac(regfac::Query::Programs {
+            name: point.into(),
+            format: format.into(),
+        }) {
+            Ok(regfac::Answer::Programs { programs }) => Ok(programs),
+            _ => Err(regfac::RegFail::unavailable("the registration facility did not answer")),
+        }
+    }
+
+    fn refused(&mut self, call: &regfac::Called) {
+        let _ = self.0.regfac(regfac::Query::Refused { call: call.clone() });
+    }
+}
+
+/// `QIBM_QSY_CHG_PROFILE` in `format` for `user`.
+fn notify(j: &mut Job, p: &mut dyn Provider, format: &str, user: &str) {
+    let req = regfac::ExitRequest::Profile {
+        point: "QIBM_QSY_CHG_PROFILE".into(),
+        format: format.into(),
+        user: user.into(),
+    };
+    let _ = regfac::call_exit(&mut ProviderRegistry(p), j, "QIBM_QSY_CHG_PROFILE", &req);
+}
+
+/// `QPWDLVL`, 3 when it cannot be read.
+fn pwd_level(p: &mut dyn Provider) -> i32 {
+    p.sysval("QPWDLVL")
+        .and_then(|v| {
+            v.data
+                .get(..4)
+                .map(|b| i32::from_be_bytes([b[0], b[1], b[2], b[3]]))
+        })
+        .unwrap_or(3)
 }
 
 /// `QPWDVLDPGM`, when it names a program: `Ok(false)` when it refuses.
@@ -734,6 +790,17 @@ fn validation(
     let Some(name) = w.next().map(str::to_ascii_uppercase) else {
         return Ok(true);
     };
+    if name == "*REGFAC" {
+        let req = regfac::ExitRequest::Password(regfac::formats::sec::Password {
+            format: "VLDP0100".into(),
+            point: "QIBM_QSY_VLD_PASSWRD".into(),
+            level: pwd_level(p),
+            user: user.into(),
+            old: Some(old.into()),
+            new: new.into(),
+        });
+        return Ok(regfac::call_exit(&mut ProviderRegistry(p), j, "QIBM_QSY_VLD_PASSWRD", &req).allow);
+    }
     if name.starts_with('*') {
         return Ok(true);
     }
@@ -815,4 +882,67 @@ fn qsysupwd(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     if ask(j, p, errc, Query::SetPassword { user, data }).is_some() {
         errc.ok();
     }
+}
+
+/// `QWTSETPX(count, flags, format, user, errc)`: which of the eight
+/// programs of `ATTN0100` or `SREQ0100` the profile's jobs call (1
+/// call, 0 do not, -1 leave it).
+fn qwtsetpx(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
+    let a = Args(args);
+    let errc = ErrCode::at(&a, 4);
+    let count = a.bin4(0);
+    if !(1..=8).contains(&count) {
+        errc.fail(j, &ApiFail::id("CPF1666").bin4(count));
+        return;
+    }
+    let n = usize::try_from(count).unwrap_or(0);
+    let raw = a.bytes(1, n * 4);
+    let mut values = Vec::with_capacity(n);
+    for i in 0..n {
+        let v = crate::param::bin4_at(&raw, i * 4);
+        if !(-1..=1).contains(&v) {
+            errc.fail(j, &ApiFail::id("CPF3C3C"));
+            return;
+        }
+        values.push(i8::try_from(v).unwrap_or(-1).to_ne_bytes()[0]);
+    }
+    let format = a.char(2, 8);
+    if !sec::prfexit::FORMATS.contains(&format.as_str()) {
+        errc.fail(j, &bad_format(&format));
+        return;
+    }
+    let user = a.char(3, 10);
+    if ask(j, p, errc, Query::SetProfileExits { user, format, values }).is_some() {
+        errc.ok();
+    }
+}
+
+/// `QWTRTVPX(receiver, length, format, user, errc)`: entries returned
+/// and available, then a `BINARY(4)` flag per program.
+fn qwtrtvpx(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
+    let a = Args(args);
+    let errc = ErrCode::at(&a, 4);
+    let room = usize::try_from(a.bin4(1)).unwrap_or(0);
+    if room < 8 {
+        errc.fail(j, &ApiFail::id("CPF3C24"));
+        return;
+    }
+    let format = a.char(2, 8);
+    if !sec::prfexit::FORMATS.contains(&format.as_str()) {
+        errc.fail(j, &bad_format(&format));
+        return;
+    }
+    let user = a.char(3, 10);
+    let Some(Answer::Bytes { data }) = ask(j, p, errc, Query::ProfileExits { user, format }) else {
+        return;
+    };
+    let fits = ((room - 8) / 4).min(data.len());
+    let mut out = Out::new();
+    out.bin4(0, i32::try_from(fits).unwrap_or(0));
+    out.bin4(4, i32::try_from(data.len()).unwrap_or(0));
+    for (i, f) in data.iter().take(fits).enumerate() {
+        out.bin4(8 + i * 4, i32::from(*f));
+    }
+    out.deliver_raw(&a, 0, room);
+    errc.ok();
 }

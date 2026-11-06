@@ -110,6 +110,9 @@ pub struct CmdReply {
     /// `Op::Called` named `midcall::ANSWER`, and reads the command's
     /// reply again. Only to `run_cmd_calling`.
     pub call: Option<Vec<u8>>,
+    /// Exit point notifications the job makes after the command, each
+    /// `POINT FORMAT PROFILE` (`RSTUSRPRF`'s `QIBM_QSY_RST_PROFILE`).
+    pub notify: Vec<String>,
 }
 
 wire_struct!(CmdReply {
@@ -120,7 +123,8 @@ wire_struct!(CmdReply {
     prompt,
     srcs,
     sysvals,
-    call
+    call,
+    notify
 });
 
 ipc::rpc! {

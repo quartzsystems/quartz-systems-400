@@ -8,11 +8,13 @@
 //! the job its programs run in. Every registered program is called in
 //! number order with IBM's parameters; the first that refuses ends it.
 //! A program that cannot be called or ends in an exception refuses,
-//! as IBM documents for the host servers. A point with no programs
+//! as IBM documents for the host servers; a notification point ignores
+//! it and a preparation point (`PRER0100`, `PWRD0200`) takes it as
+//! allowing (`ExitRequest::on_failure`). A point with no programs
 //! allows everything.
 
 use crate::error::RegResult;
-use crate::formats::ExitRequest;
+use crate::formats::{ExitRequest, OnFailure};
 use crate::model::ExitProgram;
 
 /// Calls a program in the server's job.
@@ -127,7 +129,7 @@ pub fn call_exit(
         }
         let (allowed, failed) = match run {
             Ok(()) => (req.allowed(&parms), None),
-            Err(why) => (false, Some(why)),
+            Err(why) => (req.on_failure() != OnFailure::Refuse, Some(why)),
         };
         let c = Called {
             point: point.to_string(),

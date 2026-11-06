@@ -5,7 +5,9 @@
 //! The exit points QS/400 ships, registered when the facility is first
 //! made: IBM's names, formats, maximums, flags and preprocessing
 //! programs (`tools/conformance/oracle/net/pub400/exit-points.txt`), with
-//! Quartz descriptions. Only the servers of this release are here.
+//! Quartz descriptions. Only the servers of this release are here, and
+//! the security and work management points the primary oracle has at
+//! V7R1M0 (`tools/conformance/oracle/rel/README.md`).
 
 use crate::model::{Desc, ExitPoint, Prep};
 
@@ -48,6 +50,11 @@ const HOST: (bool, bool) = (false, true);
 const TCP: (bool, bool) = (true, false);
 const FTP_PREP: Option<(&str, &str, &str)> = Some(("QTCP", "QTMFADDP", "QTMFRMVP"));
 const REXEC_PREP: Option<(&str, &str, &str)> = Some(("QTCP", "QTMXADDP", "QTMXRMVP"));
+/// The security and work management points: neither deregistered nor
+/// changed.
+const FIXED: (bool, bool) = (false, false);
+const SEC_PREP: Option<(&str, &str, &str)> = Some(("QSYS", "QSYPREAD", "QSYPRERM"));
+const WC_PREP: Option<(&str, &str, &str)> = Some(("QSYS", "QWCPDAUT", "QWCPDAUT"));
 
 static ROWS: &[Row] = &[
     // Host servers.
@@ -286,6 +293,35 @@ static ROWS: &[Row] = &[
         None,
         Some(("QSYS", "QWCPDAUT", "QWCPDAUT")),
         "Auxiliary storage lower limit action",
+    ),
+    // User profiles and passwords.
+    row("QIBM_QSY_CHG_PROFILE", "CHGP0100", FIXED, None, SEC_PREP, "Profile changed"),
+    row("QIBM_QSY_CHG_PROFILE", "CHGP0200", FIXED, None, SEC_PREP, "Profile about to change"),
+    row("QIBM_QSY_CHK_PASSWRD", "CHKP0100", FIXED, None, SEC_PREP, "Password set: check it"),
+    row("QIBM_QSY_CRT_PROFILE", "CRTP0100", FIXED, None, SEC_PREP, "Profile created"),
+    row("QIBM_QSY_DLT_PROFILE", "DLTP0100", FIXED, None, SEC_PREP, "Profile deleted"),
+    row("QIBM_QSY_DLT_PROFILE", "DLTP0200", FIXED, None, SEC_PREP, "Profile about to be deleted"),
+    row("QIBM_QSY_RST_PROFILE", "RSTP0100", FIXED, Some(20), SEC_PREP, "Profile restored"),
+    row("QIBM_QSY_VLD_PASSWRD", "VLDP0100", FIXED, None, SEC_PREP, "New password: accept or refuse it"),
+    // Work management.
+    row("QIBM_QWC_PRERESTRICT", "PRER0100", FIXED, None, WC_PREP, "Before the restricted state"),
+    row("QIBM_QWC_PWRDWNSYS", "PWRD0100", FIXED, Some(1), WC_PREP, "Before the system powers down"),
+    row("QIBM_QWC_PWRDWNSYS", "PWRD0200", FIXED, None, WC_PREP, "Before the system powers down, with answers"),
+    row(
+        "QIBM_QWT_JOBNOTIFY",
+        "NTFY0100",
+        FIXED,
+        None,
+        Some(("QSYS", "QWTARJTN", "QWTARJTN")),
+        "Job notification data queues",
+    ),
+    row(
+        "QIBM_QWT_PREATTNPGMS",
+        "ATTN0100",
+        FIXED,
+        Some(8),
+        Some(("QSYS", "QWTATNAD", "QWTATNAD")),
+        "Before the attention program",
     ),
     // QAP management (docs/QAP.md, version 7): the host servers' two
     // parameters.
