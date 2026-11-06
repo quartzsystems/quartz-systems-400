@@ -96,7 +96,9 @@ impl Suite {
                 &format!("Program {p} created"),
             )?;
         }
-        tn.cmd(&format!("CALL PGM({LIB}/CLI001) PARM('{LIB}')"), "")?;
+        // Padded to the parameter's 10: CALL passes a literal's own bytes,
+        // not IBM's 32 (an open divergence of CALL).
+        tn.cmd(&format!("CALL PGM({LIB}/CLI001) PARM('{LIB:<10}')"), "")?;
         tn.close()?;
         let got = printed(&spooled(s, "QSYSPRT")?);
         let want = expected_lines(&kit("rpg/expected/CLI001.out")?);
