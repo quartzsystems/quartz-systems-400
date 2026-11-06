@@ -9094,3 +9094,10 @@ sev = 40
 text = "Exit program &2/&1 failed."
 help = "The program RCVJRNE hands the entries to could not be called or ended in an exception; no more entries were received."
 vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF0A26"
+sev = 30
+text = "Exit program &1 in library &2 failed."
+help = "The program could not be called or ended in an exception. The exit point goes on without its answer; the messages before this one say what happened."
+vars = ["*CHAR 10", "*CHAR 10"]

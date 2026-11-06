@@ -41,7 +41,17 @@ pub fn profile(job: &mut Job, host: &Host, point: &str, format: &str, user: &str
         format: format.into(),
         user: user.into(),
     };
-    let _ = regfac::call_exit(&mut registry(host), job, point, &req);
+    let answer = regfac::call_exit(&mut registry(host), job, point, &req);
+    failures(job, &answer);
+}
+
+/// A program the point ignores the failure of still leaves a
+/// diagnostic in the job log (`CPF0A26`).
+fn failures(job: &mut Job, answer: &regfac::ExitAnswer) {
+    for c in answer.called.iter().filter(|c| c.failed.is_some()) {
+        let data = cmd::error::data(&[(&c.pgm, 10), (&c.lib, 10)]);
+        super::log(job, "CPF0A26", &data, qir::MsgType::Diag, c.failed.as_deref());
+    }
 }
 
 fn level(host: &Host) -> i32 {
@@ -62,7 +72,8 @@ pub fn check_password(job: &mut Job, host: &Host, user: &str, old: Option<&str>,
         old: old.map(str::to_string),
         new: new.into(),
     });
-    let _ = regfac::call_exit(&mut registry(host), job, "QIBM_QSY_CHK_PASSWRD", &req);
+    let answer = regfac::call_exit(&mut registry(host), job, "QIBM_QSY_CHK_PASSWRD", &req);
+    failures(job, &answer);
 }
 
 /// A parameter as typed or defaulted, upper case, quotes removed.

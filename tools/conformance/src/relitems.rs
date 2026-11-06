@@ -23,7 +23,9 @@ const LONG: Duration = Duration::from_secs(90);
 /// into `QGPL/PRFLOG`.
 const PRF_SRC: &str = "             PGM        PARM(&INFO)
              DCL        VAR(&INFO) TYPE(*CHAR) LEN(38)
-             CHGDTAARA  DTAARA(QGPL/PRFLOG) VALUE(%SST(&INFO 21 18))
+             DCL        VAR(&SEEN) TYPE(*CHAR) LEN(18)
+             CHGVAR     VAR(&SEEN) VALUE(%SST(&INFO 21 18))
+             CHGDTAARA  DTAARA(QGPL/PRFLOG) VALUE(&SEEN)
              ENDPGM";
 
 /// A password check exit program (`CHKP0100`): the profile into
@@ -31,7 +33,9 @@ const PRF_SRC: &str = "             PGM        PARM(&INFO)
 const CHK_SRC: &str = "             PGM        PARM(&INFO &RC)
              DCL        VAR(&INFO) TYPE(*CHAR) LEN(68)
              DCL        VAR(&RC) TYPE(*CHAR) LEN(1)
-             CHGDTAARA  DTAARA(QGPL/CHKLOG) VALUE(%SST(&INFO 33 10))
+             DCL        VAR(&SEEN) TYPE(*CHAR) LEN(10)
+             CHGVAR     VAR(&SEEN) VALUE(%SST(&INFO 33 10))
+             CHGDTAARA  DTAARA(QGPL/CHKLOG) VALUE(&SEEN)
              CHGVAR     VAR(&RC) VALUE('0')
              ENDPGM";
 
@@ -51,11 +55,13 @@ const RCV_SRC: &str = "             PGM        PARM(&ENTRY &IND)
              DCL        VAR(&ENTRY) TYPE(*CHAR) LEN(300)
              DCL        VAR(&IND) TYPE(*CHAR) LEN(3)
              DCL        VAR(&N) TYPE(*DEC) LEN(5 0)
+             DCL        VAR(&T) TYPE(*CHAR) LEN(3)
              IF         COND(%SST(&IND 1 1) *EQ '1') THEN(DO)
              RTVDTAARA  DTAARA(QGPL/RCVCNT) RTNVAR(&N)
              CHGVAR     VAR(&N) VALUE(&N + 1)
              CHGDTAARA  DTAARA(QGPL/RCVCNT) VALUE(&N)
-             CHGDTAARA  DTAARA(QGPL/RCVLOG) VALUE(%SST(&ENTRY 16 3))
+             CHGVAR     VAR(&T) VALUE(%SST(&ENTRY 16 3))
+             CHGDTAARA  DTAARA(QGPL/RCVLOG) VALUE(&T)
              ENDDO
              ENDPGM";
 
@@ -121,6 +127,9 @@ impl Suite {
         add(s, "QIBM_QSY_DLT_PROFILE", "DLTP0100", "PRFEXIT")?;
         add(s, "QIBM_QSY_CHK_PASSWRD", "CHKP0100", "CHKEXIT")?;
         let _ = s.command("DLTUSRPRF USRPRF(EXITUSR1)", CMD);
+        // The program itself, called by hand: its data area takes what it saw.
+        s.command("CALL PGM(QGPL/PRFEXIT) PARM('QIBM_QSY_CRT_PROFILECRTP0100BYHAND    ')", CMD)?;
+        expect(s, "DSPDTAARA DTAARA(QGPL/PRFLOG)", &["CRTP0100BYHAND"])?;
         let r = (|| -> Result<String, String> {
             expect(s, "CRTUSRPRF USRPRF(EXITUSR1) PASSWORD(Exit146pw) PWDEXP(*NO)", &["EXITUSR1"])?;
             let crt = expect(s, "DSPDTAARA DTAARA(QGPL/PRFLOG)", &["CRTP0100EXITUSR1"])?;
@@ -132,7 +141,12 @@ impl Suite {
         remove(s, "QIBM_QSY_CRT_PROFILE", "CRTP0100");
         remove(s, "QIBM_QSY_DLT_PROFILE", "DLTP0100");
         remove(s, "QIBM_QSY_CHK_PASSWRD", "CHKP0100");
-        r?;
+        if let Err(e) = r {
+            let log = s.command("dspjoblog", CMD).unwrap_or_default();
+            let tail: Vec<&str> = log.lines().rev().take(30).collect();
+            let tail: Vec<&str> = tail.into_iter().rev().collect();
+            return Err(format!("{e}\njob log:\n{}", tail.join("\n")));
+        }
         // A pre-restricted state program that says no stops ENDSBS *ALL.
         add(s, "QIBM_QWC_PRERESTRICT", "PRER0100", "PREREXIT")?;
         let ended = s.command("ENDSBS SBS(*ALL) OPTION(*IMMED)", LONG);
