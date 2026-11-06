@@ -41,8 +41,7 @@ fn facts(ctx: &Ctx) -> Result<Facts> {
     })
 }
 
-/// `SOURCE-OFFER.txt`. NEEDS-CODY: the three-year written offer names no
-/// address yet; the release page must say where source requests go.
+/// `SOURCE-OFFER.txt`: the three-year written offer and where requests go.
 fn offer(f: &Facts) -> String {
     let mut s = String::new();
     let _ = write!(
@@ -64,7 +63,8 @@ fn offer(f: &Facts) -> String {
          GPL-2.0 text (COPYING, GPL-2.0.txt, Linux-syscall-note.txt). For three\n\
          years from the release of {rel}, Quartz Systems also provides this\n\
          source, the kernel tarball included, on request, for no more than the\n\
-         cost of distribution.\n\n\
+         cost of distribution: write to cwellman@quartz.systems, naming the\n\
+         release.\n\n\
          Every other program on the media is QS/400's own (MIT) or a Rust\n\
          crate under a permissive license; NOTICES.txt at the root of the media\n\
          lists each with its license.\n",
