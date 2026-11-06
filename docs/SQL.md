@@ -59,12 +59,12 @@ rows the work has not reached as refused, as the code does today.
 | `DROP SCHEMA [RESTRICT \| CASCADE]` | supported | primary (SQL0204 only) | `ddl/DROPRES` |
 | `ALTER TABLE` ADD/DROP/ALTER COLUMN (SET DATA TYPE, SET/DROP DEFAULT, SET/DROP NOT NULL, SET GENERATED, RESTART, DROP IDENTITY), ADD/DROP CONSTRAINT | partial: refused SQL0084 (BLOCKED(sql)) when indexes or views depend on the table, and for SET DATA TYPE of a constraint key column | primary | `integrity/CSTALTER`, `integrity/IDENTITY` |
 | `ALTER TABLE ... ADD/DROP PARTITION`, materialized query tables | refused SQL0084 | none | `sql::integrity` |
-| `LABEL ON`, `COMMENT ON` | partial: tables, columns, indexes, aliases | primary | |
+| `LABEL ON`, `COMMENT ON` (tables, views, indexes, aliases, columns incl. the list form without `COLUMN`, sequences, triggers); `COMMENT` kept as the long comment apart from the label | supported; SQL0107 past 50/60/2000 characters, SQL0205, SQL0159 | primary | `ddl/SHOPLBL1`, `ddl/SHOPCOM1`, `ddl/CATCOL1` |
 | `RENAME TABLE/INDEX` (`TO SYSTEM NAME`, `FOR SYSTEM NAME`) | supported; refused SQL0084 for an object other views read | primary, pub400 | `ddl/RENAME`, `ddl/SYSNAME` |
 | `COMMIT`, `ROLLBACK` | supported | primary | |
 | `SET SCHEMA`, `SET PATH`, `SET CURRENT ...`, `SET TRANSACTION` | supported (§6) | pub400 | `query/REGISTERS` |
 | `EXPLAIN` (a Quartz statement; pub400 answers SQL0104) | partial: a query's plan text with `QQRID`, `QQRCOD`, `QVC13` per line; ACS Visual Explain (`QSYS.QQQDBVE`, undocumented) not provided | none | `sql::planner` |
-| `CREATE SEQUENCE`, `ALTER SEQUENCE`, `DROP SEQUENCE`, `NEXT VALUE FOR`, `PREVIOUS VALUE FOR` | supported, IBM's cache blocks matched; `ALTER SEQUENCE AS` refused SQL0084; a failed statement gives back the value it used, where IBM keeps it used | primary | `integrity/SEQUENCE` |
+| `CREATE SEQUENCE` (long and delimited names with generated system names; `START WITH` below `MINVALUE` accepted, as the primary), `ALTER SEQUENCE`, `DROP SEQUENCE`, `NEXT VALUE FOR`, `PREVIOUS VALUE FOR` | supported, IBM's cache blocks matched; `ALTER SEQUENCE AS` refused SQL0084; a failed statement gives back the value it used, where IBM keeps it used | primary | `integrity/SEQUENCE`, `ddl/SHOPSEQ1`, `ddl/SHOPSEQ2` |
 | `GRANT` on sequences | refused SQL0084 | none | |
 | `CREATE [OR REPLACE] PROCEDURE` with an SQL body, compiled through QIR to a `*PGM` | supported | primary | `sqlpl/*` |
 | `BEGIN ATOMIC`, `UNDO` handlers (procedures, functions, AFTER triggers; in BEFORE triggers UNDO acts as EXIT) | supported on savepoints; also under `COMMIT(*NONE)` through the routine's own commit definition; SQL0775, SQL0780 | primary | `sqlpl/ATOMIC`, `sqlpl/ATOMIC2` |
@@ -162,15 +162,16 @@ rows the work has not reached as refused, as the code does today.
 | Column types | see §7 | | |
 | `PRIMARY KEY`, `UNIQUE` (table and column level), IBM's generated names | supported; tables are arrival sequence, keys are constraints | primary | `integrity/CSTBASIC` |
 | `CHECK` | supported: comparisons, `AND/OR/NOT`, `IS NULL`, `BETWEEN`, `IN`, `LIKE`, arithmetic, concatenation, `UPPER LOWER LENGTH SUBSTR TRIM LTRIM RTRIM ABS MOD COALESCE`; other functions refused SQL0084 | primary | `integrity/CSTALTER` |
-| `FOREIGN KEY`: `ON DELETE NO ACTION/RESTRICT/CASCADE/SET NULL/SET DEFAULT`, `ON UPDATE NO ACTION/RESTRICT` | supported; `ON UPDATE CASCADE` SQL0104 as IBM; cascaded rows take no record locks yet | primary | `integrity/CSTREF` |
+| `FOREIGN KEY`: `ON DELETE NO ACTION/RESTRICT/CASCADE/SET NULL/SET DEFAULT`, `ON UPDATE NO ACTION/RESTRICT` | supported; parent changes needing a journal on unjournaled files SQL7008/CPF4328 (RPG and RLA too); no key over the referenced columns SQL0573; `ON UPDATE CASCADE` SQL0104 as IBM; cascaded rows take no record locks yet | primary | `integrity/CSTREF`, `ddl/SHOPAP1`, `ddl/SHOPCST2` |
 | Constraints enforced for RPG, RLA and SQL writes alike (CPF502D, CPF502F, CPF503A, CPF523B, RPG status 01022) | supported | primary | `db::cst` |
 | Check pending | partial: an open data path refuses it (SQL0971, CPF523B); SQL reads that open none do not | primary | `db::cst` |
 | `NOT ENFORCED`, `DEFERRABLE`, `ENABLE/DISABLE QUERY OPTIMIZATION` | refused SQL0084 | none | |
 | Identity columns: `START`, `INCREMENT`, `MINVALUE/MAXVALUE`, `CYCLE`, `CACHE`, `ORDER`, `BIGINT`/`DECIMAL`, `OVERRIDING SYSTEM/USER VALUE`, `IDENTITY_VAL_LOCAL()` | partial: a range past 19 digits refused SQL0084 (BLOCKED(sql)); `ORDER` kept, without effect on one system | primary | `integrity/IDENTITY` |
-| Column defaults: constants, `NULL`, special registers | partial | primary | |
+| Column defaults: constants, `NULL`, special registers, `NOT NULL WITH DEFAULT` (the current date, time or timestamp) | supported; a default that does not fit SQL0574, bad date and time defaults SQL0180/0181, `USER` needs 18 characters | primary | `ddl/SHOPDFT1` |
 | `ROW CHANGE TIMESTAMP` columns | supported | primary | `integrity/ROWCHG` |
 | Audit columns (`DATA CHANGE OPERATION`, `SESSION_USER`, ...) | supported, with pub400's type rules | pub400 | `integrity/AUDITCOL` |
 | `GENERATED ALWAYS AS (expression)` | SQL0104, as IBM gives | primary, pub400 | `integrity/ROWCHG` |
+| `GENERATED ALWAYS AS (USER)` | supported for VARCHAR(18) or longer; other registers need VARCHAR(128) | pub400 | `ddl/SHOPAUD2` |
 | `IMPLICITLY HIDDEN` | refused SQL0084: BLOCKED(sql), queries have no hidden-column flag yet (IBM accepts it) | pub400 | `integrity/AUDITCOL` |
 | Long names: columns | supported to 128 characters | primary | |
 | Long names: tables, views, indexes, aliases, schemas; IBM's generated system names; `FOR SYSTEM NAME`, `FOR COLUMN`, SQL7029 | supported | primary, pub400 | `ddl/LONGNAME`, `ddl/DELIMIT`, `ddl/SYSNAME` |
@@ -244,7 +245,9 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `FOR MIXED DATA` | refused SQL0604 | primary | `types/LOB1` |
 | `BINARY`, `VARBINARY` (binary vs character comparison SQL0401) | supported | primary | `types/CASTSTR` |
 | `CLOB`, `BLOB`, `DBCLOB`: functions, comparisons, `ORDER BY`, `GROUP BY`, `DISTINCT` | supported | primary | `types/LOB1` |
-| A LOB as an index key | refused SQL0350 | primary | `types/LOB1` |
+| A LOB as an index or constraint key | refused SQL0350 | primary | `types/LOB1`, `ddl/SHOPLOB1` |
+| `BLOB()` | supported; a number argument SQL0171 | primary | `ddl/SHOPLOB1` |
+| Changes through a read-only view | refused SQL0150 | primary | `ddl/SHOPVW2` |
 | `CLOB ... FOR BIT DATA` | refused SQL0683 | primary | `types/LOB1` |
 | `INLINE LENGTH` | no-op: values up to 24 bytes already sit in the record's LOB reference | pub400 | `types/DECFLT3` |
 | LOB locators, file reference variables, `FREE LOCATOR` | refused: BLOCKED(sql), the engine's locator table exists; the statements come with dynamic and embedded SQL | none | |
@@ -266,7 +269,7 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 
 | View | Status | Oracle | Test |
 |---|---|---|---|
-| `QSYS2.SYSSCHEMAS`, `SYSTABLES`, `SYSCOLUMNS`, `SYSINDEXES`, `SYSKEYS`, `SYSVIEWS`, `SYSVIEWDEP`, `SYSTABLESTAT`, `SYSCOLUMNSTAT`, `SYSPARTITIONSTAT` | partial: computed from the store; SQL and system names; SYSVIEWS with the 7.1 columns | primary | `ddl/LONGNAME`, `ddl/VIEWQRY` |
+| `QSYS2.SYSCOLUMNS` (IBM's 39 columns in 7.1 order: `LONG_COMMENT`, `IDENTITY_*`, `NUMERIC_PRECISION_RADIX`, `HIDDEN`, IBM's type names, lengths, CCSIDs, defaults, headings), `SYSTABLES` (30 columns), `SYSINDEXES`, `SYSVIEWS` (NVARCHAR and NCLOB types), `SYSSCHEMAS`, `SYSKEYS`, `SYSVIEWDEP`, `SYSTABLESTAT`, `SYSPARTITIONSTAT` | supported; `COLUMN_EXPRESSION` null; MQT columns null | primary | `ddl/CATCOL1`, `ddl/CATCOL2`, `ddl/SHOPNUM1`, `ddl/LONGNAME`, `ddl/VIEWQRY` |
 | `QSYS2.SYSCST`, `SYSCSTCOL`, `SYSKEYCST`, `SYSCHKCST`, `SYSREFCST`, `SYSCSTDEP`, `SYSSEQUENCES` | supported with the oracle's columns | primary | `integrity/CSTBASIC`, `integrity/SEQUENCE` |
 | `QSYS2.SYSROUTINES`, `SYSPROCS`, `SYSFUNCS`, `SYSPARMS`, `SYSROUTINEDEP` | supported (`PARSE_TREE`, `PARM_ARRAY` empty) | primary | `sqlpl/CATALOG` |
 | `QSYS2.SYSVARIABLES`, `SYSTYPES`, `SYSTRIGGERS`, `SYSTRIGDEP`, `SYSTRIGUPD` | supported; LOB catalog columns are VARGRAPHIC where IBM has NCLOB; `SYSTRIGGERS.SQL_PATH` null | primary | `objects2/VARIABLE`, `trigger/TRGCAT` |

@@ -40,20 +40,9 @@ ddl/SHOPEMP1   # oracle: ALTER TABLE DROP COLUMN of a table with rows waits on a
 ddl/SHOPVIEW1   # engine: a view with expression columns is updatable (IS_UPDATABLE Y) at IBM, read only here
 ddl/SHOPGRT1   # engine: column privileges (GRANT UPDATE (col)) refused SQL0084
 ddl/SHOPALT1   # oracle: ALTER COLUMN SET DATA TYPE and SET NOT NULL of a table with rows wait on an inquiry the JDBC job cancels (SQL0952), so the rows after them differ; engine: SET DATA TYPE DECIMAL(3, 1) of a value that does not fit SQL0302 here (the oracle never reaches it)
-ddl/SHOPCPY1   # engine: SYSCOLUMNS LENGTH of a DATE 10 here, 4 there
-ddl/SHOPIDN1   # engine: SYSCOLUMNS has no IDENTITY_* columns (SQL0206)
 ddl/SHOPTMP1   # oracle (release): 7.1 gives no SQL7905 for a logged declared temporary table; 7.5 does (pub400, ddl/DGTT and DGTTOPT) and QS/400 follows 7.5
-ddl/SHOPNUM1   # engine: SYSCOLUMNS has no NUMERIC_PRECISION_RADIX column (SQL0206)
-ddl/SHOPDLM1   # engine: an undelimited name of a delimited lower-case column found here; CREATE VIEW with a delimited result name refused; the system name of a delimited long name keeps its quotes ('"D4_M0001"')
-ddl/SHOPCST2   # engine: a foreign key to a column with no unique constraint SQL0538 here, SQL0573 there
-ddl/SHOPLOB1   # engine: the BLOB() function refused SQL0084; SYSCOLUMNS.CCSID of a VARCHAR or CLOB column null here (37 there); an index on a CLOB column SQL0084 here, SQL0350 there
-ddl/SHOPVW2   # engine: INSERT into a grouped view SQL0204 here, SQL0150 there
-ddl/SHOPCOM1   # engine: COMMENT ON and LABEL ON a table's columns in the list form without COLUMN, LABEL ON and COMMENT ON SEQUENCE refused SQL0104; SYSSEQUENCES.SEQUENCE_TEXT null; SYSCOLUMNS and SYSTABLES have no LONG_COMMENT
-ddl/SHOPSEQ2   # engine: sequences with long names refused SQL0084
 ddl/SHOPAUD2   # engine: CHANGED_BY = USER in a select list described nullable here, NOT NULL there (predicates as values, as types/BOOL1)
 query/SETOPS   # engine: EXCEPT and INTERSECT with ORDER BY refused SQL0084; a select-list count mismatch SQL0117 here, SQL0421 there; UNION of INTEGER and VARCHAR converts (SQL0420 warning) here, SQL0802 there; INTERSECT ALL SQL0084 here, SQL0104 on 7.1; ORDER BY a result name of a union SQL0206 here, SQL0208 there
-sqlpl/SHOPPRC2   # engine: GET DIAGNOSTICS RETURN_STATUS after a CALL in SQL PL is null here, the RETURN value there
-query/CASECAST   # engine: no 01004 truncation warning
 query/ISOLATE   # oracle: WITH RS on a query warns SQL0595 (escalated) on the primary; DELETE ... WITH CHG of a table not journaled SQL7008 there
 query/LOCKS   # engine: SKIP LOCKED DATA on UPDATE and DELETE, USE AND KEEP ... LOCKS, WAIT FOR OUTCOME, USE CURRENTLY COMMITTED and LOCK TABLE refused SQL0084 (pub400 runs them; WAIT FOR OUTCOME is SQL0104 there)
 query/NOFUNCS   # engine: RAND() comparisons described nullable here; an aggregate in WHERE SQL0120 here, SQL0112 (nested aggregate) first there; SYSDUMMY1.IBMREQD CHAR(1) NOT NULL here, VARCHAR(1) on pub400
@@ -62,10 +51,6 @@ types/XMLREF   # engine: XMLAGG and an XML column refused SQL0084 (pub400 runs t
 ddl/REFUSED1   # engine (refusals): NOT ENFORCED SQL0084 (SQL0199 on 7.1); NOT DEFERRABLE accepted here (SQL0104 on 7.1); ENABLE QUERY OPTIMIZATION SQL0084 (7.1 takes it, SQ20367); expression index keys SQL0084 (7.1 makes them); GRANT on a sequence SQL0084 (7.1 grants); GRANT on a routine SQL0084 before the name is looked up (SQL0204 there); REFRESH TABLE SQL0084 (SQL0159 there); three-part names SQL0104 (SQL0950 there; 7.1 makes the remote alias); VOLATILE and PAGESIZE accepted without effect, as 7.1
 sqlpl/REFUSED2   # engine (refusals): ASSOCIATE RESULT SET LOCATOR and ALLOCATE CURSOR SQL0104 (7.1 runs them); AUTONOMOUS SQL0084 (SQL0199 on 7.1); cursors in an SQL function SQL0084 (7.1 runs them); EXECUTE ... INTO SQL0084 (SQL0104 on 7.1)
 query/REFUSED3   # engine (refusals): NTH_VALUE ... FROM LAST, CYCLE ... USING, SQL/JSON path filters and item methods SQL0084 (pub400 runs them); a RIGHT lateral join SQL0084 (SQL5001 there); PASSING SQL0084 (SQL0199 there)
-ddl/SHOPBOM1   # engine: DELETE from a parent under a NO ACTION rule needs both files journaled on IBM (SQL7008); here the rule is checked (SQL0532)
-ddl/SHOPDFT1   # engine: NOT NULL WITH DEFAULT on DATE, TIME and TIMESTAMP gives 0001-01-01 and midnight here, the current date and time at IBM (SYSCOLUMNS.COLUMN_DEFAULT CURRENT_DATE); a default that does not fit its column is SQL0901 here (SQL0574 there); 'CURRENT DATE' written with a blank here, CURRENT_DATE there
 ddl/SHOPCAL1   # engine: DAYNAME's result described NOT NULL here, nullable there
-ddl/SHOPTRG1   # engine: an AFTER UPDATE OF PRICE trigger fires for an UPDATE that sets only another column
-sqlpl/SHOPPRC5   # engine: in an SQL function, SET V = ROUND(P * 20, 0) / 20 (P DECIMAL(9, 2), V DECIMAL(11, 4)) gives 12.00 for 12.34 where IBM, and the same expression in a VALUES here, give 12.35; a SMALLINT parameter takes an INTEGER argument here, SQL0204 at IBM (no promotion to a shorter type)
 ddl/CATCOL1   # engine: a column the table lacks is looked for only as rows are read, so SELECT NO_SUCH FROM an empty table describes a VARCHAR(32767) column where IBM gives SQL0206
 ddl/CATCOL2   # engine: ROWID columns refused SQL0084 (the primary makes them)
