@@ -10,8 +10,12 @@
 name: ci
 
 on:
+  # Branches only: a tag runs this through release.yml instead.
   push:
+    branches: ["**"]
   pull_request:
+  # release.yml runs every check before it publishes.
+  workflow_call:
   schedule:
     # Nightly, 02:00 UTC: the soak and a release with the development key.
     - cron: "0 2 * * *"
@@ -75,6 +79,8 @@ jobs:
         run: rustup show active-toolchain || rustup toolchain install
       - name: cargo-deny
         run: cargo install cargo-deny --locked
+      - name: VERSION, the release and CHANGELOG.md agree
+        run: ci/version.sh check
       - run: cargo run -q -p build -- deny
       - run: cargo run -q -p build -- notices --check
       - run: cargo run -q -p kcbuild -- notes
@@ -158,10 +164,10 @@ jobs:
         with:
           name: qs400-release-dev
           path: |
-            /srv/qs400-ci/target/release/V1R1M0/*.iso
-            /srv/qs400-ci/target/release/V1R1M0/SHA256SUMS
-            /srv/qs400-ci/target/release/V1R1M0/SHA256SUMS.sig
-            /srv/qs400-ci/target/release/V1R1M0/MANIFEST.json
-            /srv/qs400-ci/target/release/V1R1M0/NOTICES.txt
-            /srv/qs400-ci/target/release/V1R1M0/SOURCE-OFFER.txt
+            /srv/qs400-ci/target/release/V*/*.iso
+            /srv/qs400-ci/target/release/V*/SHA256SUMS
+            /srv/qs400-ci/target/release/V*/SHA256SUMS.sig
+            /srv/qs400-ci/target/release/V*/MANIFEST.json
+            /srv/qs400-ci/target/release/V*/NOTICES.txt
+            /srv/qs400-ci/target/release/V*/SOURCE-OFFER.txt
           retention-days: 14

@@ -292,13 +292,15 @@ An SST sign-on is audited as `SS` (a code of ours).
 
 ## CI and its runners
 
-`.github/workflows/ci.yml` runs on every push and pull request:
+`.github/workflows/ci.yml` runs on every push to a branch and every pull
+request; `.github/workflows/release.yml` runs it again for a `v*` tag
+before it builds and publishes the release (`releasing.md`):
 
 | Job | Runner | Runs |
 |---|---|---|
 | `fmt` | `ubuntu-24.04` | `cargo fmt --all -- --check` |
 | `clippy` | `ubuntu-24.04` | `cargo clippy --workspace --all-targets -- -D warnings`, and the musl lint of `slic`, `console`, `qsjob` |
-| `deny` | `ubuntu-24.04` | `build deny`, `build notices --check`, `kcbuild notes`, `fmtcheck` |
+| `deny` | `ubuntu-24.04` | `ci/version.sh check`, `build deny`, `build notices --check`, `kcbuild notes`, `fmtcheck` |
 | `test` | `ubuntu-24.04` | `cargo test --workspace` (host tests) |
 | `fuzz` | `ubuntu-24.04` | `build fuzz --secs 60 --jobs 4`; crashes kept as an artifact |
 | `qemu` | `[self-hosted, qs400-qemu]` | `build doctor`, `build all`, `build test`, after `clippy`, `deny` and `test` pass |
@@ -333,8 +335,10 @@ repository, label `qs400-qemu`):
 The nightly release is signed with the development keys only: the
 ed25519 build key generated under `target/keys/` and the checked-in
 Secure Boot development pair. A release for distribution sets
-`QS400_SIGNING_KEY`, `QS400_SB_KEY` and `QS400_SB_CERT` (NEEDS-CODY)
-and is never built by CI.
+`QS400_SIGNING_KEY`, `QS400_SB_KEY` and `QS400_SB_CERT`: `release.yml`
+takes them from the `qs400-qemu` runner's own environment and stops when
+they are not there, or they are set by hand on a machine holding the
+keys (`releasing.md`, "The keys"). NEEDS-CODY: make the two keys.
 
 ## Reproducible releases
 

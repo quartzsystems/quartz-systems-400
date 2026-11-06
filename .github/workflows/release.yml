@@ -1,0 +1,106 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# A tag v<VERSION> publishes a GitHub release: the tag is checked against
+# VERSION and CHANGELOG.md, every check in ci.yml runs (the QEMU suite on
+# the qs400-qemu runner among them), the release is built and signed on
+# that runner with the keys its own environment names, and the ISO, the
+# UKIs, SHA256SUMS and its signature, the manifest, NOTICES.txt, the
+# source offer, the Secure Boot certificate and CHANGELOG.md's section for
+# the version are published. See docs/releasing.md.
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: tag, VERSION and CHANGELOG.md agree
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      release: ${{ steps.v.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          ci/version.sh check "$GITHUB_REF_NAME"
+          echo "version=$(ci/version.sh)" >> "$GITHUB_OUTPUT"
+          echo "release=$(ci/version.sh release)" >> "$GITHUB_OUTPUT"
+
+  ci:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: build and sign ${{ needs.version.outputs.release }}
+    needs: [version, ci]
+    runs-on: [self-hosted, qs400-qemu]
+    timeout-minutes: 240
+    env:
+      QS400_TARGET_DIR: /srv/qs400-ci/release-target
+      CARGO_TARGET_DIR: /srv/qs400-ci/release-target
+    steps:
+      - uses: actions/checkout@v4
+      # The release keys live on the runner, never in GitHub: the runner's
+      # environment (its .env file) names them. Without all three the
+      # release would be signed with the development keys, so it stops.
+      - name: Release keys are on the runner
+        run: |
+          for k in QS400_SIGNING_KEY QS400_SB_KEY QS400_SB_CERT; do
+            [ -n "${!k:-}" ] && [ -f "${!k}" ] || { echo "$k is not set to a file on this runner (docs/releasing.md)" >&2; exit 1; }
+          done
+      - run: cargo run -q -p build -- all --release
+      - run: cargo run -q -p build -- release
+      - name: Release files
+        run: |
+          out="$QS400_TARGET_DIR/release/${{ needs.version.outputs.release }}"
+          mkdir -p dist
+          cp "$out"/*.iso "$out"/*.efi "$out"/SHA256SUMS "$out"/SHA256SUMS.sig \
+             "$out"/MANIFEST.json "$out"/MANIFEST.sig "$out"/NOTICES.txt \
+             "$out"/SOURCE-OFFER.txt "$out"/qs400-db.cer dist/ 2>/dev/null || true
+          test -n "$(ls dist/*.iso)"
+          ( cd dist && sha256sum -c SHA256SUMS --ignore-missing )
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: dist/
+
+  publish:
+    name: publish ${{ needs.version.outputs.release }}
+    needs: [version, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: dist
+      - name: Release notes from CHANGELOG.md
+        run: |
+          {
+            ci/version.sh notes
+            echo
+            echo "Check a download against SHA256SUMS, which is signed with the QS/400 release key (SHA256SUMS.sig). The full release notes are RELEASE_NOTES_${{ needs.version.outputs.release }}.md at the root of the ISO."
+          } > notes.md
+          cat notes.md
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --verify-tag \
+            --title "QS/400 ${{ needs.version.outputs.release }} (${{ needs.version.outputs.version }})" \
+            --notes-file notes.md
