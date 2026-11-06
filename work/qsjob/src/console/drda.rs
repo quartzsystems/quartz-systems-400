@@ -73,10 +73,38 @@ impl Connector for JobNet<'_> {
 /// Answer `req` when it is a connection statement or the current
 /// server is not the local one; `None` leaves it to the local server.
 pub fn route(link: &Shared, req: &Request) -> Option<Reply> {
-    SESSIONS.with(|s| match s.borrow_mut().route(&mut JobNet { link }, req) {
+    let r = SESSIONS.with(|s| match s.borrow_mut().route(&mut JobNet { link }, req) {
         Routed::Done(r) => Some(r),
         Routed::Local => None,
-    })
+    })?;
+    monitored(link, req, &r);
+    Some(r)
+}
+
+/// Tell the storage service's database monitor of a statement routed
+/// here (the connection statements and what ran at a remote server),
+/// as IBM i records them in the requester's job.
+fn monitored(link: &Shared, req: &Request, r: &Reply) {
+    use sql::embed::{Desc, Op};
+    let text = match req.desc.op {
+        Op::ExecImm | Op::Prepare if req.desc.text.is_empty() => req.inputs.first().map(sql::Value::as_text).unwrap_or_default(),
+        Op::Fetch => format!("FETCH {}", req.desc.name),
+        Op::Close => format!("CLOSE {}", req.desc.name),
+        _ => req.desc.text.clone(),
+    };
+    if text.trim().is_empty() {
+        return;
+    }
+    let note = Request {
+        scope: req.scope.clone(),
+        desc: Desc { op: Op::Routed, text, ..Desc::default() },
+        inputs: vec![
+            sql::Value::int(i64::from(r.sqlca.sqlcode)),
+            sql::Value::Str(r.sqlca.sqlstate.clone()),
+            sql::Value::int(i64::from(r.sqlca.sqlerrd[2])),
+        ],
+    };
+    let _ = stg::remote::RemoteSql::new(link.clone()).run(&note);
 }
 
 /// Whether a server other than the local one is current: the job's
@@ -96,7 +124,7 @@ pub fn current_rdb(link: &Shared) -> String {
 }
 
 /// STRSQL's query while a remote server is current, refused SQL0084.
-/// BLOCKED(sql): the requester's query brings no column descriptions
+/// BLOCKED(rel): the requester's query brings no column descriptions
 /// back (`drdar::Server::query`), and Display Data shows rows by them.
 pub fn remote_query_refused() -> sql::Sqlca {
     coded(-84, "42612", "a query at a remote server in STRSQL")
@@ -116,9 +144,6 @@ impl<E> Routing<E> {
 }
 
 impl<E: Embedded> Embedded for Routing<E> {
-    // BLOCKED(sql): statements routed here (CONNECT, CONNECT RESET and
-    // what runs at a remote server) write no database monitor records:
-    // STRDBMON around step 134's program saw only its 3018 records.
     fn run(&mut self, req: &Request) -> Reply {
         route(&self.link, req).unwrap_or_else(|| self.inner.run(req))
     }

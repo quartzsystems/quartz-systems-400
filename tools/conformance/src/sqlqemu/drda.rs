@@ -59,22 +59,25 @@ impl Suite {
                 return Err(format!("the program did not show {want:?}:\n{shown}"));
             }
         }
-        // BLOCKED(sql): routed statements write no 1000 records (see
-        // work/qsjob/src/console/drda.rs), so only the local ones show.
+        // The routed statements are monitored in the requester's job:
+        // both CONNECTs and the query run at LOOP.
         let kinds = sql_has(
             s,
             &format!("SELECT QQRID, COUNT(*) FROM {LIB}/DBMON GROUP BY QQRID ORDER BY QQRID"),
             &["row(s)"],
         )?;
         let texts = sql(s, &format!("SELECT QQ1000 FROM {LIB}/DBMON WHERE QQRID = 1000"))?;
-        let n = texts.lines().filter(|l| l.contains("CONNECT")).count();
+        let n = texts.lines().filter(|l| l.to_ascii_uppercase().contains("CONNECT")).count();
+        if n < 2 || !texts.to_ascii_uppercase().contains("DRDAT") {
+            return Err(format!("the monitor lacks the routed statements (CONNECT TO, CONNECT RESET, the query at LOOP):\n{texts}"));
+        }
         let ids: Vec<&str> = kinds
             .lines()
             .filter_map(|l| l.split_whitespace().next())
             .filter(|w| w.len() == 4 && w.chars().all(|c| c.is_ascii_digit()))
             .collect();
         Ok(format!(
-            "CRTSQLRPGI built DRDACLI; CONNECT TO LOOP, 3 rows read there, CONNECT RESET, each SQLCODE 0; the monitor file holds record types {} with {n} CONNECT statements (routed statements are not monitored yet)",
+            "CRTSQLRPGI built DRDACLI; CONNECT TO LOOP, 3 rows read there, CONNECT RESET, each SQLCODE 0; the monitor file holds record types {} with {n} CONNECT statements and the query run at LOOP",
             ids.join(" ")
         ))
     }

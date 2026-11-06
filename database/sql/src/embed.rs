@@ -73,6 +73,10 @@ pub enum Op {
     /// An SQL package action for a requester (the host server's
     /// extended dynamic support, a DRDA bind): see `embed::package`.
     Package,
+    /// A statement the job ran at a remote server (DRDA): the text,
+    /// its SQLCODE, SQLSTATE and row count as the inputs; the database
+    /// monitor records it, nothing runs.
+    Routed,
 }
 
 impl Op {
@@ -93,6 +97,7 @@ impl Op {
             Self::Deallocate => 'R',
             Self::Called => 'K',
             Self::Package => 'G',
+            Self::Routed => 'W',
         }
     }
 
@@ -113,6 +118,7 @@ impl Op {
             'R' => Self::Deallocate,
             'K' => Self::Called,
             'G' => Self::Package,
+            'W' => Self::Routed,
             _ => return None,
         })
     }
@@ -612,7 +618,7 @@ impl Session {
         let d = &req.desc;
         let naming = d.naming();
         match d.op {
-            Op::Nothing => Reply::default(),
+            Op::Nothing | Op::Routed => Reply::default(),
             Op::End => self.end(&req.scope),
             Op::Deallocate => self.deallocate(&req.scope, &d.name),
             Op::Called => self.called(req),
@@ -962,6 +968,14 @@ impl Embedded for Session {
     fn run(&mut self, req: &Request) -> Reply {
         let watched = crate::dbmon::begin(&mut self.ctx);
         let started = (crate::dbmon::record::now(&self.ctx), std::time::Instant::now());
+        // A remote server's statement: only the monitor hears of it.
+        if req.desc.op == Op::Routed {
+            let r = Reply::of(routed_sqlca(&req.inputs));
+            if watched {
+                self.monitored(req, &r, started);
+            }
+            return r;
+        }
         let r = self.run_watched(req);
         if watched {
             self.monitored(req, &r, started);
@@ -1013,6 +1027,7 @@ impl Session {
         let dyn_inputs = if req.inputs.is_empty() { &[][..] } else { &req.inputs[1..] };
         let (op, text, inputs, dynamic): (&'static str, String, &[Value], bool) = match d.op {
             Op::Query | Op::Exec => (crate::dbmon::record::operation(&d.text), d.text.clone(), &req.inputs, false),
+            Op::Routed => (crate::dbmon::record::operation(&d.text), d.text.clone(), &[], false),
             Op::ExecImm => ("EI", Self::dynamic_text(req), dyn_inputs, true),
             Op::Prepare => (if d.into { "PD" } else { "PR" }, Self::dynamic_text(req), &[], true),
             Op::Execute => {
@@ -1066,6 +1081,18 @@ impl Session {
             }
         }
     }
+}
+
+/// The SQLCA of a routed statement's inputs: SQLCODE, SQLSTATE, rows.
+fn routed_sqlca(inputs: &[Value]) -> Sqlca {
+    let code = inputs.first().and_then(|v| v.as_i64().ok()).unwrap_or(0);
+    let mut ca = Sqlca {
+        sqlcode: i32::try_from(code).unwrap_or(-1),
+        sqlstate: inputs.get(1).map_or_else(|| "00000".into(), |v| v.as_text().trim().to_string()),
+        ..Sqlca::default()
+    };
+    ca.sqlerrd[2] = inputs.get(2).and_then(|v| v.as_i64().ok()).and_then(|n| i32::try_from(n).ok()).unwrap_or(0);
+    ca
 }
 
 /// The positions `locs` marks with `kind` (`I` inputs, `O` outputs).
@@ -1238,7 +1265,7 @@ fn command_function(d: &Desc) -> String {
         Op::Describe => "DESCRIBE".into(),
         Op::Deallocate => "DEALLOCATE".into(),
         Op::Called => "CALL".into(),
-        Op::Diag | Op::End | Op::Nothing | Op::Package => String::new(),
+        Op::Diag | Op::End | Op::Nothing | Op::Package | Op::Routed => String::new(),
     }
 }
 
