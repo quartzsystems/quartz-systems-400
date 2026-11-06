@@ -79,6 +79,7 @@ impl ColType {
             sqltype::DATE => (n.max(8), n.max(8), 0, 37),
             sqltype::TIME => (8, 8, 0, 37),
             sqltype::TIMESTAMP => (26, 26, 0, 37),
+            sqltype::VARBINARY => (n + 2, n, 0, 65535),
             _ => (n, n, 0, 65535),
         };
         Self {
@@ -177,6 +178,15 @@ pub fn empty(c: &ColType) -> Value {
 pub fn encode(v: &Value, c: &ColType) -> Vec<u8> {
     let n = c.len as usize;
     let mut out = match c.base {
+        // Binary data as it is, after its length when it varies.
+        sqltype::VARBINARY => {
+            let b = bytes_of(v);
+            let b = &b[..b.len().min(n.saturating_sub(2))];
+            let mut out = crate::reply::len16(b.len()).to_be_bytes().to_vec();
+            out.extend_from_slice(b);
+            out
+        }
+        sqltype::BINARY => bytes_of(v),
         sqltype::VARCHAR | sqltype::LONGVARCHAR | sqltype::VARGRAPHIC => {
             let mut b = if c.graphic() {
                 text::utf16(&text_of(v, c))
@@ -303,7 +313,18 @@ pub fn decode(b: &[u8], c: &ColType) -> Value {
             };
             r.map_or(Value::Null, Value::Num)
         }
+        sqltype::VARBINARY => Value::Bin(crate::reply::slice(b, 2, usize::from(crate::reply::be16(b, 0))).to_vec()),
+        sqltype::BINARY => Value::Bin(b.to_vec()),
         _ => Value::Str(text::decode(u32::from(c.ccsid), b)),
+    }
+}
+
+/// A binary value's bytes; text as its EBCDIC bytes.
+fn bytes_of(v: &Value) -> Vec<u8> {
+    match v {
+        Value::Bin(b) => b.clone(),
+        Value::Null => Vec::new(),
+        other => text::ebcdic(&other.as_text()),
     }
 }
 
@@ -340,5 +361,10 @@ mod tests {
         assert_eq!((d.len, d.scale, d.precision), (5, 2, 9));
         let v = Value::Num(Decimal::parse("1000.01").unwrap());
         assert_eq!(decode(&encode(&v, &d), &d), v);
+        let vb = ColType::from_describe(909, 8, "TOKEN");
+        assert_eq!(vb.len, 10);
+        let b = encode(&Value::Bin(vec![1, 2, 3]), &vb);
+        assert_eq!(b, vec![0, 3, 1, 2, 3, 0, 0, 0, 0, 0]);
+        assert_eq!(decode(&b, &vb), Value::Bin(vec![1, 2, 3]));
     }
 }
