@@ -1090,10 +1090,22 @@ Version 7, as built on 2026-11-04 (draft; decisions made in the build, for Cody 
   (`TCP1A5F`), and answers the value read back; a value the command
   did not take is `TCP1A5F` too.
 - A read first finds its display's command with the authority to use
-  it (`cmd_lookup`): `WRKSBS`, `DSPSYSVAL`, `DSPPTF`, `WRKDSKSTS`,
-  `WRKHDWRSC`; `DSPPTF` is shipped `*PUBLIC *EXCLUDE`, so `ListPtfs`
-  is `NotAuthorized` for a user the security officer has not
-  authorized. `IplStatus` needs nothing.
+  it: `WRKSBS`, `DSPSYSVAL`, `DSPPTF`, `WRKDSKSTS`, `WRKHDWRSC`; the
+  job looks it up through the analyzer's own source (`RemoteCmds`, the
+  service's `cmd_lookup`: the library list, then `*OBJOPR` and `*USE`
+  to the `*CMD`, `cmd.run`), so a request has exactly the profile's
+  authority, adopted authority included, and a command not found is
+  `NotFound` `CPD0030`, never a pass. The service checks again for the
+  reads it answers itself (`ListPtfs` `DSPPTF`, `ListDiskUnits`
+  `WRKDSKSTS`) rather than trust the job. `DSPPTF` is shipped `*PUBLIC
+  *EXCLUDE`, so `ListPtfs` is `NotAuthorized` for a user the security
+  officer has not authorized. `IplStatus` needs nothing. Commands,
+  programs and objects named in `RunCommand` are the analyzer's and the
+  store guard's checks as at a 5250 command line: a command, a program
+  or a library `*PUBLIC *EXCLUDE` refuses the profile (QEMU step 123;
+  `lic/osobjects/tests/exclude.rs`). In earlier builds the first IPL's
+  re-owning had widened the excluded commands to `*USE`
+  (`SECURITY.md` §1, Shipped profiles).
 - The lists: `ListSubsystems` from `sbs_list` and the `*SBSD` objects
   of the library (`*ALL` every library, `*LIBL` the job's list; an
   unknown library is `NotFound` `CPF2110`), a monitor's job named as

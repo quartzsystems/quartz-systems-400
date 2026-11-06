@@ -536,6 +536,35 @@ impl Served<'_> {
     }
 }
 
+/// A `*CMD` found as the analyzer finds it, through the job's library
+/// list, with the actor's `*OBJOPR` and `*USE` to it checked
+/// (`cmd.run`); `None` when there is none. A refusal is its message
+/// identifier.
+pub fn cmd_lookup(
+    system: &mut System,
+    ctx: &JobCtx,
+    name: &str,
+    lib: Option<&str>,
+) -> Result<Option<(Vec<u8>, String)>, String> {
+    system.current_job = ctx.job.number;
+    ile::set_libl(system.attrs.get(&ctx.job.number).map(|a| a.libl.clone()));
+    let r = (|| {
+        let s = system.storage.as_mut().ok_or("object store not open")?;
+        let qsys = s.qsys.ok_or("object store not initialized")?;
+        svc::db::with_txn(&mut s.store, |txn| {
+            let names = ile::name_context(txn, qsys);
+            let mut src = cmd::store::StoreSource { txn, qsys, names };
+            match cmd::analyze::CmdSource::lookup(&mut src, name, lib) {
+                Ok(Some((o, l))) => Ok(Some((o.encode(), l))),
+                Ok(None) => Ok(None),
+                Err(e) => Err(e.msgid().to_string()),
+            }
+        })
+    })();
+    ile::set_libl(None);
+    r
+}
+
 /// A command's parameters from its block, or the escape that ends it.
 fn command_parms(
     name: &str,
@@ -1696,27 +1725,7 @@ impl Service for Served<'_> {
         name: String,
         lib: Option<String>,
     ) -> Result<Option<(Vec<u8>, String)>, String> {
-        self.system.current_job = self.ctx.job.number;
-        self.own_libl();
-        let r = (|| {
-            let s = self
-                .system
-                .storage
-                .as_mut()
-                .ok_or("object store not open")?;
-            let qsys = s.qsys.ok_or("object store not initialized")?;
-            svc::db::with_txn(&mut s.store, |txn| {
-                let names = ile::name_context(txn, qsys);
-                let mut src = cmd::store::StoreSource { txn, qsys, names };
-                match cmd::analyze::CmdSource::lookup(&mut src, &name, lib.as_deref()) {
-                    Ok(Some((o, l))) => Ok(Some((o.encode(), l))),
-                    Ok(None) => Ok(None),
-                    Err(e) => Err(e.msgid().to_string()),
-                }
-            })
-        })();
-        ile::set_libl(None);
-        r
+        cmd_lookup(self.system, self.ctx, &name, lib.as_deref())
     }
 
     /// Run at once, not on a fiber: no call can be made in its middle.

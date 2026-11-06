@@ -110,14 +110,19 @@ fn analyze(cx: &Ctx<'_>, line: &str) -> Result<Resolved, Refusal> {
 }
 
 /// The read operations need what their displays need: the command,
-/// found as a typed line finds it, with the authority to use it
-/// (`DSPPTF` is shipped `*PUBLIC *EXCLUDE`).
-// BLOCKED(phase12): `cmd_lookup` let QAPTEST find DSPPTF (`*PUBLIC *EXCLUDE`) under QEMU step 123; see whether the lookup checks *OBJOPR or the shipped exclusion was applied.
+/// found through the analyzer's own source as a typed line finds it,
+/// with the profile's `*OBJOPR` and `*USE` to it (`DSPPTF` is shipped
+/// `*PUBLIC *EXCLUDE`). A command not there is `CPD0030`, never a
+/// pass.
 pub(super) fn may_use(cx: &Ctx<'_>, command: &str) -> Result<(), Refusal> {
-    let r = cx.link().with(|l| l.cmd_lookup(command.to_string(), None));
-    match r {
-        Ok(_) => Ok(()),
-        Err(id) => Err(cx.refuse(Status::NotAuthorized, &id, &[command])),
+    let mut cmds = RemoteCmds::new(cx.shared.clone());
+    match cmd::analyze::CmdSource::lookup(&mut cmds, command, None) {
+        Ok(Some(_)) => Ok(()),
+        Ok(None) => Err(cx.refuse(Status::NotFound, "CPD0030", &[command, "*LIBL"])),
+        Err(e) => {
+            let d = e.diags.first().unwrap_or(&e.escape).clone();
+            Err(cx.refuse_data(Status::NotAuthorized, &d.msgid, &d.data, &d.detail))
+        }
     }
 }
 

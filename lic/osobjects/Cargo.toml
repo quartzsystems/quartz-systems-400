@@ -31,6 +31,7 @@ thiserror.workspace = true
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
 licpgm = { path = "../../licpgm/licpgm", version = "0.1.0" }
 lpstore = { path = "../../licpgm/lpstore", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
 
 [lints]
 workspace = true

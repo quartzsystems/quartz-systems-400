@@ -2224,6 +2224,7 @@ dependencies = [
  "qir",
  "qsname",
  "regfac",
+ "sec",
  "store",
  "sys-cpps",
  "thiserror",

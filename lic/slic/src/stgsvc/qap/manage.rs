@@ -48,10 +48,25 @@ fn ptf_status(s: ptf::Status) -> PtfStatus {
     }
 }
 
+/// `NotFound`.
+const NOT_FOUND: u16 = 7;
+
+/// The display's command found as a typed line finds it, with the
+/// actor's authority to run it: the service does not take the job's
+/// word for it (`DSPPTF` is shipped `*PUBLIC *EXCLUDE`).
+fn may_run(system: &mut System, ctx: &JobCtx, command: &str) -> Result<(), QapRefused> {
+    match super::super::served::cmd_lookup(system, ctx, command, None) {
+        Ok(Some(_)) => Ok(()),
+        Ok(None) => Err(refused(NOT_FOUND, "CPD0030", "", &[command, "*LIBL"])),
+        Err(id) => Err(refused(NOT_AUTHORIZED, &id, "", &[command, "*LIBL"])),
+    }
+}
+
 /// `ListPtfs`: the PTFs of `product` (`*ALL` every product), by
 /// product then identifier.
 pub fn ptfs(system: &mut System, ctx: &JobCtx, product: &str) -> Result<Vec<Ptf>, QapRefused> {
     connection_job(ctx)?;
+    may_run(system, ctx, "DSPPTF")?;
     let db = crate::cpp::ptfcmd::load_db(system).map_err(|e| failed(ERROR, &e))?;
     let want = product.trim().to_ascii_uppercase();
     let all = want.is_empty() || want == "*ALL";
@@ -96,6 +111,7 @@ const MIB: u64 = 1024 * 1024;
 /// no ASP; each ASP's capacity, use and threshold.
 pub fn disks(system: &mut System, ctx: &JobCtx) -> Result<DiskUnits, QapRefused> {
     connection_job(ctx)?;
+    may_run(system, ctx, "WRKDSKSTS")?;
     if let Some((part, record)) = system.lic.as_mut()
         && let Ok(fresh) = part.read()
     {

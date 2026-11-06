@@ -171,6 +171,29 @@ fn command(c: &mut Conn, line: &str) -> Result<Vec<String>, String> {
     Ok(body.messages.into_iter().map(|m| m.id).collect())
 }
 
+/// Step 123's `*PUBLIC *EXCLUDE` objects, made by the security
+/// officer: a program in `QGPL` and a library with a data area in it.
+fn excluded(s: &mut Session) -> Result<(), String> {
+    let _ = s.command("CRTSRCPF FILE(QGPL/QCLSRC)", CMD);
+    crate::qir::qemu::push(s, "QAPXSRC", "PGM\nENDPGM\n")?;
+    expect(s, "svc.srcput QGPL/QCLSRC QAPXPGM SRCTYPE(CLP) FROMSTMF(QAPXSRC)", &["written"])?;
+    let _ = s.command("DLTPGM PGM(QGPL/QAPXPGM)", CMD);
+    expect(s, "CRTCLPGM PGM(QGPL/QAPXPGM) SRCFILE(QGPL/QCLSRC) SRCMBR(QAPXPGM)", &["QAPXPGM"])?;
+    let _ = s.command("CRTLIB LIB(QAPXLIB)", CMD);
+    let _ = s.command("CRTDTAARA DTAARA(QAPXLIB/QAPXDTA) TYPE(*CHAR) LEN(10)", CMD);
+    for line in [
+        "GRTOBJAUT OBJ(QGPL/QAPXPGM) OBJTYPE(*PGM) USER(*PUBLIC) AUT(*EXCLUDE)",
+        "GRTOBJAUT OBJ(QSYS/QAPXLIB) OBJTYPE(*LIB) USER(*PUBLIC) AUT(*EXCLUDE)",
+        "CHKOBJ OBJ(QAPXLIB/QAPXDTA) OBJTYPE(*DTAARA)",
+    ] {
+        let out = s.command(line, CMD)?;
+        if out.contains("CPF") || out.contains("CPD") {
+            return Err(format!("{line}:\n{out}"));
+        }
+    }
+    Ok(())
+}
+
 /// Run a command that must fail; the status and message ID.
 fn command_fails(c: &mut Conn, line: &str) -> Result<(Status, String), String> {
     let r = c.call(Op::RunCommand, &CommandText { command: line.into() })?;
@@ -306,11 +329,14 @@ impl Suite {
     /// Step 123: `Manage` through the real jobs (`manage.rs`).
     pub(crate) fn qap_manage(&self, s: &mut Session) -> Result<String, String> {
         let mut srv = setup(self, s)?;
+        excluded(s)?;
         let mut a = srv.open()?;
         a.sign_on(USER, PASSWORD)?;
         let mut sec = srv.open()?;
         sec.sign_on("QSECOFR", crate::phase5::SECOFR_PASSWORD)?;
-        let r = manage::run(&mut a, &mut sec).map_err(|e| format!("MANAGE: {e}"));
+        let r = manage::run(&mut a, &mut sec)
+            .and_then(|m| Ok(format!("{m}; {}", manage::exclusions(&mut a, &mut sec)?)))
+            .map_err(|e| format!("MANAGE: {e}"));
         let _ = a.call(Op::SignOff, &());
         let _ = sec.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;

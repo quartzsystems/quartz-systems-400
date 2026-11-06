@@ -129,7 +129,16 @@ type (`*USE` for most objects, `*CHANGE` for `QGPL` and message queues,
 `*EXCLUDE` for profiles, the system value object, spooled files, `QSPL`
 and `QRECOVERY`); a user's message queue in `QUSRSYS` goes to its user;
 anything else whose owner is not a profile goes to `QDFTOWN`. Then the
-profile indexes are built from the objects.
+profile indexes are built from the objects. A command already shipped
+`*PUBLIC *EXCLUDE` (`sys_cpps::inventory::PUBLIC_EXCLUDE`, set as the
+commands install at every IPL) keeps it: in earlier builds the re-owning
+widened them to `*USE`, so on a freshly installed system a profile
+without authority could run `DSPPTF` until the next IPL (QAP's
+`ListPtfs` showed it, QEMU step 123).
+`lic/osobjects/tests/exclude.rs` runs the first IPL's order and a
+second IPL and checks every excluded command, and `*PUBLIC *EXCLUDE` on
+a command, a program and a library refusing a plain profile through
+the paths QAP's requests take.
 
 ## 2. Passwords
 

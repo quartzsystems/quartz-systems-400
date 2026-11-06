@@ -10,7 +10,9 @@
 //! `PowerDown`, `StartSubsystem`, `SetSystemValue` and `ListPtfs`
 //! (`DSPPTF` is `*PUBLIC *EXCLUDE`) refused `NotAuthorized`, and nothing
 //! powered down. As `QSECOFR`: the PTFs, and `QPRTTXT` set and read
-//! back, then set as it was.
+//! back, then set as it was. Then `*PUBLIC *EXCLUDE` on a command, a
+//! program and a library refuses `QAPTEST`'s `RunCommand` and not the
+//! security officer's.
 
 use qap_proto::ops::manage::{
     DiskUnits, EndHow, GetSystemValues, HardwareResources, IplSource, IplStatus, ListHardwareResources, ListPtfs,
@@ -186,4 +188,25 @@ fn secofr(sec: &mut Conn) -> Result<u32, String> {
         return Err(format!("QPRTTXT: set {set:?}, back {back:?}"));
     }
     Ok(ptfs.total)
+}
+
+/// `*PUBLIC *EXCLUDE` on a command (`DSPPTF`, shipped so), a program
+/// and a library holds for commands run through QAP as `QAPTEST`; the
+/// security officer runs each.
+pub fn exclusions(a: &mut Conn, sec: &mut Conn) -> Result<String, String> {
+    let lines = [
+        ("the command", "DSPPTF"),
+        ("the program", "CALL PGM(QGPL/QAPXPGM)"),
+        ("the library", "CHKOBJ OBJ(QAPXLIB/QAPXDTA) OBJTYPE(*DTAARA)"),
+    ];
+    let mut out = Vec::new();
+    for (what, line) in lines {
+        let (status, id) = super::command_fails(a, line)?;
+        if matches!(id.as_str(), "CPF9801" | "CPF9810" | "CPD0030" | "CPF2105") {
+            return Err(format!("{line} as QAPTEST: {id}, as if {what} were not there"));
+        }
+        super::command(sec, line).map_err(|e| format!("as QSECOFR: {e}"))?;
+        out.push(format!("{what} refused ({status:?} {id})"));
+    }
+    Ok(format!("*PUBLIC *EXCLUDE through RunCommand: {}", out.join(", ")))
 }
