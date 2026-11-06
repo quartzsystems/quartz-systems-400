@@ -4094,17 +4094,6 @@ whatever volume is in the device.
 :PD.Type a whole number. The value must be from 1 to 16777215.
 :EPARML.
 :EHELP.
-:HELP NAME='SAVSAVFDTA/EXPDATE'.File expiration date (EXPDATE)
-:P.The date after which the object or file can be deleted or
-overwritten. *PERM means it never expires.
-:P.The prompt shows this parameter after F10 (Additional parameters).
-:PARML.
-:PT.:PK DEF.*PERM:EPK.
-:PD.Permanent&colon. it never expires.
-:PT.:PV.date:EPV.
-:PD.Type a date in the date format of the job.
-:EPARML.
-:EHELP.
 :HELP NAME='SAVSAVFDTA/ENDOPT'.End of media option (ENDOPT)
 :P.What the device does with the tape when the operation ends&colon.
 leave it where it is, rewind it, or rewind and unload it.
@@ -4146,6 +4135,17 @@ not be readable on devices that do not support that size.
 :PD.After the reference entry.
 :PT.:PK.*REPLACE:EPK.
 :PD.What is there is replaced.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/EXPDATE'.File expiration date (EXPDATE)
+:P.The date after which the object or file can be deleted or
+overwritten. *PERM means it never expires.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*PERM:EPK.
+:PD.Permanent&colon. it never expires.
+:PT.:PV.date:EPV.
+:PD.Type a date in the date format of the job.
 :EPARML.
 :EHELP.
 :HELP NAME='SAVSAVFDTA/COMPACT'.Data compaction (COMPACT)

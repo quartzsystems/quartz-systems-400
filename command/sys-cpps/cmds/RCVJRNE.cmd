@@ -13,20 +13,26 @@
                           PROMPT('Program to receive entries')
              PARM       KWD(FILE) TYPE(E1) SNGVAL((*ALLFILE)) MAX(300) +
                           EXPR(*YES) PROMPT('Journaled file')
+             PARM       KWD(OBJ) TYPE(E8) MAX(300) EXPR(*YES) +
+                          PROMPT('Objects')
+             PARM       KWD(OBJPATH) TYPE(E9) MAX(300) EXPR(*YES) +
+                          PROMPT('Objects')
+             PARM       KWD(SUBTREE) TYPE(*CHAR) LEN(5) RSTD(*YES) +
+                          DFT(*NONE) VALUES(*NONE *ALL) +
+                          PROMPT('Directory subtree')
+             PARM       KWD(PATTERN) TYPE(E10) MAX(20) EXPR(*YES) +
+                          PROMPT('Name pattern')
              PARM       KWD(RCVRNG) TYPE(E2) DFT(*CURRENT) +
                           SNGVAL((*CURRENT) (*CURCHAIN)) EXPR(*YES) +
                           PROMPT('Range of journal receivers')
-             PARM       KWD(FROMENT) TYPE(*DEC) LEN(15 0) DFT(*FIRST) +
-                          RANGE(1 9999999999) SPCVAL((*FIRST 0)) +
-                          EXPR(*YES) PMTCTL(*PMTRQS) +
-                          PROMPT('Starting sequence number')
+             PARM       KWD(FROMENTLRG) TYPE(*CHAR) LEN(20) +
+                          DFT(*FIRST) SPCVAL((*FIRST)) EXPR(*YES) +
+                          PROMPT('Starting large sequence number')
              PARM       KWD(FROMTIME) TYPE(E3) EXPR(*YES) +
                           PROMPT('Starting date and time')
-             PARM       KWD(TOENT) TYPE(*DEC) LEN(15 0) DFT(*NONE) +
-                          RANGE(1 9999999999) +
-                          SPCVAL((*LAST -1) (*NONE -2)) EXPR(*YES) +
-                          PMTCTL(*PMTRQS) +
-                          PROMPT('Ending sequence number')
+             PARM       KWD(TOENTLRG) TYPE(*CHAR) LEN(20) DFT(*NONE) +
+                          SPCVAL((*LAST) (*NONE)) EXPR(*YES) +
+                          PROMPT('Ending large sequence number')
              PARM       KWD(TOTIME) TYPE(E4) EXPR(*YES) +
                           PROMPT('Ending date and time')
              PARM       KWD(NBRENT) TYPE(*INT4) DFT(*ALL) REL(*GE 1) +
@@ -46,10 +52,9 @@
              PARM       KWD(USRPRF) TYPE(*NAME) LEN(10) DFT(*ALL) +
                           SPCVAL((*ALL)) EXPR(*YES) +
                           PROMPT('User profile')
-             PARM       KWD(CMTCYCID) TYPE(*DEC) LEN(15 0) DFT(*ALL) +
-                          RANGE(1 9999999999) SPCVAL((*ALL 0)) +
-                          EXPR(*YES) PMTCTL(*PMTRQS) +
-                          PROMPT('Commit cycle identifier')
+             PARM       KWD(CCIDLRG) TYPE(*CHAR) LEN(20) DFT(*ALL) +
+                          SPCVAL((*ALL)) EXPR(*YES) +
+                          PROMPT('Commit cycle large identifier')
              PARM       KWD(DEPENT) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*ALL) VALUES(*ALL *NONE) +
                           PROMPT('Dependent entries')
@@ -57,51 +62,47 @@
                           DFT(*TYPE1) VALUES(*TYPE1 *TYPE2 *TYPE3 +
                           *TYPE4 *TYPEPTR *JRNENTFMT) EXPR(*YES) +
                           PROMPT('Entry format')
+             PARM       KWD(FMTMINDTA) TYPE(*CHAR) LEN(4) RSTD(*YES) +
+                          DFT(*NO) VALUES(*NO *YES) EXPR(*YES) +
+                          PROMPT('Format minimized data')
              PARM       KWD(NULLINDLEN) TYPE(E6) DFT(*ENTFMT) +
                           SNGVAL((*ENTFMT)) +
                           PROMPT('Null value indicators length')
              PARM       KWD(DELAY) TYPE(E7) EXPR(*YES) +
                           PROMPT('Delay time')
-             PARM       KWD(INCENT) TYPE(*CHAR) LEN(10) RSTD(*YES) +
-                          DFT(*CONFIRMED) VALUES(*CONFIRMED *ALL) +
-                          PMTCTL(*PMTRQS) PROMPT('Include entries')
+             PARM       KWD(BLKLEN) TYPE(*INT4) DFT(*NONE) +
+                          RANGE(32 4000) SPCVAL((*NONE -1) (*CALC -2)) +
+                          PROMPT('Block length')
              PARM       KWD(JRNENTFMT) TYPE(*CHAR) LEN(8) RSTD(*YES) +
                           DFT(RJNE0100) VALUES(RJNE0100 RJNE0200) +
                           PMTCTL(P1) PROMPT('Journal entry format')
              PARM       KWD(RTNPTR) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*NONE) VALUES(*NONE *SYSMNG *USRMNG) +
                           PMTCTL(P1) PROMPT('Return pointers')
-             PARM       KWD(BLKLEN) TYPE(*INT4) DFT(*NONE) +
-                          RANGE(32 4000) SPCVAL((*NONE -1) (*CALC -2)) +
-                          PROMPT('Block length')
-             PARM       KWD(FROMENTLRG) TYPE(*CHAR) LEN(20) +
-                          DFT(*FIRST) SPCVAL((*FIRST)) EXPR(*YES) +
-                          PROMPT('Starting large sequence number')
-             PARM       KWD(TOENTLRG) TYPE(*CHAR) LEN(20) DFT(*NONE) +
-                          SPCVAL((*LAST) (*NONE)) EXPR(*YES) +
-                          PROMPT('Ending large sequence number')
-             PARM       KWD(CCIDLRG) TYPE(*CHAR) LEN(20) DFT(*ALL) +
-                          SPCVAL((*ALL)) EXPR(*YES) +
-                          PROMPT('Commit cycle large identifier')
-             PARM       KWD(OBJ) TYPE(E8) MAX(300) EXPR(*YES) +
-                          PROMPT('Objects')
-             PARM       KWD(OBJPATH) TYPE(E9) MAX(300) EXPR(*YES) +
-                          PROMPT('Objects')
-             PARM       KWD(SUBTREE) TYPE(*CHAR) LEN(5) RSTD(*YES) +
-                          DFT(*NONE) VALUES(*NONE *ALL) +
-                          PROMPT('Directory subtree')
-             PARM       KWD(PATTERN) TYPE(E10) MAX(20) EXPR(*YES) +
-                          PROMPT('Name pattern')
-             PARM       KWD(FMTMINDTA) TYPE(*CHAR) LEN(4) RSTD(*YES) +
-                          DFT(*NO) VALUES(*NO *YES) EXPR(*YES) +
-                          PROMPT('Format minimized data')
+             PARM       KWD(INCENT) TYPE(*CHAR) LEN(10) RSTD(*YES) +
+                          DFT(*CONFIRMED) VALUES(*CONFIRMED *ALL) +
+                          PMTCTL(*PMTRQS) PROMPT('Include entries')
+             PARM       KWD(FROMENT) TYPE(*DEC) LEN(15 0) DFT(*FIRST) +
+                          RANGE(1 9999999999) SPCVAL((*FIRST 0)) +
+                          EXPR(*YES) PMTCTL(*PMTRQS) +
+                          PROMPT('Starting sequence number')
+             PARM       KWD(TOENT) TYPE(*DEC) LEN(15 0) DFT(*NONE) +
+                          RANGE(1 9999999999) +
+                          SPCVAL((*LAST -1) (*NONE -2)) EXPR(*YES) +
+                          PMTCTL(*PMTRQS) +
+                          PROMPT('Ending sequence number')
+             PARM       KWD(CMTCYCID) TYPE(*DEC) LEN(15 0) DFT(*ALL) +
+                          RANGE(1 9999999999) SPCVAL((*ALL 0)) +
+                          EXPR(*YES) PMTCTL(*PMTRQS) +
+                          PROMPT('Commit cycle identifier')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              Q2:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
-             Q3:        QUAL       TYPE(*NAME) LEN(10) SPCVAL((*ALL)) MIN(1)
+             Q3:        QUAL       TYPE(*NAME) LEN(10) SPCVAL((*ALL)) MIN(1) +
+                          CHOICE('Name, *ALLFILE, *ALL')
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              E1:        ELEM       TYPE(Q3) MIN(1) PROMPT('File')

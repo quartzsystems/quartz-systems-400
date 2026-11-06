@@ -11,6 +11,9 @@
              PARM       KWD(RMTLOCNAME) TYPE(*CNAME) LEN(8) +
                           SPCVAL((*CNNDEV)) MIN(1) EXPR(*YES) +
                           PROMPT('Remote location')
+             PARM       KWD(CNNDEV) TYPE(*NAME) LEN(10) DFT(*LOC) +
+                          SNGVAL((*LOC)) MAX(16) EXPR(*YES) PMTCTL(P2) +
+                          PROMPT('APPC device')
              PARM       KWD(VRTCTL) TYPE(*NAME) LEN(10) DFT(*NONE) +
                           SPCVAL((*NONE)) EXPR(*YES) +
                           PROMPT('Virtual controller')
@@ -30,9 +33,6 @@
              PARM       KWD(SRQ10PGM) TYPE(Q1) DFT(*SRQMNU) +
                           SNGVAL((*SRQMNU)) EXPR(*YES) +
                           PROMPT('System request program')
-             PARM       KWD(CNNDEV) TYPE(*NAME) LEN(10) DFT(*LOC) +
-                          SNGVAL((*LOC)) MAX(16) EXPR(*YES) PMTCTL(P2) +
-                          PROMPT('APPC device')
              PARM       KWD(RMTUSER) TYPE(*CHAR) LEN(10) DFT(*NONE) +
                           SPCVAL((*NONE) (*CURRENT)) EXPR(*YES) +
                           PMTCTL(*PMTRQS) PROMPT('User profile')

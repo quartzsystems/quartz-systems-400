@@ -16,19 +16,11 @@
              PARM       KWD(FROMENTLRG) TYPE(*CHAR) LEN(20) +
                           DFT(*FIRST) SPCVAL((*FIRST)) EXPR(*YES) +
                           PROMPT('Starting large sequence number')
-             PARM       KWD(FROMENT) TYPE(*DEC) LEN(15 0) DFT(*FIRST) +
-                          RANGE(1 9999999999) SPCVAL((*FIRST 0)) +
-                          EXPR(*YES) PMTCTL(*PMTRQS) +
-                          PROMPT('Starting sequence number')
              PARM       KWD(FROMTIME) TYPE(E2) EXPR(*YES) +
                           PROMPT('Starting date and time')
              PARM       KWD(TOENTLRG) TYPE(*CHAR) LEN(20) DFT(*LAST) +
                           SPCVAL((*LAST)) EXPR(*YES) +
                           PROMPT('Ending large sequence number')
-             PARM       KWD(TOENT) TYPE(*DEC) LEN(15 0) DFT(*LAST) +
-                          RANGE(1 9999999999) SPCVAL((*LAST -1)) +
-                          EXPR(*YES) PMTCTL(*PMTRQS) +
-                          PROMPT('Ending sequence number')
              PARM       KWD(TOTIME) TYPE(E3) EXPR(*YES) +
                           PROMPT('Ending date and time')
              PARM       KWD(CMPOPT) TYPE(*CHAR) LEN(6) RSTD(*YES) +
@@ -47,17 +39,26 @@
              PARM       KWD(CCIDLRG) TYPE(*CHAR) LEN(20) DFT(*ALL) +
                           SPCVAL((*ALL)) EXPR(*YES) +
                           PROMPT('Commit cycle large identifier')
+             PARM       KWD(OUTFMT) TYPE(*CHAR) LEN(5) RSTD(*YES) +
+                          DFT(*CHAR) VALUES(*CHAR *HEX) EXPR(*YES) +
+                          PROMPT('Output format')
+             PARM       KWD(FROMENT) TYPE(*DEC) LEN(15 0) DFT(*FIRST) +
+                          RANGE(1 9999999999) SPCVAL((*FIRST 0)) +
+                          EXPR(*YES) PMTCTL(*PMTRQS) +
+                          PROMPT('Starting sequence number')
+             PARM       KWD(TOENT) TYPE(*DEC) LEN(15 0) DFT(*LAST) +
+                          RANGE(1 9999999999) SPCVAL((*LAST -1)) +
+                          EXPR(*YES) PMTCTL(*PMTRQS) +
+                          PROMPT('Ending sequence number')
              PARM       KWD(CMTCYCID) TYPE(*DEC) LEN(15 0) DFT(*ALL) +
                           RANGE(1 9999999999) SPCVAL((*ALL 0)) +
                           EXPR(*YES) PMTCTL(*PMTRQS) +
                           PROMPT('Commit cycle identifier')
-             PARM       KWD(OUTFMT) TYPE(*CHAR) LEN(5) RSTD(*YES) +
-                          DFT(*CHAR) VALUES(*CHAR *HEX) EXPR(*YES) +
-                          PROMPT('Output format')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
-             Q2:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
+             Q2:        QUAL       TYPE(*NAME) LEN(10) MIN(1) +
+                          CHOICE('Name, *CURRENT')
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              Q3:        QUAL       TYPE(*NAME) LEN(10) MIN(1)

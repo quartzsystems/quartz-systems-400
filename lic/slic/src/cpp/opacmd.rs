@@ -747,6 +747,7 @@ fn pmtovr(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     let form = match parms.name("CMD").as_str() {
         "CHGCLNUP" => cleanup(system)?.keyword_form(),
         "CFGPFRCOL" => super::pfrcmd::override_values(system),
+        "CHGSECA" => super::fcncmd::override_values(system),
         "CHGBCKUP" => {
             let v = wm::cmd::Params::parse(&format!("x {key}"));
             match v.upper("BCKUPOPT").as_deref().and_then(Which::parse) {

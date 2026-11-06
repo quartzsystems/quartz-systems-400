@@ -15,6 +15,11 @@
                           PROMPT('Remote system')
              PARM       KWD(INTNETADR) TYPE(*CHAR) LEN(64) PMTCTL(P1) +
                           PROMPT('Internet address')
+             PARM       KWD(PORT) TYPE(*INT4) DFT(*DFT) RANGE(1 65534) +
+                          SPCVAL((*DFT 0)) EXPR(*YES) PROMPT('Port')
+             PARM       KWD(SSL) TYPE(*CHAR) LEN(7) RSTD(*YES) +
+                          DFT(*ENVVAR) VALUES(*ENVVAR *YES *NO) +
+                          PROMPT('Secure connection')
              PARM       KWD(CTLCHAR) TYPE(*CHAR) LEN(1) DFT('&') +
                           EXPR(*YES) PMTCTL(*PMTRQS) +
                           PROMPT('Control character key')
@@ -139,8 +144,6 @@
                           VALUES(*VT220B7 *VT220B8 *VT100 *VT52) +
                           PMTCTL(*PMTRQS) +
                           PROMPT('ASCII operating mode ID')
-             PARM       KWD(PORT) TYPE(*INT4) DFT(*DFT) RANGE(1 65534) +
-                          SPCVAL((*DFT 0)) EXPR(*YES) PROMPT('Port')
              PARM       KWD(RMTVRTDSP) TYPE(*NAME) LEN(10) DFT(*DFT) +
                           SPCVAL((*DFT)) EXPR(*YES) PMTCTL(*PMTRQS) +
                           PROMPT('Remote virtual display')
@@ -179,9 +182,6 @@
                           DFT(*RMTSYS) SPCVAL((*RMTSYS) (*LCL)) +
                           EXPR(*YES) PMTCTL(*PMTRQS) +
                           PROMPT('Remote character set')
-             PARM       KWD(SSL) TYPE(*CHAR) LEN(7) RSTD(*YES) +
-                          DFT(*ENVVAR) VALUES(*ENVVAR *YES *NO) +
-                          PROMPT('Secure connection')
              P1:        PMTCTL     CTL(RMTSYS) COND((*EQ *INTNETADR)) +
                           NBRTRUE(*EQ 1)
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)

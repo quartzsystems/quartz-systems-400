@@ -134,6 +134,18 @@ fn seca_text(system: &mut System) -> Result<String, String> {
     Ok(s)
 }
 
+/// `CHGSECA`'s prompt override (IBM's `QSYPOATR`): the numbers the next
+/// profiles get, in keyword form.
+pub fn override_values(system: &mut System) -> String {
+    seca_rows(system).map_or_else(
+        |_| String::new(),
+        |rows| {
+            let v = |k: &str| rows.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap_or_default();
+            format!("UID({}) GID({})", v("UID"), v("GID"))
+        },
+    )
+}
+
 /// `CHGSECA UID() GID()`: `*SECADM`; `CPC2231` names where generated
 /// numbers start now.
 fn chgseca(system: &mut System, parms: &Parms) -> CmdReply {

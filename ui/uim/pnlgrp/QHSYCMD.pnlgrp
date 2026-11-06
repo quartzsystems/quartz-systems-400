@@ -6196,6 +6196,16 @@ connection.
 :EPARML.
 :P.Also accepted&colon. *CNNDEV.
 :EHELP.
+:HELP NAME='STRPASTHR/CNNDEV'.APPC device (CNNDEV)
+:P.The APPC device for this command.
+:P.Up to 16 values can be given.
+:PARML.
+:PT.:PK DEF.*LOC:EPK.
+:PD.The location.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
 :HELP NAME='STRPASTHR/VRTCTL'.Virtual controller (VRTCTL)
 :P.The virtual controller for this command.
 :PARML.
@@ -6263,16 +6273,6 @@ connection.
 :PD.The library list of the job is searched; the first match is used.
 :PT.:PK.*CURLIB:EPK.
 :PD.The current library of the job. When the job has none, QGPL is used.
-:PT.:PV.name:EPV.
-:PD.Type a name of up to 10 characters.
-:EPARML.
-:EHELP.
-:HELP NAME='STRPASTHR/CNNDEV'.APPC device (CNNDEV)
-:P.The APPC device for this command.
-:P.Up to 16 values can be given.
-:PARML.
-:PT.:PK DEF.*LOC:EPK.
-:PD.The location.
 :PT.:PV.name:EPV.
 :PD.Type a name of up to 10 characters.
 :EPARML.

@@ -187,6 +187,25 @@ name; a 5250 session with another system from this display, over TN5250
 :PD.Type up to 64 characters.
 :EPARML.
 :EHELP.
+:HELP NAME='STRTCPTELN/PORT'.Port (PORT)
+:P.The TCP or UDP port number.
+:PARML.
+:PT.:PK DEF.*DFT:EPK.
+:PD.The default value.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 65534.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/SSL'.Secure connection (SSL)
+:P.The secure connection for this command.
+:PARML.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:EPARML.
+:P.Also accepted&colon. *ENVVAR.
+:EHELP.
 :HELP NAME='STRTCPTELN/CTLCHAR'.Control character key (CTLCHAR)
 :P.The control characters in the data&colon. none, or the first
 character of each record as a FORTRAN control character.
@@ -477,15 +496,6 @@ set the data is in, or is to be converted to.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :P.Also accepted&colon. *VT220B7, *VT220B8, *VT100, *VT52.
 :EHELP.
-:HELP NAME='STRTCPTELN/PORT'.Port (PORT)
-:P.The TCP or UDP port number.
-:PARML.
-:PT.:PK DEF.*DFT:EPK.
-:PD.The default value.
-:PT.:PV.number:EPV.
-:PD.Type a whole number. The value must be from 1 to 65534.
-:EPARML.
-:EHELP.
 :HELP NAME='STRTCPTELN/RMTVRTDSP'.Remote virtual display (RMTVRTDSP)
 :P.The remote virtual display for this command.
 :P.The prompt shows this parameter after F10 (Additional parameters).
@@ -582,15 +592,5 @@ set the data is in, or is to be converted to.
 :PD.Local.
 :EPARML.
 :P.Also accepted&colon. *RMTSYS.
-:EHELP.
-:HELP NAME='STRTCPTELN/SSL'.Secure connection (SSL)
-:P.The secure connection for this command.
-:PARML.
-:PT.:PK.*YES:EPK.
-:PD.Yes.
-:PT.:PK.*NO:EPK.
-:PD.No.
-:EPARML.
-:P.Also accepted&colon. *ENVVAR.
 :EHELP.
 :EPNLGRP.
