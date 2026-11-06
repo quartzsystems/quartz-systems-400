@@ -6,7 +6,8 @@
 //! key, DER certificate, signature list); `sign IN OUT` signs with
 //! `QS400_SB_KEY`/`QS400_SB_CERT` or the development pair; `verify
 //! FILE CERT` checks a signed image; `esl CERT OUT` writes a signature
-//! list; `show` prints the key in use.
+//! list; `ovmf-db VARS CERT OUT` copies an OVMF variable store with CERT
+//! added to its db (a test aid); `show` prints the key in use.
 
 use std::fs;
 use std::path::Path;
@@ -47,11 +48,16 @@ fn main() -> Result<()> {
         ["esl", cert, out] => {
             fs::write(out, esl::list(&fs::read(cert)?))?;
         }
+        ["ovmf-db", vars, cert, out] => {
+            let list = esl::list(&fs::read(cert)?);
+            fs::write(out, pesign::keys::ovmf::add_db(&fs::read(vars)?, &list)?)?;
+            println!("{out}: db holds {} as well", pesign::keys::fingerprint(&fs::read(cert)?));
+        }
         ["show"] => {
             let k = DbKey::from_env()?;
             println!("{}{}", k.fingerprint(), if k.development { " (DEVELOPMENT key)" } else { "" });
         }
-        _ => bail!("usage: pesign keygen DIR [SUBJECT] | sign IN OUT | verify FILE CERT | esl CERT OUT | show"),
+        _ => bail!("usage: pesign keygen DIR [SUBJECT] | sign IN OUT | verify FILE CERT | esl CERT OUT | ovmf-db VARS CERT OUT | show"),
     }
     Ok(())
 }

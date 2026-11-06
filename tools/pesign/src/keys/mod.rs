@@ -10,6 +10,7 @@
 
 pub mod esl;
 pub mod generate;
+pub mod ovmf;
 
 use std::path::Path;
 
