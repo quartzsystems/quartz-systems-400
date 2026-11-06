@@ -355,7 +355,7 @@ The `refs` part's `flags` (in the stream, earlier) are set by the save
 and depend on what else it holds, so the digest in `ObjectEnd` covers
 them but the signature need not: a build signs the content digest with
 every `flags` zero (`saverst::sign::content_digest`), and a restore
-(and a PTF's check) accepts a signature over either
+accepts a signature over either
 (`saverst::sign::verify_saved`).
 
 A reader:
