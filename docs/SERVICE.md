@@ -232,9 +232,13 @@ development builds is that already).
   5 Edit Rebuild of Access Paths (empty: recovery rebuilds what it must),
   6 Edit Check Pending Constraints (empty: no constraints are pending),
   7 user profiles, 8 the startup program (`QSTRUPPGM`). F3 goes on.
-- An escape from the startup program does not stop the IPL: `QWCSTRUP`
-  sends `CPF39DE` to `QSYSOPR` with the program and the escape, and the
-  system goes on to sign-on.
+- A startup program that fails does not stop the IPL: when the call is
+  refused (a `QSTRUPPGM` value the analyzer cannot read, a program that
+  is not there) or the program ends in an escape, `QWCSTRUP` sends
+  `CPI0915` to `QSYSOPR` (IBM's message for it, checked on pub400:
+  `tools/conformance/oracle/wm/cpi0915.txt`), the autostart job ends
+  with end code 20 and its job log holds the reason; the system goes on
+  to sign-on.
 
 The option numbers of the define menu and the HSM extensions are from
 IBM's documentation as remembered, not captured.
@@ -257,6 +261,5 @@ provider connection, `CPC39D4` contact information changed, `CPC39D5`
 trace started, `CPC39D6` trace ended, `CPC39D7` trace data printed,
 `CPC39D8` dump printed, `CPC39D9` job dump printed, `CPF39DA` needs a
 display, `CPF39DB` trace data not found, `CPC39DC` problem created,
-`CPC39DD` job trace set, `CPF39DE` startup program ended with an escape,
-`CPC39DF` cross-reference checked. IBM's own identifiers for these were
+`CPC39DD` job trace set, `CPC39DF` cross-reference checked. IBM's own identifiers for these were
 not captured; when they are, the IDs change with the oracle.

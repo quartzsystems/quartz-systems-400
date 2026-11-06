@@ -52,13 +52,11 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
             } else {
                 rqs.to_string()
             };
-            let out = c.line(&request);
-            end_code(&out)
+            ended(&c.run(&request, crate::command::RunMode::Run))
         }
     } else {
         status(link, Status::Run, &format!("PGM-{pgm}"));
-        let out = c.line(&format!("call {lib}/{pgm}"));
-        end_code(&out)
+        ended(&c.run(&format!("call {lib}/{pgm}"), crate::command::RunMode::Run))
     };
     c.ended(code);
     let mut ending = ending;
@@ -86,18 +84,19 @@ fn startup(c: &mut Console, link: &Shared) -> u16 {
     status(link, Status::Run, &format!("PGM-{pgm}"));
     c.job()
         .log_request(&format!("CALL {lib}/{pgm}"), ("QWCSTRUP", "QSYS"));
-    let out = c.line(&format!("call {lib}/{pgm}"));
-    let code = end_code(&out);
+    // A value the analyzer refuses (no such name, a bad library) fails
+    // as surely as a program that cannot be called or ends in an
+    // escape: the job ends abnormally either way.
+    let code = ended(&c.run(&format!("call {lib}/{pgm}"), crate::command::RunMode::Run));
     if code != 0 {
-        // The IPL goes on to sign-on; the operator hears why.
-        let escape = first_msgid(&out).unwrap_or("CPF9898");
+        // As IBM i: CPI0915 to QSYSOPR, the details in this job's log;
+        // the IPL goes on to sign-on.
         let m = wm::obj::msgq::QMsg {
             kind: wm::obj::msgq::MsgKind::Info,
-            severity: 40,
-            msgid: "CPF39DE".into(),
+            severity: 20,
+            msgid: STARTUP_FAILED.into(),
             msgf: ("QCPFMSG".into(), "QSYS".into()),
-            data: ccsid::to_ebcdic(&format!("{pgm:<10}{lib:<10}{escape:<7}")).unwrap_or_default(),
-            text: format!("Startup program {lib}/{pgm} ended with {escape}; the IPL went on."),
+            text: format!("Startup program {lib}/{pgm} did not run to its end; see the job log of this job."),
             ..wm::obj::msgq::QMsg::default()
         };
         if let Err(e) = link.borrow_mut().with(|l| stg::Client::msgq_send(l, "*SYSOPR".into(), m)) {
@@ -107,15 +106,14 @@ fn startup(c: &mut Console, link: &Shared) -> u16 {
     code
 }
 
-/// The first message identifier in a run's output.
-fn first_msgid(out: &str) -> Option<&str> {
-    out.split(|c: char| !c.is_ascii_alphanumeric()).find(|w| {
-        let b = w.as_bytes();
-        b.len() == 7
-            && b[..3].iter().all(u8::is_ascii_uppercase)
-            && b[3..].iter().all(u8::is_ascii_hexdigit)
-            && b[3..].iter().any(u8::is_ascii_digit)
-    })
+/// What QSYSOPR is sent when the startup program fails (IBM i's
+/// message for `QSTRUPPGM`).
+const STARTUP_FAILED: &str = "CPI0915";
+
+/// The end code of a run: 20 when it ended in an escape (the analyzer
+/// refused it, the program could not be called or left one).
+fn ended(o: &crate::command::Outcome) -> u16 {
+    if o.escape.is_some() { 20 } else { end_code(&o.text) }
 }
 
 /// The end code a run's output implies: 20 when the program could not

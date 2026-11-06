@@ -3617,11 +3617,10 @@ help = "TRCJOB SET(*OFF) prints what was traced; SET(*END) discards it."
 vars = ["*CHAR 4"]
 
 [[msg]]
-id = "CPF39DE"
-sev = 40
-text = "Startup program &1 ended with &2; the IPL went on."
-help = "The system finished starting without the rest of the startup program. Its job log has the details."
-vars = ["*CHAR 20", "*CHAR 7"]
+id = "CPI0915"
+sev = 20
+text = "The startup program did not run."
+help = "The program system value QSTRUPPGM names could not be run to its end. The autostart job's job log says why. Correct it, then IPL or end the controlling subsystem to the restricted condition and start it again to run the program."
 
 [[msg]]
 id = "CPC39DF"
