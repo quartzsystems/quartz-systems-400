@@ -92,6 +92,22 @@ impl Commands for JobCommands {
         c.sync_log();
         match r {
             Ok(()) => CallResult::Ran(Vec::new()),
+            // A program the user may not call (*OBJOPR and *EXECUTE):
+            // MCH1001 with the same object data.
+            Err(why) if why.starts_with("MCH1001") => {
+                let mut data = vec![0x02, 0x01];
+                data.extend(hostserver::text::ebcdic_fixed(program, 30));
+                data.extend([0; 16]);
+                CallResult::Failed(vec![JobMessage {
+                    id: "MCH1001".into(),
+                    kind: 15,
+                    severity: 40,
+                    file: ("QCPFMSG".into(), "QSYS".into()),
+                    text: format!("The user is not authorized to program {lib}/{program}."),
+                    data,
+                    help: String::new(),
+                }])
+            }
             // A program that cannot be resolved is MCH3401 with the
             // object's type and name, which clients read.
             Err(why) if why.contains("could not be called") => {

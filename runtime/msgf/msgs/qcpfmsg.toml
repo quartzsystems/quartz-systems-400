@@ -25,6 +25,13 @@ text = "A subscript or position is outside its range."
 help = "An array index, a string position or a length reached outside the declared bounds. The operation did not run."
 
 [[msg]]
+id = "MCH1001"
+sev = 40
+text = "The user is not authorized to use object &1."
+help = "Calling a program needs *OBJOPR and *EXECUTE authority to it, a service program *EXECUTE, and a library named for it *EXECUTE. Ask the object's owner or the security officer for the authority."
+vars = ["*CHAR 10"]
+
+[[msg]]
 id = "MCH1202"
 sev = 40
 text = "Decimal data is not valid."
@@ -401,6 +408,13 @@ id = "CPD0032"
 sev = 30
 text = "You may not use command &1 in library &2."
 help = "Your profile has no authority to the command object. Ask the security officer for *USE authority to it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD0171"
+sev = 30
+text = "You may not call program &1 in library &2."
+help = "Calling a program needs *OBJOPR and *EXECUTE authority to it and *EXECUTE authority to its library. Ask the program's owner or the security officer for the authority."
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]

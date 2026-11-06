@@ -869,6 +869,9 @@ pub fn install_hook(job: &mut Job, host: &Host) {
             job.console.push(l.to_string());
         }
         match o.escape {
+            // A command's own errors (CPF0001) end QCMDEXC with CPF0006
+            // after them, as pub400's job log shows.
+            Some(f) if f.msgid == "CPF0001" => Err(("CPF0006".into(), Vec::new())),
             Some(f) => Err((f.msgid, f.data)),
             None => Ok(o.changed),
         }

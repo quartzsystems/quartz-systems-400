@@ -17,13 +17,15 @@ use crate::proto::Client;
 /// Programs and service programs.
 pub struct RemoteObjects {
     link: Shared,
+    /// The last program asked for was refused (`MCH1001`).
+    refused: bool,
 }
 
 impl RemoteObjects {
     /// Over a link.
     #[must_use]
     pub fn new(link: Shared) -> Self {
-        Self { link }
+        Self { link, refused: false }
     }
 }
 
@@ -38,13 +40,19 @@ impl ObjectSource for RemoteObjects {
             PgmKind::Pgm => 0,
             PgmKind::SrvPgm => 1,
         };
-        let (bytes, pname, plib) = self
+        let r = self
             .link
             .borrow_mut()
-            .with(|l| l.program(name.into(), lib.into(), k))?;
+            .with(|l| l.program(name.into(), lib.into(), k));
+        self.refused = matches!(&r, Err(id) if id == "MCH1001");
+        let (bytes, pname, plib) = r.ok()?;
         let mut p = ProgramObject::decode(&bytes).ok()?;
         p.name = pname;
         Some((Arc::new(p), plib))
+    }
+
+    fn refusal(&mut self) -> Option<mi::Cond> {
+        self.refused.then_some(mi::Cond::Mch1001)
     }
 
     fn resolve(&mut self, name: &str, lib: &str, obj_type: &str) -> Option<u64> {

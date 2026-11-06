@@ -1,0 +1,105 @@
+# CALL of a program the user is not authorized to, on pub400 (V7R5M0),
+# in the account's own library only: QSCALLAUT, a copy of
+# {user}1/QSTESTPUB with *ALL revoked from *PUBLIC and the owner, is
+# called with no authority, with *OBJOPR *READ (*USE without *EXECUTE)
+# and with *EXECUTE alone (never with enough to run). The printed job
+# log shows the message IDs; then the spooled file and the copy go.
+continue
+timeout 60000
+settle 3000
+key enter
+wait "Main Menu"
+type call qcmd
+key enter
+wait "Command Entry"
+type CRTDUPOBJ OBJ(QSTESTPUB) FROMLIB({user}1) OBJTYPE(*PGM) NEWOBJ(QSCALLAUT)
+key enter
+settle 3000
+key eraseeof
+type RVKOBJAUT OBJ({user}1/QSCALLAUT) OBJTYPE(*PGM) USER(*PUBLIC) AUT(*ALL)
+key enter
+settle 3000
+key eraseeof
+type RVKOBJAUT OBJ({user}1/QSCALLAUT) OBJTYPE(*PGM) USER({user}) AUT(*ALL)
+key enter
+settle 3000
+key eraseeof
+type CALL PGM({user}1/QSCALLAUT)
+key enter
+settle 4000
+key eraseeof
+type GRTOBJAUT OBJ({user}1/QSCALLAUT) OBJTYPE(*PGM) USER({user}) AUT(*OBJOPR *READ)
+key enter
+settle 3000
+key eraseeof
+type CALL PGM({user}1/QSCALLAUT)
+key enter
+settle 4000
+key eraseeof
+type RVKOBJAUT OBJ({user}1/QSCALLAUT) OBJTYPE(*PGM) USER({user}) AUT(*ALL)
+key enter
+settle 3000
+key eraseeof
+type GRTOBJAUT OBJ({user}1/QSCALLAUT) OBJTYPE(*PGM) USER({user}) AUT(*EXECUTE)
+key enter
+settle 3000
+key eraseeof
+type CALL PGM({user}1/QSCALLAUT)
+key enter
+settle 4000
+key eraseeof
+type DSPJOBLOG OUTPUT(*PRINT)
+key enter
+settle 5000
+key eraseeof
+type DSPSPLF FILE(QPJOBLOG) JOB(*) SPLNBR(*LAST)
+key enter
+settle 4000
+type B
+key enter
+settle 2000
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key f3
+settle 2000
+key eraseeof
+type DLTSPLF FILE(QPJOBLOG) JOB(*) SPLNBR(*LAST)
+key enter
+settle 3000
+key eraseeof
+type GRTOBJAUT OBJ({user}1/QSCALLAUT) OBJTYPE(*PGM) USER({user}) AUT(*ALL)
+key enter
+settle 3000
+key eraseeof
+type DLTPGM PGM({user}1/QSCALLAUT)
+key enter
+settle 3000
+show
+key f3
+settle 2000

@@ -137,6 +137,14 @@ pub trait ObjectSource {
         lib: &str,
         kind: PgmKind,
     ) -> Option<(Arc<ProgramObject>, String)>;
+    /// Why the last [`program`](Self::program) found nothing:
+    /// `MCH1001` when the program (or its library) is there but the
+    /// user may not call it (`*OBJOPR` and `*EXECUTE` to a `*PGM`,
+    /// `*EXECUTE` to a `*SRVPGM` and to a named library); `None` for
+    /// not found (`MCH3401`).
+    fn refusal(&mut self) -> Option<Cond> {
+        None
+    }
     /// The identifier a system pointer to `lib/name` of `obj_type`
     /// carries (`rslvsp`), or none when the object does not exist.
     fn resolve(&mut self, _name: &str, _lib: &str, _obj_type: &str) -> Option<u64> {
@@ -157,6 +165,9 @@ pub trait ObjectSource {
 pub struct MemSource {
     /// `(library, program)`.
     pub programs: Vec<(String, Arc<ProgramObject>)>,
+    /// Programs (`LIB/NAME`) the user may not call.
+    pub denied: Vec<String>,
+    refused: bool,
 }
 
 impl MemSource {
@@ -173,10 +184,19 @@ impl ObjectSource for MemSource {
         lib: &str,
         kind: PgmKind,
     ) -> Option<(Arc<ProgramObject>, String)> {
-        self.programs
+        let hit = self
+            .programs
             .iter()
             .find(|(l, p)| p.name == name && p.attr.kind == kind && (lib == "*LIBL" || l == lib))
-            .map(|(l, p)| (p.clone(), l.clone()))
+            .map(|(l, p)| (p.clone(), l.clone()));
+        self.refused = hit
+            .as_ref()
+            .is_some_and(|(_, l)| self.denied.iter().any(|d| *d == format!("{l}/{name}")));
+        if self.refused { None } else { hit }
+    }
+
+    fn refusal(&mut self) -> Option<Cond> {
+        self.refused.then_some(Cond::Mch1001)
     }
 
     fn resolve(&mut self, name: &str, lib: &str, obj_type: &str) -> Option<u64> {
@@ -697,7 +717,9 @@ impl Activator {
         kind: PgmKind,
         table: &[usize],
     ) -> Result<Arc<LoadedProgram>, Cond> {
-        let (object, found_lib) = self.source.program(name, lib, kind).ok_or(Cond::Mch3401)?;
+        let Some((object, found_lib)) = self.source.program(name, lib, kind) else {
+            return Err(self.source.refusal().unwrap_or(Cond::Mch3401));
+        };
         let key = format!("{found_lib}/{name}");
         let debug = self.debug_programs.contains(&key);
         if let Some(p) = self.loaded.get(&key) {

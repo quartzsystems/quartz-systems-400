@@ -462,6 +462,9 @@ pub enum Cond {
     Mch0602 = 602,
     /// `MCH0603`: index out of range.
     Mch0603 = 603,
+    /// `MCH1001`: not authorized to the object (a program called
+    /// without `*OBJOPR` and `*EXECUTE`).
+    Mch1001 = 1001,
     /// `MCH1202`: decimal data error.
     Mch1202 = 1202,
     /// `MCH1210`: size error, a value does not fit.
@@ -505,6 +508,7 @@ impl Cond {
             601 => Self::Mch0601,
             602 => Self::Mch0602,
             603 => Self::Mch0603,
+            1001 => Self::Mch1001,
             1202 => Self::Mch1202,
             1210 => Self::Mch1210,
             1211 => Self::Mch1211,

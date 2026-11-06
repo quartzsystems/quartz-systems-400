@@ -68,7 +68,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 .link
                 .borrow_mut()
                 .with(|l| l.service_op("trace-point".into(), vec!["CALL".into(), pgm]));
-            return call(job, host, &parms);
+            return call(job, host, &parms, out);
         }
         "STRSEU" => return crate::devtools::seu::run(job, host, r),
         // --- GO SAVE, GO RESTORE and RUNBCKUP (panels/backup.rs)
@@ -392,7 +392,7 @@ fn pad32(b: &mut Vec<u8>) {
 /// `CALL PGM(LIB/NAME) PARM(values)`: character values as typed (at
 /// least 32 bytes, blank-padded), numbers as `packed(15,5)`, hex as
 /// bytes.
-fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms) -> Result<String, Fail> {
+fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms, outcome: &mut Outcome) -> Result<String, Fail> {
     let (name, lib) = parms.qual("PGM");
     let lib = if lib.is_empty() {
         "*LIBL".to_string()
@@ -447,6 +447,15 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms) -> Result<String, Fail>
             out.push_str(text);
             out.push('\n');
         }
+    }
+    if r == Err(mi::Cond::Mch1001) {
+        // Not authorized (pub400 V7R5M0): CPD0171, then CPF0001.
+        let diag = Fail::msg("CPD0171", &[(&name, 10), (&lib, 10)]);
+        super::log(job, &diag.msgid, &diag.data, qir::MsgType::Diag, None);
+        let esc = Fail::msg("CPF0001", &[("CALL", 10)]);
+        let text = format!("{out}{}{}", super::shown(job, &diag), super::shown(job, &esc));
+        outcome.diag = Some(diag);
+        return Err(Fail { text, ..esc });
     }
     if let Err(e) = r {
         return Err(Fail {

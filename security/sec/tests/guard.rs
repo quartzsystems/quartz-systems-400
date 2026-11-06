@@ -154,3 +154,46 @@ fn checked_created_indexed_cached() {
 
     assert_eq!(index::verify(&mut t, qsys).unwrap(), Vec::<String>::new());
 }
+
+#[test]
+fn calling_a_program_needs_objopr_and_execute() {
+    use store::obj::guard::check_id;
+    use store::obj::header::Authority as A;
+    let (mut store, qsys) = open_new();
+    let g = SecGuard::new(Some(qsys));
+    store.set_guard(Some(g.clone()));
+    let mut t = store.begin().unwrap();
+    let app = lib(&mut t, qsys, "APPLIB");
+    shipped::install(&mut t, qsys, 40, 3, NOW).unwrap();
+    let secofr = Principal::load(&mut t, qsys, "QSECOFR", 40).unwrap();
+    let env = Env {
+        qsys,
+        actor: &secofr,
+        now: NOW,
+        sysval: &sysval,
+    };
+    usrprf::crtusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "BOB")])).unwrap();
+    grant::set_public(&mut t, app, Some(Auth::USE)).unwrap();
+    let bob = Rc::new(RefCell::new(Session::new(
+        Principal::load(&mut t, qsys, "BOB", 40).unwrap(),
+    )));
+    // pub400 V7R5M0 refuses the first three (CPD0171).
+    let cases = [
+        ("EXCL", types::PGM, Auth::EXCLUDE, false),
+        ("NOEXEC", types::PGM, Auth(A::OBJOPR | A::READ), false),
+        ("EXECONLY", types::PGM, Auth(A::EXECUTE), false),
+        ("RUNS", types::PGM, Auth(A::OBJOPR | A::EXECUTE), true),
+        ("USE", types::PGM, Auth::USE, true),
+        ("SRVEXEC", types::SRVPGM, Auth(A::EXECUTE), true),
+        ("SRVEXCL", types::SRVPGM, Auth::EXCLUDE, false),
+    ];
+    for (name, ty, public, ok) in cases {
+        let id = create(&mut t, app, name, ty, "QSECOFR");
+        grant::set_public(&mut t, id, Some(public)).unwrap();
+        let r = as_job(&bob, || check_id(&mut t, "pgm.call", id));
+        assert_eq!(r.is_ok(), ok, "{name}: {r:?}");
+    }
+    // *EXECUTE to the library is needed to name it.
+    grant::set_public(&mut t, app, Some(Auth::EXCLUDE)).unwrap();
+    assert!(as_job(&bob, || check_id(&mut t, "lib.search", app)).is_err());
+}

@@ -159,9 +159,10 @@ ipc::rpc! {
     /// itself; each change is a keyword and its value.
     8 => fn chgjob / Chgjob (job: String, changes: Vec<(String, String)>) -> Result<(), String>;
 
-    /// A `*PGM` (kind 0) or `*SRVPGM` (kind 1): its encoded object,
-    /// name and the library it was found in.
-    10 => fn program / Program (name: String, lib: String, kind: u8) -> Option<(Vec<u8>, String, String)>;
+    /// A `*PGM` (kind 0) or `*SRVPGM` (kind 1) the job may call: its
+    /// encoded object, name and the library it was found in; else
+    /// `MCH3401` (not found) or `MCH1001` (not authorized).
+    10 => fn program / Program (name: String, lib: String, kind: u8) -> Result<(Vec<u8>, String, String), String>;
     /// A system pointer's identifier for `lib/name` of a type.
     11 => fn resolve / Resolve (name: String, lib: String, ty: String) -> Option<u64>;
     /// The `(name, library)` an identifier names.

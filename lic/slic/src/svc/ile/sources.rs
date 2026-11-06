@@ -68,6 +68,8 @@ pub struct StoreObjects {
     shared: Shared,
     /// System pointer identifiers handed out: `(name, library)`.
     ids: Vec<(String, String)>,
+    /// The last program asked for was refused (`MCH1001`).
+    refused: bool,
 }
 
 impl StoreObjects {
@@ -76,8 +78,28 @@ impl StoreObjects {
         Self {
             shared,
             ids: Vec::new(),
+            refused: false,
         }
     }
+}
+
+/// Whether a named library is there but the job may not search it
+/// (`lib.search`, `*EXECUTE`): what a program in it cannot be called
+/// for.
+fn library_refused(shared: &Shared, lib: &str) -> bool {
+    let Ok(n) = Name::parse(lib) else {
+        return false;
+    };
+    if lib.starts_with('*') || lib.eq_ignore_ascii_case("QTEMP") {
+        return false;
+    }
+    with_main(shared, |txn, qsys| {
+        let Ok(found) = ops::find_library(txn, qsys, n) else {
+            return Ok(false);
+        };
+        Ok(store::obj::guard::check_id(txn, "lib.search", found.id).is_err())
+    })
+    .unwrap_or(false)
 }
 
 impl ObjectSource for StoreObjects {
@@ -91,15 +113,34 @@ impl ObjectSource for StoreObjects {
             PgmKind::Pgm => types::PGM,
             PgmKind::SrvPgm => types::SRVPGM,
         };
-        let (id, lib_name, temp) = find_object(&self.shared, name, lib, type_code)?;
-        let load = |txn: &mut Txn<'_>| ile::store::load_program(txn, id).map_err(|e| e.to_string());
+        self.refused = false;
+        let Some((id, lib_name, temp)) = find_object(&self.shared, name, lib, type_code) else {
+            self.refused = library_refused(&self.shared, lib);
+            return None;
+        };
+        // A call needs *OBJOPR and *EXECUTE to a program, *EXECUTE to a
+        // service program it activates (`pgm.call`); the same check for
+        // every caller: CALL, CL, QCMDEXC, batch, the host servers, QAP,
+        // SQL routines, triggers and exit programs.
+        // A refusal commits: its audit entry stays.
+        let load = |txn: &mut Txn<'_>| {
+            if store::obj::guard::check_id(txn, "pgm.call", id).is_err() {
+                return Ok(None);
+            }
+            ile::store::load_program(txn, id).map(Some).map_err(|e| e.to_string())
+        };
         let object = if temp {
             with_temp(&self.shared, |txn, _| load(txn))
         } else {
             with_main(&self.shared, |txn, _| load(txn))
         }
         .ok()?;
-        Some((Arc::new(object), lib_name))
+        self.refused = object.is_none();
+        Some((Arc::new(object?), lib_name))
+    }
+
+    fn refusal(&mut self) -> Option<mi::Cond> {
+        self.refused.then_some(mi::Cond::Mch1001)
     }
 
     fn resolve(&mut self, name: &str, lib: &str, obj_type: &str) -> Option<u64> {

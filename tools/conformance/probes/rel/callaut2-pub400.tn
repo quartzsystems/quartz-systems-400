@@ -1,0 +1,114 @@
+# The same refused CALL (see callaut-pub400.tn) through QCMDEXC and
+# from a compiled CL program, on pub400 (V7R5M0). QSCALLAUT is again a
+# copy of {user}1/QSTESTPUB with no authority left; the CL program is
+# made in QTEMP from three source lines inserted with RUNSQL and
+# monitors CPF0000 and MCH0000 so no inquiry stops it. The printed job
+# log shows the IDs; then the spooled file and the copy are deleted.
+continue
+timeout 60000
+settle 3000
+key enter
+wait "Main Menu"
+type call qcmd
+key enter
+wait "Command Entry"
+type CRTDUPOBJ OBJ(QSTESTPUB) FROMLIB({user}1) OBJTYPE(*PGM) NEWOBJ(QSCALLAUT)
+key enter
+settle 3000
+key eraseeof
+type RVKOBJAUT OBJ({user}1/QSCALLAUT) OBJTYPE(*PGM) USER(*PUBLIC) AUT(*ALL)
+key enter
+settle 3000
+key eraseeof
+type RVKOBJAUT OBJ({user}1/QSCALLAUT) OBJTYPE(*PGM) USER({user}) AUT(*ALL)
+key enter
+settle 3000
+key eraseeof
+type CALL QCMDEXC PARM('CALL {user}1/QSCALLAUT' 24)
+key enter
+settle 4000
+key eraseeof
+type CRTSRCPF FILE(QTEMP/QCLSRC) MBR(CALLT)
+key enter
+settle 3000
+key eraseeof
+type RUNSQL SQL('INSERT INTO QTEMP/QCLSRC VALUES(1, 0, ''PGM'')') COMMIT(*NONE)
+key enter
+settle 3000
+key eraseeof
+type RUNSQL SQL('INSERT INTO QTEMP/QCLSRC VALUES(2, 0, ''CALL PGM({user}1/QSCALLAUT)'')') COMMIT(*NONE)
+key enter
+settle 3000
+key eraseeof
+type RUNSQL SQL('INSERT INTO QTEMP/QCLSRC VALUES(3, 0, ''MONMSG MSGID(CPF0000 MCH0000)'')') COMMIT(*NONE)
+key enter
+settle 3000
+key eraseeof
+type RUNSQL SQL('INSERT INTO QTEMP/QCLSRC VALUES(4, 0, ''ENDPGM'')') COMMIT(*NONE)
+key enter
+settle 3000
+key eraseeof
+type CRTBNDCL PGM(QTEMP/CALLT) SRCFILE(QTEMP/QCLSRC) SRCMBR(CALLT)
+key enter
+settle 8000
+key eraseeof
+type CALL QTEMP/CALLT
+key enter
+settle 4000
+key f10
+settle 1500
+show
+key eraseeof
+type DSPJOBLOG OUTPUT(*PRINT)
+key enter
+settle 5000
+key eraseeof
+type DSPSPLF FILE(QPJOBLOG) JOB(*) SPLNBR(*LAST)
+key enter
+settle 4000
+type B
+key enter
+settle 2000
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key pgup
+settle 1500
+show
+key f3
+settle 2000
+key eraseeof
+type DLTSPLF FILE(QPJOBLOG) JOB(*) SPLNBR(*LAST)
+key enter
+settle 3000
+key eraseeof
+type DLTSPLF FILE(CALLT) JOB(*) SPLNBR(*LAST)
+key enter
+settle 3000
+key eraseeof
+type GRTOBJAUT OBJ({user}1/QSCALLAUT) OBJTYPE(*PGM) USER({user}) AUT(*ALL)
+key enter
+settle 3000
+key eraseeof
+type DLTPGM PGM({user}1/QSCALLAUT)
+key enter
+settle 3000
+show
+key f3
+settle 2000

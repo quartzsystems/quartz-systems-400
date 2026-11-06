@@ -1506,14 +1506,18 @@ impl Service for Served<'_> {
         name: String,
         lib: String,
         kind: u8,
-    ) -> Option<(Vec<u8>, String, String)> {
+    ) -> Result<(Vec<u8>, String, String), String> {
         let kind = if kind == 1 {
             PgmKind::SrvPgm
         } else {
             PgmKind::Pgm
         };
-        self.lent(|c| c.objects.program(&name, &lib, kind))
-            .map(|(p, l)| (p.encode(), p.name.clone(), l))
+        self.lent(|c| {
+            c.objects
+                .program(&name, &lib, kind)
+                .ok_or_else(|| c.objects.refusal().unwrap_or(mi::Cond::Mch3401).msgid())
+        })
+        .map(|(p, l)| (p.encode(), p.name.clone(), l))
     }
 
     fn resolve(&mut self, name: String, lib: String, ty: String) -> Option<u64> {

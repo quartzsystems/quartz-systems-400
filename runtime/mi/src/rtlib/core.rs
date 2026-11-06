@@ -290,6 +290,35 @@ fn args_at(argc: i64, argv: i64) -> Vec<u64> {
         .collect()
 }
 
+/// A dynamic call that failed with `c`. A CL program's `CALL` of a
+/// program it may not call gets what IBM's CL gives (pub400 V7R5M0,
+/// `tools/conformance/oracle/sec/call-authority.md`): `CPD0171`, then
+/// the escape `CPF0001`; other callers get the condition.
+fn call_failed(j: &mut Job, c: Cond, name: &str, lib: &str) {
+    let from_cl = j
+        .act
+        .frames
+        .last()
+        .and_then(|f| f.program.as_ref())
+        .is_some_and(|p| {
+            !p.object.modules.is_empty()
+                && p.object.modules.iter().all(|m| m.module.ir.lang == qir::module::Lang::Clle)
+        });
+    if c != Cond::Mch1001 || !from_cl {
+        raise_on(j, c);
+        return;
+    }
+    let field = |s: &str| {
+        let mut b = ccsid::to_ebcdic(s).unwrap_or_default();
+        b.resize(10, 0x40);
+        b
+    };
+    let mut data = field(name);
+    data.extend(field(lib));
+    let _ = j.send_message("CPD0171", "QCPFMSG", "QSYS", data, qir::MsgType::Diag, crate::msg::QueueRef::Same);
+    let _ = j.send_message("CPF0001", "QCPFMSG", "QSYS", field("CALL"), qir::MsgType::Escape, crate::msg::QueueRef::Same);
+}
+
 /// `call_pgm(env, name, lib, argc, argv)`.
 pub extern "sysv64" fn call_pgm(env: *mut Env, name: i64, lib: i64, argc: i64, argv: i64) {
     let n = name_at(name);
@@ -297,7 +326,7 @@ pub extern "sysv64" fn call_pgm(env: *mut Env, name: i64, lib: i64, argc: i64, a
     let args = args_at(argc, argv);
     let j = job(env);
     if let Err(c) = j.call_program(&n, &l, &args) {
-        raise_on(j, c);
+        call_failed(j, c, &n, &l);
     }
 }
 
@@ -312,7 +341,7 @@ pub extern "sysv64" fn call_pgm_var(env: *mut Env, addr: i64, len: i64, argc: i6
     let args = args_at(argc, argv);
     let j = job(env);
     if let Err(c) = j.call_program(&n, &l, &args) {
-        raise_on(j, c);
+        call_failed(j, c, &n, &l);
     }
 }
 
@@ -329,7 +358,7 @@ pub extern "sysv64" fn call_pgm_ptr(env: *mut Env, ptr: i64, argc: i64, argv: i6
             };
             let args = args_at(argc, argv);
             if let Err(c) = j.call_program(&name, &lib, &args) {
-                raise_on(j, c);
+                call_failed(j, c, &name, &lib);
             }
         }
         Some(PtrKind::Null) => raise_on(j, Cond::Mch3601),

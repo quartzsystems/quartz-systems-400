@@ -122,7 +122,8 @@ pub fn status_of(c: Cond) -> u16 {
         Cond::Mch1602 => 112,
         // A program or procedure that cannot be resolved (pub400:
         // CALLP of a missing EXTPGM is 00211).
-        Cond::Mch3401 => 211,
+        // A program it may not call fails its call the same way.
+        Cond::Mch3401 | Cond::Mch1001 => 211,
         Cond::Mch0601
         | Cond::Mch0602
         | Cond::Mch3402

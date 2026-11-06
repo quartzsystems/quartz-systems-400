@@ -191,12 +191,16 @@ fn secofr(sec: &mut Conn) -> Result<u32, String> {
 }
 
 /// `*PUBLIC *EXCLUDE` on a command (`DSPPTF`, shipped so), a program
-/// and a library holds for commands run through QAP as `QAPTEST`; the
-/// security officer runs each.
+/// (called directly, through QCMDEXC and from a CL program), `*USE`
+/// without `*EXECUTE` on a program, and `*EXCLUDE` on a library holds
+/// for commands run through QAP as `QAPTEST`; the security officer
+/// runs each.
 pub fn exclusions(a: &mut Conn, sec: &mut Conn) -> Result<String, String> {
     let lines = [
         ("the command", "DSPPTF"),
         ("the program", "CALL PGM(QGPL/QAPXPGM)"),
+        ("the program without *EXECUTE", "CALL PGM(QGPL/QAPXNOX)"),
+        ("the program through QCMDEXC", "CALL PGM(QCMDEXC) PARM('CALL QGPL/QAPXPGM' 17)"),
         ("the library", "CHKOBJ OBJ(QAPXLIB/QAPXDTA) OBJTYPE(*DTAARA)"),
     ];
     let mut out = Vec::new();
@@ -205,8 +209,16 @@ pub fn exclusions(a: &mut Conn, sec: &mut Conn) -> Result<String, String> {
         if matches!(id.as_str(), "CPF9801" | "CPF9810" | "CPD0030" | "CPF2105") {
             return Err(format!("{line} as QAPTEST: {id}, as if {what} were not there"));
         }
+        // CPD0032 for the command, CPD0171 then CPF0001 for the program
+        // (pub400, tools/conformance/oracle/sec/call-authority.md).
+        if what != "the library" && status != Status::NotAuthorized {
+            return Err(format!("{line} as QAPTEST: {status:?} {id}, not NotAuthorized"));
+        }
         super::command(sec, line).map_err(|e| format!("as QSECOFR: {e}"))?;
         out.push(format!("{what} refused ({status:?} {id})"));
     }
+    // A CL program's CALL of it: CPF0001, which the program monitors.
+    super::command(a, "CALL PGM(QGPL/QAPXCL)").map_err(|e| format!("the CL program as QAPTEST: {e}"))?;
+    out.push("a CL program's CALL of it ends in CPF0001".into());
     Ok(format!("*PUBLIC *EXCLUDE through RunCommand: {}", out.join(", ")))
 }

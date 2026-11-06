@@ -27,7 +27,7 @@ const PGM: (&str, &str) = ("QAPCNN", "QSYS");
 /// not there.
 const NOT_FOUND: &[&str] = &["CPD0030", "CPF9801", "CPF2105", "CPF2110"];
 /// ... and that the profile may not use it.
-const NOT_AUTHORIZED: &[&str] = &["CPF9802", "CPF2189", "CPF2207", "CPD0033", "CPF22E9", "CPF2217"];
+const NOT_AUTHORIZED: &[&str] = &["CPF9802", "CPF2189", "CPF2207", "CPD0032", "CPD0033", "CPD0171", "MCH1001", "CPF22E9", "CPF2217"];
 
 /// A job log entry as the client sees it.
 fn message_of(e: &wm::joblog::Entry) -> ServerMessage {

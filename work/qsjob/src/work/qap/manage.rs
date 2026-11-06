@@ -88,7 +88,7 @@ impl Ctx<'_> {
 /// The status a command's message stands for.
 fn status_of(id: &str) -> Status {
     match id {
-        "CPF222E" | "CPF18B4" | "CPF9802" | "CPF2189" | "CPF2182" | "CPF2207" | "CPD0032" => Status::NotAuthorized,
+        "CPF222E" | "CPF18B4" | "CPF9802" | "CPF2189" | "CPF2182" | "CPF2207" | "CPD0032" | "CPD0171" | "MCH1001" => Status::NotAuthorized,
         "CPF9801" | "CPF1003" | "CPF2110" | "CPF1842" | "CPD0030" => Status::NotFound,
         _ => Status::Error,
     }

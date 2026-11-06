@@ -179,9 +179,24 @@ fn excluded(s: &mut Session) -> Result<(), String> {
     expect(s, "svc.srcput QGPL/QCLSRC QAPXPGM SRCTYPE(CLP) FROMSTMF(QAPXSRC)", &["written"])?;
     let _ = s.command("DLTPGM PGM(QGPL/QAPXPGM)", CMD);
     expect(s, "CRTCLPGM PGM(QGPL/QAPXPGM) SRCFILE(QGPL/QCLSRC) SRCMBR(QAPXPGM)", &["QAPXPGM"])?;
+    // A CL program whose CALL of QAPXPGM must end in CPF0001, which it
+    // monitors; had the call run, it ends in an escape.
+    crate::qir::qemu::push(
+        s,
+        "QAPXCLS",
+        "PGM\nCALL PGM(QGPL/QAPXPGM)\nMONMSG MSGID(CPF0001) EXEC(RETURN)\nSNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('QAPXPGM ran') MSGTYPE(*ESCAPE)\nENDPGM\n",
+    )?;
+    expect(s, "svc.srcput QGPL/QCLSRC QAPXCL SRCTYPE(CLP) FROMSTMF(QAPXCLS)", &["written"])?;
+    let _ = s.command("DLTPGM PGM(QGPL/QAPXCL)", CMD);
+    expect(s, "CRTCLPGM PGM(QGPL/QAPXCL) SRCFILE(QGPL/QCLSRC) SRCMBR(QAPXCL)", &["QAPXCL"])?;
+    // *USE without *EXECUTE: *OBJOPR *READ.
+    let _ = s.command("DLTPGM PGM(QGPL/QAPXNOX)", CMD);
+    expect(s, "CRTCLPGM PGM(QGPL/QAPXNOX) SRCFILE(QGPL/QCLSRC) SRCMBR(QAPXPGM)", &["QAPXNOX"])?;
     let _ = s.command("CRTLIB LIB(QAPXLIB)", CMD);
     let _ = s.command("CRTDTAARA DTAARA(QAPXLIB/QAPXDTA) TYPE(*CHAR) LEN(10)", CMD);
     for line in [
+        "RVKOBJAUT OBJ(QGPL/QAPXNOX) OBJTYPE(*PGM) USER(*PUBLIC) AUT(*ALL)",
+        "GRTOBJAUT OBJ(QGPL/QAPXNOX) OBJTYPE(*PGM) USER(*PUBLIC) AUT(*OBJOPR *READ)",
         "GRTOBJAUT OBJ(QGPL/QAPXPGM) OBJTYPE(*PGM) USER(*PUBLIC) AUT(*EXCLUDE)",
         "GRTOBJAUT OBJ(QSYS/QAPXLIB) OBJTYPE(*LIB) USER(*PUBLIC) AUT(*EXCLUDE)",
         "CHKOBJ OBJ(QAPXLIB/QAPXDTA) OBJTYPE(*DTAARA)",

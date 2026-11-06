@@ -260,6 +260,14 @@ ibm = "ADDPFTRG: *OBJOPR, *READ and *OBJALTER or *OBJMGT to the physical file (A
 need = ["*OBJALTER|*OBJMGT"]
 ibm = "RMVPFTRG, CHGPFTRG: *OBJALTER or *OBJMGT to the physical file"
 
+[op."pgm.call"]
+need = ["*OBJOPR", "*EXECUTE"]
+ibm = "CALL and every dynamic call (CL, QCMDEXC, SBMJOB, the host servers, QAP, SQL routines, triggers, exit programs): *OBJOPR and *EXECUTE to the program; pub400 V7R5M0 refuses *EXCLUDE, *OBJOPR *READ and *EXECUTE alone with CPD0171"
+
+[op."pgm.call@*SRVPGM"]
+need = ["*EXECUTE"]
+ibm = "a service program activated for the program called: *EXECUTE"
+
 [op."pgm.trigger"]
 need = ["*EXECUTE"]
 ibm = "ADDPFTRG, and CREATE TRIGGER as it adds its own program: *EXECUTE to the trigger program (and to its library: lib.search)"

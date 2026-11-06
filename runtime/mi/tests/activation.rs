@@ -198,6 +198,22 @@ fn procedure_pointers_and_missing_programs() {
 }
 
 #[test]
+fn a_program_the_user_may_not_call_is_mch1001() {
+    // The source refuses it (*EXCLUDE, or *USE without *EXECUTE): not
+    // MCH3401, and its code never runs.
+    let text = "module CALLER\nproc CALLER() entry {\nL0:\n  monitor M, MCH1001 -> NOAUT\n  call SECRET()\n  dsply \"not reached\"\n  endmon M\n  ret\nNOAUT:\n  dsply \"not authorized\"\n  ret\n}\n";
+    let mut src = MemSource::default();
+    src.add("QGPL", program(text, ActGrpAttr::Caller));
+    src.add("QGPL", counter("SECRET", ActGrpAttr::Caller));
+    src.denied.push("QGPL/SECRET".into());
+    let mut job = Job::boxed(Box::new(src));
+    job.call_program("CALLER", "*LIBL", &[]).unwrap();
+    assert_eq!(job.console, vec!["not authorized"]);
+    assert_eq!(job.call_program("SECRET", "QGPL", &[]), Err(Cond::Mch1001));
+    assert_eq!(job.call_program("NOSUCH", "QGPL", &[]), Err(Cond::Mch3401));
+}
+
+#[test]
 fn parameters_pass_through_a_dynamic_call() {
     let callee = program(
         "module ADDER\nproc ADDER($a: i32, $b: i32, $sum: i32) entry {\nL0:\n  %n = parms\n  %a = load $a\n  %b = load $b\n  %s = add %a, %b\n  store $sum, %s\n  dsply %n\n  ret\n}\n",

@@ -366,6 +366,22 @@ A refusal reaches a program as an escape with the guard's identifier
 database's feedback and on a data area or queue through the job's
 source, so a program monitors it like any other condition.
 
+Calling a program needs `*OBJOPR` and `*EXECUTE` to it (`pgm.call`),
+`*EXECUTE` to a service program it activates (`pgm.call@*SRVPGM`) and
+`*EXECUTE` to a library named for it (`lib.search`); finding the
+object (`obj.describe`, any authority) is not enough. The check is in
+the storage service's program source, which every dynamic call loads
+through: `CALL`, a CL program's `CALL`, `QCMDEXC`, `SBMJOB CMD(CALL)`,
+the host servers' remote command and program call, QAP, SQL external
+routines, trigger programs and exit programs. A refusal is what pub400
+gives (`tools/conformance/oracle/sec/call-authority.md`): the `CALL`
+command sends `CPD0171` and ends in `CPF0001` (`QCMDEXC` then in
+`CPF0006`), a CL program receives the same `CPF0001`, and other
+callers (RPG, the IR, the host servers' program call) the machine
+exception `MCH1001`. The system APIs QS/400 implements natively
+(`QCMDEXC`, `QUSRJOBI`, ...) have no `*PGM` objects and so no
+authority to check.
+
 Save and restore follow IBM's table: `*SAVSYS` stands in for the
 authority to the objects saved or restored (`obj.save`,
 `obj.restore`), never for the save file used as the medium. A save
