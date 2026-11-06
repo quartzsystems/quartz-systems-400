@@ -27,7 +27,8 @@ What the sweep settled:
   (`p BYTE UTF16 BACK`) convert each byte alone. QS/400 converts 420
   and 424 a character at a time with these tables and does no bidi
   layout. In 420 several shapes of one letter decode to the same
-  character and encode back to the lowest byte.
+  character and encode back to the one byte the oracle's `BACK` gives
+  (the other rows of `cp0420.csv` are marked decode only).
 - The ASCII CCSIDs 367, 819, 850 and 1252 are refused in a `CAST ...
   CCSID` clause on V7R1M0 (SQL0189), so they were not swept.
 - Unicode: 1200, 13488, 61952 (UCS-2) and 1208 convert; 1202, 1232,
@@ -35,3 +36,9 @@ What the sweep settled:
 
 `storage/ccsid/tests/oracle.rs` checks every swept table against this
 file.
+
+The Spanish language feature (2931, `QSYS2931`): a job with
+`LANGID(ESP) CNTRYID(ES) CCSID(65535)` has default CCSID 284 on the
+primary (`DSPJOB OPTION(*DFNA)`, `tools/conformance/probes/rel/timzon71.tn`,
+2026-11-06), the CCSID `storage/ccsid/src/nls.rs` gives ESP; 1145 (284
+with the euro) is a CCSID a job may choose, not the language's default.

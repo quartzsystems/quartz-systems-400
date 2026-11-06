@@ -672,6 +672,9 @@ impl Suite {
         reports.push(self.step(&mut s, "120 INSLNG", Self::install_language)?);
         reports.push(self.step(&mut s, "121 Spanish sign-on", Self::spanish_sign_on)?);
         reports.push(self.step(&mut s, "122 date and time formats", Self::date_formats)?);
+        reports.push(self.step(&mut s, "143 time zone descriptions", Self::time_zones)?);
+        reports.push(self.step(&mut s, "144 WRKTIMZON", Self::work_time_zones)?);
+        reports.push(self.step(&mut s, "145 CCSID tables", Self::ccsid_tables)?);
         reports.push(self.step(&mut s, "104 wrapped command lines", Self::wrapped_command_lines)?);
         reports.push(self.step(&mut s, "146 security and work management exit points", Self::exit_points)?);
         reports.push(self.step(&mut s, "147 function usage and security attributes", Self::function_usage)?);
