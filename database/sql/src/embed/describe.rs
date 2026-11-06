@@ -399,7 +399,7 @@ fn markers(t: &Tables, st: &Statement) -> Vec<(usize, Col, Option<String>)> {
             }
         };
         match e {
-            Expr::Compare(a, _, b, _) => {
+            Expr::Compare(a, _, b, _) | Expr::Binary(a, _, b) => {
                 beside(a, b, out);
                 beside(b, a, out);
                 walk(t, a, out);
@@ -428,9 +428,11 @@ fn markers(t: &Tables, st: &Statement) -> Vec<(usize, Col, Option<String>)> {
                 }
             }
             Expr::Cast(x, _) => walk(t, x, out),
-            Expr::Binary(a, _, b) => {
-                beside(a, b, out);
-                beside(b, a, out);
+            // Typed markers in a function's arguments.
+            Expr::Function(f) => {
+                for a in &f.args {
+                    walk(t, a, out);
+                }
             }
             _ => {}
         }
