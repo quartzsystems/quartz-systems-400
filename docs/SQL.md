@@ -277,6 +277,7 @@ a known function with the wrong arguments SQL0170 or SQL0440.
 | `QSYS2.SYSVARIABLEDEP`, `SYSJARCONTENTS`, `SYSJAROBJECTS` | present, empty | primary (columns) | `objects2/TYPES` |
 | `QSYS2.SYSTABAUTH` | supported | pub400 | `sql::objects` |
 | `QSYS2.SYSCOLAUTH` | present, always empty: BLOCKED(sql), the store keeps no column authorities | pub400 | `sql::objects` |
+| `QSYS2.SYSPACKAGE`, `SYSPACKAGESTAT` | supported over every library's `*SQLPKG`; the precompile options, sort sequence, use counts and SQL path a package does not keep are null | primary (columns) | `sql::exec::catalog::packages`, step 132 `sqlpkg` |
 | Catalog views in a schema (`CREATE SCHEMA`) | partial: the QSYS2 views above only | none | |
 | `SYSIBM.SYSDUMMY1` | supported | primary | |
 | Other `QSYS2` catalogs, `SYSIBM` metadata views | not present: SQL0204 | primary | |

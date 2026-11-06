@@ -9,6 +9,7 @@
 pub mod auth;
 pub mod cst;
 pub mod objects2;
+pub mod packages;
 pub mod routines;
 pub mod services;
 pub mod sys;
@@ -45,6 +46,7 @@ const PROVIDERS: &[Provider] = &[
     Provider { has: services::has, table: services::table },
     Provider { has: sysibm::has, table: sysibm::virtual_table },
     Provider { has: objects2::has, table: objects2::virtual_table },
+    Provider { has: packages::has, table: packages::virtual_table },
 ];
 
 /// Whether `name` names a computed view.
