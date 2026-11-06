@@ -112,8 +112,6 @@ pub mod ids {
     pub const PGM_FIRST: &str = "CPD0760";
     /// A command the analyzer rejected.
     pub const COMMAND: &str = "CPD0770";
-    /// Something this release does not compile.
-    pub const UNSUPPORTED: &str = "CPD0790";
     /// A subroutine used but not defined, or defined twice.
     pub const SUBR: &str = "CPD0795";
 }

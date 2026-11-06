@@ -1022,12 +1022,6 @@ text = "Errors were found on the command."
 help = "The command analyzer refused the command; the messages before this one say why."
 
 [[msg]]
-id = "CPD0790"
-sev = 10
-text = "The statement or parameter is not supported in this release."
-help = "The compiler accepted the statement but will not act on it. The detail of the message says what is left out."
-
-[[msg]]
 id = "CPD0795"
 sev = 30
 text = "A subroutine statement is misplaced or names an unknown subroutine."

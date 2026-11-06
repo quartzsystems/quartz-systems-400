@@ -209,10 +209,6 @@ impl Gen<'_, '_> {
         self.diags.push(Diag::at(line, id, text));
     }
 
-    fn warn(&mut self, line: usize, id: &str, text: impl Into<String>) {
-        self.diags.push(Diag::warn(line, id, text));
-    }
-
     /// The statement label of statement `n`.
     fn stmt_label(n: usize) -> String {
         format!("S{n}")

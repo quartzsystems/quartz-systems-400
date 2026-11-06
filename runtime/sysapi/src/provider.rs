@@ -322,9 +322,59 @@ pub struct UserInfo {
     pub text: String,
 }
 
+/// A message on a named message queue (`*MSGQ`).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct QueueMsg {
+    /// Its key on the queue.
+    pub key: u32,
+    /// `*INFO`, `*INQ`, `*RPY`, `*COMP`, `*DIAG`, `*NOTIFY`, `*ESCAPE`
+    /// or `*COPY`.
+    pub kind: String,
+    /// Severity.
+    pub severity: u8,
+    /// Identifier, blank for an immediate message.
+    pub msgid: String,
+    /// Message file and its library.
+    pub msgf: (String, String),
+    /// Message data.
+    pub data: Vec<u8>,
+    /// First-level text.
+    pub text: String,
+    /// Second-level text.
+    pub help: String,
+    /// For an inquiry, its reply once answered.
+    pub reply: String,
+}
+
+/// `CPF2403`: queue `name` in `lib` not found.
+fn no_queue(lib: &str, name: &str) -> ApiFail {
+    ApiFail::id("CPF2403").text(name, 10).text(lib, 10)
+}
+
 /// Where the APIs' objects live.
 #[allow(unused_variables)]
 pub trait Provider {
+    /// Send `m` to message queue `lib/name`; its key there.
+    fn msgq_send(&mut self, lib: &str, name: &str, m: QueueMsg) -> ApiResult<u32> {
+        Err(no_queue(lib, name))
+    }
+    /// Receive from message queue `lib/name` the first message of
+    /// `kind` (any when `None`) or the one with `key`; `remove` takes it
+    /// off the queue, else it is marked old.
+    fn msgq_receive(
+        &mut self,
+        lib: &str,
+        name: &str,
+        kind: Option<&str>,
+        key: Option<u32>,
+        remove: bool,
+    ) -> ApiResult<Option<QueueMsg>> {
+        Err(no_queue(lib, name))
+    }
+    /// The messages on queue `lib/name`, oldest first.
+    fn msgq_list(&mut self, lib: &str, name: &str) -> ApiResult<Vec<QueueMsg>> {
+        Err(no_queue(lib, name))
+    }
     /// A product or license API over its parameters' bytes
     /// (`licpgm::api::dispatch`); the shipped catalog answers by default.
     fn licpgm(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
@@ -573,6 +623,8 @@ pub struct MemProvider {
     pub sec: Option<SecAnswers>,
     /// The registration facility, the shipped points to start.
     pub regfac: regfac::Registry,
+    /// Message queues by `(library, name)`, oldest message first.
+    pub msgqs: HashMap<(String, String), Vec<QueueMsg>>,
     catalog: sysval::Catalog,
 }
 
@@ -620,6 +672,7 @@ impl Default for MemProvider {
             }],
             sec: None,
             regfac: regfac::Registry::shipped(),
+            msgqs: HashMap::new(),
             catalog: sysval::Catalog::builtin().expect("the catalog parses"),
         }
     }
@@ -733,6 +786,38 @@ impl MemProvider {
 }
 
 impl Provider for MemProvider {
+    fn msgq_send(&mut self, lib: &str, name: &str, mut m: QueueMsg) -> ApiResult<u32> {
+        let k = Self::find_key(&self.msgqs, lib, name).ok_or_else(|| no_queue(lib, name))?;
+        let key = self.msgqs.values().flatten().map(|m| m.key).max().unwrap_or(0) + 1;
+        m.key = key;
+        self.msgqs.entry(k).or_default().push(m);
+        Ok(key)
+    }
+
+    fn msgq_receive(
+        &mut self,
+        lib: &str,
+        name: &str,
+        kind: Option<&str>,
+        key: Option<u32>,
+        remove: bool,
+    ) -> ApiResult<Option<QueueMsg>> {
+        let k = Self::find_key(&self.msgqs, lib, name).ok_or_else(|| no_queue(lib, name))?;
+        let q = self.msgqs.entry(k).or_default();
+        let Some(i) = q
+            .iter()
+            .position(|m| key.is_none_or(|k| m.key == k) && kind.is_none_or(|t| m.kind == t))
+        else {
+            return Ok(None);
+        };
+        Ok(Some(if remove { q.remove(i) } else { q[i].clone() }))
+    }
+
+    fn msgq_list(&mut self, lib: &str, name: &str) -> ApiResult<Vec<QueueMsg>> {
+        let k = Self::find_key(&self.msgqs, lib, name).ok_or_else(|| no_queue(lib, name))?;
+        Ok(self.msgqs.get(&k).cloned().unwrap_or_default())
+    }
+
     fn list_objects(&mut self, lib: &str, name: &str, ty: &str) -> Vec<ObjInfo> {
         self.objects
             .iter()

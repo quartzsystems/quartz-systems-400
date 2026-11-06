@@ -1,0 +1,78 @@
+QS/400 ILE CL compiler                  V1R1M0
+
+Program  . . . . . . . . . . . . :   MSGQ
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   MSGQ
+Text . . . . . . . . . . . . . . :   corpus MSGQ
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* SNDPGMMSG TOMSGQ to a named queue, RCVMSG MSGQ, WAIT and the return */
+                    /* variables; CHGDTAARA with a length in a variable.                   */
+        1        0               PGM
+        2        0               DCL        VAR(&K) TYPE(*CHAR) LEN(4)
+        3        0               DCL        VAR(&K2) TYPE(*CHAR) LEN(4)
+        4        0               DCL        VAR(&M) TYPE(*CHAR) LEN(40)
+        5        0               DCL        VAR(&T) TYPE(*CHAR) LEN(2)
+        6        0               DCL        VAR(&ID) TYPE(*CHAR) LEN(7)
+        7        0               DCL        VAR(&L) TYPE(*DEC) LEN(5 0)
+        8        0               DCL        VAR(&SEV) TYPE(*DEC) LEN(2 0)
+        9        0               DCL        VAR(&F) TYPE(*CHAR) LEN(10)
+       10        0               DCL        VAR(&D) TYPE(*CHAR) LEN(10)
+       11        0               DCL        VAR(&S) TYPE(*DEC) LEN(3 0) VALUE(4)
+       12        0               DCL        VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(5)
+       13        0               SNDPGMMSG  MSG('to the queue') TOMSGQ(QGPL/KITMSGQ) +
+                                              KEYVAR(&K)
+       14        0               SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('second') +
+                                              TOMSGQ(KITMSGQ) MSGTYPE(*COMP)
+       15        0               RCVMSG     MSGQ(QGPL/KITMSGQ) MSGKEY(&K) MSG(&M) +
+                                              RTNTYPE(&T) MSGLEN(&L) KEYVAR(&K2)
+       16        0               IF         COND(&K *EQ &K2) THEN(SNDPGMMSG MSG('same key') +
+                                              TOPGMQ(*EXT))
+       17        0               SNDPGMMSG  MSG('queue [' *CAT &M *TCAT '] ' *CAT &T *BCAT +
+                                              %CHAR(&L)) TOPGMQ(*EXT)
+       18        0               RCVMSG     MSGQ(KITMSGQ) MSGTYPE(*COMP) MSGID(&ID) +
+                                              RTNTYPE(&T) SEV(&SEV) MSGF(&F)
+       19        0               SNDPGMMSG  MSG('next ' *CAT &ID *BCAT &T *BCAT %CHAR(&SEV) +
+                                              *BCAT &F) TOPGMQ(*EXT)
+       20        0               SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('diag') +
+                                              TOPGMQ(*SAME) MSGTYPE(*DIAG)
+       21        0               RCVMSG     PGMQ(*SAME) RTNTYPE(&T) MSGDTALEN(&L)
+       22        0               SNDPGMMSG  MSG('program queue ' *CAT &T *BCAT %CHAR(&L)) +
+                                              TOPGMQ(*EXT)
+       23        0               RCVMSG     PGMQ(*SAME) WAIT(1) MSGID(&ID) RTNTYPE(&T)
+       24        0               SNDPGMMSG  MSG('after a wait [' *CAT &ID *CAT &T *TCAT ']') +
+                                              TOPGMQ(*EXT)
+       25        0               RCVMSG     MSGQ(KITMSGQ) MSG(&M) RTNTYPE(&T)
+       26        0               SNDPGMMSG  MSG('empty queue [' *CAT &M *TCAT &T *TCAT ']') +
+                                              TOPGMQ(*EXT)
+       27        0               CHGDTAARA  DTAARA(*LDA (1 10)) VALUE('abcdefghij')
+       28        0               CHGDTAARA  DTAARA(*LDA (&S &N)) VALUE('XY')
+       29        0               RTVDTAARA  DTAARA(*LDA (1 10)) RTNVAR(&D)
+       30        0               SNDPGMMSG  MSG('lda [' *CAT &D *TCAT ']') TOPGMQ(*EXT)
+       31        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&D          *CHAR   10            15  29 30
+&F          *CHAR   10            14  18 19
+&ID         *CHAR   7             11  18 19 23 24
+&K          *CHAR   4              7  3 13 15 16
+&K2         *CHAR   4              8  15 16
+&L          *DEC    5 0           12  15 17 21 22
+&M          *CHAR   40             9  15 17 25 26
+&N          *DEC    3 0           17  28
+&S          *DEC    3 0           16  8 18 19 28
+&SEV        *DEC    2 0           13  18 19
+&T          *CHAR   2             10  15 17 18 19 21 22 23 24 25 26
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program MSGQ created.
+End of compilation.

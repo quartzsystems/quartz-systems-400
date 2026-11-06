@@ -8,8 +8,10 @@
 
 use sysapi::{
     ApiFail, ApiResult, CommitInfo, DataArea, DataAreaType, DepInfo, DtaqEntry, DtaqInfo, FileInfo,
-    FormatInfo, IdxAttr, LocalNow, MemberInfo, ObjInfo, Provider, SysVal, UserInfo,
+    FormatInfo, IdxAttr, LocalNow, MemberInfo, ObjInfo, Provider, QueueMsg, SysVal, UserInfo,
 };
+
+use wm::obj::msgq::{MsgKind, QMsg};
 
 use crate::Shared;
 use crate::proto::Client;
@@ -28,7 +30,98 @@ impl RemoteProvider {
     }
 }
 
+/// A message queue's kind by its `*MSGQ` name.
+fn kind_of(name: &str) -> MsgKind {
+    match name {
+        "*INQ" => MsgKind::Inq,
+        "*RPY" => MsgKind::Rpy,
+        "*COMP" => MsgKind::Comp,
+        "*DIAG" => MsgKind::Diag,
+        "*NOTIFY" => MsgKind::Notify,
+        "*ESCAPE" => MsgKind::Escape,
+        "*COPY" => MsgKind::Copy,
+        _ => MsgKind::Info,
+    }
+}
+
+fn kind_name(k: MsgKind) -> &'static str {
+    match k {
+        MsgKind::Info => "*INFO",
+        MsgKind::Inq => "*INQ",
+        MsgKind::Rpy => "*RPY",
+        MsgKind::Comp => "*COMP",
+        MsgKind::Diag => "*DIAG",
+        MsgKind::Notify => "*NOTIFY",
+        MsgKind::Escape => "*ESCAPE",
+        MsgKind::Copy => "*COPY",
+    }
+}
+
+fn queue_msg(m: QMsg) -> QueueMsg {
+    QueueMsg {
+        key: m.key,
+        kind: kind_name(m.kind).into(),
+        severity: m.severity,
+        msgid: m.msgid,
+        msgf: m.msgf,
+        data: m.data,
+        text: m.text,
+        help: m.help,
+        reply: m.reply,
+    }
+}
+
+/// A service refusal (`CPFnnnn text`) as an API's.
+fn msgq_fail(e: &str, lib: &str, name: &str) -> ApiFail {
+    match e.split_whitespace().next() {
+        Some(id) if id.len() == 7 && id.starts_with("CP") && id != "CPF2403" => {
+            ApiFail::id(id).text(name, 10).text(lib, 10)
+        }
+        _ => ApiFail::id("CPF2403").text(name, 10).text(lib, 10),
+    }
+}
+
 impl Provider for RemoteProvider {
+    fn msgq_send(&mut self, lib: &str, name: &str, m: QueueMsg) -> ApiResult<u32> {
+        let q = QMsg {
+            kind: kind_of(&m.kind),
+            severity: m.severity,
+            msgid: m.msgid,
+            msgf: m.msgf,
+            data: m.data,
+            text: m.text,
+            help: m.help,
+            ..QMsg::default()
+        };
+        self.link
+            .borrow_mut()
+            .with(|l| l.msgq_send(format!("{lib}/{name}"), q))
+            .map_err(|e| msgq_fail(&e, lib, name))
+    }
+
+    fn msgq_receive(
+        &mut self,
+        lib: &str,
+        name: &str,
+        kind: Option<&str>,
+        key: Option<u32>,
+        remove: bool,
+    ) -> ApiResult<Option<QueueMsg>> {
+        self.link
+            .borrow_mut()
+            .with(|l| l.msgq_receive(format!("{lib}/{name}"), kind.map(kind_of), key, remove))
+            .map(|m| m.map(queue_msg))
+            .map_err(|e| msgq_fail(&e, lib, name))
+    }
+
+    fn msgq_list(&mut self, lib: &str, name: &str) -> ApiResult<Vec<QueueMsg>> {
+        self.link
+            .borrow_mut()
+            .with(|l| l.msgq_list(format!("{lib}/{name}")))
+            .map(|v| v.into_iter().map(queue_msg).collect())
+            .map_err(|e| msgq_fail(&e, lib, name))
+    }
+
     fn licpgm(&mut self, api: &str, parms: Vec<Vec<u8>>) -> Result<Vec<u8>, ApiFail> {
         self.link
             .borrow_mut()

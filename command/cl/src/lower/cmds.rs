@@ -457,10 +457,27 @@ impl Gen<'_, '_> {
                 let whole = self.temp(&Ty::Char(2000));
                 self.ins(&format!("dtaara.read {name}, {lib}, {whole}"));
                 match &area.sub {
+                    Some((start, len)) if !matches!(len, Expr::Lit(Lit::Num(_))) => {
+                        // A length known at run time: the value padded to
+                        // it replaces that many characters.
+                        let (st, ln) = match (self.int(start), self.int(len)) {
+                            (Ok(a), Ok(b)) => (a, b),
+                            (Err(e), _) | (_, Err(e)) => {
+                                self.err(s.line, ids::EXPRESSION, e);
+                                return;
+                            }
+                        };
+                        let padded = self.chars(2000, &src);
+                        let piece = self.temp_varying(2000);
+                        self.ins(&format!("str.subst {piece}, {padded}, 1, {ln}"));
+                        let out = self.temp(&Ty::Char(2000));
+                        self.ins(&format!("str.replace {out}, {whole}, {piece}, {st}, {ln}"));
+                        self.ins(&format!("dtaara.write {name}, {lib}, {out}"));
+                        return;
+                    }
                     Some((start, len)) => {
                         let Expr::Lit(Lit::Num(n)) = len else {
-                            self.err(s.line, ids::UNSUPPORTED, "CHGDTAARA with a variable length");
-                            return;
+                            unreachable!("a variable length is the arm above");
                         };
                         let st = match self.int(start) {
                             Ok(a) => a,
@@ -736,12 +753,16 @@ impl Gen<'_, '_> {
             ),
             _ => ("QCPFMSG".into(), "*LIBL".into()),
         };
+        // The data and its length in bytes.
         let data = match get("MSG").or_else(|| get("MSGDTA")) {
-            Some(Value::Char(t)) => Some(qstr(&t)),
-            Some(Value::Var(v)) => Some(format!("${v}")),
+            Some(Value::Char(t)) => Some((qstr(&t), u32::try_from(t.chars().count()).unwrap_or(1))),
+            Some(Value::Var(v)) => Some((format!("${v}"), self.t.var(&v).map_or(1, |x| x.len))),
             Some(Value::Expr(toks)) => match crate::parse::expr::parse(&toks) {
                 Ok(e) => match self.chr(&e).and_then(|c| Ok((c, self.ty(&e)?))) {
-                    Ok((c, ty)) => Some(self.fixed(c, &ty)),
+                    Ok((c, ty)) => {
+                        let n = if let Ty::Char(n) = ty { n } else { 1 };
+                        Some((self.fixed(c, &ty), n))
+                    }
                     Err(err) => {
                         self.err(s.line, ids::EXPRESSION, err);
                         return;
@@ -758,45 +779,48 @@ impl Gen<'_, '_> {
             Some(Value::Char(t)) => t,
             _ => "*INFO".into(),
         };
-        let to = match get("TOPGMQ") {
-            Some(Value::Elems(items)) => match items.first().cloned().flatten() {
-                Some(v) => v.source(),
-                None => "*PRV".into(),
-            },
-            Some(v) => v.source(),
-            None => match get("TOMSGQ") {
-                Some(Value::List(items))
-                    if items.first().map(Value::source).as_deref() == Some("*SYSOPR") =>
-                {
-                    "*SYSOPR".into()
-                }
-                Some(v) if v.source() == "*SYSOPR" => "*SYSOPR".into(),
-                Some(v) if v.source() == "*TOPGMQ" => "*PRV".into(),
-                Some(v) => {
-                    self.warn(
-                        s.line,
-                        ids::UNSUPPORTED,
-                        format!(
-                            "TOMSGQ({}) is sent to the external queue in this release",
-                            v.source()
-                        ),
-                    );
-                    "*EXT".into()
-                }
-                None => "*PRV".into(),
-            },
+        let spec = |k: &str| r.get(k).filter(|b| b.specified).and_then(|b| b.value.clone());
+        // `TOMSGQ`: `*TOPGMQ` leaves it to `TOPGMQ`, `*SYSOPR` is the
+        // operator's queue, names go to those queues.
+        let tomsgq = match spec("TOMSGQ") {
+            Some(Value::List(items)) => items,
+            Some(v) => vec![v],
+            None => Vec::new(),
         };
-        let to = match to.as_str() {
-            "*SAME" | "*PRV" | "*CTLBDY" | "*EXT" | "*SYSOPR" => to,
-            other => {
-                self.warn(
-                    s.line,
-                    ids::UNSUPPORTED,
-                    format!("TOPGMQ({other}) is sent to the caller in this release"),
-                );
-                "*PRV".into()
+        let single = tomsgq.first().map(Value::source);
+        let to = match single.as_deref() {
+            Some("*SYSOPR") => "*SYSOPR".to_string(),
+            Some(q) if q != "*TOPGMQ" => {
+                let (msgf, msgf_lib) = (msgf.clone(), msgf_lib.clone());
+                return self.sndm(r, &msgid, (&msgf, &msgf_lib), data, &ty, &tomsgq);
+            }
+            _ => {
+                // `TOPGMQ`: the relationship, and the call stack entry
+                // it is taken from (`*` the program itself).
+                let (rel, entry) = match get("TOPGMQ") {
+                    Some(Value::Elems(items)) => (
+                        items.first().cloned().flatten().map_or_else(|| "*PRV".into(), |v| v.source()),
+                        items.get(1).cloned().flatten(),
+                    ),
+                    Some(v) => (v.source(), None),
+                    None => ("*PRV".into(), None),
+                };
+                let entry = match entry {
+                    Some(Value::Qual(parts)) => parts.first().map(Value::source),
+                    Some(v) => Some(v.source()),
+                    None => None,
+                };
+                match (rel.as_str(), entry.as_deref()) {
+                    (_, None | Some("*")) | ("*EXT", _) => rel,
+                    ("*SAME", Some("*CTLBDY")) => "*CTLBDY".into(),
+                    (_, Some(e)) => {
+                        let e = e.to_string();
+                        return self.sndpm(&msgid, (&msgf, &msgf_lib), data, &ty, &rel, &e, r);
+                    }
+                }
             }
         };
+        let data = data.map(|(d, _)| d);
         let key = match get("KEYVAR") {
             Some(Value::Var(v)) => format!(" key(${v})"),
             _ => String::new(),
@@ -807,6 +831,143 @@ impl Gen<'_, '_> {
             qstr(&msgf),
             qstr(&msgf_lib)
         ));
+    }
+
+    /// A value as an IR operand: a constant or a variable.
+    fn operand(v: &Value) -> String {
+        match v {
+            Value::Var(n) => format!("${n}"),
+            other => qstr(&other.source()),
+        }
+    }
+
+    /// A character temporary holding `src`.
+    fn chars(&mut self, n: u32, src: &str) -> String {
+        let t = self.temp(&Ty::Char(n));
+        self.ins(&format!("mov {t}, {src}"));
+        t
+    }
+
+    /// A `packed(15,0)` temporary holding `n`.
+    fn number(&mut self, n: &str) -> String {
+        let t = self.temp(&Ty::Dec(15, 0));
+        self.ins(&format!("dec.mov {t}, {n}"));
+        t
+    }
+
+    /// Put `src` (`n` characters) at byte `off` of `dst`.
+    fn put_at(&mut self, dst: &str, off: usize, n: u32, src: &str) {
+        let p = self.reg("p");
+        self.ins(&format!("{p} = addr {dst}"));
+        let q = self.reg("q");
+        self.ins(&format!("{q} = ptradd {p}, {off}"));
+        self.ins(&format!("mov [{q}]:char({n}), {src}"));
+    }
+
+    /// A qualified name as 20 characters, the library `*LIBL` unless
+    /// given.
+    fn qual20(&mut self, v: &Value) -> String {
+        let (name, lib) = match v {
+            Value::Qual(parts) => (
+                parts.first().map_or_else(|| qstr(""), Self::operand),
+                parts.get(1).map_or_else(|| qstr("*LIBL"), Self::operand),
+            ),
+            other => (Self::operand(other), qstr("*LIBL")),
+        };
+        let q = self.chars(20, &qstr(""));
+        let name = self.chars(10, &name);
+        let lib = self.chars(10, &lib);
+        self.put_at(&q, 0, 10, &name);
+        self.put_at(&q, 10, 10, &lib);
+        q
+    }
+
+    /// The message's identifier, file and data as `QCLSNDM` and
+    /// `QMHSNDPM` take them: `char(7)`, `char(20)`, `char(3000)` and
+    /// the data's length.
+    fn message_parts(
+        &mut self,
+        msgid: &str,
+        msgf: (&str, &str),
+        data: Option<(String, u32)>,
+    ) -> (String, String, String, u32) {
+        let id = self.chars(7, msgid);
+        let f = self.chars(20, &qstr(""));
+        let name = self.chars(10, &qstr(msgf.0));
+        let lib = self.chars(10, &qstr(msgf.1));
+        self.put_at(&f, 0, 10, &name);
+        self.put_at(&f, 10, 10, &lib);
+        let (d, n) = match data {
+            Some((d, n)) => (self.chars(3000, &d), n.min(3000)),
+            None => (self.chars(3000, &qstr("")), 0),
+        };
+        (id, f, d, n)
+    }
+
+    /// `SNDPGMMSG TOMSGQ(...)`: to named message queues, through
+    /// `QCLSNDM`.
+    fn sndm(
+        &mut self,
+        r: &Resolved,
+        msgid: &str,
+        msgf: (&str, &str),
+        data: Option<(String, u32)>,
+        ty: &str,
+        queues: &[Value],
+    ) {
+        let get = |k: &str| r.get(k).and_then(|b| b.value.clone());
+        let (id, f, d, n) = self.message_parts(msgid, msgf, data);
+        let len = self.number(&n.to_string());
+        let t = self.chars(10, &qstr(ty));
+        let all = u32::try_from(queues.len()).unwrap_or(50).clamp(1, 50);
+        let q = self.chars(20 * all, &qstr(""));
+        for (i, v) in queues.iter().take(50).enumerate() {
+            let one = self.qual20(v);
+            self.put_at(&q, 20 * i, 20, &one);
+        }
+        let count = self.number(&all.to_string());
+        let rpy = match get("RPYMSGQ") {
+            Some(v @ Value::Qual(_)) if v.source() != "*PGMQ" => self.qual20(&v),
+            _ => self.chars(20, &qstr("*PGMQ")),
+        };
+        let key = self.chars(4, &qstr(""));
+        self.ins(&format!("call QSYS/QCLSNDM({id}, {f}, {d}, {len}, {t}, {q}, {count}, {rpy}, {key})"));
+        if let Some(Value::Var(v)) = get("KEYVAR") {
+            self.ins(&format!("mov ${v}, {key}"));
+        }
+    }
+
+    /// `SNDPGMMSG TOPGMQ(rel entry)` for an entry the `sndpgmmsg`
+    /// instruction does not name: through `QMHSNDPM`.
+    #[allow(clippy::too_many_arguments)]
+    fn sndpm(
+        &mut self,
+        msgid: &str,
+        msgf: (&str, &str),
+        data: Option<(String, u32)>,
+        ty: &str,
+        rel: &str,
+        entry: &str,
+        r: &Resolved,
+    ) {
+        let (id, f, d, n) = self.message_parts(msgid, msgf, data);
+        let int = |g: &mut Self, v: &str| {
+            g.temps += 1;
+            let name = format!("$_i{}", g.temps);
+            g.decls.push(format!("  auto {name}: i32"));
+            g.ins(&format!("dec.mov {name}, {v}"));
+            name
+        };
+        let len = int(self, &n.to_string());
+        let t = self.chars(10, &qstr(ty));
+        let e = self.chars(10, &qstr(entry));
+        let counter = int(self, if rel == "*PRV" { "1" } else { "0" });
+        let key = self.chars(4, &qstr(""));
+        let errc = int(self, "0");
+        self.ins(&format!("call QSYS/QMHSNDPM({id}, {f}, {d}, {len}, {t}, {e}, {counter}, {key}, {errc})"));
+        if let Some(Value::Var(v)) = r.get("KEYVAR").and_then(|b| b.value.clone()) {
+            self.ins(&format!("mov ${v}, {key}"));
+        }
     }
 
     /// `RCVMSG`.
@@ -825,12 +986,15 @@ impl Gen<'_, '_> {
             Some(v) => v.source(),
             None => "*SAME".into(),
         };
-        if get("MSGQ").is_some_and(|v| v.source() != "*PGMQ") {
-            self.warn(
-                s.line,
-                ids::UNSUPPORTED,
-                "RCVMSG MSGQ is received from the program's queue in this release",
-            );
+        // A named queue, a wait, or a return variable the `rcvmsg`
+        // instruction does not fill: through `QCLRCVM`.
+        let msgq = get("MSGQ").filter(|v| v.source() != "*PGMQ");
+        let waits = get("WAIT").is_some_and(|v| v.source() != "0");
+        let more = ["RTNTYPE", "MSGLEN", "SECLVL", "SECLVLLEN", "MSGDTALEN", "MSGF", "MSGFLIB"]
+            .iter()
+            .any(|k| var(get(k)).is_some());
+        if msgq.is_some() || waits || more {
+            return self.rcvm(s, r, &pgmq, msgq.as_ref());
         }
         let pgmq = match pgmq.as_str() {
             "*SAME" | "*PRV" | "*EXT" | "*CTLBDY" => pgmq,
@@ -861,21 +1025,85 @@ impl Gen<'_, '_> {
                 parts.push(format!("{ir}(${v})"));
             }
         }
-        if get("WAIT").is_some_and(|v| v.source() != "0") {
-            self.warn(
-                s.line,
-                ids::UNSUPPORTED,
-                "RCVMSG WAIT does not wait in this release",
-            );
-        }
         let got = self.reg("g");
         self.ins(&format!("{got} = rcvmsg {}", parts.join(" ")));
-        if let Some(v) = var(get("RTNTYPE")) {
-            self.warn(
-                s.line,
-                ids::UNSUPPORTED,
-                format!("RTNTYPE(&{v}) is not returned in this release"),
-            );
+    }
+
+    /// `RCVMSG` through `QCLRCVM`: from `msgq` when it names a queue,
+    /// else from the call stack entry `pgmq`; every return variable.
+    fn rcvm(&mut self, s: &Stmt, r: &Resolved, pgmq: &str, msgq: Option<&Value>) {
+        let get = |k: &str| r.get(k).and_then(|b| b.value.clone());
+        let (rel, queue) = match msgq {
+            Some(v) if v.source() == "*EXT" => (qstr("*EXT"), self.chars(20, &qstr(""))),
+            Some(v) => (qstr("*MSGQ"), self.qual20(v)),
+            None => (qstr(pgmq), self.chars(20, &qstr(""))),
+        };
+        let rel = self.chars(10, &rel);
+        let ty = match get("MSGTYPE") {
+            Some(v) => Self::operand(&v),
+            None => qstr("*ANY"),
+        };
+        let ty = self.chars(10, &ty);
+        let key = match get("MSGKEY") {
+            Some(Value::Var(v)) => format!("${v}"),
+            _ => qstr(""),
+        };
+        let key = self.chars(4, &key);
+        let wait = match get("WAIT") {
+            Some(Value::Var(v)) => format!("${v}"),
+            Some(Value::Num(n)) => n.to_string(),
+            Some(v) if v.source() == "*MAX" => "-1".into(),
+            Some(v) => v.source(),
+            None => "0".into(),
+        };
+        let wait = self.number(&wait);
+        let rmv = match get("RMV") {
+            Some(v) => Self::operand(&v),
+            None => qstr("*YES"),
+        };
+        let rmv = self.chars(10, &rmv);
+        let found = self.chars(1, &qstr(""));
+        let rtntype = self.chars(2, &qstr(""));
+        let msgid = self.chars(7, &qstr(""));
+        let sev = self.number("0");
+        let keyvar = self.chars(4, &qstr(""));
+        let msgf = self.chars(10, &qstr(""));
+        let msgflib = self.chars(10, &qstr(""));
+        let msglen = self.number("0");
+        let seclvllen = self.number("0");
+        let msgdtalen = self.number("0");
+        let msg = self.chars(3000, &qstr(""));
+        let seclvl = self.chars(3000, &qstr(""));
+        let msgdta = self.chars(3000, &qstr(""));
+        self.ins(&format!(
+            "call QSYS/QCLRCVM({rel}, {queue}, {ty}, {key}, {wait}, {rmv}, {found}, {rtntype}, {msgid}, {sev}, {keyvar}, {msgf}, {msgflib}, {msglen}, {seclvllen}, {msgdtalen}, {msg}, {seclvl}, {msgdta})"
+        ));
+        for (kw, from, numeric) in [
+            ("RTNTYPE", &rtntype, false),
+            ("MSGID", &msgid, false),
+            ("SEV", &sev, true),
+            ("KEYVAR", &keyvar, false),
+            ("MSGF", &msgf, false),
+            ("MSGFLIB", &msgflib, false),
+            ("MSGLEN", &msglen, true),
+            ("SECLVLLEN", &seclvllen, true),
+            ("MSGDTALEN", &msgdtalen, true),
+            ("MSG", &msg, false),
+            ("SECLVL", &seclvl, false),
+            ("MSGDTA", &msgdta, false),
+        ] {
+            let Some(Value::Var(v)) = get(kw) else {
+                continue;
+            };
+            let Some((t, place)) = self.t.var(&v).map(|x| (x.ty, x.place())) else {
+                self.err(s.line, ids::UNDECLARED, format!("&{v} is not declared"));
+                continue;
+            };
+            match (numeric, t) {
+                (true, VarType::Dec | VarType::Int | VarType::Uint) => self.ins(&format!("dec.mov {place}, {from}")),
+                (false, VarType::Char) => self.ins(&format!("mov {place}, {from}")),
+                _ => self.err(s.line, ids::TYPE_MISMATCH, format!("&{v} has the wrong type for {kw}")),
+            }
         }
     }
 

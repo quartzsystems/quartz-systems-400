@@ -433,6 +433,7 @@ pub fn job_for(case: &Case, src: MemSource, programs: &[String]) -> Result<Box<J
         dst: false,
     });
     provider.add_dtaq("QGPL", "TESTQ", 100, 0, 'F');
+    provider.msgqs.insert(("QGPL".into(), "KITMSGQ".into()), Vec::new());
     // QSYRUSRI: every profile as CRTUSRPRF would make it.
     provider.sec = Some(Box::new(|q| match q {
         sec::api::Query::Profile { user } => Ok(sec::api::Answer::Profile {

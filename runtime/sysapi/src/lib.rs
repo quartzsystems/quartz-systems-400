@@ -35,6 +35,7 @@ use std::rc::Rc;
 use mi::Job;
 
 mod cee;
+mod clmsg;
 mod crt;
 mod data;
 mod db;
@@ -61,7 +62,7 @@ pub use job::Civil;
 pub use provider::{
     ApiFail, ApiResult, CommitInfo, DataArea, DataAreaType, DepInfo, DtaqEntry, DtaqInfo,
     FieldInfo, FileInfo, FormatInfo, IdxAttr, LocalNow, MemDtaq, MemFile, MemIndex, MemProvider,
-    MemberInfo, ObjInfo, Provider, SecAnswers, SysVal, SysValKind, UserInfo,
+    MemberInfo, ObjInfo, Provider, QueueMsg, SecAnswers, SysVal, SysValKind, UserInfo,
 };
 
 /// A program API: the job, the parameter addresses, the provider.
@@ -75,6 +76,7 @@ pub type SharedProvider = Rc<RefCell<dyn Provider>>;
 pub fn programs() -> Vec<(&'static str, ApiFn)> {
     let mut v: Vec<(&'static str, ApiFn)> = Vec::new();
     v.extend(msg::APIS);
+    v.extend(clmsg::APIS);
     v.extend(usrspc::APIS);
     v.extend(obj::APIS);
     v.extend(data::APIS);

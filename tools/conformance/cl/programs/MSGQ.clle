@@ -1,0 +1,47 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* SNDPGMMSG TOMSGQ to a named queue, RCVMSG MSGQ, WAIT and the return */
+/* variables; CHGDTAARA with a length in a variable.                   */
+             PGM
+             DCL        VAR(&K) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&K2) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&M) TYPE(*CHAR) LEN(40)
+             DCL        VAR(&T) TYPE(*CHAR) LEN(2)
+             DCL        VAR(&ID) TYPE(*CHAR) LEN(7)
+             DCL        VAR(&L) TYPE(*DEC) LEN(5 0)
+             DCL        VAR(&SEV) TYPE(*DEC) LEN(2 0)
+             DCL        VAR(&F) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&D) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&S) TYPE(*DEC) LEN(3 0) VALUE(4)
+             DCL        VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(5)
+             SNDPGMMSG  MSG('to the queue') TOMSGQ(QGPL/KITMSGQ) +
+                          KEYVAR(&K)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('second') +
+                          TOMSGQ(KITMSGQ) MSGTYPE(*COMP)
+             RCVMSG     MSGQ(QGPL/KITMSGQ) MSGKEY(&K) MSG(&M) +
+                          RTNTYPE(&T) MSGLEN(&L) KEYVAR(&K2)
+             IF         COND(&K *EQ &K2) THEN(SNDPGMMSG MSG('same key') +
+                          TOPGMQ(*EXT))
+             SNDPGMMSG  MSG('queue [' *CAT &M *TCAT '] ' *CAT &T *BCAT +
+                          %CHAR(&L)) TOPGMQ(*EXT)
+             RCVMSG     MSGQ(KITMSGQ) MSGTYPE(*COMP) MSGID(&ID) +
+                          RTNTYPE(&T) SEV(&SEV) MSGF(&F)
+             SNDPGMMSG  MSG('next ' *CAT &ID *BCAT &T *BCAT %CHAR(&SEV) +
+                          *BCAT &F) TOPGMQ(*EXT)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('diag') +
+                          TOPGMQ(*SAME) MSGTYPE(*DIAG)
+             RCVMSG     PGMQ(*SAME) RTNTYPE(&T) MSGDTALEN(&L)
+             SNDPGMMSG  MSG('program queue ' *CAT &T *BCAT %CHAR(&L)) +
+                          TOPGMQ(*EXT)
+             RCVMSG     PGMQ(*SAME) WAIT(1) MSGID(&ID) RTNTYPE(&T)
+             SNDPGMMSG  MSG('after a wait [' *CAT &ID *CAT &T *TCAT ']') +
+                          TOPGMQ(*EXT)
+             RCVMSG     MSGQ(KITMSGQ) MSG(&M) RTNTYPE(&T)
+             SNDPGMMSG  MSG('empty queue [' *CAT &M *TCAT &T *TCAT ']') +
+                          TOPGMQ(*EXT)
+             CHGDTAARA  DTAARA(*LDA (1 10)) VALUE('abcdefghij')
+             CHGDTAARA  DTAARA(*LDA (&S &N)) VALUE('XY')
+             RTVDTAARA  DTAARA(*LDA (1 10)) RTNVAR(&D)
+             SNDPGMMSG  MSG('lda [' *CAT &D *TCAT ']') TOPGMQ(*EXT)
+             ENDPGM

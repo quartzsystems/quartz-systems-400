@@ -1,0 +1,14 @@
+console:
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 same key
+  CPF9898 queue [to the queue] 04 12
+  CPF9898 next CPF9898 01 40 QCPFMSG
+  CPF9898 program queue 02 4
+  CPF9898 after a wait []
+  CPF9898 empty queue []
+  CPF9898 lda [abcXY   ij]

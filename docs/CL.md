@@ -18,7 +18,18 @@ comments, an optional `LABEL:` first. A statement is a CL statement
 `RTVDTAARA`, `CHGDTAARA`, `DMPCLPGM`) or a command, which the command
 analyzer binds with the program's variables known (`docs/CMD.md`).
 `SNDPGMMSG`, `RCVMSG`, `RMVMSG` and `SNDUSRMSG` are commands the
-compiler turns into the IR's message instructions.
+compiler turns into the IR's message instructions. What those do not
+reach goes through programs of `QSYS` (`sysapi::clmsg`): `SNDPGMMSG
+TOMSGQ(lib/name ...)` sends to named message queues through `QCLSNDM`
+(an inquiry with `RPYMSGQ(*PGMQ)` is answered on the program's queue,
+its `KEYVAR` the key its reply is received by); `TOPGMQ` with a call
+stack entry other than `*` (a program, `*PGMBDY`) through `QMHSNDPM`;
+`RCVMSG` with `MSGQ`, a `WAIT`, or `RTNTYPE`, `MSGLEN`, `SECLVL`,
+`SECLVLLEN`, `MSGDTALEN`, `MSGF` or `MSGFLIB` through `QCLRCVM`, which
+waits as asked (`*MAX` for good) and leaves blanks and zeros when no
+message comes. `CHGDTAARA` of a substring takes a start and length in
+variables. Nothing the compiler accepts is left without effect
+(`CPD0790`, which said so, is gone).
 
 Expressions: `+ - * /`, `*CAT *BCAT *TCAT` (`||`, `|<`, `|>`), the
 relational operators (`*EQ` and `=`, `*NE` and `¬=`, `*GT` `>`,
