@@ -193,3 +193,65 @@ impl Suite {
         ))
     }
 }
+
+/// Step 142's batch job: every subsystem ends but it, it works alone
+/// for a while, leaves a data area and ends.
+const BATCH_RSTD: &str = "\
+             PGM
+             ENDSBS     SBS(*ALL) OPTION(*IMMED) BCHTIMLMT(5)
+             DLYJOB     DLY(30)
+             CRTDTAARA  DTAARA(QGPL/BRSTDRAN) TYPE(*CHAR) LEN(10) +
+                          VALUE('ALONE')
+             ENDPGM
+";
+
+impl Suite {
+    /// Step 142: the batch restricted state. `BCHTIMLMT` from the console
+    /// is `CPF1052`; a batch job of the controlling subsystem ends every
+    /// subsystem with it and keeps running alone; when it ends, the
+    /// controlling subsystem starts again.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn batch_restricted(&self, s: &mut Session) -> Result<String, String> {
+        let refused = s.command("ENDSBS SBS(*ALL) BCHTIMLMT(5)", CMD)?;
+        if !refused.contains("CPF1052") {
+            return Err(format!("BCHTIMLMT from the console: {refused}"));
+        }
+        let _ = s.command("DLTDTAARA DTAARA(QGPL/BRSTDRAN)", CMD);
+        let _ = s.command("CRTSRCPF FILE(QGPL/QCLSRC)", CMD);
+        crate::qir::qemu::push(s, "BRSTDSRC", BATCH_RSTD)?;
+        let put = s.command("svc.srcput QGPL/QCLSRC BRSTD SRCTYPE(CLLE) FROMSTMF(BRSTDSRC)", CMD)?;
+        if !put.contains("written") {
+            return Err(format!("srcput: {put}"));
+        }
+        let made = s.command("CRTBNDCL PGM(QGPL/BRSTD) SRCFILE(QGPL/QCLSRC)", Duration::from_secs(60))?;
+        if !made.contains("created") {
+            return Err(format!("CRTBNDCL: {made}"));
+        }
+        let ctl = s.command("svc.sysval QCTLSBSD", CMD)?;
+        let (name, jobq) = if ctl.contains("QCTL") { ("QCTL", "QSYS/QCTL") } else { ("QBASE", "QGPL/QBASE") };
+        s.command(&format!("SBMJOB CMD(CALL PGM(QGPL/BRSTD)) JOB(BRSTD) JOBQ({jobq}) MSGQ(*NONE)"), CMD)?;
+        // Alone: every other subsystem gone, the job still there.
+        let alone = poll(s, "wrksbs", 60, |o| !o.lines().any(|l| l.contains("ACTIVE")))?;
+        let active = s.command("wrkactjob", CMD)?;
+        let report = format!("--- wrksbs\n{alone}\n--- wrkactjob\n{active}");
+        if alone.lines().any(|l| l.contains("ACTIVE")) {
+            return Err(format!("subsystems stayed active:\n{report}"));
+        }
+        if !has_job(&active, "BRSTD") {
+            return Err(format!("the batch job did not stay:\n{report}"));
+        }
+        // It ends; the controlling subsystem comes back.
+        let ran = poll(s, "DSPDTAARA DTAARA(QGPL/BRSTDRAN)", 90, |o| o.contains("ALONE"))?;
+        if !ran.contains("ALONE") {
+            return Err(format!("the job did not finish alone:\n{ran}\n{report}"));
+        }
+        let up = poll(s, "wrksbs", 90, |o| o.lines().any(|l| l.contains(name) && l.contains("ACTIVE")))?;
+        if !up.lines().any(|l| l.contains(name) && l.contains("ACTIVE")) {
+            let log = s.command("dsplog", CMD)?;
+            return Err(format!("{name} did not start again:\n{up}\n--- dsplog\n{log}"));
+        }
+        let _ = s.command("DLTDTAARA DTAARA(QGPL/BRSTDRAN)", CMD);
+        let _ = s.command("DLTPGM PGM(QGPL/BRSTD)", CMD);
+        Ok(format!("CPF1052 from the console; BRSTD ran alone after ENDSBS *ALL BCHTIMLMT(5); {name} started again when it ended"))
+    }
+}

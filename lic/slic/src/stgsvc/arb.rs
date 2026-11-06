@@ -338,8 +338,16 @@ fn batch(system: &mut System, w: &mut Watch, cmds: &mut Vec<String>) {
         system.rstd_keep = None;
         w.batch_ending = false;
         let ctl = super::sbs::controlling(system);
-        let lib = sysval(system, "QCTLSBSD").get(10..).map_or("QSYS", str::trim).to_string();
-        let lib = if lib.is_empty() { "QSYS".to_string() } else { lib };
+        let lib = sysval(system, "QCTLSBSD")
+            .split_whitespace()
+            .nth(1)
+            .unwrap_or("QSYS")
+            .to_string();
+        // QSYSWRK first, as the IPL starts it before the controlling
+        // subsystem.
+        if !system.sbs.contains_key("QSYSWRK") {
+            cmds.push("STRSBS SBSD(QSYS/QSYSWRK)".into());
+        }
         if !system.sbs.contains_key(&ctl) {
             cmds.push(format!("STRSBS SBSD({lib}/{ctl})"));
         }

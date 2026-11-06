@@ -673,6 +673,7 @@ impl Suite {
         reports.push(self.step(&mut s, "121 Spanish sign-on", Self::spanish_sign_on)?);
         reports.push(self.step(&mut s, "122 date and time formats", Self::date_formats)?);
         reports.push(self.step(&mut s, "104 wrapped command lines", Self::wrapped_command_lines)?);
+        reports.push(self.step(&mut s, "142 batch restricted state", Self::batch_restricted)?);
         // Last: it ends every subsystem.
         reports.push(self.step(&mut s, "103 restricted state", Self::restricted_state)?);
         s.command("pwrdwn", CMD).ok();
