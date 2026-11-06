@@ -807,6 +807,15 @@ An `entry` line is `entry` and these fields, tab separated:
 The `CPFBC` identifiers are Quartz's choice; optical errors keep their
 `OPT` identifiers.
 
+## Save file data to media
+
+`SAVSAVFDTA SAVF() DEV()` writes a save file's stream to tape or optical
+as the save that made it would have: the file is labeled with the
+library saved (`QFILEUPR` for `SAVSECDTA`, `QFILEIOC` for `SAVCFG`), so
+`DSPTAP` shows the original save and `RSTLIB` or `RSTOBJ` restore from
+the media; `CPC3724` when it is written, `CPF3707` for an empty save
+file (`lic/slic/src/cpp/savcmd.rs`).
+
 ## In the storage service
 
 `lic/slic/src/stgsvc/media/` puts the three crates to work; the command

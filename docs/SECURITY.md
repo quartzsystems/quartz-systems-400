@@ -1000,6 +1000,67 @@ one `CHGSYSVAL` (or `CHGSECAUD`) away from the recommended value:
 | `QAUDCTL(*NONE)` | IBM ships auditing off, and `QSYS/QAUDJRN` is not shipped (§7) |
 | `PROFILE QSECOFR` | the shipped `QSECOFR` password is `QSECOFR`, expired, as IBM's (§1): the first sign-on must set another; an install with a response file sets it |
 
+## 11. Function usage, security attributes and the profile exit points
+
+### Function usage
+
+`WRKFCNUSG`, `CHGFCNUSG` and `DSPFCNUSG` work with the functions a
+profile may be allowed or denied apart from the authority to objects
+(`security/sec/src/fcnusg.rs`). The functions are the 37 the primary
+oracle registers at V7R1M0, in its order, with Quartz names
+(`tools/conformance/oracle/rel/README.md`); what an administrator
+changes is kept in `QUSRSYS/QSYFCNUSG` (a user space shipped `*PUBLIC
+*EXCLUDE`, `security/sec/src/textspace.rs`). All three commands need
+`*SECADM`. A profile may use a function when its own usage says
+`*ALLOWED`; else when one of its groups' does (a group's `*DENIED`
+denies when none allows); else when the function uses `*ALLOBJ` and the
+profile has it; else by the default. `CPF228C` names an ID that is not
+registered. What checks it now:
+
+| Function | Where |
+|---|---|
+| `QIBM_DB_SQLADM` | the plan cache services, beside `*JOBCTL` (`CPF43A3`) |
+| `QIBM_ACCESS_ALLOBJ_JOBLOG` | another job's log when that job has `*ALLOBJ` (`CPF1343`) |
+| `QIBM_SERVICE_TRACE` | the communications trace commands, beside `*SERVICE` |
+| `QIBM_QTMF_SERVER_REQ_n`, `QIBM_QTMF_CLIENT_REQ_n` | each FTP server and client request, before its exit programs (`_0` for the session, then the operation's) |
+
+The primary has no host server or Navigator function IDs at V7R1M0
+(`QIBM_DB_ZDA`, `QIBM_DB_DDMDRDA` and `QIBM_NAV_*` come with 7.2 and
+later), so the host servers and Navigator check none. The other
+registered functions govern what QS/400 does not have (Tivoli
+directory server, clusters, Management Central, job and disk watchers)
+or is already `*PUBLIC *EXCLUDE` (service dumps and traces).
+
+### Security attributes
+
+`CHGSECA UID() GID()` (`*SECADM`) sets where generated user and group
+ID numbers start (`QUSRSYS/QSYSECA`); a number in use is skipped, and
+with none set a generated number is one past the highest in use.
+`CPC2231` names the new starts. Its prompt shows the numbers the next
+profiles get (`QSYPOATR`, IBM's prompt override program). `DSPSECA`
+shows them with `QSECURITY`, `QPWDLVL` and the three choices DST keeps
+(security system value changes, adding certificates, service tools IDs
+changing an expired default password).
+
+### Profile and password exit points
+
+The profile commands call the programs of IBM's points in the job that
+ran them (`work/qsjob/src/command/exits.rs`; formats and their tables
+in `docs/HOSTSVR.md` § Security and work management points):
+`QIBM_QSY_CRT_PROFILE` after `CRTUSRPRF`, `QIBM_QSY_CHG_PROFILE`
+before (`CHGP0200`) and after (`CHGP0100`) `CHGUSRPRF`, `CHGUSRAUD`,
+`CHGPRF`, `CHGPWD` and `QSYCHGPW`, `QIBM_QSY_DLT_PROFILE` before
+(`DLTP0200`) and after (`DLTP0100`) `DLTUSRPRF`,
+`QIBM_QSY_RST_PROFILE` after `RSTUSRPRF` for each profile restored, and
+`QIBM_QSY_CHK_PASSWRD` after a password is set. Their answers are
+ignored, as IBM's are. `QPWDVLDPGM(*REGFAC)` makes `CHGPWD` and
+`QSYCHGPW` call `QIBM_QSY_VLD_PASSWRD` (`VLDP0100`) instead of the
+program `QPWDVLDPGM` names: the first program that does not answer `0`
+refuses the password (`CPF22D3`). `QWTSETPX` and `QWTRTVPX` keep which
+of the eight `QIBM_QWT_PREATTNPGMS` (and `SREQ0100`) programs a
+profile's jobs call (`QUSRSYS/QWTPRFEXIT`); the Attention key calls the
+ones turned on before the attention program.
+
 ## Frozen at V1R1M0
 
 Frozen: the `*USRPRF` payload (`profile/payload.rs`), the stored authority structures (private authorities in the object store, authority bits, authorization lists; `auth::FORMAT_VERSION`) and the `QAUDJRN` entry-specific layouts of section 7 (`audit::layout::FORMAT_VERSION`).

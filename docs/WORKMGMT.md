@@ -1179,6 +1179,25 @@ start.
   the active and ineligible jobs, the defined size, the defined
   activity level and a reserved word.
 
+## 6. Restricted state, power down and job notification exit points
+
+`ENDSYS` and `ENDSBS SBS(*ALL)` ask the programs of
+`QIBM_QWC_PRERESTRICT` (`PRER0100`), and `PWRDWNSYS` those of
+`QIBM_QWC_PWRDWNSYS` (`PWRD0200`), whether the state can be reached,
+in the job that ran the command: when all say yes each is told to
+prepare, otherwise the ones already asked are told to cancel and the
+command ends with `CPF18C3` (`CPF18C7` for `PWRDWNSYS`). A program that
+cannot be called counts as yes. `PWRD0100` programs (no parameters)
+follow on `PWRDWNSYS` and `ENDSYS`. BLOCKED(rel): a program running
+longer than the wait time it asked for is not ended (`CPF18C8`); the
+job waits for it.
+
+`QIBM_QWT_JOBNOTIFY` (`NTFY0100`) registers data queues, not programs:
+the storage service puts IBM's 144-byte entries on each one when a job
+starts (key `0001`), ends (`0002`) or is placed on a job queue
+(`0004`), as the registration's notification type (`0001` to `0007`)
+and subsystem (`*ANY` for all) ask (`lic/slic/src/stgsvc/jobntfy.rs`).
+
 ## Frozen at V1R1M0
 
 Frozen: the payloads of section 2 (job descriptions, classes, job queues, message queues and entries, the reply list, subsystem descriptions and their entries, job schedules, output queues, printer files, device and controller descriptions) and the spooled file payload (`work/wm/src/obj/splf.rs`, `VERSION` 2, which still reads version 1). Each payload carries its own `VERSION`.

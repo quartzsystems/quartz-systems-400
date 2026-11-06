@@ -20,7 +20,11 @@ use crate::error::{Result, SecError};
 pub const LIB: &str = "QUSRSYS";
 
 fn find(txn: &mut Txn<'_>, qsys: ObjectId, name: &str) -> Result<Option<ObjectId>> {
-    let lib = ops::find_library(txn, qsys, Name::parse(LIB).expect("valid"))?.id;
+    // No QUSRSYS (a store made for a test): no record.
+    let Ok(lib) = ops::find_library(txn, qsys, Name::parse(LIB).expect("valid")) else {
+        return Ok(None);
+    };
+    let lib = lib.id;
     let name = Name::parse(name).map_err(|e| SecError::msg("CPF3C3C", e.to_string()))?;
     Ok(ops::list(txn, lib, Some(types::USRSPC))?
         .into_iter()

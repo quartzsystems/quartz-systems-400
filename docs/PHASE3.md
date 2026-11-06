@@ -136,6 +136,20 @@ unless `OMTJRNE(*OPNCLO)`, and `F JM`, `F EJ`, `F MC`, `F MR`, `F MA`,
 a range, marking what it wrote as applied. `DSPJRN` walks the receiver
 chain with the IBM filters.
 
+Added for V1R1M0: `WRKJRNRCV` lists receivers (a panel only);
+`RCVJRNE` hands each entry, in the `*TYPE1` layout (`QJORDJE`, a
+record entry's data its record image), to an exit program called in
+the job with IBM's two parameters, waiting `DELAY` seconds for more
+with `TOENT(*NONE)` until the program answers `9` (`CPC7061`;
+`CPF70AF` when it fails; `work/qsjob/src/command/rcvjrne.rs`);
+`CMPJRNIMG` compares a file's before and after images (or each after
+image with the record's last one, `CMPOPT(*AFTER)`) and prints the
+differing bytes to `QPCMPIMG` (`CPC7029`). BLOCKED(rel): `RCVJRNE`'s
+other entry formats, block mode and object, path, time and large
+sequence selections, and `CMPJRNIMG`'s entry selection and receiver
+ranges, are refused `CPF3C3C`; the two `TYPE(*HEX)` parameters of
+IBM's `RCVJRNE` (`OBJFID`, `OBJJID`) are not defined (`CPD0043`).
+
 **Commitment control.** `STRCMTCTL` gives the job one commit definition
 with a lock level. Opens under it journal every change with the cycle
 identifier that the first `C BC` entry's sequence number gives; record

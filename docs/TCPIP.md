@@ -1147,6 +1147,22 @@ Opaque to callers.
 | 64 | 16 | `ai_next` |
 | 80 | 4 | `ai_eflags` |
 
+## The TELNET client
+
+`TELNET` (and `STRTCPTELN`) makes a 5250 session with another system
+from an interactive job's display (`work/qsjob/src/command/telnet.rs`):
+the TN5250 negotiation of `ui/tn5250` (terminal `IBM-3179-2`, or
+`IBM-3477-FC` on a wide display; `RMTUSER` and `RMTPWD` send the RFC
+4777 substitute, `RMTPWDENC(*DES7)` the DES one), then every record
+passed through untouched until the remote system closes the connection
+(`TCP2504`); the screen as it was comes back. `TCP101A` for a host
+that is not found, `TCP10B0` when nothing takes the connection,
+`TCP2591` when nothing answers in `INZWAIT`, `TCP2534` when the server
+will not run 5250. BLOCKED(rel): VT and 3270 sessions and
+`SSL(*YES)` are not made; their parameters are IBM's and are checked.
+`STRPASTHR` is refused `CPF8933`: 5250 pass-through needs APPC, which
+QS/400 does not have.
+
 ## Communications objects
 
 `net/cmncfg` holds the pure parts: the `*LIND` payload, the names of a

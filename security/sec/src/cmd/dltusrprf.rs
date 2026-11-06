@@ -107,6 +107,12 @@ pub fn dltusrprf(txn: &mut Txn<'_>, env: &Env<'_>, job: JobHandle, k: &Keywords)
         grant::set_private(txn, env.qsys, id, &name, None)?;
     }
     ops::delete(txn, job, pid)?;
+    // Its function usage goes with it.
+    let mut usage = crate::fcnusg::load(txn, env.qsys)?;
+    if usage.usage.values().any(|m| m.contains_key(&name)) {
+        usage.forget(&name);
+        crate::fcnusg::save(txn, env.qsys, &usage)?;
+    }
     crate::auth::cache::bump_epoch();
     Ok(format!("User profile {name} deleted."))
 }
