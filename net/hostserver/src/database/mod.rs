@@ -622,6 +622,51 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         f.rows
     }
 
+    /// The native database functions (server `0xE005`): only the library
+    /// list `JTOpen`'s `libraries` property sends; the others SQL0084.
+    fn native(&mut self, f: &Frame, r: &Req, params: &[Param]) -> Outcome {
+        let a = if r.function == ADD_LIBRARY_LIST {
+            self.library_list(r, params)
+        } else {
+            self.finish(r, code(-84, "42612"), Vec::new())
+        };
+        if r.wants(ors::RETURN_DATA) { Outcome::one(Self::frame(&f.header, r, a)) } else { Outcome::none() }
+    }
+
+    /// Add library list (`0x3813`: CCSID, count, then an indicator, a
+    /// length and a name each): `C` the current library, `F` first, the
+    /// others last, each as the job's command would.
+    fn library_list(&mut self, r: &Req, params: &[Param]) -> Answer {
+        let Some(p) = params.iter().find(|p| p.cp == LIBRARY_LIST) else {
+            return self.finish(r, code(-84, "42612"), Vec::new());
+        };
+        let d = &p.data;
+        let count = usize::from(reply::be16(d, 2));
+        let mut at = 4;
+        for _ in 0..count {
+            if at + 3 > d.len() {
+                break;
+            }
+            let ind = d[at];
+            let len = usize::from(reply::be16(d, at + 1));
+            let Some(name) = d.get(at + 3..at + 3 + len) else { break };
+            at += 3 + len;
+            let lib = text::from_ebcdic(name).trim().to_string();
+            let cmd = match ind {
+                0xC3 => format!("CHGCURLIB CURLIB({lib})"),
+                0xC6 => format!("ADDLIBLE LIB({lib}) POSITION(*FIRST)"),
+                _ => format!("ADDLIBLE LIB({lib}) POSITION(*LAST)"),
+            };
+            let call = format!("CALL QSYS2.QCMDEXC('{cmd}')");
+            let ca = self.run(self.desc(Op::ExecImm), vec![Value::Str(call)]).sqlca;
+            // A library already on the list is no failure.
+            if ca.is_error() && !ca.sqlerrmc.contains("CPF2103") {
+                return self.finish(r, ca, Vec::new());
+            }
+        }
+        self.finish(r, Sqlca::default(), Vec::new())
+    }
+
     fn exec_immediate(&mut self, r: &Req, params: &[Param]) -> Answer {
         let text = match statement_text(params) {
             Some(Ok(s)) => s.to_text().unwrap_or_default(),
@@ -807,6 +852,9 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
     fn request(&mut self, f: &Frame) -> Outcome {
         let r = Req::of(f);
         let params = expanded(&f.params).unwrap_or_else(|_| f.params.clone());
+        if f.header.server_id == NATIVE_DB {
+            return self.native(f, &r, &params);
+        }
         let ans = match r.function {
             id::SET_ATTRIBUTES | id::RETRIEVE_ATTRIBUTES => Some(self.set_attributes(f, &params)),
             id::CREATE_RPB | id::CHANGE_RPB | id::CREATE_RPB_BASED_ON => {
@@ -909,6 +957,13 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
 fn is_call(text: &str) -> bool {
     text.trim_start().get(..5).is_some_and(|w| w.eq_ignore_ascii_case("CALL ") || w.eq_ignore_ascii_case("CALL	"))
 }
+
+/// The native database server.
+const NATIVE_DB: u16 = 0xE005;
+/// Its add library list function.
+const ADD_LIBRARY_LIST: u16 = 0x180C;
+/// Its library list parameter.
+const LIBRARY_LIST: u16 = 0x3813;
 
 /// An SQLCA with a code and state.
 fn code(sqlcode: i32, state: &str) -> Sqlca {
