@@ -389,9 +389,125 @@ in our own words); a function that checks nothing is listed in
 
 ## 10. Refused
 
-Every form the engine refuses, with its SQLCODE, is in the tables above
-until the work ends; this section then lists the remaining refusals
-verbatim for the release notes.
+Every form QS/400 refuses or does not provide, as the rows above state it,
+by section. A refusal is an error with the SQLCODE given and a message
+that says what is not supported; nothing is accepted and ignored.
+Generated from the tables above; the rows are the authority.
+
+### 2. Statements
+
+- `CREATE OR REPLACE VIEW`, `CREATE OR REPLACE ALIAS`: supported; refused SQL0084 when other views depend on the view
+- `CREATE OR REPLACE TABLE` (`ON REPLACE PRESERVE/DELETE ROWS`): partial: refused SQL0084 when views or indexes depend on the table
+- `CREATE OR REPLACE INDEX`: refused SQL0104, as IBM
+- `ALTER TABLE` ADD/DROP/ALTER COLUMN (SET DATA TYPE, SET/DROP DEFAULT, SET/DROP NOT NULL, SET GENERATED, RESTART, DROP IDENTITY), ADD/DROP CONSTRAINT: partial: refused SQL0084 (BLOCKED(sql)) when indexes or views depend on the table, and for SET DATA TYPE of a constraint key column
+- `ALTER TABLE ... ADD/DROP PARTITION`, materialized query tables: refused SQL0084
+- `RENAME TABLE/INDEX` (`TO SYSTEM NAME`, `FOR SYSTEM NAME`): supported; refused SQL0084 for an object other views read
+- `EXPLAIN` (a Quartz statement; pub400 answers SQL0104): partial: a query's plan text with `QQRID`, `QQRCOD`, `QVC13` per line; ACS Visual Explain (`QSYS.QQQDBVE`, undocumented) not provided
+- `CREATE SEQUENCE` (long and delimited names with generated system names; `START WITH` below `MINVALUE` accepted, as the primary), `ALTER SEQUENCE`, `DROP SEQUENCE`, `NEXT VALUE FOR`, `PREVIOUS VALUE FOR`: supported, IBM's cache blocks matched; `ALTER SEQUENCE AS` refused SQL0084; a failed statement gives back the value it used, where IBM keeps it used
+- `GRANT` on sequences: refused SQL0084
+- `CREATE PROCEDURE ... EXTERNAL` (RPGLE, CL; `PARAMETER STYLE SQL`, `GENERAL`, `GENERAL WITH NULLS`): supported, also before the program exists (SQL7909); service program procedures up to 64 parameters in the call; `LANGUAGE C/COBOL/PLI/JAVA`, `DB2GENERAL`, `JAVA`, `DB2SQL` refused SQL0084
+- `ALLOCATE`/`ASSOCIATE`/`DESCRIBE` in routines, `EXECUTE ... INTO`, cursors and handlers in functions, `AS LOCATOR`, `AUTONOMOUS`: refused SQL0084
+- `CALL` from QAP: partial: the first result set only; OUT/INOUT refused SQL0084
+- `CALL` and trigger-firing changes from `RUNSQL`, `RUNSQLSTM`: supported from a job's command line and programs; from the service console and QAP still refused SQL0084
+- External table functions; `GENERAL` style external functions; `DBINFO`; external functions during an in-place scan or from the service console: refused SQL0084: BLOCKED(sql)
+- Array parameters, array arguments in `CALL`: refused SQL0084: BLOCKED(sql)
+- Distinct types as SQL PL variables or parameters, sequence types, in `ALTER TABLE`: refused SQL0084: BLOCKED(sql)
+- `FOR EACH STATEMENT`, `OLD/NEW TABLE`, `INSTEAD OF`, several events (`INSERT OR ...`), `SECURED`: refused SQL0084 after IBM's own checks (SQL0628, SQL0696, SQL0159, SQL0156): BLOCKED(sql)
+- `GRANT`, `REVOKE` on schemas, routines, sequences, variables, types; column privileges: refused SQL0084
+- `LOCK TABLE`: refused SQL0084
+- `PREPARE`, `EXECUTE`, `EXECUTE IMMEDIATE`, `DESCRIBE`, cursor statements, `WHENEVER`, `INCLUDE`, locator statements given to a dynamic interface (JDBC, STRSQL, RUNSQLSTM, `PREPARE` text): refused as IBM refuses them: SQL0104, SQL0084, SQL0312 for host variables, SQL0199
+- `DESCRIBE CURSOR`, `DESCRIBE PROCEDURE`, `ALLOCATE/ASSOCIATE LOCATORS` in programs: refused SQL0084 (requesters describe `RS#n` cursors internally)
+- `SET OPTION` (every program option, SQL5066 order): supported; values QS/400 cannot honour refused SQL0084
+- LOB file reference variables: declared; any use refused SQL0084: BLOCKED(sql), the job's runtime has no IFS access
+- `CONNECT TO [USER ... USING ...]`, `CONNECT RESET`, `SET CONNECTION`, `RELEASE`, `DISCONNECT` (DRDA client, DUW): partial: programs' embedded SQL and the job-side requesters; queries, cursors, immediate statements and `PREPARE`/`EXECUTE` run remotely; remote input values, scrolling `FETCH`, `DESCRIBE`, `GET DIAGNOSTICS` refused SQL0084; SQL0842, 0843, 0752, 0950, 30080, 30082
+- `RDBCNNMTH(*RUW)`: refused SQL0084 (accepted and ignored before)
+- Three-part names, `CREATE ALIAS` over a remote table: refused SQL0104
+- `TRUNCATE` (all options): supported; SQL0100 on an empty table; `RESTART IDENTITY` on an identity table refused SQL0084 (BLOCKED(sql), joins identity state)
+- `REFRESH TABLE`: refused SQL0084
+- `CREATE TABLE/VIEW/INDEX/ALIAS` in QTEMP: supported; sequences and variables in QTEMP SQL0707; types, routines and triggers there refused SQL0084; a permanent view over a QTEMP table SQL7008
+
+### 3. Queries
+
+- `LATERAL`, `TABLE(fullselect)`, `TABLE(f(args)) AS x`: supported; a RIGHT or FULL lateral join, and a lateral or USING join as a MERGE source, refused SQL0084
+- `FETCH FIRST n PERCENT`: refused SQL0104, as pub400
+- `NULLS FIRST`, `NULLS LAST`: refused SQL0199, as pub400
+- Common table expressions, chained and recursive, `CYCLE`: supported; `CYCLE ... USING` refused SQL0084
+- OLAP: `ROW_NUMBER`, `RANK`, `DENSE_RANK`, `NTILE`, `PERCENT_RANK`, `CUME_DIST`, `LAG`/`LEAD` with `RESPECT/IGNORE NULLS`, `FIRST_VALUE`/`LAST_VALUE`/`NTH_VALUE`, `RATIO_TO_REPORT`, aggregates `OVER` with `ROWS` and `RANGE` frames: supported; `NTH_VALUE ... FROM LAST` refused SQL0084
+- `LIKE_REGEX`: refused SQL0104, as pub400
+- `ARRAY_EXISTS`, `XMLEXISTS`: refused SQL0084
+- `SKIP LOCKED DATA` on queries: supported; on other statements refused SQL0084
+- `USE AND KEEP ... LOCKS`, `WAIT FOR OUTCOME`, `USE CURRENTLY COMMITTED`: refused SQL0084
+- `UPDATE ... FROM`: refused SQL0199, as pub400
+
+### 4. DDL details
+
+- `CHECK`: supported: comparisons, `AND/OR/NOT`, `IS NULL`, `BETWEEN`, `IN`, `LIKE`, arithmetic, concatenation, `UPPER LOWER LENGTH SUBSTR TRIM LTRIM RTRIM ABS MOD COALESCE`; other functions refused SQL0084
+- `NOT ENFORCED`, `DEFERRABLE`, `ENABLE/DISABLE QUERY OPTIMIZATION`: refused SQL0084
+- Identity columns: `START`, `INCREMENT`, `MINVALUE/MAXVALUE`, `CYCLE`, `CACHE`, `ORDER`, `BIGINT`/`DECIMAL`, `OVERRIDING SYSTEM/USER VALUE`, `IDENTITY_VAL_LOCAL()`: partial: a range past 19 digits refused SQL0084 (BLOCKED(sql)); `ORDER` kept, without effect on one system
+- `IMPLICITLY HIDDEN`: refused SQL0084: BLOCKED(sql), queries have no hidden-column flag yet (IBM accepts it)
+- `CREATE TABLE ... AS (query) WITH [NO] DATA`, `DEFINITION ONLY`: partial: an expression column is refused SQL0084 until expression types land
+- `CREATE TABLE ... LIKE`, `(LIKE t)`: supported; `INCLUDING IDENTITY`, `EXCLUDING COLUMN DEFAULTS`, `USING TYPE DEFAULTS` refused SQL0084
+- `WITH [LOCAL \| CASCADED] CHECK OPTION` (SQL0161): partial: on views that stay logical files; refused SQL0084 on others
+- `CREATE INDEX ... WHERE` (sparse): partial: conditions select/omit can express; others refused SQL0084
+- Expression (derived) index keys: refused SQL0084: BLOCKED(sql), access paths hold no key expressions
+- `INCLUDE` on an ordinary index: refused SQL0104, as IBM
+- `VOLATILE`, `IN` on CREATE TABLE; `PAGESIZE`, `UNIT` on CREATE INDEX: accepted without effect: to be refused or documented as no-ops (honesty rule)
+
+### 5. Functions
+
+- `ENCRYPT_AES`, `ENCRYPT_RC2`, `ENCRYPT_TDES`, `DECRYPT_*`, `GETHINT`: refused SQL0084: IBM's encrypted layout is unpublished, so nothing made here could be read there
+- `VERIFY_GROUP_FOR_USER`: refused SQL0084
+- `XMLAGG`: refused SQL0084
+
+### 7. Data types
+
+- `CURRENT DECFLOAT ROUNDING MODE` and `SET` (7 modes): supported; a mode from a host variable refused SQL0084
+- `FOR MIXED DATA`: refused SQL0604
+- A LOB as an index or constraint key: refused SQL0350
+- Changes through a read-only view: refused SQL0150
+- `CLOB ... FOR BIT DATA`: refused SQL0683
+- LOB locators, file reference variables, `FREE LOCATOR`: refused: BLOCKED(sql), the engine's locator table exists; the statements come with dynamic and embedded SQL
+- `XML` as a column or `CAST` type, `XMLPARSE(CONTENT)`, `XMLQUERY`, `XMLTABLE`, `XMLEXISTS`, `XMLVALIDATE`, `XMLAGG` and the rest: refused SQL0084
+- `ROWID`, `DATALINK`: refused SQL0084
+- SQL/JSON path filters, item methods, `**`, `@`, variables, `PASSING`: refused SQL0084 (pub400 runs them)
+- `JSON_UPDATE`: refused SQL0204, as pub400 (7.5 has none)
+
+### 8. Catalogs
+
+- `QSYS2.SYSCOLAUTH`: present, always empty: BLOCKED(sql), the store keeps no column authorities
+- Other `QSYS2` catalogs, `SYSIBM` metadata views: not present: SQL0204
+
+### 9. Services, tools and interfaces
+
+- `HISTORY_LOG_INFO`: partial: `GENERATE_SYSLOG` and `EOF_DELAY` refused SQL0443
+- `SPOOLED_FILE_INFO`, `SYSTEM_STATUS` (table function): partial: timestamp filters refused SQL0443; `RESET_STATISTICS` not applied
+- `DISPLAY_JOURNAL`: partial: `GENERATE_SYSLOG`, `EOF_DELAY` refused SQL0443; thread, remote and syslog columns null
+- `OBJECT_LOCK_INFO`, `MEMORY_POOL_INFO`, `MEMORY_POOL`, `SYSTEM_ACTIVITY_INFO`, `ASP_INFO`, `SYSDISKSTAT`, `HARDWARE_RESOURCE_INFO`, `MEDIA_LIBRARY_INFO`, `COLLECTION_SERVICES_INFO`, `EXIT_POINT_INFO`, `EXIT_PROGRAM_INFO`, `ENVIRONMENT_VARIABLE_INFO`, `GROUP_PTF_INFO`, `SYSTOOLS.GROUP_PTF_DETAILS`, `TCPIP_INFO`, `IFS_OBJECT_PRIVILEGES`, `IFS_OBJECT_LOCK_INFO`: partial: columns QS/400 keeps no value for are null (listed per service in `services/`); `RESET_STATISTICS => 'YES'` refused SQL0443; job-level environment variables not shown
+- `DNS_LOOKUP`: partial: the system resolver; `DOMAIN_SERVER` refused SQL0084
+- `SYSTOOLS.CHANGE_USER_PROFILE`: partial: preview or run; special-authority actions other than `*SAME` refused SQL0084
+- `GENERATE_SQL`, `GENERATE_SQL_OBJECTS`: partial: tables, views, indexes, sequences, aliases with constraints, labels, grants and the drop, replace, unformatted, unqualified and system-name forms, laid out as pub400; other object types and options refused SQL0084; no member written in QTEMP
+- `OVERRIDE_QAQQINI`: partial: tuning options kept as no-ops; options that change results or messages refused SQL0084 unless `*DEFAULT`
+- `SET_SERVER_SBS_ROUTING`, `SET_PASE_SHELL_INFO` (SSH always starts QSH; no per-user shell is kept), `SYSTOOLS.LPRINTF`, `SYSTOOLS.GENERATE_SPREADSHEET`: refused SQL0084
+- `STRSQL`: saved sessions (SQL6102, SQL6335, SQL7971), F13 options 1 to 4 (session attributes reshaping as pub400's, printer file, remove entries, save to a source file), SELECT output to display, printer (`QPQUPRFIL` report) and file, display formats (edited numbers, every date and time format, `*COMMA`), F19/F20 at pub400's column widths, F4 then F12: partial: output to a file supports options 1, 2, 4, 5; OUTMBR other than `*FILE`/`*FIRST` and OUTOPT(3) refused SQL0084; the driver has not yet run at a real console
+- `CONNECT`, `SET CONNECTION`, `RELEASE`, `DISCONNECT` in STRSQL: supported through the DRDA client; other statements go to the current remote server; a query there refused SQL0084 (BLOCKED(sql): no column descriptions come back)
+- `RUNSQLSTM`, `RUNSQL`: partial: options checked (non-default `USRPRF`, `DYNUSRPRF`, `SAAFLAG`, `FLAGSTD` and values QS/400 cannot honour refused SQL0084; `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `SYSTIME`, `TGTRLS` without effect); a SELECT in RUNSQLSTM or RUNSQL refused SQL0084 (severity 30), as pub400; not yet run end to end
+- `CRTSQLRPGI` options: settings it does not apply refused SQL0084 (`RPGPPOPT`, `CONACC`, `DECFLTRND`, `SQLCURRULE`, `DECRESULT`, `SRTSEQ`, `DFTRDBCOL`, `DYNDFTCOL`, `SQLPATH`, `COMPILEOPT`, `DYNUSRPRF`, `SAAFLAG`, `FLAGSTD`), accepted and ignored before
+- DRDA server (JDBC, ACS): partial: `EXCSQLSET`, `CALL` with result sets and output values (`SQLDTARD`), bind into packages; LOB locators refused SQL0084
+- Other `SYSIBM` views (`_S` forms, `ROUTINES`, `PARAMETERS`, ...): not present: SQL0204
+- The other 81 `QSQCLI` exports (`SQLGetInfo`, `SQLMoreResults`, the wide forms, descriptors, locators): not present: a program that imports one fails to bind (CPD5D02)
+- `DSPSQLPKG`: not present: no such command on V7R1M0 either (CPD0030)
+- `CRTSQLCI`, `CRTSQLCBLI`: not present
+- `STRDBMON`, `ENDDBMON` (output file of the primary's 276-column `QQQDBMN` format): partial: record types 3018, 1000, 3000, 3001, 3003, 3010, 3014; programs, host servers, DDM and QAP monitored, STRSQL, RUNSQL and RUNSQLSTM not; `TYPE(*DETAIL)` writes the same records as `*SUMMARY` (no 3019); `FTR*` filters, `FTRSQLCODE`, `JOB` operator `*NE`, `HOSTVAR` other than `*BASIC`, thresholds, `INCSYSSQL(*YES)` refused CPF9898
+- `PRTSQLINF` of `*PGM`/`*SRVPGM`: supported for programs `CRTSQLRPGI` makes from now on, laid out as pub400's; of `*SQLPKG` and `*JOB` refused SQL9011 (BLOCKED(sql))
+- `ADDPFTRG` (`RPLTRG`, generated names, `ALWREPCHG`, `TRGUPDCND`, `THDSAFE`, `MLTTHDACN`), `RMVPFTRG`, `CHGPFTRG`, `DSPFD TYPE(*TRG)` with `OUTPUT(*OUTFILE)` (`QAFDTRG`): supported; other `DSPFD` outfile types refused CPD0084
+- `*READ` triggers on record I/O, logical files (one based-on member) and SQL queries (once per row the scan keeps): supported; in a join the inner table fires for every row its scan keeps where the primary fires on matches only; refused SQL0084 where no program can be called (the service console)
+- SQL changes firing external and SQL triggers: supported for statements of programs, the host server, DRDA, QAP, STRSQL, RUNSQL and RUNSQLSTM; refused SQL0084 from the service console
+- Triggers from `CPYF` (insert triggers; a failure stops the copy with CPF2972), DFU and the DDM server: supported; `CPYF MBROPT(*UPDADD)` into a file with update triggers refused CPF502B; FTP and the service console still refused
+- `ALWREPCHG(*NO)` on after triggers: supported: the program's own change of the row is not refused, as on the primary
+
+### 9b. Performance
+
+- Plan cache (statement text and naming, 512 MiB or 10,000 entries); `QSYS2.DUMP_PLAN_CACHE`, `CLEAR_PLAN_CACHE`, `CHANGE_PLAN_CACHE_SIZE` (`*JOBCTL`): partial: the parsed statement is cached, the access plan chosen again each run; the entry-selection parameters refused SQL0084; `QIBM_DB_SQLADM` not accepted (no function usage registry)
 
 ## 11. Benchmarks
 
