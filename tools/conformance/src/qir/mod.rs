@@ -429,7 +429,7 @@ pub fn job_for(case: &Case, src: MemSource, programs: &[String]) -> Result<Box<J
     provider.clock = Some(LocalNow {
         unix: CLOCK,
         offset_min: 0,
-        zone: "QN0000UTC".into(),
+        zone: "Q0000UTC".into(),
         dst: false,
     });
     provider.add_dtaq("QGPL", "TESTQ", 100, 0, 'F');

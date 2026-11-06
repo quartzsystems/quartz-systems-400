@@ -489,7 +489,7 @@ impl ThreadHost for MemThread {
         SystemId {
             system_name: "QSHQ400".into(),
             release: "V1R0M0".into(),
-            time_zone: "QN0000UTC".into(),
+            time_zone: "Q0000UTC".into(),
             ccsid: 37,
         }
     }

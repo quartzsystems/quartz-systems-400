@@ -289,9 +289,9 @@ fn time(m: &Main) -> Time {
     let a = NtpAttrs::from_bag(&bag);
     let (last_sync, last_fail) = last_poll(&bag);
     let jobs = m.ask(Client::active_jobs);
-    let mut zones: Vec<(String, String)> = sysval::tz::ZONES
-        .iter()
-        .map(|z| (z.name.to_string(), z.text.to_string()))
+    let mut zones: Vec<(String, String)> = sysval::tz::all()
+        .into_iter()
+        .map(|z| (z.name.clone(), z.description().to_string()))
         .collect();
     if !zone.is_empty() && !zones.iter().any(|(n, _)| *n == zone) {
         zones.push((zone.clone(), String::new()));

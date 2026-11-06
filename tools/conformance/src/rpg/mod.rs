@@ -707,7 +707,7 @@ fn call_into(
         provider.clock = Some(LocalNow {
             unix: CLOCK,
             offset_min: 0,
-            zone: "QN0000UTC".into(),
+            zone: "Q0000UTC".into(),
             dst: false,
         });
         sysapi::install(&mut job, Rc::new(RefCell::new(provider)));

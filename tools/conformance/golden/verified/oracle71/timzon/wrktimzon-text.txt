@@ -1,0 +1,24 @@
+                        Work with Time Zone Descriptions               S062B175 
+                                                         MM/DD/YY  HH:MM:SS EST 
+ Type options, press Enter.                                                     
+   2=Change   4=Delete   5=Display details   6=Print   8=Update system value    
+                                                                                
+                Time                                                            
+ Opt  Offset    Zone        Text                                                
+       00:00    Q0000GMT                                                        
+       00:00    Q0000GMT2                                                       
+       00:00    Q0000GMT3                                                       
+       00:00    Q0000UTC                                                        
+      -01:00    QN0100UTCS                                                      
+      -02:00    QN0200UTCS                                                      
+      -03:00    QN0300UTCS                                                      
+      -03:00    QN0300UTC2                                                      
+      -03:30    QN0330NST                                                       
+      -03:30    QN0330NST2                                                      
+      -03:30    QN0330NST3                                                      
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F6=Create    F9=Retrieve                    
+ F11=Display Standard Time name     F12=Cancel   F17=Top   F18=Bottom           
+                                                                                

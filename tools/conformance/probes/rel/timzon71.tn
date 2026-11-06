@@ -1,0 +1,146 @@
+# Time zone descriptions on the primary (V7R1M0) as QSECOFR: WRKTIMZON
+# and its four views, Display Time Zone Description Details, the prompts
+# of CRTTIMZON, CHGTIMZON, DLTTIMZON and WRKTIMZON (F10, F11, the DST
+# parameters shown once a DST abbreviation is typed), DSPSYSVAL QTIMZON,
+# DSPMSGD of the zones' messages. Read-only: every prompt is left with
+# F3, nothing is created, changed or deleted, option 8 is never used.
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type WRKTIMZON
+key enter
+settle 3000
+snap wrktimzon
+key f11
+settle 1500
+snap wrktimzon-dst
+key f11
+settle 1500
+snap wrktimzon-alt
+key f11
+settle 1500
+snap wrktimzon-text
+key f11
+settle 1500
+pick " QN0500EST3 " 5
+key enter
+settle 2500
+snap dsptimzon-1
+key pgdn
+settle 1500
+snap dsptimzon-2
+key pgdn
+settle 1500
+snap dsptimzon-3
+key enter
+settle 2000
+pick " Q0000UTC " 5
+key enter
+settle 2500
+snap dsptimzon-nodst-1
+key pgdn
+settle 1500
+snap dsptimzon-nodst-2
+key enter
+settle 2000
+key f18
+settle 2000
+snap wrktimzon-bottom
+key f3
+settle 2000
+type WRKTIMZON
+key f4
+settle 2000
+snap prompt-wrktimzon
+key f3
+settle 1500
+type CRTTIMZON
+key f4
+settle 2000
+snap prompt-crttimzon
+key f11
+settle 1500
+snap prompt-crttimzon-f11
+key f11
+settle 1500
+key f10
+settle 1500
+snap prompt-crttimzon-f10
+key pgdn
+settle 1500
+snap prompt-crttimzon-f10-2
+key f3
+settle 1500
+type CRTTIMZON TIMZON(QSPROBE) UTCOFFSET(-300) DSTABBR(QDT)
+key f4
+settle 2000
+snap prompt-crttimzon-dst
+key pgdn
+settle 1500
+snap prompt-crttimzon-dst-2
+key f11
+settle 1500
+snap prompt-crttimzon-dst-2-f11
+key pgdn
+settle 1500
+snap prompt-crttimzon-dst-3
+key f3
+settle 1500
+type CHGTIMZON TIMZON(QN0500EST3)
+key f4
+settle 2000
+snap prompt-chgtimzon
+key f11
+settle 1500
+snap prompt-chgtimzon-f11
+key pgdn
+settle 1500
+snap prompt-chgtimzon-2
+key pgdn
+settle 1500
+snap prompt-chgtimzon-3
+key f3
+settle 1500
+type DLTTIMZON
+key f4
+settle 2000
+snap prompt-dlttimzon
+key f3
+settle 1500
+type DSPSYSVAL SYSVAL(QTIMZON)
+key enter
+settle 2000
+snap dspsysval-qtimzon
+key f3
+settle 1500
+type DSPMSGD RANGE(CPX0910 CPX0912) MSGF(QSYS/QCPFMSG)
+key enter
+settle 3000
+show
+key f3
+settle 1500
+type DLTTIMZON TIMZON(QSNOSUCH)
+key enter
+settle 2000
+show
+type CRTTIMZON TIMZON(QSPROBE) UTCOFFSET(800)
+key enter
+settle 2000
+show
+type CHGJOB LANGID(ESP) CNTRYID(ES) CCSID(65535)
+key enter
+settle 2000
+type DSPJOB OPTION(*DFNA)
+key enter
+settle 3000
+seek "Default coded character set" 4
+show
+key f3
+settle 1500

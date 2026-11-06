@@ -1,0 +1,24 @@
+                              Display System Value                              
+                                                                                
+ System value . . . . . :   QTIMZON                                             
+ Description  . . . . . :   Time zone                                           
+                                                                                
+                                                                                
+ Time zone  . . . . . . :   QN0500EST      Name                                 
+                                                                                
+                                                                                
+ Associated settings:                                                           
+   Offset . . . . . :   -05:00                                                  
+   Full name  . . . :   Eastern Standard Time                                   
+   Abbreviated name :   EST                                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -9101,3 +9101,593 @@ sev = 30
 text = "Exit program &1 in library &2 failed."
 help = "The program could not be called or ended in an exception. The exit point goes on without its answer; the messages before this one say what happened."
 vars = ["*CHAR 10", "*CHAR 10"]
+# Time zone names: the full names of the shipped time zone descriptions
+# (*TIMZON), kept equal to lic/sysval/zones.toml [messages].
+
+[[msg]]
+id = "CPX0910"
+sev = 0
+text = "Coordinated universal time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0911"
+sev = 0
+text = "Greenwich mean time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0912"
+sev = 0
+text = "British summer time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0913"
+sev = 0
+text = "Standard time, one hour behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0914"
+sev = 0
+text = "Standard time, two hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0915"
+sev = 0
+text = "Standard time, three hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0916"
+sev = 0
+text = "Brasilia time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0917"
+sev = 0
+text = "Newfoundland standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0918"
+sev = 0
+text = "Newfoundland daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0919"
+sev = 0
+text = "Standard time, four hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX091A"
+sev = 0
+text = "Atlantic standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX091B"
+sev = 0
+text = "Atlantic daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX091C"
+sev = 0
+text = "Caracas and La Paz time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX091D"
+sev = 0
+text = "Standard time, five hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX091E"
+sev = 0
+text = "Eastern standard time (North America)"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX091F"
+sev = 0
+text = "Eastern daylight time (North America)"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0920"
+sev = 0
+text = "Standard time, six hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0921"
+sev = 0
+text = "Central standard time (North America)"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0922"
+sev = 0
+text = "Central daylight time (North America)"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0923"
+sev = 0
+text = "Central standard time, abbreviated S"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0924"
+sev = 0
+text = "Daylight saving time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0925"
+sev = 0
+text = "Standard time, seven hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0926"
+sev = 0
+text = "Mountain standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0927"
+sev = 0
+text = "Mountain daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0928"
+sev = 0
+text = "Mountain standard time, abbreviated T"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0929"
+sev = 0
+text = "Standard time, eight hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX092A"
+sev = 0
+text = "Pacific standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX092B"
+sev = 0
+text = "Pacific daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX092C"
+sev = 0
+text = "Pacific standard time, abbreviated U"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX092D"
+sev = 0
+text = "Standard time, nine hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX092E"
+sev = 0
+text = "Alaska standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX092F"
+sev = 0
+text = "Alaska daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0930"
+sev = 0
+text = "Standard time, ten hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0931"
+sev = 0
+text = "Hawaii and Aleutian standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0932"
+sev = 0
+text = "Hawaii and Aleutian daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0933"
+sev = 0
+text = "Standard time, eleven hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0934"
+sev = 0
+text = "Standard time, twelve hours behind UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0935"
+sev = 0
+text = "Chatham Islands standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0936"
+sev = 0
+text = "Chatham Islands daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0937"
+sev = 0
+text = "Standard time, twelve hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0938"
+sev = 0
+text = "New Zealand standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0939"
+sev = 0
+text = "New Zealand daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX093A"
+sev = 0
+text = "Standard time, eleven hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX093B"
+sev = 0
+text = "Standard time, ten hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX093C"
+sev = 0
+text = "Australian eastern standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX093D"
+sev = 0
+text = "Australian eastern daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX093E"
+sev = 0
+text = "Australian central standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX093F"
+sev = 0
+text = "Australian central daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0940"
+sev = 0
+text = "Standard time, nine hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0941"
+sev = 0
+text = "Japan standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0942"
+sev = 0
+text = "Korea standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0943"
+sev = 0
+text = "Eastern Indonesia time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0944"
+sev = 0
+text = "Standard time, eight hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0945"
+sev = 0
+text = "Australian western standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0946"
+sev = 0
+text = "China standard time (Beijing)"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0947"
+sev = 0
+text = "Taiwan and Hong Kong standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0948"
+sev = 0
+text = "Central Indonesia time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0949"
+sev = 0
+text = "Standard time, seven hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX094A"
+sev = 0
+text = "Western Indonesia time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX094B"
+sev = 0
+text = "Standard time, six hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX094C"
+sev = 0
+text = "Almaty standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX094D"
+sev = 0
+text = "Almaty daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX094E"
+sev = 0
+text = "India standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX094F"
+sev = 0
+text = "Standard time, five hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0950"
+sev = 0
+text = "Aqtobe standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0951"
+sev = 0
+text = "Aqtobe daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0952"
+sev = 0
+text = "Standard time, four hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0953"
+sev = 0
+text = "Aqtau standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0954"
+sev = 0
+text = "Aqtau daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0955"
+sev = 0
+text = "Standard time, three hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0956"
+sev = 0
+text = "Standard time, two hours ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0957"
+sev = 0
+text = "Eastern European standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0958"
+sev = 0
+text = "Eastern European summer time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0959"
+sev = 0
+text = "South Africa standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX095A"
+sev = 0
+text = "Standard time, one hour ahead of UTC"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX095B"
+sev = 0
+text = "Central European standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX095C"
+sev = 0
+text = "Central European summer time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX095D"
+sev = 0
+text = "Brasilia summer time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX095E"
+sev = 0
+text = "Chile standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX095F"
+sev = 0
+text = "Chile summer time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0961"
+sev = 0
+text = "Moscow standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0962"
+sev = 0
+text = "Moscow summer time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0963"
+sev = 0
+text = "Hawaii standard time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []
+
+[[msg]]
+id = "CPX0964"
+sev = 0
+text = "Australian western daylight time"
+help = "The full name a time zone description shows when its names come from this message (STDNAME(*MSG) or DSTNAME(*MSG))."
+vars = []

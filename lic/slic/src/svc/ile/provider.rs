@@ -620,13 +620,13 @@ impl Provider for StoreProvider {
         let unix = crate::ipl::system::now_unix();
         let zone = self
             .sysval("QTIMZON")
-            .map_or_else(|| "QN0000UTC".into(), |v| ccsid::decode_trimmed(&v.data));
+            .map_or_else(|| "Q0000UTC".into(), |v| ccsid::decode_trimmed(&v.data));
         // The zone's rules give the offset and daylight saving; a zone
         // not in the table falls back to QUTCOFFSET.
         let (offset_min, dst) = match sysval::tz::find(&zone) {
             Some(z) => {
                 let off = z.offset_at(unix);
-                (off / 60, off != z.std_offset)
+                (off / 60, off != z.std_offset())
             }
             None => (
                 self.sysval("QUTCOFFSET")

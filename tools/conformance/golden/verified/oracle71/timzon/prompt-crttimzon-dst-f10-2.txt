@@ -1,0 +1,24 @@
+                    Create Time Zone Description (CRTTIMZON)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Daylight Saving Time end:                                                      
+   Month  . . . . . . . . . . . .                 *JAN, *FEB, *MAR, *APR...     
+   Day  . . . . . . . . . . . . .                 *MON, *TUE, *WED, *THU...     
+   Relative day of month  . . . .                 *LAST, 1, 2, 3, 4             
+   Time . . . . . . . . . . . . .                 Time                          
+ Daylight Saving Time shift . . .   60            0 to 120 minutes              
+ Text 'description' . . . . . . .   *BLANK                                      
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Year offset  . . . . . . . . . .   0             -140 to 140 years             
+ Alternate name . . . . . . . . .                                               
+                                                                                
+                                                                                
+ Authority  . . . . . . . . . . .   *USE          Name, *USE, *LIBCRTAUT...     
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

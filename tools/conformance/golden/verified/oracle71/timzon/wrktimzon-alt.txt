@@ -1,0 +1,24 @@
+                        Work with Time Zone Descriptions               S062B175 
+                                                         MM/DD/YY  HH:MM:SS EST 
+ Type options, press Enter.                                                     
+   2=Change   4=Delete   5=Display details   6=Print   8=Update system value    
+                                                                                
+                Time        Alternate                                           
+ Opt  Offset    Zone        Name                                                
+       00:00    Q0000GMT    GMT                                                 
+       00:00    Q0000GMT2   Europe/London                                       
+       00:00    Q0000GMT3   Europe/London                                       
+       00:00    Q0000UTC    UTC                                                 
+      -01:00    QN0100UTCS  GMT-1                                               
+      -02:00    QN0200UTCS  GMT-2                                               
+      -03:00    QN0300UTCS  GMT-3                                               
+      -03:00    QN0300UTC2  America/Sao_Paulo                                   
+      -03:30    QN0330NST   America/St_Johns                                    
+      -03:30    QN0330NST2  America/St_Johns                                    
+      -03:30    QN0330NST3  America/St_Johns                                    
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F6=Create   F9=Retrieve   F11=Display text  
+ F12=Cancel   F17=Top   F18=Bottom                                              
+                                                                                

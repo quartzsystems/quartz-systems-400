@@ -23,6 +23,7 @@ pub mod sbsd;
 pub mod sbsdcmd;
 pub mod shipped;
 pub mod splf;
+pub mod timzon;
 
 use qsname::{LibSpec, Name};
 use store::obj::ops::{self, NameContext};

@@ -1,0 +1,24 @@
+                    Create Time Zone Description (CRTTIMZON)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Daylight Saving Time end:        DSTEND                                        
+   Month  . . . . . . . . . . . .                                               
+   Day  . . . . . . . . . . . . .                                               
+   Relative day of month  . . . .                                               
+   Time . . . . . . . . . . . . .                                               
+ Daylight Saving Time shift . . . DSTSHIFT       60                             
+ Text 'description' . . . . . . . TEXT           *BLANK                         
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Year offset  . . . . . . . . . . YEAROFS        0                              
+ Alternate name . . . . . . . . . ALTNAME                                       
+                                                                                
+                                                                                
+ Authority  . . . . . . . . . . . AUT            *USE                           
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

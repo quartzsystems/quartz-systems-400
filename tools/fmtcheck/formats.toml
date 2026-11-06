@@ -279,6 +279,7 @@ version = [
     "work/wm/src/obj/outq.rs::VERSION",
     "work/wm/src/obj/prtf.rs::VERSION",
     "work/wm/src/obj/sbsd.rs::VERSION",
+    "work/wm/src/obj/timzon.rs::VERSION",
 ]
 files = [
     "work/wm/src/obj/cls.rs",
@@ -295,6 +296,7 @@ files = [
     "work/wm/src/obj/prtf.rs",
     "work/wm/src/obj/rpyl.rs",
     "work/wm/src/obj/sbsd.rs",
+    "work/wm/src/obj/timzon.rs",
 ]
 # The shipped subsystems are content, not format.
 exclude = [

@@ -1,0 +1,24 @@
+                        Work with Time Zone Descriptions               S062B175 
+                                                         MM/DD/YY  HH:MM:SS EST 
+ Type options, press Enter.                                                     
+   2=Change   4=Delete   5=Display details   6=Print   8=Update system value    
+                                                                                
+                Time        ---------------Daylight Saving Time---------------  
+ Opt  Offset    Zone        Abbr       Full                                     
+       00:00    Q0000GMT                                                        
+       00:00    Q0000GMT2   BST        British Summer Time                      
+       00:00    Q0000GMT3   BST        British Summer Time                      
+       00:00    Q0000UTC                                                        
+      -01:00    QN0100UTCS                                                      
+      -02:00    QN0200UTCS                                                      
+      -03:00    QN0300UTCS                                                      
+      -03:00    QN0300UTC2  UTC-03:00D (GMT - 3:00) Brasilia Daylight Saving T  
+      -03:30    QN0330NST   NDT        Newfoundland Daylight Time               
+      -03:30    QN0330NST2  NDT        Newfoundland Daylight Time               
+      -03:30    QN0330NST3  NDT        Newfoundland Daylight Time               
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F4=Prompt          F5=Refresh   F6=Create   F9=Retrieve              
+ F11=Display alternate name   F12=Cancel   F17=Top     F18=Bottom               
+                                                                                

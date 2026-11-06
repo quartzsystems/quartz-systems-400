@@ -1,0 +1,24 @@
+                     Display Time Zone Description Details                      
+                                                             System:   SYSNAME  
+ Year offset  . . . . . . . . . :   0                                           
+                                                                                
+ Alternate name . . . . . . . . :   America/New_York                            
+                                                                                
+                                                                                
+                                                                                
+ Text . . . . . . . . . . . . . :                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

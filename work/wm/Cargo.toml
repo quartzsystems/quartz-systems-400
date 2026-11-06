@@ -12,6 +12,7 @@ qsname = { path = "../../storage/qsname", version = "0.1.0" }
 store = { path = "../../storage/store", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+sysval = { path = "../../lic/sysval", version = "0.1.0" }
 thiserror.workspace = true
 
 [lints]

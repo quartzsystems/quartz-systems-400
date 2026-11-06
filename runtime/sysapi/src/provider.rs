@@ -721,7 +721,7 @@ impl MemProvider {
                 .duration_since(std::time::UNIX_EPOCH)
                 .map_or(0, |d| d.as_secs()),
             offset_min: 0,
-            zone: "QN0000UTC".into(),
+            zone: "Q0000UTC".into(),
             dst: false,
         }
     }

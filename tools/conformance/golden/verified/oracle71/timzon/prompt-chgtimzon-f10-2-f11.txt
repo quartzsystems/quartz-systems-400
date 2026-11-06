@@ -1,0 +1,24 @@
+                    Change Time Zone Description (CHGTIMZON)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Time zone description  . . . . . TIMZON       > QN0500EST3                     
+ Offset . . . . . . . . . . . . . OFFSET         -300                           
+ Standard Time:                   STDNAME                                       
+   Abbreviated name . . . . . . .                *MSG                           
+   Full name  . . . . . . . . . .                                               
+                                                                                
+ Daylight Saving Time (DST):      DSTNAME                                       
+   Abbreviated name . . . . . . .                *MSG                           
+   Full name  . . . . . . . . . .                                               
+                                                                                
+ Standard Time message  . . . . . STDMSG         CPX091E                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Already at top of area.                                                        

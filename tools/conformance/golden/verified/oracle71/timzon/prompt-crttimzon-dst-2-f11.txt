@@ -1,0 +1,24 @@
+                    Create Time Zone Description (CRTTIMZON)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Time zone description  . . . . . TIMZON       > QSPROBE                        
+ Offset . . . . . . . . . . . . . OFFSET                                        
+ Standard Time:                   STDNAME                                       
+   Abbreviated name . . . . . . .                *GEN                           
+   Full name  . . . . . . . . . .                                               
+                                                                                
+ Daylight Saving Time (DST):      DSTNAME                                       
+   Abbreviated name . . . . . . .                *NONE                          
+   Full name  . . . . . . . . . .                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+ Parameter OFFSET required.                                                     

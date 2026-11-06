@@ -1,0 +1,24 @@
+                    Change Time Zone Description (CHGTIMZON)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Time zone description  . . . . . > QN0500EST3    Name                          
+ Offset . . . . . . . . . . . . .   -300          *SAME, -779 to 779 minutes    
+ Standard Time:                                                                 
+   Abbreviated name . . . . . . .   *MSG          Character value, *SAME...     
+   Full name  . . . . . . . . . .                                               
+                                                                                
+ Daylight Saving Time (DST):                                                    
+   Abbreviated name . . . . . . .   *MSG          Character value, *SAME...     
+   Full name  . . . . . . . . . .                                               
+                                                                                
+ Standard Time message  . . . . .   CPX091E       Name, *SAME                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Already at bottom of area.                                                     

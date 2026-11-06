@@ -1,0 +1,90 @@
+# The rest of timzon71.tn: the details display through WRKTIMZON of one
+# zone (pick needs the row on screen), the CRTTIMZON prompt with its
+# keywords and the DST parameters shown once DSTNAME has an
+# abbreviation. Read-only; every prompt is left with F3.
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type WRKTIMZON TIMZON(QN0500EST3)
+key enter
+settle 3000
+snap wrktimzon-one
+pick "QN0500EST3" 5
+key enter
+settle 2500
+snap dsptimzon-1
+key pgdn
+settle 1500
+snap dsptimzon-2
+key pgdn
+settle 1500
+snap dsptimzon-3
+key enter
+settle 2000
+key f3
+settle 2000
+type WRKTIMZON TIMZON(Q0000UTC)
+key enter
+settle 3000
+pick "Q0000UTC" 5
+key enter
+settle 2500
+snap dsptimzon-nodst-1
+key pgdn
+settle 1500
+snap dsptimzon-nodst-2
+key enter
+settle 2000
+key f3
+settle 2000
+type CRTTIMZON TIMZON(QSPROBE) OFFSET(-300) DSTNAME(QDT)
+key f4
+settle 2000
+snap prompt-crttimzon-dst
+key f10
+settle 1500
+snap prompt-crttimzon-dst-f10
+key pgdn
+settle 1500
+snap prompt-crttimzon-dst-f10-2
+key pgdn
+settle 1500
+snap prompt-crttimzon-dst-f10-3
+key f11
+settle 1500
+snap prompt-crttimzon-dst-f10-3-f11
+key pgup
+settle 1500
+snap prompt-crttimzon-dst-f10-2-f11
+key pgup
+settle 1500
+snap prompt-crttimzon-dst-f10-1-f11
+key f3
+settle 1500
+type CHGTIMZON TIMZON(QN0500EST3)
+key f4
+settle 2000
+key f10
+settle 1500
+snap prompt-chgtimzon-f10
+key pgdn
+settle 1500
+snap prompt-chgtimzon-f10-2
+key pgdn
+settle 1500
+snap prompt-chgtimzon-f10-3
+key f11
+settle 1500
+snap prompt-chgtimzon-f10-3-f11
+key pgup
+settle 1500
+snap prompt-chgtimzon-f10-2-f11
+key f3
+settle 1500

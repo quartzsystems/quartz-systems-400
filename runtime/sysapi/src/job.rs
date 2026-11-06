@@ -536,9 +536,9 @@ fn qwcrtvtz(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let mut out = Out::new();
     out.bin4(8, now.offset_min);
     out.ch(12, if now.dst { '1' } else { '0' });
-    out.char(13, 10, z.name);
-    out.char(23, 10, &z.name[2..].chars().skip(4).collect::<String>());
-    out.char(33, 50, z.text);
+    out.char(13, 10, &z.name);
+    out.char(23, 10, z.abbr_at(now.unix));
+    out.char(33, 50, z.description());
     out.deliver(&a, 0, 1);
     errc.ok();
 }

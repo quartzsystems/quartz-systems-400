@@ -1,0 +1,1181 @@
+# Every shipped zone's Display Time Zone Description Details on the primary
+# (V7R1M0): WRKTIMZON page by page, option 5 on each row, the details'
+# pages shown (`show`, not snapshots: the default masks hide times).
+# Generated from the zone list (93 zones, 11 a page); read-only.
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+type WRKTIMZON
+key enter
+settle 3000
+pick " Q0000GMT " 5
+pick " Q0000GMT2 " 5
+pick " Q0000GMT3 " 5
+pick " Q0000UTC " 5
+pick " QN0100UTCS " 5
+pick " QN0200UTCS " 5
+pick " QN0300UTCS " 5
+pick " QN0300UTC2 " 5
+pick " QN0330NST " 5
+pick " QN0330NST2 " 5
+pick " QN0330NST3 " 5
+key enter
+settle 2500
+echo DETAIL Q0000GMT
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL Q0000GMT2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL Q0000GMT3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL Q0000UTC
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0100UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0200UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0300UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0300UTC2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0330NST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0330NST2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0330NST3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+key f3
+settle 2000
+key eraseinput
+type WRKTIMZON
+key enter
+settle 3000
+key pgdn
+settle 1500
+pick " QN0330NST4 " 5
+pick " QN0400AST " 5
+pick " QN0400AST2 " 5
+pick " QN0400CLT " 5
+pick " QN0400UTCS " 5
+pick " QN0400UTC2 " 5
+pick " QN0500EST " 5
+pick " QN0500EST2 " 5
+pick " QN0500EST3 " 5
+pick " QN0500UTCS " 5
+pick " QN0600CST " 5
+key enter
+settle 2500
+echo DETAIL QN0330NST4
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0400AST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0400AST2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0400CLT
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0400UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0400UTC2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0500EST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0500EST2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0500EST3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0500UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0600CST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+key f3
+settle 2000
+key eraseinput
+type WRKTIMZON
+key enter
+settle 3000
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+pick " QN0600CST2 " 5
+pick " QN0600CST3 " 5
+pick " QN0600S " 5
+pick " QN0600UTCS " 5
+pick " QN0700MST " 5
+pick " QN0700MST2 " 5
+pick " QN0700MST3 " 5
+pick " QN0700MST4 " 5
+pick " QN0700T " 5
+pick " QN0700UTCS " 5
+pick " QN0800PST " 5
+key enter
+settle 2500
+echo DETAIL QN0600CST2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0600CST3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0600S
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0600UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0700MST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0700MST2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0700MST3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0700MST4
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0700T
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0700UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0800PST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+key f3
+settle 2000
+key eraseinput
+type WRKTIMZON
+key enter
+settle 3000
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+pick " QN0800PST2 " 5
+pick " QN0800PST3 " 5
+pick " QN0800U " 5
+pick " QN0800UTCS " 5
+pick " QN0900AST " 5
+pick " QN0900AST2 " 5
+pick " QN0900UTCS " 5
+pick " QN1000HAST " 5
+pick " QN1000HAS2 " 5
+pick " QN1000HST " 5
+pick " QN1000UTCS " 5
+key enter
+settle 2500
+echo DETAIL QN0800PST2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0800PST3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0800U
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0800UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0900AST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0900AST2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN0900UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN1000HAST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN1000HAS2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN1000HST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN1000UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+key f3
+settle 2000
+key eraseinput
+type WRKTIMZON
+key enter
+settle 3000
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+pick " QN1100UTCS " 5
+pick " QN1200UTCS " 5
+pick " QP1245UTCS " 5
+pick " QP1245UTC2 " 5
+pick " QP1200NZST " 5
+pick " QP1200NZS2 " 5
+pick " QP1200NZS3 " 5
+pick " QP1200UTCS " 5
+pick " QP1100UTCS " 5
+pick " QP1000AEST " 5
+pick " QP1000AES2 " 5
+key enter
+settle 2500
+echo DETAIL QN1100UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QN1200UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP1245UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP1245UTC2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP1200NZST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP1200NZS2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP1200NZS3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP1200UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP1100UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP1000AEST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP1000AES2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+key f3
+settle 2000
+key eraseinput
+type WRKTIMZON
+key enter
+settle 3000
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+pick " QP1000UTCS " 5
+pick " QP0930ACST " 5
+pick " QP0930ACS2 " 5
+pick " QP0900JST " 5
+pick " QP0900KST " 5
+pick " QP0900UTCS " 5
+pick " QP0900WIT " 5
+pick " QP0800AWST " 5
+pick " QP0800AWS2 " 5
+pick " QP0800AWS3 " 5
+pick " QP0800BST " 5
+key enter
+settle 2500
+echo DETAIL QP1000UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0930ACST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0930ACS2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0900JST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0900KST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0900UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0900WIT
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0800AWST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0800AWS2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0800AWS3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0800BST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+key f3
+settle 2000
+key eraseinput
+type WRKTIMZON
+key enter
+settle 3000
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+pick " QP0800JIST " 5
+pick " QP0800UTCS " 5
+pick " QP0800WITA " 5
+pick " QP0700UTCS " 5
+pick " QP0700WIB " 5
+pick " QP0600UTCS " 5
+pick " QP0600UTC2 " 5
+pick " QP0600UTC3 " 5
+pick " QP0530IST " 5
+pick " QP0500UTCS " 5
+pick " QP0500UTC2 " 5
+key enter
+settle 2500
+echo DETAIL QP0800JIST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0800UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0800WITA
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0700UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0700WIB
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0600UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0600UTC2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0600UTC3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0530IST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0500UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0500UTC2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+key f3
+settle 2000
+key eraseinput
+type WRKTIMZON
+key enter
+settle 3000
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+pick " QP0500UTC3 " 5
+pick " QP0400UTCS " 5
+pick " QP0400UTC2 " 5
+pick " QP0400UTC3 " 5
+pick " QP0300MSK " 5
+pick " QP0300UTCS " 5
+pick " QP0200EET " 5
+pick " QP0200EET2 " 5
+pick " QP0200EET3 " 5
+pick " QP0200SAST " 5
+pick " QP0200UTCS " 5
+key enter
+settle 2500
+echo DETAIL QP0500UTC3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0400UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0400UTC2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0400UTC3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0300MSK
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0300UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0200EET
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0200EET2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0200EET3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0200SAST
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0200UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+key f3
+settle 2000
+key eraseinput
+type WRKTIMZON
+key enter
+settle 3000
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+key pgdn
+settle 1500
+pick " QP0100CET " 5
+pick " QP0100CET2 " 5
+pick " QP0100CET3 " 5
+pick " QP0100CET4 " 5
+pick " QP0100UTCS " 5
+key enter
+settle 2500
+echo DETAIL QP0100CET
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0100CET2
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0100CET3
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0100CET4
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+echo DETAIL QP0100UTCS
+show
+key pgdn
+settle 1200
+show
+key pgdn
+settle 1200
+show
+key enter
+settle 2000
+key f3
+settle 2000
+key eraseinput

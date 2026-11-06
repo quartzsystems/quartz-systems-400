@@ -216,8 +216,8 @@ impl SysVals {
             return Err(SysValError::NotAllowed {
                 name: name.to_string(),
                 got: z.clone(),
-                allowed: tz::ZONES
-                    .iter()
+                allowed: tz::all()
+                    .into_iter()
                     .map(|z| z.name)
                     .collect::<Vec<_>>()
                     .join(", "),
@@ -251,12 +251,14 @@ impl SysVals {
     }
 
     /// The zone QTIMZON names.
-    pub fn zone(&self) -> &'static tz::Zone {
+    pub fn zone(&self) -> tz::Zone {
         let name = self
             .overrides
             .get("QTIMZON")
-            .map_or_else(|| "QN0000UTC".to_string(), Value::text);
-        tz::find(&name).unwrap_or(&tz::ZONES[0])
+            .map_or_else(|| "Q0000UTC".to_string(), Value::text);
+        tz::find(&name)
+            .or_else(|| tz::find("Q0000UTC"))
+            .unwrap_or_else(|| tz::shipped()[0].clone())
     }
 
     /// Local time now according to QTIMZON.
@@ -425,7 +427,7 @@ mod tests {
         let mut v = fresh();
         v.set_text("QSECURITY", "50").unwrap();
         v.set_text("QSYSLIBL", "QSYS QSYS2 QUSRSYS").unwrap();
-        v.set_text("QTIMZON", "QN0500EST2").unwrap();
+        v.set_text("QTIMZON", "QN0500EST3").unwrap();
         let mut rec = Record::new(0);
         v.store(&mut rec).unwrap();
         let back = SysVals::from_record(&rec, &HostInfo::default()).unwrap();
@@ -448,7 +450,7 @@ mod tests {
         assert_eq!(v.get_at("QTIME", t).unwrap().text(), "033015");
         assert_eq!(v.get_at("QDATE", t).unwrap().text(), "070426");
         assert_eq!(v.get_at("QUTCOFFSET", t).unwrap().text(), "+0000");
-        v.set_text("QTIMZON", "QN0500EST2").unwrap();
+        v.set_text("QTIMZON", "QN0500EST3").unwrap();
         v.set_text("QDATFMT", "YMD").unwrap();
         assert_eq!(v.get_at("QTIME", t).unwrap().text(), "233015"); // previous evening EDT
         assert_eq!(v.get_at("QDATE", t).unwrap().text(), "260703");

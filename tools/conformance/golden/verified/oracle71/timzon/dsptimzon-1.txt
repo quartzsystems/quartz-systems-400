@@ -1,0 +1,24 @@
+                     Display Time Zone Description Details                      
+                                                             System:   SYSNAME  
+ Time zone  . . . . . . . . . . :   QN0500EST3                                  
+                                                                                
+ Offset . . . . . . . . . . . . :   -05:00                                      
+                                                                                
+ Standard Time:                                                                 
+   Full name  . . . . . . . . . :   Eastern Standard Time                       
+                                                                                
+   Abbreviated name . . . . . . :   EST                                         
+   Message  . . . . . . . . . . :   CPX091E                                     
+                                                                                
+ Daylight Saving Time (DST):                                                    
+   Full name  . . . . . . . . . :   Eastern Daylight Time                       
+                                                                                
+   Abbreviated name . . . . . . :   EDT                                         
+   Message  . . . . . . . . . . :   CPX091F                                     
+                                                                                
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

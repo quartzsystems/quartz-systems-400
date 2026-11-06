@@ -1,0 +1,24 @@
+                        Work with Time Zone Descriptions               S062B175 
+                                                         MM/DD/YY  HH:MM:SS EST 
+ Type options, press Enter.                                                     
+   2=Change   4=Delete   5=Display details   6=Print   8=Update system value    
+                                                                                
+                Time        ------------------Standard Time-------------------  
+ Opt  Offset    Zone        Abbr       Full                                     
+       00:00    Q0000GMT    GMT        Greenwich Mean Time                      
+       00:00    Q0000GMT2   GMT        Greenwich Mean Time                      
+       00:00    Q0000GMT3   GMT        Greenwich Mean Time                      
+       00:00    Q0000UTC    UTC        Coordinated Universal Time               
+      -01:00    QN0100UTCS  UTC-01:00S UTC-01:00 Standard Time                  
+      -02:00    QN0200UTCS  UTC-02:00S UTC-02:00 Standard Time                  
+      -03:00    QN0300UTCS  UTC-03:00S UTC-03:00 Standard Time                  
+      -03:00    QN0300UTC2  UTC-03:00S (GMT - 3:00) Brasilia                    
+      -03:30    QN0330NST   NST        Newfoundland Standard Time               
+      -03:30    QN0330NST2  NST        Newfoundland Standard Time               
+      -03:30    QN0330NST3  NST        Newfoundland Standard Time               
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F4=Prompt    F5=Refresh   F6=Create   F9=Retrieve                    
+ F11=Display DST name   F12=Cancel   F17=Top     F18=Bottom                     
+                                                                                

@@ -1,0 +1,94 @@
+zone	off	stdfull	stdabbr	stdmsg	dstfull	dstabbr	dstmsg	msgf	msgflib	smon	sday	srel	stime	emon	eday	erel	etime	shift	yoff	alt	text
+Q0000GMT	00:00	Greenwich Mean Time	GMT	CPX0911	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT	
+Q0000GMT2	00:00	Greenwich Mean Time	GMT	CPX0911	British Summer Time	BST	CPX0912	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	October	Sunday	Last	02:00:00	60	0	Europe/London	
+Q0000GMT3	00:00	Greenwich Mean Time	GMT	CPX0911	British Summer Time	BST	CPX0912	QCPFMSG	*LIBL	March	Sunday	Last	01:00:00	October	Sunday	Last	02:00:00	60	0	Europe/London	
+Q0000UTC	00:00	Coordinated Universal Time	UTC	CPX0910	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	UTC	
+QN0100UTCS	-01:00	UTC-01:00 Standard Time	UTC-01:00S	CPX0913	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-1	
+QN0200UTCS	-02:00	UTC-02:00 Standard Time	UTC-02:00S	CPX0914	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-2	
+QN0300UTCS	-03:00	UTC-03:00 Standard Time	UTC-03:00S	CPX0915	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-3	
+QN0300UTC2	-03:00	(GMT - 3:00) Brasilia	UTC-03:00S	CPX0916	(GMT - 3:00) Brasilia Daylight Saving Time	UTC-03:00D	CPX095D	QCPFMSG	*LIBL	October	Saturday	Third	02:00:00	February	Friday	Second	02:00:00	60	0	America/Sao_Paulo	
+QN0330NST	-03:30	Newfoundland Standard Time	NST	CPX0917	Newfoundland Daylight Time	NDT	CPX0918	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/St_Johns	
+QN0330NST2	-03:30	Newfoundland Standard Time	NST	CPX0917	Newfoundland Daylight Time	NDT	CPX0918	QCPFMSG	*LIBL	April	Sunday	First	00:01:00	October	Sunday	Last	00:01:00	60	0	America/St_Johns	
+QN0330NST3	-03:30	Newfoundland Standard Time	NST	CPX0917	Newfoundland Daylight Time	NDT	CPX0918	QCPFMSG	*LIBL	March	Sunday	Second	02:00:00	November	Sunday	First	02:00:00	60	0	America/St_Johns	
+QN0330NST4	-03:30	Newfoundland Standard Time	NST	CPX0917	Newfoundland Daylight Time	NDT	CPX0918	QCPFMSG	*LIBL	March	Sunday	Second	00:01:00	November	Sunday	First	00:01:00	60	0	America/St_Johns	
+QN0400AST	-04:00	Atlantic Standard Time	AST	CPX091A	Atlantic Daylight Time	ADT	CPX091B	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	Atlantic/Bermuda	
+QN0400AST2	-04:00	Atlantic Standard Time	AST	CPX091A	Atlantic Daylight Time	ADT	CPX091B	QCPFMSG	*LIBL	March	Sunday	Second	02:00:00	November	Sunday	First	02:00:00	60	0	Atlantic/Bermuda	
+QN0400CLT	-04:00	Chile Time	CLT	CPX095E	Chile Summer Time	CLST	CPX095F	QCPFMSG	*LIBL	October	Saturday	Second	00:00:00	March	Saturday	Second	00:00:00	60	0	America/Santiago	
+QN0400UTCS	-04:00	UTC-04:00 Standard Time	UTC-04:00S	CPX0919	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-4	
+QN0400UTC2	-04:00	(GMT - 4:00) Caracas, La Paz	UTC-04:00S	CPX091C	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	America/Caracas	
+QN0500EST	-05:00	Eastern Standard Time	EST	CPX091E	Eastern Daylight Time	EDT	CPX091F	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/New_York	
+QN0500EST2	-05:00	Eastern Standard Time	EST	CPX091E	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-5	
+QN0500EST3	-05:00	Eastern Standard Time	EST	CPX091E	Eastern Daylight Time	EDT	CPX091F	QCPFMSG	*LIBL	March	Sunday	Second	02:00:00	November	Sunday	First	02:00:00	60	0	America/New_York	
+QN0500UTCS	-05:00	UTC-05:00 Standard Time	UTC-05:00S	CPX091D	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-5	
+QN0600CST	-06:00	Central Standard Time	CST	CPX0921	Central Daylight Time	CDT	CPX0922	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Chicago	
+QN0600CST2	-06:00	Central Standard Time	CST	CPX0921	Central Daylight Time	CDT	CPX0922	QCPFMSG	*LIBL	March	Sunday	Second	02:00:00	November	Sunday	First	02:00:00	60	0	America/Chicago	
+QN0600CST3	-06:00	Central Standard Time	CST	CPX0921	Central Daylight Time	CDT	CPX0922	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Mexico_City	
+QN0600S	-06:00	Central Standard Time	S	CPX0923	Daylight Saving Time	DST	CPX0924	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Chicago	
+QN0600UTCS	-06:00	UTC-06:00 Standard Time	UTC-06:00S	CPX0920	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-6	
+QN0700MST	-07:00	Mountain Standard Time	MST	CPX0926	Mountain Daylight Time	MDT	CPX0927	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Denver	
+QN0700MST2	-07:00	Mountain Standard Time	MST	CPX0926	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	America/Phoenix	
+QN0700MST3	-07:00	Mountain Standard Time	MST	CPX0926	Mountain Daylight Time	MDT	CPX0927	QCPFMSG	*LIBL	March	Sunday	Second	02:00:00	November	Sunday	First	02:00:00	60	0	America/Denver	
+QN0700MST4	-07:00	Mountain Standard Time	MST	CPX0926	Mountain Daylight Time	MDT	CPX0927	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Mazatlan	
+QN0700T	-07:00	Mountain Standard Time	T	CPX0928	Daylight Saving Time	DST	CPX0924	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Denver	
+QN0700UTCS	-07:00	UTC-07:00 Standard Time	UTC-07:00S	CPX0925	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-7	
+QN0800PST	-08:00	Pacific Standard Time	PST	CPX092A	Pacific Daylight Time	PDT	CPX092B	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Los_Angeles	
+QN0800PST2	-08:00	Pacific Standard Time	PST	CPX092A	Pacific Daylight Time	PDT	CPX092B	QCPFMSG	*LIBL	March	Sunday	Second	02:00:00	November	Sunday	First	02:00:00	60	0	America/Los_Angeles	
+QN0800PST3	-08:00	Pacific Standard Time	PST	CPX092A	Pacific Daylight Time	PDT	CPX092B	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Tijuana	
+QN0800U	-08:00	Pacific Standard Time	U	CPX092C	Daylight Saving Time	DST	CPX0924	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Los_Angeles	
+QN0800UTCS	-08:00	UTC-08:00 Standard Time	UTC-08:00S	CPX0929	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-8	
+QN0900AST	-09:00	Alaska Standard Time	AKST	CPX092E	Alaska Daylight Time	AKDT	CPX092F	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Anchorage	
+QN0900AST2	-09:00	Alaska Standard Time	AKST	CPX092E	Alaska Daylight Time	AKDT	CPX092F	QCPFMSG	*LIBL	March	Sunday	Second	02:00:00	November	Sunday	First	02:00:00	60	0	America/Anchorage	
+QN0900UTCS	-09:00	UTC-09:00 Standard Time	UTC-09:00S	CPX092D	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-9	
+QN1000HAST	-10:00	Hawaii-Aleutian Standard Time	HAST	CPX0931	Hawaii-Aleutian Daylight Time	HADT	CPX0932	QCPFMSG	*LIBL	April	Sunday	First	02:00:00	October	Sunday	Last	02:00:00	60	0	America/Adak	
+QN1000HAS2	-10:00	Hawaii-Aleutian Standard Time	HAST	CPX0931	Hawaii-Aleutian Daylight Time	HADT	CPX0932	QCPFMSG	*LIBL	March	Sunday	Second	02:00:00	November	Sunday	First	02:00:00	60	0	America/Adak	
+QN1000HST	-10:00	Hawaii Standard Time	HST	CPX0963	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Pacific/Honolulu	
+QN1000UTCS	-10:00	UTC-10:00 Standard Time	UTC-10:00S	CPX0930	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-10	
+QN1100UTCS	-11:00	UTC-11:00 Standard Time	UTC-11:00S	CPX0933	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-11	
+QN1200UTCS	-12:00	UTC-12:00 Standard Time	UTC-12:00S	CPX0934	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT-12	
+QP1245UTCS	+12:45	Chatham Islands Standard Time	UTC+12:45S	CPX0935	Chatham Islands Daylight Time	UTC+12:45D	CPX0936	QCPFMSG	*LIBL	October	Sunday	First	02:00:00	March	Sunday	Third	02:00:00	60	0	Pacific/Chatham	
+QP1245UTC2	+12:45	Chatham Islands Standard Time	UTC+12:45S	CPX0935	Chatham Islands Daylight Time	UTC+12:45D	CPX0936	QCPFMSG	*LIBL	October	Sunday	First	02:45:00	March	Sunday	Third	03:45:00	60	0	Pacific/Chatham	
+QP1200NZST	+12:00	New Zealand Standard Time	NZST	CPX0938	New Zealand Daylight Time	NZDT	CPX0939	QCPFMSG	*LIBL	October	Sunday	First	02:00:00	March	Sunday	Third	02:00:00	60	0	Pacific/Auckland	
+QP1200NZS2	+12:00	New Zealand Standard Time	NZST	CPX0938	New Zealand Daylight Time	NZDT	CPX0939	QCPFMSG	*LIBL	October	Sunday	First	02:00:00	March	Sunday	Third	03:00:00	60	0	Pacific/Auckland	
+QP1200NZS3	+12:00	New Zealand Standard Time	NZST	CPX0938	New Zealand Daylight Time	NZDT	CPX0939	QCPFMSG	*LIBL	September	Sunday	Last	02:00:00	April	Sunday	First	03:00:00	60	0	Pacific/Auckland	
+QP1200UTCS	+12:00	UTC+12:00 Standard Time	UTC+12:00S	CPX0937	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+12	
+QP1100UTCS	+11:00	UTC+11:00 Standard Time	UTC+11:00S	CPX093A	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+11	
+QP1000AEST	+10:00	Australian Eastern Standard Time	AEST	CPX093C	Australian Eastern Daylight Saving Time	AEDT	CPX093D	QCPFMSG	*LIBL	October	Sunday	Last	02:00:00	March	Sunday	Last	02:00:00	60	0	Australia/Sydney	
+QP1000AES2	+10:00	Australian Eastern Standard Time	AEST	CPX093C	Australian Eastern Daylight Saving Time	AEDT	CPX093D	QCPFMSG	*LIBL	October	Sunday	Last	02:00:00	March	Sunday	Last	03:00:00	60	0	Australia/Sydney	
+QP1000UTCS	+10:00	UTC+10:00 Standard Time	UTC+10:00S	CPX093B	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+10	
+QP0930ACST	+09:30	Australian Central Standard Time	ACST	CPX093E	Australian Central Daylight Saving Time	ACDT	CPX093F	QCPFMSG	*LIBL	October	Sunday	Last	02:00:00	March	Sunday	Last	02:00:00	60	0	Australia/Adelaide	
+QP0930ACS2	+09:30	Australian Central Standard Time	ACST	CPX093E	Australian Central Daylight Saving Time	ACDT	CPX093F	QCPFMSG	*LIBL	October	Sunday	Last	02:00:00	March	Sunday	Last	03:00:00	60	0	Australia/Adelaide	
+QP0900JST	+09:00	Japan Standard Time	JST	CPX0941	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Asia/Tokyo	
+QP0900KST	+09:00	Korea Standard Time	KST	CPX0942	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Asia/Seoul	
+QP0900UTCS	+09:00	UTC+09:00 Standard Time	UTC+09:00S	CPX0940	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+9	
+QP0900WIT	+09:00	Waktu Indonesia Timur	WIT	CPX0943	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Asia/Jayapura	
+QP0800AWST	+08:00	Australian Western Standard Time	AWST	CPX0945	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Australia/Perth	
+QP0800AWS2	+08:00	Australian Western Standard Time	AWST	CPX0945	Australian Western Daylight Saving Time	AWDT	CPX0964	QCPFMSG	*LIBL	December	Sunday	First	02:00:00	March	Sunday	Last	03:00:00	60	0	Australia/Perth	
+QP0800AWS3	+08:00	Australian Western Standard Time	AWST	CPX0945	Australian Western Daylight Saving Time	AWDT	CPX0964	QCPFMSG	*LIBL	October	Sunday	Last	02:00:00	March	Sunday	Last	03:00:00	60	0	Australia/Perth	
+QP0800BST	+08:00	Beijing Standard Time	BST	CPX0946	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Asia/Shanghai	
+QP0800JIST	+08:00	Jung Yuan Standard Time	JIST	CPX0947	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Asia/Hong_Kong	
+QP0800UTCS	+08:00	UTC+08:00 Standard Time	UTC+08:00S	CPX0944	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+8	
+QP0800WITA	+08:00	Waktu Indonesia Tengah	WITA	CPX0948	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Asia/Ujung_Pandang	
+QP0700UTCS	+07:00	UTC+07:00 Standard Time	UTC+07:00S	CPX0949	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+7	
+QP0700WIB	+07:00	Waktu Indonesia Barat	WIB	CPX094A	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Asia/Jakarta	
+QP0600UTCS	+06:00	UTC+06:00 Standard Time	UTC+06:00S	CPX094B	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+6	
+QP0600UTC2	+06:00	Asia/Almaty	UTC+06:00S	CPX094C	Asia/Almaty Daylight Saving Time	UTC+06:00D	CPX094D	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	September	Sunday	Last	02:00:00	60	0	Asia/Almaty	
+QP0600UTC3	+06:00	Asia/Almaty	UTC+06:00S	CPX094C	Asia/Almaty Daylight Saving Time	UTC+06:00D	CPX094D	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	October	Sunday	Last	03:00:00	60	0	Asia/Almaty	
+QP0530IST	+05:30	Indian Standard Time	IST	CPX094E	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Asia/Calcutta	
+QP0500UTCS	+05:00	UTC+05:00 Standard Time	UTC+05:00S	CPX094F	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+5	
+QP0500UTC2	+05:00	Asia/Aqtobe	UTC+05:00S	CPX0950	Asia/Aqtobe Daylight Saving Time	UTC+05:00D	CPX0951	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	September	Sunday	Last	02:00:00	60	0	Asia/Aqtobe	
+QP0500UTC3	+05:00	Asia/Aqtobe	UTC+05:00S	CPX0950	Asia/Aqtobe Daylight Saving Time	UTC+05:00D	CPX0951	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	October	Sunday	Last	03:00:00	60	0	Asia/Aqtobe	
+QP0400UTCS	+04:00	UTC+04:00 Standard Time	UTC+04:00S	CPX0952	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+4	
+QP0400UTC2	+04:00	Asia/Aqtau	UTC+04:00S	CPX0953	Asia/Aqtau Daylight Saving Time	UTC+04:00D	CPX0954	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	October	Sunday	Last	02:00:00	60	0	Asia/Aqtau	
+QP0400UTC3	+04:00	Asia/Aqtau	UTC+04:00S	CPX0953	Asia/Aqtau Daylight Saving Time	UTC+04:00D	CPX0954	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	October	Sunday	Last	03:00:00	60	0	Asia/Aqtau	
+QP0300MSK	+03:00	Moscow Time	MSK	CPX0961	Moscow Summer Time	MSD	CPX0962	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	October	Sunday	Last	03:00:00	60	0	Europe/Moscow	
+QP0300UTCS	+03:00	UTC+03:00 Standard Time	UTC+03:00S	CPX0955	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+3	
+QP0200EET	+02:00	Eastern European Time	EET	CPX0957	Eastern European Daylight Saving Time	EEDST	CPX0958	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	September	Sunday	Last	02:00:00	60	0	Europe/Tallinn	
+QP0200EET2	+02:00	Eastern European Time	EET	CPX0957	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+2	
+QP0200EET3	+02:00	Eastern European Time	EET	CPX0957	Eastern European Daylight Saving Time	EEDST	CPX0958	QCPFMSG	*LIBL	March	Sunday	Last	03:00:00	October	Sunday	Last	04:00:00	60	0	Europe/Tallinn	
+QP0200SAST	+02:00	South African Standard Time	SAST	CPX0959	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	Africa/Johannesburg	
+QP0200UTCS	+02:00	UTC+02:00 Standard Time	UTC+02:00S	CPX0956	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+2	
+QP0100CET	+01:00	Central European Time	CET	CPX095B	Central European Daylight Saving Time	CEST	CPX095C	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	September	Sunday	Last	02:00:00	60	0	Europe/Zurich	
+QP0100CET2	+01:00	Central European Time	CET	CPX095B	Central European Daylight Saving Time	CEST	CPX095C	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	October	Sunday	Last	02:00:00	60	0	Europe/Zurich	
+QP0100CET3	+01:00	Central European Time	CET	CPX095B	Central European Daylight Saving Time	CEST	CPX095C	QCPFMSG	*LIBL	March	Monday	Last	02:00:00	September	Sunday	Last	02:00:00	60	0	Europe/Zurich	
+QP0100CET4	+01:00	Central European Time	CET	CPX095B	Central European Daylight Saving Time	CEST	CPX095C	QCPFMSG	*LIBL	March	Sunday	Last	02:00:00	October	Sunday	Last	03:00:00	60	0	Europe/Zurich	
+QP0100UTCS	+01:00	UTC+01:00 Standard Time	UTC+01:00S	CPX095A	-	-	-	QCPFMSG	*LIBL	-	-	-	-	-	-	-	-	-	0	GMT+1	

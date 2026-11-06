@@ -50,7 +50,7 @@ fn utc_offset(system: &System) -> impl Fn(u64) -> i32 + use<> {
         .as_ref()
         .and_then(|v| v.get("QTIMZON").ok())
         .and_then(|v| sysval::tz::find(v.text().trim()));
-    move |t| zone.map_or(0, |z| z.offset_at(t))
+    move |t| zone.as_ref().map_or(0, |z| z.offset_at(t))
 }
 
 /// `ADDJOBSCDE`, `CHGJOBSCDE`, `RMVJOBSCDE`, `HLDJOBSCDE`,

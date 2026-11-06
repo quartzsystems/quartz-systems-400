@@ -1,0 +1,24 @@
+                    Create Time Zone Description (CRTTIMZON)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Time zone description  . . . . .                 Name                          
+ Offset . . . . . . . . . . . . .                 -779 to 779 minutes           
+ Standard Time:                                                                 
+   Abbreviated name . . . . . . .   *GEN          Character value, *GEN, *MSG   
+   Full name  . . . . . . . . . .                                               
+                                                                                
+ Daylight Saving Time (DST):                                                    
+   Abbreviated name . . . . . . .   *NONE         Character value, *NONE...     
+   Full name  . . . . . . . . . .                                               
+                                                                                
+ Text 'description' . . . . . . .   *BLANK                                      
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Year offset  . . . . . . . . . .   0             -140 to 140 years             
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter TIMZON required.                                                   + 

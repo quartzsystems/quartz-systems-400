@@ -1,0 +1,24 @@
+                     Display Time Zone Description Details                      
+                                                             System:   SYSNAME  
+ Time zone  . . . . . . . . . . :   Q0000UTC                                    
+                                                                                
+ Offset . . . . . . . . . . . . :    00:00                                      
+                                                                                
+ Standard Time:                                                                 
+   Full name  . . . . . . . . . :   Coordinated Universal Time                  
+                                                                                
+   Abbreviated name . . . . . . :   UTC                                         
+   Message  . . . . . . . . . . :   CPX0910                                     
+                                                                                
+ Message file . . . . . . . . . :   QCPFMSG                                     
+   Library  . . . . . . . . . . :     *LIBL                                     
+                                                                                
+ Year offset  . . . . . . . . . :   0                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -782,6 +782,64 @@ so database scans pass printer files by.
 | 214 | 38 | Reserved2 | zero |
 | 252 | 4 | FmtLen | bytes of compiled DDS formats that follow |
 
+### `TimeZoneDescription` (376 bytes)
+
+`*TIMZON` (type code 0x002E), in QSYS only: what `CRTTIMZON` and
+`CHGTIMZON` set. Text is CP037; `Offset` and `YearOffset` are two-byte
+two's complement. A name given as `*MSG` keeps the message identifier
+(`StdMsg`, `DstMsg`) and the names the message gave when the object was
+made or changed; a blank `DstAbbr` is `DSTNAME(*NONE)` and then
+`HasDst` is 0. The edges' times are local wall clock seconds (standard
+time at the start, daylight time at the end).
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSWMTZON` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 2 | Offset | minutes east of UTC, -779 to 779 |
+| 12 | 10 | StdAbbr | |
+| 22 | 50 | StdFull | |
+| 72 | 7 | StdMsg | blank when the names were given |
+| 79 | 10 | DstAbbr | blank is `*NONE` |
+| 89 | 50 | DstFull | |
+| 139 | 7 | DstMsg | |
+| 146 | 10 | MsgfName | `MSGF`, `QCPFMSG` by default |
+| 156 | 10 | MsgfLib | `*LIBL` by default |
+| 166 | 1 | HasDst | 1 when the zone keeps daylight saving time |
+| 167 | 1 | StartMonth | 1-12 |
+| 168 | 1 | StartDay | 0 Sunday to 6 Saturday |
+| 169 | 1 | StartWeek | 1-4, 5 is `*LAST` |
+| 170 | 4 | StartTime | seconds after midnight |
+| 174 | 1 | EndMonth | |
+| 175 | 1 | EndDay | |
+| 176 | 1 | EndWeek | |
+| 177 | 1 | Reserved | zero |
+| 178 | 4 | EndTime | |
+| 182 | 2 | Shift | `DSTSHIFT`, minutes, 0-120 |
+| 184 | 2 | YearOffset | `YEAROFS`, -140 to 140 |
+| 186 | 132 | AltName | `ALTNAME`, an IANA zone name |
+| 318 | 50 | Text | |
+| 368 | 8 | Reserved2 | zero |
+
+The 93 descriptions IBM ships are made in QSYS at the first IPL (and,
+on a system that has none, at the first IPL after a slip install, when
+`QTIMZON` is moved from its V1R0M0 name to IBM's: `sysval::tz::v1r0m0_name`).
+Their list, names, abbreviations, message identifiers and alternate
+names are the primary's (`tools/conformance/oracle/timzon/`); their
+daylight saving rules come from the IANA tz database vendored in
+`lic/sysval/tzdata/` (release in `tzdata/version`), turned into the table
+by `lic/sysval/build.rs` from `lic/sysval/zones.toml`: each zone names
+the tzdata year whose rule of its alternate zone it keeps (`QN0500EST3`:
+`America/New_York` in 2026; `QN0500EST`: the same zone in 2006), and the
+16 variants IBM ships that no tzdata year gives carry IBM's rule as it
+is. `lic/sysval/tests/timzon_oracle.rs` compares the whole table with
+the primary's.
+
+The storage service reads every `*TIMZON` in QSYS at start and after
+each `CRTTIMZON`, `CHGTIMZON`, `DLTTIMZON` and restore, so `QTIMZON`,
+`QUTCOFFSET`, the jobs' local time and SQL's `CURRENT TIMEZONE` follow
+the description `QTIMZON` names from the moment it changes, with no IPL.
+
 ### Shipped objects
 
 | Object | Notes |
@@ -1200,6 +1258,6 @@ and subsystem (`*ANY` for all) ask (`lic/slic/src/stgsvc/jobntfy.rs`).
 
 ## Frozen at V1R1M0
 
-Frozen: the payloads of section 2 (job descriptions, classes, job queues, message queues and entries, the reply list, subsystem descriptions and their entries, job schedules, output queues, printer files, device and controller descriptions) and the spooled file payload (`work/wm/src/obj/splf.rs`, `VERSION` 2, which still reads version 1). Each payload carries its own `VERSION`.
+Frozen: the payloads of section 2 (job descriptions, classes, job queues, message queues and entries, the reply list, subsystem descriptions and their entries, job schedules, output queues, printer files, device and controller descriptions, time zone descriptions) and the spooled file payload (`work/wm/src/obj/splf.rs`, `VERSION` 2, which still reads version 1). Each payload carries its own `VERSION`.
 
 Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

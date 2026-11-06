@@ -128,7 +128,7 @@ group = "DATTIM"
 name = "QTIMZON"
 type = "char"
 len = 10
-default = "QN0000UTC"
+default = "Q0000UTC"
 text = "Time zone description that converts the UTC clock to local time"
 group = "DATTIM"
 

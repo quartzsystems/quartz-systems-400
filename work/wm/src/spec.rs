@@ -36,5 +36,6 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::obj::sbsd::AJE_LAYOUT,
         &crate::obj::sbsd::PJE_LAYOUT,
         &crate::obj::sbsd::CMNE_LAYOUT,
+        &crate::obj::timzon::LAYOUT,
     ]
 }

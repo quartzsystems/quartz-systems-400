@@ -34,7 +34,7 @@ mod tests {
         assert_eq!(stamp(T, -5 * 3600, "*MDY", "/", ":"), ("10/29/26".into(), "09:02:17".into()));
         assert_eq!(stamp(T, 10 * 3600, "*MDY", "/", ":"), ("10/30/26".into(), "00:02:17".into()));
         assert_eq!(stamp(T, 0, "*MDY", " ", ":").0, "10 29 26");
-        assert_eq!(zone_offset("QN0000UTC", T), Some(0));
+        assert_eq!(zone_offset("Q0000UTC", T), Some(0));
         assert_eq!(zone_offset("NOWHERE", T), None);
     }
 }

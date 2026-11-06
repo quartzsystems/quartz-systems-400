@@ -136,6 +136,8 @@ pub const PRDDFN: u16 = 0x002A;
 pub const PRDLOD: u16 = 0x002B;
 /// Code of `*MGTCOL`: a management collection (`docs/PERF.md`).
 pub const MGTCOL: u16 = 0x002C;
+/// Code of `*TIMZON`: a time zone description, in QSYS only.
+pub const TIMZON: u16 = 0x002E;
 
 /// Every type, in code order.
 pub static TYPES: &[TypeInfo] = &[
@@ -204,6 +206,7 @@ pub static TYPES: &[TypeInfo] = &[
     t(PRDLOD, "*PRDLOD", true, false, false, false, Module::Opaque),
     t(MGTCOL, "*MGTCOL", false, false, false, false, Module::Opaque),
     t(SQLUDT, "*SQLUDT", true, true, false, false, Module::Opaque),
+    t(TIMZON, "*TIMZON", true, false, true, false, Module::Opaque),
     t(SQLINF, "*SQLINF", false, true, false, false, Module::Opaque),
     t(MBR, "*MBR", false, true, false, false, Module::Opaque),
     t(SYSVAL, "*SYSVAL", false, false, true, true, Module::SysVal),
@@ -231,7 +234,7 @@ mod tests {
         codes.sort_unstable();
         codes.dedup();
         assert_eq!(codes.len(), TYPES.len(), "codes unique");
-        assert_eq!(TYPES.len(), 44);
+        assert_eq!(TYPES.len(), 45);
         assert!(TYPES.iter().all(|t| t.name.starts_with('*')));
         assert_eq!(type_by_name("*dtaara").unwrap().code, DTAARA);
         assert_eq!(type_by_code(SYSVAL).unwrap().module, Module::SysVal);

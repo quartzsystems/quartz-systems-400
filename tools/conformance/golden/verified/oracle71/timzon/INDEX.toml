@@ -1,0 +1,296 @@
+[[golden]]
+name = "wrktimzon"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "wrktimzon-dst"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "wrktimzon-alt"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "wrktimzon-text"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "wrktimzon-bottom"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-wrktimzon"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-dst-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-dst-2-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-dst-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-chgtimzon"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-chgtimzon-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-chgtimzon-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-chgtimzon-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "prompt-dlttimzon"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "dspsysval-qtimzon"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71"
+width = 80
+
+[[golden]]
+name = "wrktimzon-one"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "dsptimzon-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "dsptimzon-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "dsptimzon-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "dsptimzon-nodst-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "dsptimzon-nodst-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-dst"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-dst-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-dst-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-dst-f10-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-dst-f10-3-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-dst-f10-2-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-crttimzon-dst-f10-1-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-chgtimzon-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-chgtimzon-f10-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-chgtimzon-f10-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-chgtimzon-f10-3-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+
+[[golden]]
+name = "prompt-chgtimzon-f10-2-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "timzon71b"
+width = 80
+

@@ -1,0 +1,809 @@
+# The time zone descriptions QS/400 ships in QSYS (*TIMZON), IBM's set as
+# the primary oracle (V7R1M0) lists them with WRKTIMZON
+# (tools/conformance/oracle/timzon/). Names, offsets (minutes east of
+# UTC), abbreviations, message identifiers and alternate names are the
+# compatibility interface; the message texts below are Quartz's.
+#
+# A zone's daylight saving rule comes from the IANA tz database vendored
+# in tzdata/: `year` names the year whose rule of the `alt` zone the
+# description holds (the build reads it from tzdata). IBM ships some
+# variants whose rule no tzdata year gives; those carry `start`, `end`
+# and `shift` as IBM has them (MONTH DAY WEEK HH:MM:SS, WEEK 1 to 4 or
+# LAST). A zone without `dst` has no saving; its `year`, when given,
+# only checks the offset against tzdata.
+
+[[zone]]
+name = "Q0000GMT"
+offset = 0
+std = ["GMT", "CPX0911"]
+alt = "GMT"
+year = 2026
+
+[[zone]]
+name = "Q0000GMT2"
+offset = 0
+std = ["GMT", "CPX0911"]
+dst = ["BST", "CPX0912"]
+alt = "Europe/London"
+start = "MAR SUN LAST 02:00:00"
+end = "OCT SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "Q0000GMT3"
+offset = 0
+std = ["GMT", "CPX0911"]
+dst = ["BST", "CPX0912"]
+alt = "Europe/London"
+year = 2026
+
+[[zone]]
+name = "Q0000UTC"
+offset = 0
+std = ["UTC", "CPX0910"]
+alt = "UTC"
+year = 2026
+
+[[zone]]
+name = "QN0100UTCS"
+offset = -60
+std = ["UTC-01:00S", "CPX0913"]
+alt = "GMT-1"
+
+[[zone]]
+name = "QN0200UTCS"
+offset = -120
+std = ["UTC-02:00S", "CPX0914"]
+alt = "GMT-2"
+
+[[zone]]
+name = "QN0300UTCS"
+offset = -180
+std = ["UTC-03:00S", "CPX0915"]
+alt = "GMT-3"
+
+[[zone]]
+name = "QN0300UTC2"
+offset = -180
+std = ["UTC-03:00S", "CPX0916"]
+dst = ["UTC-03:00D", "CPX095D"]
+alt = "America/Sao_Paulo"
+start = "OCT SAT 3 02:00:00"
+end = "FEB FRI 2 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QN0330NST"
+offset = -210
+std = ["NST", "CPX0917"]
+dst = ["NDT", "CPX0918"]
+alt = "America/St_Johns"
+start = "APR SUN 1 02:00:00"
+end = "OCT SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QN0330NST2"
+offset = -210
+std = ["NST", "CPX0917"]
+dst = ["NDT", "CPX0918"]
+alt = "America/St_Johns"
+year = 2006
+
+[[zone]]
+name = "QN0330NST3"
+offset = -210
+std = ["NST", "CPX0917"]
+dst = ["NDT", "CPX0918"]
+alt = "America/St_Johns"
+year = 2026
+
+[[zone]]
+name = "QN0330NST4"
+offset = -210
+std = ["NST", "CPX0917"]
+dst = ["NDT", "CPX0918"]
+alt = "America/St_Johns"
+year = 2010
+
+[[zone]]
+name = "QN0400AST"
+offset = -240
+std = ["AST", "CPX091A"]
+dst = ["ADT", "CPX091B"]
+alt = "Atlantic/Bermuda"
+year = 2006
+
+[[zone]]
+name = "QN0400AST2"
+offset = -240
+std = ["AST", "CPX091A"]
+dst = ["ADT", "CPX091B"]
+alt = "Atlantic/Bermuda"
+year = 2026
+
+[[zone]]
+name = "QN0400CLT"
+offset = -240
+std = ["CLT", "CPX095E"]
+dst = ["CLST", "CPX095F"]
+alt = "America/Santiago"
+start = "OCT SAT 2 00:00:00"
+end = "MAR SAT 2 00:00:00"
+shift = 60
+
+[[zone]]
+name = "QN0400UTCS"
+offset = -240
+std = ["UTC-04:00S", "CPX0919"]
+alt = "GMT-4"
+
+[[zone]]
+name = "QN0400UTC2"
+offset = -240
+std = ["UTC-04:00S", "CPX091C"]
+alt = "America/Caracas"
+year = 2026
+
+[[zone]]
+name = "QN0500EST"
+offset = -300
+std = ["EST", "CPX091E"]
+dst = ["EDT", "CPX091F"]
+alt = "America/New_York"
+year = 2006
+
+[[zone]]
+name = "QN0500EST2"
+offset = -300
+std = ["EST", "CPX091E"]
+alt = "GMT-5"
+
+[[zone]]
+name = "QN0500EST3"
+offset = -300
+std = ["EST", "CPX091E"]
+dst = ["EDT", "CPX091F"]
+alt = "America/New_York"
+year = 2026
+
+[[zone]]
+name = "QN0500UTCS"
+offset = -300
+std = ["UTC-05:00S", "CPX091D"]
+alt = "GMT-5"
+
+[[zone]]
+name = "QN0600CST"
+offset = -360
+std = ["CST", "CPX0921"]
+dst = ["CDT", "CPX0922"]
+alt = "America/Chicago"
+year = 2006
+
+[[zone]]
+name = "QN0600CST2"
+offset = -360
+std = ["CST", "CPX0921"]
+dst = ["CDT", "CPX0922"]
+alt = "America/Chicago"
+year = 2026
+
+[[zone]]
+name = "QN0600CST3"
+offset = -360
+std = ["CST", "CPX0921"]
+dst = ["CDT", "CPX0922"]
+alt = "America/Mexico_City"
+year = 2022
+
+[[zone]]
+name = "QN0600S"
+offset = -360
+std = ["S", "CPX0923"]
+dst = ["DST", "CPX0924"]
+alt = "America/Chicago"
+year = 2006
+
+[[zone]]
+name = "QN0600UTCS"
+offset = -360
+std = ["UTC-06:00S", "CPX0920"]
+alt = "GMT-6"
+
+[[zone]]
+name = "QN0700MST"
+offset = -420
+std = ["MST", "CPX0926"]
+dst = ["MDT", "CPX0927"]
+alt = "America/Denver"
+year = 2006
+
+[[zone]]
+name = "QN0700MST2"
+offset = -420
+std = ["MST", "CPX0926"]
+alt = "America/Phoenix"
+year = 2026
+
+[[zone]]
+name = "QN0700MST3"
+offset = -420
+std = ["MST", "CPX0926"]
+dst = ["MDT", "CPX0927"]
+alt = "America/Denver"
+year = 2026
+
+[[zone]]
+name = "QN0700MST4"
+offset = -420
+std = ["MST", "CPX0926"]
+dst = ["MDT", "CPX0927"]
+alt = "America/Mazatlan"
+year = 2022
+
+[[zone]]
+name = "QN0700T"
+offset = -420
+std = ["T", "CPX0928"]
+dst = ["DST", "CPX0924"]
+alt = "America/Denver"
+year = 2006
+
+[[zone]]
+name = "QN0700UTCS"
+offset = -420
+std = ["UTC-07:00S", "CPX0925"]
+alt = "GMT-7"
+
+[[zone]]
+name = "QN0800PST"
+offset = -480
+std = ["PST", "CPX092A"]
+dst = ["PDT", "CPX092B"]
+alt = "America/Los_Angeles"
+year = 2006
+
+[[zone]]
+name = "QN0800PST2"
+offset = -480
+std = ["PST", "CPX092A"]
+dst = ["PDT", "CPX092B"]
+alt = "America/Los_Angeles"
+year = 2026
+
+[[zone]]
+name = "QN0800PST3"
+offset = -480
+std = ["PST", "CPX092A"]
+dst = ["PDT", "CPX092B"]
+alt = "America/Tijuana"
+year = 2009
+
+[[zone]]
+name = "QN0800U"
+offset = -480
+std = ["U", "CPX092C"]
+dst = ["DST", "CPX0924"]
+alt = "America/Los_Angeles"
+year = 2006
+
+[[zone]]
+name = "QN0800UTCS"
+offset = -480
+std = ["UTC-08:00S", "CPX0929"]
+alt = "GMT-8"
+
+[[zone]]
+name = "QN0900AST"
+offset = -540
+std = ["AKST", "CPX092E"]
+dst = ["AKDT", "CPX092F"]
+alt = "America/Anchorage"
+year = 2006
+
+[[zone]]
+name = "QN0900AST2"
+offset = -540
+std = ["AKST", "CPX092E"]
+dst = ["AKDT", "CPX092F"]
+alt = "America/Anchorage"
+year = 2026
+
+[[zone]]
+name = "QN0900UTCS"
+offset = -540
+std = ["UTC-09:00S", "CPX092D"]
+alt = "GMT-9"
+
+[[zone]]
+name = "QN1000HAST"
+offset = -600
+std = ["HAST", "CPX0931"]
+dst = ["HADT", "CPX0932"]
+alt = "America/Adak"
+year = 2006
+
+[[zone]]
+name = "QN1000HAS2"
+offset = -600
+std = ["HAST", "CPX0931"]
+dst = ["HADT", "CPX0932"]
+alt = "America/Adak"
+year = 2026
+
+[[zone]]
+name = "QN1000HST"
+offset = -600
+std = ["HST", "CPX0963"]
+alt = "Pacific/Honolulu"
+year = 2026
+
+[[zone]]
+name = "QN1000UTCS"
+offset = -600
+std = ["UTC-10:00S", "CPX0930"]
+alt = "GMT-10"
+
+[[zone]]
+name = "QN1100UTCS"
+offset = -660
+std = ["UTC-11:00S", "CPX0933"]
+alt = "GMT-11"
+
+[[zone]]
+name = "QN1200UTCS"
+offset = -720
+std = ["UTC-12:00S", "CPX0934"]
+alt = "GMT-12"
+
+[[zone]]
+name = "QP1245UTCS"
+offset = 765
+std = ["UTC+12:45S", "CPX0935"]
+dst = ["UTC+12:45D", "CPX0936"]
+alt = "Pacific/Chatham"
+start = "OCT SUN 1 02:00:00"
+end = "MAR SUN 3 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP1245UTC2"
+offset = 765
+std = ["UTC+12:45S", "CPX0935"]
+dst = ["UTC+12:45D", "CPX0936"]
+alt = "Pacific/Chatham"
+year = 2006
+
+[[zone]]
+name = "QP1200NZST"
+offset = 720
+std = ["NZST", "CPX0938"]
+dst = ["NZDT", "CPX0939"]
+alt = "Pacific/Auckland"
+start = "OCT SUN 1 02:00:00"
+end = "MAR SUN 3 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP1200NZS2"
+offset = 720
+std = ["NZST", "CPX0938"]
+dst = ["NZDT", "CPX0939"]
+alt = "Pacific/Auckland"
+year = 2006
+
+[[zone]]
+name = "QP1200NZS3"
+offset = 720
+std = ["NZST", "CPX0938"]
+dst = ["NZDT", "CPX0939"]
+alt = "Pacific/Auckland"
+year = 2026
+
+[[zone]]
+name = "QP1200UTCS"
+offset = 720
+std = ["UTC+12:00S", "CPX0937"]
+alt = "GMT+12"
+
+[[zone]]
+name = "QP1100UTCS"
+offset = 660
+std = ["UTC+11:00S", "CPX093A"]
+alt = "GMT+11"
+
+[[zone]]
+name = "QP1000AEST"
+offset = 600
+std = ["AEST", "CPX093C"]
+dst = ["AEDT", "CPX093D"]
+alt = "Australia/Sydney"
+start = "OCT SUN LAST 02:00:00"
+end = "MAR SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP1000AES2"
+offset = 600
+std = ["AEST", "CPX093C"]
+dst = ["AEDT", "CPX093D"]
+alt = "Australia/Sydney"
+year = 2007
+
+[[zone]]
+name = "QP1000UTCS"
+offset = 600
+std = ["UTC+10:00S", "CPX093B"]
+alt = "GMT+10"
+
+[[zone]]
+name = "QP0930ACST"
+offset = 570
+std = ["ACST", "CPX093E"]
+dst = ["ACDT", "CPX093F"]
+alt = "Australia/Adelaide"
+start = "OCT SUN LAST 02:00:00"
+end = "MAR SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP0930ACS2"
+offset = 570
+std = ["ACST", "CPX093E"]
+dst = ["ACDT", "CPX093F"]
+alt = "Australia/Adelaide"
+year = 2007
+
+[[zone]]
+name = "QP0900JST"
+offset = 540
+std = ["JST", "CPX0941"]
+alt = "Asia/Tokyo"
+year = 2026
+
+[[zone]]
+name = "QP0900KST"
+offset = 540
+std = ["KST", "CPX0942"]
+alt = "Asia/Seoul"
+year = 2026
+
+[[zone]]
+name = "QP0900UTCS"
+offset = 540
+std = ["UTC+09:00S", "CPX0940"]
+alt = "GMT+9"
+
+[[zone]]
+name = "QP0900WIT"
+offset = 540
+std = ["WIT", "CPX0943"]
+alt = "Asia/Jayapura"
+year = 2026
+
+[[zone]]
+name = "QP0800AWST"
+offset = 480
+std = ["AWST", "CPX0945"]
+alt = "Australia/Perth"
+year = 2026
+
+[[zone]]
+name = "QP0800AWS2"
+offset = 480
+std = ["AWST", "CPX0945"]
+dst = ["AWDT", "CPX0964"]
+alt = "Australia/Perth"
+start = "DEC SUN 1 02:00:00"
+end = "MAR SUN LAST 03:00:00"
+shift = 60
+
+[[zone]]
+name = "QP0800AWS3"
+offset = 480
+std = ["AWST", "CPX0945"]
+dst = ["AWDT", "CPX0964"]
+alt = "Australia/Perth"
+year = 2008
+
+[[zone]]
+name = "QP0800BST"
+offset = 480
+std = ["BST", "CPX0946"]
+alt = "Asia/Shanghai"
+year = 2026
+
+[[zone]]
+name = "QP0800JIST"
+offset = 480
+std = ["JIST", "CPX0947"]
+alt = "Asia/Hong_Kong"
+year = 2026
+
+[[zone]]
+name = "QP0800UTCS"
+offset = 480
+std = ["UTC+08:00S", "CPX0944"]
+alt = "GMT+8"
+
+[[zone]]
+name = "QP0800WITA"
+offset = 480
+std = ["WITA", "CPX0948"]
+alt = "Asia/Ujung_Pandang"
+year = 2026
+
+[[zone]]
+name = "QP0700UTCS"
+offset = 420
+std = ["UTC+07:00S", "CPX0949"]
+alt = "GMT+7"
+
+[[zone]]
+name = "QP0700WIB"
+offset = 420
+std = ["WIB", "CPX094A"]
+alt = "Asia/Jakarta"
+year = 2026
+
+[[zone]]
+name = "QP0600UTCS"
+offset = 360
+std = ["UTC+06:00S", "CPX094B"]
+alt = "GMT+6"
+
+[[zone]]
+name = "QP0600UTC2"
+offset = 360
+std = ["UTC+06:00S", "CPX094C"]
+dst = ["UTC+06:00D", "CPX094D"]
+alt = "Asia/Almaty"
+start = "MAR SUN LAST 02:00:00"
+end = "SEP SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP0600UTC3"
+offset = 360
+std = ["UTC+06:00S", "CPX094C"]
+dst = ["UTC+06:00D", "CPX094D"]
+alt = "Asia/Almaty"
+year = 2003
+
+[[zone]]
+name = "QP0530IST"
+offset = 330
+std = ["IST", "CPX094E"]
+alt = "Asia/Calcutta"
+year = 2026
+
+[[zone]]
+name = "QP0500UTCS"
+offset = 300
+std = ["UTC+05:00S", "CPX094F"]
+alt = "GMT+5"
+
+[[zone]]
+name = "QP0500UTC2"
+offset = 300
+std = ["UTC+05:00S", "CPX0950"]
+dst = ["UTC+05:00D", "CPX0951"]
+alt = "Asia/Aqtobe"
+start = "MAR SUN LAST 02:00:00"
+end = "SEP SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP0500UTC3"
+offset = 300
+std = ["UTC+05:00S", "CPX0950"]
+dst = ["UTC+05:00D", "CPX0951"]
+alt = "Asia/Aqtobe"
+year = 2003
+
+[[zone]]
+name = "QP0400UTCS"
+offset = 240
+std = ["UTC+04:00S", "CPX0952"]
+alt = "GMT+4"
+
+[[zone]]
+name = "QP0400UTC2"
+offset = 240
+std = ["UTC+04:00S", "CPX0953"]
+dst = ["UTC+04:00D", "CPX0954"]
+alt = "Asia/Aqtau"
+start = "MAR SUN LAST 02:00:00"
+end = "OCT SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP0400UTC3"
+offset = 240
+std = ["UTC+04:00S", "CPX0953"]
+dst = ["UTC+04:00D", "CPX0954"]
+alt = "Asia/Aqtau"
+year = 2003
+
+[[zone]]
+name = "QP0300MSK"
+offset = 180
+std = ["MSK", "CPX0961"]
+dst = ["MSD", "CPX0962"]
+alt = "Europe/Moscow"
+year = 2010
+
+[[zone]]
+name = "QP0300UTCS"
+offset = 180
+std = ["UTC+03:00S", "CPX0955"]
+alt = "GMT+3"
+
+[[zone]]
+name = "QP0200EET"
+offset = 120
+std = ["EET", "CPX0957"]
+dst = ["EEDST", "CPX0958"]
+alt = "Europe/Tallinn"
+start = "MAR SUN LAST 02:00:00"
+end = "SEP SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP0200EET2"
+offset = 120
+std = ["EET", "CPX0957"]
+alt = "GMT+2"
+
+[[zone]]
+name = "QP0200EET3"
+offset = 120
+std = ["EET", "CPX0957"]
+dst = ["EEDST", "CPX0958"]
+alt = "Europe/Tallinn"
+year = 2026
+
+[[zone]]
+name = "QP0200SAST"
+offset = 120
+std = ["SAST", "CPX0959"]
+alt = "Africa/Johannesburg"
+year = 2026
+
+[[zone]]
+name = "QP0200UTCS"
+offset = 120
+std = ["UTC+02:00S", "CPX0956"]
+alt = "GMT+2"
+
+[[zone]]
+name = "QP0100CET"
+offset = 60
+std = ["CET", "CPX095B"]
+dst = ["CEST", "CPX095C"]
+alt = "Europe/Zurich"
+start = "MAR SUN LAST 02:00:00"
+end = "SEP SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP0100CET2"
+offset = 60
+std = ["CET", "CPX095B"]
+dst = ["CEST", "CPX095C"]
+alt = "Europe/Zurich"
+start = "MAR SUN LAST 02:00:00"
+end = "OCT SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP0100CET3"
+offset = 60
+std = ["CET", "CPX095B"]
+dst = ["CEST", "CPX095C"]
+alt = "Europe/Zurich"
+start = "MAR MON LAST 02:00:00"
+end = "SEP SUN LAST 02:00:00"
+shift = 60
+
+[[zone]]
+name = "QP0100CET4"
+offset = 60
+std = ["CET", "CPX095B"]
+dst = ["CEST", "CPX095C"]
+alt = "Europe/Zurich"
+year = 2026
+
+[[zone]]
+name = "QP0100UTCS"
+offset = 60
+std = ["UTC+01:00S", "CPX095A"]
+alt = "GMT+1"
+
+# The full names: the first-level text of the CPX09xx messages in QCPFMSG.
+[messages]
+CPX0910 = "Coordinated universal time"
+CPX0911 = "Greenwich mean time"
+CPX0912 = "British summer time"
+CPX0913 = "Standard time, one hour behind UTC"
+CPX0914 = "Standard time, two hours behind UTC"
+CPX0915 = "Standard time, three hours behind UTC"
+CPX0916 = "Brasilia time"
+CPX0917 = "Newfoundland standard time"
+CPX0918 = "Newfoundland daylight time"
+CPX0919 = "Standard time, four hours behind UTC"
+CPX091A = "Atlantic standard time"
+CPX091B = "Atlantic daylight time"
+CPX091C = "Caracas and La Paz time"
+CPX091D = "Standard time, five hours behind UTC"
+CPX091E = "Eastern standard time (North America)"
+CPX091F = "Eastern daylight time (North America)"
+CPX0920 = "Standard time, six hours behind UTC"
+CPX0921 = "Central standard time (North America)"
+CPX0922 = "Central daylight time (North America)"
+CPX0923 = "Central standard time, abbreviated S"
+CPX0924 = "Daylight saving time"
+CPX0925 = "Standard time, seven hours behind UTC"
+CPX0926 = "Mountain standard time"
+CPX0927 = "Mountain daylight time"
+CPX0928 = "Mountain standard time, abbreviated T"
+CPX0929 = "Standard time, eight hours behind UTC"
+CPX092A = "Pacific standard time"
+CPX092B = "Pacific daylight time"
+CPX092C = "Pacific standard time, abbreviated U"
+CPX092D = "Standard time, nine hours behind UTC"
+CPX092E = "Alaska standard time"
+CPX092F = "Alaska daylight time"
+CPX0930 = "Standard time, ten hours behind UTC"
+CPX0931 = "Hawaii and Aleutian standard time"
+CPX0932 = "Hawaii and Aleutian daylight time"
+CPX0933 = "Standard time, eleven hours behind UTC"
+CPX0934 = "Standard time, twelve hours behind UTC"
+CPX0935 = "Chatham Islands standard time"
+CPX0936 = "Chatham Islands daylight time"
+CPX0937 = "Standard time, twelve hours ahead of UTC"
+CPX0938 = "New Zealand standard time"
+CPX0939 = "New Zealand daylight time"
+CPX093A = "Standard time, eleven hours ahead of UTC"
+CPX093B = "Standard time, ten hours ahead of UTC"
+CPX093C = "Australian eastern standard time"
+CPX093D = "Australian eastern daylight time"
+CPX093E = "Australian central standard time"
+CPX093F = "Australian central daylight time"
+CPX0940 = "Standard time, nine hours ahead of UTC"
+CPX0941 = "Japan standard time"
+CPX0942 = "Korea standard time"
+CPX0943 = "Eastern Indonesia time"
+CPX0944 = "Standard time, eight hours ahead of UTC"
+CPX0945 = "Australian western standard time"
+CPX0946 = "China standard time (Beijing)"
+CPX0947 = "Taiwan and Hong Kong standard time"
+CPX0948 = "Central Indonesia time"
+CPX0949 = "Standard time, seven hours ahead of UTC"
+CPX094A = "Western Indonesia time"
+CPX094B = "Standard time, six hours ahead of UTC"
+CPX094C = "Almaty standard time"
+CPX094D = "Almaty daylight time"
+CPX094E = "India standard time"
+CPX094F = "Standard time, five hours ahead of UTC"
+CPX0950 = "Aqtobe standard time"
+CPX0951 = "Aqtobe daylight time"
+CPX0952 = "Standard time, four hours ahead of UTC"
+CPX0953 = "Aqtau standard time"
+CPX0954 = "Aqtau daylight time"
+CPX0955 = "Standard time, three hours ahead of UTC"
+CPX0956 = "Standard time, two hours ahead of UTC"
+CPX0957 = "Eastern European standard time"
+CPX0958 = "Eastern European summer time"
+CPX0959 = "South Africa standard time"
+CPX095A = "Standard time, one hour ahead of UTC"
+CPX095B = "Central European standard time"
+CPX095C = "Central European summer time"
+CPX095D = "Brasilia summer time"
+CPX095E = "Chile standard time"
+CPX095F = "Chile summer time"
+CPX0961 = "Moscow standard time"
+CPX0962 = "Moscow summer time"
+CPX0963 = "Hawaii standard time"
+CPX0964 = "Australian western daylight time"

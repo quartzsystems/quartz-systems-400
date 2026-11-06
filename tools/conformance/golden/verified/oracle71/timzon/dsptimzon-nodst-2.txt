@@ -1,0 +1,24 @@
+                     Display Time Zone Description Details                      
+                                                             System:   SYSNAME  
+ Alternate name . . . . . . . . :   UTC                                         
+                                                                                
+                                                                                
+                                                                                
+ Text . . . . . . . . . . . . . :                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                
