@@ -186,7 +186,7 @@ stands.
 | `INCLUDE` on an ordinary index | refused SQL0104, as IBM | primary | `ddl/INDEXEXT` |
 | `CREATE ENCODED VECTOR INDEX [INCLUDE]` | no-op as an EVI: made as an ordinary keyed index; `INCLUDE` kept for the catalog only | primary | `ddl/INDEXEXT` |
 | CREATE TABLE in a library that is not a schema: warning SQL7905 | supported | primary, pub400 | `kit/BASIC` |
-| `VOLATILE`, `IN` on CREATE TABLE; `PAGESIZE`, `UNIT` on CREATE INDEX | accepted without effect: to be refused or documented as no-ops (honesty rule) | primary | |
+| `VOLATILE`/`NOT VOLATILE` [`CARDINALITY`] on CREATE and ALTER TABLE; `IN`; `UNIT`; `PAGESIZE` | supported: VOLATILE kept (`*SQLINF` tag 19 `TABLE`), the planner uses a key that serves whatever the statistics, `SYSTABLESTAT`/`SYSPARTITIONSTAT.VOLATILE` as 7.5; `IN schema` warning SQ20367, `IN ASP n` SQL0104; `UNIT ANY\|SSD`, `PAGESIZE 8..512` no-op as IBM, other values SQL0104/SQL1583 | primary, pub400 | `ddl/VOLATIL1`, `ddl/TBLOPTS` |
 | DSPFD of a view kept as query text | partial: shows a physical file without members, not IBM's view display | primary | |
 
 ## 5. Functions
@@ -452,7 +452,7 @@ Generated from the tables above; the rows are the authority.
 - `CREATE INDEX ... WHERE` (sparse): partial: conditions select/omit can express; others refused SQL0084
 - Expression (derived) index keys: refused SQL0084: BLOCKED(sql), access paths hold no key expressions
 - `INCLUDE` on an ordinary index: refused SQL0104, as IBM
-- `VOLATILE`, `IN` on CREATE TABLE; `PAGESIZE`, `UNIT` on CREATE INDEX: accepted without effect: to be refused or documented as no-ops (honesty rule)
+- `VOLATILE`/`NOT VOLATILE` [`CARDINALITY`] on CREATE and ALTER TABLE: kept with the table (`*SQLINF` tag 19 `TABLE`); the planner uses a key that serves regardless of statistics and asks none for the table; `QSYS2.SYSTABLESTAT.VOLATILE` and `SYSPARTITIONSTAT.VOLATILE` show `1`/`0` as 7.5 does (7.1 has no such column); a second VOLATILE clause is SQL0104. `IN schema` is ignored with warning SQ20367 (01680) and `IN ASP n` is SQL0104, as on 7.1 and 7.5. `UNIT ANY|SSD` (tables and indexes) and `PAGESIZE 8|16|32|64|128|256|512` (indexes) are no-ops, as IBM documents them for a store with fixed pages and one media tier; any other unit is SQL0104 and any other page size SQL1583 (428DE), as IBM. Kit: `ddl/VOLATIL1` (pub400), `ddl/TBLOPTS` (primary)
 
 ### 5. Functions
 
