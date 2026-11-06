@@ -381,8 +381,17 @@ fn rtvobjd(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail>
     returned(r, &values, out)
 }
 
-/// `CALL PGM(LIB/NAME) PARM(values)`: character values as typed,
-/// numbers as `packed(15,5)`, hex as bytes.
+/// A character value shorter than 32 bytes is passed blank-padded to
+/// 32, as IBM's CALL passes it; a longer one at its own length.
+fn pad32(b: &mut Vec<u8>) {
+    if b.len() < 32 {
+        b.resize(32, 0x40);
+    }
+}
+
+/// `CALL PGM(LIB/NAME) PARM(values)`: character values as typed (at
+/// least 32 bytes, blank-padded), numbers as `packed(15,5)`, hex as
+/// bytes.
 fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms) -> Result<String, Fail> {
     let (name, lib) = parms.qual("PGM");
     let lib = if lib.is_empty() {
@@ -402,12 +411,17 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms) -> Result<String, Fail>
             cmd::Value::Char(s) => {
                 let mut b = ccsid::to_ebcdic(s)
                     .map_err(|_| Fail::new("CPD0084", format!("{s}: not CP037")))?;
+                pad32(&mut b);
                 // A NUL after the value, for programs that take C strings
                 // (QP2SHELL); the value's own bytes are unchanged.
                 b.push(0);
                 b
             }
-            other => ccsid::to_ebcdic(&other.source()).unwrap_or_default(),
+            other => {
+                let mut b = ccsid::to_ebcdic(&other.source()).unwrap_or_default();
+                pad32(&mut b);
+                b
+            }
         });
     }
     let addrs: Vec<u64> = buffers.iter_mut().map(|b| b.as_mut_ptr() as u64).collect();
