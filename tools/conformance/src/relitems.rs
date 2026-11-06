@@ -20,22 +20,22 @@ use crate::steps::{CMD, Suite};
 const LONG: Duration = Duration::from_secs(90);
 
 /// A profile exit program: the format and profile it is called with go
-/// into `QGPL/PRFLOG`.
+/// to the job log (`PRFEXIT saw CRTP0100NAME`).
 const PRF_SRC: &str = "             PGM        PARM(&INFO)
              DCL        VAR(&INFO) TYPE(*CHAR) LEN(38)
              DCL        VAR(&SEEN) TYPE(*CHAR) LEN(18)
              CHGVAR     VAR(&SEEN) VALUE(%SST(&INFO 21 18))
-             CHGDTAARA  DTAARA(QGPL/PRFLOG) VALUE(&SEEN)
+             SNDPGMMSG  MSG('PRFEXIT saw' *BCAT &SEEN) TOPGMQ(*EXT)
              ENDPGM";
 
-/// A password check exit program (`CHKP0100`): the profile into
-/// `QGPL/CHKLOG`, the password accepted.
+/// A password check exit program (`CHKP0100`): the profile to the job
+/// log, the password accepted.
 const CHK_SRC: &str = "             PGM        PARM(&INFO &RC)
              DCL        VAR(&INFO) TYPE(*CHAR) LEN(68)
              DCL        VAR(&RC) TYPE(*CHAR) LEN(1)
              DCL        VAR(&SEEN) TYPE(*CHAR) LEN(10)
              CHGVAR     VAR(&SEEN) VALUE(%SST(&INFO 33 10))
-             CHGDTAARA  DTAARA(QGPL/CHKLOG) VALUE(&SEEN)
+             SNDPGMMSG  MSG('CHKEXIT saw' *BCAT &SEEN) TOPGMQ(*EXT)
              CHGVAR     VAR(&RC) VALUE('0')
              ENDPGM";
 
@@ -49,19 +49,14 @@ const PRER_SRC: &str = "             PGM        PARM(&RTN &FMT &ACT &DLY)
                           VALUE(X'0000000C0000000000000000'))
              ENDPGM";
 
-/// RCVJRNE's exit program: the type of each entry handed to it into
-/// `QGPL/RCVLOG`, and a count of them.
+/// RCVJRNE's exit program: each entry's code and type to the job log.
 const RCV_SRC: &str = "             PGM        PARM(&ENTRY &IND)
              DCL        VAR(&ENTRY) TYPE(*CHAR) LEN(300)
              DCL        VAR(&IND) TYPE(*CHAR) LEN(3)
-             DCL        VAR(&N) TYPE(*DEC) LEN(5 0)
              DCL        VAR(&T) TYPE(*CHAR) LEN(3)
              IF         COND(%SST(&IND 1 1) *EQ '1') THEN(DO)
-             RTVDTAARA  DTAARA(QGPL/RCVCNT) RTNVAR(&N)
-             CHGVAR     VAR(&N) VALUE(&N + 1)
-             CHGDTAARA  DTAARA(QGPL/RCVCNT) VALUE(&N)
              CHGVAR     VAR(&T) VALUE(%SST(&ENTRY 16 3))
-             CHGDTAARA  DTAARA(QGPL/RCVLOG) VALUE(&T)
+             SNDPGMMSG  MSG('RCVEXIT got' *BCAT &T) TOPGMQ(*EXT)
              ENDDO
              ENDPGM";
 
@@ -87,11 +82,6 @@ fn program(s: &mut Session, name: &str, src: &str) -> Result<(), String> {
         return Err(format!("{name} did not compile:\n{out}"));
     }
     Ok(())
-}
-
-fn data_area(s: &mut Session, name: &str, len: u32) {
-    let _ = s.command(&format!("DLTDTAARA DTAARA(QGPL/{name})"), CMD);
-    let _ = s.command(&format!("CRTDTAARA DTAARA(QGPL/{name}) TYPE(*CHAR) LEN({len}) VALUE('none')"), CMD);
 }
 
 fn add(s: &mut Session, point: &str, format: &str, pgm: &str) -> Result<(), String> {
@@ -121,22 +111,24 @@ impl Suite {
         program(s, "PRFEXIT", PRF_SRC)?;
         program(s, "CHKEXIT", CHK_SRC)?;
         program(s, "PREREXIT", PRER_SRC)?;
-        data_area(s, "PRFLOG", 18);
-        data_area(s, "CHKLOG", 10);
         add(s, "QIBM_QSY_CRT_PROFILE", "CRTP0100", "PRFEXIT")?;
         add(s, "QIBM_QSY_DLT_PROFILE", "DLTP0100", "PRFEXIT")?;
         add(s, "QIBM_QSY_CHK_PASSWRD", "CHKP0100", "CHKEXIT")?;
         let _ = s.command("DLTUSRPRF USRPRF(EXITUSR1)", CMD);
         // The program itself, called by hand: its data area takes what it saw.
-        s.command("CALL PGM(QGPL/PRFEXIT) PARM('QIBM_QSY_CRT_PROFILECRTP0100BYHAND    ')", CMD)?;
-        expect(s, "DSPDTAARA DTAARA(QGPL/PRFLOG)", &["CRTP0100BYHAND"])?;
+        expect(
+            s,
+            "CALL PGM(QGPL/PRFEXIT) PARM('QIBM_QSY_CRT_PROFILECRTP0100BYHAND    ')",
+            &["PRFEXIT saw CRTP0100BYHAND"],
+        )?;
         let r = (|| -> Result<String, String> {
             expect(s, "CRTUSRPRF USRPRF(EXITUSR1) PASSWORD(Exit146pw) PWDEXP(*NO)", &["EXITUSR1"])?;
-            let crt = expect(s, "DSPDTAARA DTAARA(QGPL/PRFLOG)", &["CRTP0100EXITUSR1"])?;
-            expect(s, "DSPDTAARA DTAARA(QGPL/CHKLOG)", &["EXITUSR1"])?;
             expect(s, "DLTUSRPRF USRPRF(EXITUSR1)", &["EXITUSR1"])?;
-            expect(s, "DSPDTAARA DTAARA(QGPL/PRFLOG)", &["DLTP0100EXITUSR1"])?;
-            Ok(crt)
+            expect(
+                s,
+                "dspjoblog",
+                &["PRFEXIT saw CRTP0100EXITUSR1", "CHKEXIT saw EXITUSR1", "PRFEXIT saw DLTP0100EXITUSR1"],
+            )
         })();
         remove(s, "QIBM_QSY_CRT_PROFILE", "CRTP0100");
         remove(s, "QIBM_QSY_DLT_PROFILE", "DLTP0100");
@@ -159,7 +151,7 @@ impl Suite {
         if !sbs.contains("QINTER") && !sbs.contains("QBASE") && !sbs.contains("QCTL") {
             return Err(format!("the subsystems ended anyway:\n{sbs}"));
         }
-        Ok("CRTP0100, DLTP0100 and CHKP0100 programs heard EXITUSR1; a PRER0100 program's no stopped ENDSBS *ALL (CPF18C3)".into())
+        Ok("CRTP0100, DLTP0100 and CHKP0100 programs logged EXITUSR1; a PRER0100 program's no stopped ENDSBS *ALL (CPF18C3)".into())
     }
 
     /// Step 147: function usage, security attributes, pass-through.
@@ -210,13 +202,11 @@ impl Suite {
         expect(s, "CMPJRNIMG FILE(RELJRN/ITEMS)", &["QPCMPIMG"])?;
         expect(s, "WRKJRNRCV JRNRCV(RELJRN/*ALL)", &[])?;
         program(s, "RCVEXIT", RCV_SRC)?;
-        data_area(s, "RCVLOG", 3);
-        let _ = s.command("DLTDTAARA DTAARA(QGPL/RCVCNT)", CMD);
-        expect(s, "CRTDTAARA DTAARA(QGPL/RCVCNT) TYPE(*DEC) LEN(5 0) VALUE(0)", &["RCVCNT"])?;
         let rcv = s.command("RCVJRNE JRN(RELJRN/JRN) EXITPGM(QGPL/RCVEXIT) TOENT(*LAST)", LONG)?;
-        let count = s.command("DSPDTAARA DTAARA(QGPL/RCVCNT)", CMD)?;
-        if count.contains("'0'") || count.lines().any(|l| l.trim().ends_with(" 0")) {
-            return Err(format!("RCVJRNE handed the program nothing:\n{rcv}\n{count}"));
+        let log = s.command("dspjoblog", CMD)?;
+        let got = log.matches("RCVEXIT got").count();
+        if got == 0 || !log.contains("RCVEXIT got RUP") {
+            return Err(format!("RCVJRNE handed the program no update entry:\n{rcv}\n{log}"));
         }
         // SAVSAVFDTA to a virtual tape; DSPTAP shows the library.
         for (line, want) in [
@@ -240,8 +230,7 @@ impl Suite {
         expect(s, "RSTLIB SAVLIB(RELJRN) DEV(Q148TAP)", &["RELJRN"])?;
         expect(s, "RUNSQL SQL('SELECT * FROM RELJRN.ITEMS') COMMIT(*NONE)", &[])?;
         Ok(format!(
-            "CMPJRNIMG printed QPCMPIMG; RCVJRNE fed a CL program ({}); SAVSAVFDTA wrote RELJRN to Q148TAP, DSPTAP showed it, RSTLIB restored it",
-            count.lines().last().unwrap_or("").trim()
+            "CMPJRNIMG printed QPCMPIMG; RCVJRNE fed a CL program {got} entries; SAVSAVFDTA wrote RELJRN to Q148TAP, DSPTAP showed it, RSTLIB restored it"
         ))
     }
 }
