@@ -40,6 +40,11 @@ pub struct Source {
     pub dir: PathBuf,
 }
 
+/// The kernel.org URL of version `version`'s tarball.
+pub fn tarball_url(version: &str) -> String {
+    format!("{BASE_URL}/linux-{version}.tar.xz")
+}
+
 /// Read `kernel/VERSION` and `kernel/SHA256`.
 pub fn read_pin(paths: &Paths) -> Result<Pin> {
     let dir = paths.kernel_pin_dir();

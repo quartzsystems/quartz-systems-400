@@ -38,6 +38,8 @@ pub const SLOT_A_FILE: &str = manifest::SLOT_A;
 pub const SLOT_B_FILE: &str = manifest::SLOT_B;
 /// The text file at the root.
 pub const README_FILE: &str = "QS400.TXT";
+/// The db key's files, also in the boot image under `EFI/keys/`.
+pub const KEY_FILES: [&str; 2] = ["qs400-db.cer", "qs400-db.esl"];
 
 /// What goes on the media.
 pub struct Parts<'a> {
@@ -120,7 +122,7 @@ pub fn compose(p: Parts<'_>) -> Result<IsoBuilder> {
 
 /// Where the Knowledge Center (`build kc`) and the PTF baseline (`build
 /// release`) are written, and the directories they take on the media.
-pub const EXTRA_TREES: &[(&str, &str)] = &[("kc", "QS400/KC"), ("ptf-baseline", "QS400/PTF")];
+pub const EXTRA_TREES: &[(&str, &str)] = &[("kc", "QS400/KC"), ("ptf-baseline", "QS400/PTF"), ("media-root", "")];
 
 /// Every file of the extra trees that exist, with its path on the media.
 fn extra_files(ctx: &Ctx) -> Result<Vec<(String, Vec<u8>)>> {
@@ -129,7 +131,7 @@ fn extra_files(ctx: &Ctx) -> Result<Vec<(String, Vec<u8>)>> {
         entries.sort();
         for p in entries {
             let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-            let r = format!("{rel}/{name}");
+            let r = if rel.is_empty() { name } else { format!("{rel}/{name}") };
             if p.is_dir() {
                 walk(&p, &r, out)?;
             } else {
@@ -143,10 +145,45 @@ fn extra_files(ctx: &Ctx) -> Result<Vec<(String, Vec<u8>)>> {
         let dir = ctx.paths.images().join(sub);
         if dir.is_dir() {
             walk(&dir, on_media, &mut out)?;
-            info!("iso: {on_media} from {}", dir.display());
+            info!("iso: {} from {}", if on_media.is_empty() { "the root" } else { on_media }, dir.display());
         }
     }
     Ok(out)
+}
+
+/// The El Torito boot image: the media UKI, and a release's db key
+/// beside it where the firmware's enrol-from-file finds it (`build
+/// release` puts the key in `images/media-root`).
+fn boot_image(ctx: &Ctx, uki_bytes: &[u8]) -> Result<Vec<u8>> {
+    let spec = fat::media_esp(uki_bytes.len() as u64);
+    // El Torito names the boot image's size in 512-byte sectors, 16 bits:
+    // a larger image boots only on firmware that ignores the field.
+    ensure!(
+        spec.bytes <= 65_535 * 512,
+        "the media UKI ({} bytes) needs a {} MiB boot image; El Torito holds at most 32 MiB",
+        uki_bytes.len(),
+        spec.bytes / (1024 * 1024)
+    );
+    info!("iso: building {} MiB FAT16 boot image", spec.bytes / (1024 * 1024));
+    let keys_dir = ctx.paths.images().join("media-root").join(crate::image::release::KEYS);
+    let mut keys = Vec::new();
+    for k in KEY_FILES {
+        if let Ok(b) = fs::read(keys_dir.join(k)) {
+            keys.push((format!("EFI/keys/{k}"), b));
+        }
+    }
+    let mut fat_files: Vec<(&str, &[u8])> = vec![(BOOT_FILE, uki_bytes)];
+    fat_files.extend(keys.iter().map(|(p, b)| (p.as_str(), b.as_slice())));
+    let efi = fat::build(&spec, &fat_files)?;
+    let listing = fat::list(&efi)?;
+    let mut want = vec!["EFI/".to_string(), "EFI/BOOT/".into(), BOOT_FILE.into()];
+    if !keys.is_empty() {
+        want.push("EFI/keys/".into());
+        want.extend(keys.iter().map(|(p, _)| p.clone()));
+    }
+    want.sort();
+    ensure!(listing == want, "boot image contents unexpected: {listing:?}");
+    Ok(efi)
 }
 
 /// Build the ISO from the media UKI.
@@ -159,25 +196,7 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     let slot_a = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotA))?)?;
     let slot_b = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotB))?)?;
 
-    let spec = fat::media_esp(uki_bytes.len() as u64);
-    // El Torito names the boot image's size in 512-byte sectors, 16 bits:
-    // a larger image boots only on firmware that ignores the field.
-    ensure!(
-        spec.bytes <= 65_535 * 512,
-        "the media UKI ({} bytes) needs a {} MiB boot image; El Torito holds at most 32 MiB",
-        uki_bytes.len(),
-        spec.bytes / (1024 * 1024)
-    );
-    info!(
-        "iso: building {} MiB FAT16 boot image",
-        spec.bytes / (1024 * 1024)
-    );
-    let efi = fat::build(&spec, &[(BOOT_FILE, &uki_bytes)])?;
-    let listing = fat::list(&efi)?;
-    ensure!(
-        listing == ["EFI/", "EFI/BOOT/", BOOT_FILE],
-        "boot image contents unexpected: {listing:?}"
-    );
+    let efi = boot_image(ctx, &uki_bytes)?;
 
     let release = release::RELEASE.to_string();
     let readme = format!(

@@ -42,6 +42,12 @@ struct Inputs {
     source_date_epoch: u64,
     rustc: String,
     clang: String,
+    /// SHA-256 of `rust-toolchain.toml`, `rustc -vV` and `clang --version`.
+    toolchain_sha256: String,
+    /// SHA-256 of `Cargo.lock`.
+    cargo_lock_sha256: String,
+    /// SHA-256 of the Secure Boot db certificate the UKIs are signed for.
+    secure_boot_db_sha256: String,
     git_rev: String,
 }
 
@@ -99,8 +105,8 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
     );
 
     let manifest = Manifest {
-        schema: 1,
-        product: "QS/400 phase 0",
+        schema: 2,
+        product: "QS/400",
         inputs: Inputs {
             release: release::RELEASE.to_string(),
             build_id: release::build_id(),
@@ -116,6 +122,9 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
             source_date_epoch: kernel::SOURCE_DATE_EPOCH.parse()?,
             rustc: tool_version("rustc", &["-vV"]),
             clang: tool_version("clang", &["--version"]),
+            toolchain_sha256: toolchain_sha256(&ctx.paths.repo),
+            cargo_lock_sha256: sha256_file(&ctx.paths.repo.join("Cargo.lock"))?,
+            secure_boot_db_sha256: pesign::DbKey::from_env().map_or_else(|_| "unavailable".into(), |k| sha256_bytes(&k.cert)),
             git_rev: git_rev(&ctx.paths.repo),
         },
         artifacts,
@@ -210,7 +219,7 @@ fn write_private(path: &Path, contents: &str) -> Result<()> {
 }
 
 /// First line of a tool's version output, or `unavailable`.
-fn tool_version(tool: &str, args: &[&str]) -> String {
+pub(crate) fn tool_version(tool: &str, args: &[&str]) -> String {
     if !on_path(tool) {
         return "unavailable".into();
     }
@@ -239,4 +248,18 @@ fn git_rev(repo: &Path) -> String {
         .capture()
         .is_ok_and(|s| !s.trim().is_empty());
     format!("{}{}", rev.trim(), if dirty { "-dirty" } else { "" })
+}
+
+/// SHA-256 over the toolchain's identity: `rust-toolchain.toml`, then
+/// `rustc -vV` (its commit hash and LLVM version) and `clang --version`.
+fn toolchain_sha256(repo: &Path) -> String {
+    let mut all = fs::read_to_string(repo.join("rust-toolchain.toml")).unwrap_or_default().replace("\r\n", "\n");
+    for (tool, args) in [("rustc", &["-vV"][..]), ("clang", &["--version"][..])] {
+        if on_path(tool)
+            && let Ok(out) = Cmd::new(tool, "version").args(args).capture()
+        {
+            all.push_str(&out);
+        }
+    }
+    sha256_bytes(all.as_bytes())
 }

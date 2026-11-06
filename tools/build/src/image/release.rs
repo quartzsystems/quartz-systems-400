@@ -5,16 +5,20 @@
 //! `build kc` and `build release`. The release is the whole pipeline
 //! without the service console, the Knowledge Center and the PTF baseline
 //! (a cumulative package `Cyyddd110` with no PTFs) on the media, and
-//! `target/release/<VRM>/`: the ISO, the slot UKIs, the baseline,
-//! `SHA256SUMS` and its detached ed25519 signature `SHA256SUMS.sig`.
+//! `target/release/<VRM>/`: the ISO, the slot UKIs (signed for Secure
+//! Boot), the baseline, `NOTICES.txt`, `SOURCE-OFFER.txt`, `MANIFEST.json`,
+//! the db certificate, `SHA256SUMS` and its detached ed25519 signature
+//! `SHA256SUMS.sig`. The media also carry the notices, the release notes,
+//! the kernel's source offer (`QS400/SRC/`) and the db key
+//! (`QS400/EFI/keys/`).
 
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use ed25519_dalek::Signer;
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::ctx::Ctx;
 use crate::host::paths;
@@ -26,7 +30,7 @@ pub fn kc(ctx: &Ctx) -> Result<PathBuf> {
     if out.exists() {
         fs::remove_dir_all(&out).with_context(|| format!("cannot clear {}", out.display()))?;
     }
-    let s = kcbuild::build(&ctx.paths.repo, &out)?;
+    let s = kcbuild::build_checked(&ctx.paths.repo, &out, kcbuild::notes::legacy_from_env())?;
     info!(
         "kc: {} pages ({} commands, {} messages, {} documents) in {}",
         s.pages,
@@ -94,20 +98,76 @@ fn copy(from: &Path, to_dir: &Path) -> Result<String> {
     Ok(name)
 }
 
+/// Sign the three UKIs in place with the Secure Boot db key
+/// (`QS400_SB_KEY`/`QS400_SB_CERT`, else the development pair).
+pub fn sign_ukis(ctx: &Ctx) -> Result<pesign::DbKey> {
+    let key = pesign::DbKey::from_env()?;
+    if key.development {
+        warn!("release: signing the UKIs with the DEVELOPMENT Secure Boot key (set {} and {})", pesign::keys::KEY_ENV, pesign::keys::CERT_ENV);
+    }
+    for kind in UkiKind::ALL {
+        let p = paths::read_pointer(&ctx.paths.uki_pointer(kind))?;
+        let signed = pesign::sign(&fs::read(&p)?, &key)?;
+        fs::write(&p, &signed)?;
+        info!("release: UKI {kind:?} signed, db key SHA-256 {}", key.fingerprint());
+    }
+    Ok(key)
+}
+
+/// The files `build release` adds at the media's root and under
+/// `QS400/`, into `images/media-root` (the ISO takes the tree): the
+/// notices, the release notes, the kernel's source offer and the db
+/// key's certificate. The text of `SOURCE-OFFER.txt`.
+fn media_root(ctx: &Ctx, key: &pesign::DbKey) -> Result<String> {
+    let dir = ctx.paths.images().join("media-root");
+    if dir.exists() {
+        fs::remove_dir_all(&dir)?;
+    }
+    let lf = |p: &Path| -> Result<Vec<u8>> { Ok(fs::read_to_string(p)?.replace("\r\n", "\n").into_bytes()) };
+    let mut files = vec![
+        ("NOTICES.txt".to_string(), lf(&ctx.paths.repo.join(crate::notices::TREE_FILE))?),
+        (NOTES.to_string(), lf(&ctx.paths.repo.join("docs").join(NOTES))?),
+        (format!("{KEYS}/qs400-db.cer"), key.cert.clone()),
+        (format!("{KEYS}/qs400-db.esl"), pesign::keys::esl::list(&key.cert)),
+    ];
+    let (src, offer) = crate::image::srcoffer::files(ctx)?;
+    files.extend(src);
+    for (rel, data) in files {
+        let p = dir.join(&rel);
+        fs::create_dir_all(p.parent().context("no parent")?)?;
+        fs::write(&p, data)?;
+    }
+    info!("release: notices, release notes, kernel source offer and db certificate in {}", dir.display());
+    Ok(offer)
+}
+
+/// The release notes, at the media's root by this name.
+pub const NOTES: &str = "RELEASE_NOTES_V1R1M0.md";
+/// The db key's certificate and signature list on the media.
+pub const KEYS: &str = "QS400/EFI/keys";
+
 /// `build release`.
 pub fn release(ctx: &Ctx) -> Result<PathBuf> {
     let vrm = release::RELEASE.to_string();
     info!("release: {}", release::full());
+    // Stale notices or release notes stop the release before it builds.
+    crate::notices::notices(ctx, true)?;
+    let problems = kcbuild::notes::problems(&ctx.paths.repo, kcbuild::notes::legacy_from_env())?;
+    if !problems.is_empty() {
+        bail!("the release notes are not current (cargo run -p kcbuild -- notes --update):\n  {}", problems.join("\n  "));
+    }
     crate::kernel::fetch::fetch(ctx)?;
     crate::kernel::kernel(ctx)?;
     crate::userland::userland(ctx)?;
     crate::image::initramfs::initramfs(ctx)?;
     crate::kernel::uki(ctx, true)?;
+    let key = sign_ukis(ctx)?;
     crate::image::disk::disk(ctx, None)?;
     kc(ctx)?;
     let baseline = ptf_baseline(ctx)?;
+    let offer = media_root(ctx, &key)?;
     let iso = crate::image::media::iso(ctx)?;
-    crate::image::manifest::manifest(ctx)?;
+    let manifest = crate::image::manifest::manifest(ctx)?;
 
     let out = ctx.paths.target.join("release").join(&vrm);
     if out.exists() {
@@ -118,6 +178,12 @@ pub fn release(ctx: &Ctx) -> Result<PathBuf> {
     for kind in [UkiKind::SlotA, UkiKind::SlotB, UkiKind::Media] {
         files.push(copy(&paths::read_pointer(&ctx.paths.uki_pointer(kind))?, &out)?);
     }
+    fs::write(out.join("SOURCE-OFFER.txt"), offer)?;
+    fs::copy(ctx.paths.repo.join(crate::notices::TREE_FILE), out.join("NOTICES.txt"))?;
+    fs::copy(&manifest, out.join("MANIFEST.json"))?;
+    fs::copy(manifest.with_file_name("manifest.sig"), out.join("MANIFEST.sig"))?;
+    fs::write(out.join("qs400-db.cer"), &key.cert)?;
+    files.extend(["SOURCE-OFFER.txt", "NOTICES.txt", "MANIFEST.json", "qs400-db.cer"].map(str::to_string));
     let base_dir = out.join("ptf-baseline");
     fs::create_dir_all(base_dir.join("group"))?;
     let src = ctx.paths.images().join("ptf-baseline");

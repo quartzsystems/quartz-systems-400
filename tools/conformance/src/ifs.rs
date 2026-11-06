@@ -17,7 +17,8 @@ const MOUNT_POINT: &str = "/run/qs400/ifs";
 impl Suite {
     /// Step 59: the IFS volume in ASP 1, served as `/dev/ublkbN`, is
     /// mounted read-write as xfs (C6001012) with a plausible capacity;
-    /// `QSGROWIFS` grows it and the filesystem with it.
+    /// `QSGROWIFS` grows it and the filesystem with it; the third-party
+    /// notices are in `/QQS/ProdData/Notices`.
     pub(crate) fn ifs_mount(&self, s: &mut Session) -> Result<String, String> {
         let srcs = s.command("srcs", CMD)?;
         if !srcs.contains("C6001012") {
@@ -57,9 +58,20 @@ impl Suite {
         if !cat.contains("grown") {
             return Err(format!("a file after the growth:\n{put}\n{cat}"));
         }
+        // The third-party notices the storage service keeps (docs/INSTALL.md).
+        let notices = s.command("svc.ifs stat /QQS/ProdData/Notices/NOTICES.txt", CMD)?;
+        let bytes: u64 = notices
+            .lines()
+            .find_map(|l| l.strip_prefix("Size"))
+            .and_then(|r| r.split_whitespace().next())
+            .and_then(|n| n.parse().ok())
+            .unwrap_or(0);
+        if !notices.contains("Owner      QSYS") || bytes < 100_000 {
+            return Err(format!("no notices in /QQS/ProdData/Notices:\n{notices}"));
+        }
         let source = mount.split_whitespace().nth(1).unwrap_or("?");
         Ok(format!(
-            "{source} (in ASP 1) mounted rw at {MOUNT_POINT}, {size} MiB, {free} MiB free; QSGROWIFS SIZE(64) made it {grown} MiB"
+            "{source} (in ASP 1) mounted rw at {MOUNT_POINT}, {size} MiB, {free} MiB free; QSGROWIFS SIZE(64) made it {grown} MiB; /QQS/ProdData/Notices/NOTICES.txt present"
         ))
     }
 

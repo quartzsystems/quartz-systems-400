@@ -11,3 +11,4 @@ pub mod lp;
 pub mod manifest;
 pub mod media;
 pub mod release;
+pub mod srcoffer;

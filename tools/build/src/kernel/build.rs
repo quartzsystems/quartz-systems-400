@@ -22,7 +22,7 @@ use crate::kernel::{
 
 /// 2026-01-01T00:00:00Z. Fixed for reproducible builds.
 pub const SOURCE_DATE_EPOCH: &str = "1767225600";
-const BUILD_TIMESTAMP: &str = "Thu Jan  1 00:00:00 UTC 2026";
+pub const BUILD_TIMESTAMP: &str = "Thu Jan  1 00:00:00 UTC 2026";
 
 /// `build kernel`: configure, verify, build without an initramfs.
 pub fn kernel(ctx: &Ctx) -> Result<()> {
