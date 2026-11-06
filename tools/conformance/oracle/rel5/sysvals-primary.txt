@@ -1,0 +1,22 @@
+QSTGLOWLMT type=B status=  len=4 value=50000
+QSTGLOWACN type=C status=  len=10 value='*MSG'
+QPWRRSTIPL type=C status=  len=1 value='1'
+QRMTIPL type=C status=  len=1 value='0'
+QUPSDLYTIM type=C status=  len=20 value='00000002000000000200'
+QUPSMSGQ type=C status=  len=20 value='QSYSOPR   QSYS'
+QMLTTHDACN type=C status=  len=1 value='2'
+QCFGMSGQ type=C status=  len=20 value='QSYSOPR   QSYS'
+QBOOKPATH type=C status=  len=315 value='/QDLS/QBKBOOKS/BOOKS'
+QSVRAUTITV type=B status=  len=4 value=2880
+QFRCCVNRST type=C status=  len=1 value='1'
+QLIBLCKLVL type=C status=  len=1 value='1'
+QSFWERRLOG type=C status=  len=10 value='*LOG'
+QSRVDMP type=C status=  len=10 value='*DMPUSRJOB'
+QDBRCVYWT type=C status=  len=1 value='0'
+QSHRMEMCTL type=C status=  len=1 value='1'
+QSCANFS type=C status=  len=200 value='*ROOTOPNUD'
+QSCANFSCTL type=C status=  len=200 value='*NONE'
+QCHRID type=C status=  len=20 value='00000006970000000037'
+QIGC type=C status=  len=1 value='1'
+QRCLSPLSTG type=C status=  len=10 value='0000000008'
+QPWRDWNLMT type=B status=  len=4 value=900

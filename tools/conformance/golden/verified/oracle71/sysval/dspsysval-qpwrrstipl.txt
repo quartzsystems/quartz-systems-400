@@ -1,0 +1,24 @@
+                              Display System Value                              
+                                                                                
+ System value . . . . . :   QPWRRSTIPL                                          
+ Description  . . . . . :   Automatic IPL after power restored                  
+                                                                                
+                                                                                
+ Auto-IPL after power                                                           
+   restored . . . . . . :   1          0=Not allowed                            
+                                       1=Allowed                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

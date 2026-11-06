@@ -1,0 +1,24 @@
+                              Display System Value                              
+                                                                                
+ System value . . . . . :   QBOOKPATH                                           
+ Description  . . . . . :   Book and bookshelf search path                      
+                                                                                
+                                                                                
+ Sequence                                                                       
+  number      Directory                                                         
+      0                                                                         
+     10       /QDLS/QBKBOOKS/BOOKS                                              
+     20                                                                         
+     30                                                                         
+     40                                                                         
+     50                                                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

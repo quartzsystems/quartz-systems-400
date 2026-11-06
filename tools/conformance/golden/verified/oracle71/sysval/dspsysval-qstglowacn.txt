@@ -1,0 +1,24 @@
+                              Display System Value                              
+                                                                                
+ System value . . . . . :   QSTGLOWACN                                          
+ Description  . . . . . :   Auxiliary storage lower limit action                
+                                                                                
+                                                                                
+ Action . . . . . . . . :   *MSG           *MSG                                 
+                                           *CRITMSG                             
+                                           *REGFAC                              
+                                           *ENDSYS                              
+                                           *PWRDWNSYS                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -1,0 +1,56 @@
+[[golden]]
+name = "dspsysval-qupsdlytim"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sysval-power-primary"
+width = 80
+
+[[golden]]
+name = "dspsysval-qstglowlmt"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sysval-power-primary"
+width = 80
+
+[[golden]]
+name = "dspsysval-qstglowacn"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sysval-power-primary"
+width = 80
+
+[[golden]]
+name = "dspsysval-qpwrrstipl"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sysval-power-primary"
+width = 80
+
+[[golden]]
+name = "dspsysval-qrmtipl"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sysval-power-primary"
+width = 80
+
+[[golden]]
+name = "dspsysval-qmltthdacn"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sysval-power-primary"
+width = 80
+
+[[golden]]
+name = "dspsysval-qbookpath"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sysval-power-primary"
+width = 80
+

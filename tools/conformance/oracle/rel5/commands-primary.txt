@@ -1,0 +1,46 @@
+RCLSPLSTG
+  DAYS       type=INT2 min=1 max=1 dft=(none) range=1-366 rstd=NO values=*NONE=0
+  ASPGRP     type=NAME min=0 max=1 dft=*SYSBAS range=- rstd=NO values=*SYSBAS=*SYSBAS *ALL=*ALL *=* *CURASPGRP=*CURASPGRP
+STRASPBAL
+  ASP        type=INT4 min=0 max=32 dft=(none) range=1-32 rstd=NO values=*ALL=0
+  TYPE       type=INT4 min=0 max=1 dft=(none) range=- rstd=YES values=*CAPACITY=0 *USAGE=1 *HSM=2 *MOVDTA=3 *ENDALC=4 *RSMALC=5 *MP=6
+  TIMLMT     type=INT4 min=0 max=1 dft=(none) range=1-9999 rstd=NO values=*NOMAX=-1
+  ASPDEV     type=NAME min=0 max=32 dft=(none) range=- rstd=NO values=*ALLAVL=*ALLAVL
+  UNIT       type=INT4 min=0 max=300 dft=(none) range=- rstd=NO values=
+  PRIORITY   type=INT4 min=0 max=1 dft=*MEDIUM range=- rstd=YES values=*LOW=10 *MEDIUM=20 *HIGH=30
+  SUBTYPE    type=INT4 min=0 max=1 dft=*CALC range=- rstd=YES values=*CALC=0 *HDD=1 *SSD=2
+  DEP CtlKwdRel=ALWAYS NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A2
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=0 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A3
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=0 NbrTrueRel=EQ NbrTrue=0 MsgID=CPD18A8
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=1 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A3
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=1 NbrTrueRel=EQ NbrTrue=0 MsgID=CPD18A8
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=2 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A3
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=2 NbrTrueRel=EQ NbrTrue=0 MsgID=CPD18A8
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=6 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A3
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=6 NbrTrueRel=EQ NbrTrue=0 MsgID=CPD18A8
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=3 NbrTrueRel=EQ NbrTrue=0 MsgID=CPD18A4
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=4 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A5
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=4 NbrTrueRel=EQ NbrTrue=0 MsgID=CPD18A9
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=5 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A5
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=5 NbrTrueRel=EQ NbrTrue=0 MsgID=CPD18A9
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=0 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A6
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=1 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A6
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=2 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A6
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=3 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A6
+  DEP CtlKwdRel=EQ CtlKwd=TYPE CmpVal=6 NbrTrueRel=EQ NbrTrue=1 MsgID=CPD18A6
+ENDASPBAL
+  ASP        type=INT4 min=0 max=32 dft=(none) range=1-32 rstd=NO values=*ALL=0
+  ASPDEV     type=NAME min=0 max=32 dft=(none) range=- rstd=NO values=*ALLAVL=*ALLAVL
+  DEP CtlKwdRel=ALWAYS NbrTrueRel=GE NbrTrue=1 MsgID=CPD18A1
+CHKASPBAL
+ENDSYS
+  OPTION     type=CHAR min=0 max=1 dft=*CNTRLD range=- rstd=YES values=*CNTRLD=C *IMMED=I
+  DELAY      type=INT4 min=0 max=1 dft=*NOLIMIT range=0-99999 rstd=NO values=*NOLIMIT=999999
+  ENDSBSOPT  type=CHAR min=0 max=3 dft=*DFT range=- rstd=YES values=*DFT=*DFT *NOJOBLOG=*NOJOBLOG *CHGPTY=*CHGPTY *CHGTSL=*CHGTSL
+  CONFIRM    type=CHAR min=0 max=1 dft=*ENVVAR range=- rstd=YES values=*ENVVAR=*ENVVAR *YES=*YES *NO=*NO
+ENDSBS
+  SBS        type=NAME min=1 max=1 dft=(none) range=- rstd=NO values=*ALL=*ALL
+  OPTION     type=CHAR min=0 max=1 dft=*CNTRLD range=- rstd=YES values=*CNTRLD=C *IMMED=I
+  DELAY      type=INT4 min=0 max=1 dft=*NOLIMIT range=0-99999 rstd=NO values=*NOLIMIT=999999
+  ENDSBSOPT  type=CHAR min=0 max=3 dft=*DFT range=- rstd=YES values=*DFT=*DFT *NOJOBLOG=*NOJOBLOG *CHGPTY=*CHGPTY *CHGTSL=*CHGTSL
+  BCHTIMLMT  type=INT4 min=0 max=1 dft=(none) range=5-9999 rstd=NO values=*NOMAX=999999

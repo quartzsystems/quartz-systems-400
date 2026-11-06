@@ -1,0 +1,24 @@
+                              Display System Value                              
+                                                                                
+ System value . . . . . :   QMLTTHDACN                                          
+ Description  . . . . . :   Multithreaded job action                            
+                                                                                
+                                                                                
+ Multithreaded job                                                              
+   action . . . . . . . :   2          1=Perform the function that is not       
+                                         threadsafe without sending a message   
+                                       2=Perform the function that is not       
+                                         threadsafe and send an informational   
+                                         message                                
+                                       3=Do not perform the function that is    
+                                         not threadsafe                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -1,0 +1,53 @@
+# DSPSYSVAL of the storage and power system values on the primary
+# (V7R1M0) as QSECOFR, read-only: each display left with F12.
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+type DSPSYSVAL QUPSDLYTIM
+key enter
+settle 3000
+snap dspsysval-qupsdlytim
+key f12
+settle 1500
+type DSPSYSVAL QSTGLOWLMT
+key enter
+settle 3000
+snap dspsysval-qstglowlmt
+key f12
+settle 1500
+type DSPSYSVAL QSTGLOWACN
+key enter
+settle 3000
+snap dspsysval-qstglowacn
+key f12
+settle 1500
+type DSPSYSVAL QPWRRSTIPL
+key enter
+settle 3000
+snap dspsysval-qpwrrstipl
+key f12
+settle 1500
+type DSPSYSVAL QRMTIPL
+key enter
+settle 3000
+snap dspsysval-qrmtipl
+key f12
+settle 1500
+type DSPSYSVAL QMLTTHDACN
+key enter
+settle 3000
+snap dspsysval-qmltthdacn
+key f12
+settle 1500
+type DSPSYSVAL QBOOKPATH
+key enter
+settle 3000
+snap dspsysval-qbookpath
+key f12
+settle 1500

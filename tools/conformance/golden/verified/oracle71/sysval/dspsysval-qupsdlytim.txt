@@ -1,0 +1,24 @@
+                              Display System Value                              
+                                                                                
+ System value . . . . . :   QUPSDLYTIM                                          
+ Description  . . . . . :   Uninterruptible power supply delay time             
+                                                                                
+                                                                                
+ Delay time . . . . . . :   200            *CALC, *BASIC, *NOMAX, 0-99999       
+                                                                                
+ Delay value in seconds :   200                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                
