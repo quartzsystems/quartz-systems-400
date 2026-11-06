@@ -44,20 +44,34 @@ pub(crate) fn lock() -> MutexGuard<'static, Shared> {
     shared().lock().unwrap_or_else(PoisonError::into_inner)
 }
 
-/// `QCMNRCYLMT` (count, minutes) and the configuration message queue
-/// (`QSYS/QSYSOPR`; this release has no `QCFGMSGQ`).
+/// `QCMNRCYLMT` (count, minutes) and the configuration message queue,
+/// `QCFGMSGQ` as `LIB/NAME`.
 fn defaults(system: &System) -> ((u16, u16), String) {
-    let text = system
-        .sysvals
-        .as_ref()
-        .and_then(|v| v.get("QCMNRCYLMT").ok())
-        .map(|v| v.text())
-        .unwrap_or_default();
+    let sv = |name: &str| {
+        system
+            .sysvals
+            .as_ref()
+            .and_then(|v| v.get(name).ok())
+            .map(|v| v.text())
+            .unwrap_or_default()
+    };
+    let text = sv("QCMNRCYLMT");
     let mut n = text
         .split_whitespace()
         .map(|w| w.parse::<u16>().unwrap_or(0));
     let rcy = (n.next().unwrap_or(0), n.next().unwrap_or(0));
-    (rcy, "QSYS/QSYSOPR".into())
+    (rcy, cfgmsgq(&sv("QCFGMSGQ")))
+}
+
+/// `QCFGMSGQ`'s 20 characters (name, then library) as `LIB/NAME`.
+fn cfgmsgq(v: &str) -> String {
+    let name = v.get(..10).unwrap_or(v).trim();
+    let lib = v.get(10..).unwrap_or("").trim();
+    match (name, lib) {
+        ("", _) => "QSYS/QSYSOPR".into(),
+        (n, "" | "*LIBL") => format!("QSYS/{n}"),
+        (n, l) => format!("{l}/{n}"),
+    }
 }
 
 /// Line `name` as TCP/IP sees it: varied on, and over which interface.
@@ -382,4 +396,17 @@ pub(crate) fn cfgsts_names(system: &mut System, kind: Kind) -> Vec<String> {
     cfgsts_rows(system, kind, "*ALL", false, "*ALL")
         .map(|rows| rows.into_iter().map(|r| r.name).collect())
         .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::cfgmsgq;
+
+    #[test]
+    fn cfgmsgq_is_lib_slash_name() {
+        assert_eq!(cfgmsgq("QSYSOPR   QSYS      "), "QSYS/QSYSOPR");
+        assert_eq!(cfgmsgq("CFGQ      MYLIB"), "MYLIB/CFGQ");
+        assert_eq!(cfgmsgq("CFGQ"), "QSYS/CFGQ");
+        assert_eq!(cfgmsgq(""), "QSYS/QSYSOPR");
+    }
 }

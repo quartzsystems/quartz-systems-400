@@ -83,6 +83,9 @@ pub struct Launch {
     pub gid: u32,
     /// Descriptors for standard input, output and error.
     pub stdio: [i32; 3],
+    /// `QSHRMEMCTL(1)`: shared memory and writable shared mappings are
+    /// allowed.
+    pub shared_memory: bool,
 }
 
 impl Launch {
@@ -103,6 +106,7 @@ impl Launch {
             uid,
             gid,
             stdio,
+            shared_memory: true,
         }
     }
 }

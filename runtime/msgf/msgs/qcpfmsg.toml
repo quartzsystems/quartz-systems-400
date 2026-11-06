@@ -8571,3 +8571,105 @@ sev = 30
 text = "The data's last column is shown."
 help = "The display already ends at the data's last column. F19 shows the columns to the left."
 vars = []
+
+# Storage thresholds, power and library locks (V1R1M0). Identifiers,
+# severities and variable positions are the primary's (V7R1M0,
+# tools/conformance/oracle/rel5/); the words are Quartz's.
+
+[[msg]]
+id = "CPF2114"
+sev = 40
+text = "Object &1 in library &2, type *&3, could not be allocated."
+help = "Another job holds the object, or a library in its library list while QLIBLCKLVL is 1. End that use of it and try again."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 7"]
+
+[[msg]]
+id = "CPF0907"
+sev = 80
+text = "The system ASP has reached its storage threshold; storage may run short."
+help = "ASP 1 holds &1 bytes, &2 of them in use: &4 percent is still available and the threshold is &3 percent. Free storage: delete objects that are not needed, save others with STG(*FREE), clear old history log versions and spooled files. The threshold is set in SST or DST, Work with ASP threshold. The message comes again every hour while the ASP stays at or above it."
+vars = ["*CHAR 20", "*CHAR 20", "*CHAR 7", "*CHAR 7"]
+
+[[msg]]
+id = "CPI0953"
+sev = 90
+text = "ASP &5 has reached its storage threshold."
+help = "ASP &5 holds &1 bytes and its threshold is &3 percent. Reduce what it holds below the threshold."
+vars = ["*CHAR 20", "*CHAR 20", "*CHAR 7", "*CHAR 7", "*CHAR 5"]
+
+[[msg]]
+id = "CPI0954"
+sev = 90
+text = "ASP &1 is full; its objects overflow into the system ASP."
+help = "Every page of ASP &1 is in use. Delete or save with STG(*FREE) what it holds."
+vars = ["*CHAR 5"]
+
+[[msg]]
+id = "CPI099B"
+sev = 90
+text = "The system ASP is below its critical storage lower limit."
+help = "ASP 1 holds &1 bytes, &2 of them in use; &4 percent is available and QSTGLOWLMT is &3 percent. Reduce the storage used before the ASP fills: delete what is not needed, save with STG(*FREE), clear old history logs and spooled files. WRKSYSSTS shows the use; WRKSYSVAL changes QSTGLOWLMT and QSTGLOWACN."
+vars = ["*CHAR 20", "*CHAR 20", "*CHAR 7", "*CHAR 7"]
+
+[[msg]]
+id = "CPI099C"
+sev = 90
+text = "The critical storage lower limit of the system ASP has been reached."
+help = "ASP 1 holds &1 bytes, &2 of them in use; &4 percent is available and QSTGLOWLMT is &3 percent. The system now takes the QSTGLOWACN action &5: *MSG nothing more, *CRITMSG sends CPI099B, *REGFAC submits a job that calls the QIBM_QWC_QSTGLOWACN exit programs, *ENDSYS ends the system to the restricted state, *PWRDWNSYS powers down at once and restarts. The action is taken again every 30 minutes while the ASP stays below the limit."
+vars = ["*CHAR 20", "*CHAR 20", "*CHAR 7", "*CHAR 7", "*CHAR 10"]
+
+[[msg]]
+id = "CPI099D"
+sev = 90
+text = "The system is starting in the restricted state: storage is below its lower limit."
+help = "ASP 1 holds &1 bytes, &2 of them in use; &4 percent is available and QSTGLOWLMT is &3 percent. Only the console is active and no subsystem starts until the storage used drops below the limit or QSTGLOWACN is *MSG or *CRITMSG."
+vars = ["*CHAR 20", "*CHAR 20", "*CHAR 7", "*CHAR 7"]
+
+[[msg]]
+id = "CPF1050"
+sev = 80
+text = "A subsystem cannot start while storage is below its lower limit."
+help = "The system ASP is below QSTGLOWLMT and QSTGLOWACN is *REGFAC, *ENDSYS or *PWRDWNSYS. Reduce the storage used, or change QSTGLOWACN to *MSG or *CRITMSG, then start the subsystem."
+vars = []
+
+[[msg]]
+id = "CPF1816"
+sev = 80
+text = "Utility power to the system failed at &2."
+help = "The system runs on its uninterruptible power supply. It powers down as QUPSDLYTIM says unless utility power returns first."
+vars = ["*CHAR 8", "*CHAR 8"]
+
+[[msg]]
+id = "CPF1817"
+sev = 60
+text = "Utility power to the system returned at &2."
+help = "The system is on utility power again; the power down QUPSDLYTIM would have started is cancelled."
+vars = ["*CHAR 8", "*CHAR 8"]
+
+[[msg]]
+id = "CPF1818"
+sev = 90
+text = "The system is ending: the power failure could not be reported."
+help = "CPF1816 could not be sent to message queue &1 in library &2, which QUPSMSGQ names."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF1819"
+sev = 90
+text = "The system is ending: no one monitors the power failure messages."
+help = "QUPSDLYTIM is *NOMAX, so a program or an operator must handle power failures, but message queue &1 in library &2 (QUPSMSGQ) is not ready, reason &3: 1 the queue is not allocated to a program or a display; 2 it is QSYSOPR or a display's queue and is not in *BREAK or *NOTIFY delivery. Allocate the queue with ALCOBJ in the monitoring program, or change its delivery with CHGMSGQ."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 1"]
+
+[[msg]]
+id = "CPI0964"
+sev = 80
+text = "The uninterruptible power supply reports a weak battery."
+help = "Should utility power fail now, the system may have to power down at once. Check the battery of the power supply."
+vars = []
+
+[[msg]]
+id = "CPF1052"
+sev = 40
+text = "ENDSBS *ALL is not allowed in this job."
+help = "Ending every subsystem from a batch job needs BCHTIMLMT and a job started from a job queue of the controlling subsystem; BCHTIMLMT is allowed with SBS(*ALL) only."
+vars = []

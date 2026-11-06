@@ -60,6 +60,18 @@ pub fn from_dump(name: &str, why: &str) -> Detected {
     }
 }
 
+/// A job whose process failed in the system's own code: a software
+/// error, logged when `QSFWERRLOG` is `*LOG`.
+#[must_use]
+pub fn from_software(job: &str, why: &str) -> Detected {
+    Detected {
+        origin: Origin::Software(job.into()),
+        severity: 2,
+        text: why.chars().take(50).collect(),
+        symptoms: format!("JOB/{job} RC/PANIC"),
+    }
+}
+
 /// The kinds of problem `ANZPRB` asks about first.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Area {

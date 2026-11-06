@@ -322,6 +322,7 @@ fn dispatch(job: &mut Job, host: &Host, r: &Resolved, mut out: Outcome) -> Outco
                 // The detail stays in the job log.
                 let data = sys_cpps::check::diag_data(&r.name, &f.text);
                 log(job, sys_cpps::check::DIAG, &data, MsgType::Diag, None);
+                service_dump(job, host, &r.name, &f.text);
                 f.data = sys_cpps::check::escape_data(&r.name);
                 f.text.clear();
                 f.text = shown(job, &f).trim_end().to_string();
@@ -335,6 +336,31 @@ fn dispatch(job: &mut Job, host: &Host, r: &Resolved, mut out: Outcome) -> Outco
         }
     }
     out
+}
+
+/// The system's own code failed running `cmd` (an unmonitored escape
+/// in it): a service dump spooled as `QPSRVDMP` when `QSRVDMP` asks for
+/// one for this kind of job (`*DMPUSRJOB` user jobs, `*DMPSYSJOB` the
+/// system's jobs and subsystem monitors, `*DMPALLJOB` every job).
+fn service_dump(job: &mut Job, host: &Host, cmd: &str, detail: &str) {
+    let value = host
+        .link
+        .borrow_mut()
+        .with(|l| l.sysval("QSRVDMP".into()))
+        .map(|v| ccsid::decode_trimmed(&v.data))
+        .unwrap_or_default();
+    let system_job = matches!(host.start.kind, 'S' | 'X' | 'M');
+    let wanted = match value.as_str() {
+        "*DMPALLJOB" => true,
+        "*DMPSYSJOB" => system_job,
+        "*NONE" => false,
+        _ => !system_job,
+    };
+    if wanted {
+        let text = [cmd, detail, "", &job.dump(false)].join("
+");
+        let _ = job.spool_text("QPSRVDMP", &text);
+    }
 }
 
 /// A definition's `PRDLIB` and `CURLIB`: in the job's library list

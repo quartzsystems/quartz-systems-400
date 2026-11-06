@@ -13,7 +13,7 @@ use cmd::block::Parms;
 use cmd::def::{Allow, Mode, Qual};
 use cmd::store::{Changes, Ctx};
 use qsname::{MemberSpec, Name};
-use stg::proto::CmdReply;
+use stg::proto::{CmdMsg, CmdReply};
 use store::obj::{JobHandle, ObjectId, ops, types};
 use store::txn::Txn;
 
@@ -33,6 +33,9 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "DLTLIB" => {
             // The objects go first, as IBM's DLTLIB deletes them.
             let lib = parms.name("LIB");
+            if libl_held(system, &lib) {
+                return Some(escape_with("CPF2114", &[(&lib, 10), ("QSYS", 10), ("LIB", 7)]));
+            }
             let cleared = clrlib(system, &lib);
             if cleared.escape.is_some() {
                 return Some(cleared);
@@ -711,5 +714,34 @@ fn chgprxcmd(system: &mut System, parms: &Parms) -> CmdReply {
     match r {
         Ok((n, l)) => done(String::new(), "CPI9C00", &[(&n, 10), (&l, 10)]),
         Err(e) => failed("CHGPRXCMD", &e),
+    }
+}
+
+/// `QLIBLCKLVL(1)`: an active job other than this one with `lib` in its
+/// library list holds it, as the shared lock IBM i takes would.
+fn libl_held(system: &System, lib: &str) -> bool {
+    if crate::stgsvc::security::sysval_text(system, "QLIBLCKLVL").trim() != "1" {
+        return false;
+    }
+    let me = system.current_job;
+    system.attrs.iter().any(|(n, a)| {
+        let l = &a.libl;
+        *n != me
+            && system.jobs.get(*n).is_some()
+            && l.sys.iter().chain(&l.prd).chain(&l.usr).chain(l.cur.iter()).any(|x| x == lib)
+    })
+}
+
+/// A reply that is one escape with these fields, its text the message
+/// file's.
+fn escape_with(msgid: &str, fields: &[(&str, usize)]) -> CmdReply {
+    CmdReply {
+        text: String::new(),
+        escape: Some(CmdMsg {
+            msgid: msgid.into(),
+            kind: 7,
+            data: cmd::error::data(fields),
+        }),
+        ..CmdReply::default()
     }
 }

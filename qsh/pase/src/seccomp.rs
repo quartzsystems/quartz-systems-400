@@ -29,6 +29,8 @@ pub const LD_ABS: u16 = 0x20;
 pub const JEQ: u16 = 0x15;
 /// `BPF_JMP | BPF_JGE | BPF_K`.
 pub const JGE: u16 = 0x35;
+/// `BPF_JMP | BPF_JSET | BPF_K`.
+pub const JSET: u16 = 0x45;
 /// `BPF_RET | BPF_K`.
 pub const RET: u16 = 0x06;
 
@@ -49,6 +51,19 @@ pub const X32_BIT: u32 = 0x4000_0000;
 const NR: u32 = 0;
 /// Offset of `arch`.
 const ARCH: u32 = 4;
+/// Offset of `args[2]`'s low word (`mmap`'s `prot`).
+const ARG2: u32 = 32;
+/// Offset of `args[3]`'s low word (`mmap`'s `flags`).
+const ARG3: u32 = 40;
+/// `mmap`'s number.
+const MMAP: u32 = 9;
+/// The shared memory calls `QSHRMEMCTL(0)` refuses: `shmget`, `shmat`,
+/// `shmctl`, `shmdt`.
+const SHM: [u32; 4] = [29, 30, 31, 67];
+/// `MAP_SHARED`.
+const MAP_SHARED: u32 = 1;
+/// `PROT_WRITE`.
+const PROT_WRITE: u32 = 2;
 
 /// The system calls a PASE program may make: name and `x86_64` number.
 pub const ALLOWED: &[(&str, u32)] = &[
@@ -301,11 +316,25 @@ pub const ALLOWED: &[(&str, u32)] = &[
     ("futex_waitv", 449),
 ];
 
-/// The filter.
+/// The filter with shared memory allowed (`QSHRMEMCTL(1)`).
 #[must_use]
 pub fn program() -> Vec<Insn> {
-    let n = ALLOWED.len();
-    assert!(n < 255, "the allow list must fit one jump");
+    program_with(true)
+}
+
+/// The filter. Without `shared_memory` (`QSHRMEMCTL(0)`) the System V
+/// shared memory calls fail with `EPERM`, and so does an `mmap` of a
+/// shared mapping that can be written.
+#[must_use]
+pub fn program_with(shared_memory: bool) -> Vec<Insn> {
+    let allowed: Vec<u32> = ALLOWED
+        .iter()
+        .map(|(_, nr)| *nr)
+        .filter(|nr| shared_memory || !SHM.contains(nr))
+        .collect();
+    let n = allowed.len();
+    let guard = if shared_memory { 0 } else { 6 };
+    assert!(n + guard < 254, "the allow list must fit one jump");
     let mut p = vec![
         Insn { code: LD_ABS, jt: 0, jf: 0, k: ARCH },
         Insn { code: JEQ, jt: 1, jf: 0, k: ARCH_X86_64 },
@@ -314,12 +343,24 @@ pub fn program() -> Vec<Insn> {
         // The x32 ABI's numbers are refused.
         Insn {
             code: JGE,
-            jt: u8::try_from(n).expect("checked"),
+            jt: u8::try_from(n + guard).expect("checked"),
             jf: 0,
             k: X32_BIT,
         },
     ];
-    for (i, (_, nr)) in ALLOWED.iter().enumerate() {
+    if !shared_memory {
+        // mmap with MAP_SHARED and PROT_WRITE: to the EPERM return.
+        let to_errno = u8::try_from(n + 1).expect("checked");
+        p.extend([
+            Insn { code: JEQ, jt: 0, jf: 4, k: MMAP },
+            Insn { code: LD_ABS, jt: 0, jf: 0, k: ARG3 },
+            Insn { code: JSET, jt: 0, jf: 2, k: MAP_SHARED },
+            Insn { code: LD_ABS, jt: 0, jf: 0, k: ARG2 },
+            Insn { code: JSET, jt: to_errno, jf: 0, k: PROT_WRITE },
+            Insn { code: LD_ABS, jt: 0, jf: 0, k: NR },
+        ]);
+    }
+    for (i, nr) in allowed.iter().enumerate() {
         p.push(Insn {
             code: JEQ,
             jt: u8::try_from(n - i).expect("checked"),
@@ -335,6 +376,13 @@ pub fn program() -> Vec<Insn> {
 /// Run a filter over one call, as the kernel would: the action.
 #[must_use]
 pub fn check(p: &[Insn], arch: u32, nr: u32) -> u32 {
+    check_args(p, arch, nr, [0; 6])
+}
+
+/// [`check`] with the call's arguments.
+#[must_use]
+pub fn check_args(p: &[Insn], arch: u32, nr: u32, args: [u64; 6]) -> u32 {
+    let low = |i: usize| u32::try_from(args[i] & 0xFFFF_FFFF).unwrap_or(0);
     let mut a = 0u32;
     let mut pc = 0usize;
     while let Some(i) = p.get(pc) {
@@ -343,12 +391,18 @@ pub fn check(p: &[Insn], arch: u32, nr: u32) -> u32 {
                 a = match i.k {
                     NR => nr,
                     ARCH => arch,
+                    ARG2 => low(2),
+                    ARG3 => low(3),
                     _ => 0,
                 };
                 pc += 1;
             }
-            JEQ | JGE => {
-                let hit = if i.code == JEQ { a == i.k } else { a >= i.k };
+            JEQ | JGE | JSET => {
+                let hit = match i.code {
+                    JEQ => a == i.k,
+                    JGE => a >= i.k,
+                    _ => a & i.k != 0,
+                };
                 pc += 1 + usize::from(if hit { i.jt } else { i.jf });
             }
             RET => return i.k,
@@ -379,6 +433,24 @@ mod tests {
         }
         assert_eq!(check(&p, ARCH_X86_64, X32_BIT | nr("read")), RET_ERRNO | EPERM);
         assert_eq!(check(&p, 0x4000_0003, nr("read")), RET_KILL);
+    }
+
+    #[test]
+    fn shared_memory_off_refuses_shm_and_writable_shared_maps() {
+        let p = program_with(false);
+        for n in SHM {
+            assert_eq!(check(&p, ARCH_X86_64, n), RET_ERRNO | EPERM, "{n}");
+        }
+        let map = |prot: u64, flags: u64| check_args(&p, ARCH_X86_64, MMAP, [0, 4096, prot, flags, 0, 0]);
+        assert_eq!(map(3, 1), RET_ERRNO | EPERM);
+        assert_eq!(map(1, 1), RET_ALLOW);
+        assert_eq!(map(3, 2), RET_ALLOW);
+        assert_eq!(check(&p, ARCH_X86_64, nr("read")), RET_ALLOW);
+        assert_eq!(check(&p, ARCH_X86_64, 101), RET_ERRNO | EPERM);
+        assert_eq!(check(&p, ARCH_X86_64, X32_BIT | nr("read")), RET_ERRNO | EPERM);
+        let on = program_with(true);
+        assert_eq!(check(&on, ARCH_X86_64, 30), RET_ALLOW);
+        assert_eq!(check_args(&on, ARCH_X86_64, MMAP, [0, 4096, 3, 1, 0, 0]), RET_ALLOW);
     }
 
     #[test]

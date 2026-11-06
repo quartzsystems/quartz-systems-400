@@ -30,6 +30,14 @@ pub use wm::table::JobInfo;
 /// Where the service listens for job connections.
 pub const SOCKET: &str = "/run/qs400/stg";
 
+/// The file a job's process leaves when it fails in the system's own
+/// code (a panic): the service finds it when the job vanishes and logs
+/// a software problem (`QSFWERRLOG`).
+#[must_use]
+pub fn software_error_path(number: u32) -> String {
+    format!("/run/qs400/sfwerr/{number:06}")
+}
+
 /// The file whose presence asks the service to end job `number`'s
 /// running SQL statement (QAP's cancel): the engine looks for it
 /// between rows, the job makes it and removes it.

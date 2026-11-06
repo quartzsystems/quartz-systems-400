@@ -26,6 +26,7 @@ pub fn run() -> ! {
         Ok(other) => end(&mut ctl, &format!("expected the start, got {other:?}")),
         Err(e) => end(&mut ctl, &format!("control channel: {e}")),
     };
+    crate::platform::sfwerr::install(start.number);
     let link = match Chan::connect(Path::new(stg::SOCKET)) {
         Ok(c) => Link::over(c),
         Err(e) => end(&mut ctl, &format!("storage service: {e}")),

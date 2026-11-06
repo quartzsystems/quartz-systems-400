@@ -219,6 +219,7 @@ impl ProblemLog {
                 Origin::Message(m) => format!("M:{m}"),
                 Origin::Hardware { resource, src } => format!("H:{resource}:{src}"),
                 Origin::Dump(d) => format!("D:{d}"),
+                Origin::Software(j) => format!("S:{j}"),
                 Origin::Analysis => "A:".into(),
             };
             let _ = writeln!(
@@ -281,6 +282,7 @@ impl ProblemLog {
                     }
                 }
                 Some(("D", d)) => Origin::Dump(d.into()),
+                Some(("S", j)) => Origin::Software(j.into()),
                 _ => Origin::Analysis,
             };
             let notes = unesc(f[11]);

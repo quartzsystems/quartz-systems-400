@@ -399,6 +399,14 @@ group = "MSG"
 # ------------------------------------------------------------------- SEC
 
 [[sysval]]
+name = "QCFGMSGQ"
+type = "char"
+len = 20
+default = "QSYSOPR   QSYS"
+text = "Message queue for communications configuration messages"
+group = "MSG"
+
+[[sysval]]
 name = "QALWOBJRST"
 type = "list"
 len = 10
@@ -712,6 +720,14 @@ text = "Security level enforced by the system"
 group = "SEC"
 
 [[sysval]]
+name = "QSVRAUTITV"
+type = "dec"
+default = 2880
+range = [1, 108000]
+text = "Server authentication interval in minutes; not used"
+group = "SEC"
+
+[[sysval]]
 name = "QSHRMEMCTL"
 type = "char"
 len = 1
@@ -941,6 +957,15 @@ text = "Recovery attempts and interval for communication errors"
 group = "SYSCTL"
 
 [[sysval]]
+name = "QBOOKPATH"
+type = "list"
+len = 63
+elems = 5
+default = ["/QDLS/QBKBOOKS/BOOKS"]
+text = "Directories searched for online books"
+group = "SYSCTL"
+
+[[sysval]]
 name = "QCNTRYID"
 type = "char"
 len = 2
@@ -1120,6 +1145,15 @@ len = 1
 default = "1"
 allowed = ["0", "1"]
 text = "Lock libraries in a job's library list"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QMLTTHDACN"
+type = "char"
+len = 1
+default = "2"
+allowed = ["1", "2", "3"]
+text = "What a multithreaded job does with a function that is not threadsafe"
 group = "SYSCTL"
 
 [[sysval]]

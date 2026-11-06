@@ -188,3 +188,54 @@ fn qalwobjrst_refuses_system_state() {
     let out = outcome(&mut s, q, &bytes, "LS2", 1, "*ALWSYSSTT");
     assert_eq!(out[1], ("NOSIG".into(), None));
 }
+
+/// Records `QFRCCVNRST`'s conversions: the object's name and `all`.
+struct Converter {
+    calls: std::cell::RefCell<Vec<(String, bool)>>,
+}
+
+impl Hooks for Converter {
+    fn verify(&self, key_id: [u8; 8], digest: &[u8; 32], sig: &[u8; 64]) -> Option<bool> {
+        Keys.verify(key_id, digest, sig)
+    }
+
+    fn system_key(&self, _: [u8; 8]) -> bool {
+        true
+    }
+
+    fn convert(&self, txn: &mut Txn<'_>, id: ObjectId, all: bool) -> Result<u32, String> {
+        let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+        self.calls.borrow_mut().push((h.name.to_string(), all));
+        Ok(1)
+    }
+}
+
+fn converted(level: u8) -> Vec<(String, bool)> {
+    let (mut s, q) = system();
+    let bytes = saved(&mut s, q);
+    let mut r = Reader::new(Cursor::new(&bytes[..])).unwrap();
+    let opts = RestoreOptions {
+        target_library: Some("QSTEST2".into()),
+        verify: 1,
+        convert: level,
+        ..RestoreOptions::default()
+    };
+    let c = Converter { calls: std::cell::RefCell::new(Vec::new()) };
+    restore(&mut s, JobHandle(1), &c, q, &mut r, &opts).unwrap();
+    let mut v = c.calls.into_inner();
+    v.sort();
+    v
+}
+
+#[test]
+fn qfrccvnrst_levels() {
+    let t = |n: &str, all: bool| (n.to_string(), all);
+    assert!(converted(0).is_empty());
+    // Validation errors: the tampered program, all of it.
+    assert_eq!(converted(1), vec![t("TAMPERED", true)]);
+    // What must be converted: the code generator's check on the others.
+    assert_eq!(converted(2), vec![t("NOSIG", false), t("TAMPERED", true)]);
+    // No valid signature: converted whole. A trusted signature never is.
+    assert_eq!(converted(4), vec![t("NOSIG", true), t("TAMPERED", true)]);
+    assert_eq!(converted(7), vec![t("NOSIG", true), t("TAMPERED", true)]);
+}

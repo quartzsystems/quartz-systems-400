@@ -2,8 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The job process's Linux plumbing: the native stack's guard and the
-//! system clock the SNTP client adjusts.
+//! The job process's Linux plumbing: the native stack's guard, the
+//! system clock the SNTP client adjusts and the software error marker.
 
 pub mod clock;
+pub mod sfwerr;
 pub mod stack;

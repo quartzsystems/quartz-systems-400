@@ -36,6 +36,16 @@ fn ids(host: &Host) -> (u32, u32) {
         .map_or((0, 0), |i| (i.uid, i.gid))
 }
 
+/// `QSHRMEMCTL`: `0` keeps PASE programs from shared memory and from
+/// shared mappings they can write.
+fn shared_memory(host: &Host) -> bool {
+    use stg::Client as _;
+    host.link
+        .borrow_mut()
+        .with(|l| l.sysval("QSHRMEMCTL".into()))
+        .is_none_or(|v| ccsid::decode_trimmed(&v.data) != "0")
+}
+
 /// Run a PASE program over the descriptors given; its exit status (128
 /// plus the system's number when a signal ended it).
 pub fn run_with_fds(
@@ -48,6 +58,7 @@ pub fn run_with_fds(
 ) -> Result<i32, String> {
     let (uid, gid) = ids(host);
     let mut l = pase::Launch::new(path, uid, gid, fds);
+    l.shared_memory = shared_memory(host);
     if !argv.is_empty() {
         l.argv = argv;
     }
@@ -76,6 +87,7 @@ pub fn run_to_end(
     let fds = [null.as_raw_fd(), w.as_raw_fd(), w.as_raw_fd()];
     let (uid, gid) = ids(host);
     let mut l = pase::Launch::new(path, uid, gid, fds);
+    l.shared_memory = shared_memory(host);
     if !argv.is_empty() {
         l.argv = argv;
     }

@@ -156,6 +156,26 @@ pub fn retranslate(txn: &mut Txn<'_>, id: ObjectId, all: bool) -> Result<u32> {
     Ok(n)
 }
 
+/// Convert a restored object (`QFRCCVNRST`): [`retranslate`], and a
+/// program or service program that was translated is user state after.
+/// The modules translated.
+pub fn convert(txn: &mut Txn<'_>, id: ObjectId, all: bool) -> Result<u32> {
+    let n = retranslate(txn, id, all)?;
+    if n > 0 && id.type_code != types::MODULE {
+        let mut p = load_program(txn, id)?;
+        if !p.attr.user_state {
+            p.attr.user_state = true;
+            write_payload(txn, id, &p.encode())?;
+        }
+        let (page, mut h) = ops::read_header(txn, id)?;
+        if !h.user_state {
+            h.user_state = true;
+            ops::write_header(txn, page, &h)?;
+        }
+    }
+    Ok(n)
+}
+
 /// Read a `*BNDDIR`.
 pub fn load_bnddir(txn: &mut Txn<'_>, id: ObjectId) -> Result<BndDir> {
     if id.type_code != types::BNDDIR {

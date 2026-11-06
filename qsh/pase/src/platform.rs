@@ -132,7 +132,7 @@ fn prepare(l: &Launch) -> Result<Prepared, PaseError> {
         argv: argv_p,
         _envp: envp,
         envp: envp_p,
-        filter: seccomp::program(),
+        filter: seccomp::program_with(l.shared_memory),
         uid: l.uid,
         gid: l.gid,
         stdio: l.stdio,

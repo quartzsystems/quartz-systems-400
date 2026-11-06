@@ -120,6 +120,10 @@ impl SvcHooks {
 }
 
 impl Hooks for SvcHooks {
+    fn convert(&self, txn: &mut Txn<'_>, id: ObjectId, all: bool) -> Result<u32, String> {
+        ile::store::convert(txn, id, all).map_err(|e| e.to_string())
+    }
+
     fn may_save(&self, txn: &mut Txn<'_>, h: &ObjectHeader) -> Result<(), &'static str> {
         if savsys() || sec::guard::allowed(txn, self.qsys, "obj.save", h.id) {
             Ok(())
@@ -363,6 +367,23 @@ pub(super) fn may_read_savf(txn: &mut Txn<'_>, qsys: ObjectId, id: ObjectId, fil
 }
 
 /// Text values of a list parameter, uppercase.
+/// `FRCOBJCVN`: `*SYSVAL` is `QFRCCVNRST`, `*NO` converts nothing,
+/// `(*YES *RQD)` what must be converted (level 2), `(*YES *ALL)`
+/// everything (level 7).
+fn convert_level(system: &System, parms: &Parms) -> u8 {
+    let t = parms.name("FRCOBJCVN");
+    let words: Vec<&str> = t.split(|c: char| c.is_whitespace() || c == '(' || c == ')').filter(|w| !w.is_empty()).collect();
+    if words.contains(&"*ALL") {
+        7
+    } else if words.contains(&"*YES") || words.contains(&"*RQD") {
+        2
+    } else if words.contains(&"*NO") {
+        0
+    } else {
+        crate::stgsvc::security::sysval_num(system, "QFRCCVNRST", 1)
+    }
+}
+
 pub(super) fn values(parms: &Parms, kwd: &str) -> Vec<String> {
     parms
         .list(kwd)
@@ -1001,6 +1022,7 @@ fn rst(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         system: "QS400".into(),
         now: now_unix(),
         verify: crate::stgsvc::security::sysval_num(system, "QVFYOBJRST", 3),
+        convert: convert_level(system, parms),
         allow_restore: {
             let v = crate::stgsvc::security::sysval_text(system, "QALWOBJRST");
             AllowRestore::from_value(if v.is_empty() { "*ALL" } else { &v })

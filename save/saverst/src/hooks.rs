@@ -81,6 +81,16 @@ pub trait Hooks {
 
     /// The object was saved.
     fn saved(&self, _txn: &mut Txn<'_>, _h: &ObjectHeader) {}
+
+    /// Convert restored program object `id` (`QFRCCVNRST`, `FRCOBJCVN`):
+    /// its native code translated again from the creation data it
+    /// keeps, every module when `all`, else those an older code
+    /// generator made; the object made user state. The modules
+    /// translated; `Err` when it cannot be converted (no creation
+    /// data). Without a converter nothing is.
+    fn convert(&self, _txn: &mut Txn<'_>, _id: ObjectId, _all: bool) -> Result<u32, String> {
+        Ok(0)
+    }
 }
 
 /// Hooks that allow everything: tests, and the IPL's own restores.

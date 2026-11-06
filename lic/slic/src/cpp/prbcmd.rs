@@ -89,6 +89,7 @@ fn refcode(p: &Problem) -> (String, String) {
         prb::Origin::Message(m) => (m.clone(), String::new()),
         prb::Origin::Dump(_) => ("DUMP".into(), String::new()),
         prb::Origin::Analysis => ("ANZPRB".into(), String::new()),
+        prb::Origin::Software(j) => ("SOFTWARE".into(), j.clone()),
     }
 }
 

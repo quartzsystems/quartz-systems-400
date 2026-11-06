@@ -361,6 +361,10 @@ mod tests {
             "QSTSMSG",
             "QHSTLOGSIZ",
             "QSYSNAME",
+            "QMLTTHDACN",
+            "QCFGMSGQ",
+            "QBOOKPATH",
+            "QSVRAUTITV",
         ] {
             assert!(c.get(name).is_some(), "{name} missing");
         }

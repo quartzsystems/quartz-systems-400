@@ -104,6 +104,9 @@ pub enum Origin {
     },
     /// A dump: its name in the dump directory.
     Dump(String),
+    /// A software error the system detected (`QSFWERRLOG(*LOG)`): the
+    /// job it happened in.
+    Software(String),
     /// `ANZPRB`.
     Analysis,
 }

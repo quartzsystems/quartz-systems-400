@@ -375,6 +375,9 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     super::acg::job_ended(system, ctx.job.number, code);
     if ctx.end_code.is_none() {
         super::joblog::ended_here(system, ctx, &data);
+        if vanished {
+            software_error(system, &who);
+        }
     }
     super::joblog::spool(system, ctx, abnormal);
     super::spool::job_ended(system, &who);
@@ -396,6 +399,23 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     system.pools.remove(ctx.job.number);
     system.stats.ended(ctx.job.number);
     super::sbs::monitor_ended(system, ctx.job.number);
+}
+
+/// A job vanished: when its process failed in the system's code (the
+/// marker `stg::software_error_path` its panic hook left), a software
+/// error, logged as a problem when `QSFWERRLOG` is `*LOG`.
+fn software_error(system: &mut System, (name, user, number): &(String, String, u32)) {
+    let path = stg::software_error_path(*number);
+    let Ok(what) = std::fs::read_to_string(&path) else {
+        return;
+    };
+    let _ = std::fs::remove_file(&path);
+    if super::security::sysval_text(system, "QSFWERRLOG").trim() != "*LOG" {
+        return;
+    }
+    let job = format!("{number:06}/{user}/{name}");
+    let d = prb::analyze::from_software(&job, what.lines().next().unwrap_or_default());
+    let _ = super::prblog::log(system, prb::PrbType::Machine, &d);
 }
 
 /// End a job's use of the database and the store.

@@ -168,6 +168,9 @@ pub struct RestoreOptions {
     pub now: u64,
     /// `QVFYOBJRST`, 1 to 5.
     pub verify: u8,
+    /// `QFRCCVNRST`, 0 to 7, or 7 for `FRCOBJCVN(*YES *ALL)`; 2 for
+    /// `(*YES *RQD)`, 0 for `*NO`.
+    pub convert: u8,
     /// `QALWOBJRST`.
     pub allow_restore: AllowRestore,
 }
@@ -188,6 +191,7 @@ impl Default for RestoreOptions {
             system: String::new(),
             now: 0,
             verify: 3,
+            convert: 1,
             allow_restore: AllowRestore::default(),
         }
     }
@@ -719,6 +723,7 @@ fn restore_plain(
     image::import(txn, id, &parts)?;
     set_header(txn, cx, id, d, &o.authorities, existing.is_none(), &mut staged.notes)?;
     image::import_sqlinf(txn, cx.job, id, &parts, cx.opts.now)?;
+    convert(txn, cx, o, id, staged)?;
     set_signature(txn, id, staged.signature)?;
     if existing.is_some() {
         txn.store().locks_mut().unlock(cx.job, id, LockState::Exclusive);
@@ -729,6 +734,45 @@ fn restore_plain(
     let (_, h) = ops::read_header(txn, id)?;
     cx.hooks.restored(txn, &h, existing.is_some());
     Ok(())
+}
+
+/// `QFRCCVNRST`: convert a restored program, service program or module
+/// as the level asks. A valid signature from a key the system trusts
+/// is never converted; 1 converts what has validation errors (a
+/// signature that does not verify), 2 also what an older code
+/// generator made, 3 also what is suspected of tampering (the same
+/// signatures here), 4 and 6 also what has no valid signature, 5 and 7
+/// everything (every program here keeps its creation data). A converted
+/// object loses its signature; one that cannot be converted is not
+/// restored.
+fn convert(
+    txn: &mut Txn<'_>,
+    cx: &Ctx<'_>,
+    o: &SavedObject,
+    id: ObjectId,
+    staged: &mut Staged,
+) -> Result<()> {
+    let d = &o.descriptor;
+    if !matches!(d.type_code, types::PGM | types::SRVPGM | types::MODULE) {
+        return Ok(());
+    }
+    if staged.signature.as_ref().is_some_and(|s| s.system) {
+        return Ok(());
+    }
+    let level = cx.opts.convert;
+    let invalid = o.signature.is_some() && staged.signature.is_none();
+    let all = matches!(level, 5 | 7) || (level >= 4 && staged.signature.is_none()) || (level >= 1 && invalid);
+    if !all && level < 2 {
+        return Ok(());
+    }
+    match cx.hooks.convert(txn, id, all) {
+        Ok(0) => Ok(()),
+        Ok(_) => {
+            staged.signature = None;
+            Ok(())
+        }
+        Err(why) => Err(Error::refused(msg::NOT_RESTORED, format!("{}: not converted: {why}", d.object_name()))),
+    }
 }
 
 fn lock(txn: &mut Txn<'_>, cx: &Ctx<'_>, id: ObjectId, d: &ObjectDescriptor) -> Result<()> {
