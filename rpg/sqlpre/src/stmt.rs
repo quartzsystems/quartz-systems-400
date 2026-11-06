@@ -644,7 +644,7 @@ impl State<'_> {
                 form = if cx.word(i) == "INPUT" { "INPUT" } else { "OUTPUT" };
                 i += 1;
             }
-            // BLOCKED(sql): a procedure's result sets (ALLOCATE CURSOR,
+            // BLOCKED(rel): a procedure's result sets (ALLOCATE CURSOR,
             // ASSOCIATE LOCATORS) wait for CALL.
             w @ ("CURSOR" | "PROCEDURE") => {
                 self.diag(cx.tok_line(i), "SQL0084", 30, vec![format!("DESCRIBE {w}")]);
