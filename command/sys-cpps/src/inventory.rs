@@ -171,6 +171,16 @@ pub const DIRECT: &[&str] = &[
     "ENDASPBAL",
     "RCLSPLSTG",
     "STRASPBAL",
+    // --- security attributes and function usage (lic/slic/src/cpp/fcncmd.rs)
+    "CHGFCNUSG",
+    "CHGSECA",
+    "DSPFCNUSG",
+    "DSPSECA",
+    "STRPASTHR",
+    "WRKFCNUSG",
+    // --- journals and save file data (lic/slic/src/cpp/jrncmd.rs, savcmd.rs)
+    "CMPJRNIMG",
+    "SAVSAVFDTA",
     // --- physical file triggers (lic/slic/src/cpp/trgcmd.rs)
     "ADDPFTRG",
     "CHGPFTRG",
@@ -518,6 +528,16 @@ pub fn in_service_too(name: &str) -> bool {
 /// The commands `work/qsjob` runs in the job (`command/jobsite.rs` and
 /// the job words it bridges to).
 pub const JOB_SITE: &[&str] = &[
+    // --- security attributes and function usage (panels/system/fcnusg.rs)
+    "DSPFCNUSG",
+    "DSPSECA",
+    "WRKFCNUSG",
+    // --- journal receivers and RCVJRNE (panels/system/jrnrcv.rs, command/rcvjrne.rs)
+    "RCVJRNE",
+    "WRKJRNRCV",
+    // --- the TELNET client (command/telnet.rs)
+    "STRTCPTELN",
+    "TELNET",
     // --- panels: work management (work/qsjob/src/panels/work.rs)
     "WRKACTJOB",
     "DSPJOB",

@@ -45,6 +45,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "SAV" => return Some(sav(system, parms)),
         "RST" => return Some(rst_ifs(system, parms)),
         "DSPSAVF" => return Some(dspsavf(system, parms)),
+        "SAVSAVFDTA" => return Some(savsavfdta(system, parms)),
         _ => return None,
     };
     Some(match r {
@@ -1338,6 +1339,72 @@ fn read_savf(system: &mut System, name: &str, parms: &Parms) -> Result<Vec<u8>, 
         )));
     }
     Ok(stream)
+}
+
+/// `SAVSAVFDTA SAVF() DEV()`: the save file's stream onto tape or
+/// optical as the save that made it would have written it: labeled
+/// with the library saved (`QFILEIOC`, `QFILEUPR` for the system's
+/// saves), so `DSPTAP` shows the original save and `RSTLIB`/`RSTOBJ`
+/// read it back; `CPC3724` when it is written.
+fn savsavfdta(system: &mut System, parms: &Parms) -> CmdReply {
+    const NAME: &str = "SAVSAVFDTA";
+    let Some(m) = media_of(parms) else {
+        return failed(NAME, NO_DEVICE);
+    };
+    let savf_name = parms.qual("SAVF");
+    let stream = match in_store(system, |txn, qsys, names| {
+        let id = find_savf(txn, qsys, names, &savf_name)?;
+        may_read_savf(txn, qsys, id, &savf_name.0)?;
+        savf::read(txn, id).map_err(|e| e.to_string())
+    }) {
+        Ok(s) => s,
+        Err(e) => return failed(NAME, &e),
+    };
+    if stream.is_empty() {
+        return failed(NAME, &format!("{SAVF_EMPTY} {}", savf_name.0));
+    }
+    let (desc, _) = match stream_listing(&stream) {
+        Ok(l) => l,
+        Err(e) => return failed(NAME, &e),
+    };
+    // The listing's first two rows: the save command and the library.
+    let command = desc.first().map(|(_, v)| v.clone()).unwrap_or_default();
+    let lib = desc.get(1).map(|(_, v)| v.clone()).unwrap_or_default();
+    let (label, target) = match command.as_str() {
+        "SAVSECDTA" => (SECDTA_LABEL.to_string(), OptTarget::System("SAVSECDTA")),
+        "SAVCFG" => ("QFILEIOC".to_string(), OptTarget::System("SAVCFG")),
+        _ if lib.is_empty() => {
+            return failed(NAME, &format!("CPF3814 {}", savf_name.0));
+        }
+        _ => (lib.clone(), OptTarget::Library(&lib)),
+    };
+    match stream::save(system, &m, &label, target, &stream) {
+        Ok(w) => {
+            let mut reply = CmdReply {
+                text: written_line(&w),
+                ..CmdReply::default()
+            };
+            let savlib = lib_or(&savf_name.1);
+            reply.messages.push(message(
+                "CPC3724",
+                4,
+                &[
+                    ("", 10),
+                    ("", 10),
+                    ("", 10),
+                    ("", 10),
+                    ("", 10),
+                    ("", 10),
+                    ("", 10),
+                    ("", 10),
+                    (&savf_name.0, 10),
+                    (&savlib, 10),
+                ],
+            ));
+            reply
+        }
+        Err(e) => failed(NAME, &e),
+    }
 }
 
 /// `SAVSECDTA`: profiles and authorization lists to a save file.

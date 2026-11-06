@@ -6,8 +6,7 @@
 //! returns: for each profile, which of the eight programs of
 //! `QIBM_QWT_PREATTNPGMS` (`ATTN0100`) and `QIBM_QWT_SYSREQPGMS`
 //! (`SREQ0100`) its jobs call. They live in the user space
-//! `QUSRSYS/QWTPRFEXIT`, shipped `*PUBLIC *EXCLUDE` and read and
-//! written here as the system: a text payload, one line per profile,
+//! `QUSRSYS/QWTPRFEXIT` ([`crate::textspace`]), one line per profile,
 //! `USER ATTN0100 01000000 SREQ0100 00000000` after a `QPRFEXIT 1`
 //! header. A profile without a line calls none, as IBM's do until
 //! `QWTSETPX` is used.
@@ -15,11 +14,10 @@
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
-use qsname::Name;
-use store::obj::{CreateParams, ObjectId, ops, types, usrspc};
+use store::obj::ObjectId;
 use store::txn::Txn;
 
-use crate::error::{Result, SecError};
+use crate::error::Result;
 
 /// The space's library and name.
 pub const SPACE: (&str, &str) = ("QUSRSYS", "QWTPRFEXIT");
@@ -31,18 +29,9 @@ pub const FORMATS: [&str; 2] = ["ATTN0100", "SREQ0100"];
 /// Every profile's flags, by profile and format.
 pub type Flags = BTreeMap<String, BTreeMap<String, [bool; 8]>>;
 
-fn find(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<Option<ObjectId>> {
-    let lib = ops::find_library(txn, qsys, Name::parse(SPACE.0).expect("valid"))?.id;
-    let name = Name::parse(SPACE.1).expect("valid");
-    Ok(ops::list(txn, lib, Some(types::USRSPC))?
-        .into_iter()
-        .find(|(k, _)| k.name == name)
-        .map(|(_, id)| id))
-}
-
 fn decode(text: &str) -> Flags {
     let mut out = Flags::new();
-    for line in text.lines().skip(1) {
+    for line in text.lines() {
         let mut w = line.split_whitespace();
         let Some(user) = w.next() else { continue };
         let mut per = BTreeMap::new();
@@ -59,7 +48,7 @@ fn decode(text: &str) -> Flags {
 }
 
 fn encode(flags: &Flags) -> String {
-    let mut s = format!("{HEADER}\n");
+    let mut s = String::new();
     for (user, per) in flags {
         s.push_str(user);
         for (f, b) in per {
@@ -73,51 +62,21 @@ fn encode(flags: &Flags) -> String {
 
 /// Every profile's flags.
 pub fn load(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<Flags> {
-    crate::guard::as_system(|| {
-        let Some(id) = find(txn, qsys)? else {
-            return Ok(Flags::new());
-        };
-        let head = usrspc::read(txn, id, 0, 4)?;
-        let n = u32::from_be_bytes([head[0], head[1], head[2], head[3]]) as usize;
-        let body = usrspc::read(txn, id, 4, n)?;
-        Ok(decode(&String::from_utf8_lossy(&body)))
-    })
+    Ok(crate::textspace::load(txn, qsys, SPACE.1, HEADER)?
+        .map(|t| decode(&t))
+        .unwrap_or_default())
 }
 
 /// Write every profile's flags, making the space the first time.
 pub fn save(txn: &mut Txn<'_>, qsys: ObjectId, flags: &Flags, now: u64) -> Result<()> {
-    crate::guard::as_system(|| {
-        let text = encode(flags);
-        let mut data = u32::try_from(text.len())
-            .map_err(|_| SecError::msg("CPF3CF2", "too many profile exit settings"))?
-            .to_be_bytes()
-            .to_vec();
-        data.extend_from_slice(text.as_bytes());
-        let id = if let Some(id) = find(txn, qsys)? {
-            id
-        } else {
-            let lib = ops::find_library(txn, qsys, Name::parse(SPACE.0).expect("valid"))?.id;
-            usrspc::create(
-                txn,
-                &CreateParams {
-                    library: lib,
-                    name: Name::parse(SPACE.1).expect("valid"),
-                    type_code: types::USRSPC,
-                    attribute: String::new(),
-                    text: "Profile exit program settings".into(),
-                    owner: "QSYS".into(),
-                    system: String::new(),
-                    now,
-                    by_system: true,
-                },
-                4096,
-                true,
-                0,
-            )?
-        };
-        usrspc::write(txn, id, 0, &data)?;
-        Ok(())
-    })
+    crate::textspace::save(
+        txn,
+        qsys,
+        (SPACE.1, "Profile exit program settings"),
+        HEADER,
+        &encode(flags),
+        now,
+    )
 }
 
 /// `user`'s flags for `format`, all off when never set.

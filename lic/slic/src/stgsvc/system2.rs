@@ -42,6 +42,8 @@ pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<Sys2Dat
         "UPRF" => user_objects(system, &arg(0), &arg(1)),
         other => super::authdata::panel(system, other, args)
             .or_else(|| super::cppdata::panel(system, other, args))
+            .or_else(|| crate::cpp::fcncmd::panel(system, other, args))
+            .or_else(|| crate::cpp::jrncmd::panel(system, other, args))
             .unwrap_or_else(|| Err(format!("CPF9899 no panel data named {other}"))),
     }
 }

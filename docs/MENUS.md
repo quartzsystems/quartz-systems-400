@@ -366,11 +366,9 @@ not in this release.
 | `STRCPYSCN` | command | (c) | PROBLEM2, PROGRAM, TECHHELP | copy screen |
 | `STRCSP` | command | (c) | PROGRAM | Cross System Product |
 | `STREDU` | command | (c) | SUPPORT | online education |
-| `STRPASTHR` | command | (c) | CMN, NETPRB, USER2 | pass-through: the TN5250 client is the console's, not a job's |
 | `STRPGMMNU` | command | (c) | FILE, PROGRAM | programmer menu (System/38) |
 | `STRRMTSPT` | command | (c) | TECHHELP | remote support |
 | `STRSCHIDX` | command | (c) | SUPPORT | search index displays |
-| `STRTCPTELN` | command | (c) | TCPADM | TELNET client: as `STRPASTHR` |
 | `VFYAPPCCNN` | command | (c) | NETPRB 8 | APPC |
 | `VFYCMN` | command | (c) | CMN 7, NETPRB 3 | link tests; `PING` and `VFYTCPCNN` test TCP/IP |
 | `VFYTAP` | command | (c) | TAPE | tape drive tests |

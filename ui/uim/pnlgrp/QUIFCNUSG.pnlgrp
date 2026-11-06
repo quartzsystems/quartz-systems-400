@@ -1,0 +1,189 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIFCNUSG: WRKFCNUSG (the functions; option 2 prompts CHGFCNUSG,
+.* option 5 is DSPFCNUSG) and DSPFCNUSG, one function and the profiles
+.* with usage of their own, two to a row as the oracle lays them out.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=IDCL BASETYPE='CHAR 30'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 42'.
+:ECLASS.
+:CLASS NAME=VALCL BASETYPE='CHAR 50'.
+:ECLASS.
+:CLASS NAME=USERCL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TYPECL BASETYPE='CHAR 13'.
+:ECLASS.
+:CLASS NAME=USAGECL BASETYPE='CHAR 12'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=FCNID CLASS=IDCL.
+:VAR NAME=FCNNAME CLASS=NAMECL.
+:VAR NAME=FCNDESC CLASS=VALCL.
+:VAR NAME=FCNDESC2 CLASS=VALCL.
+:VAR NAME=FCNPROD CLASS=VALCL.
+:VAR NAME=FCNGRP CLASS=VALCL.
+:VAR NAME=FCNDFT CLASS=VALCL.
+:VAR NAME=FCNALLOBJ CLASS=VALCL.
+:VAR NAME=USER1 CLASS=USERCL.
+:VAR NAME=TYPE1 CLASS=TYPECL.
+:VAR NAME=USAGE1 CLASS=USAGECL.
+:VAR NAME=USER2 CLASS=USERCL.
+:VAR NAME=TYPE2 CLASS=TYPECL.
+:VAR NAME=USAGE2 CLASS=USAGECL.
+:LISTDEF NAME=FUNCTIONS VARS='OPT FCNID FCNNAME'.
+:LISTDEF NAME=USERS VARS='USER1 TYPE1 USAGE1 USER2 TYPE2 USAGE2'.
+:KEYL NAME=WRKKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F17 ACTION=TOP.F17=Top
+:KEYI KEY=F18 ACTION=BOTTOM.F18=Bottom
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:KEYL NAME=DSPKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F17 ACTION=TOP.F17=Top
+:KEYI KEY=F18 ACTION=BOTTOM.F18=Bottom
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=WRKFCNUSG KEYL=WRKKEYS HELP=WRKFCNH ENTER='RETURN 0'.Work with Function Usage
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=FUNCTIONS ACTLEN=1 SCROLL=YES.(No functions found.)
+:LISTACT OPTION=2 ENTER='CMD ?CHGFCNUSG FCNID(&FCNID.)' HELP='WRKFCNUSG/OPTIONS'.2=Change usage
+:LISTACT OPTION=5 ENTER='RETURN 55' HELP='WRKFCNUSG/OPTIONS'.5=Display usage
+:LISTCOL VAR=OPT USAGE=INPUT HELP='WRKFCNUSG/OPT'.Opt
+:LISTCOL VAR=FCNID USAGE=OUTPUT HELP='FLD/FCNID'.Function ID
+:LISTCOL VAR=FCNNAME USAGE=OUTPUT HELP='FLD/FCNNAME'.Function Name
+:ELIST.
+:CMDLINE SIZE=SHORT.Parameters for option 2 or command
+:EPANEL.
+:PANEL NAME=DSPFCNUSG KEYL=DSPKEYS HELP=DSPFCNH BOTSEP=NONE ENTER='RETURN 0'.Display Function Usage
+:DATA DEPTH=2.
+:DATACOL WIDTH=26.
+:DATACOL WIDTH=78.
+:DATAI VAR=FCNID USAGE=OUTPUT HELP='FLD/FCNID'.Function ID
+:DATAI VAR=FCNNAME USAGE=OUTPUT HELP='FLD/FCNNAME'.Function name
+:EDATA.
+:DATA DEPTH=4.
+:DATACOL WIDTH=26.
+:DATACOL WIDTH=78.
+:DATAC.
+:DATAI VAR=FCNDESC USAGE=OUTPUT HELP='FLD/FCNDESC'.Description
+:DATAI VAR=FCNDESC2 USAGE=OUTPUT HELP='FLD/FCNDESC'.
+:DATAC.
+:EDATA.
+:DATA DEPTH=2.
+:DATACOL WIDTH=26.
+:DATACOL WIDTH=78.
+:DATAI VAR=FCNPROD USAGE=OUTPUT HELP='FLD/FCNPROD'.Product
+:DATAI VAR=FCNGRP USAGE=OUTPUT HELP='FLD/FCNGRP'.Group
+:EDATA.
+:DATA DEPTH=4.
+:DATACOL WIDTH=44.
+:DATACOL WIDTH=78.
+:DATAC.
+:DATAI VAR=FCNDFT USAGE=OUTPUT HELP='FLD/FCNDFT'.Default authority
+:DATAI VAR=FCNALLOBJ USAGE=OUTPUT HELP='FLD/FCNALLOBJ'.*ALLOBJ special authority
+:DATAC.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=USERS SCROLL=YES.(No user profiles have usage information)
+:LISTCOL VAR=USER1 USAGE=OUTPUT HELP='FLD/USER'.User
+:LISTCOL VAR=TYPE1 USAGE=OUTPUT HELP='FLD/TYPE'.Type
+:LISTCOL VAR=USAGE1 USAGE=OUTPUT HELP='FLD/USAGE'.Usage
+:LISTCOL VAR=USER2 USAGE=OUTPUT HELP='FLD/USER'.User
+:LISTCOL VAR=TYPE2 USAGE=OUTPUT HELP='FLD/TYPE'.Type
+:LISTCOL VAR=USAGE2 USAGE=OUTPUT HELP='FLD/USAGE'.Usage
+:ELIST.
+:EPANEL.
+:HELP NAME=WRKFCNH.Work with Function Usage - Help
+:P.This display lists the functions a profile can be allowed or denied
+apart from the authority to objects. Option 2 changes a function's
+default, whether *ALLOBJ special authority allows it, or a profile's
+usage; option 5 shows them.
+:EHELP.
+:HELP NAME=DSPFCNH.Display Function Usage - Help
+:P.This display shows one function: what it controls, whether profiles
+may use it by default and whether *ALLOBJ special authority allows it,
+then the user and group profiles with usage of their own. A profile's
+own usage comes first, then its groups', then *ALLOBJ, then the
+default.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line.
+:PT.F5=Refresh
+:PD.Shows the functions again.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line.
+:PT.F12=Cancel
+:PD.Returns to the previous display.
+:PT.F17=Top
+:PD.Shows the first entries of the list.
+:PT.F18=Bottom
+:PD.Shows the last entries of the list.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKFCNUSG/OPTIONS'.Options
+:PARML.
+:PT.2=Change usage
+:PD.Prompts CHGFCNUSG for the function.
+:PT.5=Display usage
+:PD.Shows the function and the profiles with usage of their own.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKFCNUSG/OPT'.Opt
+:P.Type the option to use on the function.
+:EHELP.
+:HELP NAME='FLD/FCNID'.Function ID
+:P.The function's identifier, as programs and CHGFCNUSG name it.
+:EHELP.
+:HELP NAME='FLD/FCNNAME'.Function name
+:P.The function's name.
+:EHELP.
+:HELP NAME='FLD/FCNDESC'.Description
+:P.What the function controls.
+:EHELP.
+:HELP NAME='FLD/FCNPROD'.Product
+:P.The product the function belongs to.
+:EHELP.
+:HELP NAME='FLD/FCNGRP'.Group
+:P.The group of functions it belongs to, *NONE for none.
+:EHELP.
+:HELP NAME='FLD/FCNDFT'.Default authority
+:P.Whether a profile with no usage of its own, and no group with one,
+may use the function.
+:EHELP.
+:HELP NAME='FLD/FCNALLOBJ'.*ALLOBJ special authority
+:P.*USED: a profile with *ALLOBJ special authority may use the function
+whatever the default. *NOTUSED: it counts for nothing here.
+:EHELP.
+:HELP NAME='FLD/USER'.User
+:P.A user or group profile with usage of its own.
+:EHELP.
+:HELP NAME='FLD/TYPE'.Type
+:P.Whether the profile is a user or a group profile.
+:EHELP.
+:HELP NAME='FLD/USAGE'.Usage
+:P.*ALLOWED or *DENIED, for the profile.
+:EHELP.
+:EPNLGRP.

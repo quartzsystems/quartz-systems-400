@@ -1,0 +1,98 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIJRNRCV: WRKJRNRCV, the journal receivers a name selects. The first
+.* entry is blank: option 1 there creates one.
+:PNLGRP.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=RCV CLASS=NAMECL.
+:VAR NAME=RCVLIB CLASS=NAMECL.
+:VAR NAME=RCVTEXT CLASS=TEXTCL.
+:LISTDEF NAME=RCVS VARS='OPT RCV RCVLIB RCVTEXT'.
+:KEYL NAME=RCVKEYS HELP='KEYS/RCVKEYS'.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F11 ACTION='RETURN 11'.F11=Display names only
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F16 ACTION='RETURN 16'.F16=Repeat position to
+:KEYI KEY=F17 ACTION='RETURN 17'.F17=Position to
+:EKEYL.
+:PANEL NAME=WRKJRNRCV KEYL=RCVKEYS HELP=WRKJRNRCV ENTER='RETURN 1' TOPSEP=SPACE.Work with Journal Receivers
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=RCVS VIEWS=2 EXTACT=YES.(Cannot find object to match specified name.)
+:LISTACT OPTION=1 ACTFOR=EXTACT ENTER='RETURN 1' HELP='WRKJRNRCV/OPTIONS'.1=Create
+:LISTACT OPTION=4 ACTFOR=LISTE ENTER='CMD ?DLTJRNRCV JRNRCV(&RCVLIB./&RCV.)' HELP='WRKJRNRCV/OPTIONS'.4=Delete
+:LISTACT OPTION=5 ACTFOR=LISTE ENTER='CMD DSPJRNRCVA JRNRCV(&RCVLIB./&RCV.)' HELP='WRKJRNRCV/OPTIONS'.5=Display attributes
+:LISTACT OPTION=13 ACTFOR=LISTE ENTER='CMD ?CHGOBJD OBJ(&RCVLIB./&RCV.) OBJTYPE(*JRNRCV)' HELP='WRKJRNRCV/OPTIONS'.13=Change description
+:LISTCOL VAR=OPT USAGE=INPUT HELP='WRKJRNRCV/OPT'.Opt
+:LISTCOL VAR=RCV USAGE=OUTPUT EXTACT=YES HELP='FLD/RCV'.Journal     Receiver
+:LISTCOL VAR=RCVLIB USAGE=OUTPUT EXTACT=YES HELP='FLD/RCVLIB'.Library
+:LISTCOL VAR=RCVTEXT USAGE=OUTPUT HELP='FLD/RCVTEXT'.Text
+:LISTVIEW COLS='OPT RCV RCVLIB RCVTEXT'.
+:LISTVIEW COLS='OPT RCV RCVLIB'.
+:ELIST.
+:CMDLINE SIZE=SHORT.Parameters for options 1, 5 and 13 or command
+:EPANEL.
+:HELP NAME=WRKJRNRCV.Work with Journal Receivers - Help
+:P.The journal receivers the name selects. Type an option next to one to
+delete it, show its attributes or change its text; option 1 on the
+blank first line creates one with the name typed there.
+:EHELP.
+:HELP NAME='KEYS/RCVKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display.
+:PT.F4=Prompt
+:PD.Prompts the command on the command line.
+:PT.F5=Refresh
+:PD.Shows the receivers again.
+:PT.F9=Retrieve
+:PD.Puts the last command run back on the command line.
+:PT.F11=Display names only
+:PD.Shows the names alone, or the text again.
+:PT.F12=Cancel
+:PD.Returns to the previous display.
+:PT.F16=Repeat position to
+:PD.Finds the next receiver the last position starts with.
+:PT.F17=Position to
+:PD.Asks for a name to position the list at.
+:EPARML.
+:EHELP.
+:HELP NAME='WRKJRNRCV/OPTIONS'.Options
+:PARML.
+:PT.1=Create
+:PD.Creates a journal receiver (CRTJRNRCV).
+:PT.4=Delete
+:PD.Deletes the receiver (DLTJRNRCV).
+:PT.5=Display attributes
+:PD.Shows the receiver's attributes (DSPJRNRCVA).
+:PT.13=Change description
+:PD.Changes the receiver's text (CHGOBJD).
+:EPARML.
+:EHELP.
+:HELP NAME='WRKJRNRCV/OPT'.Opt
+:P.Type the option to use on the receiver.
+:EHELP.
+:HELP NAME='FLD/RCV'.Journal receiver
+:P.The receiver's name.
+:EHELP.
+:HELP NAME='FLD/RCVLIB'.Library
+:P.The library it is in.
+:EHELP.
+:HELP NAME='FLD/RCVTEXT'.Text
+:P.The receiver's text description.
+:EHELP.
+:EPNLGRP.

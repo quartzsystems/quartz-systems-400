@@ -71,6 +71,7 @@ pub fn run(
         "DSPSRVSTS" => service::dspsrvsts(host, surface, r),
         "DSPPFM" => pfm::dsppfm(host, surface, r),
         "WRKJRN" => jrn::wrkjrn(job, host, surface, r),
+        "WRKJRNRCV" => jrn::wrkjrnrcv(job, host, surface, r),
         "WRKJRNA" => jrn::wrkjrna(job, host, surface, r),
         "DSPJRN" => jrn::dspjrn(host, surface, r),
         "DSPJRNRCVA" => jrn::dspjrnrcva(host, surface, r),

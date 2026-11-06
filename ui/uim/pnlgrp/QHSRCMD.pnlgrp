@@ -4042,6 +4042,176 @@ when the file has none.
 :EPARML.
 :P.Also accepted&colon. *OBJ, *LIB, *ERR.
 :EHELP.
+:HELP NAME=SAVSAVFDTA.Save Save File Data (SAVSAVFDTA)
+:P.The Save Save File Data (SAVSAVFDTA) command works with a save file's
+contents onto tape or optical, as the save that made it would have
+written them, so RSTLIB and RSTOBJ restore from the media and DSPTAP
+shows the original save.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/SAVF'.Save file (SAVF)
+:P.The save file, by name and library.
+:P.A value is required.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/DEV'.Device (DEV)
+:P.The device for this command.
+:P.A value is required.
+:P.Up to 4 values can be given.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/VOL'.Volume identifier (VOL)
+:P.The volume identifier of the tape or optical volume. *MOUNTED uses
+whatever volume is in the device.
+:P.Up to 75 values can be given.
+:PARML.
+:PT.:PK DEF.*MOUNTED:EPK.
+:PD.Whatever volume is in the device.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 32 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/SEQNBR'.Sequence number (SEQNBR)
+:P.The sequence number for this command.
+:PARML.
+:PT.:PK DEF.*END:EPK.
+:PD.The end.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 16777215.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/EXPDATE'.File expiration date (EXPDATE)
+:P.The date after which the object or file can be deleted or
+overwritten. *PERM means it never expires.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*PERM:EPK.
+:PD.Permanent&colon. it never expires.
+:PT.:PV.date:EPV.
+:PD.Type a date in the date format of the job.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/ENDOPT'.End of media option (ENDOPT)
+:P.What the device does with the tape when the operation ends&colon.
+leave it where it is, rewind it, or rewind and unload it.
+:PARML.
+:PT.:PK DEF.*REWIND:EPK.
+:PD.The tape is rewound.
+:PT.:PK.*LEAVE:EPK.
+:PD.The tape stays where it is; the next operation goes on from there.
+:PT.:PK.*UNLOAD:EPK.
+:PD.The tape is rewound and unloaded.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/OPTFILE'.Optical file (OPTFILE)
+:P.The path of the file on the optical volume.
+:PARML.
+:PT.:PV.path-name:EPV.
+:PD.Type a path name of up to 256 characters.
+:EPARML.
+:P.When no value is given, '*' is used.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/USEOPTBLK'.Use optimum block (USEOPTBLK)
+:P.Whether the device's optimum block size is used. The tape may then
+not be readable on devices that do not support that size.
+:PARML.
+:PT.:PK DEF.*YES:EPK.
+:PD.Yes.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/CLEAR'.Clear (CLEAR)
+:P.The clear for this command.
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PK.*AFTER:EPK.
+:PD.After the reference entry.
+:PT.:PK.*REPLACE:EPK.
+:PD.What is there is replaced.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/COMPACT'.Data compaction (COMPACT)
+:P.Whether the device compacts data as it writes it to the tape.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*DEV:EPK.
+:PD.The value of the device.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/OUTPUT'.Output (OUTPUT)
+:P.Where the command sends what it produces&colon. to the display of an
+interactive job, or to a spooled file of the job's printer file. Some
+commands can also write it to a database file.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*PRINT:EPK.
+:PD.The output is printed with the job's spooled output.
+:PT.:PK.*OUTFILE:EPK.
+:PD.The output goes to the database file named by OUTFILE.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/OUTFILE'.File to receive output (OUTFILE)
+:P.The database file that receives the output when OUTPUT(*OUTFILE) is
+given. The file is created with the system's model format when it does
+not exist.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='SAVSAVFDTA/OUTMBR'.Output member options (OUTMBR)
+:P.The member of the output file that receives the records, and whether
+they replace the member's records or are added after them.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Member to receive output
+:PARML.
+:PT.:PK DEF.*FIRST:EPK.
+:PD.The first member of the file. A member with the file's name is added
+when the file has none.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:H4.Part 2&colon. Replace or add records
+:PARML.
+:PT.:PK DEF.*REPLACE:EPK.
+:PD.The member's records are cleared first.
+:PT.:PK.*ADD:EPK.
+:PD.The records are added after the member's records.
+:EPARML.
+:EHELP.
 :HELP NAME=SAVSECDTA.Save Security Data (SAVSECDTA)
 :P.Use the Save Security Data (SAVSECDTA) command to save user profiles,
 authorization lists and private authorities.

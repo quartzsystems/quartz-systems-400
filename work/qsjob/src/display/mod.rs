@@ -231,6 +231,12 @@ impl Display {
         });
     }
 
+    /// A record made elsewhere (a `TELNET` session's remote system) sent
+    /// as it is; the model no longer says what the screen shows.
+    pub fn write_raw(&mut self, opcode: u8, data: Vec<u8>) {
+        let _ = self.chan.send(&ToDevice::Write { opcode, data });
+    }
+
     /// The display was reset: send the last panel whole again, or the
     /// model as it stands when display files drew it.
     pub fn reset(&mut self, device: String) {

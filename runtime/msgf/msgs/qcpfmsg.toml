@@ -8556,7 +8556,7 @@ vars = ["*CHAR 28"]
 [[msg]]
 id = "CPF43A3"
 sev = 40
-text = "The SQL plan cache needs *JOBCTL special authority."
+text = "The SQL plan cache needs *JOBCTL special authority or the QIBM_DB_SQLADM function usage."
 help = "Dumping, clearing or resizing the plan cache works on every job's statements, so the user needs *JOBCTL special authority. Ask a security officer for it, or have such a user run the request."
 
 [[msg]]
@@ -8829,4 +8829,268 @@ id = "CPFB8E9"
 sev = 40
 text = "Thread &2 has no ASP group &1."
 help = "This system has no independent ASP groups; name *SYSBAS or *ALL."
+[[msg]]
+id = "CPF1666"
+sev = 40
+text = "Number of entries &1 is not from 1 to 8."
+help = "QWTSETPX takes from 1 to 8 exit program flags. Give a number in that range."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CPF8933"
+sev = 40
+text = "No route to the remote location was found."
+help = "5250 pass-through needs an APPC route to the remote location, and this system has none. Use TELNET to reach another system's displays."
+vars = []
+
+[[msg]]
+id = "CPF228C"
+sev = 40
+text = "Function ID &1 is not a registered function."
+help = "WRKFCNUSG lists the functions this system registers. Type one of them, or a generic name."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "CPI223E"
+sev = 0
+text = "No function matches."
+help = "No registered function matches the function ID given. WRKFCNUSG FCNID(*ALL) lists them all."
+vars = []
+
+[[msg]]
+id = "CPC2231"
+sev = 0
+text = "User ID numbers are now generated from &2 and group ID numbers from &4."
+help = "CHGSECA changed where generated numbers start. They had been &1 and &3. A number already in use is skipped."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD22B5"
+sev = 30
+text = "USER and USAGE go together."
+help = "Give both USER and USAGE to change a profile's usage of a function, or neither."
+vars = []
+
+[[msg]]
+id = "CPD8901"
+sev = 30
+text = "VRTCTL and VRTDEV cannot both be given."
+help = "Name a virtual controller or virtual display devices, not both."
+vars = []
+
+[[msg]]
+id = "CPD8902"
+sev = 30
+text = "RMTLOCNAME(*CNNDEV) needs CNNDEV device names."
+help = "Name the APPC devices to connect through on CNNDEV, or give a remote location name."
+vars = []
+
+[[msg]]
+id = "CPD8903"
+sev = 30
+text = "MODE, LCLLOCNAME and RMTNETID do not go with CNNDEV."
+help = "With RMTLOCNAME(*CNNDEV) the devices say the route; leave MODE, LCLLOCNAME and RMTNETID at their defaults."
+vars = []
+
+[[msg]]
+id = "CPD8904"
+sev = 30
+text = "This value needs a remote user."
+help = "RMTPWD, RMTINLPGM, RMTINLMNU and RMTCURLIB need RMTUSER other than *NONE."
+vars = []
+
+[[msg]]
+id = "CPD2707"
+sev = 30
+text = "A reserved mode name cannot be the user's mode."
+help = "SNASVCMG and CPSVCMG are the system's own modes. Name another mode."
+vars = []
+
+[[msg]]
+id = "CPD7061"
+sev = 30
+text = "FROMENT and FROMTIME do not go together."
+help = "Start the entries by sequence number or by time, not both."
+vars = []
+
+[[msg]]
+id = "CPD7062"
+sev = 30
+text = "TOENT and TOTIME do not go together."
+help = "End the entries by sequence number or by time, not both."
+vars = []
+
+[[msg]]
+id = "CPD7056"
+sev = 30
+text = "FROMENTLRG and FROMTIME do not go together."
+help = "Start the entries by sequence number or by time, not both."
+vars = []
+
+[[msg]]
+id = "CPD7057"
+sev = 30
+text = "TOENTLRG and TOTIME do not go together."
+help = "End the entries by sequence number or by time, not both."
+vars = []
+
+[[msg]]
+id = "CPD705A"
+sev = 30
+text = "FROMENTLRG and FROMENT do not go together."
+help = "Give the starting sequence number once."
+vars = []
+
+[[msg]]
+id = "CPD705B"
+sev = 30
+text = "TOENTLRG and TOENT do not go together."
+help = "Give the ending sequence number once."
+vars = []
+
+[[msg]]
+id = "CPD705C"
+sev = 30
+text = "CCIDLRG and CMTCYCID do not go together."
+help = "Give the commit cycle once."
+vars = []
+
+[[msg]]
+id = "CPD7028"
+sev = 30
+text = "JOB, PGM, USRPRF, CCIDLRG and CMTCYCID do not go with CMPOPT(*AFTER)."
+help = "Comparing after images with the previous after image takes no entry selection but the record number."
+vars = []
+
+[[msg]]
+id = "CPD7029"
+sev = 30
+text = "CMPOPT(*AFTER) needs a record number."
+help = "Give RCDNBR with CMPOPT(*AFTER)."
+vars = []
+
+[[msg]]
+id = "CPD7063"
+sev = 30
+text = "DELAY needs TOENT(*NONE) and TOENTLRG(*NONE)."
+help = "Waiting for new entries goes on without an end; leave the ending sequence number at *NONE."
+vars = []
+
+[[msg]]
+id = "CPD7064"
+sev = 30
+text = "NULLINDLEN goes only with ENTFMT(*TYPE3), *TYPE4, *TYPEPTR or *JRNENTFMT."
+help = "The *TYPE1 and *TYPE2 formats have no null value indicators."
+vars = []
+
+[[msg]]
+id = "CPD70F7"
+sev = 30
+text = "NULLINDLEN(*VARLEN) does not go with this entry format."
+help = "Give a length for the null value indicators, or another entry format."
+vars = []
+
+[[msg]]
+id = "CPD70FC"
+sev = 30
+text = "RTNPTR goes only with ENTFMT(*JRNENTFMT)."
+help = "Leave RTNPTR at its default, or choose ENTFMT(*JRNENTFMT)."
+vars = []
+
+[[msg]]
+id = "CPD70FD"
+sev = 30
+text = "JRNENTFMT goes only with ENTFMT(*JRNENTFMT)."
+help = "Leave JRNENTFMT at its default, or choose ENTFMT(*JRNENTFMT)."
+vars = []
+
+[[msg]]
+id = "CPD700D"
+sev = 30
+text = "FILE does not go with OBJ or OBJPATH."
+help = "Select the objects with FILE, or with OBJ and OBJPATH, not both."
+vars = []
+
+[[msg]]
+id = "CPD700E"
+sev = 30
+text = "PATTERN and SUBTREE need OBJPATH."
+help = "Give the paths on OBJPATH to choose by pattern or subtree."
+vars = []
+
+[[msg]]
+id = "CPD371E"
+sev = 30
+text = "OUTPUT(*OUTFILE) needs OUTFILE."
+help = "Name the file to receive the output."
+vars = []
+
+[[msg]]
+id = "CPD371F"
+sev = 30
+text = "OUTFILE needs OUTPUT(*OUTFILE)."
+help = "Give OUTPUT(*OUTFILE), or leave OUTFILE out."
+vars = []
+
+[[msg]]
+id = "CPD9867"
+sev = 30
+text = "OUTMBR needs OUTFILE."
+help = "Name the output file the member is in."
+vars = []
+
+[[msg]]
+id = "CPD0150"
+sev = 30
+text = "These parameters go together."
+help = "A parameter given needs another that was not given, or the values given do not go together."
+vars = []
+
+[[msg]]
+id = "CPF7062"
+sev = 40
+text = "No entries were received from journal &1."
+help = "No entry of the journal matched the selection in the receivers chosen."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF7060"
+sev = 40
+text = "The object was not journaled in the receivers chosen."
+help = "Choose the receivers the file was journaled to (RCVRNG), or the file journaled now."
+vars = []
+
+[[msg]]
+id = "CPC3724"
+sev = 0
+text = "The objects in save file &9 in &10 were saved to media."
+help = "SAVSAVFDTA wrote the save file's contents as the save that made it had; RSTLIB and RSTOBJ restore them from the media."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF3814"
+sev = 40
+text = "No objects from save file &1 in &2 were saved to media."
+help = "The save file holds no save QS/400 can write to media. DSPSAVF shows what it holds."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC7029"
+sev = 0
+text = "&7 entries were compared for member &3."
+help = "CMPJRNIMG printed the differences it found in spooled file QPCMPIMG."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC7061"
+sev = 0
+text = "&4 entries were received from journal &1 in &2."
+help = "RCVJRNE handed the program each entry that matched."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF70AF"
+sev = 40
+text = "Exit program &2/&1 failed."
+help = "The program RCVJRNE hands the entries to could not be called or ended in an exception; no more entries were received."
 vars = ["*CHAR 10", "*CHAR 10"]

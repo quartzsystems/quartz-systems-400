@@ -242,6 +242,15 @@ pub fn may_display(target_user: &str, job: &str) -> Result<(), String> {
     }
 }
 
+/// Whether the actor may use function `id` (`sec::fcnusg`); the
+/// system may use every one.
+pub fn function_allowed(system: &mut System, id: &str) -> bool {
+    let Some(me) = actor() else {
+        return true;
+    };
+    crate::svc::security::in_store(system, |txn, env| sec::fcnusg::check(txn, env.qsys, &me, id)).unwrap_or(false)
+}
+
 /// A scheduling priority beyond the actor's `PTYLMT` is refused with
 /// `CPF1337`, as the machine does (`RUNPTY` against ten times the limit).
 pub fn check_priority(kw: &str, value: &str) -> Result<(), String> {
@@ -688,7 +697,7 @@ pub fn chg_pwd(
     let program = sysval_text(system, "QPWDVLDPGM");
     let program = program.split_whitespace().next().unwrap_or("*NONE");
     if !program.starts_with('*') && !validated {
-        return Err("CPF22D3 The password approval program was not run.".into());
+        return Err("CPF22D3".into());
     }
     let vals = crate::svc::security::sysvals(system);
     let get = |n: &str| vals.get(n).cloned().unwrap_or_default();

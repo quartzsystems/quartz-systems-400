@@ -18,6 +18,8 @@ pub(crate) mod clpgm;
 mod cmncmd;
 mod cmntrc;
 pub(crate) mod cstcmd;
+pub(crate) mod fcncmd;
+pub(crate) mod jrncmd;
 mod trgcmd;
 mod dbcmd;
 mod dbmoncmd;
@@ -113,6 +115,8 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| msgfcmd::run(system, name, parms))
             .or_else(|| cstcmd::run(system, name, parms))
             .or_else(|| trgcmd::run(system, name, parms))
+            .or_else(|| fcncmd::run(system, name, parms))
+            .or_else(|| jrncmd::run(system, name, parms))
             .or_else(|| dbcmd::run(system, name, parms))
             .or_else(|| dbmoncmd::run(system, name, parms))
             .or_else(|| sqlinfcmd::run(system, name, parms))

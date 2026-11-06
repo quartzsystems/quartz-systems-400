@@ -248,6 +248,22 @@ fn joblog_of(
     super::security::freshen(system, session);
     let q = ctx.job.qualified();
     sec::guard::as_job(session, || super::security::may_display(&ctx.job.user, &q))?;
+    // The log of a job with *ALLOBJ takes QIBM_ACCESS_ALLOBJ_JOBLOG
+    // from a *JOBCTL user who is not its own.
+    let target_allobj = ctx.session.borrow().principal.has(sec::profile::SpecialAuth::ALLOBJ);
+    let other = sec::guard::as_job(session, || {
+        super::security::actor().is_some_and(|p| p.user != ctx.job.user)
+    });
+    if target_allobj && other {
+        let entries = super::joblog::entries(ctx);
+        let allowed = sec::guard::as_job(session, || {
+            super::security::function_allowed(system, "QIBM_ACCESS_ALLOBJ_JOBLOG")
+        });
+        if !allowed {
+            return Err(format!("CPF1343 {q} QIBM_ACCESS_ALLOBJ_JOBLOG"));
+        }
+        return Ok(entries);
+    }
     Ok(super::joblog::entries(ctx))
 }
 

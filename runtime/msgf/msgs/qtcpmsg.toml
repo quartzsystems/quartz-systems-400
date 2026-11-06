@@ -867,3 +867,73 @@ sev = 40
 text = "Value &2 is not valid for system value &1."
 help = "The system value takes only values of its type and, for some, only the values listed for it. Check the value with WRKSYSVAL and try again."
 vars = ["*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "TCP101A"
+sev = 30
+text = "Host &1 was not found."
+help = "Neither the host table nor the name servers know the remote system's name. Check the name, or give its internet address."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "TCP10B0"
+sev = 30
+text = "Host &1 at address &2 did not take the connection."
+help = "Nothing answered on the port, or the connection was refused. Try again later, or check that the remote system's TELNET server is started."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "TCP2504"
+sev = 0
+text = "The TELNET session ended and its connection is closed."
+help = "The remote system signed the session off or closed the connection."
+vars = []
+
+[[msg]]
+id = "TCP2534"
+sev = 40
+text = "The TELNET session could not start."
+help = "The remote system did not agree to a 5250 session. QS/400's TELNET makes 5250 sessions only; VT and 3270 sessions are not part of this release."
+vars = []
+
+[[msg]]
+id = "TCP2591"
+sev = 40
+text = "The TELNET server did not answer."
+help = "The connection was made but nothing came back in the time INZWAIT allows."
+vars = []
+
+[[msg]]
+id = "TCP9095"
+sev = 30
+text = "RMTSYS and INTNETADR do not go together."
+help = "Give RMTSYS(*INTNETADR) with INTNETADR, or a remote system name without it."
+vars = []
+
+[[msg]]
+id = "TCP2511"
+sev = 30
+text = "The 3270 mapping table parameters do not go together."
+help = "KBDTYPE(*TRNTBL) needs both TBL3270OUT and TBL3270IN; another keyboard type needs neither."
+vars = []
+
+[[msg]]
+id = "TCP258A"
+sev = 30
+text = "A remote user needs a remote password."
+help = "Give RMTPWD with RMTUSER."
+vars = []
+
+[[msg]]
+id = "TCP258B"
+sev = 30
+text = "RMTUSER and RMTPWD do not go together."
+help = "RMTUSER(*NONE) takes RMTPWD(*NONE)."
+vars = []
+
+[[msg]]
+id = "TCP2590"
+sev = 40
+text = "The TELNET client failed. Reason &1."
+help = "The client could not go on with the connection; the reason says why."
+vars = ["*CHAR *VARY 2"]

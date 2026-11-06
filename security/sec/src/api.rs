@@ -128,6 +128,14 @@ pub enum Query {
         /// The format.
         format: String,
     },
+    /// Whether `user` may use function `function` (`QSYCKUFU`'s
+    /// question; the FTP server and client ask it per request).
+    FunctionUsage {
+        /// The user, `*CURRENT` for the asker.
+        user: String,
+        /// The function ID.
+        function: String,
+    },
     /// `QWTSETPX`: set them; each byte 1 call, 0 do not, 0xFF keep.
     SetProfileExits {
         /// The user, `*CURRENT` for the asker.
@@ -156,6 +164,7 @@ wire_enum!(Query {
     13 => SetPassword { user, data },
     14 => ProfileExits { user, format },
     15 => SetProfileExits { user, format, values },
+    16 => FunctionUsage { user, function },
 });
 
 /// One object an answer lists.
@@ -532,15 +541,23 @@ pub fn answer(
             if let Query::SetProfileExits { values, .. } = q {
                 let v: Vec<i32> = values.iter().map(|b| i32::from(i8::from_ne_bytes([*b]))).collect();
                 crate::prfexit::set(&mut flags, &u, format, &v);
-                let now = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .map_or(0, |d| d.as_secs());
-                crate::prfexit::save(txn, qsys, &flags, now)?;
+                crate::prfexit::save(txn, qsys, &flags, crate::textspace::now())?;
                 Answer::Done
             } else {
                 Answer::Bytes {
                     data: crate::prfexit::of(&flags, &u, format).iter().map(|b| u8::from(*b)).collect(),
                 }
+            }
+        }
+        Query::FunctionUsage { user, function } => {
+            let u = who(user);
+            let p = if other(user) {
+                Principal::load(txn, qsys, &u, me.qsecurity)?
+            } else {
+                me.clone()
+            };
+            Answer::Yes {
+                yes: crate::fcnusg::check(txn, qsys, &p, function)?,
             }
         }
         Query::GetHandle { .. }

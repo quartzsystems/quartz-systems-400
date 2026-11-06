@@ -11,7 +11,7 @@ mod bench;
 pub(crate) mod ddmf;
 pub(crate) mod dspf;
 pub mod files;
-mod journal;
+pub(crate) mod journal;
 pub(crate) mod prtf;
 mod rla;
 mod sqlcmd;

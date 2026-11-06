@@ -1136,3 +1136,51 @@ note = "QSDBCST WRKPFCST (panels/work2/cst.rs), its list from the service (cstcm
 [cmd.EDTCPCST]
 site = "job"
 note = "QSDBCST EDTCPCST (panels/work2/cst.rs): the constraints in check pending; a sequence number verifies one again (CHGPFCST STATE(*ENABLED)) in sequence order, *HLD leaves it"
+
+# --- security attributes and function usage (lic/slic/src/cpp/fcncmd.rs;
+# the job's panels in work/qsjob/src/panels/system/fcnusg.rs)
+[cmd.CHGSECA]
+note = "*SECADM; where generated user and group ID numbers start (QUSRSYS/QSYSECA)"
+
+[cmd.DSPSECA]
+site = "job"
+note = "a panel at a display; the service's text otherwise"
+
+[cmd.CHGFCNUSG]
+note = "*SECADM; the function usage registry (QUSRSYS/QSYFCNUSG)"
+
+[cmd.DSPFCNUSG]
+site = "job"
+note = "a panel at a display; the service's text otherwise"
+
+[cmd.WRKFCNUSG]
+site = "job"
+note = "a panel at a display (options 2 and 5); the service's listing otherwise"
+
+[cmd.STRPASTHR]
+note = "refused CPF8933: pass-through needs APPC, which QS/400 does not have; TELNET instead"
+
+# --- journals (lic/slic/src/cpp/jrncmd.rs; the job's RCVJRNE calls its exit program)
+[cmd.WRKJRNRCV]
+site = "job"
+note = "a panel only: no text form outside a display"
+
+[cmd.RCVJRNE]
+site = "job"
+note = "the entries from the service, the exit program called in the job"
+
+[cmd.CMPJRNIMG]
+note = "the differences printed to QPCMPIMG"
+
+# --- save file data to media (lic/slic/src/cpp/savcmd.rs)
+[cmd.SAVSAVFDTA]
+note = "the save file's stream written to tape or optical as the original save"
+
+# --- the TELNET client (work/qsjob/src/command/telnet.rs)
+[cmd.TELNET]
+site = "job"
+note = "5250 sessions only (TCP2534 for a server that will not run one)"
+
+[cmd.STRTCPTELN]
+site = "job"
+note = "TELNET's other name"

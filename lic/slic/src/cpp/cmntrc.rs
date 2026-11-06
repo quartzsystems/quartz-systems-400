@@ -25,7 +25,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         return None;
     }
     let obj = parms.name("CFGOBJ");
-    let r = authorized().and_then(|()| match name {
+    let r = authorized(system).and_then(|()| match name {
         "STRCMNTRC" => start(parms, &obj).map(|m| vec![m]),
         "ENDCMNTRC" => cfgtype(parms).and_then(|t| trc::end(&obj, t)).map(|m| vec![m]),
         "DLTCMNTRC" => cfgtype(parms).and_then(|t| trc::delete(&obj, t)).map(|m| vec![m]),
@@ -39,12 +39,17 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
     })
 }
 
-/// `*SERVICE`, as the service tools ask.
-fn authorized() -> Result<(), Msg> {
+/// `*SERVICE` or the `QIBM_SERVICE_TRACE` function usage, as IBM asks.
+fn authorized(system: &mut System) -> Result<(), Msg> {
     let Some(session) = sec::guard::current() else {
         return Ok(());
     };
     let p = session.borrow().principal.clone();
+    if p.has(sec::profile::SpecialAuth::SERVICE)
+        || crate::stgsvc::security::function_allowed(system, "QIBM_SERVICE_TRACE")
+    {
+        return Ok(());
+    }
     p.require(sec::profile::SpecialAuth::SERVICE, "communications trace")
         .map_err(|_| Msg::new(msg::TRC_NOT_AUTH, Kind::Escape, "Using the communications trace needs *SERVICE special authority."))
 }

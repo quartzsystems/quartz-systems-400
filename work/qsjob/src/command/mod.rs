@@ -19,9 +19,11 @@ pub mod jobsite;
 pub mod natives;
 pub mod nettools;
 pub mod prompt;
+pub mod rcvjrne;
 pub mod netcmd;
 pub mod tcp;
 pub mod tcpsvr;
+pub mod telnet;
 pub mod uiapi;
 
 use std::fmt::Write as _;

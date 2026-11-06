@@ -251,6 +251,49 @@ enable it; only QSECOFR may run it.
 :EPARML.
 :P.Also accepted&colon. *DEFAULT.
 :EHELP.
+:HELP NAME=CHGFCNUSG.Change Function Usage (CHGFCNUSG)
+:P.The Change Function Usage (CHGFCNUSG) command works with a function's
+default, its *ALLOBJ use, a profile's usage.
+:EHELP.
+:HELP NAME='CHGFCNUSG/FCNID'.Function ID (FCNID)
+:P.The function ID for this command.
+:P.A value is required.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 30 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CHGFCNUSG/USER'.User (USER)
+:P.The user for this command.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CHGFCNUSG/USAGE'.Usage (USAGE)
+:P.The usage for this command.
+:PARML.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *ALLOWED, *DENIED.
+:EHELP.
+:HELP NAME='CHGFCNUSG/DEFAULT'.Default authority (DEFAULT)
+:P.The default authority for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:EPARML.
+:P.Also accepted&colon. *ALLOWED, *DENIED.
+:EHELP.
+:HELP NAME='CHGFCNUSG/ALLOBJAUT'.*ALLOBJ special authority (ALLOBJAUT)
+:P.The *ALLOBJ special authority for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:EPARML.
+:P.Also accepted&colon. *USED, *NOTUSED.
+:EHELP.
 :HELP NAME=CHGOBJAUD.Change Object Auditing (CHGOBJAUD)
 :P.Use the Change Object Auditing (CHGOBJAUD) command to set the
 auditing value of objects.
@@ -1126,6 +1169,30 @@ alter and reference.
 the signed-on user; the old and new passwords are entered on a screen,
 so the command has no parameters.
 :P.The command has no parameters.
+:EHELP.
+:HELP NAME=CHGSECA.Change Security Attributes (CHGSECA)
+:P.Use the Change Security Attributes (CHGSECA) command to where
+generated user and group ID numbers start.
+:EHELP.
+:HELP NAME='CHGSECA/UID'.User ID number (UID)
+:P.The user ID number for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PV.number:EPV.
+:PD.Type a number of up to 10 digits. The value must be from 101 to
+4294967294.
+:EPARML.
+:EHELP.
+:HELP NAME='CHGSECA/GID'.Group ID number (GID)
+:P.The group ID number for this command.
+:PARML.
+:PT.:PK DEF.*SAME:EPK.
+:PD.The value does not change.
+:PT.:PV.number:EPV.
+:PD.Type a number of up to 10 digits. The value must be from 101 to
+4294967294.
+:EPARML.
 :EHELP.
 :HELP NAME=CHGSECAUD.Change Security Auditing (CHGSECAUD)
 :P.Use the Change Security Auditing (CHGSECAUD) command to set the
@@ -3293,6 +3360,33 @@ when the file has none.
 :PD.The records are added after the member's records.
 :EPARML.
 :EHELP.
+:HELP NAME=DSPFCNUSG.Display Function Usage (DSPFCNUSG)
+:P.Use the Display Function Usage (DSPFCNUSG) command to one or more
+functions and the profiles' usage of them.
+:EHELP.
+:HELP NAME='DSPFCNUSG/FCNID'.Function ID (FCNID)
+:P.The function ID for this command.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.generic-name:EPV.
+:PD.Type a name of up to 30 characters, or a generic name&colon.
+characters that end with an asterisk (*) select every name that starts
+with them.
+:EPARML.
+:EHELP.
+:HELP NAME='DSPFCNUSG/OUTPUT'.Output (OUTPUT)
+:P.Where the command sends what it produces&colon. to the display of an
+interactive job, or to a spooled file of the job's printer file. Some
+commands can also write it to a database file.
+:PARML.
+:PT.:PK DEF.*:EPK.
+:PD.The output is shown at the display of an interactive job, and
+printed for a batch job.
+:PT.:PK.*PRINT:EPK.
+:PD.The output is printed with the job's spooled output.
+:EPARML.
+:EHELP.
 :HELP NAME=DSPOBJAUT.Display Object Authority (DSPOBJAUT)
 :P.Use the Display Object Authority (DSPOBJAUT) command to show the
 owner, primary group, authorization list and the authorities of an
@@ -3571,6 +3665,22 @@ when the file has none.
 :P.The type of authority for this command.
 :P.The prompt shows this parameter after F10 (Additional parameters).
 :P.Also accepted&colon. *OBJECT, *FIELD.
+:EHELP.
+:HELP NAME=DSPSECA.Display Security Attributes (DSPSECA)
+:P.The Display Security Attributes (DSPSECA) command works with the
+security attributes&colon. next ID numbers, levels, DST flags.
+:EHELP.
+:HELP NAME='DSPSECA/OUTPUT'.Output (OUTPUT)
+:P.Where the command sends what it produces&colon. to the display of an
+interactive job, or to a spooled file of the job's printer file. Some
+commands can also write it to a database file.
+:PARML.
+:PT.:PK DEF.*:EPK.
+:PD.The output is shown at the display of an interactive job, and
+printed for a batch job.
+:PT.:PK.*PRINT:EPK.
+:PD.The output is printed with the job's spooled output.
+:EPARML.
 :EHELP.
 :HELP NAME=DSPSECAUD.Display Security Auditing (DSPSECAUD)
 :P.Use the Display Security Auditing (DSPSECAUD) command to show the
@@ -6071,6 +6181,163 @@ change its owner or what secures it.
 :EPARML.
 :P.Also accepted&colon. *AUTL.
 :EHELP.
+:HELP NAME=STRPASTHR.Start Pass-Through (STRPASTHR)
+:P.Use the Start Pass-Through (STRPASTHR) command to 5250 display
+station pass-through runs over APPC, which QS/400 does not have&colon.
+no remote location is found (CPF8933).
+:EHELP.
+:HELP NAME='STRPASTHR/RMTLOCNAME'.Remote location (RMTLOCNAME)
+:P.The remote location name of the system at the other end of the
+connection.
+:P.A value is required.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 8 characters.
+:EPARML.
+:P.Also accepted&colon. *CNNDEV.
+:EHELP.
+:HELP NAME='STRPASTHR/VRTCTL'.Virtual controller (VRTCTL)
+:P.The virtual controller for this command.
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRPASTHR/VRTDEV'.Virtual display device (VRTDEV)
+:P.The virtual display device for this command.
+:P.Up to 32 values can be given.
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRPASTHR/MODE'.Mode (MODE)
+:P.The mode for this command.
+:PARML.
+:PT.:PK DEF.*NETATR:EPK.
+:PD.The value of the network attributes (DSPNETA).
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 8 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRPASTHR/LCLLOCNAME'.Local location (LCLLOCNAME)
+:P.The local location name this system uses on the connection.
+:PARML.
+:PT.:PK DEF.*LOC:EPK.
+:PD.The location.
+:PT.:PK.*NETATR:EPK.
+:PD.The value of the network attributes (DSPNETA).
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 8 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRPASTHR/RMTNETID'.Remote network identifier (RMTNETID)
+:P.The network identifier of the remote location.
+:PARML.
+:PT.:PK DEF.*LOC:EPK.
+:PD.The location.
+:PT.:PK.*NETATR:EPK.
+:PD.The value of the network attributes (DSPNETA).
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 8 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRPASTHR/SRQ10PGM'.System request program (SRQ10PGM)
+:P.The system request program for this command.
+:PARML.
+:EPARML.
+:P.Also accepted&colon. *SRQMNU.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRPASTHR/CNNDEV'.APPC device (CNNDEV)
+:P.The APPC device for this command.
+:P.Up to 16 values can be given.
+:PARML.
+:PT.:PK DEF.*LOC:EPK.
+:PD.The location.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRPASTHR/RMTUSER'.User profile (RMTUSER)
+:P.The user profile for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*CURRENT:EPK.
+:PD.The current one.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRPASTHR/RMTPWD'.User password (RMTPWD)
+:P.The user password for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 128 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRPASTHR/RMTINLPGM'.Initial program to call (RMTINLPGM)
+:P.The initial program to call for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *RMTUSRPRF.
+:EHELP.
+:HELP NAME='STRPASTHR/RMTINLMNU'.Initial menu (RMTINLMNU)
+:P.The initial menu for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *RMTUSRPRF, *SIGNOFF.
+:EHELP.
+:HELP NAME='STRPASTHR/RMTCURLIB'.Current library (RMTCURLIB)
+:P.The current library for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *RMTUSRPRF.
+:EHELP.
+:HELP NAME='STRPASTHR/PASTHRSCN'.Display option (PASTHRSCN)
+:P.Whether to display option.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*YES:EPK.
+:PD.Yes.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:EPARML.
+:EHELP.
 :HELP NAME=WRKAUT.Work with Authority (WRKAUT)
 :P.The Work with Authority (WRKAUT) command works with an IFS object's
 authorities, with options to change them.
@@ -6117,6 +6384,21 @@ commands can also write it to a database file.
 printed for a batch job.
 :PT.:PK.*PRINT:EPK.
 :PD.The output is printed with the job's spooled output.
+:EPARML.
+:EHELP.
+:HELP NAME=WRKFCNUSG.Work with Function Usage (WRKFCNUSG)
+:P.The Work with Function Usage (WRKFCNUSG) command works with the
+function usage registry, options 2 and 5.
+:EHELP.
+:HELP NAME='WRKFCNUSG/FCNID'.Function ID (FCNID)
+:P.The function ID for this command.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.generic-name:EPV.
+:PD.Type a name of up to 30 characters, or a generic name&colon.
+characters that end with an asterisk (*) select every name that starts
+with them.
 :EPARML.
 :EHELP.
 :HELP NAME=WRKOBJOWN.Work with Objects by Owner (WRKOBJOWN)

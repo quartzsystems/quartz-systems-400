@@ -1,0 +1,82 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUISECA: DSPSECA, the security attributes.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=VALCL BASETYPE='CHAR 30'.
+:ECLASS.
+:VAR NAME=SAUID CLASS=VALCL.
+:VAR NAME=SAGID CLASS=VALCL.
+:VAR NAME=SASECLVL CLASS=VALCL.
+:VAR NAME=SAPWDLVL CLASS=VALCL.
+:VAR NAME=SASYSVAL CLASS=VALCL.
+:VAR NAME=SACERT CLASS=VALCL.
+:VAR NAME=SASTPWD CLASS=VALCL.
+:KEYL NAME=DSPKEYS HELP='KEYS/DSPKEYS'.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+.* The labels that go on are indented with non-breaking blanks.
+:PANEL NAME=DSPSECA HELP=HLPSECA KEYL=DSPKEYS TOPSEP=SYSNAM.Display Security Attributes
+:DATA DEPTH='*' SCROLL=NO.
+:DATACOL WIDTH=44.
+:DATACOL WIDTH=78.
+:DATAI VAR=SAUID USAGE=OUTPUT HELP='FLD/SAUID'.User ID number
+:DATAI VAR=SAGID USAGE=OUTPUT HELP='FLD/SAGID'.Group ID number
+:DATAI VAR=SASECLVL USAGE=OUTPUT HELP='FLD/SASECLVL'.Security level
+:DATAI VAR=SAPWDLVL USAGE=OUTPUT HELP='FLD/SAPWDLVL'.Password level
+:DATAC.Allow change of security related system
+:DATAI VAR=SASYSVAL USAGE=OUTPUT HELP='FLD/SASYSVAL'.  values
+:DATAI VAR=SACERT USAGE=OUTPUT HELP='FLD/SACERT'.Allow add of digital certificates
+:DATAC.Allow service tools user ID with default
+:DATAC.  and expired password to change its own
+:DATAI VAR=SASTPWD USAGE=OUTPUT HELP='FLD/SASTPWD'.  password
+:EDATA.
+:EPANEL.
+:HELP NAME=HLPSECA.Display Security Attributes - Help
+:P.This display shows where the next generated user and group ID numbers
+come from, the security and password levels, and the three security
+choices dedicated service tools keep. CHGSECA changes the ID numbers;
+CHGSYSVAL the levels; DST the choices.
+:EHELP.
+:HELP NAME='KEYS/DSPKEYS'.Function keys
+:PARML.
+:PT.F3=Exit
+:PD.Ends the display and returns to where it was started from.
+:PT.F12=Cancel
+:PD.Returns to the previous display.
+:EPARML.
+:EHELP.
+:HELP NAME='FLD/SAUID'.User ID number
+:P.The number the next user profile made without a UID gets: the start
+CHGSECA set, skipping numbers in use, or one past the highest in use.
+:EHELP.
+:HELP NAME='FLD/SAGID'.Group ID number
+:P.The number the next group profile made without a GID gets, chosen the
+same way.
+:EHELP.
+:HELP NAME='FLD/SASECLVL'.Security level
+:P.The QSECURITY system value.
+:EHELP.
+:HELP NAME='FLD/SAPWDLVL'.Password level
+:P.The QPWDLVL system value.
+:EHELP.
+:HELP NAME='FLD/SASYSVAL'.Allow change of security related system values
+:P.Whether the security system values may change. Only dedicated service
+tools change this choice.
+:EHELP.
+:HELP NAME='FLD/SACERT'.Allow add of digital certificates
+:P.Whether certificates may be added to the certificate stores. Only
+dedicated service tools change this choice.
+:EHELP.
+:HELP NAME='FLD/SASTPWD'.Service tools user IDs with expired default passwords
+:P.Whether a service tools user ID whose password is its default and has
+expired may change its own password. Only dedicated service tools change
+this choice.
+:EHELP.
+:EPNLGRP.

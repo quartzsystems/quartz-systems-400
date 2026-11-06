@@ -164,4 +164,433 @@ set the data is in, or is to be converted to.
 :PD.The value does not change.
 :EPARML.
 :EHELP.
+:HELP NAME=STRTCPTELN.Start TCP/IP TELNET (STRTCPTELN)
+:P.Use the Start TCP/IP TELNET (STRTCPTELN) command to TELNET's other
+name; a 5250 session with another system from this display, over TN5250
+(RFC 2877 and 4777).
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTSYS'.Remote system (RMTSYS)
+:P.The remote system, by host name or internet address.
+:P.A value is required.
+:PARML.
+:PT.:PK.*INTNETADR:EPK.
+:PD.The internet address given in INTNETADR.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 255 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/INTNETADR'.Internet address (INTNETADR)
+:P.An internet address in dotted decimal form (IPv4) or in colon form
+(IPv6).
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 64 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/CTLCHAR'.Control character key (CTLCHAR)
+:P.The control characters in the data&colon. none, or the first
+character of each record as a FORTRAN control character.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 1 characters.
+:EPARML.
+:P.When no value is given, '&amp.' is used.
+:EHELP.
+:HELP NAME='STRTCPTELN/KBDTYPE'.Keyboard language type (KBDTYPE)
+:P.The keyboard language type for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*LCL:EPK.
+:PD.Local.
+:EPARML.
+:P.Also accepted&colon. AGB, AGE, AGI, AGM, ALI, ALM, BGB, BGE, BLI,
+BLM, BRB, BRE, CAB, CAE, CAI, CAM, CLB, CLE, CSB, CSE, CYB, DMB, DME,
+DMI, DMM, ESB, FAB, FAE, FAI, FAM, FNB, FNE, FNI, FNM, FQB, FQI, GKB,
+GNB, GNE, HIB, HNB, HNE, ICB, ICE, ICI, ICM, INB, INI, IRB, ITB, ITE,
+ITI, ITM, JEB, JEI, JKB, JPB, JPE, JUB, KAB, KOB, LAB, LAE, LTB, LVB,
+MKB, MKE, NCB, NCE, NEB, NEE, NEI, NEM, NWB, NWE, NWI, NWM, PKB, PKE,
+PLB, PLE, PRB, PRE, PRI, PRM, RCB, RMB, RME, ROB, ROE, RUB, RUE, SFI,
+SFM, SGI, SGM, SKB, SKE, SPB, SPE, SPI, SPM, SQB, SQE, SSB, SSE, SSI,
+SSM, SWB, SWE, SWI, SWM, TAB, THB, THE, TKB, TKE, TRB, TRE, UAB, UAE,
+UKB, UKE, UKI, UKM, USB, USE, USI, USM, VNB, VNE, YGI, YGM, *TRNTBL.
+:EHELP.
+:HELP NAME='STRTCPTELN/PAGEUP'.Page Up (Roll Down) key (PAGEUP)
+:P.The page Up (Roll Down) key for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *PA2, *PA1, *PA3, *F1, *F2, *F3, *F4, *F5, *F6,
+*F7, *F8, *F9, *F10, *F11, *F12, *F13, *F14, *F15, *F16, *F17, *F18,
+*F19, *F20, *F21, *F22, *F23, *F24, *CLEAR, *ERASEINP, *CSRSLT.
+:EHELP.
+:HELP NAME='STRTCPTELN/PAGEDOWN'.Page Down (Roll Up) key (PAGEDOWN)
+:P.The page Down (Roll Up) key for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *PA1, *PA2, *PA3, *F1, *F2, *F3, *F4, *F5, *F6,
+*F7, *F8, *F9, *F10, *F11, *F12, *F13, *F14, *F15, *F16, *F17, *F18,
+*F19, *F20, *F21, *F22, *F23, *F24, *CLEAR, *ERASEINP, *CSRSLT.
+:EHELP.
+:HELP NAME='STRTCPTELN/CSRSLT'.Cursor Select key (CSRSLT)
+:P.The cursor Select key for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *F1, *F2, *F3, *F4, *F5, *F6, *F7, *F8, *F9,
+*F10, *F11, *F12, *F13, *F14, *F15, *F16, *F17, *F18, *F19, *F20, *F21,
+*F22, *F23, *F24.
+:EHELP.
+:HELP NAME='STRTCPTELN/TBLVTOUT'.Outgoing EBCDIC/ASCII table (TBLVTOUT)
+:P.The outgoing EBCDIC/ASCII table for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*CCSID:EPK.
+:PD.The CCSID determines the conversion.
+:PT.:PK.*DFT:EPK.
+:PD.The default value.
+:EPARML.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/TBLVTIN'.Incoming ASCII/EBCDIC table (TBLVTIN)
+:P.The incoming ASCII/EBCDIC table for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*CCSID:EPK.
+:PD.The CCSID determines the conversion.
+:PT.:PK.*DFT:EPK.
+:PD.The default value.
+:EPARML.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/TBL3270OUT'.Outgoing 3270 mapping table (TBL3270OUT)
+:P.The outgoing 3270 mapping table for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:EPARML.
+:P.Also accepted&colon. *KBDTYPE.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/TBL3270IN'.Incoming 3270 mapping table (TBL3270IN)
+:P.The incoming 3270 mapping table for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:EPARML.
+:P.Also accepted&colon. *KBDTYPE.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/INZWAIT'.Timeout wait for host (INZWAIT)
+:P.The timeout wait for host for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*NOMAX:EPK.
+:PD.No limit.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 32767.
+:EPARML.
+:P.When no value is given, 120 is used.
+:EHELP.
+:HELP NAME='STRTCPTELN/NUMLCK'.Numeric lock keyboard (NUMLCK)
+:P.Whether to numeric lock keyboard.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.No.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/NULLS'.Handle nulls (NULLS)
+:P.The handle nulls for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*BLANK:EPK.
+:PD.Blanks&colon. no value.
+:EPARML.
+:P.Also accepted&colon. *REMOVE.
+:EHELP.
+:HELP NAME='STRTCPTELN/TBLVTDRWO'.ASCII full screen draw out (TBLVTDRWO)
+:P.The ASCII full screen draw out for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*DFT:EPK.
+:PD.The default value.
+:EPARML.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/TBLVTDRWI'.ASCII full screen draw in (TBLVTDRWI)
+:P.The ASCII full screen draw in for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*DFT:EPK.
+:PD.The default value.
+:EPARML.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/VTOPT'.ASCII full screen options (VTOPT)
+:P.The ASCII full screen options for this command.
+:P.Up to 3 values can be given.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:EPARML.
+:P.Also accepted&colon. *LOCALECHO, *AUTOWRAP, *NEWLINE.
+:EHELP.
+:HELP NAME='STRTCPTELN/DSPCHRATTR'.Display character attributes (DSPCHRATTR)
+:P.Whether to display character attributes.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:PT.:PK DEF.*YES:EPK.
+:PD.Yes.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/PAGESCROLL'.ASCII page scroll feature (PAGESCROLL)
+:P.Whether to ASCII page scroll feature.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.No.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/ANSWERBACK'.ASCII answerback feature (ANSWERBACK)
+:P.The ASCII answerback feature for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 20 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/TABSTOP'.ASCII tab stops (TABSTOP)
+:P.The ASCII tab stops for this command.
+:P.Up to 10 values can be given.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*DFT:EPK.
+:PD.The default value.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 0 to 133.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/CCSID'.Coded character set identifier (CCSID)
+:P.The coded character set identifier&colon. the code page and character
+set the data is in, or is to be converted to.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 65533.
+:EPARML.
+:P.Also accepted&colon. *MULTINAT, *BRITISH, *DUTCH, *FINNISH, *FRENCH,
+*FRENCHCAN, *GERMAN, *ITALIAN, *NORDAN, *SPANISH, *SWEDISH, *SWISS.
+:EHELP.
+:HELP NAME='STRTCPTELN/ASCOPRMOD'.ASCII operating mode ID (ASCOPRMOD)
+:P.The ASCII operating mode ID for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:P.Also accepted&colon. *VT220B7, *VT220B8, *VT100, *VT52.
+:EHELP.
+:HELP NAME='STRTCPTELN/PORT'.Port (PORT)
+:P.The TCP or UDP port number.
+:PARML.
+:PT.:PK DEF.*DFT:EPK.
+:PD.The default value.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 65534.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTVRTDSP'.Remote virtual display (RMTVRTDSP)
+:P.The remote virtual display for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*DFT:EPK.
+:PD.The default value.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTUSER'.Remote user (RMTUSER)
+:P.The remote user for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*CURRENT:EPK.
+:PD.The current one.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTPWD'.Remote password (RMTPWD)
+:P.The remote password for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 128 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTPWDENC'.Remote password encryption (RMTPWDENC)
+:P.The remote password encryption for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *DES7, *SHA1.
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTINLPGM'.Remote initial program (RMTINLPGM)
+:P.The remote initial program for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *RMTUSRPRF.
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTINLMNU'.Remote initial menu (RMTINLMNU)
+:P.The remote initial menu for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *RMTUSRPRF, *SIGNOFF.
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTCURLIB'.Remote current library (RMTCURLIB)
+:P.The remote current library for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *RMTUSRPRF.
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTKBDTYPE'.Remote keyboard type (RMTKBDTYPE)
+:P.The remote keyboard type for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*LCL:EPK.
+:PD.Local.
+:EPARML.
+:P.Also accepted&colon. *RMTSYS.
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTCODPAG'.Remote codepage (RMTCODPAG)
+:P.The remote codepage for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*LCL:EPK.
+:PD.Local.
+:EPARML.
+:P.Also accepted&colon. *RMTSYS.
+:EHELP.
+:HELP NAME='STRTCPTELN/RMTCHRSET'.Remote character set (RMTCHRSET)
+:P.The remote character set for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*LCL:EPK.
+:PD.Local.
+:EPARML.
+:P.Also accepted&colon. *RMTSYS.
+:EHELP.
+:HELP NAME='STRTCPTELN/SSL'.Secure connection (SSL)
+:P.The secure connection for this command.
+:PARML.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:PT.:PK.*NO:EPK.
+:PD.No.
+:EPARML.
+:P.Also accepted&colon. *ENVVAR.
+:EHELP.
 :EPNLGRP.

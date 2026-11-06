@@ -72,14 +72,20 @@ pub fn is_group(txn: &mut Txn<'_>, qsys: ObjectId, name: &str) -> Result<bool> {
     Ok(!members(txn, qsys, name)?.is_empty())
 }
 
-/// The next free `UID` (`which` false) or `GID` (true).
+/// The next free `UID` (`which` false) or `GID` (true): from where
+/// `CHGSECA` set it to start, else one past the highest in use.
 pub fn next_id(txn: &mut Txn<'_>, qsys: ObjectId, gid: bool) -> Result<u32> {
-    let mut top = FIRST_ID - 1;
+    let mut used = Vec::new();
     for name in objects::list(txn, qsys)? {
         let (_, p) = objects::read(txn, qsys, &name)?;
-        top = top.max(if gid { p.gid } else { p.uid });
+        let n = if gid { p.gid } else { p.uid };
+        if n != 0 {
+            used.push(n);
+        }
     }
-    Ok(top + 1)
+    let starts = crate::seca::load(txn, qsys)?;
+    let start = if gid { starts.gid } else { starts.uid };
+    Ok(crate::seca::next(&used, start, FIRST_ID))
 }
 
 /// Give each of `p`'s groups a `GID` if it has none, as IBM does when a

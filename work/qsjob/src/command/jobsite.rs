@@ -110,6 +110,9 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
                 return res;
             }
         }
+        // --- RCVJRNE and the TELNET client (command/rcvjrne.rs, telnet.rs)
+        "RCVJRNE" => return super::rcvjrne::run(job, host, r),
+        "TELNET" | "STRTCPTELN" => return super::telnet::run(job, host, r),
         // --- the FTP client (command/ftp.rs, net/ftp)
         "FTP" | "STRTCPFTP" => return super::ftp::run(job, host, r, out),
         // --- DDM and DRDA (command/ddm.rs)

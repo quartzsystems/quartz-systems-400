@@ -258,6 +258,20 @@ impl Host for JobHost {
     }
 
     fn exit(&mut self, point: &str, req: &ExitRequest) -> ExitAnswer {
+        // The function usage first: a denied one refuses before any program.
+        if crate::command::exits::ftp_usage(&self.link, req) == Some(false) {
+            return ExitAnswer {
+                allow: false,
+                outputs: req.parms(),
+                called: vec![regfac::Called {
+                    point: point.into(),
+                    format: req.format().into(),
+                    failed: Some("CPF2207".into()),
+                    ..regfac::Called::default()
+                }],
+                error: None,
+            };
+        }
         let mut reg = stg::remote::RemoteRegistry::new(Rc::clone(&self.link));
         match reg.programs(point, req.format()) {
             Ok(p) if p.is_empty() => ExitAnswer {

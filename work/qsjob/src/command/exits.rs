@@ -116,12 +116,7 @@ fn prepare(job: &mut Job, host: &Host, point: &str, format: &str, r: &Resolved) 
         Fail::new("CPF18C7", "")
     } else {
         let pgm = who.rsplit('/').next().unwrap_or_default();
-        let data = regfac::text::fixed(pgm, 10);
-        Fail {
-            msgid: "CPF18C3".into(),
-            data,
-            text: format!("Exit program {who} said the restricted state cannot be reached."),
-        }
+        Fail::msg("CPF18C3", &[(pgm, 10)])
     })
 }
 
@@ -216,4 +211,40 @@ pub(crate) fn service_with_exits(
         }
         _ => service(job, host, r, out),
     }
+}
+
+/// The FTP client and server's function usage (`QIBM_QTMF_CLIENT_REQ_n`,
+/// `QIBM_QTMF_SERVER_REQ_n`) for a `VLRQ0100` request: the session's
+/// function (`_0`) and the operation's, where IBM registers one, for
+/// the request's user. `None` when the request is not one of these.
+pub fn ftp_usage(link: &stg::Shared, req: &ExitRequest) -> Option<bool> {
+    let ExitRequest::Validate(v) = req else {
+        return None;
+    };
+    let side = match v.app {
+        regfac::formats::tcp::app::FTP_SERVER => "SERVER",
+        regfac::formats::tcp::app::FTP_CLIENT => "CLIENT",
+        _ => return None,
+    };
+    let user = if v.user.trim().is_empty() || v.user.starts_with('*') {
+        "*CURRENT".to_string()
+    } else {
+        v.user.trim().to_ascii_uppercase()
+    };
+    let mut ids = vec![format!("QIBM_QTMF_{side}_REQ_0")];
+    if v.op != 0 {
+        ids.push(format!("QIBM_QTMF_{side}_REQ_{}", v.op));
+    }
+    for id in ids.iter().filter(|id| sec::fcnusg::function(id).is_some()) {
+        let q = sec::api::Query::FunctionUsage {
+            user: user.clone(),
+            function: id.clone(),
+        };
+        match link.borrow_mut().with(|l| stg::Client::sec_api(l, q)) {
+            // A profile that cannot be read uses nothing.
+            Ok(sec::api::Answer::Yes { yes: false }) | Err(_) => return Some(false),
+            Ok(_) => {}
+        }
+    }
+    Some(true)
 }

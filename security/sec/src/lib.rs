@@ -14,14 +14,17 @@ pub mod audit;
 pub mod auth;
 pub mod cmd;
 mod error;
+pub mod fcnusg;
 pub mod guard;
 pub mod level;
 pub mod password;
 pub mod prfexit;
 pub mod profile;
 pub mod rec;
+pub mod seca;
 pub mod signon;
 pub mod spec;
 pub mod sysval;
+pub mod textspace;
 
 pub use error::{Result, SecError};

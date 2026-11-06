@@ -1312,3 +1312,123 @@ help = "Text of the interactive SQL displays and reports (STRSQL): the key that 
 id = "TXT0A52"
 text = "F24=More keys"
 help = "Text of the interactive SQL displays and reports (STRSQL): the key that shows the other function keys."
+
+[[msg]]
+id = "TXT0B01"
+text = "User ID number"
+help = "Text of DSPSECA's printed or text form: the next generated user ID number's label."
+
+[[msg]]
+id = "TXT0B02"
+text = "Group ID number"
+help = "Text of DSPSECA's printed or text form: the next generated group ID number's label."
+
+[[msg]]
+id = "TXT0B03"
+text = "Security level"
+help = "Text of DSPSECA's printed or text form: QSECURITY's label."
+
+[[msg]]
+id = "TXT0B04"
+text = "Password level"
+help = "Text of DSPSECA's printed or text form: QPWDLVL's label."
+
+[[msg]]
+id = "TXT0B05"
+text = "Security system values may change"
+help = "Text of DSPSECA's printed or text form: the DST choice over the security system values."
+
+[[msg]]
+id = "TXT0B06"
+text = "Digital certificates may be added"
+help = "Text of DSPSECA's printed or text form: the DST choice over adding certificates."
+
+[[msg]]
+id = "TXT0B07"
+text = "Service tools IDs may change expired default passwords"
+help = "Text of DSPSECA's printed or text form: the DST choice over service tools user IDs."
+
+[[msg]]
+id = "TXT0B10"
+text = "Function ID"
+help = "Text of DSPFCNUSG's printed or text form: the function's identifier."
+
+[[msg]]
+id = "TXT0B11"
+text = "Function name"
+help = "Text of DSPFCNUSG's printed or text form: the function's name."
+
+[[msg]]
+id = "TXT0B12"
+text = "Description"
+help = "Text of DSPFCNUSG's printed or text form: what the function controls."
+
+[[msg]]
+id = "TXT0B13"
+text = "Product"
+help = "Text of DSPFCNUSG's printed or text form: the product the function belongs to."
+
+[[msg]]
+id = "TXT0B14"
+text = "Group"
+help = "Text of DSPFCNUSG's printed or text form: the function's group."
+
+[[msg]]
+id = "TXT0B15"
+text = "Default authority"
+help = "Text of DSPFCNUSG's printed or text form: whether a profile may use it by default."
+
+[[msg]]
+id = "TXT0B16"
+text = "*ALLOBJ special authority"
+help = "Text of DSPFCNUSG's printed or text form: whether *ALLOBJ allows it."
+
+[[msg]]
+id = "TXT0B17"
+text = "(No user profiles have usage information)"
+help = "Text of DSPFCNUSG's printed or text form: no profile has usage of its own."
+
+[[msg]]
+id = "TXT0B18"
+text = "User"
+help = "Text of DSPFCNUSG's printed or text form: a user profile, in the Type column."
+
+[[msg]]
+id = "TXT0B19"
+text = "Group"
+help = "Text of DSPFCNUSG's printed or text form: a group profile, in the Type column."
+
+[[msg]]
+id = "TXT0B20"
+text = "Journal images compared: file &1, member &2"
+help = "Text of CMPJRNIMG's report (QPCMPIMG): the heading."
+vars = ["*CHAR 21", "*CHAR 10"]
+
+[[msg]]
+id = "TXT0B21"
+text = "Compare option &1, output format &2"
+help = "Text of CMPJRNIMG's report (QPCMPIMG): the options the report was made with."
+vars = ["*CHAR 6", "*CHAR 5"]
+
+[[msg]]
+id = "TXT0B22"
+text = "Record &1, entries &2 and &3"
+help = "Text of CMPJRNIMG's report (QPCMPIMG): a changed record and the two entries compared."
+vars = ["*CHAR 20", "*CHAR 20", "*CHAR 20"]
+
+[[msg]]
+id = "TXT0B23"
+text = "At &1, before: &2"
+help = "Text of CMPJRNIMG's report (QPCMPIMG): where a run of bytes differs and what it was."
+vars = ["*CHAR 10", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "TXT0B24"
+text = "after: &1"
+help = "Text of CMPJRNIMG's report (QPCMPIMG): what the run became."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "TXT0B25"
+text = "No differences."
+help = "Text of CMPJRNIMG's report (QPCMPIMG): no change of the selection differs."

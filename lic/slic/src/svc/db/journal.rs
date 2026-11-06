@@ -528,3 +528,153 @@ fn public(txn: &mut store::Txn<'_>, id: store::obj::ObjectId, p: &Params) -> Res
     let a = sec::auth::bits::Auth::parse(&[aut.as_str()], false).map_err(|e| format!("CPD0084 AUT({aut}): {e}"))?;
     sec::auth::grant::set_public(txn, id, Some(a)).map_err(|e| e.to_string())
 }
+
+/// The entry as RCVJRNE and the outfiles show it: a record-level
+/// entry's data is the record image's bytes.
+fn as_shown(e: &jrn::Entry) -> jrn::Entry {
+    let mut e = e.clone();
+    if e.code == b'R'
+        && let Ok(img) = jrn::RecordImage::decode(&e.data)
+    {
+        e.data = img.record;
+    }
+    e
+}
+
+/// `RCVJRNE`'s entries: `line` is the `dspjrn` filter; each matching
+/// entry as a `*TYPE1` record (`QJORDJE`'s layout), and the last
+/// sequence number seen (0 for none).
+pub fn type1_entries(system: &mut System, line: &str) -> Result<(Vec<Vec<u8>>, u64), String> {
+    let p = Params::parse(line);
+    let qual = p.pos_or(0, "JRN")?;
+    let f = filter(&p)?;
+    let local = system
+        .sysvals
+        .as_ref()
+        .map_or(0, |v| i64::from(v.zone().offset_at(now())));
+    let datfmt = system
+        .attrs
+        .get(&system.current_job)
+        .map_or_else(|| "*YMD".to_string(), |a| a.datfmt.clone());
+    let (store, ctx) = db(system)?;
+    with_txn(store, |txn| {
+        let jid = typed_id(txn, ctx, &qual, jrn::JRN)?;
+        let entries = jrn::dspjrn(txn, jid, &f).map_err(|e| jrn_err(&e))?;
+        let shown: Vec<jrn::Entry> = entries.iter().map(as_shown).collect();
+        let longest = shown.iter().map(|e| e.data.len()).max().unwrap_or(0);
+        let fmt = acg::type1_definition(longest)?.format;
+        let last = shown.last().map_or(0, |e| e.seq);
+        let records = shown
+            .iter()
+            .map(|e| acg::type1_record(&fmt, e, local, &datfmt))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok((records, last))
+    })
+}
+
+/// One change `CMPJRNIMG` compares: the record number, the sequence
+/// numbers and the images.
+struct Change {
+    rrn: u64,
+    seqs: (u64, u64),
+    before: Vec<u8>,
+    after: Vec<u8>,
+}
+
+/// A change with its differing byte runs: offset from 1, before, after.
+pub struct Compared {
+    /// The record number.
+    pub rrn: u64,
+    /// The two entries' sequence numbers.
+    pub seqs: (u64, u64),
+    /// The runs that differ.
+    pub runs: Vec<(usize, Vec<u8>, Vec<u8>)>,
+}
+
+/// `CMPJRNIMG FILE() MBR() CMPOPT() RCDNBR()`: the journal the file is
+/// journaled to, its `R` entries for the member compared; the changes
+/// that differ and how many entries were compared.
+pub fn cmpjrnimg(
+    system: &mut System,
+    (file, mbr): (&str, &str),
+    after_only: bool,
+    rcdnbr: Option<u64>,
+) -> Result<(Vec<Compared>, usize), String> {
+    let (store, ctx) = db(system)?;
+    with_txn(store, |txn| {
+        let fid = file_id(txn, ctx, file)?;
+        let desc = db::file::describe(txn, fid).map_err(|e| db_err(&e))?;
+        if desc.attr.journal == store::obj::ObjectId::NONE {
+            return Err(format!("CPF7060 {file}"));
+        }
+        let name = object_name(file)?;
+        let lib = match name.schema.as_ref() {
+            Some(s) => Some(Name::parse(&s.value).map_err(|e| e.to_string())?),
+            None => None,
+        };
+        let member = if mbr.is_empty() || mbr == "*FIRST" {
+            None
+        } else {
+            Some(Name::parse(mbr).map_err(|e| e.to_string())?)
+        };
+        let f = Filter {
+            object: Some((lib, Name::parse(&name.name.value).map_err(|e| e.to_string())?, member)),
+            codes: vec![b'R'],
+            ..Filter::default()
+        };
+        let entries = jrn::dspjrn(txn, desc.attr.journal, &f).map_err(|e| jrn_err(&e))?;
+        let mut changes = Vec::new();
+        let mut compared = 0;
+        let mut last_after: std::collections::HashMap<u64, (u64, Vec<u8>)> = std::collections::HashMap::new();
+        let mut pending: Option<(u64, u64, Vec<u8>)> = None;
+        for e in &entries {
+            let img = as_shown(e).data;
+            match &e.kind {
+                b"UB" => pending = Some((e.count, e.seq, img)),
+                b"UP" => {
+                    compared += 1;
+                    if after_only {
+                        if rcdnbr.is_none_or(|n| n == e.count)
+                            && let Some((s, prev)) = last_after.get(&e.count)
+                        {
+                            changes.push(Change { rrn: e.count, seqs: (*s, e.seq), before: prev.clone(), after: img.clone() });
+                        }
+                    } else if let Some((rrn, s, before)) = pending.take()
+                        && rrn == e.count
+                        && rcdnbr.is_none_or(|n| n == rrn)
+                    {
+                        changes.push(Change { rrn, seqs: (s, e.seq), before, after: img.clone() });
+                    }
+                    last_after.insert(e.count, (e.seq, img));
+                }
+                b"PT" | b"PX" => {
+                    last_after.insert(e.count, (e.seq, img));
+                }
+                _ => {}
+            }
+        }
+        let out = changes
+            .into_iter()
+            .map(|c| {
+                let n = c.before.len().max(c.after.len());
+                let mut runs = Vec::new();
+                let mut i = 0;
+                while i < n {
+                    if c.before.get(i) == c.after.get(i) {
+                        i += 1;
+                        continue;
+                    }
+                    let start = i;
+                    while i < n && c.before.get(i) != c.after.get(i) {
+                        i += 1;
+                    }
+                    let part = |b: &[u8]| b.get(start..i.min(b.len())).unwrap_or(&[]).to_vec();
+                    runs.push((start + 1, part(&c.before), part(&c.after)));
+                }
+                Compared { rrn: c.rrn, seqs: c.seqs, runs }
+            })
+            .filter(|c| !c.runs.is_empty())
+            .collect();
+        Ok((out, compared))
+    })
+}

@@ -443,6 +443,229 @@ work-with and display commands next to its name.
 :PD.Type up to 50 characters.
 :EPARML.
 :EHELP.
+:HELP NAME=CMPJRNIMG.Compare Journal Images (CMPJRNIMG)
+:P.The Compare Journal Images (CMPJRNIMG) command works with the before
+and after images of a journaled file's record changes compared, the
+differences printed (QPCMPIMG).
+:EHELP.
+:HELP NAME='CMPJRNIMG/FILE'.File (FILE)
+:P.The file, by name and library.
+:P.A value is required.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/MBR'.Member (MBR)
+:P.The member for this command.
+:PARML.
+:PT.:PK DEF.*FIRST:EPK.
+:PD.The first one.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/RCVRNG'.Range of journal receivers (RCVRNG)
+:P.The range of journal receivers for this command.
+:PARML.
+:PT.:PK DEF.*CURRENT:EPK.
+:PD.The current one.
+:EPARML.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Starting journal receiver
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:H4.Part 2&colon. Ending journal receiver
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/FROMENTLRG'.Starting large sequence number (FROMENTLRG)
+:P.The starting large sequence number for this command.
+:PARML.
+:PT.:PK DEF.*FIRST:EPK.
+:PD.The first one.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 20 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/FROMENT'.Starting sequence number (FROMENT)
+:P.The starting sequence number for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*FIRST:EPK.
+:PD.The first one.
+:PT.:PV.number:EPV.
+:PD.Type a number of up to 15 digits. The value must be from 1 to
+9999999999.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/FROMTIME'.Starting date and time (FROMTIME)
+:P.The starting date and time for this command.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Starting date
+:PARML.
+:PT.:PV.date:EPV.
+:PD.Type a date in the date format of the job.
+:EPARML.
+:H4.Part 2&colon. Starting time
+:PARML.
+:PT.:PV.time:EPV.
+:PD.Type a time of day&colon. hours, minutes and seconds.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/TOENTLRG'.Ending large sequence number (TOENTLRG)
+:P.The ending large sequence number for this command.
+:PARML.
+:PT.:PK DEF.*LAST:EPK.
+:PD.The last one.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 20 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/TOENT'.Ending sequence number (TOENT)
+:P.The ending sequence number for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*LAST:EPK.
+:PD.The last one.
+:PT.:PV.number:EPV.
+:PD.Type a number of up to 15 digits. The value must be from 1 to
+9999999999.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/TOTIME'.Ending date and time (TOTIME)
+:P.The ending date and time for this command.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Ending date
+:PARML.
+:PT.:PV.date:EPV.
+:PD.Type a date in the date format of the job.
+:EPARML.
+:H4.Part 2&colon. Ending time
+:PARML.
+:PT.:PV.time:EPV.
+:PD.Type a time of day&colon. hours, minutes and seconds.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/CMPOPT'.Compare option (CMPOPT)
+:P.The compare option for this command.
+:PARML.
+:PT.:PK DEF.*BOTH:EPK.
+:PD.Both.
+:PT.:PK.*AFTER:EPK.
+:PD.After the reference entry.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/RCDNBR'.Record number (RCDNBR)
+:P.The record number for this command.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be at least 1.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/JOB'.Job name (JOB)
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:EPARML.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.User&colon. the name can be qualified by it.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Number&colon. the name can be qualified by it.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 6 characters. The value must be from 000000 to 999999.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/PGM'.Program (PGM)
+:P.The program the command calls or works on, by name and library.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/USRPRF'.User profile (USRPRF)
+:P.The user profile the command uses.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/CCIDLRG'.Commit cycle large identifier (CCIDLRG)
+:P.The commit cycle large identifier for this command.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 20 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/CMTCYCID'.Commit cycle identifier (CMTCYCID)
+:P.The commit cycle identifier for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.number:EPV.
+:PD.Type a number of up to 15 digits. The value must be from 1 to
+9999999999.
+:EPARML.
+:EHELP.
+:HELP NAME='CMPJRNIMG/OUTFMT'.Output format (OUTFMT)
+:P.The format of the output.
+:PARML.
+:PT.:PK DEF.*CHAR:EPK.
+:PD.Character.
+:PT.:PK.*HEX:EPK.
+:PD.Hexadecimal&colon. the characters are compared by their code values,
+and no conversion is done.
+:EPARML.
+:EHELP.
 :HELP NAME=CRTJRN.Create Journal (CRTJRN)
 :P.Use the Create Journal (CRTJRN) command to create a journal attached
 to a journal receiver.
@@ -1181,6 +1404,466 @@ journaling of physical files.
 :EPARML.
 :P.Also accepted&colon. *ERRORS.
 :EHELP.
+:HELP NAME=RCVJRNE.Receive Journal Entry (RCVJRNE)
+:P.The Receive Journal Entry (RCVJRNE) command works with a journal's
+entries handed one at a time to an exit program in IBM's *TYPEn layouts.
+:EHELP.
+:HELP NAME='RCVJRNE/JRN'.Journal (JRN)
+:P.The journal, by name and library.
+:P.A value is required.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/EXITPGM'.Program to receive entries (EXITPGM)
+:P.The program to receive entries for this command.
+:P.A value is required.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/FILE'.Journaled file (FILE)
+:P.The file, by name and library.
+:P.Up to 300 values can be given.
+:PARML.
+:EPARML.
+:P.Also accepted&colon. *ALLFILE.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. File
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:H4.Part 2&colon. Member
+:PARML.
+:PT.:PK DEF.*FIRST:EPK.
+:PD.The first one.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/RCVRNG'.Range of journal receivers (RCVRNG)
+:P.The range of journal receivers for this command.
+:PARML.
+:PT.:PK DEF.*CURRENT:EPK.
+:PD.The current one.
+:PT.:PK.*CURCHAIN:EPK.
+:PD.The receivers of the current chain.
+:EPARML.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Starting journal receiver
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:H4.Part 2&colon. Ending journal receiver
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/FROMENT'.Starting sequence number (FROMENT)
+:P.The starting sequence number for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*FIRST:EPK.
+:PD.The first one.
+:PT.:PV.number:EPV.
+:PD.Type a number of up to 15 digits. The value must be from 1 to
+9999999999.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/FROMTIME'.Starting date and time (FROMTIME)
+:P.The starting date and time for this command.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Starting date
+:PARML.
+:PT.:PV.date:EPV.
+:PD.Type a date in the date format of the job.
+:EPARML.
+:H4.Part 2&colon. Starting time
+:PARML.
+:PT.:PV.time:EPV.
+:PD.Type a time of day&colon. hours, minutes and seconds.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/TOENT'.Ending sequence number (TOENT)
+:P.The ending sequence number for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*LAST:EPK.
+:PD.The last one.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.number:EPV.
+:PD.Type a number of up to 15 digits. The value must be from 1 to
+9999999999.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/TOTIME'.Ending date and time (TOTIME)
+:P.The ending date and time for this command.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Ending date
+:PARML.
+:PT.:PV.date:EPV.
+:PD.Type a date in the date format of the job.
+:EPARML.
+:H4.Part 2&colon. Ending time
+:PARML.
+:PT.:PV.time:EPV.
+:PD.Type a time of day&colon. hours, minutes and seconds.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/NBRENT'.Number of journal entries (NBRENT)
+:P.The number of journal entries for this command.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be at least 1.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/JRNCDE'.Journal codes (JRNCDE)
+:P.The journal codes for this command.
+:P.Up to 16 values can be given.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:EPARML.
+:P.Also accepted&colon. *CTL.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Journal code value
+:P.The value must be A, B, C, D, E, F, J, L, M, P, R, Q, S, T, U, Y.
+:H4.Part 2&colon. Journal code selection
+:P.Also accepted&colon. *ALLSLT, *IGNFILSLT, *IGNOBJSLT.
+:EHELP.
+:HELP NAME='RCVJRNE/ENTTYP'.Journal entry types (ENTTYP)
+:P.The journal entry types for this command.
+:P.Up to 300 values can be given.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PK.*RCD:EPK.
+:PD.The record.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 2 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/JOB'.Job name (JOB)
+:P.The job, by name, user and number. A job name alone is enough when
+only one job has it.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:EPARML.
+:P.Also accepted&colon. *.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.User&colon. the name can be qualified by it.
+:PARML.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Number&colon. the name can be qualified by it.
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 6 characters. The value must be from 000000 to 999999.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/PGM'.Program (PGM)
+:P.The program the command calls or works on, by name and library.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/USRPRF'.User profile (USRPRF)
+:P.The user profile the command uses.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/CMTCYCID'.Commit cycle identifier (CMTCYCID)
+:P.The commit cycle identifier for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.number:EPV.
+:PD.Type a number of up to 15 digits. The value must be from 1 to
+9999999999.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/DEPENT'.Dependent entries (DEPENT)
+:P.The dependent entries for this command.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/ENTFMT'.Entry format (ENTFMT)
+:P.The entry format for this command.
+:PARML.
+:PT.:PK DEF.*TYPE1:EPK.
+:PD.Type 1.
+:PT.:PK.*TYPE2:EPK.
+:PD.Type 2.
+:EPARML.
+:P.Also accepted&colon. *TYPE3, *TYPE4, *TYPEPTR, *JRNENTFMT.
+:EHELP.
+:HELP NAME='RCVJRNE/NULLINDLEN'.Null value indicators length (NULLINDLEN)
+:P.The null value indicators length for this command.
+:PARML.
+:EPARML.
+:P.Also accepted&colon. *ENTFMT.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Field data format
+:PARML.
+:PT.:PK DEF.*VARLEN:EPK.
+:PD.Varying length.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 8000.
+:EPARML.
+:H4.Part 2&colon. Variable length field length
+:PARML.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 8000.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/DELAY'.Delay time (DELAY)
+:P.How many seconds a controlled end waits before the end becomes
+immediate.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Delay time value
+:PARML.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 99999.
+:EPARML.
+:P.Also accepted&colon. *NEXTENT.
+:P.When no value is given, 30 is used.
+:H4.Part 2&colon. Maximum delay time value
+:PARML.
+:PT.:PK.*CLS:EPK.
+:PD.The value of the class.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 99999.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/INCENT'.Include entries (INCENT)
+:P.The include entries for this command.
+:P.The prompt shows this parameter after F10 (Additional parameters).
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:EPARML.
+:P.Also accepted&colon. *CONFIRMED.
+:EHELP.
+:HELP NAME='RCVJRNE/JRNENTFMT'.Journal entry format (JRNENTFMT)
+:P.The journal entry format for this command.
+:P.The value must be RJNE0100, RJNE0200.
+:P.When no value is given, RJNE0100 is used.
+:EHELP.
+:HELP NAME='RCVJRNE/RTNPTR'.Return pointers (RTNPTR)
+:P.The return pointers for this command.
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:EPARML.
+:P.Also accepted&colon. *SYSMNG, *USRMNG.
+:EHELP.
+:HELP NAME='RCVJRNE/BLKLEN'.Block length (BLKLEN)
+:P.The block length for this command.
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PK.*CALC:EPK.
+:PD.The system calculates the value.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 32 to 4000.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/FROMENTLRG'.Starting large sequence number (FROMENTLRG)
+:P.The starting large sequence number for this command.
+:PARML.
+:PT.:PK DEF.*FIRST:EPK.
+:PD.The first one.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 20 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/TOENTLRG'.Ending large sequence number (TOENTLRG)
+:P.The ending large sequence number for this command.
+:PARML.
+:PT.:PK.*LAST:EPK.
+:PD.The last one.
+:PT.:PK DEF.*NONE:EPK.
+:PD.None.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 20 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/CCIDLRG'.Commit cycle large identifier (CCIDLRG)
+:P.The commit cycle large identifier for this command.
+:PARML.
+:PT.:PK DEF.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 20 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/OBJ'.Objects (OBJ)
+:P.The object or objects the command works on, by name and library.
+:P.Up to 300 values can be given.
+:P.The value has 3 parts, given in order&colon.
+:H4.Part 1&colon. Object
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:H4.Part 2&colon. Object type
+:PARML.
+:PT.:PK.*FILE:EPK.
+:PD.The value of the file.
+:EPARML.
+:P.Also accepted&colon. *DTAARA, *DTAQ, *LIB.
+:H4.Part 3&colon. Member, if data base file
+:PARML.
+:PT.:PK DEF.*FIRST:EPK.
+:PD.The first one.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/OBJPATH'.Objects (OBJPATH)
+:P.The objects for this command.
+:P.Up to 300 values can be given.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Name
+:PARML.
+:PT.:PV.path-name:EPV.
+:PD.Type a path name of up to 5000 characters.
+:EPARML.
+:H4.Part 2&colon. Include or omit
+:PARML.
+:PT.:PK DEF.*INCLUDE:EPK.
+:PD.Included.
+:PT.:PK.*OMIT:EPK.
+:PD.Left out.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/SUBTREE'.Directory subtree (SUBTREE)
+:P.Whether the objects in the subdirectories are included.
+:PARML.
+:PT.:PK DEF.*NONE:EPK.
+:PD.The objects of the directory only.
+:PT.:PK.*ALL:EPK.
+:PD.The directory and everything below it.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/PATTERN'.Name pattern (PATTERN)
+:P.The name pattern for this command.
+:P.Up to 20 values can be given.
+:P.The value has 2 parts, given in order&colon.
+:H4.Part 1&colon. Pattern
+:PARML.
+:PT.:PV.character-value:EPV.
+:PD.Type up to 5000 characters.
+:EPARML.
+:P.When no value is given, '*' is used.
+:H4.Part 2&colon. Include or omit
+:PARML.
+:PT.:PK DEF.*INCLUDE:EPK.
+:PD.Included.
+:PT.:PK.*OMIT:EPK.
+:PD.Left out.
+:EPARML.
+:EHELP.
+:HELP NAME='RCVJRNE/FMTMINDTA'.Format minimized data (FMTMINDTA)
+:P.Whether to format minimized data.
+:PARML.
+:PT.:PK DEF.*NO:EPK.
+:PD.No.
+:PT.:PK.*YES:EPK.
+:PD.Yes.
+:EPARML.
+:EHELP.
 :HELP NAME=RMVJRNCHG.Remove Journaled Changes (RMVJRNCHG)
 :P.Use the Remove Journaled Changes (RMVJRNCHG) command to remove
 journaled changes from files, backward through a range of entries.
@@ -1619,6 +2302,38 @@ commands can also write it to a database file.
 printed for a batch job.
 :PT.:PK.*PRINT:EPK.
 :PD.The output is printed with the job's spooled output.
+:EPARML.
+:EHELP.
+:HELP NAME=WRKJRNRCV.Work with Journal Receivers (WRKJRNRCV)
+:P.The Work with Journal Receivers (WRKJRNRCV) command works with the
+journal receivers of one library or more.
+:EHELP.
+:HELP NAME='WRKJRNRCV/JRNRCV'.Journal receiver (JRNRCV)
+:P.The journal receiver, by name and library.
+:P.A value is required.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.generic-name:EPV.
+:PD.Type a name of up to 10 characters, or a generic name&colon.
+characters that end with an asterisk (*) select every name that starts
+with them.
+:EPARML.
+:P.Library&colon. the name can be qualified by it.
+:PARML.
+:PT.:PK DEF.*LIBL:EPK.
+:PD.The library list of the job is searched; the first match is used.
+:PT.:PK.*CURLIB:EPK.
+:PD.The current library of the job. When the job has none, QGPL is used.
+:PT.:PK.*USRLIBL:EPK.
+:PD.The libraries of the user part of the library list.
+:PT.:PK.*ALLUSR:EPK.
+:PD.Every user library&colon. libraries whose names do not start with Q,
+and the Q libraries that hold user data (QGPL, QUSRSYS and the like).
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
 :EPARML.
 :EHELP.
 :EPNLGRP.

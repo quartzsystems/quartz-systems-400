@@ -5,9 +5,9 @@
 //! The plan cache's procedures (`plan::cache`): `DUMP_PLAN_CACHE`
 //! writes its entries to a database monitor file, `CLEAR_PLAN_CACHE`
 //! empties it, `CHANGE_PLAN_CACHE_SIZE` bounds it. Each needs `*JOBCTL`
-//! special authority, as on IBM i (CPF43A3 / SQLSTATE `38501`
-//! otherwise). BLOCKED(sql): IBM also accepts the `QIBM_DB_SQLADM`
-//! function usage, which QS/400 has no registry of.
+//! special authority or the `QIBM_DB_SQLADM` function usage
+//! (`sec::fcnusg`), as on IBM i (CPF43A3 / SQLSTATE `38501`
+//! otherwise).
 //!
 //! The arguments that pick entries (`PLAN_IDENTIFIER`, `QRO_HASH`,
 //! `SQL_STATEMENT_TEXT_FILTER`, `IASP_NAME`, `INCLUDE_SYSTEM_QUERIES`)
@@ -21,16 +21,19 @@ use super::Args;
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
-/// `*JOBCTL`, or a store without profiles (tools, tests).
+/// `*JOBCTL` or `QIBM_DB_SQLADM`, or a store without profiles (tools,
+/// tests).
 fn authorized(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<()> {
     let user = ctx.user.to_ascii_uppercase();
     let Ok(p) = sec::auth::principal::Principal::load(txn, ctx.qsys, &user, 0) else {
         return Ok(());
     };
-    if p.has(sec::profile::spcaut::SpecialAuth::JOBCTL) {
+    if p.has(sec::profile::spcaut::SpecialAuth::JOBCTL)
+        || sec::fcnusg::check(txn, ctx.qsys, &p, "QIBM_DB_SQLADM").unwrap_or(false)
+    {
         return Ok(());
     }
-    Err(SqlError::Coded { code: -443, state: "38501", what: "CPF43A3 *JOBCTL special authority is needed to use the plan cache.".into() })
+    Err(SqlError::Coded { code: -443, state: "38501", what: "CPF43A3 *JOBCTL special authority or the QIBM_DB_SQLADM function usage is needed to use the plan cache.".into() })
 }
 
 fn refuse_filters(args: &Args, names: &[&str]) -> Result<()> {
