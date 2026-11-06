@@ -1,0 +1,234 @@
+// Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+// licensed under the terms of the MIT license which can be found in the
+// root directory of this project.
+
+//! Steps 146 to 148, the V1R1M0 items D4 and D3. 146: CL exit programs
+//! on `QIBM_QSY_CRT_PROFILE`, `QIBM_QSY_DLT_PROFILE`,
+//! `QIBM_QSY_CHK_PASSWRD` and `QIBM_QWC_PRERESTRICT` are called and
+//! heard (`ENDSBS *ALL` refused `CPF18C3`). 147: the function usage
+//! registry (`WRKFCNUSG`, `CHGFCNUSG`, `DSPFCNUSG`, `CPF228C`), the
+//! security attributes (`CHGSECA`, `DSPSECA`) and `STRPASTHR` refused.
+//! 148: `CMPJRNIMG` over a journaled file, `RCVJRNE` handing its entries
+//! to a CL exit program, and `SAVSAVFDTA` writing a save file to a
+//! virtual tape that `DSPTAP` reads and `RSTLIB` restores from.
+
+use std::time::Duration;
+
+use crate::qemu::session::Session;
+use crate::steps::{CMD, Suite};
+
+const LONG: Duration = Duration::from_secs(90);
+
+/// A profile exit program: the format and profile it is called with go
+/// into `QGPL/PRFLOG`.
+const PRF_SRC: &str = "             PGM        PARM(&INFO)
+             DCL        VAR(&INFO) TYPE(*CHAR) LEN(38)
+             CHGDTAARA  DTAARA(QGPL/PRFLOG) VALUE(%SST(&INFO 21 18))
+             ENDPGM";
+
+/// A password check exit program (`CHKP0100`): the profile into
+/// `QGPL/CHKLOG`, the password accepted.
+const CHK_SRC: &str = "             PGM        PARM(&INFO &RC)
+             DCL        VAR(&INFO) TYPE(*CHAR) LEN(68)
+             DCL        VAR(&RC) TYPE(*CHAR) LEN(1)
+             CHGDTAARA  DTAARA(QGPL/CHKLOG) VALUE(%SST(&INFO 33 10))
+             CHGVAR     VAR(&RC) VALUE('0')
+             ENDPGM";
+
+/// A pre-restricted state program that says no on the check.
+const PRER_SRC: &str = "             PGM        PARM(&RTN &FMT &ACT &DLY)
+             DCL        VAR(&RTN) TYPE(*CHAR) LEN(12)
+             DCL        VAR(&FMT) TYPE(*CHAR) LEN(8)
+             DCL        VAR(&ACT) TYPE(*CHAR) LEN(1)
+             DCL        VAR(&DLY) TYPE(*CHAR) LEN(4)
+             IF         COND(&ACT *EQ '1') THEN(CHGVAR VAR(&RTN) +
+                          VALUE(X'0000000C0000000000000000'))
+             ENDPGM";
+
+/// RCVJRNE's exit program: the type of each entry handed to it into
+/// `QGPL/RCVLOG`, and a count of them.
+const RCV_SRC: &str = "             PGM        PARM(&ENTRY &IND)
+             DCL        VAR(&ENTRY) TYPE(*CHAR) LEN(300)
+             DCL        VAR(&IND) TYPE(*CHAR) LEN(3)
+             DCL        VAR(&N) TYPE(*DEC) LEN(5 0)
+             IF         COND(%SST(&IND 1 1) *EQ '1') THEN(DO)
+             RTVDTAARA  DTAARA(QGPL/RCVCNT) RTNVAR(&N)
+             CHGVAR     VAR(&N) VALUE(&N + 1)
+             CHGDTAARA  DTAARA(QGPL/RCVCNT) VALUE(&N)
+             CHGDTAARA  DTAARA(QGPL/RCVLOG) VALUE(%SST(&ENTRY 16 3))
+             ENDDO
+             ENDPGM";
+
+/// A service console command whose output holds every word of `want`.
+fn expect(s: &mut Session, line: &str, want: &[&str]) -> Result<String, String> {
+    let out = s.command(line, CMD)?;
+    if want.iter().all(|w| out.contains(w)) {
+        Ok(out)
+    } else {
+        Err(format!("{line}: no {want:?} in:\n{out}"))
+    }
+}
+
+/// A CL program `QGPL/name` from `src`.
+fn program(s: &mut Session, name: &str, src: &str) -> Result<(), String> {
+    let _ = s.command("CRTSRCPF FILE(QGPL/QCLSRC)", CMD);
+    let buf = format!("{name}SRC");
+    crate::qir::qemu::push(s, &buf, src)?;
+    expect(s, &format!("svc.srcput QGPL/QCLSRC {name} SRCTYPE(CLLE) FROMSTMF({buf})"), &["written"])?;
+    let _ = s.command(&format!("DLTPGM PGM(QGPL/{name})"), CMD);
+    let out = s.command(&format!("CRTBNDCL PGM(QGPL/{name}) SRCFILE(QGPL/QCLSRC) SRCMBR({name})"), LONG)?;
+    if out.contains("CPF0C") || out.contains("not created") {
+        return Err(format!("{name} did not compile:\n{out}"));
+    }
+    Ok(())
+}
+
+fn data_area(s: &mut Session, name: &str, len: u32) {
+    let _ = s.command(&format!("DLTDTAARA DTAARA(QGPL/{name})"), CMD);
+    let _ = s.command(&format!("CRTDTAARA DTAARA(QGPL/{name}) TYPE(*CHAR) LEN({len}) VALUE('none')"), CMD);
+}
+
+fn add(s: &mut Session, point: &str, format: &str, pgm: &str) -> Result<(), String> {
+    let _ = s.command(&format!("RMVEXITPGM EXITPNT({point}) FORMAT({format}) PGMNBR(1)"), CMD);
+    expect(
+        s,
+        &format!("ADDEXITPGM EXITPNT({point}) FORMAT({format}) PGMNBR(1) PGM(QGPL/{pgm})"),
+        &["added to exit point"],
+    )
+    .map(|_| ())
+}
+
+fn remove(s: &mut Session, point: &str, format: &str) {
+    let _ = s.command(&format!("RMVEXITPGM EXITPNT({point}) FORMAT({format}) PGMNBR(1)"), CMD);
+}
+
+#[allow(clippy::unused_self)] // the steps share one signature
+impl Suite {
+    /// Step 146: the security and work management exit points.
+    pub(crate) fn exit_points(&self, s: &mut Session) -> Result<String, String> {
+        let points = s.command("WRKREGINF EXITPNT(QIBM_QSY*)", CMD)?;
+        for p in ["QIBM_QSY_VLD_PASSWRD", "QIBM_QSY_CRT_PROFILE", "QIBM_QSY_DLT_PROFILE", "QIBM_QSY_CHK_PASSWRD"] {
+            if !points.contains(p) {
+                return Err(format!("WRKREGINF has no {p}:\n{points}"));
+            }
+        }
+        program(s, "PRFEXIT", PRF_SRC)?;
+        program(s, "CHKEXIT", CHK_SRC)?;
+        program(s, "PREREXIT", PRER_SRC)?;
+        data_area(s, "PRFLOG", 18);
+        data_area(s, "CHKLOG", 10);
+        add(s, "QIBM_QSY_CRT_PROFILE", "CRTP0100", "PRFEXIT")?;
+        add(s, "QIBM_QSY_DLT_PROFILE", "DLTP0100", "PRFEXIT")?;
+        add(s, "QIBM_QSY_CHK_PASSWRD", "CHKP0100", "CHKEXIT")?;
+        let _ = s.command("DLTUSRPRF USRPRF(EXITUSR1)", CMD);
+        let r = (|| -> Result<String, String> {
+            expect(s, "CRTUSRPRF USRPRF(EXITUSR1) PASSWORD(Exit146pw) PWDEXP(*NO)", &["EXITUSR1"])?;
+            let crt = expect(s, "DSPDTAARA DTAARA(QGPL/PRFLOG)", &["CRTP0100EXITUSR1"])?;
+            expect(s, "DSPDTAARA DTAARA(QGPL/CHKLOG)", &["EXITUSR1"])?;
+            expect(s, "DLTUSRPRF USRPRF(EXITUSR1)", &["EXITUSR1"])?;
+            expect(s, "DSPDTAARA DTAARA(QGPL/PRFLOG)", &["DLTP0100EXITUSR1"])?;
+            Ok(crt)
+        })();
+        remove(s, "QIBM_QSY_CRT_PROFILE", "CRTP0100");
+        remove(s, "QIBM_QSY_DLT_PROFILE", "DLTP0100");
+        remove(s, "QIBM_QSY_CHK_PASSWRD", "CHKP0100");
+        r?;
+        // A pre-restricted state program that says no stops ENDSBS *ALL.
+        add(s, "QIBM_QWC_PRERESTRICT", "PRER0100", "PREREXIT")?;
+        let ended = s.command("ENDSBS SBS(*ALL) OPTION(*IMMED)", LONG);
+        remove(s, "QIBM_QWC_PRERESTRICT", "PRER0100");
+        let ended = ended?;
+        if !ended.contains("CPF18C3") {
+            return Err(format!("ENDSBS *ALL went on past a PRER0100 program that said no:\n{ended}"));
+        }
+        let sbs = s.command("WRKSBS", CMD)?;
+        if !sbs.contains("QINTER") && !sbs.contains("QBASE") && !sbs.contains("QCTL") {
+            return Err(format!("the subsystems ended anyway:\n{sbs}"));
+        }
+        Ok("CRTP0100, DLTP0100 and CHKP0100 programs heard EXITUSR1; a PRER0100 program's no stopped ENDSBS *ALL (CPF18C3)".into())
+    }
+
+    /// Step 147: function usage, security attributes, pass-through.
+    pub(crate) fn function_usage(&self, s: &mut Session) -> Result<String, String> {
+        expect(s, "WRKFCNUSG", &["QIBM_DB_SQLADM", "QIBM_ACCESS_ALLOBJ_JOBLOG", "QIBM_QTMF_SERVER_REQ_10"])?;
+        let _ = s.command("DLTUSRPRF USRPRF(FCNUSR1)", CMD);
+        expect(s, "CRTUSRPRF USRPRF(FCNUSR1) PASSWORD(*NONE)", &["FCNUSR1"])?;
+        let r = (|| -> Result<(), String> {
+            s.command("CHGFCNUSG FCNID(QIBM_DB_SQLADM) USER(FCNUSR1) USAGE(*ALLOWED)", CMD)?;
+            expect(s, "DSPFCNUSG FCNID(QIBM_DB_SQLADM)", &["FCNUSR1", "*ALLOWED", "*DENIED", "*NOTUSED"])?;
+            s.command("CHGFCNUSG FCNID(QIBM_DB_SQLADM) USER(FCNUSR1) USAGE(*NONE)", CMD)?;
+            let after = s.command("DSPFCNUSG FCNID(QIBM_DB_SQLADM)", CMD)?;
+            if after.contains("FCNUSR1") {
+                return Err(format!("USAGE(*NONE) left FCNUSR1:\n{after}"));
+            }
+            expect(s, "CHGFCNUSG FCNID(QIBM_NOSUCH_FUNCTION) DEFAULT(*ALLOWED)", &["CPF228C"])?;
+            Ok(())
+        })();
+        let _ = s.command("DLTUSRPRF USRPRF(FCNUSR1)", CMD);
+        r?;
+        expect(s, "CHGSECA UID(5000) GID(6000)", &["CPC2231"])?;
+        let seca = expect(s, "DSPSECA", &["5000", "6000"])?;
+        let pass = s.command("STRPASTHR RMTLOCNAME(QSNOSUCH)", CMD)?;
+        if !pass.contains("CPF8933") && !pass.contains("CPD0031") && !pass.contains("not allowed") {
+            return Err(format!("STRPASTHR was not refused:\n{pass}"));
+        }
+        let _ = seca;
+        Ok("WRKFCNUSG listed the V7R1M0 functions; CHGFCNUSG gave and took FCNUSR1's QIBM_DB_SQLADM; CPF228C for an unknown ID; CHGSECA and DSPSECA at 5000/6000; STRPASTHR refused".into())
+    }
+
+    /// Step 148: `CMPJRNIMG`, `RCVJRNE` and `SAVSAVFDTA`.
+    pub(crate) fn journal_and_savf_data(&self, s: &mut Session) -> Result<String, String> {
+        let _ = s.command("DLTLIB LIB(RELJRN)", LONG);
+        for (line, want) in [
+            ("CRTLIB LIB(RELJRN)", "RELJRN"),
+            ("CRTJRNRCV JRNRCV(RELJRN/RCV0001)", "RCV0001"),
+            ("CRTJRN JRN(RELJRN/JRN) JRNRCV(RELJRN/RCV0001)", "JRN"),
+            ("RUNSQL SQL('CREATE TABLE RELJRN.ITEMS (NAME CHAR(10))') COMMIT(*NONE)", ""),
+            ("STRJRNPF FILE(RELJRN/ITEMS) JRN(RELJRN/JRN) IMAGES(*BOTH)", ""),
+            ("RUNSQL SQL('INSERT INTO RELJRN.ITEMS VALUES(''APPLE'')') COMMIT(*NONE)", ""),
+            ("RUNSQL SQL('UPDATE RELJRN.ITEMS SET NAME = ''APRICOT''') COMMIT(*NONE)", ""),
+        ] {
+            let out = s.command(line, LONG)?;
+            if !want.is_empty() && !out.contains(want) {
+                return Err(format!("{line}:\n{out}"));
+            }
+        }
+        expect(s, "CMPJRNIMG FILE(RELJRN/ITEMS)", &["QPCMPIMG"])?;
+        expect(s, "WRKJRNRCV JRNRCV(RELJRN/*ALL)", &[])?;
+        program(s, "RCVEXIT", RCV_SRC)?;
+        data_area(s, "RCVLOG", 3);
+        let _ = s.command("DLTDTAARA DTAARA(QGPL/RCVCNT)", CMD);
+        expect(s, "CRTDTAARA DTAARA(QGPL/RCVCNT) TYPE(*DEC) LEN(5 0) VALUE(0)", &["RCVCNT"])?;
+        let rcv = s.command("RCVJRNE JRN(RELJRN/JRN) EXITPGM(QGPL/RCVEXIT) TOENT(*LAST)", LONG)?;
+        let count = s.command("DSPDTAARA DTAARA(QGPL/RCVCNT)", CMD)?;
+        if count.contains("'0'") || count.lines().any(|l| l.trim().ends_with(" 0")) {
+            return Err(format!("RCVJRNE handed the program nothing:\n{rcv}\n{count}"));
+        }
+        // SAVSAVFDTA to a virtual tape; DSPTAP shows the library.
+        for (line, want) in [
+            ("CRTSAVF FILE(RELJRN/SAVED)", ""),
+            ("SAVLIB LIB(RELJRN) DEV(*SAVF) SAVF(RELJRN/SAVED)", "CPC3722"),
+            ("CRTDEVTAP DEVD(Q148TAP) RSRCNAME(*VRT)", ""),
+            ("CRTIMGCLG IMGCLG(Q148TAP) DIR('/q148/tap') TYPE(*TAP)", ""),
+            ("ADDIMGCLGE IMGCLG(Q148TAP) FROMFILE(*NEW) TOFILE(VOL1) VOLNAM(Q148V1) IMGSIZ(8)", ""),
+            ("LODIMGCLG IMGCLG(Q148TAP) DEV(Q148TAP)", ""),
+            ("VRYCFG CFGOBJ(Q148TAP) CFGTYPE(*DEV) STATUS(*ON)", ""),
+            ("INZTAP DEV(Q148TAP) NEWVOL(Q148V1) CHECK(*NO)", ""),
+        ] {
+            let out = s.command(line, LONG)?;
+            if !want.is_empty() && !out.contains(want) {
+                return Err(format!("{line}:\n{out}"));
+            }
+        }
+        expect(s, "SAVSAVFDTA SAVF(RELJRN/SAVED) DEV(Q148TAP)", &["CPC3724"])
+            .or_else(|_| expect(s, "DSPJOBLOG", &["CPC3724"]))?;
+        expect(s, "DSPTAP DEV(Q148TAP) DATA(*LABELS)", &["RELJRN"])?;
+        let _ = s.command("DLTLIB LIB(RELJRN)", LONG);
+        expect(s, "RSTLIB SAVLIB(RELJRN) DEV(Q148TAP)", &["RELJRN"])?;
+        expect(s, "RUNSQL SQL('SELECT * FROM RELJRN.ITEMS') COMMIT(*NONE)", &[])?;
+        Ok(format!(
+            "CMPJRNIMG printed QPCMPIMG; RCVJRNE fed a CL program ({}); SAVSAVFDTA wrote RELJRN to Q148TAP, DSPTAP showed it, RSTLIB restored it",
+            count.lines().last().unwrap_or("").trim()
+        ))
+    }
+}

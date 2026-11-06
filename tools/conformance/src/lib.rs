@@ -62,6 +62,7 @@ mod qap;
 mod qemu;
 pub mod qir;
 mod qsh;
+mod relitems;
 mod restricted;
 mod savrst;
 mod medlib;

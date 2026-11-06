@@ -673,6 +673,9 @@ impl Suite {
         reports.push(self.step(&mut s, "121 Spanish sign-on", Self::spanish_sign_on)?);
         reports.push(self.step(&mut s, "122 date and time formats", Self::date_formats)?);
         reports.push(self.step(&mut s, "104 wrapped command lines", Self::wrapped_command_lines)?);
+        reports.push(self.step(&mut s, "146 security and work management exit points", Self::exit_points)?);
+        reports.push(self.step(&mut s, "147 function usage and security attributes", Self::function_usage)?);
+        reports.push(self.step(&mut s, "148 journal commands and save file data", Self::journal_and_savf_data)?);
         reports.push(self.step(&mut s, "142 batch restricted state", Self::batch_restricted)?);
         // Last: it ends every subsystem.
         reports.push(self.step(&mut s, "103 restricted state", Self::restricted_state)?);
