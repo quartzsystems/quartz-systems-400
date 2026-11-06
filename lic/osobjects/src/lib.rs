@@ -14,6 +14,7 @@
 
 pub mod display;
 pub mod nls;
+pub mod notices;
 pub mod products;
 pub mod qstrup;
 pub mod ui;

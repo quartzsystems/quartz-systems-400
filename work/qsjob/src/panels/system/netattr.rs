@@ -95,7 +95,7 @@ pub fn dspsfwrsc(host: &Host, surface: &mut Surface) -> Option<Result<String, Fa
                 panel = if panel == "DSPSFWRSC" { "DSPSFWLIB" } else { "DSPSFWRSC" };
             }
             Ok(Response::Return(19)) => {
-                d.info("CPI9B83", &[]);
+                d.info("CPI9B83", &[crate::panels::licpgm::NOTICES]);
             }
             Ok(Response::Print) => {
                 d.error("CPD9B84", &[]);

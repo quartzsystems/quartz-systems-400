@@ -1,0 +1,24 @@
+# V1R1M0 release: what F19=Display trademarks shows from DSPSFWRSC,
+# the key QS/400 points at its third-party notices with (C2).
+wait "Sign On"
+signon
+settle 3000
+wait "Main Menu"
+timeout 30000
+type call qcmd
+key enter
+wait "Command Entry"
+type dspsfwrsc
+key enter
+settle 3000
+snap dspsfwrsc-f19-before
+key f19
+settle 2500
+snap dspsfwrsc-f19
+key enter
+settle 1500
+snap dspsfwrsc-f19-enter
+key f3
+settle 1500
+key f3
+settle 1500

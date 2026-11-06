@@ -4505,9 +4505,9 @@ vars = []
 [[msg]]
 id = "CPI9B83"
 sev = 0
-text = "This system has no trademark information to show."
-help = "The licensed programs installed carry no trademark notices."
-vars = []
+text = "Third-party notices and licenses are in &1."
+help = "QS/400 shows no trademark list. The notices of the software QS/400 is built from, each with its license, are in the integrated file system at &1, and at the root of the install media as NOTICES.txt. Use DSPF to read them."
+vars = ["*CHAR 40"]
 
 [[msg]]
 id = "CPD9B94"

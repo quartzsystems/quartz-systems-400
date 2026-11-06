@@ -1,0 +1,24 @@
+                           Display Software Resources                           
+                                                             System:   SYSNAME  
+ Resource                                                                       
+    ID     Option  Feature  Description                                         
+ 5770999   *BASE    5050    Licensed Internal Code                              
+ 5770SS1   *BASE    5050    IBM i                                               
+ 5770SS1   *BASE    2924    IBM i                                               
+ 5770SS1   1        5050    Extended Base Support                               
+ 5770SS1   1        2924    Extended Base Support                               
+ 5770SS1   3        5050    Extended Base Directory Support                     
+ 5770SS1   3        2924    Extended Base Directory Support                     
+ 5770SS1   12       5050    Host Servers                                        
+ 5770SS1   12       2924    Host Servers                                        
+ 5770SS1   13       5050    System Openness Includes                            
+ 5770SS1   30       5050    Qshell                                              
+ 5770SS1   30       2924    Qshell                                              
+ 5770SS1   33       5111    Portable App Solutions Environment                  
+ 5770SS1   33       2924    Portable App Solutions Environment                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display libraries/releases   F12=Cancel                          
+ F19=Display trademarks                                                         
+                                                                                

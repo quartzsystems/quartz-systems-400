@@ -68,6 +68,9 @@ fn fill(d: &mut UimDialog, list: &str, data: &[Vec<String>], vars: &[&str]) {
 /// `INSTALLED` rows: product, option, status, text, release.
 const INSTALLED: &[&str] = &["LPID", "LPOPT", "STATUS", "LPTEXT", "LPRLS"];
 
+/// Where the storage service keeps the third-party notices (F19 names it).
+pub const NOTICES: &str = "/QQS/ProdData/Notices/NOTICES.txt";
+
 /// Option 10.
 fn installed(host: &Host, surface: &mut Surface) -> Result<(), Fail> {
     let mut d = dialog(host)?;
@@ -76,7 +79,7 @@ fn installed(host: &Host, surface: &mut Surface) -> Result<(), Fail> {
     loop {
         match show(&mut d, surface, panel)? {
             Response::Return(11) => panel = if panel == "LICPGM10" { "LICPGM10R" } else { "LICPGM10" },
-            Response::Return(19) => d.info("CPI9B83", &[]),
+            Response::Return(19) => d.info("CPI9B83", &[NOTICES]),
             Response::Exit | Response::Cancel | Response::Gone | Response::Return(_) => return Ok(()),
             _ => {}
         }

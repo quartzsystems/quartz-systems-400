@@ -1,0 +1,24 @@
+                               Display Trademarks                               
+                                                             System:   SYSNAME  
+ The following terms are trademarks or registered trademarks of the             
+ International Business Machines Corporation in the United States, or           
+ other countries, or both:                                                      
+                                                                                
+     APL2                                                                       
+     AS/400                                                                     
+     C/400                                                                      
+     CICS                                                                       
+     DB2                                                                        
+     DB2 Extenders                                                              
+     DB2 OLAP Server                                                            
+     DB2 Universal Database                                                     
+     Domino                                                                     
+     eServer                                                                    
+     Express                                                                    
+     GDDM                                                                       
+     i5/OS                                                                      
+     IBM                                                                        
+     iCluster                                                                   
+                                                                        More... 
+ F3=Exit   F12=Cancel                                                           
+                                                                                

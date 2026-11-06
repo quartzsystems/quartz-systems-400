@@ -1,0 +1,24 @@
+[[golden]]
+name = "dspsfwrsc-f19-before"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "notices"
+width = 80
+
+[[golden]]
+name = "dspsfwrsc-f19"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "notices"
+width = 80
+
+[[golden]]
+name = "dspsfwrsc-f19-enter"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "notices"
+width = 80
+

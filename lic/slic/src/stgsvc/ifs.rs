@@ -127,8 +127,36 @@ pub fn start(system: &mut System) -> String {
     let _ = IFS.set(r);
     if get().is_some() {
         keep_registry(system);
+        keep_notices(system);
     }
     line
+}
+
+/// The third-party notices this release ships, at
+/// `/QQS/ProdData/Notices/NOTICES.txt`, rewritten when they differ.
+fn keep_notices(system: &mut System) {
+    let p = Principal {
+        user: "QSYS".into(),
+        spcaut: sec::profile::SpecialAuth::ALL.0,
+        qsecurity: 40,
+        objaud: "*NONE".into(),
+        ..Principal::default()
+    };
+    let path = osobjects::notices::PATH;
+    let text = osobjects::notices::TEXT.as_bytes();
+    with_client(system, 0, console_owner(0), &p, 37, |c| {
+        let same = c
+            .open(path, ifs::ops::OpenArgs::new(ifs::ops::flags::O_RDONLY))
+            .and_then(|fd| {
+                let r = ifs::client::read_all(c, fd);
+                let _ = c.close(fd);
+                r
+            })
+            .is_ok_and(|old| old == text);
+        if !same && let Err(e) = ifs::client::replace(c, path, text, 0o644) {
+            eprintln!("qsstg: {path}: {}", e.text());
+        }
+    });
 }
 
 /// The HTTP instance registry is the `ADMIN` job's: one another
@@ -167,6 +195,10 @@ fn build(system: &mut System) -> Result<Ifs<LinuxBackend>, String> {
         let env = StoreEnv::new(&Lent);
         ifs.ensure_layout(&env)?;
         // The HTTP server's instances: the `ADMIN` job writes there.
+        // The third-party notices' directory (`keep_notices`).
+        for dir in ["/QQS", "/QQS/ProdData", osobjects::notices::DIR] {
+            ifs.ensure_dir(&env, dir, "QSYS", "*RX")?;
+        }
         ifs.ensure_dir(&env, WWW, WWW_OWNER, WWW_PUBLIC)
     })
     .map_err(|e| format!("making the standard directories: {}", e.text()))?;
