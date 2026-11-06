@@ -124,3 +124,16 @@ fn save_file_data_telnet_and_pass_through() {
     check("prompt-telnet", "?TELNET");
     check("prompt-strpasthr", "?STRPASTHR");
 }
+
+#[test]
+fn function_ids_longer_than_ten_are_names() {
+    let mut src = source();
+    for line in [
+        "CHGFCNUSG FCNID(QIBM_DB_SQLADM) USER(ANNE) USAGE(*ALLOWED)",
+        "DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_10)",
+        "WRKFCNUSG FCNID(QIBM_DB*)",
+    ] {
+        let mut env = Env::new(&mut src);
+        analyze(&mut env, line).unwrap_or_else(|e| panic!("{line}: {e}"));
+    }
+}

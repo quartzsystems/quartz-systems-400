@@ -211,7 +211,7 @@ impl Suite {
         // SAVSAVFDTA to a virtual tape; DSPTAP shows the library.
         for (line, want) in [
             ("CRTSAVF FILE(RELJRN/SAVED)", ""),
-            ("SAVLIB LIB(RELJRN) DEV(*SAVF) SAVF(RELJRN/SAVED)", "CPC3722"),
+            ("SAVLIB LIB(RELJRN) DEV(*SAVF) SAVF(RELJRN/SAVED)", "RELJRN"),
             ("CRTDEVTAP DEVD(Q148TAP) RSRCNAME(*VRT)", ""),
             ("CRTIMGCLG IMGCLG(Q148TAP) DIR('/q148/tap') TYPE(*TAP)", ""),
             ("ADDIMGCLGE IMGCLG(Q148TAP) FROMFILE(*NEW) TOFILE(VOL1) VOLNAM(Q148V1) IMGSIZ(8)", ""),

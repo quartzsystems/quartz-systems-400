@@ -338,6 +338,19 @@ fn name(parm: &Parm, kwd: &str, w: &str, trusted: bool) -> Result<Value, Diag> {
                 return Err(bad());
             }
         }
+        // A name longer than an object's (`LEN(30)`, a function ID):
+        // the same characters, without the ten-character limit.
+        _ if upper.chars().count() > 10 => {
+            let mut c = upper.chars();
+            let first = c.next().ok_or_else(bad)?;
+            if !(first.is_ascii_uppercase() || "$#@".contains(first)) {
+                return Err(bad());
+            }
+            let dot = parm.ty != ParmType::SName;
+            if !c.all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || "$#@_".contains(ch) || (dot && ch == '.')) {
+                return Err(bad());
+            }
+        }
         _ => {
             qsname::Name::parse(&upper).map_err(|_| bad())?;
             if parm.ty == ParmType::SName && upper.contains('.') {
