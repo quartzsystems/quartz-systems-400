@@ -136,7 +136,10 @@ pub fn rewrite<S: std::hash::BuildHasher>(text: &str, names: &dyn Names, columns
             if matches!(after, Some(Tok::Sym("["))) && let Some(t) = names.element_type(k) {
                 out.text.push_str("CAST(?");
                 casts.push((depth, t));
-            } else if let Some(t) = names.cast_type(k).or_else(|| if char_arg { names.type_of(k) } else { None }) {
+            } else if let Some(t) = names.cast_type(k).or_else(|| if char_arg { names.type_of(k) } else { None })
+                // A row count takes a bare marker.
+                && !matches!(prev, Some(Tok::Word(w)) if matches!(w.as_str(), "FIRST" | "NEXT" | "OFFSET" | "LIMIT"))
+            {
                 let _ = write!(out.text, "CAST(? AS {t})");
             } else {
                 out.text.push('?');

@@ -84,6 +84,7 @@ struct Target {
     depth: usize,
 }
 
+#[allow(clippy::struct_excessive_bools)] // the generator's modes
 struct Gen<'a> {
     sig: &'a Signature,
     cat: &'a mut dyn Catalog,
@@ -110,6 +111,9 @@ struct Gen<'a> {
     atomics: u32,
     /// Markers stay bare (a `CALL`'s arguments, which may be outputs).
     uncast: bool,
+    /// Every marker is cast to its variable's type (a result set's
+    /// query: its columns describe as the primary's do).
+    typed: bool,
 }
 
 impl Names for Gen<'_> {
@@ -123,7 +127,13 @@ impl Names for Gen<'_> {
     }
 
     fn cast_type(&self, k: usize) -> Option<String> {
-        if self.uncast { None } else { super::types::marker_type(&self.vars[k].sql) }
+        if self.uncast {
+            None
+        } else if self.typed {
+            self.type_of(k)
+        } else {
+            super::types::marker_type(&self.vars[k].sql)
+        }
     }
 
     fn element_type(&self, k: usize) -> Option<String> {
@@ -168,6 +178,7 @@ pub fn compile(sig: &Signature, body: &PlStmt, cat: &mut dyn Catalog) -> Result<
         pca: false,
         atomics: 0,
         uncast: false,
+        typed: false,
     };
     g.fail = g.label();
     g.done = g.label();
@@ -1077,7 +1088,10 @@ impl Gen<'_> {
                     return Err(SqlError::Coded { code: -313, state: "07004", what: "OPEN USING of a cursor with no markers".into() });
                 }
                 let cols = self.columns_of(&q.stmt);
-                let r = self.rewrite(&q.text, &cols)?;
+                self.typed = c.returns.is_some();
+                let r = self.rewrite(&q.text, &cols);
+                self.typed = false;
+                let r = r?;
                 d.text = r.text;
                 self.run_desc(&d, &r.vars, &[])
             }
