@@ -782,6 +782,13 @@ impl Job {
         let key = self.next_key;
         self.next_key += 1;
         let from_depth = self.depth;
+        let from_pgm = self
+            .act
+            .frames
+            .last()
+            .and_then(|f| f.program.as_ref())
+            .map(|p| p.object.name.clone())
+            .unwrap_or_default();
         let m = Message {
             key,
             msgid: msgid.into(),
@@ -793,6 +800,8 @@ impl Job {
             help,
             severity,
             from_depth,
+            from_pgm,
+            sent_us: now_us(),
             received: false,
             reply: None,
         };
@@ -1037,10 +1046,19 @@ impl Job {
             help,
             severity,
             from_depth: 0,
+            from_pgm: String::new(),
+            sent_us: now_us(),
             received: false,
             reply: None,
         };
         self.log_message(&m, QueueTarget::Ext);
         self.ext_msgq.push(m);
     }
+}
+
+/// Now, microseconds since the epoch.
+fn now_us() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_micros()).unwrap_or(u64::MAX))
 }

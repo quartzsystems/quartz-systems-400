@@ -1,0 +1,22 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* SNDPGMMSG TOUSR: a profile's queue (QUSRSYS), the operator's, the   */
+/* requester (a batch job's is the operator) and every signed-on user. */
+             PGM
+             DCL        VAR(&M) TYPE(*CHAR) LEN(40)
+             SNDPGMMSG  MSG('to bob') TOUSR(BOB)
+             SNDPGMMSG  MSG('to the operator') TOUSR(*SYSOPR)
+             SNDPGMMSG  MSG('to the requester') TOUSR(*REQUESTER)
+             SNDPGMMSG  MSG('to all') TOUSR(*ALLACT)
+             RCVMSG     MSGQ(QUSRSYS/BOB) MSG(&M)
+             SNDPGMMSG  MSG('bob [' *CAT &M *TCAT ']') TOPGMQ(*EXT)
+             RCVMSG     MSGQ(QSYS/QSYSOPR) MSG(&M)
+             SNDPGMMSG  MSG('qsysopr [' *CAT &M *TCAT ']') TOPGMQ(*EXT)
+             RCVMSG     MSGQ(QSYS/QSYSOPR) MSG(&M)
+             SNDPGMMSG  MSG('qsysopr [' *CAT &M *TCAT ']') TOPGMQ(*EXT)
+             RCVMSG     MSGQ(QUSRSYS/ANNE) MSG(&M)
+             SNDPGMMSG  MSG('anne [' *CAT &M *TCAT ']') TOPGMQ(*EXT)
+             RCVMSG     MSGQ(QUSRSYS/BOB) MSG(&M)
+             SNDPGMMSG  MSG('bob again [' *CAT &M *TCAT ']') TOPGMQ(*EXT)
+             ENDPGM

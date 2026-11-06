@@ -24,10 +24,22 @@ TOMSGQ(lib/name ...)` sends to named message queues through `QCLSNDM`
 (an inquiry with `RPYMSGQ(*PGMQ)` is answered on the program's queue,
 its `KEYVAR` the key its reply is received by); `TOPGMQ` with a call
 stack entry other than `*` (a program, `*PGMBDY`) through `QMHSNDPM`;
-`RCVMSG` with `MSGQ`, a `WAIT`, or `RTNTYPE`, `MSGLEN`, `SECLVL`,
-`SECLVLLEN`, `MSGDTALEN`, `MSGF` or `MSGFLIB` through `QCLRCVM`, which
-waits as asked (`*MAX` for good) and leaves blanks and zeros when no
-message comes. `CHGDTAARA` of a substring takes a start and length in
+`RCVMSG` always goes through `QCLRCVM`: it waits as asked (`*MAX` for
+good), receives from a named queue (`MSGQ`) or a call stack entry's
+(`PGMQ(*SAME|*PRV entry)`, the entry a program or procedure name,
+`*PGMBDY`, `*CTLBDY`, or `*PGMNAME` with a module and bound program;
+`CPF2479` when none is active), and fills every return variable, blanks
+and zeros when no message comes, as the primary does
+(`tools/conformance/oracle/cl/rcvmsg/`). `ALROPT`, `TXTCCSID` and
+`DTACCSID` are `*NO`, 65535 and 65535 for a message from a message file
+(QS/400 keeps no alert options) and blank, 37 and 0 for an immediate
+one; `SENDER` holds the sending job (for a named queue's message), the
+sending and receiving programs, the date and time sent and the sending
+user at the primary's positions, the rest blank. `SNDPGMMSG TOUSR` sends
+to a profile's queue in `QUSRSYS`, to `QSYSOPR` (`*SYSOPR`), to the
+requester (`*REQUESTER`: an interactive job's external queue, a batch
+job's `QSYSOPR`) or to every user signed on at a display (`*ALLACT`).
+`CHGDTAARA` of a substring takes a start and length in
 variables. Nothing the compiler accepts is left without effect
 (`CPD0790`, which said so, is gone).
 

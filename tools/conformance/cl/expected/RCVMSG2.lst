@@ -1,0 +1,101 @@
+QS/400 ILE CL compiler                  V1R1M0
+
+Program  . . . . . . . . . . . . :   RCVMSG2
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   RCVMSG2
+Text . . . . . . . . . . . . . . :   corpus RCVMSG2
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* RCVMSG's return variables as the primary fills them               */
+                    /* (tools/conformance/oracle/cl/rcvmsg/rcvmsg.txt, lines A1, B1, C1): */
+                    /* nothing received blanks them, ALROPT, TXTCCSID, DTACCSID, SENDER,  */
+                    /* and PGMQ naming the program's own entry. CHGVAR of a decimal to  */
+                    /* *CHAR gives 0 where the primary gives 00000 (not this test's).    */
+        1        0               PGM
+        2        0               DCL        VAR(&S) TYPE(*CHAR) LEN(720)
+        3        0               DCL        VAR(&ID) TYPE(*CHAR) LEN(7) VALUE('XXXXXXX')
+        4        0               DCL        VAR(&MSG) TYPE(*CHAR) LEN(20) VALUE('PRESET')
+        5        0               DCL        VAR(&DTA) TYPE(*CHAR) LEN(20) VALUE('PRESETDTA')
+        6        0               DCL        VAR(&KEY) TYPE(*CHAR) LEN(4) VALUE('KKKK')
+        7        0               DCL        VAR(&SEV) TYPE(*DEC) LEN(2 0) VALUE(77)
+        8        0               DCL        VAR(&AL) TYPE(*CHAR) LEN(9) VALUE('ALROPTXXX')
+        9        0               DCL        VAR(&TC) TYPE(*DEC) LEN(5 0) VALUE(11111)
+       10        0               DCL        VAR(&DC) TYPE(*DEC) LEN(5 0) VALUE(22222)
+       11        0               DCL        VAR(&RT) TYPE(*CHAR) LEN(2) VALUE('ZZ')
+       12        0               DCL        VAR(&C1) TYPE(*CHAR) LEN(5)
+       13        0               DCL        VAR(&C2) TYPE(*CHAR) LEN(5)
+       14        0               DCL        VAR(&C3) TYPE(*CHAR) LEN(5)
+       15        0               DCL        VAR(&M) TYPE(*CHAR) LEN(12)
+       16        0               RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) RMV(*YES) MSGID(&ID) +
+                                              MSG(&MSG) MSGDTA(&DTA) KEYVAR(&KEY) SEV(&SEV) +
+                                              RTNTYPE(&RT) ALROPT(&AL) TXTCCSID(&TC) +
+                                              DTACCSID(&DC) SENDER(&S)
+       17        0               CHGVAR     VAR(&C1) VALUE(&SEV)
+       18        0               CHGVAR     VAR(&C2) VALUE(&TC)
+       19        0               CHGVAR     VAR(&C3) VALUE(&DC)
+       20        0               SNDPGMMSG  MSG('A1 ID=[' *CAT &ID *CAT '] MSG=[' *CAT &MSG *CAT +
+                                              '] DTA=[' *CAT &DTA *CAT '] KEY=[' *CAT &KEY *CAT +
+                                              '] SEV=[' *CAT &C1 *CAT '] RT=[' *CAT &RT *CAT +
+                                              '] AL=[' *CAT &AL *CAT '] TC=[' *CAT &C2 *CAT +
+                                              '] DC=[' *CAT &C3 *CAT '] S=[' *CAT %SST(&S 1 40) +
+                                              *CAT ']') TOPGMQ(*EXT)
+       21        0               SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) MSGDTA('HELLO') +
+                                              TOPGMQ(*SAME) MSGTYPE(*INFO)
+       22        0               RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) RMV(*YES) MSGID(&ID) +
+                                              RTNTYPE(&RT) ALROPT(&AL) TXTCCSID(&TC) +
+                                              DTACCSID(&DC) SENDER(&S)
+       23        0               CHGVAR     VAR(&C2) VALUE(&TC)
+       24        0               CHGVAR     VAR(&C3) VALUE(&DC)
+       25        0               SNDPGMMSG  MSG('B1 ID=[' *CAT &ID *CAT '] RT=[' *CAT &RT *CAT +
+                                              '] AL=[' *CAT &AL *CAT '] TC=[' *CAT &C2 *CAT +
+                                              '] DC=[' *CAT &C3 *CAT ']') TOPGMQ(*EXT)
+       26        0               SNDPGMMSG  MSG('B2 SENDER pgm=[' *CAT %SST(&S 27 12) *CAT +
+                                              '] rcv=[' *CAT %SST(&S 56 10) *CAT '] types=[' +
+                                              *CAT %SST(&S 70 2) *CAT '] tail=[' *CAT +
+                                              %SST(&S 88 20) *CAT ']') TOPGMQ(*EXT)
+       27        0               SNDPGMMSG  MSG('IMPROMPTU') TOPGMQ(*SAME)
+       28        0               RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) RMV(*YES) MSGID(&ID) +
+                                              RTNTYPE(&RT) ALROPT(&AL) TXTCCSID(&TC) +
+                                              DTACCSID(&DC)
+       29        0               CHGVAR     VAR(&C2) VALUE(&TC)
+       30        0               CHGVAR     VAR(&C3) VALUE(&DC)
+       31        0               SNDPGMMSG  MSG('C1 ID=[' *CAT &ID *CAT '] RT=[' *CAT &RT *CAT +
+                                              '] AL=[' *CAT &AL *CAT '] TC=[' *CAT &C2 *CAT +
+                                              '] DC=[' *CAT &C3 *CAT ']') TOPGMQ(*EXT)
+       32        0               SNDPGMMSG  MSG('MINE') TOPGMQ(*SAME)
+       33        0               RCVMSG     PGMQ(*SAME RCVMSG2) MSGTYPE(*ANY) RMV(*YES) MSG(&M)
+       34        0               SNDPGMMSG  MSG('E1 PGMQ(*SAME RCVMSG2) MSG=[' *CAT &M *CAT ']') +
+                                              TOPGMQ(*EXT)
+       35        0               RCVMSG     PGMQ(*SAME NOSUCH) MSGTYPE(*ANY) MSG(&M)
+       36        0               MONMSG     MSGID(CPF2479) EXEC(SNDPGMMSG MSG('E2 NOSUCH: +
+                                              CPF2479') TOPGMQ(*EXT))
+       37        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&AL         *CHAR   9             16  16 20 22 25 28 31
+&C1         *CHAR   5             20  17 20
+&C2         *CHAR   5             21  18 20 23 25 29 31
+&C3         *CHAR   5             22  19 20 24 25 30 31
+&DC         *DEC    5 0           18  16 19 22 24 28 30
+&DTA        *CHAR   20            13  16 20
+&ID         *CHAR   7             11  16 20 22 25 28 31
+&KEY        *CHAR   4             14  16 20
+&M          *CHAR   12            23  4 16 20 33 34 35
+&MSG        *CHAR   20            12  16 20
+&RT         *CHAR   2             19  16 20 22 25 28 31
+&S          *CHAR   720           10  7 16 17 20 22 26
+&SEV        *DEC    2 0           15  16 17
+&TC         *DEC    5 0           17  16 18 22 23 28 29
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program RCVMSG2 created.
+End of compilation.

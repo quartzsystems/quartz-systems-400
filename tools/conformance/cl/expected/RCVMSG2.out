@@ -1,0 +1,13 @@
+console:
+raised: CPF2479
+handled: CPF2479
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 A1 ID=[       ] MSG=[                    ] DTA=[                    ] KEY=[    ] SEV=[0    ] RT=[  ] AL=[         ] TC=[0    ] DC=[0    ] S=[                                        ]
+  CPF9898 B1 ID=[CPF9897] RT=[04] AL=[*NO      ] TC=[65535] DC=[65535]
+  CPF9898 B2 SENDER pgm=[RCVMSG2     ] rcv=[RCVMSG2   ] types=[11] tail=[                    ]
+  CPF9898 C1 ID=[CPF9898] RT=[04] AL=[*NO      ] TC=[65535] DC=[65535]
+  CPF9898 E1 PGMQ(*SAME RCVMSG2) MSG=[MINE        ]
+  CPF9898 E2 NOSUCH: CPF2479

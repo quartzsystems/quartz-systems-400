@@ -1,0 +1,12 @@
+console:
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 bob [to bob]
+  CPF9898 qsysopr [to the operator]
+  CPF9898 qsysopr [to the requester]
+  CPF9898 anne [to all]
+  CPF9898 bob again []

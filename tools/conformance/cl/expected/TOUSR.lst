@@ -1,0 +1,43 @@
+QS/400 ILE CL compiler                  V1R1M0
+
+Program  . . . . . . . . . . . . :   TOUSR
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   TOUSR
+Text . . . . . . . . . . . . . . :   corpus TOUSR
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* SNDPGMMSG TOUSR: a profile's queue (QUSRSYS), the operator's, the   */
+                    /* requester (a batch job's is the operator) and every signed-on user. */
+        1        0               PGM
+        2        0               DCL        VAR(&M) TYPE(*CHAR) LEN(40)
+        3        0               SNDPGMMSG  MSG('to bob') TOUSR(BOB)
+        4        0               SNDPGMMSG  MSG('to the operator') TOUSR(*SYSOPR)
+        5        0               SNDPGMMSG  MSG('to the requester') TOUSR(*REQUESTER)
+        6        0               SNDPGMMSG  MSG('to all') TOUSR(*ALLACT)
+        7        0               RCVMSG     MSGQ(QUSRSYS/BOB) MSG(&M)
+        8        0               SNDPGMMSG  MSG('bob [' *CAT &M *TCAT ']') TOPGMQ(*EXT)
+        9        0               RCVMSG     MSGQ(QSYS/QSYSOPR) MSG(&M)
+       10        0               SNDPGMMSG  MSG('qsysopr [' *CAT &M *TCAT ']') TOPGMQ(*EXT)
+       11        0               RCVMSG     MSGQ(QSYS/QSYSOPR) MSG(&M)
+       12        0               SNDPGMMSG  MSG('qsysopr [' *CAT &M *TCAT ']') TOPGMQ(*EXT)
+       13        0               RCVMSG     MSGQ(QUSRSYS/ANNE) MSG(&M)
+       14        0               SNDPGMMSG  MSG('anne [' *CAT &M *TCAT ']') TOPGMQ(*EXT)
+       15        0               RCVMSG     MSGQ(QUSRSYS/BOB) MSG(&M)
+       16        0               SNDPGMMSG  MSG('bob again [' *CAT &M *TCAT ']') TOPGMQ(*EXT)
+       17        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&M          *CHAR   40             7  7 8 9 10 11 12 13 14 15 16
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program TOUSR created.
+End of compilation.

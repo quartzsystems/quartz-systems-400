@@ -1,0 +1,79 @@
+# RCVMSG return variables, SENDER, PGMQ entries
+# primary oracle (V7R1M0), 2026-11-06
+
+> CRTBNDCL PGM(QSTEST/RCVT2) SRCFILE(QSTEST/ZZSRC) SRCMBR(RCVT2)
+  -> ok
+  CPF1336 Escape 40 QWTCHGJB->QWCJOBSR | Errors on CHGJOB command for job 009252/QUSER/QZDASOINIT.
+  CPF5813 Diagnostic 40 QDDCPF->QSQRUN4 | File ZZSRC in library QSTEST already exists.
+  CPF7302 Escape 40 QDDCPF->QSQRUN4 | File ZZSRC not created in library QSTEST.
+  CPI2119 Information 00 QLIINSRT->QBNINSOB | AUT and USRPRF parameter values were ignored.
+  CPI2119 Information 00 QLIINSRT->QBNINSOB | AUT and USRPRF parameter values were ignored.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member RCVT2 added to file ZZSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member RCVT2 file ZZSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member RCVT1 added to file ZZSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member RCVT1 file ZZSRC in QSTEST cleared.
+  CPC0815 Completion 00 QCLENTR->QSQRUN4 | Program RCVT2 created in library QSTEST.
+
+> CRTBNDCL PGM(QSTEST/RCVT1) SRCFILE(QSTEST/ZZSRC) SRCMBR(RCVT1)
+  -> ok
+  CPC0815 Completion 00 QCLENTR->QSQRUN4 | Program RCVT1 created in library QSTEST.
+
+> CALL PGM(QSTEST/RCVT1)
+  -> ok
+  CPF9897 Information 40 RCVT1->*EXT | A1 ID=[       ] MSG=[                    ] DTA=[ ] KEY=[    ] SEV=[00000] RT=[  ] AL=[         ] TC=[00000] DC=[00000] S=[                                        ]
+  CPF9897 Information 40 RCVT1->*EXT | B1 ID=[CPF9897] RT=[04] AL=[*NO      ] TC=[65535] DC=[65535]
+  CPF9897 Information 40 RCVT1->*EXT | S001=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S021=[      RCVT1       00]
+  CPF9897 Information 40 RCVT1->*EXT | S041=[001261106051924RCVT1]
+  CPF9897 Information 40 RCVT1->*EXT | S061=[     000011977235QSE]
+  CPF9897 Information 40 RCVT1->*EXT | S081=[COFR                ]
+  CPF9897 Information 40 RCVT1->*EXT | S101=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S121=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S141=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S161=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S181=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S201=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S221=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S241=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S261=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S281=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S301=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S321=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S341=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S361=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S381=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S401=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S421=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S441=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S461=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S481=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S501=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S521=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S541=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S561=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S581=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S601=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S621=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S641=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S661=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S681=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | S701=[                    ]
+  CPF9897 Information 40 RCVT1->*EXT | C1 ID=[       ] RT=[04] AL=[         ] TC=[00037] DC=[00000]
+  CPF9897 Information 40 RCVT2->*EXT | E1 PGMQ(*SAME RCVT1) MSG=[FOR-RCVT1-A ]
+  CPF9897 Information 40 RCVT2->*EXT | E2 PGMQ(*PRV *) MSG=[FOR-RCVT1-B ]
+
+> DLTPGM PGM(QSTEST/RCVT1)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object RCVT1 in QSTEST type *PGM deleted.
+
+> DLTPGM PGM(QSTEST/RCVT2)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object RCVT2 in QSTEST type *PGM deleted.
+
+> RMVM FILE(QSTEST/ZZSRC) MBR(RCVT1)
+  -> ok
+  CPC7309 Completion 00 QDDDMBR->QSQRUN4 | Member RCVT1 removed from file ZZSRC in QSTEST.
+
+> RMVM FILE(QSTEST/ZZSRC) MBR(RCVT2)
+  -> ok
+  CPC7309 Completion 00 QDDDMBR->QSQRUN4 | Member RCVT2 removed from file ZZSRC in QSTEST.

@@ -7762,6 +7762,13 @@ help = "ADDMSGD adds new identifiers only. Use CHGMSGD to change the description
 vars = ["*CHAR 7", "*CHAR 10", "*CHAR 10"]
 
 [[msg]]
+id = "CPF2479"
+sev = 40
+text = "The call stack entry named is not on the call stack."
+help = "No program or procedure of that name, in the module and program given, is active in the job. Check the PGMQ or TOPGMQ value."
+vars = []
+
+[[msg]]
 id = "CPF24A3"
 sev = 40
 text = "The call stack counter &1 is not valid."

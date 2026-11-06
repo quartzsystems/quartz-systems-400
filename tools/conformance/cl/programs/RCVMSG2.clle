@@ -1,0 +1,67 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* RCVMSG's return variables as the primary fills them               */
+/* (tools/conformance/oracle/cl/rcvmsg/rcvmsg.txt, lines A1, B1, C1): */
+/* nothing received blanks them, ALROPT, TXTCCSID, DTACCSID, SENDER,  */
+/* and PGMQ naming the program's own entry. CHGVAR of a decimal to  */
+/* *CHAR gives 0 where the primary gives 00000 (not this test's).    */
+             PGM
+             DCL        VAR(&S) TYPE(*CHAR) LEN(720)
+             DCL        VAR(&ID) TYPE(*CHAR) LEN(7) VALUE('XXXXXXX')
+             DCL        VAR(&MSG) TYPE(*CHAR) LEN(20) VALUE('PRESET')
+             DCL        VAR(&DTA) TYPE(*CHAR) LEN(20) VALUE('PRESETDTA')
+             DCL        VAR(&KEY) TYPE(*CHAR) LEN(4) VALUE('KKKK')
+             DCL        VAR(&SEV) TYPE(*DEC) LEN(2 0) VALUE(77)
+             DCL        VAR(&AL) TYPE(*CHAR) LEN(9) VALUE('ALROPTXXX')
+             DCL        VAR(&TC) TYPE(*DEC) LEN(5 0) VALUE(11111)
+             DCL        VAR(&DC) TYPE(*DEC) LEN(5 0) VALUE(22222)
+             DCL        VAR(&RT) TYPE(*CHAR) LEN(2) VALUE('ZZ')
+             DCL        VAR(&C1) TYPE(*CHAR) LEN(5)
+             DCL        VAR(&C2) TYPE(*CHAR) LEN(5)
+             DCL        VAR(&C3) TYPE(*CHAR) LEN(5)
+             DCL        VAR(&M) TYPE(*CHAR) LEN(12)
+             RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) RMV(*YES) MSGID(&ID) +
+                          MSG(&MSG) MSGDTA(&DTA) KEYVAR(&KEY) SEV(&SEV) +
+                          RTNTYPE(&RT) ALROPT(&AL) TXTCCSID(&TC) +
+                          DTACCSID(&DC) SENDER(&S)
+             CHGVAR     VAR(&C1) VALUE(&SEV)
+             CHGVAR     VAR(&C2) VALUE(&TC)
+             CHGVAR     VAR(&C3) VALUE(&DC)
+             SNDPGMMSG  MSG('A1 ID=[' *CAT &ID *CAT '] MSG=[' *CAT &MSG *CAT +
+                          '] DTA=[' *CAT &DTA *CAT '] KEY=[' *CAT &KEY *CAT +
+                          '] SEV=[' *CAT &C1 *CAT '] RT=[' *CAT &RT *CAT +
+                          '] AL=[' *CAT &AL *CAT '] TC=[' *CAT &C2 *CAT +
+                          '] DC=[' *CAT &C3 *CAT '] S=[' *CAT %SST(&S 1 40) +
+                          *CAT ']') TOPGMQ(*EXT)
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) MSGDTA('HELLO') +
+                          TOPGMQ(*SAME) MSGTYPE(*INFO)
+             RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) RMV(*YES) MSGID(&ID) +
+                          RTNTYPE(&RT) ALROPT(&AL) TXTCCSID(&TC) +
+                          DTACCSID(&DC) SENDER(&S)
+             CHGVAR     VAR(&C2) VALUE(&TC)
+             CHGVAR     VAR(&C3) VALUE(&DC)
+             SNDPGMMSG  MSG('B1 ID=[' *CAT &ID *CAT '] RT=[' *CAT &RT *CAT +
+                          '] AL=[' *CAT &AL *CAT '] TC=[' *CAT &C2 *CAT +
+                          '] DC=[' *CAT &C3 *CAT ']') TOPGMQ(*EXT)
+             SNDPGMMSG  MSG('B2 SENDER pgm=[' *CAT %SST(&S 27 12) *CAT +
+                          '] rcv=[' *CAT %SST(&S 56 10) *CAT '] types=[' +
+                          *CAT %SST(&S 70 2) *CAT '] tail=[' *CAT +
+                          %SST(&S 88 20) *CAT ']') TOPGMQ(*EXT)
+             SNDPGMMSG  MSG('IMPROMPTU') TOPGMQ(*SAME)
+             RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) RMV(*YES) MSGID(&ID) +
+                          RTNTYPE(&RT) ALROPT(&AL) TXTCCSID(&TC) +
+                          DTACCSID(&DC)
+             CHGVAR     VAR(&C2) VALUE(&TC)
+             CHGVAR     VAR(&C3) VALUE(&DC)
+             SNDPGMMSG  MSG('C1 ID=[' *CAT &ID *CAT '] RT=[' *CAT &RT *CAT +
+                          '] AL=[' *CAT &AL *CAT '] TC=[' *CAT &C2 *CAT +
+                          '] DC=[' *CAT &C3 *CAT ']') TOPGMQ(*EXT)
+             SNDPGMMSG  MSG('MINE') TOPGMQ(*SAME)
+             RCVMSG     PGMQ(*SAME RCVMSG2) MSGTYPE(*ANY) RMV(*YES) MSG(&M)
+             SNDPGMMSG  MSG('E1 PGMQ(*SAME RCVMSG2) MSG=[' *CAT &M *CAT ']') +
+                          TOPGMQ(*EXT)
+             RCVMSG     PGMQ(*SAME NOSUCH) MSGTYPE(*ANY) MSG(&M)
+             MONMSG     MSGID(CPF2479) EXEC(SNDPGMMSG MSG('E2 NOSUCH: +
+                          CPF2479') TOPGMQ(*EXT))
+             ENDPGM

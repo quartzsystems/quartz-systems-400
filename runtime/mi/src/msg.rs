@@ -32,6 +32,10 @@ pub struct Message {
     pub severity: u16,
     /// Call-stack depth of the sender.
     pub from_depth: u32,
+    /// The sending program, blank when none sent it.
+    pub from_pgm: String,
+    /// When it was sent, microseconds since the epoch (UTC).
+    pub sent_us: u64,
     /// Received already (`*OLD`).
     pub received: bool,
     /// The reply, for an inquiry that got one.

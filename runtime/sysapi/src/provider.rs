@@ -344,6 +344,12 @@ pub struct QueueMsg {
     pub help: String,
     /// For an inquiry, its reply once answered.
     pub reply: String,
+    /// The sending job: name, user, number.
+    pub job: (String, String, u32),
+    /// The sending program.
+    pub from_pgm: String,
+    /// When it was sent, microseconds since the epoch.
+    pub sent_us: u64,
 }
 
 /// `CPF2403`: queue `name` in `lib` not found.
@@ -374,6 +380,11 @@ pub trait Provider {
     /// The messages on queue `lib/name`, oldest first.
     fn msgq_list(&mut self, lib: &str, name: &str) -> ApiResult<Vec<QueueMsg>> {
         Err(no_queue(lib, name))
+    }
+    /// The users signed on at a display (interactive jobs), each once:
+    /// `TOUSR(*ALLACT)`.
+    fn signed_on_users(&mut self) -> ApiResult<Vec<String>> {
+        Err(ApiFail::id("CPF9B70").text("SNDPGMMSG", 10))
     }
     /// A product or license API over its parameters' bytes
     /// (`licpgm::api::dispatch`); the shipped catalog answers by default.
@@ -625,6 +636,8 @@ pub struct MemProvider {
     pub regfac: regfac::Registry,
     /// Message queues by `(library, name)`, oldest message first.
     pub msgqs: HashMap<(String, String), Vec<QueueMsg>>,
+    /// Users signed on at a display (`TOUSR(*ALLACT)`).
+    pub signed_on: Vec<String>,
     catalog: sysval::Catalog,
 }
 
@@ -673,6 +686,7 @@ impl Default for MemProvider {
             sec: None,
             regfac: regfac::Registry::shipped(),
             msgqs: HashMap::new(),
+            signed_on: Vec::new(),
             catalog: sysval::Catalog::builtin().expect("the catalog parses"),
         }
     }
@@ -786,6 +800,10 @@ impl MemProvider {
 }
 
 impl Provider for MemProvider {
+    fn signed_on_users(&mut self) -> ApiResult<Vec<String>> {
+        Ok(self.signed_on.clone())
+    }
+
     fn msgq_send(&mut self, lib: &str, name: &str, mut m: QueueMsg) -> ApiResult<u32> {
         let k = Self::find_key(&self.msgqs, lib, name).ok_or_else(|| no_queue(lib, name))?;
         let key = self.msgqs.values().flatten().map(|m| m.key).max().unwrap_or(0) + 1;

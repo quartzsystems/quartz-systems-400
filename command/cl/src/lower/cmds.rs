@@ -780,6 +780,18 @@ impl Gen<'_, '_> {
             _ => "*INFO".into(),
         };
         let spec = |k: &str| r.get(k).filter(|b| b.specified).and_then(|b| b.value.clone());
+        // `TOUSR`: a profile's queue in QUSRSYS, the operator's, the
+        // requester's (decided when it runs: the external queue of an
+        // interactive job, else QSYSOPR) or every signed-on user's.
+        if let Some(u) = spec("TOUSR") {
+            let qual = |n: &str, l: &str| Value::Qual(vec![Value::Char(n.into()), Value::Char(l.into())]);
+            let q = match u.source().as_str() {
+                "*SYSOPR" | "QSYSOPR" => qual("QSYSOPR", "QSYS"),
+                s @ ("*REQUESTER" | "*ALLACT") => qual(s, ""),
+                _ => Value::Qual(vec![u, Value::Char("QUSRSYS".into())]),
+            };
+            return self.sndm(r, &msgid, (&msgf, &msgf_lib), data, &ty, &[q]);
+        }
         // `TOMSGQ`: `*TOPGMQ` leaves it to `TOPGMQ`, `*SYSOPR` is the
         // operator's queue, names go to those queues.
         let tomsgq = match spec("TOMSGQ") {
@@ -970,74 +982,48 @@ impl Gen<'_, '_> {
         }
     }
 
-    /// `RCVMSG`.
+    /// `RCVMSG`, always through `QCLRCVM`: it fills every return
+    /// variable, blanks and zeros when nothing comes, as IBM's does.
     fn rcvmsg(&mut self, s: &Stmt, r: &Resolved) {
         let get = |k: &str| r.get(k).and_then(|b| b.value.clone());
-        let var = |v: Option<Value>| match v {
-            Some(Value::Var(n)) => Some(n),
-            _ => None,
+        // PGMQ(relationship entry): the entry is a name, or a name with
+        // its module and bound program.
+        let (pgmq, entry) = match get("PGMQ") {
+            Some(Value::Elems(items)) => (
+                items
+                    .first()
+                    .cloned()
+                    .flatten()
+                    .map_or_else(|| "*SAME".into(), |v| v.source()),
+                items.get(1).cloned().flatten(),
+            ),
+            Some(v) => (v.source(), None),
+            None => ("*SAME".into(), None),
         };
-        let pgmq = match get("PGMQ") {
-            Some(Value::Elems(items)) => items
-                .first()
-                .cloned()
-                .flatten()
-                .map_or_else(|| "*SAME".into(), |v| v.source()),
-            Some(v) => v.source(),
-            None => "*SAME".into(),
+        let entry = match entry {
+            Some(Value::Qual(parts)) => parts.iter().map(Value::source).collect(),
+            Some(v) => vec![v.source()],
+            None => Vec::new(),
         };
-        // A named queue, a wait, or a return variable the `rcvmsg`
-        // instruction does not fill: through `QCLRCVM`.
         let msgq = get("MSGQ").filter(|v| v.source() != "*PGMQ");
-        let waits = get("WAIT").is_some_and(|v| v.source() != "0");
-        let more = ["RTNTYPE", "MSGLEN", "SECLVL", "SECLVLLEN", "MSGDTALEN", "MSGF", "MSGFLIB"]
-            .iter()
-            .any(|k| var(get(k)).is_some());
-        if msgq.is_some() || waits || more {
-            return self.rcvm(s, r, &pgmq, msgq.as_ref());
-        }
-        let pgmq = match pgmq.as_str() {
-            "*SAME" | "*PRV" | "*EXT" | "*CTLBDY" => pgmq,
-            _ => "*SAME".into(),
-        };
-        let ty = match get("MSGTYPE") {
-            // `*EXCP` is the last exception: an escape here.
-            Some(Value::Char(t)) if t == "*EXCP" => "*ESCAPE".into(),
-            Some(Value::Char(t)) => t,
-            _ => "*ANY".into(),
-        };
-        let rmv = !matches!(get("RMV"), Some(Value::Char(t)) if t == "*NO");
-        let mut parts = vec![format!("pgmq({pgmq})"), format!("type({ty})")];
-        if let Some(k) = var(get("MSGKEY")) {
-            parts.push(format!("key(${k})"));
-        }
-        if rmv {
-            parts.push("rmv".into());
-        }
-        for (kw, ir) in [
-            ("MSG", "msg"),
-            ("MSGID", "msgid"),
-            ("MSGDTA", "data"),
-            ("KEYVAR", "keyout"),
-            ("SEV", "sev"),
-        ] {
-            if let Some(v) = var(get(kw)) {
-                parts.push(format!("{ir}(${v})"));
-            }
-        }
-        let got = self.reg("g");
-        self.ins(&format!("{got} = rcvmsg {}", parts.join(" ")));
+        self.rcvm(s, r, &pgmq, &entry, msgq.as_ref());
     }
 
     /// `RCVMSG` through `QCLRCVM`: from `msgq` when it names a queue,
-    /// else from the call stack entry `pgmq`; every return variable.
-    fn rcvm(&mut self, s: &Stmt, r: &Resolved, pgmq: &str, msgq: Option<&Value>) {
+    /// else from the call stack entry `pgmq` and `entry`; every return
+    /// variable.
+    fn rcvm(&mut self, s: &Stmt, r: &Resolved, pgmq: &str, entry: &[String], msgq: Option<&Value>) {
         let get = |k: &str| r.get(k).and_then(|b| b.value.clone());
         let (rel, queue) = match msgq {
             Some(v) if v.source() == "*EXT" => (qstr("*EXT"), self.chars(20, &qstr(""))),
             Some(v) => (qstr("*MSGQ"), self.qual20(v)),
             None => (qstr(pgmq), self.chars(20, &qstr(""))),
         };
+        let spec = self.chars(30, &qstr(""));
+        for (i, part) in entry.iter().take(3).enumerate() {
+            let one = self.chars(10, &qstr(part));
+            self.put_at(&spec, 10 * i, 10, &one);
+        }
         let rel = self.chars(10, &rel);
         let ty = match get("MSGTYPE") {
             Some(v) => Self::operand(&v),
@@ -1075,10 +1061,18 @@ impl Gen<'_, '_> {
         let msg = self.chars(3000, &qstr(""));
         let seclvl = self.chars(3000, &qstr(""));
         let msgdta = self.chars(3000, &qstr(""));
+        let alropt = self.chars(9, &qstr(""));
+        let txtccsid = self.number("0");
+        let dtaccsid = self.number("0");
+        let sender = self.chars(720, &qstr(""));
         self.ins(&format!(
-            "call QSYS/QCLRCVM({rel}, {queue}, {ty}, {key}, {wait}, {rmv}, {found}, {rtntype}, {msgid}, {sev}, {keyvar}, {msgf}, {msgflib}, {msglen}, {seclvllen}, {msgdtalen}, {msg}, {seclvl}, {msgdta})"
+            "call QSYS/QCLRCVM({rel}, {queue}, {ty}, {key}, {wait}, {rmv}, {found}, {rtntype}, {msgid}, {sev}, {keyvar}, {msgf}, {msgflib}, {msglen}, {seclvllen}, {msgdtalen}, {msg}, {seclvl}, {msgdta}, {alropt}, {txtccsid}, {dtaccsid}, {sender}, {spec})"
         ));
         for (kw, from, numeric) in [
+            ("ALROPT", &alropt, false),
+            ("TXTCCSID", &txtccsid, true),
+            ("DTACCSID", &dtaccsid, true),
+            ("SENDER", &sender, false),
             ("RTNTYPE", &rtntype, false),
             ("MSGID", &msgid, false),
             ("SEV", &sev, true),
