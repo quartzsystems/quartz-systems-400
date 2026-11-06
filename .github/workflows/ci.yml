@@ -1,0 +1,167 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# QS/400 CI (docs/TOOLS.md, "CI and its runners"). Host jobs run on
+# GitHub's Ubuntu runners with the toolchain rust-toolchain.toml pins;
+# the QEMU suite, the soak and the release run on the self-hosted runner
+# labelled qs400-qemu (KVM). NEEDS-CODY: register that runner.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # Nightly, 02:00 UTC: the soak and a release with the development key.
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  # Until the BLOCKED(rel) rename lands, the release notes check accepts
+  # the older marker forms; drop this line after it.
+  QS400_MARKERS: legacy
+
+jobs:
+  fmt:
+    name: rustfmt
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    name: clippy -D warnings
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Host packages (clang links the host tools)
+        run: sudo apt-get update && sudo apt-get install -y clang lld
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: clippy-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      # The Linux-only crates' real code is cfg(target_os = "linux").
+      - run: cargo clippy -p slic -p console -p qsjob --all-targets --locked --target x86_64-unknown-linux-musl -- -D warnings
+
+  deny:
+    name: build deny, notices, release notes
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Host packages
+        run: sudo apt-get update && sudo apt-get install -y clang lld
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: cargo-deny
+        run: cargo install cargo-deny --locked
+      - run: cargo run -q -p build -- deny
+      - run: cargo run -q -p build -- notices --check
+      - run: cargo run -q -p kcbuild -- notes
+      - run: cargo run -q -p fmtcheck
+
+  test:
+    name: host tests
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - name: Host packages
+        run: sudo apt-get update && sudo apt-get install -y clang lld
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: test-${{ hashFiles('rust-toolchain.toml', 'Cargo.lock') }}
+      - run: cargo test --workspace --locked
+
+  fuzz:
+    name: build fuzz (60 s a target)
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Host packages
+        run: sudo apt-get update && sudo apt-get install -y clang lld
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - run: cargo run -q -p build -- fuzz --secs 60 --jobs 4
+      - name: Crashes
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashes
+          path: tools/fuzz/crashes/
+
+  qemu:
+    name: build test (QEMU)
+    if: github.event_name != 'schedule'
+    needs: [clippy, deny, test]
+    runs-on: [self-hosted, qs400-qemu]
+    timeout-minutes: 480
+    env:
+      QS400_TARGET_DIR: /srv/qs400-ci/target
+      CARGO_TARGET_DIR: /srv/qs400-ci/target
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo run -q -p build -- doctor
+      - run: cargo run -q -p build -- all
+      - run: cargo run -q -p build -- test
+      - name: Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-logs
+          path: /srv/qs400-ci/target/logs/
+
+  nightly:
+    name: soak and release (development key)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, qs400-qemu]
+    timeout-minutes: 600
+    env:
+      QS400_TARGET_DIR: /srv/qs400-ci/target
+      CARGO_TARGET_DIR: /srv/qs400-ci/target
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo run -q -p build -- all
+      - run: cargo run -q -p build -- soak --secs 3600
+      # No QS400_SIGNING_KEY or QS400_SB_KEY here: the development keys.
+      - run: cargo run -q -p build -- release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qs400-release-dev
+          path: |
+            /srv/qs400-ci/target/release/V1R1M0/*.iso
+            /srv/qs400-ci/target/release/V1R1M0/SHA256SUMS
+            /srv/qs400-ci/target/release/V1R1M0/SHA256SUMS.sig
+            /srv/qs400-ci/target/release/V1R1M0/MANIFEST.json
+            /srv/qs400-ci/target/release/V1R1M0/NOTICES.txt
+            /srv/qs400-ci/target/release/V1R1M0/SOURCE-OFFER.txt
+          retention-days: 14

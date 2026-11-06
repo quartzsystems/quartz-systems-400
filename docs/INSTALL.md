@@ -33,6 +33,15 @@ and, when `QS400_INSTALL_RSP` names a file at build time,
 or USB stick, and with its tree copied onto FAT32 (`build test --media
 iso`, `iso-raw`, `iso-fat`).
 
+A release (`build release`) adds, at the root, `NOTICES.txt` (every
+third-party component with its license, `build notices`) and
+`RELEASE_NOTES_V1R1M0.md`; `QS400/SRC/`, the Linux kernel's source
+offer (`SOURCE-OFFER.txt`, `BUILDING-THE-KERNEL.md`, the configuration,
+the GPL-2.0 text); and `QS400/EFI/keys/`, the Secure Boot db key's
+certificate (§6). The installed system keeps the notices at
+`/QQS/ProdData/Notices/NOTICES.txt`; F19 on `DSPSFWRSC` and on `GO
+LICPGM` option 10 names that file (CPI9B83).
+
 On tape the manifest is file 1 (label `QS400MANIFEST`), the payload
 files follow in manifest order with 64 KiB blocks, IBM standard labels
 throughout (docs/MEDIA.md, "Tape: labels"). Files after them (a
@@ -342,3 +351,68 @@ matrix:
 `--media iso-raw` is the D IPL from the USB image: the hybrid image
 written raw to a disk boots, installs onto a blank disk beside it, and
 the installed disk boots alone.
+
+## 6. Secure Boot
+
+QS/400 V1R1M0 boots with Secure Boot **off**. Its UKIs carry no
+signature from the Microsoft UEFI CA (there is no shim), so a firmware
+that enforces Secure Boot with its factory keys refuses them ("Access
+Denied", or the firmware's own security violation screen). Either turn
+Secure Boot off, or enrol the QS/400 key and keep it on.
+
+`QSHWQUAL` reports `SECBOOT` as `PASS` with Secure Boot off and, with it
+on, `WARN: QS/400 V1R1M0 is not Secure Boot signed; disable Secure Boot
+or enrol the QS/400 key`. The installer checks the same variable when it
+writes the LIC: with Secure Boot on and signed slot UKIs it says the
+system boots while the QS/400 key stays enrolled; with unsigned UKIs it
+prints the warning above.
+
+**The QS/400 key.** `build release` signs the three UKIs (slot A, slot B,
+the media) with an Authenticode signature (PKCS#7, SHA-256, RSA-2048) by
+the QS/400 Secure Boot db key (`tools/pesign`). The release key comes
+from `QS400_SB_KEY` (PKCS#8, PEM or DER) and `QS400_SB_CERT` (X.509,
+PEM or DER); `cargo run -p pesign -- keygen DIR` makes one. Without them
+the development pair checked in as `tools/pesign/keys/qs400-db-DEV-ONLY.*`
+signs, and the build says so: a release that leaves the building is
+never signed with it. `cargo run -p pesign -- verify FILE CERT` checks a
+signed UKI as the firmware does.
+
+The media carry the certificate: `QS400/EFI/keys/qs400-db.cer` (DER)
+and `qs400-db.esl` (an `EFI_SIGNATURE_LIST`) in the ISO tree, and the
+same two files under `EFI/keys/` in the boot image, the FAT partition a
+firmware's file browser reads when the ISO is written to a USB stick.
+
+**Enrolling it.** The certificate goes into the firmware's `db`
+(authorized signatures), beside the keys already there:
+
+- *OVMF (QEMU, Proxmox, libvirt).* Boot to the firmware setup (Esc at
+  the logo), Device Manager, Secure Boot Configuration, Secure Boot Mode
+  `Custom Mode`, Custom Secure Boot Options, DB Options, Enroll
+  Signature, Enroll Signature Using File: the boot image's
+  `EFI/keys/qs400-db.cer`; Commit Changes and Exit, then reset. On
+  Proxmox the EFI disk must have been made with pre-enrolled keys (a PK
+  and KEK exist) for Secure Boot to be enforced at all.
+- *VMware ESXi and Workstation.* The EFI setup offers no enrolment of a
+  file; set `uefi.allowAuthBypass = "TRUE"` in the VM's `.vmx`, then
+  enrol from the setup as for OVMF, and remove the setting afterwards.
+- *Hyper-V Generation 2.* The Secure Boot templates (Microsoft Windows,
+  Microsoft UEFI Certificate Authority, Open Source Shielded VM) cannot
+  take another key, and none of them starts the QS/400 UKI: turn Secure
+  Boot off in the VM's Security settings.
+- *Physical machines.* In the firmware setup's Secure Boot key
+  management (on a Dell PowerEdge: System Security, Secure Boot, Secure
+  Boot Policy `Custom`, Expert Key Management, `db`, Append from File),
+  choose `qs400-db.cer` on the USB stick. The menu names differ from one
+  firmware to the next.
+
+`qs400-db.esl` is for tools that take a signature list (`efi-updatevar
+-a -f qs400-db.esl db`, `virt-fw-vars --add-db`). No `.auth` file is
+shipped: an authenticated `db` update must be signed by the machine's
+own KEK, which only its owner holds. No enrolment EFI application is
+shipped either; the firmware's own setup does the work.
+
+The signing was checked under QEMU with OVMF's Secure Boot build
+(`OVMF_CODE_4M.secboot.fd`): an unsigned UKI and a UKI signed with a key
+not in `db` are refused (`Access Denied -- rejected probably by Secure
+Boot`); the same UKI boots to the IPL (`SRC C1001000`) once the QS/400
+certificate is in `db`.

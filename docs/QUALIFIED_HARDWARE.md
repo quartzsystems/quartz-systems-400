@@ -9,6 +9,13 @@ needs that run on hardware or a hypervisor this build machine does not
 have; the checklist under each is what to do and what to write back
 into the table.
 
+**Secure Boot.** V1R1M0 boots with Secure Boot off. Its UKIs are signed
+only with the QS/400 db key (no Microsoft UEFI CA signature, no shim),
+so with Secure Boot on the firmware refuses them unless the QS/400 key
+is enrolled in its `db` (`INSTALL.md` §6 gives the steps per platform).
+Qualify each platform with Secure Boot off; a run with Secure Boot on
+and the key enrolled is optional and is recorded as such.
+
 | Platform | Firmware | Storage | Network | Console | Guest agent | State |
 | --- | --- | --- | --- | --- | --- | --- |
 | QEMU/KVM, `q35` | OVMF (UEFI) | virtio-blk, SATA on the q35 AHCI controller, virtio-scsi, NVMe | virtio-net, e1000e | VGA through the GOP (simpledrm), serial `ttyS0` | virtio-serial `org.qemu.guest_agent.0` | **Qualified** here: QEMU steps 114 to 117 and media step 5 |
@@ -48,12 +55,12 @@ What it checks, and the limits (QS/400's own):
 | Area | `PASS` | `WARN` | `FAIL` |
 | --- | --- | --- | --- |
 | Firmware | UEFI (`/sys/firmware/efi`) | | legacy BIOS boot |
-| Secure Boot | the `SecureBoot` variable is 1 | it is 0, or cannot be read | |
+| Secure Boot | the `SecureBoot` variable is 0 (V1R1M0 boots with Secure Boot off) | it is 1 (`WARN: QS/400 V1R1M0 is not Secure Boot signed; disable Secure Boot or enrol the QS/400 key`), or cannot be read | |
 | TPM | a TPM 2.0 (`/sys/class/tpm/tpm0`) | none, or a TPM 1.2 | |
 | Processors | each `PNnn`, with the CPU's model | only one processor | none found |
 | Main storage | 2048 MiB or more | 512 to 2047 MiB | under 512 MiB |
 | Storage controllers | each `DCnn` with its driver bound and a type QS/400 knows (`HARDWARE_NOTES.md`) | a controller of type `QD00` (a class with no table entry) | a PCI controller no driver took |
-| Disk units | each `DDnnn` | a RAID volume (a PERC or MegaRAID virtual disk: put the controller in HBA mode); a disk too small for a load source; only one disk (no mirroring) | no disk at all |
+| Disk units | each `DDnnn` | a RAID volume (a PERC or MegaRAID virtual disk; the line names the controller, `DCnn` and its description: put it in HBA mode); a disk too small for a load source; only one disk (no mirroring) | no disk at all |
 | Network | each Ethernet port with link | a port without link; no port | |
 | Guest agent | the `org.qemu.guest_agent.0` channel, under a hypervisor | under a hypervisor, no channel | |
 | Console | the serial port; the firmware's framebuffer (name, size, depth) | no framebuffer (serial only) | neither a serial port nor a framebuffer |
@@ -143,14 +150,16 @@ line, any `WARN`/`FAIL` lines, time to sign-on).
 Per platform:
 
 - **Proxmox VE 8**: Machine `q35`, BIOS `OVMF (UEFI)` with an EFI disk
-  (pre-enrolled keys off for the first run, then on to check Secure
-  Boot), SCSI controller `VirtIO SCSI single`, disk on `scsi0`, network
-  `VirtIO`, Display `Default`, Options: QEMU Guest Agent `Enabled`, add a
-  TPM state (v2.0). Expect `DC01` virtio SCSI (`QD02-001`), the TPM
-  `PASS`, the agent channel `PASS`; in step 6 the Summary page shows the
-  IPs and `Shutdown` powers down through the agent.
+  (pre-enrolled keys off: Secure Boot is not enforced; a run with the
+  keys on needs the QS/400 key enrolled, `INSTALL.md` §6), SCSI
+  controller `VirtIO SCSI single`, disk on `scsi0`, network `VirtIO`,
+  Display `Default`, Options: QEMU Guest Agent `Enabled`, add a TPM
+  state (v2.0). Expect `DC01` virtio SCSI (`QD02-001`), the TPM `PASS`,
+  the agent channel `PASS`; in step 6 the Summary page shows the IPs and
+  `Shutdown` powers down through the agent.
 - **VMware ESXi 8**: guest OS `Other 5.x or later Linux (64-bit)`, EFI
-  firmware, Secure Boot off, then on; controller `VMware Paravirtual`,
+  firmware, Secure Boot off (on only with the QS/400 key enrolled,
+  `INSTALL.md` §6); controller `VMware Paravirtual`,
   then repeat with `LSI Logic SAS`; NIC `VMXNET 3`; add a virtual TPM
   (needs a key provider). Expect `QD07-001` (PVSCSI) or `QD06` (LSI
   SAS), `QN` vmxnet3 ports, `WARN` for the guest agent (ESXi has no
@@ -160,11 +169,12 @@ Per platform:
   run; `vTPM` needs the VM encrypted.
 - **Oracle VirtualBox 7**: `Other Linux (64-bit)`, Enable EFI, storage
   `AHCI` (SATA), network `Intel PRO/1000 MT Desktop` then `virtio-net`,
-  graphics `VMSVGA`, TPM `v2.0`, Secure Boot as offered. Expect AHCI
+  graphics `VMSVGA`, TPM `v2.0`, Secure Boot off. Expect AHCI
   `QD03`, e1000 ports, the guest agent `WARN` (VirtualBox has no QEMU
   agent channel). Check the console's scale at the default GOP mode.
-- **Hyper-V Generation 2**: Secure Boot template `Microsoft UEFI
-  Certificate Authority` (or Secure Boot off for the first run), a SCSI
+- **Hyper-V Generation 2**: Security, Secure Boot **off**: no template
+  boots V1R1M0 (the `Microsoft UEFI Certificate Authority` template
+  trusts only loaders that CA signed, and Hyper-V takes no other key), a SCSI
   disk and DVD, a synthetic network adapter, a TPM (Security). Expect
   the disks under no PCI controller (VMBus), `WARN` for the guest agent
   (Hyper-V offers vsock; the agent listens on port 9400 but Hyper-V's
@@ -178,14 +188,16 @@ The reference physical machine (`HARDWARE_NOTES.md`, "Tested hardware"):
 1. In the PERC's configuration (Ctrl-R at boot, or the System Setup's
    Device Settings), set the controller to **HBA mode** (H330: "Convert
    to HBA"/"HBA Personality"); clear any virtual disk on the four SSDs.
-   In System Setup, Boot Settings: **UEFI**; Secure Boot as you will
-   run it; TPM Security on.
+   In System Setup, Boot Settings: **UEFI**; Secure Boot **off** (or
+   on with the QS/400 key appended to `db`, `INSTALL.md` §6); TPM
+   Security on.
 2. Build the ISO (`cargo run -p build -- all --release`,
    `cargo run -p build -- iso`) and write it raw to a USB stick (`dd`,
    `HARDWARE_NOTES.md`); keep a second, FAT32 stick for the report.
 3. Boot the stick (F11, one-shot UEFI boot menu). At `IPL or Install
-   the System`: 2, then 4, then 1. Expected: `UEFI` `PASS`; `SECBOOT` as
-   set; `TPM 2.0 present` `PASS`; `PN01` and on with the Xeon's model;
+   the System`: 2, then 4, then 1. Expected: `UEFI` `PASS`; `SECBOOT`
+   `PASS` with Secure Boot off (`WARN` with it on); `TPM 2.0 present`
+   `PASS`; `PN01` and on with the Xeon's model;
    `MS01` `PASS`; the PERC as `DCnn` type `QD10-330`, driver
    `megaraid_sas`, 4 disk units, `PASS`; `DD001` to `DD004`, `SSD`, about
    953 869 MiB each, `PASS` (a `WARN` "a RAID volume" means the

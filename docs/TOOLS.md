@@ -289,3 +289,64 @@ options or user IDs asks first.
 **Known gaps.** No Command Entry from SST, no device IDs, diskette
 recovery or partitions, no progress display during long disk actions.
 An SST sign-on is audited as `SS` (a code of ours).
+
+## CI and its runners
+
+`.github/workflows/ci.yml` runs on every push and pull request:
+
+| Job | Runner | Runs |
+|---|---|---|
+| `fmt` | `ubuntu-24.04` | `cargo fmt --all -- --check` |
+| `clippy` | `ubuntu-24.04` | `cargo clippy --workspace --all-targets -- -D warnings`, and the musl lint of `slic`, `console`, `qsjob` |
+| `deny` | `ubuntu-24.04` | `build deny`, `build notices --check`, `kcbuild notes`, `fmtcheck` |
+| `test` | `ubuntu-24.04` | `cargo test --workspace` (host tests) |
+| `fuzz` | `ubuntu-24.04` | `build fuzz --secs 60 --jobs 4`; crashes kept as an artifact |
+| `qemu` | `[self-hosted, qs400-qemu]` | `build doctor`, `build all`, `build test`, after `clippy`, `deny` and `test` pass |
+| `nightly` | `[self-hosted, qs400-qemu]` | 02:00 UTC: `build all`, `build soak --secs 3600`, `build release` with the development keys; the ISO, `SHA256SUMS`, `MANIFEST.json`, `NOTICES.txt` and `SOURCE-OFFER.txt` uploaded for 14 days |
+
+Every job takes the toolchain from `rust-toolchain.toml` (rustup
+installs the pinned channel, rustfmt, clippy and the musl target on the
+first `cargo`). `QS400_MARKERS=legacy` lets the release notes check pass
+with the older marker forms; it goes once only `BLOCKED(rel)` and
+`NEEDS-CODY` are left.
+
+**The `qs400-qemu` runner** (NEEDS-CODY: register it with the
+repository, label `qs400-qemu`):
+
+- x86_64 Linux with KVM (`/dev/kvm` readable and writable by the runner's
+  user), 8 cores or more, 16 GB of memory at the least (a QEMU guest of
+  2 GB plus the kernel and LTO builds), 150 GB free on an ext4 or xfs
+  volume at `/srv/qs400-ci/target` (the workflow's `QS400_TARGET_DIR`;
+  never a Windows drive mounted into WSL).
+- rustup with the channel of `rust-toolchain.toml` (1.98.0 today),
+  `cargo-deny`, and what `build doctor` checks: clang, ld.lld and the
+  LLVM binutils (the kernel's `LLVM=1` build), make, flex, bison, bc,
+  perl, tar, xz, gzip, git.
+- QEMU 8.2 or later (`qemu-system-x86_64`; the suite was last run with
+  10.2.1) and OVMF (`/usr/share/OVMF/OVMF_CODE_4M.fd`, or
+  `QS400_OVMF_CODE`; the Secure Boot check of `INSTALL.md` §6 uses
+  `OVMF_CODE_4M.secboot.fd` and `OVMF_VARS_4M.snakeoil.fd` from the same
+  package, edk2 2025.11 here).
+- Network access to cdn.kernel.org for the pinned tarball (or the
+  tarball already under `target/src/`).
+
+The nightly release is signed with the development keys only: the
+ed25519 build key generated under `target/keys/` and the checked-in
+Secure Boot development pair. A release for distribution sets
+`QS400_SIGNING_KEY`, `QS400_SB_KEY` and `QS400_SB_CERT` (NEEDS-CODY)
+and is never built by CI.
+
+## Reproducible releases
+
+Two `build release` runs on the same checkout give the same SHA-256 for
+every UKI, the ISO and every file in it: the kernel builds with
+`SOURCE_DATE_EPOCH` and fixed `KBUILD_BUILD_*`, the cpio, FAT and ISO
+9660 images take their times from the same epoch and list their files in
+order, the Secure Boot signature (RSA PKCS#1 v1.5) and the ed25519
+signatures are deterministic. `MANIFEST.json` (beside the release) records
+the inputs: the kernel version and SHA-256, the SHA-256 of the
+configuration, of `Cargo.lock` and of the toolchain (`rust-toolchain.toml`,
+`rustc -vV`, `clang --version`), the db certificate's, and the git
+revision. The binaries hold the checkout's path and `CARGO_HOME` in
+their panic locations: two checkouts at different paths do not give the
+same bytes (Cargo's `trim-paths` is not stable in 1.98).
