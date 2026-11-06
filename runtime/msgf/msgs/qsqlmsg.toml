@@ -1262,3 +1262,31 @@ sev = 30
 text = "The query passed the limit the query options set."
 help = "The query's estimated run time or temporary storage passed QUERY_TIME_LIMIT or QUERY_STORAGE_LIMIT of the job's query options (QAQQINI), so it was not run. Narrow the query, or raise the limit with QSYS2.OVERRIDE_QAQQINI."
 vars = []
+
+[[msg]]
+id = "SQL0950"
+sev = 30
+text = "The relational database directory has no entry &1."
+help = "CONNECT and SET CONNECTION name an entry of the relational database directory. Add the entry with ADDRDBDIRE, or name one WRKRDBDIRE lists."
+vars = ["*CHAR 18"]
+
+[[msg]]
+id = "SQ30061"
+sev = 30
+text = "The server does not know relational database &1."
+help = "The server the directory entry points at answered that it has no relational database of that name. An entry for a loopback to this system names this system's database and takes the second name as its alias: ADDRDBDIRE RDB(sysname alias)."
+vars = ["*CHAR 18"]
+
+[[msg]]
+id = "SQ30080"
+sev = 30
+text = "The connection to &1 could not be made."
+help = "No server answered at the address and port of the directory entry. Check that the DDM server runs there (STRTCPSVR SERVER(*DDM)) and that the address is reachable."
+vars = ["*CHAR 254"]
+
+[[msg]]
+id = "SQ30082"
+sev = 30
+text = "The server refused the connection: &1."
+help = "Signing on to the server failed, or no user and password were found for it. Give USER and USING on CONNECT, or add a server authentication entry with ADDSVRAUTE."
+vars = ["*CHAR 254"]

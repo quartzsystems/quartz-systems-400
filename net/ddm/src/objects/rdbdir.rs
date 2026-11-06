@@ -77,6 +77,12 @@ impl RdbEntry {
         Self::new(system, "*LOCAL", "*IP")
     }
 
+    /// The entry's name: its alias when it has one (a second way to
+    /// reach an RDB, such as a loopback to this system), else the RDB.
+    pub fn name(&self) -> &str {
+        if self.alias.is_empty() || self.alias == "*NONE" { &self.rdb } else { &self.alias }
+    }
+
     /// Whether it names this system.
     pub fn is_local(&self) -> bool {
         self.rmtloc.eq_ignore_ascii_case("*LOCAL")
@@ -202,13 +208,13 @@ impl RdbDirectory {
     }
 
     fn sort(&mut self) {
-        self.entries.sort_by(|a, b| a.rdb.cmp(&b.rdb));
+        self.entries.sort_by(|a, b| a.name().cmp(b.name()));
     }
 
     /// An entry by name.
     pub fn find(&self, rdb: &str) -> Option<&RdbEntry> {
         let n = rdb.trim().to_ascii_uppercase();
-        self.entries.iter().find(|e| e.rdb == n)
+        self.entries.iter().find(|e| e.name() == n)
     }
 
     /// The `*LOCAL` entry.
@@ -218,8 +224,8 @@ impl RdbDirectory {
 
     /// `ADDRDBDIRE`.
     pub fn add(&mut self, e: RdbEntry) -> Result<(), Refused> {
-        if self.find(&e.rdb).is_some() {
-            return Err(Refused::new(EXISTS, format!("The directory has an entry for {} already.", e.rdb)));
+        if self.find(e.name()).is_some() {
+            return Err(Refused::new(EXISTS, format!("The directory has an entry for {} already.", e.name())));
         }
         if e.is_local() && self.local().is_some() {
             return Err(Refused::new(
@@ -238,7 +244,7 @@ impl RdbDirectory {
         let e = self
             .entries
             .iter_mut()
-            .find(|e| e.rdb == n)
+            .find(|e| e.name() == n)
             .ok_or_else(|| Refused::new(NOT_FOUND, format!("The directory has no entry for {n}.")))?;
         f(e);
         Ok(())
@@ -269,8 +275,8 @@ fn matches(pattern: &str, e: &RdbEntry) -> bool {
         "*ALL" | "" => true,
         "*ALLRMT" => !e.is_local(),
         p => match p.strip_suffix('*') {
-            Some(prefix) => e.rdb.starts_with(prefix),
-            None => e.rdb == p,
+            Some(prefix) => e.name().starts_with(prefix),
+            None => e.name() == p,
         },
     }
 }
@@ -300,5 +306,18 @@ mod tests {
         assert_eq!(d.remove("*ALLRMT").unwrap(), 1);
         assert!(d.remove("REMOTE1").is_err());
         assert_eq!(d.entries.len(), 1);
+    }
+
+    #[test]
+    fn an_alias_names_its_entry() {
+        let mut d = RdbDirectory::installed("QS400");
+        let mut e = RdbEntry::new("QS400", "127.0.0.1", "*IP");
+        e.alias = "LOOP".into();
+        d.add(e).unwrap();
+        assert_eq!(d.find("loop").unwrap().rdb, "QS400");
+        assert!(d.find("QS400").unwrap().is_local());
+        assert_eq!(d.select("LO*").len(), 1);
+        assert_eq!(d.remove("LOOP").unwrap(), 1);
+        assert!(d.local().is_some());
     }
 }

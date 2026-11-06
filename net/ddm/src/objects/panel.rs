@@ -61,7 +61,7 @@ pub fn wrkrdbdire(entries: &[&RdbEntry], more: bool) -> Vec<String> {
     g.put(9, 2, "Option  Entry               Location                  Text");
     for (i, e) in entries.iter().take(PAGE).enumerate() {
         let row = 11 + i;
-        g.put(row, 10, &cut(&e.rdb, 18));
+        g.put(row, 10, &cut(e.name(), 18));
         g.put(row, 30, &cut(&e.rmtloc, 24));
         g.put(row, 56, &cut(&e.text, 24));
     }

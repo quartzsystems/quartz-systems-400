@@ -45,7 +45,10 @@ impl Connector for JobNet<'_> {
         let port = e.tcp_port();
         let (user, password) = match user {
             Some((u, p)) => (u.to_string(), p.to_string()),
-            None => crate::work::ddm::requester::credentials(self.link, &e.rdb).ok_or_else(|| coded(-30_082, "08001", &e.rdb))?,
+            // The entry's own name first: an alias has an entry of its own.
+            None => crate::work::ddm::requester::credentials(self.link, e.name())
+                .or_else(|| crate::work::ddm::requester::credentials(self.link, &e.rdb))
+                .ok_or_else(|| coded(-30_082, "08001", &e.rdb))?,
         };
         let addrs = crate::work::netsvc::resolve(self.link, &host, port);
         let stream = addrs
@@ -59,7 +62,10 @@ impl Connector for JobNet<'_> {
         opts.srvnam = crate::work::ddm::system_name(self.link);
         opts.collection = PACKAGE.0.into();
         opts.package = PACKAGE.1.into();
-        let conn = Connection::connect(stream, &opts).map_err(|x| coded(-30_082, "08001", &x.to_string()))?;
+        let conn = Connection::connect(stream, &opts).map_err(|x| match x {
+            ddm::Error::Reply { name, .. } if name == "RDBNFNRM" => coded(-30_061, "08004", &e.rdb),
+            x => coded(-30_082, "08001", &x.to_string()),
+        })?;
         Ok(Box::new(Remote::new(conn)))
     }
 }

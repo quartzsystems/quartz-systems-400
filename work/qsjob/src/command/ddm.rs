@@ -184,6 +184,7 @@ fn addrdbdire(host: &Host, r: &Resolved) -> Result<String, Fail> {
     let name = elem(r, "RDB", 0).unwrap_or_default().to_ascii_uppercase();
     let mut e = RdbEntry::new(&name, "", "*SNA");
     apply_entry(&mut e, r);
+    let name = e.name().to_string();
     let mut d = directory(host);
     d.add(e).map_err(|e| refused(&e))?;
     save_directory(host, &d)?;
