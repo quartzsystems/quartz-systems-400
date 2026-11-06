@@ -289,9 +289,15 @@ fn time(m: &Main) -> Time {
     let a = NtpAttrs::from_bag(&bag);
     let (last_sync, last_fail) = last_poll(&bag);
     let jobs = m.ask(Client::active_jobs);
-    let mut zones: Vec<(String, String)> = sysval::tz::all()
-        .into_iter()
-        .map(|z| (z.name.clone(), z.description().to_string()))
+    // The descriptions in QSYS as the service has them (CRTTIMZON's too).
+    let (_, rows) = m.ask(|l| l.panel2_data("TIMZON".into(), vec!["*ALL".into()])).unwrap_or_default();
+    let cell = |r: &[(String, String)], k: &str| r.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap_or_default();
+    let mut zones: Vec<(String, String)> = rows
+        .iter()
+        .map(|r| {
+            let text = cell(r, "TEXT");
+            (cell(r, "TIMZON"), if text.trim().is_empty() { cell(r, "FULL") } else { text })
+        })
         .collect();
     if !zone.is_empty() && !zones.iter().any(|(n, _)| *n == zone) {
         zones.push((zone.clone(), String::new()));
