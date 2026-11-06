@@ -86,7 +86,8 @@ fn reason(text: &str, start: usize, end: usize, next: usize) -> String {
 }
 
 /// The tree's text files: `git ls-files` when it answers, else a walk
-/// that leaves out `target` and hidden directories.
+/// that leaves out `.git` and `target` (a worktree whose `.git` names a
+/// Windows path, read from WSL, has no working `git`).
 fn files(repo: &Path) -> Vec<String> {
     if let Ok(o) = Command::new("git").arg("-C").arg(repo).args(["ls-files", "-z"]).output()
         && o.status.success()
@@ -107,7 +108,7 @@ fn walk(root: &Path, dir: &Path, out: &mut Vec<String>) {
     for e in rd.flatten() {
         let p = e.path();
         let name = e.file_name().to_string_lossy().into_owned();
-        if name.starts_with('.') || name == "target" {
+        if name == ".git" || name == "target" {
             continue;
         }
         if p.is_dir() {
