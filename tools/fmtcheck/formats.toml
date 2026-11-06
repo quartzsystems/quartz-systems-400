@@ -59,12 +59,11 @@ files = [
 
 # --- The database and journals ---
 
-# SQL information (*SQLINF) and the library SQL name index: a draft until
-# the SQL completion work (docs/SQL.md) freezes the entry bodies.
+# SQL information (*SQLINF), the library SQL name index and the trigger
+# buffer, frozen by the SQL completion work (docs/SQL.md).
 [[format]]
 name = "sql-info"
 frozen_at = "V1R2M0"
-draft = true
 doc = "docs/DB_FORMAT.md"
 version = ["database/db/src/sqlinf/entry.rs::VERSION"]
 files = [
@@ -80,13 +79,13 @@ files = [
     "database/db/src/sqlinf/program.rs",
     "database/db/src/sqlinf/colstats.rs",
     "database/db/src/sqlinf/comment.rs",
+    "database/db/src/trg/buffer.rs",
 ]
 
-# SQL packages (*SQLPKG): a draft until the SQL completion work freezes it.
+# SQL packages (*SQLPKG), frozen by the SQL completion work.
 [[format]]
 name = "sql-package"
 frozen_at = "V1R2M0"
-draft = true
 doc = "docs/DB_FORMAT.md"
 version = ["database/db/src/sqlpkg/format.rs::VERSION"]
 files = ["database/db/src/sqlpkg/format.rs"]
