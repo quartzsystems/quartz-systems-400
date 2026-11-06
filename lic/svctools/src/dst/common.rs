@@ -7,13 +7,20 @@
 
 use console::Screen;
 
-use crate::dst::{INVALID_SELECTION, NOT_AVAILABLE, selection};
+use crate::dst::{INVALID_SELECTION, selection};
 use crate::env::DstEnv;
 use crate::panel::{Flow, Outcome, Panel};
 use crate::ui;
 
 /// What an option on a submenu does.
 pub type Action = Box<dyn Fn(&mut dyn DstEnv) -> Flow>;
+
+/// An option that answers on the message line: its function does not
+/// apply here (`crate::dst::answers`).
+#[must_use]
+pub fn says(text: &'static str) -> Option<Action> {
+    Some(Box::new(move |_env| Flow::Message(text.into())))
+}
 
 /// A numbered submenu whose options are closures.
 pub struct Submenu {
@@ -26,8 +33,8 @@ pub struct Submenu {
 }
 
 impl Submenu {
-    /// A menu with these options; `None` for an option that is not
-    /// available in this release.
+    /// A menu with these options; an option that is `None` is listed
+    /// but not selectable (every shipped menu has an action for each).
     #[must_use]
     pub fn new(
         name: &'static str,
@@ -91,8 +98,7 @@ impl Panel for Submenu {
         };
         match self.options.iter().find(|(number, _, _)| *number == n) {
             Some((_, _, Some(action))) => action(env),
-            Some((_, _, None)) => Flow::Message(NOT_AVAILABLE.into()),
-            None => Flow::Error(INVALID_SELECTION.into()),
+            Some((_, _, None)) | None => Flow::Error(INVALID_SELECTION.into()),
         }
     }
 }
@@ -542,12 +548,12 @@ mod tests {
                         )))
                     })),
                 ),
-                (2, "Nothing", None),
+                (2, "Nothing", says("Nothing here")),
             ],
         );
         let mut r = Runner::new(Box::new(menu));
         assert_eq!(r.enter(&f(&["2"]), &mut env), None);
-        assert!(r.screen(&mut env).dump().contains(NOT_AVAILABLE));
+        assert!(r.screen(&mut env).dump().contains("Nothing here"));
         assert_eq!(r.enter(&f(&["1"]), &mut env), None);
         assert_eq!(r.top(), "c");
         assert_eq!(r.function(12, &mut env), None);

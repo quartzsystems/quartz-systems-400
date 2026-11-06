@@ -69,6 +69,8 @@ fn reason_of(e: &StoreError) -> Option<String> {
                 Refusal::HoldsIfs => r::HOLDS_IFS,
                 Refusal::IfsNoRoom(_) => r::IFS_NO_ROOM,
                 Refusal::IfsNotInAsp => r::IFS_NOT_IN_ASP,
+                Refusal::SparesFull => r::SPARES_FULL,
+                Refusal::NoSuchSpare => r::NO_SUCH_SPARE,
             };
             r::for_unit(text, *unit)
         }
@@ -168,6 +170,12 @@ impl<'a> Env<'a> {
                 .iter()
                 .position(|d| storage::unit_uuid_of(d) == Some(uuid))
         })
+    }
+
+    /// The device node of a hot spare, by the UUID in its header.
+    fn spare_device(&self, uuid: [u8; 16]) -> Option<String> {
+        self.device_index(uuid)
+            .and_then(|i| self.system.storage.as_ref().map(|s| s.devices[i].display().to_string()))
     }
 
     /// Drop a removed unit's device from the configured devices.
@@ -533,7 +541,57 @@ impl DstEnv for Env<'_> {
                 });
             }
         }
+        // The hot spares, as rows of set 0.
+        let spares = self.store().map(|s| s.hot_spares()).unwrap_or_default();
+        for spare in spares {
+            let device = self.spare_device(spare.unit_uuid).unwrap_or_default();
+            let (type_model, serial) = diskimg::locate::identity(std::path::Path::new(&device));
+            out.push(ParityUnit {
+                set: svctools::dst::disk::parity::SPARE_SET,
+                level: String::new(),
+                unit: u16::MAX,
+                serial,
+                type_model,
+                resource: if spare.attached { self.resource_for(&device) } else { "-----".into() },
+                controller: controller.clone(),
+                status: svctools::dst::disk::parity::HOT_SPARE.into(),
+                percent: None,
+            });
+        }
         out
+    }
+
+    fn start_hot_spare(&mut self, device: &str) -> Result<String, String> {
+        let (dev, _) = open_unit(device)?;
+        self.store()?
+            .start_hot_spare(dev, storage::fresh_uuid())
+            .map_err(refused("Starting the hot spare"))?;
+        if let Some(s) = self.system.storage.as_mut() {
+            s.devices.push(std::path::PathBuf::from(device));
+        }
+        Ok(svctools::dst::disk::parity::SPARE_STARTED.to_string())
+    }
+
+    fn stop_hot_spare(&mut self, resource: &str) -> Result<String, String> {
+        let spares = self.store()?.hot_spares();
+        let found = spares.iter().find_map(|s| {
+            let d = self.spare_device(s.unit_uuid)?;
+            (self.resource_for(&d) == resource).then_some((s.unit_uuid, d))
+        });
+        let Some((uuid, device)) = found else {
+            return Err(svctools::dst::disk::reasons::NO_SUCH_SPARE.into());
+        };
+        self.store()?
+            .stop_hot_spare(&uuid)
+            .map_err(refused("Stopping the hot spare"))?;
+        if let Some(s) = self.system.storage.as_mut() {
+            s.devices.retain(|d| d.display().to_string() != device);
+        }
+        Ok(svctools::dst::disk::parity::spare_stopped(resource))
+    }
+
+    fn cmn_traces(&mut self) -> Result<Vec<(String, String, String)>, String> {
+        Ok(crate::stgsvc::cmntrc::rows())
     }
 
     fn start_parity(&mut self, level: u8, units: &[u16]) -> Result<String, String> {

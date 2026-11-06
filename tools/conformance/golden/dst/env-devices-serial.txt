@@ -4,7 +4,7 @@
  Console type . . . . . :  Serial console (ttyS0)                               
                                                                                 
  Option 6 of the DST menu chooses the local or the serial console;              
- an operations console over the LAN comes with a later phase.                   
+ there is no operations console over the LAN.                                   
                                                                                 
                                                                                 
                                                                                 

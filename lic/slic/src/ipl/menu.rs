@@ -28,8 +28,8 @@ pub const OPTIONS: [(u8, &str); 5] = [
     (5, "Save Licensed Internal Code"),
 ];
 
-/// Message for an option that does nothing yet.
-pub const NOT_AVAILABLE: &str = dst_text::NOT_AVAILABLE;
+/// What options 2 and 4 say without the installation media booted.
+pub const NEEDS_MEDIA: &str = dst_text::answers::NEEDS_MEDIA;
 
 /// What the operator did on an application screen.
 pub enum Answer {
@@ -139,7 +139,8 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
                     return;
                 }
             }
-            "2" | "4" | "5" => message = Some((NOT_AVAILABLE.to_string(), false)),
+            "2" | "4" => message = Some((NEEDS_MEDIA.to_string(), false)),
+            "5" => message = Some((dst_text::answers::SAVE_LIC.to_string(), false)),
             "" => {}
             _ => message = Some((dst_text::INVALID_SELECTION.to_string(), true)),
         }
@@ -180,7 +181,8 @@ pub fn pending(system: &mut System, rx: &Receiver<Event>) -> Pending {
             "2" if system.boot.ipl_d => install::run_lic(system, rx),
             "2" => return Pending::InstallOs,
             "3" => return Pending::Dst,
-            "4" | "5" => message = Some((NOT_AVAILABLE.to_string(), false)),
+            "4" => message = Some((NEEDS_MEDIA.to_string(), false)),
+            "5" => message = Some((dst_text::answers::SAVE_LIC.to_string(), false)),
             "" => {}
             _ => message = Some((dst_text::INVALID_SELECTION.to_string(), true)),
         }
@@ -198,7 +200,7 @@ fn service_tools(
         dst::Outcome::InstallOs if system.boot.ipl_d => install::run_lic(system, rx),
         dst::Outcome::AutoInstall if system.boot.ipl_d => install::run_auto(system),
         dst::Outcome::InstallOs | dst::Outcome::AutoInstall => {
-            *message = Some((NOT_AVAILABLE.to_string(), false));
+            *message = Some((NEEDS_MEDIA.to_string(), false));
         }
         _ => {}
     }

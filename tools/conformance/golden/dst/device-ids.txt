@@ -1,0 +1,24 @@
+                       Work with Service Tools Device IDs                       
+                                                                 System:  QS400 
+                                                                                
+ Device ID   Status     Description                                             
+ QCONSOLE    Enabled    The system console                                      
+                                                                                
+ Service tools are reached from the system console and from                     
+ STRSST in a job; there are no LAN service tools devices.                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

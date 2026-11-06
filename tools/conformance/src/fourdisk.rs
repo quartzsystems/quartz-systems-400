@@ -9,6 +9,7 @@
 //! |---|---|
 //! | 12 | mirrored protection started over the four units (1 with 4, 2 with 3, data moved off 3 and 4 first), the copies at the re-IPL, the IPL with disk 4 pulled, then disk 4 back and resumed with the system up across a power down |
 //! | 13 | device parity (RAID 5) over the four units, synchronized with the system up (written and read meanwhile, a power down part way), an IPL with disk 4 pulled (exposed, A6001257), the disk back and rebuilt with the system up; IFS files (the IFS volume is in ASP 1) written and read back at each stage |
+//! | 16 | RAID 5 with a hot spare (option 7) on a fifth disk; an IPL with disk 4 pulled: the spare takes its place and is rebuilt with the system up |
 //!
 //! Every disk action goes through the DST screens over serial.
 
@@ -251,7 +252,89 @@ type Boot = Result<String, (String, String)>;
 impl Suite {
     /// Steps 12 and 13, each over a copy of step 1's disk.
     pub(crate) fn four_disks(&self, installed: &Path) -> Result<Vec<StepReport>, HarnessError> {
-        Ok(vec![self.four_mirrored(installed)?, self.four_parity(installed)?])
+        Ok(vec![
+            self.four_mirrored(installed)?,
+            self.four_parity(installed)?,
+            self.hot_spare(installed)?,
+        ])
+    }
+
+    /// Step 16: RAID 5 with a hot spare started in DST (option 7), then
+    /// an IPL with disk 4 pulled: the spare takes its place and is
+    /// rebuilt with the system up.
+    fn hot_spare(&self, installed: &Path) -> Result<StepReport, HarnessError> {
+        let name = "16 hot spare";
+        let start = Instant::now();
+        if !self.wanted(name) {
+            return Ok(StepReport { name, elapsed: Duration::ZERO, detail: "skipped".into() });
+        }
+        let [d1, d2, d3, d4] = self.four(installed, "spare")?;
+        let d5 = self.out_dir.join("spare-5.img");
+        blank(&d5)?;
+        let boot = self.boot_timeout;
+        let mut s = Session::spawn(&self.launch_of(&[&d1, &d2, &d3, &d4, &d5]))?;
+        let r = (|| -> Result<String, String> {
+            let filled = configure(&mut s, boot)?;
+            enter_dst(&mut s, boot)?;
+            disk_configuration(&mut s)?;
+            s.send("5")?;
+            s.expect("Work with Device Parity Protection", CMD)?;
+            s.send("7")?;
+            s.expect("RAID 5 with Hot Spare", CMD)?;
+            for _ in 0..4 {
+                s.send("type 1")?;
+            }
+            s.send("key enter")?;
+            s.expect("becomes the hot spare", CMD)?;
+            self.snap("spare-confirm");
+            s.send("key f10")?;
+            s.expect("Hot spare started", Duration::from_mins(2))?;
+            s.send("1")?;
+            let shown = s.expect("F3=Exit", CMD)?;
+            if !shown.contains("Hot spare") {
+                return Err(format!("no hot spare on the status display:\n{shown}"));
+            }
+            s.send("key f3")?;
+            s.expect("Use Dedicated Service Tools (DST)", CMD)?;
+            ipl_from_dst(&mut s, boot)?;
+            let waited = wait_active(&mut s, 4)?;
+            let asp = s.command("svc.asp", CMD)?;
+            if !asp.contains("hot spare ") {
+                return Err(format!("svc.asp shows no hot spare:\n{asp}"));
+            }
+            Ok(format!("{filled}; RAID 5 with a hot spare started in DST; DPY/Active {waited}s after the IPL"))
+        })();
+        let first = match r {
+            Ok(d) => d,
+            Err(e) => {
+                let log = s.log.clone();
+                s.kill();
+                return Self::finish(name, start, Err((e, log)));
+            }
+        };
+        power_down(&mut s);
+        drop(s);
+        // Disk 4 pulled: the spare takes its place.
+        let mut s = Session::spawn(&self.launch_of(&[&d1, &d2, &d3, &d5]))?;
+        let r = (|| -> Result<String, String> {
+            s.expect("SRC A6001257", boot)?;
+            s.expect("a hot spare took the place of disk unit 3", boot)?;
+            s.expect(SRC_IPL_COMPLETE, boot)?;
+            s.expect(crate::PROMPT, CMD)?;
+            let waited = wait_active(&mut s, 4)?;
+            let asp = s.command("svc.asp", CMD)?;
+            if asp.contains("hot spare ") {
+                return Err(format!("the spare is still listed:\n{asp}"));
+            }
+            verify(&mut s, FILL.0, FILL.1, FILL.2)?;
+            chkstg(&mut s)?;
+            Ok(format!(
+                "{first}; disk 4 pulled: A6001257, the spare took unit 4's place and was rebuilt, DPY/Active {waited}s later, data intact, chkstg clean"
+            ))
+        })()
+        .map_err(|e| (e, s.log.clone()));
+        power_down(&mut s);
+        Self::finish(name, start, r)
     }
 
     fn wanted(&self, name: &str) -> bool {

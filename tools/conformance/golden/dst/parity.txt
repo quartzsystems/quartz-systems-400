@@ -11,8 +11,8 @@
       6. Exclude unit from device parity protection                             
       7. Start device parity protection - RAID 5 with hot spare                 
       8. Start device parity protection - RAID 6 with hot spare                 
-                                                                                
-                                                                                
+      9. Start hot spare                                                        
+     10. Stop hot spare                                                         
                                                                                 
                                                                                 
                                                                                 

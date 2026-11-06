@@ -14,7 +14,6 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
-pub mod capacity;
 pub mod menu;
 pub mod screen;
 

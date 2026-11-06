@@ -143,7 +143,7 @@ pub fn disk_change(
     unit: u16,
     device: &str,
 ) -> Result<u16, String> {
-    let admin = matches!(op, "add" | "remove" | "mirror" | "unmirror" | "threshold");
+    let admin = matches!(op, "add" | "remove" | "mirror" | "unmirror" | "threshold" | "spare-start" | "spare-stop");
     let p = if admin {
         Privilege::DISK_UNITS_ADMIN
     } else {
@@ -159,6 +159,8 @@ pub fn disk_change(
         "suspend" => e.suspend(unit).map(|()| unit),
         "resume" => e.resume(unit).map(|()| unit),
         "replace" => e.replace(unit, device).map(|()| unit),
+        "spare-start" => e.start_hot_spare(device).map(|_| unit),
+        "spare-stop" => e.stop_hot_spare(device).map(|_| unit),
         "threshold" => u8::try_from(unit)
             .map_err(|_| "Threshold must be a number from 1 to 100".to_string())
             .and_then(|p| e.set_asp_threshold(p))

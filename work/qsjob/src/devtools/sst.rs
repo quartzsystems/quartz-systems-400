@@ -311,6 +311,31 @@ impl DstEnv for SstEnv {
         self.parity_change("exclude", 0, 0, &[unit])
     }
 
+    fn start_hot_spare(&mut self, device: &str) -> Result<String, String> {
+        self.disk_change("spare-start", 0, device)
+            .map(|_| svctools::dst::disk::parity::SPARE_STARTED.to_string())
+    }
+
+    fn stop_hot_spare(&mut self, resource: &str) -> Result<String, String> {
+        self.disk_change("spare-stop", 0, resource)
+            .map(|_| svctools::dst::disk::parity::spare_stopped(resource))
+    }
+
+    fn cmn_traces(&mut self) -> Result<Vec<(String, String, String)>, String> {
+        Ok(self
+            .op("cmntrc-list", &[])?
+            .iter()
+            .map(|l| {
+                let mut f = l.split('\t').map(str::to_string);
+                (
+                    f.next().unwrap_or_default(),
+                    f.next().unwrap_or_default(),
+                    f.next().unwrap_or_default(),
+                )
+            })
+            .collect())
+    }
+
     fn asp_threshold(&mut self) -> u8 {
         self.host
             .link
@@ -335,7 +360,7 @@ impl DstEnv for SstEnv {
             .borrow_mut()
             .with(Client::sst_resources)
             .map_or(1, |(_, n)| n);
-        vec![(sst::capacity::PROCESSORS.to_string(), cpus.to_string())]
+        vec![(svctools::dst::capacity::PROCESSORS.to_string(), cpus.to_string())]
     }
 
     fn activity_log(&mut self) -> Vec<LogEntry> {

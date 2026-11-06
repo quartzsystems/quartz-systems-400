@@ -1,0 +1,24 @@
+                          Display Device Parity Status                          
+                                                                 System:  QS400 
+                                                                                
+ Controller: DC03      QDPY-001  Software device parity controller              
+                                                                                
+ Set  Level   Unit  Serial Number     Type Model    Resource  Status            
+   1  RAID 5     1  QM00000           QEMU HARDDISK DD001     Unprotected       
+   1  RAID 5     2  QM00001           QEMU HARDDISK DD002     Unprotected       
+   1  RAID 5     3  QM00002           QEMU HARDDISK DD003     Unprotected       
+   1  RAID 5     4  QM00003           QEMU HARDDISK DD004     Failed            
+                    SP-vdh            QEMU HARDDISK DD008     Hot spare         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

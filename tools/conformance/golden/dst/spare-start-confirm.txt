@@ -1,0 +1,24 @@
+                            Confirm Start Hot Spare                             
+                                                                 System:  QS400 
+                                                                                
+ This unit becomes a hot spare. When a mirrored unit or a device                
+ parity unit no larger than it fails, the spare takes its place and             
+ is rebuilt in the background. Any data on it is lost.                          
+                                                                                
+      Resource  Serial Number     Type Model    Size (MiB) Ctl   Device         
+      DD003     SP-vdg            QEMU HARDDISK       4096 DC02  vdg            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

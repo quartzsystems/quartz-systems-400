@@ -71,6 +71,9 @@ guest's own screens with the same files.
 | Delete Disk Unit Data (select, confirm, Function Status) | `delete-data.txt`, `delete-data-confirm.txt`, `delete-data-status.txt` |
 | Work with Licensed Internal Code | `lic-info.txt` |
 | Select DST Console Mode | `console-mode.txt` |
+| Hot spares: status with a spare, Start/Stop Hot Spare and their confirmations, Start RAID 5 and RAID 6 with Hot Spare and its confirmation | `parity-status-spare.txt`, `spare-start.txt`, `spare-start-confirm.txt`, `spare-stop.txt`, `spare-stop-confirm.txt`, `parity-start5-spare.txt`, `parity-start6-spare.txt`, `parity-start-spare-confirm.txt` |
+| Work with Save Storage and Restore Storage, Remote Service Support and its status, Logical Partitioning Environment Not Supported, Work with System Capacity | `save-storage.txt`, `remote.txt`, `remote-status.txt`, `partitions.txt`, `capacity.txt` |
+| Work with Service Tools Device IDs, Communications Traces, Service Action Log, Label Location Work Sheet | `device-ids.txt`, `cmn-trace.txt`, `hsm-sal.txt`, `hsm-labels.txt` |
 | Work with DST Environment, Active Service Tools, System Devices | `env.txt`, `env-active.txt`, `env-devices.txt`, `env-devices-serial.txt` |
 | Work with Service Tools User IDs, Display, Privileges, Create | `users.txt`, `user-display.txt`, `user-privileges.txt`, `user-create.txt` |
 | Work with System Values | `sysvals.txt` |
@@ -96,8 +99,12 @@ Use Dedicated Service Tools (DST)
   6. Select DST console mode             -> local or serial, for the next IPL
   7. Start a service tool
   8. Perform automatic installation      -> the installer without prompts
-  9..12, 14                              not available
+  9. Work with save storage and restore storage
+ 10. Work with remote service support
+ 11. Work with system partitions
+ 12. Work with system capacity
  13. Work with system security
+ 14. End batch restricted state
 ```
 
 `Select DST console mode` keeps its choice in the LIC record (TLV
@@ -108,40 +115,89 @@ from the service console as described above. The installer carries the
 mode chosen in the media's DST into the record it writes on the load
 source.
 
-`Work with disk units`: 1 disk configuration, 2 disk unit recovery;
-3 and 4 are not available.
+`Work with disk units`: 1 disk configuration, 2 disk unit recovery,
+3 problem recovery and 4 tracing (see below).
 
 `Work with disk configuration`: 1 display (status, capacity,
 protection, non-configured units), 2 ASP threshold, 3 ASP configuration
-(2 add units, 4 remove units; 3 and 6 are not available), 4 mirrored
-protection (1 display, 2 start, 3 stop; 4 not available), 5 device
-parity protection (1 display status, 2 start RAID 5, 3 start RAID 6,
-4 stop, 5 include a unit, 6 exclude a unit; 7 and 8, the hot spare
-starts, not available), 6 and 7 not available.
+(2 add units, 4 remove units), 4 mirrored protection (1 display, 2
+start, 3 stop), 5 device parity protection (1 display status, 2 start
+RAID 5, 3 start RAID 6, 4 stop, 5 include a unit, 6 exclude a unit, 7
+and 8 start RAID 5 or RAID 6 with a hot spare, 9 start hot spare, 10
+stop hot spare), 6 checksum protection and 7 disk compression.
 
 `Work with disk unit recovery`: 3 replace configured unit, 6 problem
-recovery procedures, 7 suspend, 8 resume, 10 delete disk unit data; the
-rest are not available.
+recovery procedures, 7 suspend, 8 resume, 10 delete disk unit data.
 
 `Work with DST environment`: 1 active service tools, 2 system devices,
-3 service tools user IDs, 4 system values (the LIC-side subset), 5 not
-available.
+3 service tools user IDs, 4 system values (the LIC-side subset), 5
+service tools device IDs (the console; SST's option 8.2 shows the same).
 
-`Start a service tool`: 1 product activity log, 4 display/alter/dump
-(display only), 5 LIC log, 7 hardware service manager (packaging,
-logical, failed views); 2, 3 and 6 not available.
+`Start a service tool`: 1 product activity log, 2 trace Licensed
+Internal Code, 3 communications traces (the traces `STRCMNTRC` started,
+with their status), 4 display/alter/dump, 5 LIC log, 6 main storage
+dump manager, 7 hardware service manager (packaging, logical, locate,
+failed; 6 the service action log, the product activity log's `A6` and
+`B1` entries; 7 the label location work sheet, each resource with its
+location).
 
-The options still answering `Option not available in this release`
-wait for what they work on: save and restore storage, save and restore
-of a disk unit's data (Phase 9); remote service support, service tools
-device IDs, communications trace (Phase 10); fixes to the Licensed
-Internal Code, system partitions and capacity (Phase 11 and hardware
-this system has none of); disk unit tracing, problem recovery, missing
-unit assignment, configuration recovery, checksum protection, disk
-compression, remote load source mirroring and the ASP moves (one ASP,
-no capable controllers); LIC and main storage dumps (Phase 8's job
-dumps feed them); batch restricted state (a subsystem matter, Phase 5
-owns it from a job).
+`Work with system capacity` (12, and SST's 6): processor and storage
+capacity displays.
+
+Every other option answers on the message line why its function does
+not apply here, or, marked `BLOCKED(rel)`, that it is not in this
+release (`svctools::dst::answers`). LIC panels have no message IDs;
+the words are Quartz's:
+
+| Option | Answer |
+|---|---|
+| DST 9.1, 9.2 save and restore storage | `BLOCKED(rel)`: not in this release; `SAVSYS` and the install media save and recover the system (RECOVERY.md) |
+| DST 10 remote service support | 1 displays the status (never active); 2 and 4: no ECS line; 3: not active |
+| DST 11, SST 5 system partitions | `Logical Partitioning Environment Not Supported`: one system on its hardware |
+| DST 12.2, 12.3 temporary and permanent capacity | no capacity on demand; every processor is active |
+| DST 14 end batch restricted state | the system is never in batch restricted state |
+| Disk units 3 problem recovery, 4 tracing | no IOP or IOA to recover or trace |
+| Disk configuration 6 checksum protection | not supported (gone from IBM i before V7R1) |
+| Disk configuration 7 compression | no unit is capable of compression |
+| ASP configuration 3 add units and balance data | `BLOCKED(rel)`: balancing waits for the page moves `STRASPBAL` brings; option 2 adds units |
+| ASP configuration 6 move units between ASPs | only ASP 1 exists |
+| Mirrored protection 4 remote load source mirroring | no remote bus; pairing already prefers another controller |
+| Recovery 1, 2, 9 save, restore and copy disk unit data | `BLOCKED(rel)`: no page-level copy of one unprotected unit |
+| Recovery 4 assign missing unit | a missing mirrored or parity unit is replaced with option 3 |
+| Recovery 5 recover configuration | every unit carries the configuration; each IPL reads it |
+| Hardware service manager 8 device concurrent maintenance | devices come and go with the system up |
+| SST 4 diskette data recovery | no diskette unit |
+| IPL or Install the System 2 and 4 without the media | installing needs an IPL from the installation media |
+| IPL or Install the System 5 save Licensed Internal Code | `BLOCKED(rel)`: `SAVSYS` saves it with the system up |
+
+The primary oracle (V7R1M0) shows its `STRSST` sign-on
+(`golden/verified/oracle71/sst/sst-signon.txt`); its panels behind the
+sign-on need a service tools user ID, which the oracle's credentials do
+not include (NEEDS-CODY), so the option numbers and titles above follow
+IBM's documentation.
+
+## Hot spares
+
+Device parity option 9 makes a non-configured disk a hot spare of ASP 1
+(at most 3, STORE_FORMAT.md §4); options 7 and 8 start a set and take
+the smallest non-configured disk at least as large as its largest unit
+as its spare, refusing when there is none; option 10 lists the spares
+and returns one to the non-configured disks (its header wiped). The
+device parity status display lists the spares after the sets, with the
+status `Hot spare` and no set or unit number; a spare is never listed
+as non-configured nor offered to delete disk unit data.
+
+When a mirrored half fails (Not operational while running, Missing at
+an IPL) or a parity member fails, `slic` puts the smallest spare that
+fits in its place at once (`storage::use_hot_spares`, from the open and
+from the run loop's I/O events): a half resumes from its partner in the
+background, a member is rebuilt by the parity work, and the serial log
+says `a hot spare took the place of disk unit N`. The attention code
+for the failure (A6001255, A6001256, A6001257) is still raised. SST
+starts and stops spares through the storage service (request 424, ops
+`spare-start` and `spare-stop`). `WRKDSKSTS` lists ASP units only, as
+IBM's does: a spare shows there once it has taken a unit's place.
+`svc.asp` lists the spares.
 
 ## Disk configuration
 

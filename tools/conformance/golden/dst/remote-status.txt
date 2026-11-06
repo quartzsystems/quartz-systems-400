@@ -1,0 +1,24 @@
+                     Display Remote Service Support Status                      
+                                                                 System:  QS400 
+                                                                                
+ Remote service support . . . . :  Not active                                   
+ Line . . . . . . . . . . . . . :  None                                         
+                                                                                
+ Problems are reported from the problem log (WRKPRB, SNDSRVRQS) and             
+ fixes arrive through the update service (SNDPTFORD).                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

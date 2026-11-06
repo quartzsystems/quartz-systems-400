@@ -52,6 +52,14 @@ pub const NO_SPACE: &str = "ASP 1 does not have the space this needs";
 pub const RESUME_RUNNING: &str = "A resume is already running; wait for it to end";
 /// The disk could not be opened.
 pub const DISK_NOT_OPENED: &str = "The disk could not be opened";
+/// No non-configured unit is large enough to be a set's hot spare.
+pub const NO_SPARE_DISK: &str = "No non-configured unit is large enough to be the hot spare";
+/// There is no hot spare to stop.
+pub const NO_SPARES: &str = "There are no hot spares";
+/// The ASP holds the most hot spares it can.
+pub const SPARES_FULL: &str = "ASP 1 has the most hot spares it can hold (3)";
+/// No hot spare is on that disk.
+pub const NO_SUCH_SPARE: &str = "The unit is not a hot spare";
 
 /// `reason` with the unit it is about, numbered as the displays number
 /// units (from 1).
@@ -90,6 +98,10 @@ mod tests {
             NO_SPACE,
             RESUME_RUNNING,
             DISK_NOT_OPENED,
+            NO_SPARE_DISK,
+            NO_SPARES,
+            SPARES_FULL,
+            NO_SUCH_SPARE,
         ] {
             assert!(for_unit(r, Some(999)).len() <= 78, "{r}");
         }

@@ -1,0 +1,24 @@
+                        Work with Remote Service Support                        
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display remote service support status                                  
+      2. Activate remote service support                                        
+      3. Deactivate remote service support                                      
+      4. Change remote service support attributes                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

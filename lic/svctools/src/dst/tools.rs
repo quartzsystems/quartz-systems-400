@@ -105,7 +105,11 @@ pub fn start_a_service_tool(privileges: Privilege) -> Submenu {
                 "Trace Licensed Internal Code",
                 Some(Box::new(move |env| guard(dt, Flow::Push(Box::new(work_with_traces(env)))))),
             ),
-            (3, "Work with communications trace", None),
+            (
+                3,
+                "Work with communications trace",
+                Some(Box::new(move |env| guard(dt, Flow::Push(Box::new(communications_traces(env)))))),
+            ),
             (
                 4,
                 "Display/Alter/Dump",
@@ -144,6 +148,58 @@ fn activity_log(env: &mut dyn DstEnv) -> Notice {
         lines.push(format!("{:<12} {:<9} {}", e.time, e.code, e.text));
     }
     Notice::new("dst-pal", "Product Activity Log", lines)
+}
+
+/// `Work with Communications Traces`: the traces `STRCMNTRC` started,
+/// as the storage service holds them.
+fn communications_traces(env: &mut dyn DstEnv) -> Notice {
+    let mut lines = vec!["Configuration object  Type    Trace status".to_string()];
+    match env.cmn_traces() {
+        Ok(rows) if rows.is_empty() => lines.push("  (No communications traces)".into()),
+        Ok(rows) => lines.extend(rows.iter().map(|(o, t, s)| format!("{o:<20}  {t:<7} {s}"))),
+        Err(e) => lines.push(format!("  {e}")),
+    }
+    lines.push(String::new());
+    lines.push("STRCMNTRC starts a trace, ENDCMNTRC ends it, PRTCMNTRC prints it".into());
+    lines.push("and DLTCMNTRC deletes it.".into());
+    Notice::new("dst-cmn-trace", "Work with Communications Traces", lines)
+}
+
+/// `Service Action Log`: the activity log entries that ask for a
+/// service action, the attention (`A6`) and failure (`B1`) codes.
+fn service_action_log(env: &mut dyn DstEnv) -> Notice {
+    let mut lines = vec!["Time         Code      Description".to_string()];
+    let entries: Vec<_> = env
+        .activity_log()
+        .into_iter()
+        .filter(|e| e.code.starts_with("A6") || e.code.starts_with("B1"))
+        .collect();
+    if entries.is_empty() {
+        lines.push("  (No service actions)".into());
+    }
+    for e in entries.iter().rev() {
+        lines.push(format!("{:<12} {:<9} {}", e.time, e.code, e.text));
+    }
+    Notice::new("dst-hsm-sal", "Service Action Log", lines)
+}
+
+/// `Display Label Location Work Sheet`: where each resource is, to
+/// label the hardware by.
+fn label_work_sheet(env: &mut dyn DstEnv) -> Notice {
+    let mut lines = vec!["Resource    Location                Description".to_string()];
+    let rows = env.resources();
+    if rows.is_empty() {
+        lines.push("  (No hardware resources reported)".into());
+    }
+    for r in &rows {
+        lines.push(format!(
+            "{:<10}  {:<22}  {}",
+            r.name,
+            crate::dst::disk::clip(&r.location, 22),
+            r.description
+        ));
+    }
+    Notice::new("dst-hsm-labels", "Display Label Location Work Sheet", lines)
 }
 
 // --- the Licensed Internal Code log
@@ -654,9 +710,17 @@ pub fn hardware_service_manager() -> Submenu {
                     )))
                 })),
             ),
-            (6, "Work with service action log", None),
-            (7, "Display label location work sheet", None),
-            (8, "Device Concurrent Maintenance", None),
+            (
+                6,
+                "Work with service action log",
+                Some(Box::new(|env| Flow::Push(Box::new(service_action_log(env))))),
+            ),
+            (
+                7,
+                "Display label location work sheet",
+                Some(Box::new(|env| Flow::Push(Box::new(label_work_sheet(env))))),
+            ),
+            (8, "Device Concurrent Maintenance", crate::dst::common::says(crate::dst::answers::CONCURRENT)),
         ],
     )
     .with_key(

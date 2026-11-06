@@ -1,0 +1,24 @@
+                             Confirm Stop Hot Spare                             
+                                                                 System:  QS400 
+                                                                                
+ This unit stops being a hot spare and becomes a non-configured                 
+ unit; a unit that fails is no longer replaced by it.                           
+                                                                                
+ Set  Level   Unit  Serial Number     Type Model    Resource  Status            
+                    SP-vdh            QEMU HARDDISK DD008     Hot spare         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

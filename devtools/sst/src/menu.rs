@@ -9,7 +9,7 @@
 use console::Screen;
 use svctools::dst::common::{Notice, Submenu};
 use svctools::dst::signon::{SignOn, Tool};
-use svctools::dst::{INVALID_SELECTION, NOT_AUTHORIZED, NOT_AVAILABLE, selection};
+use svctools::dst::{INVALID_SELECTION, NOT_AUTHORIZED, answers, selection};
 use svctools::panel::{Flow, Outcome, Panel, Runner};
 use svctools::ui;
 use svctools::{DstEnv, Privilege};
@@ -92,12 +92,13 @@ impl Panel for SstMenu {
             3 => self.needs(Privilege::DISK_UNITS_OPERATIONS, || {
                 Flow::Push(Box::new(svctools::dst::disk::work_with_disk_units(p)))
             }),
-            6 => Flow::Push(Box::new(crate::capacity::work_with_system_capacity())),
+            6 => Flow::Push(Box::new(svctools::dst::capacity::work_with_system_capacity("sst-capacity"))),
             7 => self.needs(Privilege::SECURITY, || {
                 Flow::Push(Box::new(svctools::dst::security::Security))
             }),
             8 => Flow::Push(Box::new(user_ids_and_devices(p))),
-            4 | 5 => Flow::Message(NOT_AVAILABLE.into()),
+            4 => Flow::Message(answers::NO_DISKETTE.into()),
+            5 => Flow::Push(Box::new(svctools::dst::partitions::NotSupported)),
             _ => Flow::Error(INVALID_SELECTION.into()),
         }
     }
@@ -147,18 +148,7 @@ fn user_ids_and_devices(privileges: Privilege) -> Submenu {
                     if !can {
                         return Flow::Error(NOT_AUTHORIZED.into());
                     }
-                    let mut lines = vec!["Device ID   Status     Description".to_string()];
-                    for (n, s, d) in env.device_ids() {
-                        lines.push(format!("{n:<10}  {s:<9}  {d}"));
-                    }
-                    lines.push(String::new());
-                    lines.push("Service tools are reached from the system console and from".into());
-                    lines.push("STRSST in a job; there are no LAN service tools devices.".into());
-                    Flow::Push(Box::new(Notice::new(
-                        "sst-device-ids",
-                        "Work with Service Tools Device IDs",
-                        lines,
-                    )))
+                    Flow::Push(Box::new(svctools::dst::environment::device_ids(env, "sst-device-ids")))
                 })),
             ),
         ],
@@ -190,7 +180,7 @@ mod tests {
         assert!(r.screen(&mut env).dump().contains(NOT_AUTHORIZED));
         r.function(3, &mut env);
         r.enter(&f(&["4"]), &mut env);
-        assert!(r.screen(&mut env).dump().contains(NOT_AVAILABLE));
+        assert!(r.screen(&mut env).dump().contains(answers::NO_DISKETTE));
         assert_eq!(r.function(3, &mut env), Some(Outcome::Exit));
     }
 

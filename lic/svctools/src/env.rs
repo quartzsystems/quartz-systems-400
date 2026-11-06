@@ -514,6 +514,23 @@ pub trait DstEnv {
         let _ = unit;
         Err("not available".into())
     }
+    /// The communications traces: object, type, status.
+    fn cmn_traces(&mut self) -> Result<Vec<(String, String, String)>, String> {
+        Ok(Vec::new())
+    }
+    /// Make a non-configured disk a hot spare (`docs/STORE_FORMAT.md`
+    /// §4): it takes the place of a mirrored half or parity member that
+    /// fails. The spares show in [`parity_units`](Self::parity_units)
+    /// as rows of set 0.
+    fn start_hot_spare(&mut self, device: &str) -> Result<String, String> {
+        let _ = device;
+        Err("not available".into())
+    }
+    /// Stop holding the hot spare on the disk with this resource name.
+    fn stop_hot_spare(&mut self, resource: &str) -> Result<String, String> {
+        let _ = resource;
+        Err("not available".into())
+    }
     /// The ASP threshold percent.
     fn asp_threshold(&mut self) -> u8 {
         90
@@ -865,6 +882,14 @@ impl DstEnv for MemEnv {
     fn exclude_parity(&mut self, unit: u16) -> Result<String, String> {
         self.actions.push(format!("parity exclude {unit}"));
         Ok("Unit excluded".into())
+    }
+    fn start_hot_spare(&mut self, device: &str) -> Result<String, String> {
+        self.actions.push(format!("spare start {device}"));
+        Ok("Hot spare started".into())
+    }
+    fn stop_hot_spare(&mut self, resource: &str) -> Result<String, String> {
+        self.actions.push(format!("spare stop {resource}"));
+        Ok("Hot spare stopped".into())
     }
     fn show(&mut self, screen: Screen) {
         self.shown.push(screen.dump());

@@ -301,3 +301,52 @@ fn dumps_traces_alter_and_the_lic_log() {
     r.enter(&f(&["DD*"]), &mut e);
     assert!(r.screen(&mut e).dump().contains("DD001"));
 }
+
+/// The options that used to answer "not available": each is a panel
+/// now, or says on the message line why it does not apply.
+#[test]
+fn every_option_has_a_panel_or_an_answer() {
+    use svctools::dst::answers as a;
+    let mut e = env();
+    e.capacity = vec![("Installed processors".into(), "4".into())];
+    walk(&mut e, &["9"], "save-storage");
+    walk(&mut e, &["10"], "remote");
+    walk(&mut e, &["10", "1"], "remote-status");
+    walk(&mut e, &["11"], "partitions");
+    walk(&mut e, &["12"], "capacity");
+    walk(&mut e, &["5", "5"], "device-ids");
+    walk(&mut e, &["7", "3"], "cmn-trace");
+    walk(&mut e, &["7", "7", "6"], "hsm-sal");
+    walk(&mut e, &["7", "7", "7"], "hsm-labels");
+    let says = |e: &mut MemEnv, path: &[&str], text: &str| {
+        let mut r = runner();
+        for sel in path {
+            r.enter(&f(&[sel]), e);
+        }
+        let d = r.screen(e).dump();
+        assert!(d.contains(text), "{path:?}: {d}");
+    };
+    says(&mut e, &["9", "1"], a::SAVE_STORAGE);
+    says(&mut e, &["9", "2"], a::SAVE_STORAGE);
+    says(&mut e, &["10", "2"], a::NO_REMOTE_LINE);
+    says(&mut e, &["10", "3"], a::REMOTE_NOT_ACTIVE);
+    says(&mut e, &["10", "4"], a::NO_REMOTE_LINE);
+    says(&mut e, &["12", "2"], a::NO_COD);
+    says(&mut e, &["12", "3"], a::NO_COD);
+    says(&mut e, &["14"], a::NOT_RESTRICTED);
+    says(&mut e, &["4", "3"], a::NO_IOA);
+    says(&mut e, &["4", "4"], a::NO_IOA);
+    says(&mut e, &["4", "1", "6"], a::NO_CHECKSUM);
+    says(&mut e, &["4", "1", "7"], a::NO_COMPRESSION);
+    says(&mut e, &["4", "1", "3", "3"], a::BALANCE);
+    says(&mut e, &["4", "1", "3", "6"], a::ONE_ASP);
+    says(&mut e, &["4", "1", "4", "4"], a::NO_REMOTE_BUS);
+    for (opt, text) in [("1", a::UNIT_DATA), ("2", a::UNIT_DATA), ("4", a::ASSIGN_MISSING), ("5", a::RECOVER_CONFIG), ("9", a::UNIT_DATA)] {
+        says(&mut e, &["4", "2", opt], text);
+    }
+    says(&mut e, &["7", "7", "8"], a::CONCURRENT);
+    // Partitions: Enter goes back.
+    let mut r = walk(&mut e, &["11"], "partitions");
+    r.enter(&f(&[]), &mut e);
+    assert_eq!(r.top(), "dst-main");
+}

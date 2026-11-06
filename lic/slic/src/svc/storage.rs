@@ -119,6 +119,23 @@ pub fn mirror(system: &mut System, args: &[&str]) -> String {
     result.unwrap_or_else(|e| format!("{e}\n"))
 }
 
+/// The hot spares, one line each.
+fn spare_lines(st: &store::Store, out: &mut String) {
+    for h in st.hot_spares() {
+        let u = h.unit_uuid;
+        let _ = writeln!(
+            out,
+            "  hot spare {:02x}{:02x}{:02x}{:02x}: {} pages{}",
+            u[0],
+            u[1],
+            u[2],
+            u[3],
+            h.pages,
+            if h.attached { "" } else { " (not attached)" }
+        );
+    }
+}
+
 /// `asp`: units, free space, WAL fill, checkpoint generation, release.
 pub fn asp(system: &mut System) -> String {
     let mut out = String::new();
@@ -167,6 +184,7 @@ pub fn asp(system: &mut System) -> String {
             );
         }
         parity_lines(st, &mut out);
+        spare_lines(st, &mut out);
         for u in a.unit_stats() {
             let _ = writeln!(
                 out,

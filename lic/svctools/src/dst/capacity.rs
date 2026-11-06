@@ -7,15 +7,16 @@
 //! demand: processors and memory are what the hardware reports, and
 //! nothing here changes them.
 
-use svctools::DstEnv;
-use svctools::dst::common::{Notice, Submenu};
-use svctools::panel::Flow;
+use crate::DstEnv;
+use crate::dst::answers;
+use crate::dst::common::{Notice, Submenu, says};
+use crate::panel::Flow;
 
-/// The `Work with System Capacity` menu.
+/// The `Work with System Capacity` menu, DST's option 12 and SST's 6.
 #[must_use]
-pub fn work_with_system_capacity() -> Submenu {
+pub fn work_with_system_capacity(name: &'static str) -> Submenu {
     Submenu::new(
-        "sst-capacity",
+        name,
         "Work with System Capacity",
         vec![
             (
@@ -25,8 +26,8 @@ pub fn work_with_system_capacity() -> Submenu {
                     Flow::Push(Box::new(processor_status(env)))
                 })),
             ),
-            (2, "Work with temporary capacity", None),
-            (3, "Work with permanent capacity", None),
+            (2, "Work with temporary capacity", says(answers::NO_COD)),
+            (3, "Work with permanent capacity", says(answers::NO_COD)),
             (
                 4,
                 "Display storage capacity",
@@ -57,7 +58,7 @@ fn figure(cap: &[(String, String)], label: &str) -> Option<String> {
 
 /// A label dotted to the value column.
 fn line(label: &str, value: &str) -> String {
-    let mut l = svctools::ui::leader(label, 32);
+    let mut l = crate::ui::leader(label, 32);
     l.truncate(32);
     format!("{l}:  {value}")
 }

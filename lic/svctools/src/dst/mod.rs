@@ -6,20 +6,23 @@
 //! under it. Titles and option numbers are the functional interface;
 //! every sentence is Quartz's.
 
+pub mod answers;
+pub mod capacity;
 pub mod common;
 pub mod console_mode;
 pub mod disk;
 pub mod environment;
 pub mod lic;
 pub mod menu;
+pub mod partitions;
+pub mod remote;
 pub mod security;
 pub mod signon;
+pub mod storage;
 pub mod tools;
 
 use crate::panel::Runner;
 
-/// Shown for an option that exists on the menu but does nothing yet.
-pub const NOT_AVAILABLE: &str = "Option not available in this release";
 /// Shown when the user lacks the privilege an option needs.
 pub const NOT_AUTHORIZED: &str = "Service tools user ID is not authorized to this option";
 /// Shown for a selection that is not an option number.

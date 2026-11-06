@@ -1,0 +1,24 @@
+                 Logical Partitioning Environment Not Supported                 
+                                                                 System:  QS400 
+                                                                                
+ This system cannot be divided into logical partitions. It runs as              
+ one system on the hardware it was installed on; a hypervisor that              
+ runs it in a virtual machine divides the hardware instead.                     
+                                                                                
+ Press Enter to return.                                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -40,8 +40,8 @@ pub fn work_with_disk_units(privileges: Privilege) -> Submenu {
                     Flow::Push(Box::new(recovery::work_with_disk_unit_recovery(ops, admin)))
                 })),
             ),
-            (3, "Work with disk unit problem recovery", None),
-            (4, "Work with disk unit tracing", None),
+            (3, "Work with disk unit problem recovery", crate::dst::common::says(crate::dst::answers::NO_IOA)),
+            (4, "Work with disk unit tracing", crate::dst::common::says(crate::dst::answers::NO_IOA)),
         ],
     )
 }

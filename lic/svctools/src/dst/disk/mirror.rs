@@ -39,7 +39,7 @@ pub fn work_with_mirrored_protection() -> Submenu {
                 "Stop mirrored protection",
                 Some(Box::new(|env| Flow::Push(Box::new(stop(env))))),
             ),
-            (4, "Enable remote load source mirroring", None),
+            (4, "Enable remote load source mirroring", crate::dst::common::says(crate::dst::answers::NO_REMOTE_BUS)),
         ],
     )
 }

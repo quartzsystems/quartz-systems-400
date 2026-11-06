@@ -113,6 +113,19 @@ pub fn delete(obj: &str, ty: CfgType) -> Result<Msg, Msg> {
     registry().delete(obj, ty)
 }
 
+/// Every trace as the service tools list it: object, type, status.
+pub fn rows() -> Vec<(String, String, String)> {
+    registry()
+        .all()
+        .iter()
+        .map(|e| {
+            let t = e.lock();
+            let h = &t.header;
+            (h.cfgobj.clone(), h.cfgtype.name().to_string(), h.status.name().to_string())
+        })
+        .collect()
+}
+
 /// `CHKCMNTRC`.
 pub fn check(obj: Option<&str>, ty: Option<CfgType>) -> Result<Vec<Msg>, Msg> {
     registry().check(obj, ty)

@@ -6,7 +6,7 @@
 
 use console::Screen;
 
-use crate::dst::{INVALID_SELECTION, NOT_AUTHORIZED, NOT_AVAILABLE, selection};
+use crate::dst::{INVALID_SELECTION, NOT_AUTHORIZED, answers, selection};
 use crate::env::DstEnv;
 use crate::panel::{Flow, Outcome, Panel};
 use crate::ui;
@@ -96,7 +96,11 @@ impl Panel for MainMenu {
             13 => self
                 .needs(Privilege::SECURITY)
                 .unwrap_or_else(|| Flow::Push(Box::new(crate::dst::security::Security))),
-            9..=12 | 14 => Flow::Message(NOT_AVAILABLE.into()),
+            9 => Flow::Push(Box::new(crate::dst::storage::work_with_save_storage())),
+            10 => Flow::Push(Box::new(crate::dst::remote::work_with_remote_service())),
+            11 => Flow::Push(Box::new(crate::dst::partitions::NotSupported)),
+            12 => Flow::Push(Box::new(crate::dst::capacity::work_with_system_capacity("dst-capacity"))),
+            14 => Flow::Message(answers::NOT_RESTRICTED.into()),
             _ => Flow::Error(INVALID_SELECTION.into()),
         }
     }
@@ -128,8 +132,8 @@ mod tests {
         assert!(d.contains("14. End batch restricted state"));
         assert_eq!(r.enter(&f(&["2"]), &mut env), None);
         assert!(r.screen(&mut env).dump().contains(NOT_AUTHORIZED));
-        assert_eq!(r.enter(&f(&["9"]), &mut env), None);
-        assert!(r.screen(&mut env).dump().contains(NOT_AVAILABLE));
+        assert_eq!(r.enter(&f(&["14"]), &mut env), None);
+        assert!(r.screen(&mut env).dump().contains(answers::NOT_RESTRICTED));
         assert_eq!(r.enter(&f(&["x"]), &mut env), None);
         assert!(r.screen(&mut env).dump().contains(INVALID_SELECTION));
         assert_eq!(r.enter(&f(&["1"]), &mut env), Some(Outcome::PerformIpl));

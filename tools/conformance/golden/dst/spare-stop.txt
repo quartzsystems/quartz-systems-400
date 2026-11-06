@@ -1,0 +1,24 @@
+                                 Stop Hot Spare                                 
+                                                                 System:  QS400 
+                                                                                
+ Type 1 beside the hot spare to stop, then press Enter.                         
+                                                                                
+ Opt  Set  Level   Unit  Serial Number     Type Model    Resource  Status       
+                        SP-vdh            QEMU HARDDISK DD008     Hot spare     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

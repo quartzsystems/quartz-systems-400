@@ -48,7 +48,7 @@ pub fn work_with_dst_environment(privileges: Privilege) -> Submenu {
                             format!("Console type . . . . . :  {}", env.console_type()),
                             String::new(),
                             "Option 6 of the DST menu chooses the local or the serial console;".into(),
-                            "an operations console over the LAN comes with a later phase.".into(),
+                            "there is no operations console over the LAN.".into(),
                         ],
                     )))
                 })),
@@ -75,9 +75,33 @@ pub fn work_with_dst_environment(privileges: Privilege) -> Submenu {
                     }
                 })),
             ),
-            (5, "Service tools device IDs", None),
+            (
+                5,
+                "Service tools device IDs",
+                Some(Box::new(move |env| {
+                    if can_users {
+                        Flow::Push(Box::new(device_ids(env, "dst-device-ids")))
+                    } else {
+                        Flow::Error(NOT_AUTHORIZED.into())
+                    }
+                })),
+            ),
         ],
     )
+}
+
+/// `Work with Service Tools Device IDs`: the devices service tools are
+/// reached from, as DST's option 5 and SST's user IDs and devices
+/// option 2 show them.
+pub fn device_ids(env: &mut dyn DstEnv, name: &'static str) -> Notice {
+    let mut lines = vec!["Device ID   Status     Description".to_string()];
+    for (n, s, d) in env.device_ids() {
+        lines.push(format!("{n:<10}  {s:<9}  {d}"));
+    }
+    lines.push(String::new());
+    lines.push("Service tools are reached from the system console and from".into());
+    lines.push("STRSST in a job; there are no LAN service tools devices.".into());
+    Notice::new(name, "Work with Service Tools Device IDs", lines)
 }
 
 /// `User ID     Status    Description`.

@@ -62,8 +62,8 @@ pub fn work_with_disk_configuration(admin: bool) -> Submenu {
                 "Work with device parity protection",
                 Some(Box::new(move |env| parity::open(env, admin))),
             ),
-            (6, "Work with checksum protection", None),
-            (7, "Work with disk compression", None),
+            (6, "Work with checksum protection", crate::dst::common::says(crate::dst::answers::NO_CHECKSUM)),
+            (7, "Work with disk compression", crate::dst::common::says(crate::dst::answers::NO_COMPRESSION)),
         ],
     )
 }
@@ -258,13 +258,13 @@ pub fn asp_configuration() -> Submenu {
                 "Add units to ASPs",
                 Some(Box::new(add_units)),
             ),
-            (3, "Add units to ASPs and balance data", None),
+            (3, "Add units to ASPs and balance data", crate::dst::common::says(crate::dst::answers::BALANCE)),
             (
                 4,
                 "Remove units from configuration",
                 Some(Box::new(|env| Flow::Push(Box::new(remove_units(env))))),
             ),
-            (6, "Move units from one ASP to another", None),
+            (6, "Move units from one ASP to another", crate::dst::common::says(crate::dst::answers::ONE_ASP)),
         ],
     )
 }

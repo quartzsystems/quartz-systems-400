@@ -273,6 +273,7 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
         devices: opened,
         resume: None,
     });
+    use_hot_spares(system);
     database_recovery(system);
     Ok(())
 }
@@ -576,18 +577,20 @@ fn resume_step(system: &mut System) -> bool {
     }
 }
 
-/// Report what the I/O layer did on its own.
-fn report_io_events(system: &mut System) {
+/// Report what the I/O layer did on its own. True when a unit failed.
+fn report_io_events(system: &mut System) -> bool {
     let events = match system.storage.as_mut() {
         Some(s) => s.store.drain_io_events(),
-        None => return,
+        None => return false,
     };
+    let mut failed = false;
     for e in events {
         match e {
             IoEvent::Healed { page, unit } => system.out.serial(&format!(
                 "slic: page {page} rewritten on unit {unit} from its mirror\n"
             )),
             IoEvent::UnitFailed { unit, what } => {
+                failed = true;
                 system.out.serial(&format!(
                     "slic: disk unit {unit} taken out of service: {what}\n"
                 ));
@@ -601,6 +604,48 @@ fn report_io_events(system: &mut System) {
                     &src::MIRROR_FAILED
                 });
             }
+        }
+    }
+    failed
+}
+
+/// Put a hot spare in the place of each failed unit one fits
+/// (`docs/STORE_FORMAT.md` §4, hot spares). A parity member is rebuilt by
+/// the parity work; a mirrored half resumes in the background.
+pub fn use_hot_spares(system: &mut System) {
+    let Some(s) = system.storage.as_mut() else {
+        return;
+    };
+    if s.store.hot_spares().iter().all(|h| !h.attached) {
+        return;
+    }
+    let paths = s.devices.clone();
+    let serial_of = |uuid: &[u8; 16]| {
+        paths
+            .iter()
+            .find(|p| unit_uuid_of(p) == Some(*uuid))
+            .map(|p| diskimg::locate::identity(p).1)
+            .unwrap_or_default()
+    };
+    let used = match s.store.use_hot_spares(&serial_of) {
+        Ok(u) => u,
+        Err(e) => {
+            system.out.serial(&format!("slic: hot spare: {e}\n"));
+            return;
+        }
+    };
+    for u in used {
+        system.out.serial(&format!(
+            "slic: a hot spare took the place of disk unit {}; it is {}\n",
+            u.unit,
+            if u.parity { "rebuilt from its parity set" } else { "resumed from its partner" }
+        ));
+        if !u.parity
+            && let Err(e) = start_resume(system, u.unit)
+        {
+            system
+                .out
+                .serial(&format!("slic: resume of unit {}: {e}\n", u.unit));
         }
     }
 }
@@ -952,7 +997,9 @@ pub fn tick(system: &mut System) {
 pub fn tick_with(system: &mut System, slice: Duration) {
     resume_step(system);
     parity_turn(system, slice);
-    report_io_events(system);
+    if report_io_events(system) {
+        use_hot_spares(system);
+    }
     let now = now_unix();
     if let Some(s) = system.storage.as_mut()
         && let Err(e) = s.store.tick(now)

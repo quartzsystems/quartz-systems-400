@@ -131,6 +131,10 @@ fn hex_bytes(s: &str) -> Result<Vec<u8>, String> {
 #[allow(clippy::too_many_lines)] // one arm a request
 fn sst_op(system: &mut System, job: u32, op: &str, args: &[String]) -> Result<Vec<String>, String> {
     match op {
+        "cmntrc-list" => {
+            super::sst::need(system, job, Privilege::DUMPS_AND_TRACES)?;
+            Ok(super::cmntrc::rows().into_iter().map(|(o, t, s)| format!("{o}\t{t}\t{s}")).collect())
+        }
         "capacity" => {
             super::sst::need(system, job, Privilege::NONE)?;
             Ok(capacity(system))

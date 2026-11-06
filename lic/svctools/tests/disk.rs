@@ -405,3 +405,59 @@ fn delete_data_confirms_then_reaches_the_environment() {
     assert_eq!(r.top(), "dst-disk-recovery");
     assert!(r.screen(&mut e).dump().contains("not authorized"));
 }
+
+/// The parity environment with a hot spare held.
+fn spare_env() -> MemEnv {
+    let mut e = parity_env();
+    e.parity.push(ParityUnit {
+        set: 0,
+        level: String::new(),
+        unit: u16::MAX,
+        serial: "SP-vdh".into(),
+        type_model: "QEMU HARDDISK".into(),
+        resource: "DD008".into(),
+        controller: "DC03".into(),
+        status: "Hot spare".into(),
+        percent: None,
+    });
+    e
+}
+
+#[test]
+fn hot_spare_screens_and_actions() {
+    let mut e = spare_env();
+    walk(&mut e, &["4", "1", "5", "1"], "parity-status-spare");
+    // Option 9: a non-configured disk becomes a spare.
+    let mut r = walk(&mut e, &["4", "1", "5", "9"], "spare-start");
+    r.enter(&f(&["1"]), &mut e);
+    check("spare-start-confirm", &r.screen(&mut e).dump());
+    r.function(10, &mut e);
+    assert_eq!(e.actions, vec!["spare start /dev/vdg"]);
+    assert_eq!(r.top(), "dst-parity");
+    // Option 10 lists the spares only.
+    e.actions.clear();
+    let mut r = walk(&mut e, &["4", "1", "5", "10"], "spare-stop");
+    r.enter(&f(&["1"]), &mut e);
+    check("spare-stop-confirm", &r.screen(&mut e).dump());
+    r.function(10, &mut e);
+    assert_eq!(e.actions, vec!["spare stop DD008"]);
+    // Option 7: the set and a spare at least as large as its units.
+    e.actions.clear();
+    e.units.push(unit(6, false, None, "Unprotected", true));
+    let mut r = walk(&mut e, &["4", "1", "5", "7"], "parity-start5-spare");
+    r.enter(&f(&["1", "1", "1"]), &mut e);
+    check("parity-start-spare-confirm", &r.screen(&mut e).dump());
+    r.function(10, &mut e);
+    assert_eq!(e.actions, vec!["parity start 5 [4, 5, 6]", "spare start /dev/vdg"]);
+    // No disk large enough: refused before the confirmation.
+    e.spare = vec![spare("vdg", 1024)];
+    walk(&mut e, &["4", "1", "5", "8"], "parity-start6-spare");
+    let mut r = walk(&mut e, &["4", "1", "5", "7"], "parity-start5-spare");
+    r.enter(&f(&["1", "1", "1"]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("large enough to be the hot spare"));
+    // Without spares, stop says so; the sets ignore the spare rows.
+    e.parity.retain(|p| p.set != 0);
+    let mut r = walk(&mut e, &["4", "1", "5"], "parity");
+    r.enter(&f(&["10"]), &mut e);
+    assert!(r.screen(&mut e).dump().contains("There are no hot spares"));
+}
