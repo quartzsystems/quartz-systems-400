@@ -1,0 +1,64 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# Chosen QEMU steps of one suite on a GitHub-hosted runner, on demand, for
+# any branch: `gh workflow run qemu.yml --ref BRANCH -f suite=disk -f
+# only=146,147` (docs/TOOLS.md, "CI and its runners"). The boot step always
+# runs; steps that need an earlier one name it too (54 before 55).
+
+name: qemu
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "disk, media or install"
+        type: choice
+        options: [disk, media, install]
+        default: disk
+      only:
+        description: "Step prefixes, comma separated (empty: the whole suite)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qemu-${{ github.ref }}-${{ inputs.suite }}-${{ inputs.only }}
+  cancel-in-progress: true
+
+jobs:
+  qemu:
+    name: QEMU ${{ inputs.suite }} ${{ inputs.only }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/qs400-host
+      - run: cargo run -q -p build -- all
+      - name: Install media
+        if: inputs.suite != 'disk'
+        run: cargo run -q -p build -- iso
+      - name: The steps
+        run: |
+          case "${{ inputs.suite }}" in
+            disk) media=() ;;
+            media) media=(--media iso) ;;
+            install) media=(--media iso --install) ;;
+          esac
+          only=()
+          [ -n "${{ inputs.only }}" ] && only=(--only "${{ inputs.only }}")
+          if [ ${#only[@]} -eq 0 ]; then
+            cargo run -q -p build -- test "${media[@]}"
+          else
+            cargo run -q -p conformance -- "${media[@]}" "${only[@]}"
+          fi
+      - name: Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-logs
+          path: target/logs/
+          if-no-files-found: ignore
