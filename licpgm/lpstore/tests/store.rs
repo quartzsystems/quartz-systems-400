@@ -81,6 +81,7 @@ impl Remover for NoRemove {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)] // one scenario, start to end
 fn seed_save_delete_restore() {
     let (mut store, qsys) = system();
     assert!(lpstore::seed(&mut store, qsys, NOW).unwrap());
