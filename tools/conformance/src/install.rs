@@ -9,10 +9,10 @@
 //! |---|---|
 //! | 8 | a response file on a FAT32 copy of the media: no prompts, two disks mirrored, the answers applied, every licensed program installed, signatures clean |
 //! | 9 | `SAVSYS` to a virtual tape, the system disk wiped, the recovery from the tape: LIC, operating system, profiles, configuration |
-//! | 10 | V1R0M0 media (`QS400_OLD_ISO`) installed, user data made (a journaled table, spooled files, a SAVLIB in a save file), upgraded with option 1 to the suite's V1R1M0 media: the data kept, the release recorded, RSTLIB of the V1R0M0 save, the downgrade refused |
+//! | 10 | V1R0M0 media (`QS400_OLD_ISO`) installed, user data made (a journaled SQL table, spooled files, a SAVLIB with an SQL table in a save file), upgraded with option 1 to the suite's V1R1M0 media: the data kept, the release recorded, the V1R0M0 table (no `*SQLINF`) selected, inserted into, indexed and viewed by SQL, RSTLIB of the V1R0M0 save, the downgrade refused |
 //! | 11 | a power pull in the middle of a LIC install, then a clean reinstall |
 //! | 14 | option 1, Restore Licensed Internal Code, over step 1's disk with user data: the data kept, the new slot booted |
-//! | 15 | a network boot (PXE over QEMU's TFTP): the response file beside the boot file, the payload from the CD, the address from DHCP |
+//! | 15 | a network boot (PXE over QEMU's TFTP): the response file beside the boot file, the payload from the CD; `QSTRUP` starts the `*IP4DHCP` interface and it gets a lease, again after an IPL from the disk alone |
 
 use std::fs;
 use std::path::PathBuf;
@@ -406,6 +406,8 @@ impl Suite {
                 ("DSPLIBL OUTPUT(*PRINT)", ""),
                 ("crtlib LIB(SLIPSAV) TEXT('saved by V1R0M0')", ""),
                 ("crtdtaara DTAARA(SLIPSAV/OLDSAVE) TYPE(*CHAR) LEN(20) VALUE('from V1R0M0')", ""),
+                ("runsql SQL('CREATE TABLE SLIPSAV.PARTS (ID INTEGER, NAME CHAR(10))') COMMIT(*NONE)", ""),
+                ("runsql SQL('INSERT INTO SLIPSAV.PARTS VALUES(7, ''gears'')') COMMIT(*NONE)", ""),
                 ("crtsavf FILE(SLIPUSR/OLDSAVF)", ""),
                 ("savlib LIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)", "CPC3722"),
                 ("dltlib LIB(SLIPSAV)", ""),
@@ -448,20 +450,51 @@ impl Suite {
             if !asp.contains("V1R1M0") {
                 return Err(format!("the store does not record V1R1M0:\n{asp}"));
             }
-            let checks: [(&str, &[&str]); 4] = [
+            // The V1R0M0 table has no *SQLINF (header version 1): SQL
+            // still sees a table, reads it, adds to it and builds on it.
+            let checks: [(&str, &[&str]); 14] = [
                 ("svc.dtaara get SLIPUSR/KEEPME", &["kept value"]),
                 ("dsppfm FILE(SLIPUSR/ORDERS)", &["bolts", "nuts"]),
                 ("dspjrn JRN(SLIPUSR/JRN)", &["PT", "ORDERS"]),
                 (
+                    "svc.sql SELECT TABLE_NAME FROM QSYS2/SYSTABLES WHERE TABLE_SCHEMA = 'SLIPUSR' AND TABLE_TYPE = 'T';",
+                    &["ORDERS", "1 row(s)"],
+                ),
+                ("svc.sql SELECT ITEM FROM SLIPUSR/ORDERS WHERE ID = 2;", &["nuts", "1 row(s)"]),
+                ("runsql SQL('INSERT INTO SLIPUSR.ORDERS VALUES(3, ''washers'')') COMMIT(*NONE)", &[]),
+                ("runsql SQL('CREATE INDEX SLIPUSR.ORDERSIX ON SLIPUSR.ORDERS (ITEM)') COMMIT(*NONE)", &[]),
+                (
+                    "runsql SQL('CREATE VIEW SLIPUSR.ORDERSV AS SELECT ID, ITEM FROM SLIPUSR.ORDERS WHERE ID > 1') COMMIT(*NONE)",
+                    &[],
+                ),
+                ("svc.sql SELECT COUNT(*) FROM SLIPUSR/ORDERS;", &["3", "1 row(s)"]),
+                ("svc.sql SELECT ITEM FROM SLIPUSR/ORDERSV ORDER BY ITEM;", &["nuts", "washers", "2 row(s)"]),
+                (
+                    "svc.sql SELECT TABLE_NAME, TABLE_TYPE FROM QSYS2/SYSTABLES WHERE TABLE_SCHEMA = 'SLIPUSR' AND TABLE_NAME LIKE 'ORDERS%' ORDER BY TABLE_NAME;",
+                    &["ORDERSV", "2 row(s)"],
+                ),
+                (
+                    "svc.sql SELECT INDEX_NAME, TABLE_NAME FROM QSYS2/SYSINDEXES WHERE INDEX_SCHEMA = 'SLIPUSR';",
+                    &["ORDERSIX", "ORDERS", "1 row(s)"],
+                ),
+                (
                     "rstlib SAVLIB(SLIPSAV) DEV(*SAVF) SAVF(SLIPUSR/OLDSAVF)",
                     &["CPC3703", "SLIPSAV"],
                 ),
+                ("svc.sql SELECT ID, NAME FROM SLIPSAV/PARTS;", &["gears", "1 row(s)"]),
             ];
             for (line, wants) in checks {
                 let out = s.command(line, CMD)?;
+                if out.contains("CPF") || out.contains("SQLSTATE") {
+                    return Err(format!("{line}: failed after the upgrade:\n{out}"));
+                }
                 if let Some(w) = wants.iter().find(|w| !out.contains(**w)) {
                     return Err(format!("{line}: no {w} after the upgrade:\n{out}"));
                 }
+            }
+            let v = s.command("svc.sql SELECT ITEM FROM SLIPUSR/ORDERSV WHERE ITEM = 'bolts';", CMD)?;
+            if !v.contains("0 row(s)") {
+                return Err(format!("the view over the V1R0M0 table does not select:\n{v}"));
             }
             let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
             if let Some(f) = spooled.iter().find(|f| !files.contains(f.as_str())) {
@@ -482,7 +515,8 @@ impl Suite {
                 .to_string();
             Ok(format!(
                 "V1R0M0 installed, upgraded to V1R1M0; the data area, the journaled table and \
-                 its entries, the spooled files kept; RSTLIB of a V1R0M0 SAVLIB; {last}; {sig}"
+                 its entries, the spooled files kept; the V1R0M0 SQL table selected, inserted \
+                 into, indexed and viewed; RSTLIB of a V1R0M0 SAVLIB with its SQL table; {last}; {sig}"
             ))
         })()
         .map_err(|e| (e, s.log.clone()));

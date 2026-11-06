@@ -704,7 +704,7 @@ mod tests {
         assert_eq!(text_of(&back.text), "A data area");
         assert_eq!(back.public_authority.display(), "*CHANGE");
         assert_eq!(Authority::ALL.display(), "*ALL");
-        // A version 1 header (V1R1M0): its reserved bytes read as no SQL
+        // A version 1 header (V1R0M0): its reserved bytes read as no SQL
         // information, whatever they hold.
         let mut v1 = body.clone();
         v1[OFF_VERSION..OFF_VERSION + 4].copy_from_slice(&1u32.to_le_bytes());
