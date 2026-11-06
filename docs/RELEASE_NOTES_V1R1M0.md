@@ -127,3 +127,309 @@ The `NEEDS-CODY` list in `PHASE12.md`: sign the release with the real
 key (`QS400_SIGNING_KEY`), the ACS checklist, the hypervisor and Dell
 qualification runs, physical tape, the oracle commands that need a
 configuration change, and the tag.
+
+## Refused in SQL
+
+The list of `SQL.md` §10, imported as it stands.
+
+<!-- sql-refused:begin: imported from docs/SQL.md section 10 by `cargo run -p kcbuild -- notes --update`; do not edit -->
+Every form QS/400 refuses or does not provide, as the rows above state it,
+by section. A refusal is an error with the SQLCODE given and a message
+that says what is not supported; nothing is accepted and ignored.
+Generated from the tables above; the rows are the authority.
+
+### 2. Statements
+
+- `CREATE OR REPLACE VIEW`, `CREATE OR REPLACE ALIAS`: supported; refused SQL0084 when other views depend on the view
+- `CREATE OR REPLACE TABLE` (`ON REPLACE PRESERVE/DELETE ROWS`): partial: refused SQL0084 when views or indexes depend on the table
+- `CREATE OR REPLACE INDEX`: refused SQL0104, as IBM
+- `ALTER TABLE` ADD/DROP/ALTER COLUMN (SET DATA TYPE, SET/DROP DEFAULT, SET/DROP NOT NULL, SET GENERATED, RESTART, DROP IDENTITY), ADD/DROP CONSTRAINT: partial: refused SQL0084 (BLOCKED(sql)) when indexes or views depend on the table, and for SET DATA TYPE of a constraint key column
+- `ALTER TABLE ... ADD/DROP PARTITION`, materialized query tables: refused SQL0084
+- `RENAME TABLE/INDEX` (`TO SYSTEM NAME`, `FOR SYSTEM NAME`): supported; refused SQL0084 for an object other views read
+- `EXPLAIN` (a Quartz statement; pub400 answers SQL0104): partial: a query's plan text with `QQRID`, `QQRCOD`, `QVC13` per line; ACS Visual Explain (`QSYS.QQQDBVE`, undocumented) not provided
+- `CREATE SEQUENCE` (long and delimited names with generated system names; `START WITH` below `MINVALUE` accepted, as the primary), `ALTER SEQUENCE`, `DROP SEQUENCE`, `NEXT VALUE FOR`, `PREVIOUS VALUE FOR`: supported, IBM's cache blocks matched; `ALTER SEQUENCE AS` refused SQL0084; a failed statement gives back the value it used, where IBM keeps it used
+- `GRANT` on sequences: refused SQL0084
+- `CREATE PROCEDURE ... EXTERNAL` (RPGLE, CL; `PARAMETER STYLE SQL`, `GENERAL`, `GENERAL WITH NULLS`): supported, also before the program exists (SQL7909); service program procedures up to 64 parameters in the call; `LANGUAGE C/COBOL/PLI/JAVA`, `DB2GENERAL`, `JAVA`, `DB2SQL` refused SQL0084
+- `ALLOCATE`/`ASSOCIATE`/`DESCRIBE` in routines, `EXECUTE ... INTO`, cursors and handlers in functions, `AS LOCATOR`, `AUTONOMOUS`: refused SQL0084
+- `CALL` from QAP: partial: the first result set only; OUT/INOUT refused SQL0084
+- `CALL` and trigger-firing changes from `RUNSQL`, `RUNSQLSTM`: supported from a job's command line and programs; from the service console and QAP still refused SQL0084
+- External table functions; `GENERAL` style external functions; `DBINFO`; external functions during an in-place scan or from the service console: refused SQL0084: BLOCKED(sql)
+- Array parameters, array arguments in `CALL`: refused SQL0084: BLOCKED(sql)
+- Distinct types as SQL PL variables or parameters, sequence types, in `ALTER TABLE`: refused SQL0084: BLOCKED(sql)
+- `FOR EACH STATEMENT`, `OLD/NEW TABLE`, `INSTEAD OF`, several events (`INSERT OR ...`), `SECURED`: refused SQL0084 after IBM's own checks (SQL0628, SQL0696, SQL0159, SQL0156): BLOCKED(sql)
+- `GRANT`, `REVOKE` on schemas, routines, sequences, variables, types; column privileges: refused SQL0084
+- `LOCK TABLE`: refused SQL0084
+- `PREPARE`, `EXECUTE`, `EXECUTE IMMEDIATE`, `DESCRIBE`, cursor statements, `WHENEVER`, `INCLUDE`, locator statements given to a dynamic interface (JDBC, STRSQL, RUNSQLSTM, `PREPARE` text): refused as IBM refuses them: SQL0104, SQL0084, SQL0312 for host variables, SQL0199
+- `DESCRIBE CURSOR`, `DESCRIBE PROCEDURE`, `ALLOCATE/ASSOCIATE LOCATORS` in programs: refused SQL0084 (requesters describe `RS#n` cursors internally)
+- `SET OPTION` (every program option, SQL5066 order): supported; values QS/400 cannot honour refused SQL0084
+- LOB file reference variables: declared; any use refused SQL0084: BLOCKED(sql), the job's runtime has no IFS access
+- `CONNECT TO [USER ... USING ...]`, `CONNECT RESET`, `SET CONNECTION`, `RELEASE`, `DISCONNECT` (DRDA client, DUW): partial: programs' embedded SQL and the job-side requesters; queries, cursors, immediate statements and `PREPARE`/`EXECUTE` run remotely; remote input values, scrolling `FETCH`, `DESCRIBE`, `GET DIAGNOSTICS` refused SQL0084; SQL0842, 0843, 0752, 0950, 30080, 30082
+- `RDBCNNMTH(*RUW)`: refused SQL0084 (accepted and ignored before)
+- Three-part names, `CREATE ALIAS` over a remote table: refused SQL0104
+- `TRUNCATE` (all options): supported; SQL0100 on an empty table; `RESTART IDENTITY` on an identity table refused SQL0084 (BLOCKED(sql), joins identity state)
+- `REFRESH TABLE`: refused SQL0084
+- `CREATE TABLE/VIEW/INDEX/ALIAS` in QTEMP: supported; sequences and variables in QTEMP SQL0707; types, routines and triggers there refused SQL0084; a permanent view over a QTEMP table SQL7008
+
+### 3. Queries
+
+- `LATERAL`, `TABLE(fullselect)`, `TABLE(f(args)) AS x`: supported; a RIGHT or FULL lateral join, and a lateral or USING join as a MERGE source, refused SQL0084
+- `FETCH FIRST n PERCENT`: refused SQL0104, as pub400
+- `NULLS FIRST`, `NULLS LAST`: refused SQL0199, as pub400
+- Common table expressions, chained and recursive, `CYCLE`: supported; `CYCLE ... USING` refused SQL0084
+- OLAP: `ROW_NUMBER`, `RANK`, `DENSE_RANK`, `NTILE`, `PERCENT_RANK`, `CUME_DIST`, `LAG`/`LEAD` with `RESPECT/IGNORE NULLS`, `FIRST_VALUE`/`LAST_VALUE`/`NTH_VALUE`, `RATIO_TO_REPORT`, aggregates `OVER` with `ROWS` and `RANGE` frames: supported; `NTH_VALUE ... FROM LAST` refused SQL0084
+- `LIKE_REGEX`: refused SQL0104, as pub400
+- `ARRAY_EXISTS`, `XMLEXISTS`: refused SQL0084
+- `SKIP LOCKED DATA` on queries: supported; on other statements refused SQL0084
+- `USE AND KEEP ... LOCKS`, `WAIT FOR OUTCOME`, `USE CURRENTLY COMMITTED`: refused SQL0084
+- `UPDATE ... FROM`: refused SQL0199, as pub400
+
+### 4. DDL details
+
+- `CHECK`: supported: comparisons, `AND/OR/NOT`, `IS NULL`, `BETWEEN`, `IN`, `LIKE`, arithmetic, concatenation, `UPPER LOWER LENGTH SUBSTR TRIM LTRIM RTRIM ABS MOD COALESCE`; other functions refused SQL0084
+- `NOT ENFORCED`, `DEFERRABLE`, `ENABLE/DISABLE QUERY OPTIMIZATION`: refused SQL0084
+- Identity columns: `START`, `INCREMENT`, `MINVALUE/MAXVALUE`, `CYCLE`, `CACHE`, `ORDER`, `BIGINT`/`DECIMAL`, `OVERRIDING SYSTEM/USER VALUE`, `IDENTITY_VAL_LOCAL()`: partial: a range past 19 digits refused SQL0084 (BLOCKED(sql)); `ORDER` kept, without effect on one system
+- `IMPLICITLY HIDDEN`: refused SQL0084: BLOCKED(sql), queries have no hidden-column flag yet (IBM accepts it)
+- `CREATE TABLE ... AS (query) WITH [NO] DATA`, `DEFINITION ONLY`: partial: an expression column is refused SQL0084 until expression types land
+- `CREATE TABLE ... LIKE`, `(LIKE t)`: supported; `INCLUDING IDENTITY`, `EXCLUDING COLUMN DEFAULTS`, `USING TYPE DEFAULTS` refused SQL0084
+- `WITH [LOCAL \| CASCADED] CHECK OPTION` (SQL0161): partial: on views that stay logical files; refused SQL0084 on others
+- `CREATE INDEX ... WHERE` (sparse): partial: conditions select/omit can express; others refused SQL0084
+- Expression (derived) index keys: refused SQL0084: BLOCKED(sql), access paths hold no key expressions
+- `INCLUDE` on an ordinary index: refused SQL0104, as IBM
+- `VOLATILE`, `IN` on CREATE TABLE; `PAGESIZE`, `UNIT` on CREATE INDEX: accepted without effect: to be refused or documented as no-ops (honesty rule)
+
+### 5. Functions
+
+- `ENCRYPT_AES`, `ENCRYPT_RC2`, `ENCRYPT_TDES`, `DECRYPT_*`, `GETHINT`: refused SQL0084: IBM's encrypted layout is unpublished, so nothing made here could be read there
+- `VERIFY_GROUP_FOR_USER`: refused SQL0084
+- `XMLAGG`: refused SQL0084
+
+### 7. Data types
+
+- `CURRENT DECFLOAT ROUNDING MODE` and `SET` (7 modes): supported; a mode from a host variable refused SQL0084
+- `FOR MIXED DATA`: refused SQL0604
+- A LOB as an index or constraint key: refused SQL0350
+- Changes through a read-only view: refused SQL0150
+- `CLOB ... FOR BIT DATA`: refused SQL0683
+- LOB locators, file reference variables, `FREE LOCATOR`: refused: BLOCKED(sql), the engine's locator table exists; the statements come with dynamic and embedded SQL
+- `XML` as a column or `CAST` type, `XMLPARSE(CONTENT)`, `XMLQUERY`, `XMLTABLE`, `XMLEXISTS`, `XMLVALIDATE`, `XMLAGG` and the rest: refused SQL0084
+- `ROWID`, `DATALINK`: refused SQL0084
+- SQL/JSON path filters, item methods, `**`, `@`, variables, `PASSING`: refused SQL0084 (pub400 runs them)
+- `JSON_UPDATE`: refused SQL0204, as pub400 (7.5 has none)
+
+### 8. Catalogs
+
+- `QSYS2.SYSCOLAUTH`: present, always empty: BLOCKED(sql), the store keeps no column authorities
+- Other `QSYS2` catalogs, `SYSIBM` metadata views: not present: SQL0204
+
+### 9. Services, tools and interfaces
+
+- `HISTORY_LOG_INFO`: partial: `GENERATE_SYSLOG` and `EOF_DELAY` refused SQL0443
+- `SPOOLED_FILE_INFO`, `SYSTEM_STATUS` (table function): partial: timestamp filters refused SQL0443; `RESET_STATISTICS` not applied
+- `DISPLAY_JOURNAL`: partial: `GENERATE_SYSLOG`, `EOF_DELAY` refused SQL0443; thread, remote and syslog columns null
+- `OBJECT_LOCK_INFO`, `MEMORY_POOL_INFO`, `MEMORY_POOL`, `SYSTEM_ACTIVITY_INFO`, `ASP_INFO`, `SYSDISKSTAT`, `HARDWARE_RESOURCE_INFO`, `MEDIA_LIBRARY_INFO`, `COLLECTION_SERVICES_INFO`, `EXIT_POINT_INFO`, `EXIT_PROGRAM_INFO`, `ENVIRONMENT_VARIABLE_INFO`, `GROUP_PTF_INFO`, `SYSTOOLS.GROUP_PTF_DETAILS`, `TCPIP_INFO`, `IFS_OBJECT_PRIVILEGES`, `IFS_OBJECT_LOCK_INFO`: partial: columns QS/400 keeps no value for are null (listed per service in `services/`); `RESET_STATISTICS => 'YES'` refused SQL0443; job-level environment variables not shown
+- `DNS_LOOKUP`: partial: the system resolver; `DOMAIN_SERVER` refused SQL0084
+- `SYSTOOLS.CHANGE_USER_PROFILE`: partial: preview or run; special-authority actions other than `*SAME` refused SQL0084
+- `GENERATE_SQL`, `GENERATE_SQL_OBJECTS`: partial: tables, views, indexes, sequences, aliases with constraints, labels, grants and the drop, replace, unformatted, unqualified and system-name forms, laid out as pub400; other object types and options refused SQL0084; no member written in QTEMP
+- `OVERRIDE_QAQQINI`: partial: tuning options kept as no-ops; options that change results or messages refused SQL0084 unless `*DEFAULT`
+- `SET_SERVER_SBS_ROUTING`, `SET_PASE_SHELL_INFO` (SSH always starts QSH; no per-user shell is kept), `SYSTOOLS.LPRINTF`, `SYSTOOLS.GENERATE_SPREADSHEET`: refused SQL0084
+- `STRSQL`: saved sessions (SQL6102, SQL6335, SQL7971), F13 options 1 to 4 (session attributes reshaping as pub400's, printer file, remove entries, save to a source file), SELECT output to display, printer (`QPQUPRFIL` report) and file, display formats (edited numbers, every date and time format, `*COMMA`), F19/F20 at pub400's column widths, F4 then F12: partial: output to a file supports options 1, 2, 4, 5; OUTMBR other than `*FILE`/`*FIRST` and OUTOPT(3) refused SQL0084; the driver has not yet run at a real console
+- `CONNECT`, `SET CONNECTION`, `RELEASE`, `DISCONNECT` in STRSQL: supported through the DRDA client; other statements go to the current remote server; a query there refused SQL0084 (BLOCKED(sql): no column descriptions come back)
+- `RUNSQLSTM`, `RUNSQL`: partial: options checked (non-default `USRPRF`, `DYNUSRPRF`, `SAAFLAG`, `FLAGSTD` and values QS/400 cannot honour refused SQL0084; `ALWCPYDTA`, `ALWBLK`, `DLYPRP`, `SYSTIME`, `TGTRLS` without effect); a SELECT in RUNSQLSTM or RUNSQL refused SQL0084 (severity 30), as pub400; not yet run end to end
+- `CRTSQLRPGI` options: settings it does not apply refused SQL0084 (`RPGPPOPT`, `CONACC`, `DECFLTRND`, `SQLCURRULE`, `DECRESULT`, `SRTSEQ`, `DFTRDBCOL`, `DYNDFTCOL`, `SQLPATH`, `COMPILEOPT`, `DYNUSRPRF`, `SAAFLAG`, `FLAGSTD`), accepted and ignored before
+- DRDA server (JDBC, ACS): partial: `EXCSQLSET`, `CALL` with result sets and output values (`SQLDTARD`), bind into packages; LOB locators refused SQL0084
+- Other `SYSIBM` views (`_S` forms, `ROUTINES`, `PARAMETERS`, ...): not present: SQL0204
+- The other 81 `QSQCLI` exports (`SQLGetInfo`, `SQLMoreResults`, the wide forms, descriptors, locators): not present: a program that imports one fails to bind (CPD5D02)
+- `DSPSQLPKG`: not present: no such command on V7R1M0 either (CPD0030)
+- `CRTSQLCI`, `CRTSQLCBLI`: not present
+- `STRDBMON`, `ENDDBMON` (output file of the primary's 276-column `QQQDBMN` format): partial: record types 3018, 1000, 3000, 3001, 3003, 3010, 3014; programs, host servers, DDM and QAP monitored, STRSQL, RUNSQL and RUNSQLSTM not; `TYPE(*DETAIL)` writes the same records as `*SUMMARY` (no 3019); `FTR*` filters, `FTRSQLCODE`, `JOB` operator `*NE`, `HOSTVAR` other than `*BASIC`, thresholds, `INCSYSSQL(*YES)` refused CPF9898
+- `PRTSQLINF` of `*PGM`/`*SRVPGM`: supported for programs `CRTSQLRPGI` makes from now on, laid out as pub400's; of `*SQLPKG` and `*JOB` refused SQL9011 (BLOCKED(sql))
+- `ADDPFTRG` (`RPLTRG`, generated names, `ALWREPCHG`, `TRGUPDCND`, `THDSAFE`, `MLTTHDACN`), `RMVPFTRG`, `CHGPFTRG`, `DSPFD TYPE(*TRG)` with `OUTPUT(*OUTFILE)` (`QAFDTRG`): supported; other `DSPFD` outfile types refused CPD0084
+- `*READ` triggers on record I/O, logical files (one based-on member) and SQL queries (once per row the scan keeps): supported; in a join the inner table fires for every row its scan keeps where the primary fires on matches only; refused SQL0084 where no program can be called (the service console)
+- SQL changes firing external and SQL triggers: supported for statements of programs, the host server, DRDA, QAP, STRSQL, RUNSQL and RUNSQLSTM; refused SQL0084 from the service console
+- Triggers from `CPYF` (insert triggers; a failure stops the copy with CPF2972), DFU and the DDM server: supported; `CPYF MBROPT(*UPDADD)` into a file with update triggers refused CPF502B; FTP and the service console still refused
+- `ALWREPCHG(*NO)` on after triggers: supported: the program's own change of the row is not refused, as on the primary
+
+### 9b. Performance
+
+- Plan cache (statement text and naming, 512 MiB or 10,000 entries); `QSYS2.DUMP_PLAN_CACHE`, `CLEAR_PLAN_CACHE`, `CHANGE_PLAN_CACHE_SIZE` (`*JOBCTL`): partial: the parsed statement is cached, the access plan chosen again each run; the entry-selection parameters refused SQL0084; `QIBM_DB_SQLADM` not accepted (no function usage registry)
+<!-- sql-refused:end -->
+
+## Marker inventory
+
+Every marker left in the tree, generated from it.
+
+<!-- inventory:begin: generated by `cargo run -p kcbuild -- notes --update`; do not edit -->
+169 markers in the tree.
+
+| Marker | Where | Reason |
+|---|---|---|
+| `BLOCKED(sql)` | `database/db/src/odp/mod.rs:471` | triggers are a later wave), after the constraints' |
+| `BLOCKED(sql)` | `database/db/src/odp/mod.rs:667` | a logical path over more than one member |
+| `BLOCKED(sql)` | `database/db/src/util/cpyf/mod.rs:514` | an update by *UPDADD does not fire update |
+| `BLOCKED(sql)` | `database/sql/src/dbmon/write.rs:84` | records are written with INSERT, which |
+| `BLOCKED(sql)` | `database/sql/src/exec/alter.rs:285` | dependent files are not rebuilt", |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/objects2.rs:13` | variables record no |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/objects2.rs:17` | ( |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/services/admin.rs:52` | adding or removing one special authority needs |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/services/admin.rs:106` | a statement runs in the storage service, which |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/services/gensql/format.rs:50` | the standards, obfuscation, temporal, additional |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/services/gensql/mod.rs:74` | routines, triggers, types, variables, schemas, |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/services/jobs.rs:221` | no table of ended jobs). |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/services/plancache.rs:9` | IBM also accepts the `QIBM_DB_SQLADM` |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/services/procs.rs:10` | `CALL` is SQL-5's; until it lands these run only |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/services/procs.rs:116` | PRINT => 'PRINT' writes a spooled file of the |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/services/qaqqini.rs:109` | these options change results or messages |
+| `BLOCKED(sql)` | `database/sql/src/exec/catalog/services/sysconf.rs:239` | the system's resolver answers; asking one server |
+| `BLOCKED(sql)` | `database/sql/src/exec/change.rs:57` | restarting an identity column needs SQL-2's identity state. |
+| `BLOCKED(sql)` | `database/sql/src/exec/column.rs:70` | an 8-byte counter"), |
+| `BLOCKED(sql)` | `database/sql/src/exec/column.rs:92` | queries have no implicitly hidden column yet".into(), |
+| `BLOCKED(sql)` | `database/sql/src/exec/ddl.rs:481` | ALTER TABLE keeps no COLTYPE entries yet. |
+| `BLOCKED(sql)` | `database/sql/src/exec/func/services.rs:72` | the encoding modes pub400 accepts are not |
+| `BLOCKED(sql)` | `database/sql/src/exec/grant.rs:55` | routines, sequences, schemas and packages as |
+| `BLOCKED(sql)` | `database/sql/src/exec/grant.rs:62` | the store keeps no column authorities. |
+| `BLOCKED(sql)` | `database/sql/src/exec/locator.rs:16` | locator host variables (`SQL TYPE IS CLOB_LOCATOR`), |
+| `BLOCKED(sql)` | `database/sql/src/exec/mod.rs:1309` | statements run where no trigger program can |
+| `BLOCKED(sql)` | `database/sql/src/exec/qtemp.rs:348` | routines, types and triggers in QTEMP need their |
+| `BLOCKED(sql)` | `database/sql/src/exec/reads.rs:15` | the primary reads a join's inner table by the join's |
+| `BLOCKED(sql)` | `database/sql/src/exec/reads.rs:40` | a context with no job (the service console, the |
+| `BLOCKED(sql)` | `database/sql/src/exec/reads.rs:55` | a join or multi-format logical file's rows are |
+| `BLOCKED(sql)` | `database/sql/src/exec/rename.rs:35` | the views over it keep its name in their query. |
+| `BLOCKED(sql)` | `database/sql/src/exec/routine/call.rs:155` | this interface runs statements in the database |
+| `BLOCKED(sql)` | `database/sql/src/exec/routine/create.rs:428` | distinct types need strong typing in the engine. |
+| `BLOCKED(sql)` | `database/sql/src/exec/routine/create.rs:522` | an external table function is called for each row |
+| `BLOCKED(sql)` | `database/sql/src/exec/routine/extfunc.rs:52` | PARAMETER STYLE GENERAL gives the result as the |
+| `BLOCKED(sql)` | `database/sql/src/exec/routine/extfunc.rs:70` | an external table function is called once per row |
+| `BLOCKED(sql)` | `database/sql/src/exec/routine/extfunc.rs:130` | a statement run where no program can be called |
+| `BLOCKED(sql)` | `database/sql/src/exec/routine/extfunc.rs:135` | a scan holding the store open cannot give it back. |
+| `BLOCKED(sql)` | `database/sql/src/exec/schema.rs:26` | IBM's SYSCHKCST, SYSCSTDEP, |
+| `BLOCKED(sql)` | `database/sql/src/exec/table.rs:216` | IBM keeps the views and indexes over a replaced |
+| `BLOCKED(sql)` | `database/sql/src/exec/trigger/mod.rs:88` | a statement trigger is called once per statement |
+| `BLOCKED(sql)` | `database/sql/src/exec/trigger/mod.rs:120` | transition tables of a row trigger. |
+| `BLOCKED(sql)` | `database/sql/src/exec/trigger/mod.rs:133` | an insert, update or delete of a view runs its |
+| `BLOCKED(sql)` | `database/sql/src/exec/trigger/mod.rs:200` | a column whose storage is not a routine variable's. |
+| `BLOCKED(sql)` | `database/sql/src/exec/udt/mod.rs:14` | a variable, routine parameter or result, sequence or |
+| `BLOCKED(sql)` | `database/sql/src/exec/udt/typing.rs:299` | a quantified or `IN` subquery's column is not typed |
+| `BLOCKED(sql)` | `database/sql/src/exec/view.rs:31` | IBM keeps views over a replaced view when |
+| `BLOCKED(sql)` | `database/sql/src/exec/view.rs:101` | a view that is not a logical file is read only, so |
+| `BLOCKED(sql)` | `database/sql/src/exec/view.rs:181` | an expression column has no type until the |
+| `BLOCKED(sql)` | `database/sql/src/options.rs:87` | the job's connections follow the distributed unit |
+| `BLOCKED(sql)` | `database/sql/src/parse/ddl.rs:250` | derived keys need key expressions in the |
+| `BLOCKED(sql)` | `database/sql/src/parse/mod.rs:522` | an XML column needs a stored field type (DB_FORMAT |
+| `BLOCKED(sql)` | `database/sql/src/parse/mod.rs:528` | a distinct type is a column's or a CAST's |
+| `BLOCKED(sql)` | `database/sql/src/parse/trigger.rs:43` | one trigger for several events, with the |
+| `BLOCKED(sql)` | `database/sql/src/pl/compile.rs:549` | a CALL passes values, and an array |
+| `BLOCKED(sql)` | `database/sql/tests/trigger.rs:196` | in exec::reads); every row its scan keeps here. |
+| `BLOCKED(phase12)` | `docs/DB_OPEN_QUESTIONS.md:283` | the database |
+| `BLOCKED(phase12)` | `docs/PHASE12.md:95` | SAVLICPGM writes no IFS records, RSTLICPGM restores none |
+| `BLOCKED(phase12)` | `docs/PHASE12.md:100` | at jobcmd.rs:153 |
+| `BLOCKED(phase12)` | `docs/PHASE12.md:121` | the DST options DST.md lists (save/restore storage, disk unit data, remote service, LIC fixes, partitions, ASP moves); their reasons in DST.md name earlier phases and are not re-checked |
+| `BLOCKED(phase12)` | `docs/PHASE12.md:134` | (b855a775) |
+| `NEEDS-CODY` | `docs/PHASE12.md:156` | the primary has no QAUDJRN |
+| `BLOCKED(phase12)` | `docs/PHASE12.md:165` | `DB_OPEN_QUESTIONS.md` (Utilities) \| what an RPG program sees in a `*USA` time field's buffer \| §1: an RPG program on pub400 \| settled on pub400; the buffer form |
+| `NEEDS-CODY` | `docs/PHASE12.md:167` | (a JTOpen probe) |
+| `NEEDS-CODY` | `docs/PHASE12.md:169` | needs a test user profile on the primary |
+| `NEEDS-CODY` | `docs/PHASE12.md:171` | physical tape acceptance |
+| `NEEDS-CODY` | `docs/PHASE12.md:176` | `UI_OPEN_QUESTIONS.md` 4, 6, 8, 12 \| start-up response record; keys that carry data; the printer data stream; SST's audit code \| §1: the primary's telnet \| 4 closed; 6 open (a display-file probe); 8 a |
+| `NEEDS-CODY` | `docs/PHASE12.md:242` |  |
+| `NEEDS-CODY` | `docs/PHASE12.md:251` | ": Proxmox, ESXi, Workstation, VirtualBox, Hyper-V Gen2 and the Dell checklists; also try booting the ISO as a CD on real firmware \| open |
+| `BLOCKED(phase12)` | `docs/PHASE9.md:217` | the ABI items below |
+| `BLOCKED(phase12)` | `docs/PHASE9.md:218` | no ILE binding of `QSOSSLSR` (`gsk_*`) exists; `net/tls` has the semantics only (`docs/CERTS.md`), so `CONFIG_H` is built without `HAVE_SSLAPI` |
+| `BLOCKED(phase12)` | `docs/PHASE9.md:220` | `SIIOF` and `SIIMF` copy `QSYSINC/QRPGLESRC,FCNTL` and `SYSSTAT`, IBM's headers, which QS/400 does not ship; `JSONPARSE` is a `DATA-INTO` parser (see "Blocked" above) |
+| `BLOCKED(phase12)` | `docs/PHASE9.md:260` | (a change of the call ABI, `ABI.md` §3, which the V1R1M0 freeze of the module format holds to a version bump): a pointer taken to a by-reference parameter |
+| `BLOCKED(phase12)` | `docs/PHASE9.md:268` | (the same ABI change): a parameter passed by reference and a pointer |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:7` | its own disk and powered down cleanly. Everything listed as |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:15` | Proxmox VE 8 \| OVMF \| virtio-scsi (default), virtio-blk, SATA \| virtio-net \| `Default` VGA, serial \| QEMU guest agent option |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:16` | VMware ESXi 8 \| EFI \| PVSCSI, LSI Logic SAS, SATA, NVMe \| vmxnet3, e1000e \| SVGA through the GOP \| none (VMware Tools is not offered); vsock |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:17` | VMware Workstation 17 \| EFI \| as ESXi \| vmxnet3, e1000e \| as ESXi \| none; vsock |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:18` | Oracle VirtualBox 7 \| EFI \| AHCI (SATA), virtio-scsi, NVMe \| Intel PRO/1000 (e1000), virtio-net \| VBoxVGA/VMSVGA through the GOP \| none |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:19` | Microsoft Hyper-V, Generation 2 \| UEFI \| SCSI (storvsc) \| synthetic (netvsc) \| Gen2 EFI framebuffer \| none; vsock (hv_sock) |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:20` | Dell PowerEdge with PERC H330 in HBA mode, 4 x 1 TB SSD (reference physical target, `HARDWARE_NOTES.md`) \| UEFI \| MegaRAID (`megaraid_sas`) \| the board's Broadcom or Intel ports \| iDRAC/Matrox VGA thr |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:122` | hypervisor checklists |
+| `NEEDS-CODY` | `docs/QUALIFIED_HARDWARE.md:174` | the Dell with the PERC H330 |
+| `NEEDS-CODY` | `docs/SQL.md:57` | `sql::objects` |
+| `BLOCKED(sql)` | `docs/SQL.md:60` | when indexes or views depend on the table, and for SET DATA TYPE of a constraint key column \| primary \| `integrity/CSTALTER`, `integrity/IDENTITY` |
+| `BLOCKED(sql)` | `docs/SQL.md:88` | none \| |
+| `BLOCKED(sql)` | `docs/SQL.md:92` | primary \| `sqlpl/ARRAYS` |
+| `BLOCKED(sql)` | `docs/SQL.md:97` | primary \| |
+| `BLOCKED(sql)` | `docs/SQL.md:99` | primary \| `trigger/TRGDEFS` |
+| `BLOCKED(sql)` | `docs/SQL.md:113` | the job's runtime has no IFS access \| pub400 \| `rpg/b11sql/SQL060` |
+| `BLOCKED(sql)` | `docs/SQL.md:118` | joins identity state) \| pub400 \| `query/CHANGES` |
+| `BLOCKED(sql)` | `docs/SQL.md:169` | `ORDER` kept, without effect on one system \| primary \| `integrity/IDENTITY` |
+| `BLOCKED(sql)` | `docs/SQL.md:175` | queries have no hidden-column flag yet (IBM accepts it) \| pub400 \| `integrity/AUDITCOL` |
+| `BLOCKED(sql)` | `docs/SQL.md:185` | access paths hold no key expressions \| primary \| `ddl/INDEXEXT` |
+| `BLOCKED(sql)` | `docs/SQL.md:253` | the engine's locator table exists; the statements come with dynamic and embedded SQL \| none \| |
+| `BLOCKED(sql)` | `docs/SQL.md:279` | the store keeps no column authorities \| pub400 \| `sql::objects` |
+| `BLOCKED(sql)` | `docs/SQL.md:327` | no column descriptions come back) \| none \| |
+| `NEEDS-CODY` | `docs/SQL.md:341` | QEMU) \| pub400 \| CLI001 |
+| `BLOCKED(sql)` | `docs/SQL.md:350` | pub400 \| `rpgc::prtsqlinf` |
+| `BLOCKED(sql)` | `docs/SQL.md:403` | when indexes or views depend on the table, and for SET DATA TYPE of a constraint key column |
+| `BLOCKED(sql)` | `docs/SQL.md:413` | External table functions; `GENERAL` style external functions; `DBINFO`; external functions during an in-place scan or from the service console: refused SQL0084: |
+| `BLOCKED(sql)` | `docs/SQL.md:414` | Array parameters, array arguments in `CALL`: refused SQL0084: |
+| `BLOCKED(sql)` | `docs/SQL.md:415` | Distinct types as SQL PL variables or parameters, sequence types, in `ALTER TABLE`: refused SQL0084: |
+| `BLOCKED(sql)` | `docs/SQL.md:416` | `FOR EACH STATEMENT`, `OLD/NEW TABLE`, `INSTEAD OF`, several events (`INSERT OR ...`), `SECURED`: refused SQL0084 after IBM's own checks (SQL0628, SQL0696, SQL0159, SQL0156): |
+| `BLOCKED(sql)` | `docs/SQL.md:422` | the job's runtime has no IFS access |
+| `BLOCKED(sql)` | `docs/SQL.md:426` | joins identity state) |
+| `BLOCKED(sql)` | `docs/SQL.md:447` | `ORDER` kept, without effect on one system |
+| `BLOCKED(sql)` | `docs/SQL.md:448` | queries have no hidden-column flag yet (IBM accepts it) |
+| `BLOCKED(sql)` | `docs/SQL.md:453` | access paths hold no key expressions |
+| `BLOCKED(sql)` | `docs/SQL.md:470` | the engine's locator table exists; the statements come with dynamic and embedded SQL |
+| `BLOCKED(sql)` | `docs/SQL.md:478` | the store keeps no column authorities |
+| `BLOCKED(sql)` | `docs/SQL.md:493` | no column descriptions come back) |
+| `BLOCKED(sql)` | `docs/SQL.md:502` | `PRTSQLINF` of `*PGM`/`*SRVPGM`: supported for programs `CRTSQLRPGI` makes from now on, laid out as pub400's; of `*SQLPKG` and `*JOB` refused SQL9011 ( |
+| `NEEDS-CODY` | `docs/SQL.md:546` | JTOpen `DatabaseMetaData` diff clean; ACS Run SQL Scripts checklist signed off \| Primary capture kept (`jtopen/expected/oracle/metadata.out`); the QS/400 side runs in a QEMU step; ACS checklist: |
+| `BLOCKED(sql)` | `docs/SQL.md:575` | in `work/qsjob/src/console/sqlcall.rs`). Other OUT types |
+| `NEEDS-CODY` | `docs/SQL.md:586` | ACS Run SQL Scripts checklist ( |
+| `NEEDS-CODY` | `docs/SQL.md:588` | library be created ( |
+| `BLOCKED(sql)` | `docs/STORAGE_SERVICE.md:395` | until each can reach its job). DFU |
+| `BLOCKED(sql)` | `docs/STORAGE_SERVICE.md:447` | the service console has no job runtime). `MODE DB2SQL` after |
+| `BLOCKED(sql)` | `docs/STORAGE_SERVICE.md:455` | `ALWREPCHG(*NO)` on an after trigger does not |
+| `BLOCKED(sql)` | `docs/STORAGE_SERVICE.md:456` | yet refuse the program's own change of the same record ( |
+| `BLOCKED(sql)` | `docs/SYSAPI.md:568` | the DRDA requester), and a CLI call made by a procedure |
+| `BLOCKED(sql)` | `lic/slic/src/cpp/dbmoncmd.rs:65` | a monitor watches one job or every job. |
+| `BLOCKED(sql)` | `lic/slic/src/cpp/dbmoncmd.rs:242` | the planner makes no time or storage estimate a |
+| `BLOCKED(sql)` | `lic/slic/src/cpp/dbmoncmd.rs:246` | query options come from OVERRIDE_QAQQINI, not a |
+| `BLOCKED(sql)` | `lic/slic/src/cpp/rpg/mod.rs:269` | CRTPGM does not carry a module's statements. |
+| `BLOCKED(sql)` | `lic/slic/src/cpp/sqlinfcmd.rs:68` | statements are not kept in a plan cache to print. |
+| `BLOCKED(sql)` | `lic/slic/src/cpp/sqlinfcmd.rs:74` | packages are printed when *SQLPKG lands here. |
+| `BLOCKED(sql)` | `lic/slic/src/stgsvc/sqlhost.rs:116` | the request holds the service until it answers |
+| `BLOCKED(sql)` | `lic/slic/src/stgsvc/sqlhost.rs:252` | commands whose processing program runs in the |
+| `BLOCKED(sql)` | `lic/slic/src/stgsvc/sqlhost.rs:388` | the job's own variables live in the job; the |
+| `BLOCKED(sql)` | `lic/slic/src/stgsvc/sqlhost.rs:457` | the lookup holds the service until the resolver |
+| `BLOCKED(sql)` | `lic/slic/src/svc/db/trgout.rs:99` | the other DSPFD outfile formats (QAFDBASI, QAFDMBR, |
+| `BLOCKED(phase12)` | `licpgm/lpstore/src/savfile.rs:157` | the system's own directories exist already. |
+| `BLOCKED(sql)` | `net/drdar/src/session.rs:326` | the client sends no input values (SQLDTA) yet. |
+| `BLOCKED(sql)` | `net/hostserver/src/database/catalog.rs:503` | routines and types are listed once SQL procedures, |
+| `BLOCKED(sql)` | `net/hostserver/src/database/mod.rs:945` | LOB locators of the database server (RETRIEVE_LOB, |
+| `TODO(later)` | `net/httpd/src/serve/handle.rs:194` | CGI programs. Until they run, a ScriptAlias |
+| `BLOCKED(sql)` | `rpg/qrpgrt/src/sql.rs:48` | the runtime has |
+| `BLOCKED(sql)` | `rpg/sqlpre/src/stmt.rs:647` | a procedure's result sets (ALLOCATE CURSOR, |
+| `BLOCKED(sql)` | `runtime/sqlcli/src/exec/conn.rs:46` | a connection to another relational database |
+| `NEEDS-CODY` | `tools/build/src/image/srcoffer.rs:44` | the three-year written offer names no |
+| `BLOCKED(phase12)` | `tools/conformance/rpg/known.txt:28` | in the database's buffer conversion |
+| `BLOCKED(sql)` | `tools/conformance/rpg/known.txt:32` | SQL058 a SENSITIVE cursor is refused with SQL0243: QS/400 reads a cursor's rows when it opens ( |
+| `BLOCKED(sql)` | `tools/conformance/rpg/known.txt:33` | SQL060 LOB file reference variables are refused with SQL0084: the runtime reads and writes no IFS files yet ( |
+| `BLOCKED(sql)` | `tools/conformance/sql/known.txt:13` | integrity/AUDITCOL   # engine: IMPLICITLY HIDDEN refused (SQL0084, |
+| `BLOCKED(sql)` | `tools/conformance/sql/known.txt:29` | ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here |
+| `BLOCKED(sql)` | `tools/conformance/sql/known.txt:32` | in alter) |
+| `BLOCKED(sql)` | `tools/conformance/sql/known.txt:35` | in udt::typing::check) |
+| `BLOCKED(phase12)` | `tools/conformance/src/netinst.rs:86` | under QEMU (2026-11-04) the install and IPL pass but TCP/IP stays Inactive after QSTRUP (eth0 keeps the installer's 10.0.2.50); STRTCP's failure there is not yet seen. |
+| `BLOCKED(sql)` | `tools/conformance/src/sqlqemu/drda.rs:62` | routed statements write no 1000 records (see |
+| `NEEDS-CODY` | `tools/pesign/src/keys/mod.rs:7` | the real one is made with `pesign |
+| `BLOCKED(phase12)` | `ui/uim/pnlgrp/QGWCDSKS.pnlgrp:8` | headings and decimal columns sit on a hand grid this renderer does not make (work2_panels::wrkdsksts); it needs a display file with a command line |
+| `BLOCKED(phase12)` | `ui/uim/pnlgrp/QGWCPOOL.pnlgrp:8` | the primary's display is a display file on a hand grid this renderer does not make; it needs a display file with a command line |
+| `BLOCKED(phase12)` | `ui/uim/pnlgrp/QGWCSSTS.pnlgrp:10` | the primary's display is a display file on a hand grid this renderer does not make (as WRKACTJOB's); it needs a display file with a command line |
+| `BLOCKED(phase12)` | `ui/uim/tests/object_panels.rs:350` | the golden runs the message text through column 80 into column 1 of the next row; output fields do not wrap rows yet"] |
+| `BLOCKED(phase12)` | `ui/uim/tests/system2_panels.rs:266` | the golden runs the 32-character signature past column 80 into column 1 of row 18; output fields do not wrap rows yet"] |
+| `NEEDS-CODY` | `ui/uim/tests/system2_panels.rs:696` | no golden; the primary has no QAUDJRN (DSPSECAUD: journal exists NO), see docs/SEC_OPEN_QUESTIONS.md"] |
+| `BLOCKED(sql)` | `work/qsjob/src/command/ftp.rs:289` | no trigger programs called here; a file with |
+| `BLOCKED(sql)` | `work/qsjob/src/console/drda.rs:99` | the requester's query brings no column descriptions |
+| `BLOCKED(sql)` | `work/qsjob/src/console/drda.rs:119` | statements routed here (CONNECT, CONNECT RESET and |
+| `BLOCKED(phase12)` | `work/qsjob/src/console/jobcmd.rs:153` | another job's call stack needs a request the |
+| `BLOCKED(sql)` | `work/qsjob/src/console/sqlcall.rs:72` | in a server job |
+| `BLOCKED(sql)` | `work/qsjob/src/devtools/isql/prompts.rs:317` | F6, F10, F11, F14, F15, F19, F20 and F24 of |
+| `BLOCKED(sql)` | `work/qsjob/src/devtools/isql/prompts.rs:393` | the WHERE display after this one is not |
+| `BLOCKED(sql)` | `work/qsjob/src/qapsql/mod.rs:305` | QAP's Executed has no output values (a later |
+| `BLOCKED(sql)` | `work/qsjob/src/qapsql/mod.rs:351` | `Executed` names one cursor, so a second set is not |
+| `TODO(later)` | `work/qsjob/src/work/httpsvr.rs:67` | validation lists (*VLDL) once the system has them. |
+| `BLOCKED(phase12)` | `work/qsjob/src/work/qap/manage.rs:115` | `cmd_lookup` let QAPTEST find DSPPTF (`*PUBLIC *EXCLUDE`) under QEMU step 123; see whether the lookup checks *OBJOPR or the shipped exclusion was applied. |
+<!-- inventory:end -->

@@ -8,11 +8,30 @@
 //! shipped message file, the documents under `docs/`, and the
 //! conformance matrix (where each command runs). `build kc` writes it;
 //! the install media carries it and `QS00AFW` serves it from
-//! `/QQS/ProdData/KnowledgeCenter`.
+//! `/QQS/ProdData/KnowledgeCenter`. [`notes`] keeps the release notes'
+//! generated blocks; [`build_checked`] refuses to build while they are
+//! stale.
 
 mod help;
 pub mod md;
+pub mod notes;
 mod page;
 mod site;
 
+use std::io;
+use std::path::Path;
+
 pub use site::{Summary, build};
+
+/// [`build`], after checking the release notes (`notes::problems`);
+/// `legacy` allows the marker forms of before the rename.
+pub fn build_checked(repo: &Path, out: &Path, legacy: bool) -> io::Result<Summary> {
+    let p = notes::problems(repo, legacy)?;
+    if !p.is_empty() {
+        return Err(io::Error::other(format!(
+            "the release notes are not current (run `cargo run -p kcbuild -- notes --update`):\n  {}",
+            p.join("\n  ")
+        )));
+    }
+    build(repo, out)
+}

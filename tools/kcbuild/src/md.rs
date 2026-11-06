@@ -165,6 +165,13 @@ pub fn to_html(md: &str) -> (String, String) {
             i += 1;
             continue;
         }
+        // An HTML comment line (the release notes' generated-block
+        // markers) is not shown.
+        if t.trim_start().starts_with("<!--") && t.ends_with("-->") {
+            flush(&mut para, &mut out);
+            i += 1;
+            continue;
+        }
         if let Some(h) = t.strip_prefix('#') {
             flush(&mut para, &mut out);
             let level = 1 + h.chars().take_while(|&c| c == '#').count();
