@@ -1432,3 +1432,224 @@ vars = ["*CHAR *VARY 2"]
 id = "TXT0B25"
 text = "No differences."
 help = "Text of CMPJRNIMG's report (QPCMPIMG): no change of the selection differs."
+# Time zone descriptions (lic/slic/src/cpp/tzcmd.rs): WRKTIMZON, its
+# details display and printout, CRTTIMZON, CHGTIMZON and DLTTIMZON.
+
+[[msg]]
+id = "TXT0E01"
+text = "January"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E02"
+text = "February"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E03"
+text = "March"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E04"
+text = "April"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E05"
+text = "May"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E06"
+text = "June"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E07"
+text = "July"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E08"
+text = "August"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E09"
+text = "September"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E0A"
+text = "October"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E0B"
+text = "November"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E0C"
+text = "December"
+help = "Text of the time zone description displays: the month daylight saving time starts or ends in."
+
+[[msg]]
+id = "TXT0E0D"
+text = "Sunday"
+help = "Text of the time zone description displays: the day of the week daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E0E"
+text = "Monday"
+help = "Text of the time zone description displays: the day of the week daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E0F"
+text = "Tuesday"
+help = "Text of the time zone description displays: the day of the week daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E10"
+text = "Wednesday"
+help = "Text of the time zone description displays: the day of the week daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E11"
+text = "Thursday"
+help = "Text of the time zone description displays: the day of the week daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E12"
+text = "Friday"
+help = "Text of the time zone description displays: the day of the week daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E13"
+text = "Saturday"
+help = "Text of the time zone description displays: the day of the week daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E14"
+text = "First"
+help = "Text of the time zone description displays: which of the days in the month daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E15"
+text = "Second"
+help = "Text of the time zone description displays: which of the days in the month daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E16"
+text = "Third"
+help = "Text of the time zone description displays: which of the days in the month daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E17"
+text = "Fourth"
+help = "Text of the time zone description displays: which of the days in the month daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E18"
+text = "Last"
+help = "Text of the time zone description displays: which of the days in the month daylight saving time starts or ends on."
+
+[[msg]]
+id = "TXT0E19"
+text = "Time zone description &1 created."
+help = "Text of CRTTIMZON: the description was made in QSYS."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TXT0E1A"
+text = "Time zone description &1 changed."
+help = "Text of CHGTIMZON: the description was changed; when QTIMZON names it, local time follows at once."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TXT0E1B"
+text = "&1 is the time zone of system value QTIMZON and was not deleted."
+help = "Text of DLTTIMZON: the description QTIMZON names stays; change QTIMZON first."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TXT0E1C"
+text = "Time zone description &1 printed."
+help = "Text of WRKTIMZON option 6: the description's details were written to a spooled file of QSYSPRT."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "TXT0E1D"
+text = "Offset  Zone        Abbr        Full name"
+help = "Text of WRKTIMZON without a display: the heading of the list."
+
+[[msg]]
+id = "TXT0E1E"
+text = "Time zone description"
+help = "Text of the printed time zone description: its first line."
+
+[[msg]]
+id = "TXT0E1F"
+text = "Offset"
+help = "Text of the printed time zone description: the offset from UTC."
+
+[[msg]]
+id = "TXT0E20"
+text = "Standard Time"
+help = "Text of the printed time zone description: the names of standard time."
+
+[[msg]]
+id = "TXT0E21"
+text = "Daylight Saving Time"
+help = "Text of the printed time zone description: the names of daylight saving time."
+
+[[msg]]
+id = "TXT0E22"
+text = "Daylight Saving Time start"
+help = "Text of the printed time zone description: when daylight saving time starts."
+
+[[msg]]
+id = "TXT0E23"
+text = "Daylight Saving Time end"
+help = "Text of the printed time zone description: when daylight saving time ends."
+
+[[msg]]
+id = "TXT0E24"
+text = "Daylight Saving Time shift"
+help = "Text of the printed time zone description: the minutes the clock moves."
+
+[[msg]]
+id = "TXT0E25"
+text = "Message file"
+help = "Text of the printed time zone description: the message file the names come from."
+
+[[msg]]
+id = "TXT0E26"
+text = "Year offset"
+help = "Text of the printed time zone description: the years added to the Gregorian year."
+
+[[msg]]
+id = "TXT0E27"
+text = "Alternate name"
+help = "Text of the printed time zone description: the zone's other name."
+
+[[msg]]
+id = "TXT0E28"
+text = "Text"
+help = "Text of the printed time zone description: its text."
+
+[[msg]]
+id = "TXT0E29"
+text = "create a time zone description"
+help = "Text of CRTTIMZON's refusal: what the user was not allowed to do (*ALLOBJ is needed)."
+
+[[msg]]
+id = "TXT0E2A"
+text = "change a time zone description"
+help = "Text of CHGTIMZON's refusal: what the user was not allowed to do (*ALLOBJ is needed)."
+
+[[msg]]
+id = "TXT0E2B"
+text = "delete a time zone description"
+help = "Text of DLTTIMZON's refusal: what the user was not allowed to do (*ALLOBJ is needed)."

@@ -1184,3 +1184,6 @@ note = "5250 sessions only (TCP2534 for a server that will not run one)"
 [cmd.STRTCPTELN]
 site = "job"
 note = "TELNET's other name"
+[cmd.WRKTIMZON]
+site = "job"
+note = "panels at a display (work/qsjob/src/panels/work2/timzon.rs); the list printed by lic/slic/src/cpp/tzcmd.rs otherwise"

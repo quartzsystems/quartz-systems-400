@@ -21,6 +21,7 @@ pub(crate) mod cstcmd;
 pub(crate) mod fcncmd;
 pub(crate) mod jrncmd;
 mod trgcmd;
+pub(crate) mod tzcmd;
 mod dbcmd;
 mod dbmoncmd;
 mod sqlinfcmd;
@@ -74,6 +75,15 @@ pub(crate) use savcmd::trusted_keys;
 /// `typed` is the keyword form as the caller typed it, for the bridge;
 /// empty when the block is all there is.
 pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdReply {
+    let r = run_cpp(system, name, parms, typed);
+    // A restore or a reclaim can bring or drop time zone descriptions.
+    if crate::stgsvc::timzon::touches(name) {
+        crate::stgsvc::timzon::reload(system);
+    }
+    r
+}
+
+fn run_cpp(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdReply {
     let Some(e) = sys_cpps::entry(name) else {
         return escape(
             "CPF0006",
@@ -117,6 +127,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             .or_else(|| trgcmd::run(system, name, parms))
             .or_else(|| fcncmd::run(system, name, parms))
             .or_else(|| jrncmd::run(system, name, parms))
+            .or_else(|| tzcmd::run(system, name, parms))
             .or_else(|| dbcmd::run(system, name, parms))
             .or_else(|| dbmoncmd::run(system, name, parms))
             .or_else(|| sqlinfcmd::run(system, name, parms))

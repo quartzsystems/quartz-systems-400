@@ -90,6 +90,7 @@ impl SysVals {
             .or_else(|| record.tlv(TAG_IPL_SYSVALS))
         {
             vals.overrides = decode(data, &vals.catalog)?;
+            tz::set_current(&vals.zone_name());
         }
         Ok(vals)
     }
@@ -99,6 +100,7 @@ impl SysVals {
         let mut vals = Self::empty(host)?;
         if !blob.is_empty() {
             vals.overrides = decode(blob, &vals.catalog)?;
+            tz::set_current(&vals.zone_name());
         }
         Ok(vals)
     }
@@ -233,6 +235,9 @@ impl SysVals {
         } else {
             self.overrides.insert(name.to_string(), value);
         }
+        if name == "QTIMZON" {
+            tz::set_current(&self.zone_name());
+        }
         Ok(effect)
     }
 
@@ -248,6 +253,14 @@ impl SysVals {
         self.entry(name)?.validate(&value)?;
         self.system.insert(name.to_string(), value);
         Ok(())
+    }
+
+    /// The name QTIMZON holds.
+    #[must_use]
+    pub fn zone_name(&self) -> String {
+        self.overrides
+            .get("QTIMZON")
+            .map_or_else(|| "Q0000UTC".to_string(), |v| v.text().trim().to_string())
     }
 
     /// The zone QTIMZON names.

@@ -75,6 +75,28 @@ impl Default for Registers {
     }
 }
 
+/// The process's local offset from UTC in seconds at a Unix time: the
+/// storage service sets it to `QTIMZON`'s description.
+static LOCAL_OFFSET: std::sync::OnceLock<fn(u64) -> i64> = std::sync::OnceLock::new();
+
+/// Make `f` the local offset `CURRENT TIMEZONE`, `CURRENT DATE`,
+/// `CURRENT TIME` and `CURRENT TIMESTAMP` follow (once per process).
+pub fn set_local_offset(f: fn(u64) -> i64) {
+    let _ = LOCAL_OFFSET.set(f);
+}
+
+impl Registers {
+    /// The offset from UTC in seconds at `now`: the register when a
+    /// session set it, else the process's local offset (UTC without one).
+    #[must_use]
+    pub fn offset_at(&self, now: u64) -> i64 {
+        if self.timezone_secs != 0 {
+            return self.timezone_secs;
+        }
+        LOCAL_OFFSET.get().map_or(0, |f| f(now))
+    }
+}
+
 /// The registers `CURRENT x` names beyond the parser's own, by the word
 /// after `CURRENT` (or the underscore spelling).
 pub const CURRENT: &[(&str, &str)] = &[

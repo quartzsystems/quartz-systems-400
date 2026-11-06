@@ -529,16 +529,19 @@ fn qwcrtvtz(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     } else {
         wanted
     };
-    let Some(z) = sysval::tz::find(&zone) else {
+    // BLOCKED(rel): a job knows the shipped descriptions only; one made or
+    // changed by CRTTIMZON/CHGTIMZON is found here only as *CURRENT, by name.
+    let found = sysval::tz::find(&zone);
+    if found.is_none() && zone != now.zone {
         errc.fail(j, &ApiFail::id("CPF9801").text(&zone, 10).text("QSYS", 10));
         return;
-    };
+    }
     let mut out = Out::new();
     out.bin4(8, now.offset_min);
     out.ch(12, if now.dst { '1' } else { '0' });
-    out.char(13, 10, &z.name);
-    out.char(23, 10, z.abbr_at(now.unix));
-    out.char(33, 50, z.description());
+    out.char(13, 10, &zone);
+    out.char(23, 10, found.as_ref().map_or("", |z| z.abbr_at(now.unix)));
+    out.char(33, 50, found.as_ref().map_or("", |z| z.description()));
     out.deliver(&a, 0, 1);
     errc.ok();
 }

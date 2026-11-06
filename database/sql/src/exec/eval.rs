@@ -683,12 +683,16 @@ impl Evaluator<'_> {
     }
 
     fn register(&self, r: Register) -> Value {
-        let now = self.ctx.clock();
+        let utc = self.ctx.clock();
+        // Local time: UTC moved by the job's offset (QTIMZON's).
+        let off = self.ctx.registers.offset_at(utc);
+        let now = utc.saturating_add_signed(off);
         match r {
             Register::Date => Value::Date(Date::from_unix(now)),
             Register::Time => Value::Time(Time::from_unix(now)),
             Register::Timestamp(p) => {
                 let (secs, picos) = self.ctx.clock_picos();
+                let secs = secs.saturating_add_signed(off);
                 Value::Timestamp(Timestamp::new(Date::from_unix(secs), Time::from_unix(secs), picos).with_precision(p))
             }
             Register::User => Value::Str(self.ctx.user.clone()),
@@ -705,7 +709,7 @@ impl Evaluator<'_> {
             })),
             Register::Timezone => {
                 // hhmmss of the offset from UTC, signed.
-                let s = self.ctx.registers.timezone_secs;
+                let s = off;
                 let a = s.abs();
                 let n = a / 3600 * 10_000 + a % 3600 / 60 * 100 + a % 60;
                 Value::int(if s < 0 { -n } else { n })

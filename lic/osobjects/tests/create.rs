@@ -65,6 +65,10 @@ fn every_piece_is_made_once() {
     assert!(r.failed_commands.is_empty(), "{:?}", r.failed_commands);
     assert!(r.made > 300, "{} objects", r.made);
     let mut t = store.begin().unwrap();
+    // IBM's 93 time zone descriptions, in WRKTIMZON order.
+    let zones = osobjects::timzon::load_all(&mut t, qsys).unwrap();
+    assert_eq!(zones.len(), 93);
+    assert_eq!(zones.as_slice(), sysval::tz::shipped());
     let l = Library::load(&mut t, qsys).unwrap();
     for (name, ty) in [
         ("QSTRUP", types::PGM),

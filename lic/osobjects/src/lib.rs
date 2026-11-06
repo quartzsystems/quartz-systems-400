@@ -17,6 +17,7 @@ pub mod nls;
 pub mod notices;
 pub mod products;
 pub mod qstrup;
+pub mod timzon;
 pub mod ui;
 pub mod wscst;
 
@@ -55,7 +56,8 @@ pub struct Report {
 }
 
 /// Every operating system object missing from the store: message
-/// files, the work management objects, display files, the primary
+/// files, the work management objects, display files, the time zone
+/// descriptions, the primary
 /// language library (`QSYS2924`), panel groups
 /// and menus, the Collection Services model files, the registration
 /// facility, the commands and `QSTRUP`.
@@ -80,6 +82,7 @@ pub fn create(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Resu
     r.made += piece("display files", display::install_shipped(txn, qsys, stamp))?;
     r.made += piece("primary language library", nls::install_primary(txn, qsys, stamp))?;
     r.made += piece("workstation customizing objects", wscst::install_shipped(txn, qsys, stamp))?;
+    r.made += piece("time zone descriptions", timzon::install_shipped(txn, qsys, stamp))?;
     r.made += piece(
         "panel groups and menus",
         ui::install_shipped(txn, qsys, stamp),

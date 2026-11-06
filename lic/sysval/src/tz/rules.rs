@@ -39,7 +39,7 @@ const DAY: i64 = 86_400;
 
 impl Edge {
     /// Days since the epoch of the edge's day in `year`.
-    fn day(&self, year: i64) -> i64 {
+    fn day(self, year: i64) -> i64 {
         let m = u32::from(self.month.clamp(1, 12));
         if self.week >= 5 {
             let (ny, nm) = if m == 12 { (year + 1, 1) } else { (year, m + 1) };

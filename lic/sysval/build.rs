@@ -66,33 +66,33 @@ fn main() {
     writeln!(out, "/// The IANA tz database release the rules came from.\npub const TZDATA_VERSION: &str = {:?};", version.trim())
         .expect("string");
     out.push_str("/// The shipped zones, in `zones.toml` order.\npub static SHIPPED: &[Shipped] = &[\n");
-    for z in doc.get("zone").and_then(toml::Value::as_array).expect("[[zone]]") {
-        let z = z.as_table().expect("zone table");
-        let name = s(z, "name").expect("name");
-        let offset = z.get("offset").and_then(toml::Value::as_integer).expect("offset");
-        let (std_abbr, std_msg) = pair(z, "std").expect("std");
-        let dst = pair(z, "dst");
-        let alt = s(z, "alt").unwrap_or("");
-        let year = z.get("year").and_then(toml::Value::as_integer);
+    for entry in doc.get("zone").and_then(toml::Value::as_array).expect("[[zone]]") {
+        let zt = entry.as_table().expect("zone table");
+        let name = s(zt, "name").expect("name");
+        let offset = zt.get("offset").and_then(toml::Value::as_integer).expect("offset");
+        let (std_abbr, std_msg) = pair(zt, "std").expect("std");
+        let dst = pair(zt, "dst");
+        let alt = s(zt, "alt").unwrap_or("");
+        let year = zt.get("year").and_then(toml::Value::as_integer);
         let text = |id: &str| messages.get(id).and_then(toml::Value::as_str).unwrap_or_else(|| panic!("{name}: no text for {id}"));
-        let rule = match (&dst, year, s(z, "start")) {
-            (None, Some(y), _) => {
+        let rule = match (&dst, year, s(zt, "start")) {
+            (None, Some(yr), _) => {
                 if tz.knows(alt) {
-                    let r = tz.rule(alt, y).unwrap_or_else(|e| panic!("{name}: {e}"));
-                    assert!(r.stdoff == offset * 60, "{name}: {alt} is {} in {y}, not {offset} minutes", r.stdoff);
+                    let r = tz.rule(alt, yr).unwrap_or_else(|e| panic!("{name}: {e}"));
+                    assert!(r.stdoff == offset * 60, "{name}: {alt} is {} in {yr}, not {offset} minutes", r.stdoff);
                 }
                 None
             }
             (None, None, _) => None,
-            (Some(_), Some(y), None) => {
-                let r = tz.rule(alt, y).unwrap_or_else(|e| panic!("{name}: {e}"));
-                assert!(r.stdoff == offset * 60, "{name}: {alt} is {} in {y}, not {offset} minutes", r.stdoff);
-                let (a, b, shift) = r.dst.unwrap_or_else(|| panic!("{name}: {alt} keeps no daylight saving in {y}"));
-                Some((a, b, shift / 60, format!("Source::Tzdata({y})")))
+            (Some(_), Some(yr), None) => {
+                let r = tz.rule(alt, yr).unwrap_or_else(|e| panic!("{name}: {e}"));
+                assert!(r.stdoff == offset * 60, "{name}: {alt} is {} in {yr}, not {offset} minutes", r.stdoff);
+                let (a, b, shift) = r.dst.unwrap_or_else(|| panic!("{name}: {alt} keeps no daylight saving in {yr}"));
+                Some((a, b, shift / 60, format!("Source::Tzdata({yr})")))
             }
             (Some(_), None, Some(st)) => {
-                let end = s(z, "end").unwrap_or_else(|| panic!("{name}: start without end"));
-                let shift = z.get("shift").and_then(toml::Value::as_integer).expect("shift");
+                let end = s(zt, "end").unwrap_or_else(|| panic!("{name}: start without end"));
+                let shift = zt.get("shift").and_then(toml::Value::as_integer).expect("shift");
                 Some((literal(name, st), literal(name, end), shift, "Source::Ibm".to_string()))
             }
             _ => panic!("{name}: a zone with dst needs `year` or `start`/`end`, not both"),

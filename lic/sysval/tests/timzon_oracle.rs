@@ -17,7 +17,7 @@ const MONTHS: [&str; 12] = [
 const DAYS: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const WEEKS: [&str; 5] = ["First", "Second", "Third", "Fourth", "Last"];
 
-fn edge(e: &Edge) -> String {
+fn edge(e: Edge) -> String {
     let (h, m, s) = (e.secs / 3600, e.secs % 3600 / 60, e.secs % 60);
     format!(
         "{} {} {} {h:02}:{m:02}:{s:02}",
@@ -47,7 +47,7 @@ fn shipped_zones_match_the_primary() {
     for (r, z) in rows.iter().zip(ours) {
         let dst = z.dst.map_or_else(
             || "- -".to_string(),
-            |d| format!("{} {} {}", edge(&d.start), edge(&d.end), d.shift),
+            |d| format!("{} {} {}", edge(d.start), edge(d.end), d.shift),
         );
         let want_dst = if r[10] == "-" {
             "- -".to_string()

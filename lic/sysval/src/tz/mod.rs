@@ -121,6 +121,22 @@ pub fn all() -> Vec<Zone> {
         .unwrap_or_else(|| shipped().to_vec())
 }
 
+/// The `QTIMZON` value this process last saw ([`crate::SysVals`] sets it).
+static CURRENT: RwLock<String> = RwLock::new(String::new());
+
+/// Note the `QTIMZON` value.
+pub fn set_current(name: &str) {
+    *CURRENT.write().unwrap_or_else(std::sync::PoisonError::into_inner) = name.trim().to_string();
+}
+
+/// The offset from UTC in seconds at `unix` of the zone `QTIMZON`
+/// names (UTC before any value was seen or for an unknown name).
+#[must_use]
+pub fn current_offset(unix: u64) -> i64 {
+    let name = CURRENT.read().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+    find(&name).map_or(0, |z| i64::from(z.offset_at(unix)))
+}
+
 /// A zone by name.
 #[must_use]
 pub fn find(name: &str) -> Option<Zone> {

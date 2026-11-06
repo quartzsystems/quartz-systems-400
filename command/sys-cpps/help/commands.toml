@@ -91,3 +91,43 @@ USRPRF = "The user profile the statements run under: the user's, the owner's, or
 [ENDSBS]
 BCHTIMLMT = "How long, in minutes, the system stays in the batch restricted state. With SBS(*ALL), run from a batch job that came from a job queue of the controlling subsystem, every subsystem ends and that job alone keeps running. When it ends, or its time runs out and the system ends it, the controlling subsystem starts again. A batch job of the controlling subsystem cannot end every subsystem without it, and no other job may give it."
 "BCHTIMLMT.*NOMAX" = "No limit: the state lasts until the job ends."
+[CRTTIMZON]
+about = "Use the Create Time Zone Description (CRTTIMZON) command to create a time zone description in library QSYS: an offset from UTC, the names of standard and daylight saving time and the rule that starts and ends daylight saving time. The QTIMZON system value names the description the system's local time follows."
+TIMZON = "The name of the time zone description to create. It is created in QSYS."
+OFFSET = "The difference between standard time in the zone and UTC, in minutes: negative west of Greenwich, positive east of it."
+STDNAME = "The abbreviated and full names of standard time. *GEN makes the abbreviation from the offset; *MSG takes both names from the message STDMSG names."
+DSTNAME = "The abbreviated and full names of daylight saving time. *NONE means the zone keeps no daylight saving time; *MSG takes both names from the message DSTMSG names."
+STDMSG = "The message that holds the names of standard time when STDNAME(*MSG) is given."
+DSTMSG = "The message that holds the names of daylight saving time when DSTNAME(*MSG) is given."
+MSGF = "The message file of STDMSG and DSTMSG."
+DSTSTR = "When daylight saving time starts: the month, the day of the week, which of those days in the month (the first to the fourth, or the last) and the local standard time."
+DSTEND = "When daylight saving time ends: the month, the day of the week, which of those days in the month and the local daylight saving time."
+DSTSHIFT = "How many minutes the clock moves forward when daylight saving time starts."
+YEAROFS = "The number of years added to the Gregorian year when the zone's dates are shown."
+ALTNAME = "Another name for the zone, such as the name the IANA time zone database gives it."
+TEXT = "A description of the time zone description."
+AUT = "The authority the public has to the time zone description."
+
+[CHGTIMZON]
+about = "Use the Change Time Zone Description (CHGTIMZON) command to change a time zone description in QSYS. When the description is the one the QTIMZON system value names, the system's local time and QUTCOFFSET follow the change at once."
+TIMZON = "The time zone description to change."
+OFFSET = "The difference between standard time in the zone and UTC, in minutes."
+STDNAME = "The abbreviated and full names of standard time."
+DSTNAME = "The abbreviated and full names of daylight saving time; *NONE removes daylight saving time from the zone."
+STDMSG = "The message that holds the names of standard time."
+DSTMSG = "The message that holds the names of daylight saving time."
+MSGF = "The message file of the messages."
+DSTSTR = "When daylight saving time starts."
+DSTEND = "When daylight saving time ends."
+DSTSHIFT = "How many minutes the clock moves forward when daylight saving time starts."
+YEAROFS = "The number of years added to the Gregorian year."
+ALTNAME = "Another name for the zone."
+TEXT = "A description of the time zone description."
+
+[DLTTIMZON]
+about = "Use the Delete Time Zone Description (DLTTIMZON) command to delete time zone descriptions from QSYS. The description the QTIMZON system value names cannot be deleted."
+TIMZON = "The time zone description to delete, or a generic name for every description that starts with it."
+
+[WRKTIMZON]
+about = "Use the Work with Time Zone Descriptions (WRKTIMZON) command to show the time zone descriptions in QSYS and change, delete, display or print them, or make one the system's time zone. The description the QTIMZON system value names is marked with a greater-than sign."
+TIMZON = "The time zone descriptions to show: a name, a generic name, or *ALL."

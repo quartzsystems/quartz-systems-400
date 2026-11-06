@@ -55,6 +55,7 @@ pub(crate) mod spool;
 pub(crate) mod perfcol;
 pub(crate) mod stats;
 pub(crate) mod tcp;
+pub(crate) mod timzon;
 mod units;
 mod work2;
 mod uiapi;
@@ -112,6 +113,8 @@ pub fn run() -> ! {
     let mut system = System::new(Outputs::open(), Boot::read());
     system.role = Role::Storage;
     let opened = open(&mut system, &start).and_then(|text| {
+        // The descriptions in QSYS, QTIMZON moved from a V1R0M0 name.
+        timzon::after_install(&mut system);
         let l = listen(Path::new(stg::SOCKET))?;
         Ok((text, l))
     });
@@ -333,6 +336,7 @@ fn serve(mut system: System, slic: Chan, listener: UnixListener) -> ! {
 
 /// The shipped work management objects that are missing.
 fn install(system: &mut System) -> Result<usize, String> {
+    timzon::before_install(system);
     let Some(s) = system.storage.as_mut() else {
         return Ok(0);
     };

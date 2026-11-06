@@ -9,7 +9,7 @@
 //! (`objs`); `DSPPFM` (`pfm`); `WRKJRN`, `WRKJRNA`, `DSPJRN`,
 //! `DSPJRNRCVA` (`jrn`); `WRKPFCST`, `EDTCPCST` (`cst`); the service displays `WRKPRB`, `DSPPRB`, `ANZPRB`,
 //! `WRKCNTINF`, `WRKSRVPVD`, `DSPSRVSTS` (`service`); `WRKIMGCLG`,
-//! `WRKIMGCLGE`, `WRKTAPCTG`, `WRKMLBSTS` (`media`). Their data comes through `panel2_data`, named
+//! `WRKIMGCLGE`, `WRKTAPCTG`, `WRKMLBSTS` (`media`); `WRKTIMZON` (`timzon`). Their data comes through `panel2_data`, named
 //! as the panel groups' variables; `viewer` is the window the two
 //! viewers share.
 
@@ -25,6 +25,7 @@ mod pfm;
 mod service;
 mod spool;
 mod sys;
+mod timzon;
 mod viewer;
 
 use cmd::{Resolved, Value};
@@ -77,6 +78,7 @@ pub fn run(
         "DSPJRNRCVA" => jrn::dspjrnrcva(host, surface, r),
         "WRKPFCST" => cst::wrkpfcst(job, host, surface, r),
         "EDTCPCST" => cst::edtcpcst(job, host, surface),
+        "WRKTIMZON" => timzon::wrktimzon(job, host, surface, r),
         _ => return None,
     })
 }

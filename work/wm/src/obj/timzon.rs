@@ -47,7 +47,7 @@ pub const LAYOUT: Layout = Layout {
 const MAGIC: &[u8; 8] = b"QSWMTZON";
 const VERSION: u64 = 1;
 
-fn put_edge(r: &mut Rec<'_>, side: &str, e: &Edge) {
+fn put_edge(r: &mut Rec<'_>, side: &str, e: Edge) {
     r.set_uint(&format!("{side}Month"), u64::from(e.month));
     r.set_uint(&format!("{side}Day"), u64::from(e.weekday));
     r.set_uint(&format!("{side}Week"), u64::from(e.week));
@@ -90,8 +90,8 @@ pub fn encode(z: &Zone) -> Vec<u8> {
     r.set_text("MsgfLib", &z.msgf.1);
     if let Some(d) = &z.dst {
         r.set_flag("HasDst", true);
-        put_edge(&mut r, "Start", &d.start);
-        put_edge(&mut r, "End", &d.end);
+        put_edge(&mut r, "Start", d.start);
+        put_edge(&mut r, "End", d.end);
         r.set_uint("Shift", u64::from(d.shift));
     }
     r.set_uint("YearOffset", unsigned(i32::from(z.year_offset)));

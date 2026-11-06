@@ -95,12 +95,17 @@ pub(crate) fn stamp(host: &Host) -> String {
     let now = host.link.borrow_mut().with(Client::now);
     let a = host.attrs();
     let (date, time) = date_time(now.unix, now.offset_min, &a.formats());
-    let zone: String = now
-        .zone
-        .trim()
-        .trim_start_matches(|c: char| !c.is_ascii_digit())
-        .trim_start_matches(|c: char| c.is_ascii_digit())
-        .to_string();
+    // The abbreviation in force (EST, EDT); else the name's letters.
+    let zone: String = sysval::tz::find(&now.zone).map_or_else(
+        || {
+            now.zone
+                .trim()
+                .trim_start_matches(|c: char| !c.is_ascii_digit())
+                .trim_start_matches(|c: char| c.is_ascii_digit())
+                .to_string()
+        },
+        |z| z.abbr_at(now.unix).to_string(),
+    );
     let zone = if zone.is_empty() { "UTC".to_string() } else { zone };
     format!("{date}  {time} {zone}")
 }

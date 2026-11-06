@@ -128,6 +128,9 @@ pub fn data(
         "OVR" => Ok(ovr(system)),
         "PFCST" => crate::cpp::cstcmd::wrkpfcst_panel(system, arg(0), arg(1), arg(2), arg(3)),
         "CPCST" => crate::cpp::cstcmd::edtcpcst_panel(system),
+        "TIMZON" => Ok(crate::cpp::tzcmd::list_panel(system, arg(0))),
+        "TIMZONDTL" => crate::cpp::tzcmd::detail_panel(system, arg(0)),
+        "TIMZONPRT" => crate::cpp::tzcmd::print_panel(system, arg(0)),
         _ => Err(format!("CPF9899 no display data called {what}")),
     }
 }

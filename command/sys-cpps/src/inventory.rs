@@ -185,6 +185,11 @@ pub const DIRECT: &[&str] = &[
     "ADDPFTRG",
     "CHGPFTRG",
     "RMVPFTRG",
+    // --- time zone descriptions (lic/slic/src/cpp/tzcmd.rs)
+    "CRTTIMZON",
+    "CHGTIMZON",
+    "DLTTIMZON",
+    "WRKTIMZON",
     // --- physical file constraints (lic/slic/src/cpp/cstcmd.rs)
     "ADDPFCST",
     "CHGPFCST",
@@ -625,6 +630,8 @@ pub const JOB_SITE: &[&str] = &[
     "DSPSAVF",
     "WRKPRB",
     "DSPPRB",
+    // --- time zone descriptions (panels/work2/timzon.rs)
+    "WRKTIMZON",
     // --- media (panels/work2/media.rs)
     "WRKIMGCLG",
     "WRKIMGCLGE",
