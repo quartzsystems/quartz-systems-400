@@ -228,7 +228,9 @@ impl Suite {
             return Err(format!("CRTBNDCL: {made}"));
         }
         let ctl = s.command("svc.sysval QCTLSBSD", CMD)?;
-        let (name, jobq) = if ctl.contains("QCTL") { ("QCTL", "QSYS/QCTL") } else { ("QBASE", "QGPL/QBASE") };
+        // The value after the name: `QCTLSBSD: QBASE QSYS`.
+        let value = ctl.split_once(':').map_or("", |(_, v)| v);
+        let (name, jobq) = if value.contains("QCTL") { ("QCTL", "QSYS/QCTL") } else { ("QBASE", "QGPL/QBASE") };
         s.command(&format!("SBMJOB CMD(CALL PGM(QGPL/BRSTD)) JOB(BRSTD) JOBQ({jobq}) MSGQ(*NONE)"), CMD)?;
         // Alone: every other subsystem gone, the job still there.
         let alone = poll(s, "wrksbs", 60, |o| !o.lines().any(|l| l.contains("ACTIVE")))?;
