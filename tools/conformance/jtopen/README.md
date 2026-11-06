@@ -32,6 +32,7 @@ QS/400, and its source was read only to understand the datastream.
 | `ifs` | `Ifs` | `IFSFile` and streams under `/home/QSTEST` only, removed after |
 | `splf` | `Splf` | `SpooledFileList` of the user's spooled files (list only) |
 | `splfdata` | `SplfData` | `PrintObjectInputStream`: the bytes of the user's smallest spooled file (read only) |
+| (direct) | `CcsidProbe` | the 256-byte sweep of single-byte CCSIDs to UTF-16 and back, bidi CCSIDs a byte at a time, the Unicode CCSIDs the system converts; run directly (not through the proxy), output in `tools/conformance/oracle/ccsid/sweep.txt` |
 
 Each program prints one `ok NAME` or `fail NAME: ...` line per step,
 with indented result lines; the user's name is printed as `{user}`.

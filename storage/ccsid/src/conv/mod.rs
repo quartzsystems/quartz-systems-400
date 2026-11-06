@@ -4,12 +4,17 @@
 
 //! Conversion between CCSIDs: the single-byte EBCDIC and ASCII tables,
 //! the Japanese mixed EBCDIC CCSIDs (930, 5026, 939, 5035) and the
-//! double-byte 300, UTF-8 (1208), UTF-16 big-endian (1200, 13488) and
+//! double-byte 300, UTF-8 (1208), UTF-16 big-endian (1200, 13488, 61952) and
 //! binary (65535, no conversion). A character the target cannot hold
 //! becomes the target's substitution character, as IBM's conversions do;
 //! line ends are just characters and convert like any other. Text cut
 //! to a record or field length goes through [`fit`], [`cut`] or
 //! [`wrap`], which keep a mixed record's double-byte runs whole.
+//!
+//! The bidirectional CCSIDs 420 (Arabic) and 424 (Hebrew) convert a
+//! character at a time; there is no bidi layout (no reordering between
+//! visual and logical order, no shaping), which IBM applies when it
+//! converts a whole string.
 
 pub(crate) mod dbcs;
 mod fit;
@@ -20,7 +25,7 @@ mod unicode;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use crate::tables::{SB0930, SB0939, TABLES};
+use crate::tables::{DECODE_ONLY, SB0930, SB0939, TABLES};
 
 pub use dbcs::DbcsTable;
 pub use fit::{Fitted, cut, fit, wrap};
@@ -35,6 +40,8 @@ pub const UTF8: u16 = 1208;
 pub const UTF16: u16 = 1200;
 /// UCS-2, treated as UTF-16 big-endian.
 pub const UCS2: u16 = 13488;
+/// The older UCS-2 CCSID, treated as UTF-16 big-endian.
+pub const UCS2_OLD: u16 = 61952;
 
 /// A CCSID this crate cannot convert.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -80,7 +87,10 @@ pub struct Codec {
 }
 
 /// The single-byte EBCDIC CCSIDs with tables.
-const EBCDIC: [u16; 12] = [37, 273, 277, 278, 280, 284, 285, 297, 500, 871, 1140, 1141];
+const EBCDIC: [u16; 26] = [
+    37, 273, 277, 278, 280, 284, 285, 297, 420, 424, 500, 870, 871, 875, 1025, 1026, 1140, 1141,
+    1142, 1143, 1144, 1145, 1146, 1147, 1148, 1149,
+];
 
 /// The Japanese CCSIDs: mixed 930, 939, 5026, 5035 and double-byte 300.
 const JAPANESE: [u16; 5] = [300, 930, 939, 5026, 5035];
@@ -91,7 +101,7 @@ pub fn supported() -> Vec<u16> {
     let mut v = vec![37];
     v.extend(TABLES.iter().map(|(c, _)| *c));
     v.extend(JAPANESE);
-    v.extend([UTF8, UTF16, UCS2, BINARY]);
+    v.extend([UTF8, UTF16, UCS2, UCS2_OLD, BINARY]);
     v.sort_unstable();
     v
 }
@@ -107,7 +117,7 @@ pub fn ccsid_of_codepage(cp: u16) -> u16 {
 #[must_use]
 pub fn codepage_of(ccsid: u16) -> u16 {
     match ccsid {
-        UCS2 => UTF16,
+        UCS2 | UCS2_OLD => UTF16,
         c => c,
     }
 }
@@ -118,7 +128,7 @@ impl Codec {
         let form = match ccsid {
             BINARY => return Ok(None),
             UTF8 => Form::Utf8,
-            UTF16 | UCS2 => Form::Utf16,
+            UTF16 | UCS2 | UCS2_OLD => Form::Utf16,
             37 => Form::Sbcs {
                 table: &crate::TO_UNICODE,
                 ebcdic: true,
@@ -254,20 +264,23 @@ impl Codec {
 fn reverse(ccsid: u16) -> &'static HashMap<u32, u8> {
     static REV: OnceLock<HashMap<u16, HashMap<u32, u8>>> = OnceLock::new();
     let all = REV.get_or_init(|| {
-        let of = |t: &[u32; 256]| -> HashMap<u32, u8> {
+        // Bytes that only decode (420's letter shapes) never encode.
+        let of = |t: &[u32; 256], skip: &[u8]| -> HashMap<u32, u8> {
             t.iter()
                 .enumerate()
                 .filter(|(_, cp)| **cp != u32::MAX)
                 .map(|(b, &cp)| (cp, u8::try_from(b).expect("byte")))
+                .filter(|(_, b)| !skip.contains(b))
                 .collect()
         };
         let mut m = HashMap::new();
-        m.insert(37, of(&crate::TO_UNICODE));
+        m.insert(37, of(&crate::TO_UNICODE, &[]));
         for (c, t) in TABLES {
-            m.insert(*c, of(t));
+            let skip = DECODE_ONLY.iter().find(|(n, _)| n == c).map_or(&[][..], |(_, s)| *s);
+            m.insert(*c, of(t, skip));
         }
         for (c, t) in [(930, &SB0930), (5026, &SB0930), (939, &SB0939), (5035, &SB0939)] {
-            m.insert(c, of(t));
+            m.insert(c, of(t, &[]));
         }
         m
     });

@@ -9,7 +9,8 @@ use crate::conv::*;
 #[test]
 fn every_ccsid_is_known() {
     for c in [
-        37, 273, 277, 278, 280, 284, 285, 297, 500, 871, 1140, 1141, 819, 850, 1252, 367, 300, 930, 939,
+        37, 273, 277, 278, 280, 284, 285, 297, 420, 424, 500, 870, 871, 875, 1025, 1026, 1140, 1141, 1142,
+        1143, 1144, 1145, 1146, 1147, 1148, 1149, 819, 850, 1252, 367, 300, 930, 939, 61952,
         5026, 5035, 1208, 1200, 13488, 65535,
     ] {
         assert!(Codec::of(c).is_ok(), "{c}");
@@ -35,7 +36,13 @@ fn sbcs_tables_round_trip() {
             codec.decode(&[b], &mut chars);
             let mut back = Vec::new();
             assert!(codec.encode(chars[0], &mut back), "{c} {b:#04x}");
-            assert_eq!(back, vec![b], "{c} {b:#04x}");
+            // 420 holds several shapes of a letter; they encode to one.
+            let mut again = Vec::new();
+            codec.decode(&back, &mut again);
+            assert_eq!(again, chars, "{c} {b:#04x}");
+            if c != 420 {
+                assert_eq!(back, vec![b], "{c} {b:#04x}");
+            }
         }
     }
 }

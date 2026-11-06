@@ -10,6 +10,15 @@
 //! `cp037.csv` have it, and the five undefined CP1252 bytes as the C1
 //! controls of the same value, as IBM's CCSID 1252 maps them.
 //!
+//! The tables added for V1R1M0 (870, 875, 1025, 1026, 1142 to 1149 and
+//! the bidirectional 420 and 424) were written from the primary
+//! oracle's own conversion to UTF-16, byte by byte
+//! (`tools/conformance/oracle/ccsid/`); a byte IBM converts to the
+//! substitution character is left out. CCSID 420 holds several shapes
+//! of one Arabic letter (and Arabic-Indic digits): every such byte
+//! decodes to the letter, and the rows of all but the byte the oracle
+//! encodes it to end in ` (decode only)`.
+//!
 //! The Japanese tables were written the same way, from Java's x-IBM300,
 //! x-IBM930 and x-IBM939 (Temurin 25): `cp/cp0300.dbcs` the double-byte
 //! code page, `cp/mixed/cpNNNN.csv` the single-byte half of a mixed CCSID
@@ -26,6 +35,20 @@ use std::path::Path;
 
 /// Marks an unmapped byte in a generated table.
 const NONE: u32 = u32::MAX;
+
+/// A row whose name ends so decodes but is never what a character
+/// encodes to (another byte of the same code point is).
+const DECODE_ONLY: &str = " (decode only)";
+
+/// The bytes of a table marked decode-only.
+fn decode_only(path: &Path) -> Vec<u8> {
+    let csv = fs::read_to_string(path).unwrap_or_else(|_| panic!("{}", path.display()));
+    csv.lines()
+        .skip(1)
+        .filter(|l| l.ends_with(DECODE_ONLY))
+        .map(|l| u8::from_str_radix(l[2..4].trim_end_matches(','), 16).expect("byte"))
+        .collect()
+}
 
 fn parse(path: &Path, full: bool) -> Vec<u32> {
     let csv = fs::read_to_string(path).unwrap_or_else(|_| panic!("{}", path.display()));
@@ -50,9 +73,14 @@ fn parse(path: &Path, full: bool) -> Vec<u32> {
             assert!(*cp != NONE, "{}: byte {b:#04x} missing", path.display());
         }
     }
-    // Every code point must be unique so the reverse map is a function.
+    // Every code point must be unique among the bytes that encode, so
+    // the reverse map is a function.
+    let skip = decode_only(path);
     let mut seen = std::collections::HashSet::new();
-    for &cp in to_unicode.iter().filter(|&&c| c != NONE) {
+    for (b, &cp) in to_unicode.iter().enumerate().filter(|&(_, &c)| c != NONE) {
+        if skip.contains(&u8::try_from(b).expect("byte")) {
+            continue;
+        }
         assert!(
             seen.insert(cp),
             "{}: U+{cp:04X} mapped twice",
@@ -178,6 +206,9 @@ fn main() {
     let mut index = String::from(
         "/// Every generated table by CCSID.\npub static TABLES: &[(u16, &[u32; 256])] = &[\n",
     );
+    let mut one_way = String::from(
+        "/// The bytes of a table that decode but never encode.\npub static DECODE_ONLY: &[(u16, &[u8])] = &[\n",
+    );
     for f in &files {
         let stem = f.file_stem().expect("stem").to_string_lossy();
         let n: u16 = stem.trim_start_matches("cp").parse().expect("cpNNNN.csv");
@@ -190,9 +221,15 @@ fn main() {
             &table,
         );
         writeln!(index, "    ({n}, &{name}),").expect("string");
+        let skip = decode_only(f);
+        if !skip.is_empty() {
+            writeln!(one_way, "    ({n}, &{skip:?}),").expect("string");
+        }
     }
     index.push_str("];\n");
     out.push_str(&index);
+    one_way.push_str("];\n");
+    out.push_str(&one_way);
 
     emit_dbcs(
         &mut out,
