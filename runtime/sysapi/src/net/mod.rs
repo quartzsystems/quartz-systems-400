@@ -266,8 +266,13 @@ mod tests {
         for n in &ours {
             assert!(ile::is_system_srvpgm_proc(n), "{n} has no service program");
         }
-        for (n, _) in ile::SYSTEM_SRVPGM_PROCS {
-            assert!(ours.contains(n), "{n} has no procedure");
+        // QSQCLI's procedures are the sqlcli crate's; its own test
+        // checks them against the table.
+        for (n, s) in ile::SYSTEM_SRVPGM_PROCS.iter().filter(|(_, s)| *s != "QSQCLI") {
+            assert!(ours.contains(n), "{n} ({s}) has no procedure");
+        }
+        for n in &ours {
+            assert_ne!(ile::system_srvpgm(n), Some("QSQCLI"), "{n} is QSQCLI's");
         }
     }
 

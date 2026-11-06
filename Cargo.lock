@@ -3477,6 +3477,7 @@ dependencies = [
  "ccsid",
  "codegen",
  "db",
+ "ile",
  "ipc",
  "mi",
  "qdecimal",

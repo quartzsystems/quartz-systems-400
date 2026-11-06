@@ -17,6 +17,7 @@ qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 
 [dev-dependencies]
+ile = { path = "../../runtime/ile", version = "0.1.0" }
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
 store = { path = "../../storage/store", version = "0.1.0" }
 qsname = { path = "../../storage/qsname", version = "0.1.0" }

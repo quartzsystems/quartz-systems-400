@@ -48,3 +48,21 @@ pub fn install(job: &mut mi::Job) {
 pub fn uninstall(job: &mi::Job) {
     abi::drop_state(job);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_procedure_is_qsqcli_s_and_back() {
+        let ours: Vec<&str> = procedures().iter().map(|(n, _)| *n).collect();
+        let mut seen = std::collections::HashSet::new();
+        for n in &ours {
+            assert!(seen.insert(*n), "{n} registered twice");
+            assert_eq!(ile::system_srvpgm(n), Some(SRVPGM), "{n} is not bound to {SRVPGM}");
+        }
+        for (n, _) in ile::SYSTEM_SRVPGM_PROCS.iter().filter(|(_, s)| *s == SRVPGM) {
+            assert!(ours.contains(n), "{n} has no procedure");
+        }
+    }
+}
