@@ -1348,6 +1348,15 @@ fn read_savf(system: &mut System, name: &str, parms: &Parms) -> Result<Vec<u8>, 
 /// read it back; `CPC3724` when it is written.
 fn savsavfdta(system: &mut System, parms: &Parms) -> CmdReply {
     const NAME: &str = "SAVSAVFDTA";
+    // BLOCKED(rel): SAVSAVFDTA's OUTPUT(*PRINT|*OUTFILE) listing and
+    // USEOPTBLK(*NO) are not made; the file is written in 64 KiB blocks.
+    // COMPACT is the device's (*DEV), and a virtual device compacts nothing.
+    for (k, dft) in [("OUTPUT", "*NONE"), ("USEOPTBLK", "*YES")] {
+        let v = parms.name(k);
+        if !v.is_empty() && v != dft {
+            return super::escape("CPF3C3C", k, "");
+        }
+    }
     let Some(m) = media_of(parms) else {
         return failed(NAME, NO_DEVICE);
     };

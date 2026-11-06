@@ -161,6 +161,8 @@ fn session(job: &mut Job, host: &Host, r: &Resolved, stream: TcpStream, wait: Du
                 }
                 early.extend(records);
             }
+            // BLOCKED(rel): a server that will not run 5250 (VT or 3270
+            // sessions) ends the command; those modes are not made.
             Ok(Net::Closed) => return Err(Fail::msg("TCP2534", &[])),
             Err(_) => return Err(Fail::msg(if heard { "TCP2534" } else { "TCP2591" }, &[])),
         }
