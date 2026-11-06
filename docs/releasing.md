@@ -22,8 +22,12 @@ Knowledge Center.
 
 ## The keys
 
-A release is signed with two keys. Neither is in the repository, in
-GitHub's secrets or in a CI log.
+A release is signed with two keys. Neither is in the repository or in a
+CI log: they are secrets of the repository's `release` environment, whose
+deployment rule admits `v*` tags only, so no branch or pull request build
+ever sees them (GitHub never gives secrets to a fork's pull request
+either). GitHub cannot show a secret again once it is set, so an offline
+copy of each key is kept as well.
 
 | Key | Variable | Signs | If it leaks / is lost |
 |---|---|---|---|
@@ -38,8 +42,19 @@ openssl rand -hex 32 > /media/keys/qs400-release.ed25519
 cargo run -p pesign -- keygen /media/keys "CN=Quartz Systems QS/400 Secure Boot db 2026"
 ```
 
-Keep two copies offline (the stick and a second stick or a password
-manager's file vault in another place). Without the variables, `build`
+Then put them in the `release` environment, the certificate in base64
+(a secret is text):
+
+```sh
+gh secret set QS400_SIGNING_KEY --env release < /media/keys/qs400-release.ed25519
+gh secret set QS400_SB_KEY --env release < /media/keys/qs400-db.key
+base64 -w0 /media/keys/qs400-db.cer | gh secret set QS400_SB_CERT_B64 --env release
+```
+
+Keep the files offline as well (an encrypted stick, or a password
+manager's file vault): a release key that exists only as a GitHub secret
+is lost with the repository, and PTFs for installed systems can never be
+signed again. Without the variables, `build`
 signs with the development keys (an ed25519 key generated under
 `target/keys/`, and the checked-in Secure Boot pair
 `tools/pesign/keys/qs400-db-DEV-ONLY.*`), and says so; CI and the
@@ -74,11 +89,10 @@ Pushing the tag runs `.github/workflows/release.yml`:
 2. **ci**: every job of `ci.yml`, the QEMU suite on the `qs400-qemu`
    runner included.
 3. **build**: on the `qs400-qemu` runner, `build all --release` and
-   `build release`, signed with the keys the runner's own environment
-   names. The runner must have `QS400_SIGNING_KEY`, `QS400_SB_KEY` and
-   `QS400_SB_CERT` set to files (in the runner's `.env`, beside
-   `run.sh`); without them the job stops rather than publish a release
-   signed with the development keys.
+   `build release`, signed with the `release` environment's keys,
+   written to a directory only the job can read and removed when the
+   job ends; without all three secrets the job stops rather than publish
+   a release signed with the development keys.
 4. **publish**: a GitHub release named `QS/400 VxRyMz (x.y.z)` with the
    ISO, the UKIs, `SHA256SUMS` and `SHA256SUMS.sig`, `MANIFEST.json` and
    its signature, `NOTICES.txt`, `SOURCE-OFFER.txt` and `qs400-db.cer`,
@@ -92,8 +106,8 @@ git tag -f v1.1.0
 git push -f origin v1.1.0
 ```
 
-If the keys stay off the runner (the stick is plugged in only to sign),
-build and sign by hand instead and publish with `gh release create`:
+To build and sign by hand instead (from the offline copy) and publish
+with `gh release create`:
 
 ```sh
 QS400_SIGNING_KEY=/media/keys/qs400-release.ed25519 \

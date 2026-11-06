@@ -127,7 +127,12 @@ jobs:
 
   qemu:
     name: build test (QEMU)
-    if: github.event_name != 'schedule'
+    # The self-hosted runner never runs a fork's pull request: on a public
+    # repository that would run anyone's code on it.
+    if: >-
+      github.event_name != 'schedule' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     needs: [clippy, deny, test]
     runs-on: [self-hosted, qs400-qemu]
     timeout-minutes: 480

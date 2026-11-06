@@ -336,9 +336,10 @@ The nightly release is signed with the development keys only: the
 ed25519 build key generated under `target/keys/` and the checked-in
 Secure Boot development pair. A release for distribution sets
 `QS400_SIGNING_KEY`, `QS400_SB_KEY` and `QS400_SB_CERT`: `release.yml`
-takes them from the `qs400-qemu` runner's own environment and stops when
-they are not there, or they are set by hand on a machine holding the
-keys (`releasing.md`, "The keys"). NEEDS-CODY: make the two keys.
+takes them from the secrets of the `release` environment (`v*` tags
+only) and stops when they are not there, or they are set by hand on a
+machine holding the keys (`releasing.md`, "The keys"). The QEMU job
+never runs a fork's pull request on the self-hosted runner.
 
 ## Reproducible releases
 

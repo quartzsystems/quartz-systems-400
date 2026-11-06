@@ -5,7 +5,8 @@
 # A tag v<VERSION> publishes a GitHub release: the tag is checked against
 # VERSION and CHANGELOG.md, every check in ci.yml runs (the QEMU suite on
 # the qs400-qemu runner among them), the release is built and signed on
-# that runner with the keys its own environment names, and the ISO, the
+# that runner with the keys in the `release` environment's secrets (only
+# v* tags may use that environment), and the ISO, the
 # UKIs, SHA256SUMS and its signature, the manifest, NOTICES.txt, the
 # source offer, the Secure Boot certificate and CHANGELOG.md's section for
 # the version are published. See docs/releasing.md.
@@ -46,22 +47,43 @@ jobs:
     name: build and sign ${{ needs.version.outputs.release }}
     needs: [version, ci]
     runs-on: [self-hosted, qs400-qemu]
+    # Holds the release keys; its deployment rule admits v* tags only.
+    environment: release
     timeout-minutes: 240
     env:
       QS400_TARGET_DIR: /srv/qs400-ci/release-target
       CARGO_TARGET_DIR: /srv/qs400-ci/release-target
     steps:
       - uses: actions/checkout@v4
-      # The release keys live on the runner, never in GitHub: the runner's
-      # environment (its .env file) names them. Without all three the
-      # release would be signed with the development keys, so it stops.
-      - name: Release keys are on the runner
+      # The keys go to a directory only this job's user can read, for the
+      # signing step alone, and are removed whatever happens. Without all
+      # three the release would be signed with the development keys, so
+      # the job stops.
+      - name: Release keys from the release environment
+        env:
+          SIGNING_KEY: ${{ secrets.QS400_SIGNING_KEY }}
+          SB_KEY: ${{ secrets.QS400_SB_KEY }}
+          SB_CERT_B64: ${{ secrets.QS400_SB_CERT_B64 }}
         run: |
-          for k in QS400_SIGNING_KEY QS400_SB_KEY QS400_SB_CERT; do
-            [ -n "${!k:-}" ] && [ -f "${!k}" ] || { echo "$k is not set to a file on this runner (docs/releasing.md)" >&2; exit 1; }
+          for k in SIGNING_KEY SB_KEY SB_CERT_B64; do
+            [ -n "${!k}" ] || { echo "secret for $k is missing in the release environment (docs/releasing.md)" >&2; exit 1; }
           done
+          umask 077
+          dir=$(mktemp -d)
+          printf '%s' "$SIGNING_KEY" > "$dir/release.ed25519"
+          printf '%s\n' "$SB_KEY" > "$dir/qs400-db.key"
+          printf '%s' "$SB_CERT_B64" | base64 -d > "$dir/qs400-db.cer"
+          echo "KEYDIR=$dir" >> "$GITHUB_ENV"
       - run: cargo run -q -p build -- all --release
-      - run: cargo run -q -p build -- release
+      - name: build release (signed)
+        run: |
+          QS400_SIGNING_KEY="$KEYDIR/release.ed25519" \
+          QS400_SB_KEY="$KEYDIR/qs400-db.key" \
+          QS400_SB_CERT="$KEYDIR/qs400-db.cer" \
+            cargo run -q -p build -- release
+      - name: Remove the keys
+        if: always()
+        run: '[ -z "${KEYDIR:-}" ] || rm -rf "$KEYDIR"'
       - name: Release files
         run: |
           out="$QS400_TARGET_DIR/release/${{ needs.version.outputs.release }}"
