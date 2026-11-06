@@ -116,6 +116,9 @@ impl<E> Routing<E> {
 }
 
 impl<E: Embedded> Embedded for Routing<E> {
+    // BLOCKED(sql): statements routed here (CONNECT, CONNECT RESET and
+    // what runs at a remote server) write no database monitor records:
+    // STRDBMON around step 134's program saw only its 3018 records.
     fn run(&mut self, req: &Request) -> Reply {
         route(&self.link, req).unwrap_or_else(|| self.inner.run(req))
     }
