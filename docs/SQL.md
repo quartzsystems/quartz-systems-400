@@ -555,11 +555,34 @@ The SQL completion's acceptance list, as it stands at the end of the work
 ### QEMU
 
 Regression on the final code: steps 1, 13, 15, 16, 33, 46, 52, 54, 55, 56,
-57, 68, 71, 89, 90, 91, 92, 93 and 100 pass. The SQL steps (130 up) are
-listed with their results below.
+57, 68, 71, 89, 90, 91, 92, 93 and 100 pass. The SQL steps:
+
+| Step | Result |
+|---|---|
+| 130 STRSQL | Pass: rows made, Display Data paged, F13 session options, F4 prompt, CONNECT to another server and back |
+| 131 RUNSQL and RUNSQLSTM | Pass: a source member's procedure and trigger made, the listing spooled, RUNSQL CALL and INSERT fire the trigger |
+| 132 JTOpen | Fails: `sqlpkg` agrees with the primary; `callproc` refuses its OUT VARCHAR call (open items); `metadata` differs in a few rows (open items) |
+| 133 CLI server mode | Pass |
+| 134 DRDA client | Pass: an embedded-SQL program connects to the loopback server, reads there and resets; the monitor records only local statements (open items) |
+| 135 RPG triggers | Pass: an RPG write fires both the SQL trigger and an RPG trigger program |
+| 136 QTEMP | Pass: QTEMP shared by CL, RUNSQL and STRSQL in one job, dropped at sign-off |
 
 ### Open items
 
+- A host-server job calling an SQL procedure with an OUT VARCHAR parameter
+  ends with an addressing fault on a running system (the same call passes
+  in memory); the call is refused with SQL0084 until the cause is found
+  (BLOCKED(sql) in `work/qsjob/src/console/sqlcall.rs`). Other OUT types
+  through a server job are not yet exercised.
+- JTOpen `DatabaseMetaData` on a running system: index columns of national
+  types report NVARCHAR where the primary has NCLOB, and the version-column
+  and privilege rows differ.
+- A procedure's result-set column computed from a variable is described as
+  VARCHAR(32740); the primary has the expression's type.
+- Database monitor records for statements routed to a remote server
+  (CONNECT and what runs there) are not written.
+- CALL from the command line passes a literal to a CHAR parameter
+  unpadded where IBM pads it (`work/qsjob/src/command/jobsite.rs`).
 - Slip-install from V1R1M0: the build still names itself V1R1M0 (the
   release identity is unchanged); the step upgrades from older media to the
   current release, so it waits for the next release's name (V1R2M0 is
