@@ -92,6 +92,28 @@ final class Hs {
         return "1".equals(System.getenv("QS_HS_SKIP_SIGNON"));
     }
 
+    /**
+     * A JDBC connection by the URL; when the database port is moved (QS_HS_PORT_8471,
+     * a QEMU forward), through a system object with the URL's properties instead.
+     */
+    static java.sql.Connection jdbc(String url) throws Exception {
+        String moved = System.getenv("QS_HS_PORT_8471");
+        if (moved == null || moved.isEmpty()) {
+            return java.sql.DriverManager.getConnection(url, user(), pass());
+        }
+        java.util.Properties p = new java.util.Properties();
+        int semi = url.indexOf(';');
+        if (semi >= 0) {
+            for (String kv : url.substring(semi + 1).split(";")) {
+                int eq = kv.indexOf('=');
+                if (eq > 0) {
+                    p.setProperty(kv.substring(0, eq), kv.substring(eq + 1));
+                }
+            }
+        }
+        return new com.ibm.as400.access.AS400JDBCDriver().connect(signonSystem(), p, null);
+    }
+
     /** A system that always goes through the sign-on server. */
     static AS400 signonSystem() {
         AS400 s = new AS400(host(), user(), pass());

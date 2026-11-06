@@ -3,7 +3,6 @@
 // root directory of this project.
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -19,7 +18,7 @@ public final class SqlPkg {
         String url = "jdbc:as400://" + Hs.host() + (Hs.skipSignon() ? ":8471" : "")
             + ";naming=sql;prompt=false;errors=full;extended dynamic=true;package=QSPKG;package library=QSTEST"
             + ";package cache=" + cache + ";package criteria=select;package error=exception";
-        return DriverManager.getConnection(url, Hs.user(), Hs.pass());
+        return Hs.jdbc(url);
     }
 
     static void query(Connection c, String sql, Object... parms) throws Exception {
@@ -56,7 +55,7 @@ public final class SqlPkg {
             Hs.step("cached", () -> query(c, "SELECT CAST(? AS INTEGER) + 1 AS N FROM SYSIBM.SYSDUMMY1", 7));
             Hs.step("new", () -> query(c, "SELECT CAST(? AS VARCHAR(10)) AS W FROM SYSIBM.SYSDUMMY1", "HI"));
         }
-        try (Connection c = DriverManager.getConnection("jdbc:as400://" + Hs.host() + (Hs.skipSignon() ? ":8471" : "") + ";naming=sql;prompt=false;errors=full", Hs.user(), Hs.pass())) {
+        try (Connection c = Hs.jdbc("jdbc:as400://" + Hs.host() + (Hs.skipSignon() ? ":8471" : "") + ";naming=sql;prompt=false;errors=full")) {
             Hs.step("stmts", () -> query(c, "SELECT * FROM QSYS2.SYSPACKAGESTAT WHERE PACKAGE_SCHEMA = 'QSTEST' FETCH FIRST 5 ROWS ONLY"));
             com.ibm.as400.access.AS400 sys = Hs.system();
             com.ibm.as400.access.CommandCall cc = new com.ibm.as400.access.CommandCall(sys);

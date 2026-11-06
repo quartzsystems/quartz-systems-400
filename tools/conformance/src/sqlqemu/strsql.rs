@@ -161,14 +161,28 @@ fn resume(tn: &mut Tn) -> String {
     let run = |tn: &mut Tn| -> Result<String, String> {
         tn.run("key eraseinput\ntype strsql\nkey enter\nwait \"Enter SQL Statements\"\nsettle 1000\n")?;
         let resumed = tn.screen();
-        let id = tn.msgid_at(24, 2)?;
-        tn.run(
-            "key eraseinput\nkey f3\nwait \"Exit Interactive SQL\"\ncursor 5 31\nkey eraseeof\ntype 2\nkey enter\nwait \"Command Entry\"\n",
-        )?;
+        // SQL6102 is a line of the history: F1 on it.
+        let rows = tn.d.term.text_rows();
+        let at = rows.iter().rposition(|r| r.contains("saved when STRSQL")).map(|i| (i + 1, rows[i].len() - rows[i].trim_start().len() + 1));
+        let id = match at {
+            Some((r, c)) => tn.msgid_at(r, c)?,
+            None => "no message".into(),
+        };
         Ok(match (resumed.contains("connect to"), id == "SQL6102") {
             (true, true) => "saved and resumed with SQL6102".into(),
-            (has, _) => format!("open: the resumed session sent {id}, statements back: {has}"),
+            (has, _) => format!("open: the resumed session showed {id}, statements back: {has}"),
         })
     };
-    run(tn).unwrap_or_else(|e| format!("open: resuming failed: {}", e.lines().next().unwrap_or("")))
+    let r = run(tn).unwrap_or_else(|e| format!("open: resuming failed: {}", e.lines().next().unwrap_or("")));
+    // Back to Enter SQL Statements whatever happened, then out unsaved.
+    for _ in 0..3 {
+        if tn.screen().contains("Enter SQL Statements") && !tn.screen().contains("Help") {
+            break;
+        }
+        let _ = tn.run("key f12\nsettle 800\n");
+    }
+    let _ = tn.run(
+        "key eraseinput\nkey f3\nwait \"Exit Interactive SQL\"\ncursor 5 31\nkey eraseeof\ntype 2\nkey enter\nwait \"Command Entry\"\n",
+    );
+    r
 }

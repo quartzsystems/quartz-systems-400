@@ -4,7 +4,6 @@
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Types;
@@ -20,7 +19,7 @@ public final class CallProc {
     public static void main(String[] a) throws Exception {
         Class.forName("com.ibm.as400.access.AS400JDBCDriver");
         String url = "jdbc:as400://" + Hs.host() + (Hs.skipSignon() ? ":8471" : "") + ";naming=sql;prompt=false;errors=full";
-        try (Connection c = DriverManager.getConnection(url, Hs.user(), Hs.pass())) {
+        try (Connection c = Hs.jdbc(url)) {
             Hs.out("ok   connect");
             Hs.step("create", () -> Jdbc.exec(c, "CREATE OR REPLACE PROCEDURE QSTEST.HSPROC1 "
                 + "(IN N INTEGER, OUT WORD VARCHAR(10), INOUT AMT DECIMAL(7, 2)) "

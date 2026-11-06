@@ -4,7 +4,6 @@
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -25,7 +24,7 @@ public final class MetaData {
     private static Connection open() throws Exception {
         String url = "jdbc:as400://" + Hs.host() + (Hs.skipSignon() ? ":8471" : "")
             + ";naming=sql;prompt=false;errors=full;libraries=" + LIB;
-        return DriverManager.getConnection(url, Hs.user(), Hs.pass());
+        return Hs.jdbc(url);
     }
 
     public static void main(String[] a) throws Exception {
