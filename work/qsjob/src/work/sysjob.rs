@@ -77,7 +77,9 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         }
         if start.name == "QSYSARB5" && Instant::now() >= next {
             status(link, Status::Run, "ARB");
-            for cmd in link.borrow_mut().with(Client::arb_tick) {
+            // Taken first: the commands use the link themselves.
+            let cmds = link.borrow_mut().with(Client::arb_tick);
+            for cmd in cmds {
                 let out = c.line(&cmd);
                 eprintln!("qsjob: QSYSARB5: {cmd}: {}", out.trim_end());
             }
