@@ -16,6 +16,7 @@
 pub mod catalog;
 pub mod data;
 pub mod format;
+pub mod lob;
 pub mod package;
 pub mod sqlca;
 pub mod types;
@@ -131,6 +132,8 @@ pub struct Database<A, E, X> {
     prepares: HashMap<String, u32>,
     /// The package's statements as last read or added: name and text.
     pkg_stmts: Vec<(String, String)>,
+    /// LOB locators of the server's own result sets.
+    lobs: lob::Locators,
 }
 
 /// A request's template.
@@ -205,6 +208,7 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             package: None,
             prepares: HashMap::new(),
             pkg_stmts: Vec::new(),
+            lobs: lob::Locators::default(),
         }
     }
 
@@ -496,7 +500,8 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         let ca = if let Some(c) = rpb.call.clone() {
             let args = c.values(rows.first().map_or(&[][..], Vec::as_slice));
             let rdb = self.config.rdb.clone();
-            let results = catalog::answer(&c, &args, &rdb, &mut |q: &str| self.query(q));
+            let mut results = catalog::answer(&c, &args, &rdb, &mut |q: &str| self.query(q));
+            self.locate(&mut results);
             rpb.results = Some(results);
             rpb.pos = 0;
             if r.wants(ors::CURSOR_ATTRIBUTES) {
@@ -556,6 +561,36 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
         };
         self.rpbs.insert(r.rpb, rpb);
         self.finish(r, ca, extra)
+    }
+
+    /// A catalog result's locator columns: their text held, a handle
+    /// in each row. The last catalog result's locators end here, and
+    /// the handles start again, as the primary's do.
+    fn locate(&mut self, rows: &mut Rows) {
+        let at: Vec<usize> = rows.cols.iter().enumerate().filter(|(_, c)| c.base == types::sqltype::DBCLOB_LOCATOR).map(|(i, _)| i).collect();
+        if !at.is_empty() {
+            self.lobs = lob::Locators::default();
+        }
+        for row in &mut rows.rows {
+            for &i in &at {
+                if let Some(v) = row.get_mut(i) {
+                    *v = self.lobs.hold(v);
+                }
+            }
+        }
+    }
+
+    /// Retrieve LOB data of a locator the server holds (one it does not
+    /// is SQL0423, the locator is not valid), or free one.
+    fn lob_request(&mut self, r: &Req, params: &[Param]) -> Answer {
+        if r.function == id::FREE_LOB {
+            self.lobs.free(params);
+            return self.finish(r, Sqlca::default(), Vec::new());
+        }
+        match self.lobs.retrieve(params) {
+            Some(params) => Answer { of: r.function, class: 0, code: 0, params },
+            None => self.finish(r, code(-423, "0F001"), Vec::new()),
+        }
     }
 
     fn finish(&mut self, r: &Req, ca: Sqlca, extra: Vec<Param>) -> Answer {
@@ -942,8 +977,10 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
             id::SEND_RESULTS => Some(self.send_results(&r)),
             id::DELETE_RESULTS | id::TEST_CONNECTION => None,
             id::END => return Outcome::close(),
-            // BLOCKED(sql): LOB locators of the database server (RETRIEVE_LOB,
-            // WRITE_LOB, FREE_LOB) are not kept.
+            id::RETRIEVE_LOB | id::FREE_LOB => Some(self.lob_request(&r, &params)),
+            // BLOCKED(rel): LOB locators of the engine's own result sets
+            // (a CLOB column of a table) and WRITE_LOB are not kept; only
+            // the catalog's locators are.
             _ => Some(self.finish(&r, code(-84, "42612"), Vec::new())),
         };
         match ans {

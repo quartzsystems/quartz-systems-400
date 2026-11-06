@@ -38,7 +38,7 @@ fn code() -> Vec<Entry> {
             INTERFACE_NAME, INTERFACE_LEVEL)),
         ("database::types::sqltype", "database/types.rs", Some("sqltype"), consts!(database::types::sqltype;
             DATE, TIME, TIMESTAMP, VARCHAR, CHAR, LONGVARCHAR, VARGRAPHIC, GRAPHIC, LONGVARGRAPHIC,
-            FLOAT, DECIMAL, NUMERIC, BIGINT, INTEGER, SMALLINT, VARBINARY, BINARY)),
+            FLOAT, DECIMAL, NUMERIC, BIGINT, INTEGER, SMALLINT, VARBINARY, BINARY, DBCLOB_LOCATOR)),
         ("dtaq::rc", "dtaq.rs", Some("rc"), consts!(dtaq::rc; OK, ERROR, PROTOCOL, NO_ENTRY, EXIT_REJECTED)),
         ("file::cp", "file/mod.rs", Some("cp"), consts!(file::cp;
             NAME1, NAME, SOURCE, TARGET, READ_DATA, CCSIDS, OA2, OA1, WRITE_DATA)),

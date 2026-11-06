@@ -52,7 +52,11 @@ pub fn encode(cols: &[ColType], result: bool) -> Vec<u8> {
         r.extend(c.ccsid.to_be_bytes());
         r.push(c.direction());
         r.extend(u16::from(c.column).to_be_bytes());
-        r.extend([0u8; 4 + 1 + 4 + 4 + 2]);
+        r.extend([0u8; 4 + 1 + 4]);
+        // A locator's LOB size in bytes: the primary's DBCLOB(1M).
+        let lob_max: u32 = if c.base == super::types::sqltype::DBCLOB_LOCATOR { 0x0020_0000 } else { 0 };
+        r.extend(lob_max.to_be_bytes());
+        r.extend([0u8; 2]);
         // From this record's start to its name.
         let off = var_at - RECORD * i;
         r.extend(reply::len32(off).to_be_bytes());

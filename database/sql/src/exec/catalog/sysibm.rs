@@ -461,9 +461,11 @@ pub fn virtual_table(txn: &mut Txn<'_>, ctx: &SqlContext, name: &ObjectName, ali
                 c("DBNAME", Ty::Var(8), true),
             ];
             let a = View::load(txn, ctx, "SYSTABAUTH")?;
+            // INDEX is not a table privilege here (oracle/sql-catalog/PRIVS).
             let rows = a
                 .rows
                 .iter()
+                .filter(|r| a.text(r, "PRIVILEGE_TYPE") != "INDEX")
                 .map(|r| {
                     let grantor = a.text(r, "GRANTOR");
                     vec![

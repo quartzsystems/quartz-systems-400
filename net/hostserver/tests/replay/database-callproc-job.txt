@@ -3,6 +3,5 @@ conn 1 req 5 e004/1803 corr 3 reply 1: 3807 136 bytes, oracle 136, differ at 115
 conn 1 req 6 e004/1f00 corr 4 reply 1: 3807 136 bytes, oracle 136, differ at 115
 conn 2 req 11 e004/1805 corr 9 reply 1: 380e 46 bytes, oracle 46, differ at 36-41
 conn 2 req 14 e004/1804 corr 12 reply 1: 3812 134 bytes, oracle 182, differ at 10,51,99,115-117,119-121,125-127,129-181
-conn 2 req 17 e004/1804 corr 15 reply 1: 3812 75 bytes, oracle 123, differ at 10,14-15,19,22-25,27,29,32,51,67-69,71-122
-conn 2 req 18 e004/180b corr 16 reply 1: 380e 32791 bytes, oracle 26, differ at 18-19,23-32790
+conn 2 req 17 e004/1804 corr 15 reply 1: 3812 75 bytes, oracle 123, differ at 10,32,51,67-69,71-122
 25 replies compared

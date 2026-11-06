@@ -1083,6 +1083,7 @@ nullable; the nullable type is one more):
 | `500` | `SMALLINT` |
 | `908` | `VARBINARY` |
 | `912` | `BINARY` |
+| `968` | `DBCLOB_LOCATOR` |
 
 <!-- server-consts: dtaq::rc -->
 
@@ -1211,7 +1212,14 @@ The metadata calls `SYSIBM.SQLTABLES`, `SQLCOLUMNS` (and the other
 `SYSIBM` catalog procedures, answered empty) are answered by the server
 from `QSYS2.SYSTABLES` and `QSYS2.SYSCOLUMNS` in the JDBC shapes;
 another `CALL` answers SQL0204 (QS/400 has no stored procedures of its
-own yet). LOBs are refused (`-84`).
+own yet). LOBs are refused (`-84`), except the one locator column the
+catalog answers carry: `SQLSTATISTICS`' `COLUMN_NAME` is a `DBCLOB`
+locator in CCSID 1200 (type 968, LOB size 2 MiB in the format, JDBC's
+`NCLOB`) as on the primary; the row holds a handle (`0x100`, `0x200`,
+... numbered again for each catalog result), retrieve LOB data
+(`0x1816`) answers `0x3810` (the size of the length, 4, then the length
+in characters) and `0x380F` (CCSID 1200, the length, UTF-16), free LOB
+(`0x1819`) drops the handle (`net/hostserver/src/database/lob.rs`).
 
 Extended dynamic packages (`*SQLPKG`, `docs/DB_FORMAT.md` §9) are kept
 as the primary keeps them for JTOpen (`extended dynamic=true`;

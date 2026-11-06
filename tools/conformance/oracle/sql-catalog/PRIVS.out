@@ -1,0 +1,34 @@
+-- captured from primary 2026-11-06 (tools/conformance/jtopen/src/SqlProbe.java primary PRIVS.sql); message texts dropped
+> CREATE TABLE QSTEST.QSPRIV (ID INTEGER NOT NULL PRIMARY KEY, NAME VARCHAR(10))
+  warning 7905 01567 SQL7905
+  sqlcode 0 count 0
+> CALL QSYS.QCMDEXC('DSPOBJAUT OBJ(QSTEST/QSPRIV) OBJTYPE(*FILE) OUTPUT(*OUTFILE) OUTFILE(QSTEST/QSPRIVA)', 0000000084.00000)
+  sqlcode 0 count 0
+> SELECT OAUSR, OAOBJA, OAOPR, OAREAD, OAADD, OAUPD, OADLT FROM QSTEST.QSPRIVA ORDER BY OAUSR
+  cols | OAUSR CHAR(10,0) NN | OAOBJA CHAR(8,0) NN | OAOPR CHAR(1,0) NN | OAREAD CHAR(1,0) NN | OAADD CHAR(1,0) NN | OAUPD CHAR(1,0) NN | OADLT CHAR(1,0) NN
+  row | '*PUBLIC   ' | '*EXCLUDE' | ' ' | ' ' | ' ' | ' ' | ' '
+  row | '{user}   ' | '*ALL    ' | 'X' | 'X' | 'X' | 'X' | 'X'
+> CALL SYSIBM.SQLTABLEPRIVILEGES(NULL, 'QSTEST', 'QSPRIV', 'DATATYPE=''JDBC'';REPORTPUBLICPRIVILEGES=1')
+  warning 466 0100C SQL0466
+  cols | TABLE_CAT VARCHAR(128,0) NN | TABLE_SCHEM VARCHAR(128,0) NN | TABLE_NAME VARCHAR(128,0) NN | GRANTOR VARCHAR(128,0) | GRANTEE VARCHAR(128,0) NN | PRIVILEGE VARCHAR(10,0) NN | IS_GRANTABLE VARCHAR(3,0) NN
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | - | '{user}' | 'ALTER' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | - | '{user}' | 'DELETE' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | - | '{user}' | 'INSERT' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | - | '{user}' | 'REFERENCES' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | - | '{user}' | 'SELECT' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | - | '{user}' | 'UPDATE' | 'YES'
+> CALL SYSIBM.SQLCOLPRIVILEGES(NULL, 'QSTEST', 'QSPRIV', '%', 'DATATYPE=''JDBC'';REPORTPUBLICPRIVILEGES=1')
+  warning 466 0100C SQL0466
+  cols | TABLE_CAT VARCHAR(128,0) NN | TABLE_SCHEM VARCHAR(128,0) NN | TABLE_NAME VARCHAR(128,0) NN | COLUMN_NAME VARCHAR(128,0) NN | GRANTOR VARCHAR(128,0) | GRANTEE VARCHAR(128,0) NN | PRIVILEGE VARCHAR(10,0) NN | IS_GRANTABLE VARCHAR(3,0) NN
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | 'ID' | - | '{user}' | 'INSERT' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | 'ID' | - | '{user}' | 'REFERENCES' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | 'ID' | - | '{user}' | 'SELECT' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | 'ID' | - | '{user}' | 'UPDATE' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | 'NAME' | - | '{user}' | 'INSERT' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | 'NAME' | - | '{user}' | 'REFERENCES' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | 'NAME' | - | '{user}' | 'SELECT' | 'YES'
+  row | 'S062B175' | 'QSTEST' | 'QSPRIV' | 'NAME' | - | '{user}' | 'UPDATE' | 'YES'
+> DROP TABLE QSTEST.QSPRIV
+  sqlcode 0 count 0
+> DROP TABLE QSTEST.QSPRIVA
+  sqlcode 0 count 0

@@ -31,6 +31,7 @@ pub mod sqltype {
     pub const SMALLINT: u16 = 500;
     pub const VARBINARY: u16 = 908;
     pub const BINARY: u16 = 912;
+    pub const DBCLOB_LOCATOR: u16 = 968;
 }
 
 /// A column or parameter marker.
@@ -80,6 +81,8 @@ impl ColType {
             sqltype::TIME => (8, 8, 0, 37),
             sqltype::TIMESTAMP => (26, 26, 0, 37),
             sqltype::VARBINARY => (n + 2, n, 0, 65535),
+            // A handle; the text in CCSID 1200 (JDBC's NCLOB).
+            sqltype::DBCLOB_LOCATOR => (4, 0, 9, 1200),
             _ => (n, n, 0, 65535),
         };
         Self {
@@ -187,6 +190,7 @@ pub fn encode(v: &Value, c: &ColType) -> Vec<u8> {
             out
         }
         sqltype::BINARY => bytes_of(v),
+        sqltype::DBCLOB_LOCATOR => u32::try_from(v.as_i64().unwrap_or(0)).unwrap_or(0).to_be_bytes().to_vec(),
         sqltype::VARCHAR | sqltype::LONGVARCHAR | sqltype::VARGRAPHIC => {
             let mut b = if c.graphic() {
                 text::utf16(&text_of(v, c))

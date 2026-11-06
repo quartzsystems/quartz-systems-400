@@ -173,7 +173,7 @@ pub fn jdbc_type(t: &str) -> (i64, &'static str) {
 
 /// A column of a catalog result: its name and shape (`v` VARCHAR, `g`
 /// VARGRAPHIC, `c` CHAR, all with a length; `s` SMALLINT, `i` INTEGER,
-/// `b` BIGINT), and whether it may be null.
+/// `b` BIGINT, `n` an NCLOB locator), and whether it may be null.
 type Spec = (&'static str, char, u32, bool);
 
 fn col(&(name, kind, n, null): &Spec) -> ColType {
@@ -184,6 +184,7 @@ fn col(&(name, kind, n, null): &Spec) -> ColType {
             c.ccsid = 1200;
             c
         }
+        'n' => t(sqltype::DBCLOB_LOCATOR, 4),
         'c' => t(sqltype::CHAR, i64::from(n)),
         's' => t(sqltype::SMALLINT, 2),
         'i' => t(sqltype::INTEGER, 4),
@@ -300,7 +301,7 @@ const STATISTICS: &[Spec] = &[
     ("INDEX_NAME", 'v', 128, true),
     ("TYPE", 's', 0, false),
     ("ORDINAL_POSITION", 's', 0, true),
-    ("COLUMN_NAME", 'g', 2000, true),
+    ("COLUMN_NAME", 'n', 0, true),
     ("ASC_OR_DESC", 'c', 1, true),
     ("CARDINALITY", 'b', 0, true),
     ("PAGES", 'b', 0, true),
@@ -425,6 +426,7 @@ pub fn answer(c: &Call, args: &[Option<String>], rdb: &str, query: &mut dyn FnMu
             }
             run(STATISTICS, &select("SQLSTATISTICS", STATISTICS, &w, "NON_UNIQUE, TYPE, INDEX_QUALIFIER, INDEX_NAME, ORDINAL_POSITION"), rdb, query)
         }
+        "SQLSPECIALCOLUMNS" if a(0).as_deref().map(str::trim) == Some("2") => version_columns(a(2).as_deref(), a(3).as_deref(), rdb, query),
         "SQLSPECIALCOLUMNS" => {
             // Columns whose scope lasts at least as long as asked for.
             let scope = a(4).as_deref().and_then(|x| x.trim().parse::<i64>().ok()).unwrap_or(0);
@@ -436,7 +438,8 @@ pub fn answer(c: &Call, args: &[Option<String>], rdb: &str, query: &mut dyn FnMu
             run(PRIVILEGES, &select("SQLTABLEPRIVILEGES", PRIVILEGES, &w, "TABLE_SCHEM, TABLE_NAME, PRIVILEGE"), rdb, query)
         }
         "SQLCOLPRIVILEGES" => col_privileges(a(1).as_deref(), a(2).as_deref(), a(3).as_deref(), rdb, query),
-        "SQLGETTYPEINFO" => run(TYPEINFO, &select("SQLTYPEINFO", TYPEINFO, &[], "JDBC_DATA_TYPE, TYPE_NAME"), rdb, query),
+        // The primary's order (jtopen/expected/oracle/metadata.out).
+        "SQLGETTYPEINFO" => run(TYPEINFO, &select("SQLTYPEINFO", TYPEINFO, &[], "JDBC_DATA_TYPE, I_DATA_TYPE, DATA_TYPE, TYPE_NAME DESC"), rdb, query),
         "SQLPROCEDURES" => routines(false, a(1).as_deref(), a(2).as_deref(), rdb, query),
         "SQLFUNCTIONS" => routines(true, a(1).as_deref(), a(2).as_deref(), rdb, query),
         _ => empty(&c.name),
@@ -466,6 +469,25 @@ fn tables(a: &dyn Fn(usize) -> Option<String>, rdb: &str, query: &mut dyn FnMut(
     let tf = (!types.is_empty()).then(|| format!("TABLE_TYPE IN ({})", types.join(", ")));
     let w = [filter("TABLE_SCHEM", a(1).as_deref()), filter("TABLE_NAME", a(2).as_deref()), tf];
     run(TABLES, &select("SQLTABLES", TABLES, &w, "TABLE_TYPE, TABLE_SCHEM, TABLE_NAME"), rdb, query)
+}
+
+/// `SQLSPECIALCOLUMNS` for identifier type 2 (JDBC's version columns):
+/// the row change timestamp columns, a table without one has none
+/// (oracle/sql-catalog/PRIVG); the scope is null.
+fn version_columns(schema: Option<&str>, table: Option<&str>, rdb: &str, query: &mut dyn FnMut(&str) -> Vec<Vec<Value>>) -> Rows {
+    let (Some(schema), Some(table)) = (schema, table) else {
+        return run(SPECIAL, "", rdb, &mut |_| Vec::new());
+    };
+    let q = format!(
+        "SELECT CAST(NULL AS SMALLINT), COLUMN_NAME, JDBC_DATA_TYPE, TYPE_NAME, COLUMN_SIZE, BUFFER_LENGTH, DECIMAL_DIGITS, 1 FROM SYSIBM.SQLCOLUMNS \
+         WHERE TABLE_SCHEM = {s} AND TABLE_NAME = {t} AND COLUMN_NAME IN (SELECT COLUMN_NAME FROM QSYS2.SYSCOLUMNS WHERE TABLE_SCHEMA = {s} AND TABLE_NAME = {t} AND HAS_DEFAULT = 'E') \
+         ORDER BY ORDINAL_POSITION",
+        s = lit(schema.trim()),
+        t = lit(table.trim())
+    );
+    let mut r = run(SPECIAL, &q, rdb, query);
+    r.cols[0].null = true;
+    r
 }
 
 /// `SQLCOLPRIVILEGES`: the store keeps no column privileges, so each
