@@ -87,3 +87,7 @@ OPTION = "Whether a listing of the statement is printed when the statement fails
 [RUNSQLSTM]
 OPTION = "Whether the listing of the statements is printed."
 USRPRF = "The user profile the statements run under: the user's, the owner's, or the one the naming convention implies."
+
+[ENDSBS]
+BCHTIMLMT = "How long, in minutes, the system stays in the batch restricted state. With SBS(*ALL), run from a batch job that came from a job queue of the controlling subsystem, every subsystem ends and that job alone keeps running. When it ends, or its time runs out and the system ends it, the controlling subsystem starts again. A batch job of the controlling subsystem cannot end every subsystem without it, and no other job may give it."
+"BCHTIMLMT.*NOMAX" = "No limit: the state lasts until the job ends."

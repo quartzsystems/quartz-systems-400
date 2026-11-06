@@ -177,6 +177,7 @@ impl Asp {
             ifs_map: None,
             ifs_pages: 0,
             spares: Vec::new(),
+            threshold: superblock::DEFAULT_THRESHOLD,
         };
         // The WAL of a store that used these units before would replay
         // into this one: its pages carry the sequence numbers this one

@@ -1145,6 +1145,10 @@ impl Service for Served<'_> {
         msgs::take_breaks(self.system, self.ctx.job.number)
     }
 
+    fn arb_tick(&mut self) -> Vec<String> {
+        super::arb::tick(self.system)
+    }
+
     fn sbs_check(&mut self, name: String) -> Result<(String, Vec<u8>), String> {
         super::sbs::check(self.system, &name)
     }
@@ -1453,7 +1457,7 @@ impl Service for Served<'_> {
 
     fn sbs_end(&mut self, name: String, immediate: bool, delay: u32) -> Result<(), String> {
         self.system.current_job = self.ctx.job.number;
-        super::sbs::end(self.system, &name, immediate, delay).map(|_| ())
+        super::sbs::end(self.system, &name, immediate, delay, None).map(|_| ())
     }
 
     fn wm_object(&mut self, qual: String, ty: String) -> Result<Vec<u8>, String> {

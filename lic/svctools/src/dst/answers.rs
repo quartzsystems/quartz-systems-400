@@ -47,7 +47,11 @@ pub const NO_COD: &str = "This system has no capacity on demand; every processor
 /// SST's diskette data recovery.
 pub const NO_DISKETTE: &str = "This system has no diskette unit";
 
-/// DST's option 14.
+/// DST's option 14. `ENDSBS *ALL BCHTIMLMT()` puts a running system in
+/// batch restricted state, but DST runs only while the IPL has not
+/// started the operating system, and an IPL ends that state: at DST
+/// the system is never in it. On the running system the state ends
+/// with its job, its time limit, or the job ended from the console.
 pub const NOT_RESTRICTED: &str = "The system is not in batch restricted state";
 
 /// Device concurrent maintenance: disks come and go while the system

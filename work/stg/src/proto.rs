@@ -868,6 +868,11 @@ ipc::rpc! {
     /// `QDBFSTCCOL`'s pass: the column statistics asked for and those
     /// gone stale collected; the lines for the log.
     1495 => fn stats_tick / StatsTick () -> Vec<String>;
+    // --- the system arbiter's watch (1496; storage thresholds, power)
+    /// `QSYSARB5`'s pass: the system ASP against its threshold and
+    /// `QSTGLOWLMT`, the power supply, the batch restricted state's
+    /// time; the commands the job is to run as `QSYS`.
+    1496 => fn arb_tick / ArbTick () -> Vec<String>;
 }
 
 /// What `machine` answers. Each string is empty when unknown.

@@ -17,7 +17,9 @@
 //!   OPTION(*CNTRLD)`, `reboot` adds `RESTART(*YES)`; as the QEMU agent,
 //!   a shutdown that starts sends no reply;
 //! - `qs400-get-status`: the release, IPL state, mode, type and the last
-//!   SRC with its text.
+//!   SRC with its text;
+//! - `qs400-set-power-source`: `source` `utility` or `battery`, and
+//!   `battery-low`, from the host's UPS daemon (`ups`).
 //!
 //! Anything else is `CommandNotFound`; a request that is not JSON or has
 //! no `execute` is a `GenericError`. Replies carry the request's `id`
@@ -45,6 +47,7 @@ pub const COMMANDS: &[&str] = &[
     "guest-fsfreeze-status",
     "guest-shutdown",
     "qs400-get-status",
+    "qs400-set-power-source",
 ];
 
 /// Commands that send no reply when they succeed.
@@ -168,6 +171,7 @@ impl<G: Guest> Agent<G> {
                     "ipl-time": s.ipl_time,
                 })
             }
+            "qs400-set-power-source" => return self.power(args),
             _ => return Err(error("CommandNotFound", &format!("The command {cmd} has not been found"))),
         };
         Ok(Some(r))
@@ -236,6 +240,19 @@ impl<G: Guest> Agent<G> {
             })
             .collect();
         json!(v)
+    }
+
+    fn power(&mut self, args: &Map<String, Value>) -> Result<Option<Value>, Value> {
+        let on_battery = match args.get("source").and_then(Value::as_str) {
+            Some("utility") => false,
+            Some("battery") => true,
+            Some(s) => return Err(error("GenericError", &format!("Parameter 'source' does not accept value '{s}'"))),
+            None => return Err(error("GenericError", "Parameter 'source' is missing")),
+        };
+        let battery_low = args.get("battery-low").and_then(Value::as_bool).unwrap_or(false);
+        let p = crate::ups::Power { on_battery, battery_low };
+        self.guest.set_power(p).map_err(|e| error("GenericError", &e))?;
+        Ok(Some(json!({})))
     }
 
     fn shutdown(&mut self, args: &Map<String, Value>) -> Result<Option<Value>, Value> {

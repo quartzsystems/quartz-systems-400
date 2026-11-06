@@ -76,7 +76,11 @@ const OFF_WORK_DONE: usize = 176;
 const OFF_IFS_MAP: usize = 184;
 const OFF_IFS_PAGES: usize = 192;
 const OFF_SPARE_COUNT: usize = 200;
+const OFF_THRESHOLD: usize = 201;
 const OFF_SPARES: usize = 208;
+
+/// The ASP threshold when the superblock records none, percent.
+pub const DEFAULT_THRESHOLD: u8 = 90;
 
 /// Most hot spares an ASP keeps (§4, hot spares).
 pub const MAX_SPARES: usize = 3;
@@ -130,7 +134,8 @@ pub static LAYOUT: Layout = Layout {
         field("ifs_map", OFF_IFS_MAP, 8),
         field("ifs_pages", OFF_IFS_PAGES, 8),
         field("spare_count", OFF_SPARE_COUNT, 1),
-        field("reserved4", 201, 7),
+        field("threshold", OFF_THRESHOLD, 1),
+        field("reserved4", 202, 6),
         field("spares", OFF_SPARES, 16 * MAX_SPARES),
     ],
 };
@@ -282,6 +287,9 @@ pub struct Superblock {
     pub ifs_pages: u64,
     /// Unit UUIDs of the hot spares, at most [`MAX_SPARES`].
     pub spares: Vec<[u8; 16]>,
+    /// The ASP threshold, percent used (1 to 100); 0 on disk is
+    /// [`DEFAULT_THRESHOLD`].
+    pub threshold: u8,
 }
 
 fn opt(v: u64) -> Option<PageNo> {
@@ -348,6 +356,7 @@ impl Superblock {
         put_u64(body, OFF_IFS_PAGES, self.ifs_pages);
         assert!(self.spares.len() <= MAX_SPARES, "too many hot spares");
         body[OFF_SPARE_COUNT] = u8::try_from(self.spares.len()).expect("checked");
+        body[OFF_THRESHOLD] = if self.threshold == DEFAULT_THRESHOLD { 0 } else { self.threshold.min(100) };
         for (i, u) in self.spares.iter().enumerate() {
             let at = OFF_SPARES + 16 * i;
             body[at..at + 16].copy_from_slice(u);
@@ -445,6 +454,10 @@ impl Superblock {
             ifs_map: opt(get_u64(body, OFF_IFS_MAP)),
             ifs_pages: get_u64(body, OFF_IFS_PAGES),
             spares,
+            threshold: match body[OFF_THRESHOLD] {
+                0 => DEFAULT_THRESHOLD,
+                t => t.min(100),
+            },
         })
     }
 }
@@ -553,6 +566,7 @@ mod tests {
             ifs_map: Some(46),
             ifs_pages: 262_144,
             spares: vec![[9; 16], [10; 16]],
+            threshold: 85,
         };
         sb.update_protection();
         assert_eq!(sb.protection, PROTECTION_MIRRORED | PROTECTION_PARITY);
@@ -564,9 +578,13 @@ mod tests {
         assert!(!back.flag(FLAG_NEEDS_RECOVERY));
         assert_eq!(back.units[0].serial_text(), "QM00001");
         assert_eq!(back.units[2].serial_text(), "03".repeat(16));
-        // A version 2 superblock written before hot spares: no spares.
+        assert_eq!(back.threshold, 85);
+        // A version 2 superblock written before hot spares and the
+        // threshold: no spares, the default threshold.
         body[OFF_SPARE_COUNT..HEADER_LEN].fill(0);
-        assert!(Superblock::decode(&body, 1).unwrap().spares.is_empty());
+        let old = Superblock::decode(&body, 1).unwrap();
+        assert!(old.spares.is_empty());
+        assert_eq!(old.threshold, DEFAULT_THRESHOLD);
         body[OFF_SPARE_COUNT] = 4;
         assert!(Superblock::decode(&body, 1).is_err());
         put_u16(&mut body, OFF_UNIT_COUNT, 0);

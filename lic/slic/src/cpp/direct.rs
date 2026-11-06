@@ -194,6 +194,11 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             let sv = parms.name("SYSVAL");
             // Not through the `sysval` line: a blank VALUE would read as a display.
             let out = crate::svc::sysval_set(system, &sv, &parms.text("VALUE"));
+            if out.starts_with("CPF1076") {
+                let mut r = escape_with("CPF1076", &[(&sv, 10)]);
+                r.text = out;
+                return Some(r);
+            }
             finish(out, name, "CPI9C01", &[(&sv, 10)])
         }
         "WRKSYSVAL" => wrksysval(system, &parms.name("SYSVAL")),

@@ -1387,7 +1387,7 @@ name = "QUPSDLYTIM"
 type = "list"
 len = 10
 elems = 2
-default = ["*CALC"]
+default = ["*CALC", "200"]
 text = "Seconds to wait on battery power before powering down"
 group = "SYSCTL"
 

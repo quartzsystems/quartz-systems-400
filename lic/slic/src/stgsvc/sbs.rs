@@ -166,6 +166,7 @@ pub fn wm_object(system: &mut System, qual: &str, ty: &str) -> Result<Vec<u8>, S
 /// A subsystem that may start: its library and description.
 pub fn check(system: &mut System, name: &str) -> Result<(String, Vec<u8>), String> {
     super::security::require(sec::profile::SpecialAuth::JOBCTL, "start a subsystem")?;
+    storage_allows(system)?;
     let name = name.to_ascii_uppercase();
     let bare = wm::obj::params::qualified(&name).1;
     if let Some(a) = system.sbs.get(&bare) {
@@ -187,6 +188,18 @@ pub fn check(system: &mut System, name: &str) -> Result<(String, Vec<u8>), Strin
     Ok((lib, payload))
 }
 
+/// No subsystem starts while the system ASP is below `QSTGLOWLMT` and
+/// `QSTGLOWACN` is `*REGFAC`, `*ENDSYS` or `*PWRDWNSYS`: `CPI099B` to
+/// the operator, `CPF1050` (at the IPL also `CPI099D`, the system
+/// starting in the restricted state).
+fn storage_allows(system: &mut System) -> Result<(), String> {
+    if !super::arb::storage_restricted(system) {
+        return Ok(());
+    }
+    super::arb::refused_start(system);
+    Err("CPF1050".into())
+}
+
 /// A monitor registers its subsystem: the description.
 pub fn register(
     system: &mut System,
@@ -197,6 +210,7 @@ pub fn register(
     if system.sbs.contains_key(name) {
         return Err(format!("CPF1010 subsystem {name} is active"));
     }
+    storage_allows(system)?;
     let payload = wm_object(system, &format!("{lib}/{name}"), "*SBSD")?;
     let d = Sbsd::decode(&payload).map_err(|e| e.to_string())?;
     let pools = d
@@ -259,7 +273,10 @@ pub fn monitor_ended(system: &mut System, monitor: u32) {
 
 /// What the subsystem of monitor `monitor` is to do.
 pub fn state(system: &System, monitor: u32) -> SbsState {
+    let ctl = controlling(system);
+    let mine = system.sbs.get(&ctl).is_some_and(|a| a.monitor == monitor);
     SbsState {
+        keep: system.batch_rstd.filter(|_| mine).map(|(job, _)| job),
         end_jobs: Vec::new(),
         ending: system
             .sbs
@@ -268,6 +285,9 @@ pub fn state(system: &System, monitor: u32) -> SbsState {
             .and_then(|a| a.ending),
     }
 }
+
+/// `BCHTIMLMT(*NOMAX)`'s value.
+pub const BCHTIMLMT_NOMAX: u32 = 999_999;
 
 /// The console display's name: its interactive job outlives every
 /// `ENDSBS`, as the console's does on IBM i.
@@ -293,15 +313,40 @@ pub fn ends_with_subsystem(system: &System, n: u32) -> Option<bool> {
 }
 
 /// `ENDSBS`: `*ALL` ends every subsystem but the controlling one,
-/// which needs `*ALL` to end the last.
-pub fn end(system: &mut System, name: &str, immediate: bool, delay: u32) -> Result<String, String> {
+/// which needs `*ALL` to end the last. `bchtimlmt` (minutes,
+/// `BCHTIMLMT_NOMAX` for `*NOMAX`) is the batch restricted state: only
+/// with `*ALL`, only from a batch job of the controlling subsystem, and
+/// such a job needs it; the job stays, alone, until it ends or the time
+/// runs out (`arb`), and the controlling subsystem starts again.
+pub fn end(
+    system: &mut System,
+    name: &str,
+    immediate: bool,
+    delay: u32,
+    bchtimlmt: Option<u32>,
+) -> Result<String, String> {
     super::security::require(sec::profile::SpecialAuth::JOBCTL, "end a subsystem")?;
     let name = name.to_ascii_uppercase();
     let ctl = controlling(system);
+    let me = system.current_job;
+    let batch_here = system
+        .jobs
+        .get(me)
+        .is_some_and(|j| j.kind == 'B' && j.subsystem == ctl);
+    match (bchtimlmt, name == "*ALL", batch_here) {
+        (Some(_), true, true) | (None, _, false) => {}
+        (None, false, true) if name != ctl => {}
+        _ => return Err("CPF1052".into()),
+    }
     // An interactive job in the controlling subsystem that ends it stays
-    // for the restricted state; any other job of it ends with it.
-    if name == "*ALL" || name == ctl {
-        let me = system.current_job;
+    // for the restricted state, and so does the batch restricted state's
+    // job; any other job of it ends with it.
+    if let Some(minutes) = bchtimlmt {
+        let until = (minutes != BCHTIMLMT_NOMAX)
+            .then(|| crate::ipl::system::now_unix() + u64::from(minutes) * 60);
+        system.batch_rstd = Some((me, until));
+        system.rstd_keep = Some(me);
+    } else if name == "*ALL" || name == ctl {
         system.rstd_keep = system
             .jobs
             .get(me)

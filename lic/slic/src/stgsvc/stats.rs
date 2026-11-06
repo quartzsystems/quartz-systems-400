@@ -654,8 +654,19 @@ pub fn wrksysact(system: &mut System) -> String {
 /// the system ASP, where IBM keeps the IFS (`docs/IFS.md`); pages
 /// device parity holds count in neither figure (`units.rs`).
 fn asp_figures(system: &System) -> (u64, f64, u64) {
-    let Some(s) = system.storage.as_ref() else {
+    if system.storage.is_none() {
         return (0, 0.0, 0);
+    }
+    let (total, used) = asp_bytes(system);
+    let temp = system.temp.as_ref().map_or(0, |_| 64);
+    (total >> 20, exact_percent(used, total), temp)
+}
+
+/// The system ASP's capacity and the bytes in use, as `WRKSYSSTS`
+/// counts them; what the threshold and `QSTGLOWLMT` are measured on.
+pub fn asp_bytes(system: &System) -> (u64, u64) {
+    let Some(s) = system.storage.as_ref() else {
+        return (0, 0);
     };
     let a = s.store.asp();
     let (ifs_size, ifs_used) = super::ifs::partition_capacity(system).unwrap_or((0, 0));
@@ -668,8 +679,7 @@ fn asp_figures(system: &System) -> (u64, f64, u64) {
         .saturating_sub(a.total_free())
         .saturating_sub(held)
         + ifs_used / 4096;
-    let temp = system.temp.as_ref().map_or(0, |_| 64);
-    ((total * 4096) >> 20, exact_percent(used, total), temp)
+    (total * 4096, used * 4096)
 }
 
 /// `part` of `whole` in percent, unrounded: a fresh system's few

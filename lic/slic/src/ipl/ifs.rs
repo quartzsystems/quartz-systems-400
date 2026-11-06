@@ -15,7 +15,6 @@ use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
 use store::Store;
-use store::asp::ifs::ops::DEFAULT_THRESHOLD;
 
 use crate::ipl::storage;
 use crate::ipl::system::{System, now_unix};
@@ -59,7 +58,8 @@ pub fn prepare(system: &mut System, installed: bool) {
     };
     let store = &mut s.store;
     let made = store.ifs_volume().is_empty();
-    if made && let Err(e) = store.ifs_create(DEFAULT_THRESHOLD) {
+    let threshold = store.asp_threshold();
+    if made && let Err(e) = store.ifs_create(threshold) {
         system.out.serial(&format!("slic: IFS not created in ASP 1: {e}\n"));
         system.emit(&src::IFS_NOT_CREATED);
         return;

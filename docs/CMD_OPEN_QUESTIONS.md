@@ -96,7 +96,10 @@ now and what to check.
       not in the 7.1 definition (`CPD0043`); which one needs the
       definitions themselves.
     - `ENDSBS ... DELAY(*NOLIMIT) ... BCHTIMLMT(*NONE)`: one of the two
-      special values is not one on the box (`CPD0076`).
+      special values is not one on the box (`CPD0076`). Settled for
+      V1R1M0: `BCHTIMLMT` has no default and takes 5 to 9999 or `*NOMAX`
+      (`tools/conformance/oracle/rel5/commands-primary.txt`); `ENDSYS`
+      has no `BCHTIMLMT` at all.
     - `ENDJOB ABC/ABC/*` positional: `CPD0017` there, `CPD0012` here.
     - `WRKSPLF SELECT((...)) PERIOD(((...)))`: the box accepts the
       extra parentheses on these two groups and not on others.

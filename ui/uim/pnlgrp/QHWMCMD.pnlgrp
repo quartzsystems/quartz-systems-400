@@ -4975,12 +4975,19 @@ immediate.
 :P.Also accepted&colon. *NOJOBLOG, *CHGPTY, *CHGTSL.
 :EHELP.
 :HELP NAME='ENDSBS/BCHTIMLMT'.Batch time limit (BCHTIMLMT)
-:P.The batch time limit for this command.
+:P.How long, in minutes, the system stays in the batch restricted state.
+With SBS(*ALL), run from a batch job that came from a job queue of the
+controlling subsystem, every subsystem ends and that job alone keeps
+running. When it ends, or its time runs out and the system ends it, the
+controlling subsystem starts again. A batch job of the controlling
+subsystem cannot end every subsystem without it, and no other job may
+give it.
+:P.The prompt shows this parameter after F10 (Additional parameters).
 :PARML.
-:PT.:PK DEF.*NONE:EPK.
-:PD.None.
+:PT.:PK.*NOMAX:EPK.
+:PD.No limit&colon. the state lasts until the job ends.
 :PT.:PV.number:EPV.
-:PD.Type a whole number. The value must be from 1 to 99999.
+:PD.Type a whole number. The value must be from 5 to 9999.
 :EPARML.
 :EHELP.
 :HELP NAME=ENDSYS.End System (ENDSYS)
@@ -5015,15 +5022,6 @@ immediate.
 :PD.The default value.
 :EPARML.
 :P.Also accepted&colon. *NOJOBLOG, *CHGPTY, *CHGTSL.
-:EHELP.
-:HELP NAME='ENDSYS/BCHTIMLMT'.Batch time limit (BCHTIMLMT)
-:P.The batch time limit for this command.
-:PARML.
-:PT.:PK DEF.*NONE:EPK.
-:PD.None.
-:PT.:PV.number:EPV.
-:PD.Type a whole number. The value must be from 1 to 99999.
-:EPARML.
 :EHELP.
 :HELP NAME=HLDJOB.Hold Job (HLDJOB)
 :P.Use the Hold Job (HLDJOB) command to hold a job, and its spooled

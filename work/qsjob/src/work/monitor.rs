@@ -82,7 +82,8 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         m.end_requested(&state.end_jobs);
         if let Some((immediate, delay)) = state.ending {
             stg::remote::status(&m.link, wm::job::Status::Deqw, "END-SBS");
-            m.end_all(immediate, delay);
+            m.end_all(immediate, delay, state.keep);
+            m.wait_kept();
             let _ = ctl.send(&FromJob::Ending {
                 reason: format!("subsystem {} ended", m.name),
             });
@@ -347,7 +348,34 @@ impl Monitor {
     /// End every job: a controlled end asks them and waits `delay`
     /// seconds (0 waits as long as they take); then, or at once for
     /// `*IMMED`, the immediate end, and after `QENDJOBLMT` the kill.
-    fn end_all(&mut self, immediate: bool, delay: u32) {
+    fn end_all(&mut self, immediate: bool, delay: u32, keep: Option<u32>) {
+        // The batch restricted state's job stays out of it.
+        let kept: Vec<Spawned> = match keep {
+            Some(n) => {
+                let (k, rest) = std::mem::take(&mut self.jobs)
+                    .into_iter()
+                    .partition(|s| s.start.number == n);
+                self.jobs = rest;
+                k
+            }
+            None => Vec::new(),
+        };
+        self.end_all_jobs(immediate, delay);
+        self.jobs = kept;
+    }
+
+    /// The subsystem ending to a single job: wait for it, passing on
+    /// `ENDJOB` (the batch restricted state's time running out).
+    fn wait_kept(&mut self) {
+        while !self.jobs.is_empty() {
+            std::thread::sleep(TICK);
+            self.reap();
+            let state = self.link.borrow_mut().with(Client::sbs_state);
+            self.end_requested(&state.end_jobs);
+        }
+    }
+
+    fn end_all_jobs(&mut self, immediate: bool, delay: u32) {
         if !immediate {
             for s in &mut self.jobs {
                 let _ = s.chan.send(&ToJob::End { immediate: false });

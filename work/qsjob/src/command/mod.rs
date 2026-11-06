@@ -357,8 +357,7 @@ fn service_dump(job: &mut Job, host: &Host, cmd: &str, detail: &str) {
         _ => !system_job,
     };
     if wanted {
-        let text = [cmd, detail, "", &job.dump(false)].join("
-");
+        let text = [cmd, detail, "", &job.dump(false)].join("\n");
         let _ = job.spool_text("QPSRVDMP", &text);
     }
 }

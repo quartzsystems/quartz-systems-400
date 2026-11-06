@@ -15,6 +15,7 @@ mod clock;
 mod error;
 mod store;
 pub mod tz;
+pub mod ups;
 mod value;
 
 pub use catalog::{Catalog, Entry, Group, Kind};

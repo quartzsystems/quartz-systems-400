@@ -155,7 +155,7 @@ the words are Quartz's:
 | DST 10 remote service support | 1 displays the status (never active); 2 and 4: no ECS line; 3: not active |
 | DST 11, SST 5 system partitions | `Logical Partitioning Environment Not Supported`: one system on its hardware |
 | DST 12.2, 12.3 temporary and permanent capacity | no capacity on demand; every processor is active |
-| DST 14 end batch restricted state | the system is never in batch restricted state |
+| DST 14 end batch restricted state | DST runs before the operating system starts and an IPL ends batch restricted state (`ENDSBS *ALL BCHTIMLMT()`), so at DST the system is never in it; on the running system it ends with its job, its time limit, or `ENDJOB` of the job from the console |
 | Disk units 3 problem recovery, 4 tracing | no IOP or IOA to recover or trace |
 | Disk configuration 6 checksum protection | not supported (gone from IBM i before V7R1) |
 | Disk configuration 7 compression | no unit is capable of compression |

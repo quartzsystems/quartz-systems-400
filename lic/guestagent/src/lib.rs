@@ -16,6 +16,7 @@
 //! - [`facts`]: what the agent reports, as plain data.
 //! - [`status`]: the state file `slic` keeps for it.
 //! - [`port`]: finding the agent's virtio-serial port in sysfs.
+//! - [`ups`]: the power supply's state the host reports.
 //! - `linux`: the guest itself and the serve loop (`/init qsga`).
 
 #![forbid(unsafe_code)]
@@ -25,6 +26,7 @@ pub mod facts;
 pub mod framer;
 pub mod port;
 pub mod status;
+pub mod ups;
 
 #[cfg(target_os = "linux")]
 pub mod linux;

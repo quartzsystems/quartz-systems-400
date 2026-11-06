@@ -206,7 +206,7 @@ impl Panel for Threshold {
         s.put(
             ui::BODY_ROW + 2,
             ui::BODY_COL,
-            "An attention code is raised when ASP 1 is fuller than this.",
+            "QSYSOPR is sent CPF0907 while ASP 1 is this full or fuller.",
             console::Attr::GREEN,
         );
         s
@@ -214,10 +214,10 @@ impl Panel for Threshold {
 
     fn enter(&mut self, fields: &[String], env: &mut dyn DstEnv) -> Flow {
         let Some(p) = fields.first().and_then(|f| f.trim().parse::<u8>().ok()) else {
-            return Flow::Error("Threshold must be a number from 1 to 100".into());
+            return Flow::Error(crate::dst::disk::reasons::THRESHOLD_RANGE.into());
         };
         if !(1..=100).contains(&p) {
-            return Flow::Error("Threshold must be a number from 1 to 100".into());
+            return Flow::Error(crate::dst::disk::reasons::THRESHOLD_RANGE.into());
         }
         guarded(
             env,

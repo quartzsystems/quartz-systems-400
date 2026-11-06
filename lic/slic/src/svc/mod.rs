@@ -396,6 +396,11 @@ pub(crate) fn sysval_set(system: &mut System, name: &str, value: &str) -> String
     if let Err(e) = sec::sysval::validate(&name, value, journal) {
         return format!("{e}\n");
     }
+    // Remote power-on needs a line or modem the system can be woken
+    // through; QS/400 has none, so only 0 is taken.
+    if name == "QRMTIPL" && value.trim() != "0" {
+        return format!("CPF1076 {name} cannot be 1: this system has no remote power-on line\n");
+    }
     let Some(vals) = system.sysvals.as_mut() else {
         return "System values not loaded\n".to_string();
     };
@@ -425,7 +430,8 @@ pub(crate) fn sysval_set(system: &mut System, name: &str, value: &str) -> String
                 Err(e) => format!("{name} set to {now}{when}, but not saved: {e}\n"),
             }
         }
-        Err(e) => format!("{e}\n"),
+        // IBM's escape for a value the system value does not take.
+        Err(e) => format!("CPF1076 {e}\n"),
     }
 }
 

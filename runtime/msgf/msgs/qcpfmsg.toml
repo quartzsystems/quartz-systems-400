@@ -8673,3 +8673,10 @@ sev = 40
 text = "ENDSBS *ALL is not allowed in this job."
 help = "Ending every subsystem from a batch job needs BCHTIMLMT and a job started from a job queue of the controlling subsystem; BCHTIMLMT is allowed with SBS(*ALL) only."
 vars = []
+
+[[msg]]
+id = "CPF1076"
+sev = 40
+text = "System value &1 does not take the value given."
+help = "The value is outside what the system value allows, or this system cannot act on it (QRMTIPL 1: there is no remote power-on line). Display the system value with WRKSYSVAL to see its values."
+vars = ["*CHAR 10"]

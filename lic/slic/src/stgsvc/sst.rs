@@ -162,7 +162,7 @@ pub fn disk_change(
         "spare-start" => e.start_hot_spare(device).map(|_| unit),
         "spare-stop" => e.stop_hot_spare(device).map(|_| unit),
         "threshold" => u8::try_from(unit)
-            .map_err(|_| "Threshold must be a number from 1 to 100".to_string())
+            .map_err(|_| svctools::dst::disk::reasons::THRESHOLD_RANGE.to_string())
             .and_then(|p| e.set_asp_threshold(p))
             .map(|()| unit),
         other => Err(format!("{other} is not a disk change")),

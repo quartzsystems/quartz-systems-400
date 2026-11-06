@@ -15,6 +15,7 @@ use serde_json::Value;
 struct Mem {
     stopped: Vec<Stop>,
     refuse: bool,
+    power: Vec<guestagent::ups::Power>,
 }
 
 impl Guest for Mem {
@@ -89,6 +90,10 @@ impl Guest for Mem {
             return Err("The system cannot power down now (state ipl)".into());
         }
         self.stopped.push(how);
+        Ok(())
+    }
+    fn set_power(&mut self, power: guestagent::ups::Power) -> Result<(), String> {
+        self.power.push(power);
         Ok(())
     }
 }
@@ -193,4 +198,17 @@ fn errors() {
     // Requests split across reads, two in one read.
     assert!(a.feed(br#"{"execute":"guest-pi"#).is_empty());
     assert_eq!(replies(&a.feed(b"ng\"}{\"execute\":\"guest-ping\"}")).len(), 2);
+}
+
+#[test]
+fn power_source() {
+    let mut a = Agent::new(Mem::default());
+    let r = one(&mut a, r#"{"execute":"qs400-set-power-source","arguments":{"source":"battery"}}"#);
+    assert_eq!(r["return"], serde_json::json!({}));
+    one(&mut a, r#"{"execute":"qs400-set-power-source","arguments":{"source":"battery","battery-low":true}}"#);
+    one(&mut a, r#"{"execute":"qs400-set-power-source","arguments":{"source":"utility"}}"#);
+    let e = one(&mut a, r#"{"execute":"qs400-set-power-source","arguments":{"source":"solar"}}"#);
+    assert_eq!(e["error"]["class"], "GenericError");
+    let p = |on_battery, battery_low| guestagent::ups::Power { on_battery, battery_low };
+    assert_eq!(a.guest().power, vec![p(true, false), p(true, true), p(false, false)]);
 }

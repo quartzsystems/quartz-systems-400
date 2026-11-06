@@ -40,6 +40,9 @@ pub const PARITY_NOT_ACTIVE: &str = "The parity set is not active: a unit failed
 pub const NOT_FAILED: &str = "The unit has not failed";
 /// Part of the IFS lives on the unit, and the IFS never moves.
 pub const HOLDS_IFS: &str = "Part of the IFS is on the unit and cannot move";
+/// An ASP threshold outside 1 to 100.
+pub const THRESHOLD_RANGE: &str = "Threshold must be a number from 1 to 100";
+
 /// The IFS cannot grow below the ASP threshold.
 pub const IFS_NO_ROOM: &str = "The ASP has no room for the IFS below its threshold";
 /// The IFS is in its own partition.

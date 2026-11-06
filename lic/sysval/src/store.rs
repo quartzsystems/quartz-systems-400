@@ -199,6 +199,11 @@ impl SysVals {
     /// Change a value as a user: validated, read-only refused. Persist
     /// with `store`/`save` afterwards.
     pub fn set(&mut self, name: &str, value: Value) -> Result<Effect, SysValError> {
+        // The delay in seconds is the system's to fill in.
+        let value = match (name, value) {
+            ("QUPSDLYTIM", Value::List(v)) => Value::List(crate::ups::elements(&v)?),
+            (_, v) => v,
+        };
         let entry = self.entry(name)?;
         if entry.readonly {
             return Err(SysValError::ReadOnly(name.to_string()));

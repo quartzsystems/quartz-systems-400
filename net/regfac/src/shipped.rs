@@ -277,6 +277,16 @@ static ROWS: &[Row] = &[
         Some(("QSYS", "QTVADDP", "QTVRMVP")),
         "Telnet session end",
     ),
+    // Work management: the storage lower limit's *REGFAC action submits
+    // a job that calls these programs, without parameters.
+    row(
+        "QIBM_QWC_QSTGLOWACN",
+        "STGL0100",
+        (false, false),
+        None,
+        Some(("QSYS", "QWCPDAUT", "QWCPDAUT")),
+        "Auxiliary storage lower limit action",
+    ),
     // QAP management (docs/QAP.md, version 7): the host servers' two
     // parameters.
     row(

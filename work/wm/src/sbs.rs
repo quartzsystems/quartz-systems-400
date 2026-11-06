@@ -44,9 +44,12 @@ pub struct SbsState {
     pub ending: Option<(bool, u32)>,
     /// Its jobs `ENDJOB` asked to end: number, and `*IMMED`.
     pub end_jobs: Vec<(u32, bool)>,
+    /// The batch job kept for the batch restricted state: ending the
+    /// subsystem leaves it running and waits for it.
+    pub keep: Option<u32>,
 }
 
-wire_struct!(SbsState { ending, end_jobs });
+wire_struct!(SbsState { ending, end_jobs, keep });
 
 /// A storage pool.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

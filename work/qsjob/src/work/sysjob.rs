@@ -4,7 +4,10 @@
 
 //! The system jobs `slic` starts at IPL (type `SYS`): `QSYSARB` to
 //! `QSYSARB5`, `QLUS`, `QDBSRV01` to `QDBSRV05`, `QSPLMAINT`, `QALERT`,
-//! `QSYSCOMM1`, `QTCPCTL` and `QTCPWRK`. `QSPLMAINT` cleans up spooling
+//! `QSYSCOMM1`, `QTCPCTL` and `QTCPWRK`. `QSYSARB5` has the service
+//! watch the system ASP's threshold and lower limit, the power supply
+//! and the batch restricted state every ten seconds, and runs the
+//! commands it decides on (`stgsvc::arb`). `QSPLMAINT` cleans up spooling
 //! every minute; `QTCPWRK` has the storage service look at the lines
 //! and carriers under TCP/IP's interfaces every few seconds (the state
 //! itself is the service's); `QSYSCOMM1` has the service check the
@@ -40,6 +43,10 @@ const CERTCHK_FIRST: Duration = Duration::from_mins(10);
 /// How often `QSYSCOMM1` checks them after that.
 const CERTCHK: Duration = Duration::from_hours(24);
 
+/// How often `QSYSARB5` looks at storage, power and the batch
+/// restricted state.
+const ARB: Duration = Duration::from_secs(10);
+
 /// How often `QDBFSTCCOL` collects the database statistics due.
 const STCCOL: Duration = Duration::from_mins(1);
 
@@ -67,6 +74,14 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
                 eprintln!("qsjob: QSYSCOMM1: {line}");
             }
             updchk = Instant::now() + UPDCHK;
+        }
+        if start.name == "QSYSARB5" && Instant::now() >= next {
+            status(link, Status::Run, "ARB");
+            for cmd in link.borrow_mut().with(Client::arb_tick) {
+                let out = c.line(&cmd);
+                eprintln!("qsjob: QSYSARB5: {cmd}: {}", out.trim_end());
+            }
+            next = Instant::now() + ARB;
         }
         if start.name == "QDBFSTCCOL" && Instant::now() >= next {
             status(link, Status::Run, "STCCOL");

@@ -131,6 +131,10 @@ impl Guest for LinuxGuest {
         })
     }
 
+    fn set_power(&mut self, power: crate::ups::Power) -> Result<(), String> {
+        std::fs::write(crate::ups::STATE_FILE, power.encode()).map_err(|e| e.to_string())
+    }
+
     fn stop(&mut self, how: Stop) -> Result<(), String> {
         let s = self.status();
         if s.state != "complete" {

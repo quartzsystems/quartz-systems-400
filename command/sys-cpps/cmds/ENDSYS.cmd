@@ -16,6 +16,3 @@
                           MAX(3) DFT(*DFT) VALUES(*NOJOBLOG *CHGPTY +
                           *CHGTSL) SNGVAL((*DFT)) +
                           PROMPT('End subsystem option')
-             PARM       KWD(BCHTIMLMT) TYPE(*INT4) DFT(*NONE) +
-                          RANGE(1 99999) SPCVAL((*NONE 0)) +
-                          PROMPT('Batch time limit')

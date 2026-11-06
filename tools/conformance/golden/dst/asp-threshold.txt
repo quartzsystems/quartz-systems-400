@@ -3,7 +3,7 @@
                                                                                 
  ASP 1 threshold (percent) : 90                                                 
                                                                                 
- An attention code is raised when ASP 1 is fuller than this.                    
+ QSYSOPR is sent CPF0907 while ASP 1 is this full or fuller.                    
                                                                                 
                                                                                 
                                                                                 

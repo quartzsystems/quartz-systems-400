@@ -12,6 +12,7 @@
 //! when its connection closes. `docs/STORAGE_SERVICE.md` has the design.
 
 pub(crate) mod acg;
+pub(crate) mod arb;
 mod census;
 pub(crate) mod certs;
 pub(crate) mod cmn;

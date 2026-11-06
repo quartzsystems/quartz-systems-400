@@ -633,6 +633,22 @@ impl DstEnv for Env<'_> {
         hw().parity_capable()
     }
 
+    fn asp_threshold(&mut self) -> u8 {
+        self.system
+            .storage
+            .as_ref()
+            .map_or(store::asp::superblock::DEFAULT_THRESHOLD, |s| s.store.asp_threshold())
+    }
+
+    fn set_asp_threshold(&mut self, percent: u8) -> Result<(), String> {
+        if !(1..=100).contains(&percent) {
+            return Err(svctools::dst::disk::reasons::THRESHOLD_RANGE.into());
+        }
+        self.store()?
+            .set_asp_threshold(percent)
+            .map_err(refused("Changing the ASP threshold"))
+    }
+
     fn show(&mut self, screen: console::Screen) {
         menu::show(self.system, screen);
     }

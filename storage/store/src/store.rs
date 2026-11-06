@@ -789,6 +789,20 @@ impl Store {
         self.asp.superblock_mut().release = release::RELEASE;
     }
 
+    /// The ASP threshold, percent used (DST and SST, Work with ASP
+    /// threshold).
+    #[must_use]
+    pub fn asp_threshold(&self) -> u8 {
+        self.asp.superblock().threshold
+    }
+
+    /// Change the ASP threshold (1 to 100), checkpointed.
+    pub fn set_asp_threshold(&mut self, percent: u8) -> Result<()> {
+        self.check()?;
+        self.asp.superblock_mut().threshold = percent.clamp(1, 100);
+        self.checkpoint()
+    }
+
     /// Record the `*SYSVAL` object in the superblock.
     pub fn asp_superblock_set_sysval(&mut self, id: ObjectId) {
         self.asp.superblock_mut().sysval = id;

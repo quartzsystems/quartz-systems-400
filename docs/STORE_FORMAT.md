@@ -287,7 +287,8 @@ At offset 0 of the body.
 | 184 | 8 | ifs_map | first IFS map page (§12), 0 when the IFS is not in the ASP |
 | 192 | 8 | ifs_pages | pages of the IFS volume: the sum of its extents |
 | 200 | 1 | spare_count | hot spares listed, 0..3 (§4, hot spares) |
-| 201 | 7 | reserved4 | 0 |
+| 201 | 1 | threshold | the ASP threshold, percent used, 1..100 (DST and SST, Work with ASP threshold; `CPF0907` at it); 0 is the default, 90 |
+| 202 | 6 | reserved4 | 0 |
 | 208 | 48 | spares | `spare_count` unit UUIDs of the hot spares, 16 bytes each; the rest 0 |
 
 The unit table follows at body offset 256: `unit_count` entries, one
@@ -1156,6 +1157,6 @@ From body offset 32, `count` entries, in volume order.
 
 Frozen: the page and its trailer, the unit label, the superblock, the WAL pages and records, B+tree nodes and their key and value codecs, the allocation bitmaps and free log, the parity table and partial-parity log, the IFS map, and the object header with the type codes and the payloads the store itself defines (authority, data areas, data queues, user indexes, system values). The versions are the superblock's and unit's `FORMAT_VERSION` and the object header's `HEADER_VERSION`.
 
-V1R1M0 freezes object header version 2 (with the `sql` link to the object's `*SQLINF`, and the `*SQLINF`/`*SQLUDT` type codes); the superblock and unit stay at version 2. The superblock's hot spare list (`spare_count`, `spares`, §5) takes bytes version 2 left reserved: V1R0M0 wrote them as zeros, which read as no spares, so the version does not move and a V1R0M0 ASP opens unchanged. V1R0M0 wrote object header version 1. A V1R1M0 system reads a version 1 header as an object with no SQL information and writes it as version 2 at its next change, so a slip install from V1R0M0 (`INSTALL.md` §4) converts the store in place without a pass of its own.
+V1R1M0 freezes object header version 2 (with the `sql` link to the object's `*SQLINF`, and the `*SQLINF`/`*SQLUDT` type codes); the superblock and unit stay at version 2. The superblock's hot spare list (`spare_count`, `spares`, §5) and its `threshold` take bytes version 2 left reserved: V1R0M0 wrote them as zeros, which read as no spares and the default threshold, so the version does not move and a V1R0M0 ASP opens unchanged. V1R0M0 wrote object header version 1. A V1R1M0 system reads a version 1 header as an object with no SQL information and writes it as version 2 at its next change, so a slip install from V1R0M0 (`INSTALL.md` §4) converts the store in place without a pass of its own.
 
 Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

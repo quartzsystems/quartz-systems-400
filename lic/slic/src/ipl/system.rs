@@ -122,6 +122,9 @@ pub struct System {
     /// The job that ran `ENDSBS *ALL` from the controlling subsystem
     /// interactively: it stays, as the console's job does.
     pub rstd_keep: Option<u32>,
+    /// Batch restricted state (`ENDSBS *ALL BCHTIMLMT()`): the batch job
+    /// kept, and the Unix second its time runs out (`None`: `*NOMAX`).
+    pub batch_rstd: Option<(u32, Option<u64>)>,
     /// The active jobs (storage service).
     pub jobs: wm::table::JobTable,
     /// Every spooled file (storage service).
@@ -199,6 +202,7 @@ impl System {
             self_ending: std::collections::BTreeSet::new(),
             ended_sbs: std::collections::BTreeSet::new(),
             rstd_keep: None,
+            batch_rstd: None,
             sbs: std::collections::BTreeMap::new(),
             pools: wm::pools::PoolTable::default(),
             break_alloc: std::collections::HashMap::new(),

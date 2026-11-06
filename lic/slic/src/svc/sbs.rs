@@ -202,7 +202,8 @@ fn dspsbsd(system: &mut System, p: &Params) -> Result<String, String> {
     Ok(d.display(&lib, &name, option))
 }
 
-/// `ENDSBS SBS|*ALL [OPTION(*CNTRLD|*IMMED) DELAY(seconds|*NOLIMIT)]`.
+/// `ENDSBS SBS|*ALL [OPTION(*CNTRLD|*IMMED) DELAY(seconds|*NOLIMIT)
+/// BCHTIMLMT(minutes|*NOMAX)]`.
 fn endsbs(system: &mut System, p: &Params) -> Result<String, String> {
     let name = p.pos_or(0, "SBS")?.to_ascii_uppercase();
     let immediate = match p.upper("OPTION").as_deref() {
@@ -214,7 +215,12 @@ fn endsbs(system: &mut System, p: &Params) -> Result<String, String> {
         None | Some("*NOLIMIT") => 0,
         Some(d) => d.parse().map_err(|_| format!("CPD0084 DELAY({d})"))?,
     };
-    sbs::end(system, &name, immediate, delay)
+    let bchtimlmt = match p.upper("BCHTIMLMT").as_deref() {
+        None | Some("") => None,
+        Some("*NOMAX") => Some(sbs::BCHTIMLMT_NOMAX),
+        Some(m) => Some(m.parse().map_err(|_| format!("CPD0084 BCHTIMLMT({m})"))?),
+    };
+    sbs::end(system, &name, immediate, delay, bchtimlmt)
 }
 
 /// `WRKSHRPOOL`.

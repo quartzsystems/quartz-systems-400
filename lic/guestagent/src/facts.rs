@@ -86,4 +86,12 @@ pub trait Guest {
     /// # Errors
     /// The request could not be made.
     fn stop(&mut self, how: Stop) -> Result<(), String>;
+    /// Record what the uninterruptible power supply says.
+    ///
+    /// # Errors
+    /// The state could not be kept.
+    fn set_power(&mut self, power: crate::ups::Power) -> Result<(), String> {
+        let _ = power;
+        Err("The guest keeps no power supply state".into())
+    }
 }

@@ -14,7 +14,6 @@ use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
 use store::asp::ifs::IfsIo;
-use store::asp::ifs::ops::DEFAULT_THRESHOLD;
 use store::{Refusal, StoreError};
 
 use crate::ipl::ifs::{MOUNT_POINT, QOPENSYS_EXEC};
@@ -190,7 +189,8 @@ pub fn grow(system: &mut System, pages: Option<u64>) -> Result<(u64, u64), GrowE
         return Err(GrowError::Failed("the IFS device is not served".into()));
     };
     let want = pages.unwrap_or_else(|| store.ifs_step());
-    let added = store.ifs_grow(want, DEFAULT_THRESHOLD).map_err(|e| match e {
+    let threshold = store.asp_threshold();
+    let added = store.ifs_grow(want, threshold).map_err(|e| match e {
         StoreError::Refused {
             reason: Refusal::IfsNoRoom(room),
             ..
@@ -252,8 +252,8 @@ pub fn report(system: &System) -> String {
         v.pages() * 4096 / MIB,
         v.extents().len(),
         s.store.ifs_step() * 4096 / MIB,
-        s.store.ifs_room(DEFAULT_THRESHOLD) * 4096 / MIB,
-        DEFAULT_THRESHOLD
+        s.store.ifs_room(s.store.asp_threshold()) * 4096 / MIB,
+        s.store.asp_threshold()
     );
     if let Some(sv) = served().as_ref() {
         let _ = writeln!(out, "served as {}", sv.device.block_path().display());
