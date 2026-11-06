@@ -267,16 +267,9 @@ fn read_all(txn: &mut Txn<'_>, id: ObjectId) -> Result<BTreeMap<String, String>,
     Ok(unpack(&bytes))
 }
 
-/// The user the request runs for.
-fn user() -> Result<String, String> {
-    sec::guard::current()
-        .map(|s| s.borrow().principal.user.clone())
-        .ok_or_else(|| "no user".to_string())
-}
-
-/// `isql_session`: the job's user's saved session.
-pub fn session(system: &mut System) -> Option<String> {
-    let u = user().ok()?;
+/// `isql_session`: user `u`'s saved session (the job's current user:
+/// the guard holds no session for these requests).
+pub fn session(system: &mut System, u: &str) -> Option<String> {
     let (store, ctx) = db(system).ok()?;
     let qsys = ctx.qsys;
     sec::guard::as_system(|| {
@@ -284,16 +277,15 @@ pub fn session(system: &mut System) -> Option<String> {
             let Some(id) = space(txn, qsys, false)? else {
                 return Ok(None);
             };
-            Ok(read_all(txn, id)?.remove(&u))
+            Ok(read_all(txn, id)?.remove(u))
         })
     })
     .ok()
     .flatten()
 }
 
-/// `isql_session_put`: the job's user's session stored, or dropped.
-pub fn session_put(system: &mut System, text: Option<&str>) -> Result<(), String> {
-    let u = user()?;
+/// `isql_session_put`: user `u`'s session stored, or dropped.
+pub fn session_put(system: &mut System, u: &str, text: Option<&str>) -> Result<(), String> {
     let (store, ctx) = db(system)?;
     let qsys = ctx.qsys;
     sec::guard::as_system(|| {
@@ -304,10 +296,10 @@ pub fn session_put(system: &mut System, text: Option<&str>) -> Result<(), String
             let mut all = read_all(txn, id)?;
             match text {
                 Some(t) => {
-                    all.insert(u.clone(), t.to_string());
+                    all.insert(u.to_string(), t.to_string());
                 }
                 None => {
-                    all.remove(&u);
+                    all.remove(u);
                 }
             }
             let bytes = pack(&all);

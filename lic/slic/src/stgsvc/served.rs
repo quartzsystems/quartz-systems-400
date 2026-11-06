@@ -2142,11 +2142,13 @@ impl Service for Served<'_> {
     }
 
     fn isql_session(&mut self) -> Option<String> {
-        super::isql::session(self.system)
+        let user = self.ctx.session.borrow().principal.user.clone();
+        super::isql::session(self.system, &user)
     }
 
     fn isql_session_put(&mut self, text: Option<String>) -> Result<(), String> {
-        super::isql::session_put(self.system, text.as_deref())
+        let user = self.ctx.session.borrow().principal.user.clone();
+        super::isql::session_put(self.system, &user, text.as_deref())
     }
 
 
