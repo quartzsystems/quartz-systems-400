@@ -42,6 +42,9 @@ jobs:
     name: rustfmt
     if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
+    # The tree is reformatted once, after the V1R1M0 merges (docs/TOOLS.md);
+    # until then a difference does not fail the run. Remove with the reformat.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Toolchain (rust-toolchain.toml)
