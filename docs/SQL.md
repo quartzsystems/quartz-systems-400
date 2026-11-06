@@ -24,9 +24,9 @@ QS/400 behaviour with no oracle, with the reason.
 the kit; `tools/conformance/sql/known.txt` lists the cases that still
 differ from their oracle.
 
-The work that takes the engine from the Phase 3 subset to this matrix is
-in progress; its plan is the SQL completion brief. Sections below mark
-rows the work has not reached as refused, as the code does today.
+The SQL completion work (2026-11-05/06) took the engine from the Phase 3
+subset to this matrix; the Acceptance section at the end records where it
+stands.
 
 ## 1. Storage of SQL objects
 
@@ -35,7 +35,7 @@ rows the work has not reached as refused, as the code does today.
 | SQL attributes of any object (`*SQLINF`, the header's `sql` link) | supported | `docs/STORE_FORMAT.md` §8-9, `docs/DB_FORMAT.md` §8; store header version 2, version 1 headers read as having none |
 | Library SQL name index | supported | `docs/DB_FORMAT.md` §8.2; schemas in QSYS's |
 | `*SQLUDT` object type | supported (type only) | |
-| `*SQLINF` entry bodies | draft | the `sql-info` format in `tools/fmtcheck` until the work freezes it |
+| `*SQLINF` entry bodies (tags 1 to 18), the trigger buffer, `*SQLPKG` | frozen at V1R2M0 | the `sql-info` and `sql-package` formats in `tools/fmtcheck`; `docs/DB_FORMAT.md` "Frozen at V1R2M0" |
 | Save and restore of `*SQLINF` | supported | save format 2, part 11; a saved library carries its schema name (`saverst/tests/sqlinfo.rs`) |
 
 ## 2. Statements
@@ -532,4 +532,39 @@ million keyed rows).
 
 ## Acceptance
 
-Filled in when the work ends.
+The SQL completion's acceptance list, as it stands at the end of the work
+(2026-11-06). QEMU steps run with `cargo run -p conformance -- --only N`.
+
+| Criterion | Result |
+|---|---|
+| Every statement, clause, function and type in this document passes its case or is listed as refused with its SQLCODE | Met for the rows above: 160 kit cases (118 captured from the primary, 41 from pub400, 1 without an oracle), 106 agree with their capture, 54 differ, each listed in `tools/conformance/sql/known.txt` with whose the difference is; §10 lists every refusal |
+| No SQL0084 for anything marked supported | Met as far as the kit shows: no supported row's case answers SQL0084; refusals are SQL0084 or IBM's own code with a message saying what is not supported |
+| SQL PL: 50 procedures conformant | Met: 44 SQL PL cases create 139 routines on the oracles; 79 procedures are in cases that agree |
+| External RPGLE and CL procedures callable from SQL, JDBC and STRSQL with result sets | Met in the engine and the host server (`qrpgrt::sqlpl`, replay `database-callproc`); on a running system by the QEMU SQL steps (see the open items) |
+| Triggers fire identically from SQL and RPG writes | Met: one trigger machinery under both (`db::trg`, `qrpgrt::sqltrg`); QEMU step for RPG writes (see the open items) |
+| JTOpen `DatabaseMetaData` diff clean; ACS Run SQL Scripts checklist signed off | Primary capture kept (`jtopen/expected/oracle/metadata.out`); the QS/400 side runs in a QEMU step; ACS checklist: NEEDS-CODY |
+| `QSYS2` services: every listed view and function present with oracle-exact columns | Met for about 80 services, every listed one except the procedures in §10; shapes held to pub400 by `sql::service_shapes`; columns QS/400 keeps no value for are null |
+| `QSQCLI` server-mode program runs a prepared statement with parameters | Met in the kit (CLI001-CLI005 agree with pub400, a second session standing in for `QSQSRVR`); on a running system by a QEMU SQL step |
+| DRDA client connects to a second QS/400 and to QSTEST read-only | QSTEST read-only on the primary: met (`conformance::drda_client`); loopback to the guest itself in a QEMU step; two guests: not run |
+| `STRSQL` panels diff clean against pub400 | Met for the 108 captured screens and the 26 statement prompts (`isql`); session save and resume at a real terminal in a QEMU SQL step |
+| Benchmarks recorded; no Phase 3 regression | Met (§11); the database kit's outputs unchanged |
+| `fmtcheck`, slip-install, save/restore round trip | `fmtcheck`: met, `sql-info` and `sql-package` frozen at V1R2M0, store header at version 2 (version 1 headers read); save/restore of `*SQLINF`, `*SQLPKG` and a schema with SQL objects: met in `saverst` tests and QEMU step 71; slip-install from V1R1M0: not run (open items) |
+| The SQL fuzz targets 30 minutes crash-free | Met: `sql` 10.4 million and `sqlrun` 6.9 million executions in 30 instrumented minutes each, no crash |
+
+### QEMU
+
+Regression on the final code: steps 1, 13, 15, 16, 33, 46, 52, 54, 55, 56,
+57, 68, 71, 89, 90, 91, 92, 93 and 100 pass. The SQL steps (130 up) are
+listed with their results below.
+
+### Open items
+
+- Slip-install from V1R1M0: the build still names itself V1R1M0 (the
+  release identity is unchanged); the step upgrades from older media to the
+  current release, so it waits for the next release's name (V1R2M0 is
+  assumed by the format freeze).
+- ACS Run SQL Scripts checklist (NEEDS-CODY).
+- CREATE and DROP SCHEMA have no oracle capture: neither oracle lets a
+  library be created (NEEDS-CODY).
+- The DRDA client against a second QS/400 under QEMU (two guests).
+- Query/400 (`WRKQRY`, `RUNQRY`, product QS00QU1) is a follow-on product.
