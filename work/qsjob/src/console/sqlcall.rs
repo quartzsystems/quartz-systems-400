@@ -68,6 +68,31 @@ pub fn perform(console: &mut Console, plan: &CallPlan) -> Outcome {
     qrpgrt::sqlcall::perform(console.job(), plan)
 }
 
+/// A call a server job does not make: an SQL procedure with an `OUT`
+/// varying character parameter. BLOCKED(sql): in a server job
+/// (QZDASOINIT, step 132 `callproc`) that call ends the job with an
+/// addressing fault, though the same call runs in memory
+/// (`net/hostserver/tests/replay_callproc_job.rs`); `INOUT` decimals,
+/// `IN` parameters and result sets run. Refused SQL0084 until found.
+fn refused(plan: &CallPlan) -> Option<Outcome> {
+    use qrpgrt::value::{Desc as Storage, Kind};
+    use sql::exec::routine::{CallStyle, Called};
+    let varying_out = plan.parms.iter().any(|p| p.mode == 2 && Storage::of(p.desc).kind == Kind::VarChar);
+    (plan.style == CallStyle::SqlRoutine && varying_out).then(|| Outcome {
+        called: Called {
+            seq: plan.seq,
+            max: plan.max_results,
+            sqlcode: -84,
+            sqlstate: "42612".into(),
+            message: format!("CALL of {} from a server job: an OUT varying character parameter is not supported yet", plan.routine),
+            routine: plan.routine.clone(),
+            ..Called::default()
+        },
+        outs: Vec::new(),
+        answer: None,
+    })
+}
+
 /// The job's SQL for a server: statements over the link, calls in the
 /// job's runtime.
 pub struct CallingSql {
@@ -86,7 +111,7 @@ impl CallingSql {
 impl Embedded for CallingSql {
     fn run(&mut self, req: &Request) -> Reply {
         let job = &self.job;
-        let (reply, outs) = run(&self.link, req, |p| perform(&mut job.borrow_mut(), p));
+        let (reply, outs) = run(&self.link, req, |p| refused(p).unwrap_or_else(|| perform(&mut job.borrow_mut(), p)));
         self.outs = outs;
         reply
     }
