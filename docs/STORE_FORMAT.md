@@ -1,7 +1,8 @@
 # QS/400 object store: on-disk format
 
-Format version 2 (version 1 stores are not opened; V1R0M0 test installs
-are reinstalled). This document is written before the code that
+Format version 2, frozen at V1R1M0 (superblock and unit version 2,
+object header version 2; V1R0M0's version 1 object headers are read,
+§8). Version 1 superblocks, from before V1R0M0, are not opened. This document is written before the code that
 implements each structure, and the code's constants are checked against
 the tables here by `storage/store/tests/spec.rs`. Every table under a heading of
 the form `### \`Name\` (N bytes)` is parsed by that test: the heading name
@@ -1120,5 +1121,7 @@ From body offset 32, `count` entries, in volume order.
 ## Frozen at V1R1M0
 
 Frozen: the page and its trailer, the unit label, the superblock, the WAL pages and records, B+tree nodes and their key and value codecs, the allocation bitmaps and free log, the parity table and partial-parity log, the IFS map, and the object header with the type codes and the payloads the store itself defines (authority, data areas, data queues, user indexes, system values). The versions are the superblock's and unit's `FORMAT_VERSION` and the object header's `HEADER_VERSION`.
+
+V1R1M0 freezes object header version 2 (with the `sql` link to the object's `*SQLINF`, and the `*SQLINF`/`*SQLUDT` type codes); the superblock and unit stay at version 2. V1R0M0 wrote object header version 1. A V1R1M0 system reads a version 1 header as an object with no SQL information and writes it as version 2 at its next change, so a slip install from V1R0M0 (`INSTALL.md` §4) converts the store in place without a pass of its own.
 
 Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

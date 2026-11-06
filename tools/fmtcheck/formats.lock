@@ -85,12 +85,12 @@ version = "2"
 hash = "b72809bdaea4a59970f33a5ae766678dcf3d1c1064c5065e44feba85be92a714"
 
 [format.sql-info]
-frozen_at = "V1R2M0"
+frozen_at = "V1R1M0"
 version = "1"
 hash = "6bccde5c3b090cd426ae6ff0b87e9bbe33f38eef94f4d249c6b7611c8004dacc"
 
 [format.sql-package]
-frozen_at = "V1R2M0"
+frozen_at = "V1R1M0"
 version = "1"
 hash = "93289e038536d1d624770652f25953dee8938b931f54c0513ec636b192464cfa"
 

@@ -94,7 +94,7 @@ mod tests {
     fn store_compatibility() {
         let p = |s: &str| s.parse::<Release>().unwrap();
         assert!(p("V1R1M0").is_compatible_store(p("V1R1M3")));
-        assert!(!p("V1R1M0").is_compatible_store(p("V1R2M0")));
+        assert!(!p("V1R0M0").is_compatible_store(p("V1R1M0")));
         assert!(!p("V1R1M0").is_compatible_store(p("V2R1M0")));
     }
 }

@@ -1221,8 +1221,4 @@ Frozen: the `*FILE` attribute and alias payloads, the member and dependents tabl
 
 Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.
 
-## Frozen at V1R2M0
-
-Frozen: the `*SQLINF` attribute and entry header, every entry body of §8.1 (tags 1 to 18), the library SQL name index key (§8.2) and the trigger buffer (§8.3) (`sql-info`); the `*SQLPKG` attribute and statement entries (§9) (`sql-package`). The object header's `sql` link and the `*SQLINF`/`*SQLUDT` types are part of the store format (`docs/STORE_FORMAT.md`), bumped once for this work. Each payload carries its own `VERSION`; a reader skips an entry tag it does not know.
-
-Changes follow the rule above: a version bump with a reader of the old version or a conversion, and a row in the release notes.
+Also frozen at V1R1M0: the `*SQLINF` attribute and entry header, every entry body of §8.1 (tags 1 to 18), the library SQL name index key (§8.2) and the trigger buffer (§8.3) (`sql-info`); the `*SQLPKG` attribute and statement entries (§9) (`sql-package`). The object header's `sql` link and the `*SQLINF`/`*SQLUDT` types are part of the store format (`docs/STORE_FORMAT.md`), bumped once for this work (object header version 2; V1R0M0's version 1 headers read as objects with no SQL information). Each payload carries its own `VERSION`; a reader skips an entry tag it does not know.

@@ -2,7 +2,7 @@
 
 The save stream every `SAV*` command writes and every `RST*` command
 reads, on any medium: a save file, a tape file, a file on an optical
-volume, an install medium, a PTF. Format version 1. This is Quartz's
+volume, an install medium, a PTF. Format version 2 (V1R1M0); version 1 (V1R0M0) is read. This is Quartz's
 own format; IBM save files are not restorable and IBM systems cannot
 read ours.
 
@@ -585,6 +585,6 @@ Record format of `QASRRSTO`, the restore outfile, as IBM i V7R1M0's `DSPFFD` sho
 
 ## Frozen at V1R1M0
 
-Frozen: the media header, records, object descriptors, parts, references, the index and trailer, chunk compression, the content digest and the `QSRSAV`/`QSRRST` outfile layouts. The version is the media header's `VERSION`. A V1R1M0 system restores every save written by V1R0M0, which has the same version.
+Frozen: the media header, records, object descriptors, parts, references, the index and trailer, chunk compression, the content digest and the `QSRSAV`/`QSRRST` outfile layouts. The version is the media header's `VERSION`. V1R1M0 freezes version 2, which adds the `sqlinf` parts (an object's SQL information). V1R0M0 wrote version 1; a V1R1M0 system restores every version 1 save as objects with no SQL information, so a `SAVLIB` made on V1R0M0 restores after a slip install.
 
 Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

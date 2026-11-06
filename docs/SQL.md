@@ -35,7 +35,7 @@ stands.
 | SQL attributes of any object (`*SQLINF`, the header's `sql` link) | supported | `docs/STORE_FORMAT.md` §8-9, `docs/DB_FORMAT.md` §8; store header version 2, version 1 headers read as having none |
 | Library SQL name index | supported | `docs/DB_FORMAT.md` §8.2; schemas in QSYS's |
 | `*SQLUDT` object type | supported (type only) | |
-| `*SQLINF` entry bodies (tags 1 to 18), the trigger buffer, `*SQLPKG` | frozen at V1R2M0 | the `sql-info` and `sql-package` formats in `tools/fmtcheck`; `docs/DB_FORMAT.md` "Frozen at V1R2M0" |
+| `*SQLINF` entry bodies (tags 1 to 18), the trigger buffer, `*SQLPKG` | frozen at V1R1M0 | the `sql-info` and `sql-package` formats in `tools/fmtcheck`; `docs/DB_FORMAT.md` "Frozen at V1R1M0" |
 | Save and restore of `*SQLINF` | supported | save format 2, part 11; a saved library carries its schema name (`saverst/tests/sqlinfo.rs`) |
 
 ## 2. Statements
@@ -549,7 +549,7 @@ The SQL completion's acceptance list, as it stands at the end of the work
 | DRDA client connects to a second QS/400 and to QSTEST read-only | QSTEST read-only on the primary: met (`conformance::drda_client`); loopback to the guest itself in a QEMU step; two guests: not run |
 | `STRSQL` panels diff clean against pub400 | Met for the 108 captured screens and the 26 statement prompts (`isql`); session save and resume at a real terminal in a QEMU SQL step |
 | Benchmarks recorded; no Phase 3 regression | Met (§11); the database kit's outputs unchanged |
-| `fmtcheck`, slip-install, save/restore round trip | `fmtcheck`: met, `sql-info` and `sql-package` frozen at V1R2M0, store header at version 2 (version 1 headers read); save/restore of `*SQLINF`, `*SQLPKG` and a schema with SQL objects: met in `saverst` tests and QEMU step 71; slip-install from V1R1M0: not run (open items) |
+| `fmtcheck`, slip-install, save/restore round trip | `fmtcheck`: met, `sql-info` and `sql-package` frozen at V1R1M0, store header at version 2 (V1R0M0's version 1 headers read); save/restore of `*SQLINF`, `*SQLPKG` and a schema with SQL objects: met in `saverst` tests and QEMU step 71; slip-install from V1R0M0: see `PHASE12.md` Release gate |
 | The SQL fuzz targets 30 minutes crash-free | Met: `sql` 10.4 million and `sqlrun` 6.9 million executions in 30 instrumented minutes each, no crash |
 
 ### QEMU
@@ -583,10 +583,6 @@ Regression on the final code: steps 1, 13, 15, 16, 33, 46, 52, 54, 55, 56,
   (CONNECT and what runs there) are not written.
 - CALL from the command line passes a literal to a CHAR parameter
   unpadded where IBM pads it (`work/qsjob/src/command/jobsite.rs`).
-- Slip-install from V1R1M0: the build still names itself V1R1M0 (the
-  release identity is unchanged); the step upgrades from older media to the
-  current release, so it waits for the next release's name (V1R2M0 is
-  assumed by the format freeze).
 - ACS Run SQL Scripts checklist (NEEDS-CODY).
 - CREATE and DROP SCHEMA have no oracle capture: neither oracle lets a
   library be created (NEEDS-CODY).
