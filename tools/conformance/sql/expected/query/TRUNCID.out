@@ -1,0 +1,27 @@
+-- captured from pub400
+> CREATE TABLE {lib}.TRID1 (ID INT GENERATED ALWAYS AS IDENTITY (START WIT
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> INSERT INTO {lib}.TRID1 (V) VALUES ('a'), ('b')
+sqlcode 0 sqlstate 00000 msgid - count 2
+> TRUNCATE {lib}.TRID1 CONTINUE IDENTITY IMMEDIATE
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.TRID1 (V) VALUES ('c')
+sqlcode 0 sqlstate 00000 msgid - count 1
+> SELECT ID, V FROM {lib}.TRID1 ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# V CHAR(1)
+| 20 | 'c' |
+> TRUNCATE {lib}.TRID1 RESTART IDENTITY IMMEDIATE
+sqlcode 0 sqlstate 00000 msgid -
+> INSERT INTO {lib}.TRID1 (V) VALUES ('d'), ('e')
+sqlcode 0 sqlstate 00000 msgid - count 2
+> SELECT ID, V FROM {lib}.TRID1 ORDER BY ID
+sqlcode 0 sqlstate 00000 msgid -
+# ID INTEGER NOT NULL
+# V CHAR(1)
+| 10 | 'd' |
+| 15 | 'e' |
+> DROP TABLE {lib}.TRID1
+sqlcode 0 sqlstate 00000 msgid -

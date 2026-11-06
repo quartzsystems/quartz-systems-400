@@ -450,10 +450,13 @@ makes its calls through its trigger mode (`db::trg::Mode`):
   `sql::exec::trigger`) is a trigger program like any other: record I/O
   calls it as above.
 
-Read triggers fire for record I/O of a physical file; a query of a table
-with read triggers and a read through a logical file over one are
-refused (BLOCKED(sql)). `ALWREPCHG(*NO)` on an after trigger does not
-yet refuse the program's own change of the same record (BLOCKED(sql)).
+Read triggers fire for record I/O of a physical file and for SQL
+queries, once for each row a table's scan keeps (`sql::exec::reads`),
+a view's or one-member logical file's rows as their table's. A query
+from a context with no job to call a program in (the service console)
+and a read through a logical file over more than one member are refused
+(BLOCKED(sql)). `ALWREPCHG(*NO)` on an after trigger does not yet
+refuse the program's own change of the same record (BLOCKED(sql)).
 
 ## The service console
 

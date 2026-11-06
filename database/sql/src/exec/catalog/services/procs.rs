@@ -3,12 +3,9 @@
 // root directory of this project.
 
 //! The `QSYS2` and `SYSTOOLS` procedures the engine runs itself, for
-//! `CALL` to dispatch to ([`call`]), and `QSYS2.QCMDEXC` as a scalar
+//! `CALL` (`routine::call`) to dispatch to ([`call`]), and `QSYS2.QCMDEXC` as a scalar
 //! function. A procedure's arguments bind as a table function's do;
 //! `OUT` parameters come back in order.
-//!
-//! BLOCKED(sql): `CALL` is SQL-5's; until it lands these run only
-//! through [`call`] (and the scalar `QCMDEXC`).
 
 use store::txn::Txn;
 

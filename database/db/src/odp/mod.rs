@@ -466,11 +466,10 @@ impl Odp {
         }
     }
 
-    /// Before a physical record changes: the constraints. This is where
-    /// before-row trigger programs plug in (`ADDPFTRG TRGTIME(*BEFORE)`,
-    /// BLOCKED(sql): triggers are a later wave), after the constraints'
-    /// own checks as IBM orders them; after-row triggers go after the
-    /// member's change in `write`, `update` and `delete`.
+    /// Before a physical record changes: the constraints, after the
+    /// before-row trigger programs (`trg.before`, `ADDPFTRG
+    /// TRGTIME(*BEFORE)`) as IBM orders them; after-row triggers go
+    /// after the member's change in `write`, `update` and `delete`.
     fn before_row(
         &mut self,
         txn: &mut Txn<'_>,

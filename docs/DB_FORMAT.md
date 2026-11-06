@@ -355,7 +355,7 @@ is `1 + record_len + null_map_len`.
 | 1 | record_len | record | the record, every field at its format offset; a `VARLEN` field is its 2-byte length then its bytes, blank padded to the maximum; a date or time field holds its text in the field's format, except that a `TIMFMT(*USA)` time holds `hh:mm:ss` (the machine keeps the seconds `hh:mm AM` has no room for) |
 | 1 + record_len | null_map_len | null_map | bit `null_index` of each null-capable field set when it is null |
 
-`TODO(perf)`: a `VARLEN` field is stored at its maximum length; the
+`BLOCKED(rel)` (performance only): a `VARLEN` field is stored at its maximum length; the
 `ALLOCATE` length and an overflow extent are not used.
 
 **Field encodings.** By the field's type code (`FieldEntry.data_type`):

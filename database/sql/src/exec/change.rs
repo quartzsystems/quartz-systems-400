@@ -53,13 +53,23 @@ pub(crate) fn data_change_rows(
 /// them, the count not reported.
 pub(crate) fn truncate(txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value], t: &Truncate) -> Result<u64> {
     let info = ctx.resolve_table(txn, &t.table)?;
-    if t.restart_identity && info.format.format.fields.iter().any(|f| f.identity.is_some()) {
-        // BLOCKED(sql): restarting an identity column needs SQL-2's identity state.
-        return Err(SqlError::Unsupported { what: "TRUNCATE ... RESTART IDENTITY of a table with an identity column".into() });
-    }
+    // `RESTART IDENTITY`: the identity column starts again at its START.
+    let restart = if t.restart_identity {
+        let kept = db::sqlinf::seq::columns(txn, info.id)?.into_iter().find_map(|c| match c.kind {
+            db::sqlinf::seq::ColumnKind::Identity(a) => Some(a.start),
+            _ => None,
+        });
+        kept.or_else(|| info.format.format.fields.iter().find_map(|f| f.identity.as_ref().map(|i| i128::from(i.start))))
+    } else {
+        None
+    };
     let d = Delete { table: t.table.clone(), alias: None, where_clause: Where::All, isolation: None };
     // No row to delete is the warning SQL0100.
-    dml::delete(txn, ctx, params, &d)
+    let n = dml::delete(txn, ctx, params, &d)?;
+    if let Some(start) = restart {
+        super::column::set_counter(txn, info.id, start)?;
+    }
+    Ok(n)
 }
 
 /// A record a change kept: its RRN, the record and its null map.

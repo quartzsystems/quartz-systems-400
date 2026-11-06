@@ -1,0 +1,25 @@
+# TN5250E negotiation with the primary (V7R1M0), 2026-11-06
+# tn5250-driver run --target oracle --device QSRELDEV1 --trace --hex (a script that waits
+# for the first display). The host asks NEW-ENVIRON (IBMRSEED), TERMINAL-TYPE, EOR and
+# BINARY, then sends the sign-on display as its first record: no start-up response
+# record (RFC 4777 section 10) came before it, with or without DEVNAME. Without DEVNAME
+# the display names device QPADEV0001.
+
+  tn < DO NEW-ENVIRON
+  tn > WILL NEW-ENVIRON
+  tn < DO TERMINAL-TYPE
+  tn > WILL TERMINAL-TYPE
+  tn < SB NEW-ENVIRON SEND IBMRSEED<8 bytes>  
+  tn > SB NEW-ENVIRON IS DEVNAME=QSRELDEV1 KBDTYPE=USB CODEPAGE=37 CHARSET=697
+  tn < SB TERMINAL-TYPE SEND
+  tn > SB TERMINAL-TYPE IS IBM-3179-2
+  tn < DO EOR
+  tn > WILL EOR
+  tn < WILL EOR
+  tn > DO EOR
+  tn < DO BINARY
+  tn > WILL BINARY
+  tn < WILL BINARY
+  tn > DO BINARY
+  <- record 501 bytes, opcode 3 (put/get), flags 0x0000
+  (the rest of the sign-on display record)

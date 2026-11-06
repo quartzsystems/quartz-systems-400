@@ -64,7 +64,8 @@ struct JobAuth {
 impl Authenticator for JobAuth {
     fn check(&self, source: &str, user: &str, password: &str) -> Result<String, Refused> {
         if !source.eq_ignore_ascii_case(SYSTEM) {
-            // TODO(later): validation lists (*VLDL) once the system has them.
+            // BLOCKED(rel): validation lists (*VLDL) do not exist; a PasswdFile
+            // naming one refuses every user, the reason in the error log.
             return Err(Refused::Unavailable(format!("Validation list {source} cannot be checked yet.")));
         }
         let (tx, rx) = mpsc::channel();

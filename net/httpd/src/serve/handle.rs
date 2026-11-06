@@ -191,7 +191,7 @@ impl Server {
             }
         }
         if script {
-            // TODO(later): CGI programs. Until they run, a ScriptAlias
+            // BLOCKED(rel): CGI programs do not run; a ScriptAlias
             // answers 501 and says so in the error log.
             self.log_error(site, Level::Error, Some(&client), &format!("CGI is not supported yet: {fs}"));
             return (self.error_page(501, site, &d, ctx, depth), out);

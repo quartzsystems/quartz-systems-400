@@ -437,6 +437,8 @@ pub fn answer(c: &Call, args: &[Option<String>], rdb: &str, query: &mut dyn FnMu
         }
         "SQLCOLPRIVILEGES" => col_privileges(a(1).as_deref(), a(2).as_deref(), a(3).as_deref(), rdb, query),
         "SQLGETTYPEINFO" => run(TYPEINFO, &select("SQLTYPEINFO", TYPEINFO, &[], "JDBC_DATA_TYPE, TYPE_NAME"), rdb, query),
+        "SQLPROCEDURES" => routines(false, a(1).as_deref(), a(2).as_deref(), rdb, query),
+        "SQLFUNCTIONS" => routines(true, a(1).as_deref(), a(2).as_deref(), rdb, query),
         _ => empty(&c.name),
     }
 }
@@ -499,23 +501,56 @@ fn col_privileges(schema: Option<&str>, table: Option<&str>, column: Option<&str
     Rows { cols, rows }
 }
 
-/// The procedures with nothing to list: their columns, no rows.
-/// BLOCKED(sql): routines and types are listed once SQL procedures,
-/// functions and distinct types are kept (`SQLPROCEDURES`, ...).
+
+const PROCS: &[Spec] = &[
+    ("PROCEDURE_CAT", 'v', 128, true),
+    ("PROCEDURE_SCHEM", 'v', 128, false),
+    ("PROCEDURE_NAME", 'v', 128, false),
+    ("NUM_INPUT_PARAMS", 'i', 0, false),
+    ("NUM_OUTPUT_PARAMS", 'i', 0, false),
+    ("NUM_RESULT_SETS", 'i', 0, false),
+    ("REMARKS", 'g', 2000, true),
+    ("PROCEDURE_TYPE", 's', 0, false),
+    ("SPECIFIC_NAME", 'v', 128, false),
+];
+
+const FUNCS: &[Spec] = &[
+    ("FUNCTION_CAT", 'v', 128, true),
+    ("FUNCTION_SCHEM", 'v', 128, false),
+    ("FUNCTION_NAME", 'v', 128, false),
+    ("REMARKS", 'g', 2000, true),
+    ("FUNCTION_TYPE", 's', 0, false),
+    ("SPECIFIC_NAME", 'v', 128, false),
+];
+
+/// `SQLPROCEDURES` and `SQLFUNCTIONS` from `QSYS2.SYSPROCS` and
+/// `SYSFUNCS`: JDBC's `procedureNoResult` (1) or `procedureReturnsResult`
+/// (2), `functionNoTable` (1) or `functionReturnsTable` (2).
+fn routines(functions: bool, schema: Option<&str>, name: Option<&str>, rdb: &str, query: &mut dyn FnMut(&str) -> Vec<Vec<Value>>) -> Rows {
+    let w: Vec<String> = [filter("ROUTINE_SCHEMA", schema), filter("ROUTINE_NAME", name)].into_iter().flatten().collect();
+    let w = if w.is_empty() { String::new() } else { format!(" WHERE {}", w.join(" AND ")) };
+    let (specs, q) = if functions {
+        (
+            FUNCS,
+            format!("SELECT 'C', ROUTINE_SCHEMA, ROUTINE_NAME, LONG_COMMENT, CASE WHEN FUNCTION_TYPE = 'T' THEN 2 ELSE 1 END, SPECIFIC_NAME FROM QSYS2.SYSFUNCS{w} ORDER BY 2, 3, 6"),
+        )
+    } else {
+        (
+            PROCS,
+            format!(
+                "SELECT 'C', ROUTINE_SCHEMA, ROUTINE_NAME, IN_PARMS + INOUT_PARMS, OUT_PARMS + INOUT_PARMS, RESULT_SETS, LONG_COMMENT, CASE WHEN RESULT_SETS > 0 THEN 2 ELSE 1 END, SPECIFIC_NAME FROM QSYS2.SYSPROCS{w} ORDER BY 2, 3, 9"
+            ),
+        )
+    };
+    run(specs, &q, rdb, query)
+}
+
+/// The calls answered with no rows: their columns.
+// BLOCKED(rel): distinct types (SQLUDTS) and routine parameters
+// (SQLPROCEDURECOLS, SQLFUNCTIONCOLS) are kept (QSYS2.SYSTYPES,
+// SYSPARMS) but not yet listed to JDBC; these calls answer no rows.
 fn empty(name: &str) -> Rows {
     let names: &[&str] = match name {
-        "SQLPROCEDURES" => &[
-            "PROCEDURE_CAT",
-            "PROCEDURE_SCHEM",
-            "PROCEDURE_NAME",
-            "NUM_INPUT_PARAMS",
-            "NUM_OUTPUT_PARAMS",
-            "NUM_RESULT_SETS",
-            "REMARKS",
-            "PROCEDURE_TYPE",
-            "SPECIFIC_NAME",
-        ],
-        "SQLFUNCTIONS" => &["FUNCTION_CAT", "FUNCTION_SCHEM", "FUNCTION_NAME", "REMARKS", "FUNCTION_TYPE", "SPECIFIC_NAME"],
         "SQLUDTS" => &["TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "CLASS_NAME", "DATA_TYPE", "REMARKS", "BASE_TYPE"],
         _ => &["TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME"],
     };
@@ -525,6 +560,20 @@ fn empty(name: &str) -> Rows {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn procedures_come_from_sysprocs() {
+        let c = parse("CALL SYSIBM.SQLPROCEDURES(?,?,?,?)").unwrap();
+        let mut asked = String::new();
+        let mut q = |sql: &str| {
+            asked = sql.to_string();
+            vec![vec![s("C"), s("QGPL"), s("P1"), Value::int(1), Value::int(0), Value::int(1), Value::Null, Value::int(2), s("P1")]]
+        };
+        let r = answer(&c, &[None, Some("QGPL".into()), Some("P%".into()), None], "QS400", &mut q);
+        assert!(asked.contains("QSYS2.SYSPROCS") && asked.contains("ROUTINE_SCHEMA = 'QGPL'") && asked.contains("ROUTINE_NAME LIKE 'P%'"), "{asked}");
+        assert_eq!(r.cols.len(), 9);
+        assert_eq!(r.rows[0][0], s("QS400"));
+    }
 
     #[test]
     fn parses_calls() {

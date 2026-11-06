@@ -157,7 +157,7 @@ What it does: static files from `DocumentRoot` with media types
 (`AddType`, `DefaultType`), `DirectoryIndex`, `Options +/-Indexes`
 listings, `If-Modified-Since` (304), one byte range (206/416), `HEAD`,
 `OPTIONS`; `Alias`; `ScriptAlias` answers 501 and logs it until CGI
-exists (`TODO(later)`); `<Directory>` (shortest first), `<Files>`,
+exists (`BLOCKED(rel)`); `<Directory>` (shortest first), `<Files>`,
 `<Location>`, `<Limit>`/`<LimitExcept>`; `Order`/`Allow`/`Deny` by
 client address (a section naming any of them replaces the access group
 before it); `AuthType Basic`, `AuthName`, `PasswdFile` (`%%SYSTEM%%`,

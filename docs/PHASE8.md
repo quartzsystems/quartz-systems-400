@@ -238,9 +238,13 @@ pool's 20 levels.
   `QDSIGNON` source as known (constants at column 48, values at 68 as the Phase 1 specification lays them out,
   fields at 53). `QSECOFR`-only panels wait for a system that allows
   them.
-- **ACS negotiation strings.** No ACS trace can be taken (ACS cannot
-  reach the primary oracle either); the start-up response record is
-  built from RFC 2877 as read and marked `BLOCKED(phase8)`.
+- **ACS negotiation strings** (closed 2026-11-06). ACS still cannot
+  reach the primary, but its telnet now answers: a TN5250E negotiation
+  with it is in `tools/conformance/oracle/net/primary/telnet-negotiation.txt`.
+  The host asks NEW-ENVIRON (with `IBMRSEED`), TERMINAL-TYPE, EOR and
+  BINARY and sends the sign-on display first, with no start-up response
+  record before it, with or without `DEVNAME`; clients take either
+  (`ui/tn5250/src/startup.rs` decodes the record when a host sends it).
 - **Password level 0/1 auto-signon** (the DES substitute) has no
   reachable system to verify against; implemented after JTOpen.
 - **HLINV is not on the primary oracle.** The specification says it

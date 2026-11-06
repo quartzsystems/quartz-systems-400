@@ -65,13 +65,15 @@ fn prtsqlinf(system: &mut System, parms: &Parms) -> CmdReply {
         if t.is_empty() { "*PGM".to_string() } else { t }
     };
     if obj == "*JOB" {
-        // BLOCKED(sql): statements are not kept in a plan cache to print.
+        // BLOCKED(sql): the plan cache (`sql::exec::plan::cache`) keeps
+        // statements by text for every job, none as one job's to print.
         return super::escape("SQL9011", "PRTSQLINF", &sql::prtsqlinf::refusal("OBJ(*JOB)"));
     }
     let ty = match objtype.as_str() {
         "*PGM" => types::PGM,
         "*SRVPGM" => types::SRVPGM,
-        // BLOCKED(sql): packages are printed when *SQLPKG lands here.
+        // BLOCKED(sql): a package's statements are kept (`db::sqlpkg`)
+        // but not yet printed.
         _ => return super::escape("SQL9011", "PRTSQLINF", &sql::prtsqlinf::refusal("OBJTYPE(*SQLPKG)")),
     };
     let found = in_store(system, |txn, qsys, names| {
