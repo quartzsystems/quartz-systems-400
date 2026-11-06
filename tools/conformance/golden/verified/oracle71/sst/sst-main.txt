@@ -1,0 +1,24 @@
+                       System Service Tools (SST)                               
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Start a service tool                                                   
+      2. Work with active service tools                                         
+      3. Work with disk units                                                   
+      4. Work with diskette data recovery                                       
+      5. Work with system partitions                                            
+                                                                                
+      7. Work with system security                                              
+      8. Work with service tools user IDs and Devices                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit         F10=Command entry         F12=Cancel                           
+                                                                                

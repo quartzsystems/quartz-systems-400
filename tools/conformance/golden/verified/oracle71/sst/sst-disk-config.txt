@@ -1,0 +1,24 @@
+                         Work with Disk Configuration                           
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display disk configuration                                             
+      2. Add units to ASPs                                                      
+      3. Work with ASP threshold                                                
+      4. Add units to ASPs and balance data                                     
+      5. Enable remote load source mirroring                                    
+      6. Disable remote load source mirroring                                   
+      7. Start compression on non-configured units                              
+      8. Work with device parity protection                                     
+      9. Start hot spare                                                        
+     10. Stop hot spare                                                         
+     11. Work with encryption                                                   
+     12. Work with removing units from configuration                            
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit         F12=Cancel                                                     
+                                                                                

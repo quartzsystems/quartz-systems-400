@@ -1,0 +1,24 @@
+                   Logical Partitioning Environment Supported                   
+                                                            System:   SYSNAME   
+ Virtual Partition Manager is supported.  The system is in a                    
+ state that does allow this operating system to partition the                   
+ server.  Refer to the Virtual Partition Manager documentation                  
+ for more information.                                                          
+                                                                                
+ Press Enter to confirm using Virtual Partition Manager to                      
+   partition the server.                                                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -30,6 +30,7 @@
 //! {env:NAME}                in any step: the environment variable NAME
 //! pick "TEXT" VALUE         type VALUE into the first input field on
 //!                           the first row showing TEXT (a list option)
+//! choose "TEXT"             type the number of the menu option "N. TEXT"
 //! seek "TEXT" N [KEY]       press KEY (pgdn) at most N times until TEXT shows
 //!                           (pick and seek: `re:` before TEXT makes it a regex)
 //! continue                  keep going after a failed step (the script
@@ -226,6 +227,23 @@ fn step(s: &mut Session, ctx: &mut Context, line: &str) -> Result<()> {
                 .with_context(|| format!("row {} has no input field", row + 1))?;
             s.term.set_cursor(row + 1, start % cols + 1);
             check(s.type_str(value.trim())?)?;
+        }
+        "choose" => {
+            // A menu's option by its text: the number before "N. TEXT"
+            // typed where the cursor is (the selection field).
+            s.wait_unlocked(ctx.timeout)?;
+            let text = unquote(rest);
+            let number = s
+                .term
+                .text_rows()
+                .iter()
+                .find_map(|r| {
+                    let at = r.find(&format!(". {text}"))?;
+                    let digits: String = r[..at].chars().rev().take_while(char::is_ascii_digit).collect();
+                    (!digits.is_empty()).then(|| digits.chars().rev().collect::<String>())
+                })
+                .with_context(|| format!("no option {text:?} on the screen"))?;
+            check(s.type_str(&number)?)?;
         }
         "seek" => {
             let (text, n) = match rest.strip_prefix('"') {

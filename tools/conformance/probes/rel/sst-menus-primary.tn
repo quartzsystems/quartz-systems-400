@@ -1,0 +1,154 @@
+# SST on the primary (V7R1M0), read only, in one sign-on as the service
+# tools user QS_SST_ID names: QS_SST_USER of the oracle's .env, or
+# QS_SST_USER_ALT when the first was refused (2026-11-06: it was, for
+# want of the functional privilege to start SST). Every display is captured
+# and left with F12. Nothing is typed but menu selections, each chosen
+# by its text after the menu's title is on the screen (`choose`), so a
+# display other than the one expected stops the script before anything
+# is selected on it. No list option, no confirmation, no Enter on a
+# display with input fields; `continue` is not used.
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+type STRSST
+key enter
+wait "Start Service Tools (STRSST) Sign On"
+settle 1500
+type {env:QS_SST_ID}
+key fieldexit
+type {env:QS_SST_PASS}
+key enter
+wait "System Service Tools (SST)"
+settle 1500
+snap sst-main
+# Work with Disk Units, Work with Disk Configuration, Work with Device
+# Parity Protection: the menus only.
+choose "Work with disk units"
+key enter
+wait "Work with Disk Units"
+settle 1500
+snap sst-disk
+choose "Work with disk configuration"
+key enter
+wait "Work with Disk Configuration"
+settle 1500
+snap sst-disk-config
+choose "Work with device parity protection"
+key enter
+wait "Work with Device Parity Protection"
+settle 1500
+snap sst-parity
+key f12
+wait "Work with Disk Configuration"
+settle 1000
+key f12
+wait "Work with Disk Units"
+settle 1000
+key f12
+wait "System Service Tools (SST)"
+settle 1000
+# The other options of the main menu: each display shown, then F12.
+choose "Work with system partitions"
+key enter
+settle 4000
+snap sst-partitions
+key f12
+wait "System Service Tools (SST)"
+settle 1000
+choose "Work with system capacity"
+key enter
+settle 4000
+snap sst-capacity
+key f12
+wait "System Service Tools (SST)"
+settle 1000
+choose "Work with system security"
+key enter
+settle 4000
+snap sst-security
+key f12
+wait "System Service Tools (SST)"
+settle 1000
+choose "Work with service tools user IDs and Devices"
+key enter
+settle 4000
+snap sst-users-devices
+key f12
+wait "System Service Tools (SST)"
+settle 1000
+choose "Start a service tool"
+key enter
+wait "Start a Service Tool"
+settle 1500
+snap sst-start-tool
+key f12
+wait "System Service Tools (SST)"
+settle 1000
+choose "Work with active service tools"
+key enter
+settle 4000
+snap sst-active-tools
+key f12
+wait "System Service Tools (SST)"
+settle 1000
+# Display Disk Configuration and its displays.
+choose "Work with disk units"
+key enter
+wait "Work with Disk Units"
+settle 1000
+choose "Display disk configuration"
+key enter
+wait "Display Disk Configuration"
+settle 1500
+snap sst-disk-display
+choose "Display disk configuration status"
+key enter
+settle 4000
+snap sst-disk-display-status
+key f12
+wait "Display Disk Configuration"
+settle 1000
+choose "Display disk configuration capacity"
+key enter
+settle 4000
+snap sst-disk-display-capacity
+key f12
+wait "Display Disk Configuration"
+settle 1000
+choose "Display disk configuration protection"
+key enter
+settle 4000
+snap sst-disk-display-protection
+key f12
+wait "Display Disk Configuration"
+settle 1000
+choose "Display device parity status"
+key enter
+settle 4000
+snap sst-disk-display-parity
+key f12
+wait "Display Disk Configuration"
+settle 1000
+choose "Display non-configured units"
+key enter
+settle 4000
+snap sst-disk-display-nonconfigured
+key f12
+wait "Display Disk Configuration"
+settle 1000
+key f12
+wait "Work with Disk Units"
+settle 1000
+key f12
+wait "System Service Tools (SST)"
+settle 1000
+key f3
+settle 3000
+snap sst-exit
+show

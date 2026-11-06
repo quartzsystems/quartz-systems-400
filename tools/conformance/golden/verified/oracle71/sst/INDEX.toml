@@ -6,3 +6,43 @@ date = "2026-11-06"
 script = "strsst-primary"
 width = 80
 
+[[golden]]
+name = "sst-main"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sst-menus-primary"
+width = 80
+
+[[golden]]
+name = "sst-disk"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sst-menus-primary"
+width = 80
+
+[[golden]]
+name = "sst-disk-config"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sst-menus-primary"
+width = 80
+
+[[golden]]
+name = "sst-parity"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sst-menus-primary"
+width = 80
+
+[[golden]]
+name = "sst-partitions"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "sst-menus-primary"
+width = 80
+
