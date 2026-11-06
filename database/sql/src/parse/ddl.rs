@@ -9,7 +9,7 @@ use crate::ast::{
     ColumnDef, ColumnDefault, CreateIndex, CreateTable, CreateView, Ident, Label, LabelTarget, Rename,
     Statement,
 };
-use crate::error::Result;
+use crate::error::{Result, SqlError};
 use crate::lex::Tok;
 
 impl Parser {
@@ -94,6 +94,8 @@ impl Parser {
             like: None,
             preserve_rows: true,
             column_names: Vec::new(),
+            volatile: None,
+            in_schema: false,
         };
         if self.eat_words(&["FOR", "SYSTEM", "NAME"]) {
             t.system_name = Some(self.ident()?);
@@ -148,6 +150,13 @@ impl Parser {
             }
             self.expect_sym(")")?;
         }
+        self.table_clauses(&mut t)?;
+        Ok(Statement::CreateTable(t))
+    }
+
+    /// The clauses after a table's columns: `RCDFMT`, `ON REPLACE`,
+    /// `IN`, `VOLATILE`, `UNIT`.
+    fn table_clauses(&mut self, t: &mut CreateTable) -> Result<()> {
         loop {
             if self.eat_word("RCDFMT") {
                 t.rcdfmt = Some(self.ident()?);
@@ -165,14 +174,44 @@ impl Parser {
             } else if self.is_words(&["ON", "COMMIT"]) {
                 // A declared temporary table's clause (`parse::temp`).
                 break;
-            } else if self.eat_words(&["IN", "ASP"]) || self.eat_word("IN") {
+            } else if self.eat_word("IN") {
+                // `IN schema`: Db2 for i ignores it, with `SQL20367`
+                // (`IN ASP n` it does not take: `SQL0104`).
+                if self.is_word("ASP") {
+                    return Err(self.expected("the end of the statement"));
+                }
                 self.ident()?;
-            } else if self.eat_words(&["NOT", "VOLATILE"]) || self.eat_word("VOLATILE") {
+                t.in_schema = true;
+            } else if self.is_word("VOLATILE") || self.is_words(&["NOT", "VOLATILE"]) {
+                if t.volatile.is_some() {
+                    return Err(self.expected("the end of the statement"));
+                }
+                t.volatile = Some(self.volatile());
+            } else if self.eat_word("UNIT") {
+                self.media_preference()?;
             } else {
                 break;
             }
         }
-        Ok(Statement::CreateTable(t))
+        Ok(())
+    }
+
+    /// `VOLATILE [CARDINALITY]` (true) or `NOT VOLATILE [CARDINALITY]`.
+    pub(crate) fn volatile(&mut self) -> bool {
+        let not = self.eat_word("NOT");
+        self.eat_word("VOLATILE");
+        self.eat_word("CARDINALITY");
+        !not
+    }
+
+    /// `UNIT ANY` or `UNIT SSD`: a media preference, which a store
+    /// without solid-state units has no use for, as Db2 for i on one.
+    fn media_preference(&mut self) -> Result<()> {
+        if self.eat_word("ANY") || self.eat_word("SSD") {
+            Ok(())
+        } else {
+            Err(self.expected("ANY or SSD"))
+        }
     }
 
     pub(crate) fn column_def(&mut self) -> Result<ColumnDef> {
@@ -274,11 +313,15 @@ impl Parser {
             if self.eat_word("RCDFMT") {
                 rcdfmt = Some(self.ident()?);
             } else if self.eat_word("UNIT") {
-                // Media preference: accepted, no effect.
-                self.advance();
+                self.media_preference()?;
             } else if self.eat_word("PAGESIZE") {
-                // A page size hint: accepted, no effect.
-                self.integer()?;
+                // The access path's logical page size in kilobytes, a
+                // performance hint the store's fixed pages make moot;
+                // a size Db2 for i does not take is `SQL1583`.
+                let n = self.integer()?;
+                if ![8, 16, 32, 64, 128, 256, 512].contains(&n) {
+                    return Err(SqlError::Coded { code: -1583, state: "428DE", what: format!("PAGESIZE {n} is not a page size an index can have") });
+                }
             } else if encoded_vector && self.eat_word("INCLUDE") {
                 self.expect_sym("(")?;
                 loop {

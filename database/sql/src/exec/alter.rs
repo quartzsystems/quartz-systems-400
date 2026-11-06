@@ -232,6 +232,13 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
             _ => {}
         }
     }
+    // 4. `VOLATILE` and `NOT VOLATILE`, the last one given.
+    if let Some(on) = stmt.actions.iter().rev().find_map(|a| match a {
+        AlterAction::Volatile(on) => Some(*on),
+        _ => None,
+    }) {
+        super::table::set_volatile(txn, ctx, id, on)?;
+    }
     Ok(())
 }
 

@@ -6,6 +6,7 @@
 //! [NO] DATA`, `LIKE`, and the column system names IBM generates.
 
 use db::file::{self, CreateFileOpts};
+use db::sqlinf::body::TableDef;
 use dds::FieldDef;
 use qsname::Name;
 use store::obj::ObjectId;
@@ -85,12 +86,44 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable, params: 
     if let Some(old) = replaced {
         restore_rows(txn, ctx, t, old)?;
     }
+    if t.volatile == Some(true) {
+        let id = ctx.resolve_file(txn, &t.name)?;
+        set_volatile(txn, ctx, id, true)?;
+    }
+    // `IN schema` Db2 for i ignores, saying so (no `SQL7905` then).
+    if t.in_schema {
+        ctx.warning = Some(crate::sqlca::Warning::coded(20_367, "01680", "IN"));
+    }
     if super::qtemp::qualifier(&t.name) == Some(false)
         && let Ok(id) = ctx.resolve_file(txn, &t.name)
     {
         ctx.qtemp.plain_table(id);
     }
     Ok(count)
+}
+
+/// Whether table `id` is `VOLATILE` (its `TABLE` entry says so).
+pub(crate) fn is_volatile(txn: &mut Txn<'_>, id: ObjectId) -> bool {
+    db::sqlinf::load(txn, id)
+        .ok()
+        .flatten()
+        .and_then(|i| i.first(db::sqlinf::tag::TABLE).and_then(|b| TableDef::decode(b).ok()))
+        .is_some_and(|d| d.volatile)
+}
+
+/// Make table `id` `VOLATILE` or not: its `TABLE` entry, dropped when
+/// nothing is left in it. A file SQL did not make keeps its kind.
+pub(crate) fn set_volatile(txn: &mut Txn<'_>, ctx: &SqlContext, id: ObjectId, on: bool) -> Result<()> {
+    let mut info = db::sqlinf::load(txn, id)?.unwrap_or_else(|| db::sqlinf::SqlInfo::new(db::sqlinf::Kind::File));
+    let mut d = info.first(db::sqlinf::tag::TABLE).and_then(|b| TableDef::decode(b).ok()).unwrap_or_default();
+    d.volatile = on;
+    if d == TableDef::default() {
+        info.remove(db::sqlinf::tag::TABLE);
+    } else {
+        info.set(db::sqlinf::tag::TABLE, d.encode());
+    }
+    db::sqlinf::save(txn, id, &info, ctx.clock())?;
+    Ok(())
 }
 
 /// The fields of a query's result: each column's field, its SQL name the

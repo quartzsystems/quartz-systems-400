@@ -724,6 +724,7 @@ The attribute area holds `SqlInfAttr`; the byte space holds
 | 16 `COLTYPE` | one column of a distinct type: the field and its type (a table's or view's) |
 | 17 `COLSTATS` | one column's statistics of one member of a physical file |
 | 18 `COMMENT` | a long comment (`COMMENT ON`) of the object or one of its columns |
+| 19 `TABLE` | a table's SQL attributes (`VOLATILE`) |
 
 A schema keeps its SQL name only in QSYS's name index (a `*LIB` owns
 no `*SQLINF`). An object keeps a `NAME` entry only when its SQL
@@ -788,6 +789,16 @@ The `DEPENDENCY` entry: one object a view depends on, by name.
 | 4 | 10 | library | CP037 |
 | 14 | 10 | name | CP037 system name |
 | 24 | 8 | reserved2 | 0 |
+
+### `SqlTable` (8 bytes)
+
+The `TABLE` entry: a table's SQL attributes. A table without one has
+them all off.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | flags | bit 0 `VOLATILE`; the other bits 0, kept by a reader that does not know them |
+| 2 | 6 | reserved | 0 |
 The bodies of the tags SQL completion has defined so far follow; a tag
 not described here is still a draft.
 
@@ -1221,4 +1232,4 @@ Frozen: the `*FILE` attribute and alias payloads, the member and dependents tabl
 
 Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.
 
-Also frozen at V1R1M0: the `*SQLINF` attribute and entry header, every entry body of §8.1 (tags 1 to 18), the library SQL name index key (§8.2) and the trigger buffer (§8.3) (`sql-info`); the `*SQLPKG` attribute and statement entries (§9) (`sql-package`). The object header's `sql` link and the `*SQLINF`/`*SQLUDT` types are part of the store format (`docs/STORE_FORMAT.md`), bumped once for this work (object header version 2; V1R0M0's version 1 headers read as objects with no SQL information). Each payload carries its own `VERSION`; a reader skips an entry tag it does not know.
+Also frozen at V1R1M0: the `*SQLINF` attribute and entry header, every entry body of §8.1 (tags 1 to 19; tag 19 `TABLE` was added before the release, which no reader of tags 1 to 18 minds), the library SQL name index key (§8.2) and the trigger buffer (§8.3) (`sql-info`); the `*SQLPKG` attribute and statement entries (§9) (`sql-package`). The object header's `sql` link and the `*SQLINF`/`*SQLUDT` types are part of the store format (`docs/STORE_FORMAT.md`), bumped once for this work (object header version 2; V1R0M0's version 1 headers read as objects with no SQL information). Each payload carries its own `VERSION`; a reader skips an entry tag it does not know.

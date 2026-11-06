@@ -558,11 +558,14 @@ pub fn virtual_table(
             if !per_member {
                 cols.push(c("NUMBER_PARTITIONS", DataType::Packed, 9, 0, false));
             }
+            // As 7.5 has it: `1` for a `VOLATILE` table.
+            cols.push(c("VOLATILE", DataType::Char, 1, 0, false));
             let mut rows = Vec::new();
             for (lib, d) in &all {
                 if d.attr.kind == FileKind::Logical {
                     continue;
                 }
+                let volatile = s(if crate::exec::table::is_volatile(txn, d.id) { "1" } else { "0" }.to_string());
                 let (mut rcount, mut dcount, mut size) = (0u64, 0u64, 0u64);
                 for m in &d.members {
                     let Ok(core) = Core::load(txn, m.object) else {
@@ -577,6 +580,7 @@ pub fn virtual_table(
                             n(core.attr.record_count),
                             n(core.attr.deleted_count),
                             n(bytes),
+                            volatile.clone(),
                         ]);
                     }
                     rcount += core.attr.record_count;
@@ -591,6 +595,7 @@ pub fn virtual_table(
                         n(dcount),
                         n(size),
                         n(d.members.len() as u64),
+                        volatile,
                     ]);
                 }
             }

@@ -1,0 +1,54 @@
+-- captured from primary
+> CREATE TABLE {lib}.TOPT1 (A INT, B INT, C INT) IN {lib}
+sqlcode 0 sqlstate 00000 msgid -
+warning 20367 01680 SQ20367
+> CREATE TABLE {lib}.TOPT2 (A INT) IN NOSUCHLIB9
+sqlcode 0 sqlstate 00000 msgid -
+warning 20367 01680 SQ20367
+> CREATE TABLE {lib}.TOPT3 (A INT) IN ASP 1
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CREATE TABLE {lib}.TOPT4 (A INT) UNIT SSD
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.TOPT5 (A INT) VOLATILE UNIT ANY
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.TOPT6 (A INT) UNIT FAST
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CREATE INDEX {lib}.TOPTX1 ON {lib}.TOPT1 (A) PAGESIZE 64
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.TOPTX2 ON {lib}.TOPT1 (B) PAGESIZE 512 UNIT SSD
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.TOPTX3 ON {lib}.TOPT1 (C) UNIT ANY PAGESIZE 8
+sqlcode 0 sqlstate 00000 msgid -
+> CREATE INDEX {lib}.TOPTX4 ON {lib}.TOPT1 (A, B) PAGESIZE 4
+sqlcode -1583 sqlstate 428DE msgid SQL1583
+> CREATE INDEX {lib}.TOPTX5 ON {lib}.TOPT1 (A, C) PAGESIZE 1024
+sqlcode -1583 sqlstate 428DE msgid SQL1583
+> CREATE INDEX {lib}.TOPTX6 ON {lib}.TOPT1 (B, C) UNIT FAST
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> ALTER TABLE {lib}.TOPT1 VOLATILE
+sqlcode 0 sqlstate 00000 msgid -
+> ALTER TABLE {lib}.TOPT1 NOT VOLATILE CARDINALITY
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT TABLE_NAME FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = '{lib}' AND 
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+| 'TOPT1' |
+| 'TOPT2' |
+| 'TOPT4' |
+| 'TOPT5' |
+> SELECT INDEX_NAME FROM QSYS2.SYSINDEXES WHERE INDEX_SCHEMA = '{lib}' AND
+sqlcode 0 sqlstate 00000 msgid -
+# INDEX_NAME VARCHAR(128) NOT NULL
+| 'TOPTX1' |
+| 'TOPTX2' |
+| 'TOPTX3' |
+> DROP TABLE {lib}.TOPT1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.TOPT2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.TOPT4
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.TOPT5
+sqlcode 0 sqlstate 00000 msgid -

@@ -303,6 +303,8 @@ impl Parser {
                     let cascade = cascade(self);
                     actions.push(AlterAction::DropColumn { name: col, cascade });
                 }
+            } else if self.is_word("VOLATILE") || self.is_words(&["NOT", "VOLATILE"]) {
+                actions.push(AlterAction::Volatile(self.volatile()));
             } else if self.eat_word("ALTER") {
                 self.eat_word("COLUMN");
                 let col = self.ident()?;
@@ -313,7 +315,7 @@ impl Parser {
             self.eat_sym(",");
         }
         if actions.is_empty() {
-            if self.is_words(&["VOLATILE"]) || self.is_words(&["NOT", "VOLATILE"]) || self.is_word("APPEND") || self.is_word("ACTIVATE") || self.is_word("DEACTIVATE") {
+            if self.is_word("APPEND") || self.is_word("ACTIVATE") || self.is_word("DEACTIVATE") {
                 return Err(Self::unsupported("that ALTER TABLE attribute"));
             }
             return Err(self.expected("ADD, DROP or ALTER"));

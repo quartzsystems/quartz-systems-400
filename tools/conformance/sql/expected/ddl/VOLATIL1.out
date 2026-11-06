@@ -1,0 +1,51 @@
+-- captured from pub400
+> CREATE TABLE {lib}.VOLT1 (A INT) VOLATILE
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.VOLT2 (A INT)
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> CREATE TABLE {lib}.VOLT3 (A INT) NOT VOLATILE CARDINALITY
+sqlcode 0 sqlstate 00000 msgid -
+warning 7905 01567 SQL7905
+> SELECT TABLE_NAME, VOLATILE FROM QSYS2.SYSTABLESTAT WHERE TABLE_SCHEMA =
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# VOLATILE CHAR(1) NOT NULL
+| 'VOLT1' | '1' |
+| 'VOLT2' | '0' |
+| 'VOLT3' | '0' |
+> SELECT TABLE_NAME, VOLATILE FROM QSYS2.SYSPARTITIONSTAT WHERE TABLE_SCHE
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# VOLATILE CHAR(1) NOT NULL
+| 'VOLT1' | '1' |
+| 'VOLT2' | '0' |
+| 'VOLT3' | '0' |
+> ALTER TABLE {lib}.VOLT1 NOT VOLATILE
+sqlcode 0 sqlstate 00000 msgid -
+> ALTER TABLE {lib}.VOLT2 VOLATILE CARDINALITY
+sqlcode 0 sqlstate 00000 msgid -
+> SELECT TABLE_NAME, VOLATILE FROM QSYS2.SYSTABLESTAT WHERE TABLE_SCHEMA =
+sqlcode 0 sqlstate 00000 msgid -
+# TABLE_NAME VARCHAR(128) NOT NULL
+# VOLATILE CHAR(1) NOT NULL
+| 'VOLT1' | '0' |
+| 'VOLT2' | '1' |
+| 'VOLT3' | '0' |
+> INSERT INTO {lib}.VOLT2 VALUES (1), (2), (3)
+sqlcode 0 sqlstate 00000 msgid - count 3
+> SELECT COUNT(*) FROM {lib}.VOLT2 WHERE A > 1
+sqlcode 0 sqlstate 00000 msgid -
+# 00001 INTEGER NOT NULL
+| 2 |
+> CREATE TABLE {lib}.VOLT4 (A INT) VOLATILE VOLATILE
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> CREATE TABLE {lib}.VOLT4 (A INT) VOLATILE NOT VOLATILE
+sqlcode -104 sqlstate 42601 msgid SQL0104
+> DROP TABLE {lib}.VOLT1
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.VOLT2
+sqlcode 0 sqlstate 00000 msgid -
+> DROP TABLE {lib}.VOLT3
+sqlcode 0 sqlstate 00000 msgid -

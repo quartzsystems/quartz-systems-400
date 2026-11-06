@@ -870,6 +870,9 @@ struct Weigh {
     member: Option<ObjectId>,
     /// The query's row goal.
     goal: Option<u64>,
+    /// The table is `VOLATILE`: its size changes too much to weigh by,
+    /// so a key that serves is used whatever the statistics say.
+    volatile: bool,
 }
 
 /// Tables smaller than this read alike by any plan: the key is used
@@ -981,7 +984,7 @@ fn choose(cands: &[Candidate], preds: &[Expr], order: &[OrderItem], alias: &str,
     // Statistics say the key would read much of a large table, and its
     // order is not needed: read the table in arrival order.
     #[allow(clippy::cast_precision_loss)]
-    let wide = known && w.rows >= SCAN_FLOOR && est as f64 > w.rows as f64 * SCAN_SHARE;
+    let wide = !w.volatile && known && w.rows >= SCAN_FLOOR && est as f64 > w.rows as f64 * SCAN_SHARE;
     if wide && choice.ordered.is_none() {
         return None;
     }
@@ -1090,8 +1093,9 @@ fn scan_table_in(
         // Statistics kept on the file come back the first time it is weighed.
         super::plan::stats::prime(txn, t.id);
     }
-    let weigh = Weigh { rows: rows_now, member: physical.then_some(t.member.object), goal: ev.ctx.plan.goal };
-    if physical && rows_now >= super::plan::stats::ASK_FLOOR {
+    let volatile = physical && super::table::is_volatile(txn, t.id);
+    let weigh = Weigh { rows: rows_now, member: physical.then_some(t.member.object), goal: ev.ctx.plan.goal, volatile };
+    if physical && !volatile && rows_now >= super::plan::stats::ASK_FLOOR {
         // Columns the planner would weigh: ask the collection job for them.
         for (name, _, _) in simple_predicates(&scan.preds) {
             if let Some((_, f)) = t.field(&name)

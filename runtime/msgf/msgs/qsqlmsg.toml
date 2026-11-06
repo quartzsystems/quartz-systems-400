@@ -670,6 +670,19 @@ help = "The library is not an SQL schema, so it has no QSQJRN journal to start j
 vars = ["*CHAR 128", "*CHAR 128"]
 
 [[msg]]
+id = "SQL1583"
+sev = 30
+text = "The PAGESIZE value is not one an index can have."
+help = "An index's logical page size is 8, 16, 32, 64, 128, 256 or 512 kilobytes. Give one of these, or leave PAGESIZE out."
+
+[[msg]]
+id = "SQ20367"
+sev = 10
+text = "Clause &1 is not supported and was ignored."
+help = "The statement ran without the clause. IN on CREATE TABLE names a table space, which a Db2 for i table does not have; the table is made in the schema its name gives."
+vars = ["*CHAR 128"]
+
+[[msg]]
 id = "SQL0171"
 sev = 30
 text = "Argument &1 of function &2 is not valid."

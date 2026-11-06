@@ -195,6 +195,10 @@ pub struct CreateTable {
     pub preserve_rows: bool,
     /// The column names of `CREATE TABLE t (a, b) AS (query)`.
     pub column_names: Vec<Ident>,
+    /// `VOLATILE` (true) or `NOT VOLATILE` (false), when given.
+    pub volatile: Option<bool>,
+    /// `IN schema` was given: Db2 for i ignores it with `SQL20367`.
+    pub in_schema: bool,
 }
 
 /// One `ALTER TABLE` action.
@@ -203,6 +207,8 @@ pub struct CreateTable {
 pub enum AlterAction {
     /// `ADD COLUMN`.
     AddColumn(ColumnDef),
+    /// `VOLATILE` (true) or `NOT VOLATILE` (false).
+    Volatile(bool),
     /// `DROP COLUMN`.
     DropColumn {
         /// The column.

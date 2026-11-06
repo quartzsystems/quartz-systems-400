@@ -57,6 +57,39 @@ pub static DEPENDENCY_LAYOUT: Layout = Layout {
 /// Bytes of an `SqlDependency`.
 pub const DEPENDENCY_LEN: usize = 32;
 
+/// `SqlTable` layout.
+pub static TABLE_LAYOUT: Layout = Layout {
+    name: "SqlTable",
+    size: Some(TABLE_LEN),
+    fields: &[field("flags", 0, 2), field("reserved", 2, 6)],
+};
+
+/// Bytes of an `SqlTable`.
+pub const TABLE_LEN: usize = 8;
+
+/// A table's SQL attributes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct TableDef {
+    /// `VOLATILE`: its row count changes too much for statistics.
+    pub volatile: bool,
+}
+
+impl TableDef {
+    /// The entry body.
+    #[must_use]
+    pub fn encode(&self) -> Vec<u8> {
+        let mut out = vec![0u8; TABLE_LEN];
+        out[0] = u8::from(self.volatile);
+        out
+    }
+
+    /// From the entry body; flags it does not know are left alone.
+    pub fn decode(b: &[u8]) -> Result<Self> {
+        let head = b.get(..2).ok_or_else(|| bad("table"))?;
+        Ok(Self { volatile: head[0] & 1 != 0 })
+    }
+}
+
 fn bad(what: &str) -> DbError {
     DbError::Corrupt { what: format!("SQL information: {what}") }
 }

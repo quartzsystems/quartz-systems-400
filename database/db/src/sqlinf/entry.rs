@@ -138,6 +138,8 @@ pub mod tag {
     pub const COLSTATS: u16 = 17;
     /// A long comment of the object or a column (`COMMENT ON`).
     pub const COMMENT: u16 = 18;
+    /// A table's SQL attributes (`VOLATILE`).
+    pub const TABLE: u16 = 19;
 }
 
 /// One tagged entry.
