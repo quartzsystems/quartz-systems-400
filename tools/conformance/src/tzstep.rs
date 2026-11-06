@@ -37,6 +37,8 @@ impl Suite {
     pub(crate) fn time_zones(&self, s: &mut Session) -> Result<String, String> {
         let shipped = s.command("WRKTIMZON TIMZON(QN0500EST*)", CMD)?;
         want(&shipped, "WRKTIMZON of the shipped Eastern zones", &["QN0500EST3", "QN0500EST2", "-05:00", "EST"])?;
+        let objd = s.command("DSPOBJD OBJ(QSYS/Q0000UTC) OBJTYPE(*TIMZON)", CMD)?;
+        want(&objd, "DSPOBJD of a shipped *TIMZON", &["Q0000UTC", "*TIMZON"])?;
         s.command("DLTTIMZON TIMZON(QSTZTEST)", CMD).ok();
         let made = s.command("CRTTIMZON TIMZON(QSTZTEST) OFFSET(330) STDNAME(QST 'Quartz test time') TEXT('Step 143')", CMD)?;
         want(&made, "CRTTIMZON", &["QSTZTEST"])?;

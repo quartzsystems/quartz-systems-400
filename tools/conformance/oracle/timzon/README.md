@@ -37,8 +37,10 @@ What the capture settled:
   alternate names and text.
 - `DSPSYSVAL QTIMZON` shows the zone's offset, full and abbreviated
   names under "Associated settings".
-- `QSYS2.TIME_ZONE_INFO` was not looked for here: no pub400 credentials
-  were in the oracle environment for this capture, and the primary
-  (V7R1M0) predates it if it exists at all; QS/400 does not provide it.
+- `sql.txt`: the primary's catalog has no view, table or routine with
+  TIME and ZONE in its name (no `QSYS2.TIME_ZONE_INFO` at V7R1M0), and
+  `CURRENT TIMEZONE` is `DECIMAL(6,0)` hhmmss (-50000 under `QN0500EST`).
+  pub400 (V7R5M0) was not asked: no pub400 credentials were in the
+  oracle environment. QS/400 provides no `TIME_ZONE_INFO`.
 - A job with `LANGID(ESP) CNTRYID(ES) CCSID(65535)` has default CCSID
   284 on the primary, the CCSID QS/400's `QSYS2931` keeps.
