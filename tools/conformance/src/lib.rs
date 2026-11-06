@@ -68,6 +68,7 @@ mod medlib;
 mod tapeopt;
 pub mod rpg;
 pub mod sql;
+mod sqlqemu;
 mod servers;
 mod service;
 mod smallsvr;

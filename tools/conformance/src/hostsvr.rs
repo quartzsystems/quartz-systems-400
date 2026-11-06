@@ -49,7 +49,7 @@ fn lookup(port: u16, service: &str) -> Result<Vec<u8>, String> {
 }
 
 /// The jobs the step waits for.
-const JOBS: &[&str] = &["QZSOSMAPD", "QZSOSGND", "QZRCSRVSD", "QZDASRVSD", "QZRCSRVS", "QZDASOINIT"];
+pub(crate) const JOBS: &[&str] = &["QZSOSMAPD", "QZSOSGND", "QZRCSRVSD", "QZDASRVSD", "QZRCSRVS", "QZDASOINIT"];
 
 fn host_port(suite: &Suite, guest: u16) -> Result<u16, String> {
     suite
@@ -81,7 +81,7 @@ fn repo() -> PathBuf {
 
 /// The JDK's tools: `QS_JAVA_HOME/bin` when set (a Windows JDK from
 /// WSL works: its paths are converted), else `PATH`.
-fn tool(name: &str) -> (String, bool) {
+pub(crate) fn tool(name: &str) -> (String, bool) {
     match std::env::var("QS_JAVA_HOME") {
         Ok(home) if Path::new(&format!("{home}/bin/{name}.exe")).exists() => (format!("{home}/bin/{name}.exe"), true),
         Ok(home) => (format!("{home}/bin/{name}"), false),
@@ -120,7 +120,7 @@ const SCENARIOS: &[(&str, &str)] = &[
 ];
 
 /// Compile the suite; the java to run it with and the class path.
-fn compile(suite: &Suite, jar: &str) -> Result<(String, String), String> {
+pub(crate) fn compile(suite: &Suite, jar: &str) -> Result<(String, String), String> {
     let classes = suite.out_dir.join("jtopen");
     std::fs::create_dir_all(&classes).map_err(|e| e.to_string())?;
     let src = repo().join("tools/conformance/jtopen/src");
@@ -142,7 +142,7 @@ fn compile(suite: &Suite, jar: &str) -> Result<(String, String), String> {
 }
 
 /// Run one class of the suite against the guest; its output.
-fn run_class(suite: &Suite, java: &str, cp: &str, class: &str) -> Result<String, String> {
+pub(crate) fn run_class(suite: &Suite, java: &str, cp: &str, class: &str) -> Result<String, String> {
     let mut c = Command::new(java);
     c.arg("-cp").arg(cp).arg(class);
     let mut vars = vec![

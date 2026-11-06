@@ -654,6 +654,14 @@ impl Suite {
         reports.push(self.step(&mut s, "98 SMTP relay credentials", Self::smtp_relay_auth)?);
         reports.push(self.step(&mut s, "100 DDM", Self::ddm)?);
         reports.push(self.step(&mut s, "101 WSCST", Self::wscst)?);
+        reports.push(self.step(&mut s, "130 SQL STRSQL", Self::sql_strsql)?);
+        reports.push(self.step(&mut s, "131 SQL RUNSQL and RUNSQLSTM", Self::sql_runsql)?);
+        reports.push(self.step(&mut s, "132 SQL JTOpen", Self::sql_jtopen)?);
+        reports.push(self.step(&mut s, "133 SQL CLI server mode", Self::sql_cli)?);
+        reports.push(self.step(&mut s, "134 SQL DRDA client", Self::sql_drda)?);
+        reports.push(self.step(&mut s, "135 SQL RPG triggers", Self::sql_rpg_triggers)?);
+        // An IPL at its end.
+        reports.push(self.step(&mut s, "136 SQL QTEMP", Self::sql_qtemp)?);
         reports.push(self.step(&mut s, "85 display messages", Self::display_messages)?);
         reports.push(self.step(&mut s, "84 console display", Self::console_display)?);
         reports.push(self.step(&mut s, "105 phase 12 leftovers", Self::leftovers)?);
