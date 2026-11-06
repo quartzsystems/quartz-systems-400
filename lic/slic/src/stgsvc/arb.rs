@@ -236,9 +236,9 @@ fn regfac_jobs(system: &mut System) -> Vec<String> {
 /// `QUPSMSGQ` as `(lib, name)`.
 fn ups_queue(system: &System) -> (String, String) {
     let v = sysval(system, "QUPSMSGQ");
-    let name = v.get(..10).unwrap_or(&v).trim();
-    let lib = v.get(10..).unwrap_or("").trim();
-    let name = if name.is_empty() { "QSYSOPR" } else { name };
+    let mut w = v.split_whitespace();
+    let name = w.next().unwrap_or("QSYSOPR");
+    let lib = w.next().unwrap_or("");
     let lib = if lib.is_empty() || lib == "*LIBL" { "QSYS" } else { lib };
     (lib.to_string(), name.to_string())
 }

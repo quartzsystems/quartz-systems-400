@@ -136,6 +136,19 @@ fn spare_lines(st: &store::Store, out: &mut String) {
     }
 }
 
+/// `asp threshold PERCENT`: what DST and SST's Work with ASP threshold
+/// sets.
+pub fn asp_threshold(system: &mut System, percent: &str) -> String {
+    use svctools::DstEnv as _;
+    let Ok(p) = percent.parse::<u8>() else {
+        return format!("{}\n", svctools::dst::disk::reasons::THRESHOLD_RANGE);
+    };
+    match crate::ipl::dst::Env::new(system).set_asp_threshold(p) {
+        Ok(()) => format!("ASP 1 threshold set to {p}%\n"),
+        Err(e) => format!("{e}\n"),
+    }
+}
+
 /// `asp`: units, free space, WAL fill, checkpoint generation, release.
 pub fn asp(system: &mut System) -> String {
     let mut out = String::new();
@@ -159,9 +172,10 @@ pub fn asp(system: &mut System) -> String {
         );
         let _ = writeln!(
             out,
-            "  protection: {}; recovery replayed {} transaction(s) at IPL",
+            "  protection: {}; recovery replayed {} transaction(s) at IPL; threshold {}%",
             protection(sb.protection),
-            s.recovery.replayed
+            s.recovery.replayed,
+            sb.threshold
         );
         for u in st.units() {
             let e = &u.entry;

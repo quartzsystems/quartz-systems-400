@@ -179,6 +179,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("vrtout", [dev, path]) => vrtout(dev, path),
         ("pwrdwn", []) => power::down(system, false),
         ("pwrdwn", ["restart"]) => power::down(system, true),
+        ("asp", ["threshold", p]) => storage::asp_threshold(system, p),
         ("asp", _) => storage::asp(system),
         ("unit", rest) => storage::unit(system, rest),
         ("mirror", rest) => storage::mirror(system, rest),

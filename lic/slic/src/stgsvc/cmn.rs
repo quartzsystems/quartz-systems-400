@@ -63,10 +63,11 @@ fn defaults(system: &System) -> ((u16, u16), String) {
     (rcy, cfgmsgq(&sv("QCFGMSGQ")))
 }
 
-/// `QCFGMSGQ`'s 20 characters (name, then library) as `LIB/NAME`.
+/// `QCFGMSGQ` (the name, then the library) as `LIB/NAME`.
 fn cfgmsgq(v: &str) -> String {
-    let name = v.get(..10).unwrap_or(v).trim();
-    let lib = v.get(10..).unwrap_or("").trim();
+    let mut w = v.split_whitespace();
+    let name = w.next().unwrap_or("");
+    let lib = w.next().unwrap_or("");
     match (name, lib) {
         ("", _) => "QSYS/QSYSOPR".into(),
         (n, "" | "*LIBL") => format!("QSYS/{n}"),
@@ -407,6 +408,7 @@ mod tests {
         assert_eq!(cfgmsgq("QSYSOPR   QSYS      "), "QSYS/QSYSOPR");
         assert_eq!(cfgmsgq("CFGQ      MYLIB"), "MYLIB/CFGQ");
         assert_eq!(cfgmsgq("CFGQ"), "QSYS/CFGQ");
+        assert_eq!(cfgmsgq("CFGQ MYLIB"), "MYLIB/CFGQ");
         assert_eq!(cfgmsgq(""), "QSYS/QSYSOPR");
     }
 }

@@ -10,6 +10,9 @@
 //! - 114: `QSHWQUAL` at the console, printed, and written to the stick.
 //! - 115: the guest agent as a management stack talks to it.
 //! - 116: the agent's channel among the `*CMN` resources.
+//! - 141: the host's UPS daemon says utility power failed and came back
+//!   (`qs400-set-power-source`): `CPF1816`, then `CPF1817`, to
+//!   `QUPSMSGQ`, and no power down inside `QUPSDLYTIM`.
 //! - 117: `guest-shutdown`, a controlled power down.
 //!
 //! The media suite's step 5 (`media_qshwqual`) runs `QSHWQUAL` from the
@@ -28,7 +31,13 @@ use crate::qemu::session::Session;
 use crate::steps::{CMD, StepReport, Suite};
 
 /// The steps' names, for `--only`.
-const NAMES: [&str; 4] = ["114 QSHWQUAL", "115 guest agent", "116 agent channel resource", "117 agent power down"];
+const NAMES: [&str; 5] = [
+    "114 QSHWQUAL",
+    "115 guest agent",
+    "116 agent channel resource",
+    "141 UPS power",
+    "117 agent power down",
+];
 
 /// Where the stick's FAT partition starts (`media::fat_stick_of`).
 const FAT_AT: usize = 2048 * 512;
@@ -156,6 +165,21 @@ impl Agent {
     }
 }
 
+/// Poll `QSYSOPR` until a message holds `needle`; the queue's text.
+fn wait_opr(s: &mut Session, needle: &str, secs: u64) -> Result<String, String> {
+    let until = Instant::now() + Duration::from_secs(secs);
+    loop {
+        let out = s.command("DSPMSG MSGQ(QSYSOPR)", CMD)?;
+        if out.contains(needle) {
+            return Ok(out);
+        }
+        if Instant::now() > until {
+            return Err(format!("QSYSOPR has no message with {needle:?}:\n{out}"));
+        }
+        std::thread::sleep(Duration::from_secs(1));
+    }
+}
+
 impl Suite {
     /// Steps 114 to 117 in their own guest; with `--only` when named.
     pub(crate) fn guest_steps(&self) -> Result<Vec<StepReport>, crate::HarnessError> {
@@ -185,7 +209,8 @@ impl Suite {
             self.step(&mut s, NAMES[0], Self::qshwqual)?,
             self.step(&mut s, NAMES[1], Self::guest_agent)?,
             self.step(&mut s, NAMES[2], Self::agent_channel)?,
-            self.step(&mut s, NAMES[3], Self::agent_power_down)?,
+            self.step(&mut s, NAMES[3], Self::ups_power)?,
+            self.step(&mut s, NAMES[4], Self::agent_power_down)?,
         ];
         if !s.wait_exit(Duration::from_secs(5)) {
             s.command("pwrdwn", CMD).ok();
@@ -366,6 +391,29 @@ impl Suite {
     }
 
     /// 117: `guest-shutdown` powers the system down, controlled.
+    /// Step 141.
+    fn ups_power(&self, s: &mut Session) -> Result<String, String> {
+        let set = s.command("CHGSYSVAL SYSVAL(QUPSDLYTIM) VALUE('600')", CMD)?;
+        if set.trim_start().starts_with("CPF") {
+            return Err(format!("CHGSYSVAL QUPSDLYTIM: {set}"));
+        }
+        let shown = s.command("svc.sysval QUPSDLYTIM", CMD)?;
+        if !shown.contains("600 600") {
+            return Err(format!("QUPSDLYTIM's second element: {shown}"));
+        }
+        let mut a = Agent::connect(&self.out_dir.join("qga.sock"))?;
+        a.sync(Duration::from_secs(30))?;
+        a.call("qs400-set-power-source", Some("{\"source\":\"battery\"}"))?;
+        let failed = wait_opr(s, "power to the system failed", 60)?;
+        a.call("qs400-set-power-source", Some("{\"source\":\"utility\"}"))?;
+        let back = wait_opr(s, "power to the system returned", 60)?;
+        let _ = s.command("CHGSYSVAL SYSVAL(QUPSDLYTIM) VALUE(*CALC)", CMD);
+        if s.log.contains("SRC D1001000") {
+            return Err(format!("the system powered down on battery:\n{failed}\n{back}"));
+        }
+        Ok("CPF1816 on battery, CPF1817 on utility power, no power down within QUPSDLYTIM(600)".into())
+    }
+
     fn agent_power_down(&self, s: &mut Session) -> Result<String, String> {
         let mut a = Agent::connect(&self.out_dir.join("qga.sock"))?;
         a.sync(Duration::from_secs(30))?;
