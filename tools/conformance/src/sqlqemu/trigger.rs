@@ -94,7 +94,7 @@ impl Suite {
         tn.cmd(&format!("RUNSQLSTM SRCFILE({LIB}/QSQLSRC) SRCMBR(TRGB) COMMIT(*NONE)"), "")?;
         sql_has(
             s,
-            &format!("SELECT TRIGGER_NAME, ACTION_TIME FROM QSYS2/SYSTRIGGERS WHERE TRIGGER_SCHEMA = '{LIB}'"),
+            &format!("SELECT TRIGGER_NAME, ACTION_TIMING FROM QSYS2/SYSTRIGGERS WHERE TRIGGER_SCHEMA = '{LIB}'"),
             &["TRGTB"],
         )?;
         for p in ["TRGAFT", "RPGWRT"] {
