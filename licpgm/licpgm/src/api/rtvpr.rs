@@ -63,7 +63,8 @@ impl ProductInfo {
 
 /// The load a request names, resolved: the definition, the load (or
 /// one synthesized in state `10` when the definition names it but no
-/// object exists), and the product ID to echo.
+/// object exists), and the product ID returned: always the product's
+/// own, an IBM alias asked for or not.
 struct Found {
     echo: String,
     def: ProductDefinition,
@@ -83,10 +84,10 @@ fn not_found(pi: &ProductInfo) -> ApiError {
 fn resolve(store: &dyn ProductStore, pi: &ProductInfo) -> Result<Found, ApiError> {
     let defs: Vec<ProductDefinition> = store.definitions().into_iter().map(|(_, d)| d).collect();
     let loads: Vec<ProductLoad> = store.loads().into_iter().map(|(_, l)| l).collect();
-    let (want, echo) = if pi.product == "*OPSYS" {
-        (ProductId::OS.to_string(), ProductId::OS.to_string())
+    let want = if pi.product == "*OPSYS" {
+        ProductId::OS.to_string()
     } else {
-        (pi.product.clone(), pi.product.clone())
+        pi.product.clone()
     };
     let mine: Vec<&ProductDefinition> = defs.iter().filter(|d| d.answers_to(&want)).collect();
     if mine.is_empty() {
@@ -98,6 +99,7 @@ fn resolve(store: &dyn ProductStore, pi: &ProductInfo) -> Result<Found, ApiError
         pi.option.parse().map_err(|_| not_found(pi))?
     };
     let pid = mine[0].product.clone();
+    let echo = pid.to_string();
     let rel = match pi.release.as_str() {
         "*CUR" => loads
             .iter()

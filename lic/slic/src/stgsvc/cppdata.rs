@@ -52,7 +52,11 @@ fn wanted(which: &str, name: &str) -> bool {
 fn ptfs(system: &mut System, product: &str, select: &str) -> Result<Sys2Data, String> {
     let db = ptfcmd::load_db(system)?;
     let sel: Vec<&str> = select.split(',').map(str::trim).filter(|s| !s.is_empty() && *s != "*ALL").collect();
-    let prod = if wanted(product, "") { release::PRODUCT_ID.to_string() } else { product.trim().to_string() };
+    let prod = if wanted(product, "") {
+        release::PRODUCT_ID.to_string()
+    } else {
+        release::product_id(&product.trim().to_ascii_uppercase()).to_string()
+    };
     let rows: Rows = db
         .ptfs
         .values()

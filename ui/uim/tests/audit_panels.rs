@@ -169,13 +169,13 @@ fn dspptfcvr_list_and_letter() {
     d.set_list(
         "CVRS",
         list(vec![
-            vec![("PTFID", "QS00001"), ("PRODID", "5770QS1"), ("PTFRLS", "V1R0M0"), ("PTFSTS", "Loaded"), ("CVRATR", "*SPCINST")],
-            vec![("PTFID", "QS00002"), ("PRODID", "5770QS1"), ("PTFRLS", "V1R0M0"), ("PTFSTS", "Temporarily applied"), ("CVRATR", "*DFT")],
+            vec![("PTFID", "QS00001"), ("PRODID", "QS00SS1"), ("PTFRLS", "V1R0M0"), ("PTFSTS", "Loaded"), ("CVRATR", "*SPCINST")],
+            vec![("PTFID", "QS00002"), ("PRODID", "QS00SS1"), ("PTFRLS", "V1R0M0"), ("PTFSTS", "Temporarily applied"), ("CVRATR", "*DFT")],
         ]),
     );
     ours("selcvr", &render(&g, "SELCVR", &d, &opts(0)).unwrap());
     let mut d = MapDialog::new();
-    d.set("PTFID", "QS00001").set("PRODID", "5770QS1").set("PTFRLS", "V1R0M0");
+    d.set("PTFID", "QS00001").set("PRODID", "QS00SS1").set("PTFRLS", "V1R0M0");
     d.set_list(
         "LINES",
         list(vec![

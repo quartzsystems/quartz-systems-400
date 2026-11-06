@@ -16,7 +16,7 @@ fn ptf(id: &str, prereqs: &[&str], coreqs: &[&str], supersedes: &[&str]) -> Cata
     let v = |x: &[&str]| x.iter().map(|s| (*s).to_string()).collect();
     CatalogPtf {
         id: id.into(),
-        product: "5770SS1".into(),
+        product: "QS00SS1".into(),
         option: "0000".into(),
         release: "V1R0M0".into(),
         kind: PtfKind::Immediate,

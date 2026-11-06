@@ -69,7 +69,7 @@ allows and until when. Enter shows the next key that matched.
 :EHELP.
 .* Item, key and option help.
 :HELP NAME='FLD/PRDID'.Product identifier
-:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:P.A product identifier&colon. seven characters, QS00SS1 for example.
 :EHELP.
 :HELP NAME='FLD/LICTRM'.License term
 :P.The license term of the product, for example V7 or V7R1.

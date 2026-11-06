@@ -48,10 +48,45 @@ const fn num(s: &str) -> u8 {
     n
 }
 
-/// The operating system's product identifier, IBM's for the operating
-/// system so that software checking for it finds it (`DSPSFWRSC`,
-/// `DSPPTF`, `QSZRTVPR`).
-pub const PRODUCT_ID: &str = "5770SS1";
+/// The operating system's product identifier (`DSPSFWRSC`, `DSPPTF`,
+/// `QSZRTVPR`). IBM's `5770SS1` is accepted for it on input
+/// ([`product_id`]).
+pub const PRODUCT_ID: &str = "QS00SS1";
+
+/// The development tools' product identifier (the ILE RPG compiler's
+/// listing heading); IBM's `5770WDS` is accepted for it on input.
+pub const DEV_TOOLS_ID: &str = "QS00WDS";
+
+/// The Licensed Internal Code's resource ID (`DSPSFWRSC`); IBM's
+/// `5770999` is accepted for it on input.
+pub const LIC_ID: &str = "QS00999";
+
+/// IBM's product IDs and the Quartz products that answer to them, so
+/// that software asking for IBM's product finds ours. Input only:
+/// what the system shows is always the Quartz ID. The licensed program
+/// catalog's `ibm_alias` entries agree with this table (a test there
+/// checks).
+pub const IBM_ALIASES: &[(&str, &str)] = &[
+    ("5770999", LIC_ID),
+    ("5770SS1", PRODUCT_ID),
+    ("5770WDS", DEV_TOOLS_ID),
+    ("5770TC1", "QS00TC1"),
+    ("5770ST1", "QS00ST1"),
+    ("5770DG1", "QS00DG1"),
+    ("5770PT1", "QS00PT1"),
+    ("5770XH2", "QS00AFW"),
+];
+
+/// The Quartz product ID for `id`: an IBM alias becomes the product
+/// answering to it; anything else is returned as it is. Case and
+/// blanks are the caller's.
+#[must_use]
+pub fn product_id(id: &str) -> &str {
+    IBM_ALIASES
+        .iter()
+        .find(|(ibm, _)| *ibm == id)
+        .map_or(id, |(_, ours)| ours)
+}
 
 /// The product's description.
 pub const PRODUCT_TEXT: &str = "Quartz Systems/400 Operating System";
@@ -59,8 +94,7 @@ pub const PRODUCT_TEXT: &str = "Quartz Systems/400 Operating System";
 /// A licensed program option installed beside the operating system.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Product {
-    /// IBM's product identifier, so that software checking for the
-    /// product finds it.
+    /// The product identifier.
     pub id: &'static str,
     /// `*BASE` or the option number.
     pub option: &'static str,
@@ -71,17 +105,17 @@ pub struct Product {
 }
 
 /// The licensed programs past the operating system, at [`RELEASE`]:
-/// the ILE RPG compiler stands where IBM's development tools product
-/// and its ILE RPG option (31) stand.
+/// the ILE RPG compiler is option 31 of `QS00WDS`, where IBM's ILE RPG
+/// stands in `5770WDS`.
 pub const PRODUCTS: &[Product] = &[
     Product {
-        id: "5770WDS",
+        id: DEV_TOOLS_ID,
         option: "*BASE",
         text: "Quartz Systems/400 Application Development",
         lib: "QSYS",
     },
     Product {
-        id: "5770WDS",
+        id: DEV_TOOLS_ID,
         option: "31",
         text: "Quartz Systems/400 ILE RPG Compiler",
         lib: "QSYS",
@@ -118,5 +152,18 @@ mod tests {
         for word in ["alpha", "beta", "rc"] {
             assert!(!full().to_lowercase().contains(word));
         }
+    }
+
+    #[test]
+    fn ibm_ids_are_aliases_on_input() {
+        assert_eq!(product_id("5770SS1"), PRODUCT_ID);
+        assert_eq!(product_id("5770WDS"), DEV_TOOLS_ID);
+        assert_eq!(product_id("5770999"), LIC_ID);
+        assert_eq!(product_id("QS00SS1"), "QS00SS1");
+        assert_eq!(product_id("1ABCDEF"), "1ABCDEF");
+        for (ibm, ours) in IBM_ALIASES {
+            assert!(ibm.starts_with("5770") && ours.starts_with("QS00"));
+        }
+        assert!(PRODUCTS.iter().all(|p| p.id.starts_with("QS00")));
     }
 }

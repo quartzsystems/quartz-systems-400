@@ -82,7 +82,7 @@ fn make(id: &str, prereqs: &[&str]) -> Vec<u8> {
     let k = key();
     let header = PtfHeader {
         ptf: id.into(),
-        product: "5770SS1".into(),
+        product: "QS00SS1".into(),
         option: "0000".into(),
         release: "V1R0M0".into(),
         load: "5050".into(),
@@ -96,7 +96,7 @@ fn make(id: &str, prereqs: &[&str]) -> Vec<u8> {
             .iter()
             .map(|p| PtfRef {
                 ptf: (*p).into(),
-                product: "5770SS1".into(),
+                product: "QS00SS1".into(),
             })
             .collect(),
         coreqs: Vec::new(),

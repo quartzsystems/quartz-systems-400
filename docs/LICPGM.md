@@ -32,7 +32,12 @@ build pipeline asks.
 
 A product answers to its IBM alias as well (`QSZRTVPR` with `5770SS1`
 finds `QS00SS1`), so software that checks for IBM's product finds
-ours. Reserved products are in the catalog with their IDs, options and
+ours. The alias is input only: every command, API, panel and SQL
+service shows the `QS00` ID (`QSZRTVPR` returns `QS00SS1` when asked
+for `5770SS1`). The table of aliases is `release::IBM_ALIASES`, which
+also maps the Licensed Internal Code's `5770999` to `QS00999`; PTF
+records and PTF packages that name an IBM ID (V1R0M0 recorded the
+operating system's PTFs as `5770SS1`) read as the `QS00` product. Reserved products are in the catalog with their IDs, options and
 agreements, never installed.
 
 - **Release**: every shipped product is at the system's release, from
@@ -406,7 +411,7 @@ sets to 108 (the end of `PRDR0100`; IBM documents the offset, not its
 value). Offsets below are decimal.
 
 `PRDR0100`: 0 bytes returned, 4 bytes available, 8 reserved (`bin4`
-0), 12 product ID (7: the ID asked for, so an alias is echoed), 19
+0), 12 product ID (7: the product's own ID, also when an IBM alias was asked for), 19
 release (6), 25 option (4), 29 load ID (4), 33 load type (10), 43
 symbolic load state (10), 53 load error indicator (10), 63 load state
 (2), 65 supported flag (1), 66 registration type (2), 68 registration

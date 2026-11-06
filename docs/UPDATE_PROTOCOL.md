@@ -74,14 +74,14 @@ sequence = 42              # grows with each catalog; older ones are refused
 generated = 1793318400     # Unix seconds
 
 [[product]]
-id = "5770SS1"
+id = "QS00SS1"
 option = "0000"
 release = "V1R0M0"
 text = "Quartz Systems/400 Operating System"
 
 [[ptf]]
 id = "QS00012"
-product = "5770SS1"
+product = "QS00SS1"
 option = "0000"
 release = "V1R0M0"
 kind = "immediate"         # immediate, delayed or lic

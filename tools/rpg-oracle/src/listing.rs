@@ -259,7 +259,7 @@ pub fn mask(lines: &[String], m: &Mask) -> Vec<String> {
             continue;
         }
         let mut l = raw.trim_end().to_string();
-        if l.starts_with('1') && (l.contains("5770WDS") || l.contains("Page")) {
+        if l.starts_with('1') && (l.contains("5770WDS") || l.contains("QS00WDS") || l.contains("Page")) {
             let page = l
                 .rsplit_once("Page")
                 .map(|(_, p)| p.trim().to_string())

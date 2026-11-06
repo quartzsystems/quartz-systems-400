@@ -1,7 +1,7 @@
                             Display PTF Cover Letter
                                                              System:   SYSNAME
  PTF identifier . . . . . :   QS00001
- Product  . . . . . . . . :   5770QS1
+ Product  . . . . . . . . :   QS00SS1
  Release  . . . . . . . . :   V1R0M0
 
  Corrects the level of the object store check.

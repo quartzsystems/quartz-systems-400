@@ -67,7 +67,7 @@ fn db() -> PtfDb {
         "QS00050".into(),
         PtfRecord {
             ptf: "QS00050".into(),
-            product: "5770SS1".into(),
+            product: "QS00SS1".into(),
             option: "0000".into(),
             release: "V1R0M0".into(),
             status: Status::Loaded,

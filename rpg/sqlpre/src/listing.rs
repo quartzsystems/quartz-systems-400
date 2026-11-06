@@ -13,6 +13,8 @@ use crate::{Options, Precompiled, msgs};
 /// What the listing's options page names.
 #[derive(Clone, Debug, Default)]
 pub struct Heading {
+    /// The product in the page heading (`QS00SS1`).
+    pub product: String,
     /// `LIB/OBJ`.
     pub object: String,
     /// `LIB/FILE`.
@@ -198,7 +200,7 @@ pub fn listing(p: &Precompiled, h: &Heading, records: &[Record], xref: &[XrefEnt
         page: 0,
         pos: 0,
         title: None,
-        head: format!(" 5770SS1 {}  QS/400 SQL precompiler  {}", h.release, h.object),
+        head: format!(" {} {}  QS/400 SQL precompiler  {}", h.product, h.release, h.object),
     };
     out.section(None);
     for (k, r) in options(h).iter().enumerate() {

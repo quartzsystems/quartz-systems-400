@@ -2024,7 +2024,7 @@ character variable of at least 13 characters.
 :EPARML.
 :EHELP.
 :HELP NAME='RTVOBJD/LICPGM'.CL var for LICPGM (7) (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :PARML.
 :PT.:PV.character-value:EPV.

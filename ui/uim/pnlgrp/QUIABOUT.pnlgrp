@@ -61,11 +61,11 @@ problem, and the serial number and model the system calls itself.
 :EPARML.
 :EHELP.
 :HELP NAME='FLD/PRDTEXT'.Product
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :EHELP.
 :HELP NAME='FLD/PRODUCT'.Product identifier
-:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:P.A product identifier&colon. seven characters, QS00SS1 for example.
 :EHELP.
 :HELP NAME='FLD/RELEASE'.Release
 :P.A release, in the form VxRyMz.

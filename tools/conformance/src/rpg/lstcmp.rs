@@ -87,7 +87,7 @@ pub fn normalize(lines: &[String], ours: bool) -> Vec<String> {
     let lines: Vec<String> = lines
         .into_iter()
         .map(|l| {
-            if !l.starts_with('1') && l.contains("5770WDS") && l.contains("Page") {
+            if !l.starts_with('1') && (l.contains("5770WDS") || l.contains("QS00WDS")) && l.contains("Page") {
                 let page = l.rsplit_once("Page").map(|(_, p)| p.trim().to_string()).unwrap_or_default();
                 format!("{}{{heading}} page {page}", &l[..1])
             } else {

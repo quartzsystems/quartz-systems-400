@@ -197,6 +197,14 @@ mod tests {
         assert_eq!(nav.loads[0].1.libraries[0].installed, "QSYS");
         assert!(nav.loads[0].1.objects.is_empty());
         let os = c.product("5770SS1").unwrap();
+        assert_eq!(os.definition.product.as_str(), release::PRODUCT_ID);
+        // Every IBM alias in the catalog is the release crate's, and
+        // names the same product there.
+        for p in &c.products {
+            if let Some(a) = &p.definition.ibm_alias {
+                assert_eq!(release::product_id(a.as_str()), p.definition.product.as_str(), "{a}");
+            }
+        }
         let opts: Vec<u8> = os.definition.options.iter().map(|o| o.option.0).collect();
         assert_eq!(opts, [0, 12, 18, 30, 33, 34]);
         assert_eq!(os.definition.release, release::RELEASE);

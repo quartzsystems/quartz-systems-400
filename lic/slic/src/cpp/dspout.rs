@@ -138,7 +138,7 @@ fn ptf_row(run: &PtfRun, p: &PtfRecord) -> Row {
     let opt = p.option.trim().trim_start_matches('*');
     let opt = opt.parse::<u32>().map_or_else(|_| "0000".into(), |n| format!("{n:04}"));
     let product = if p.product.is_empty() { run.product.clone() } else { p.product.clone() };
-    let lib = if product == release::PRODUCT_ID { "QSYS" } else { "QGPL" };
+    let lib = if release::product_id(&product) == release::PRODUCT_ID { "QSYS" } else { "QGPL" };
     let ty = if p.delayed { ("Delayed", "D") } else { ("Immediate", "I") };
     let serial: String = run.serial.trim().chars().rev().take(8).collect::<Vec<_>>().into_iter().rev().collect();
     vec![
@@ -446,9 +446,11 @@ mod tests {
                 product: String::new(),
             };
             let (_, mine) = ours("QSCPTF", QSCPTF, &ptf_row(&run, &p));
-            // The LIC group and the creation stamp are IBM's own.
-            let mask = ["SCMCGG", "SCCRTDAT", "SCCRTTIM"];
+            // The LIC group and the creation stamp are IBM's own; the
+            // operating system's product ID is Quartz's.
+            let mask = ["SCMCGG", "SCCRTDAT", "SCCRTTIM", "SCXPFID"];
             assert_eq!(split(QSCPTF, &mine, &mask), split(QSCPTF, &theirs, &mask), "{}", p.ptf);
+            assert_eq!(field(QSCPTF, &mine, "SCXPFID"), release::PRODUCT_ID);
         }
     }
 

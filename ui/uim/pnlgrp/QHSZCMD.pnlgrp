@@ -11,7 +11,7 @@
 product's objects are all there.
 :EHELP.
 :HELP NAME='CHKPRDOPT/PRDID'.Product ID (PRDID)
-:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:P.A product identifier&colon. seven characters, QS00SS1 for example.
 :P.A value is required.
 :PARML.
 :PT.:PV.character-value:EPV.
@@ -52,7 +52,7 @@ product's objects are all there.
 licensed program or one of its options.
 :EHELP.
 :HELP NAME='DLTLICPGM/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :P.A value is required.
 :PARML.
@@ -166,7 +166,7 @@ product from a manifest stream file (Quartz's).
 licensed program from media or a save file.
 :EHELP.
 :HELP NAME='RSTLICPGM/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :P.A value is required.
 :PARML.
@@ -277,7 +277,7 @@ leave it where it is, rewind it, or rewind and unload it.
 program for installing elsewhere.
 :EHELP.
 :HELP NAME='SAVLICPGM/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :P.A value is required.
 :PARML.

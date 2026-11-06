@@ -15,7 +15,7 @@ license key; a Quartz key is 18 groups of 6.
 :P.Also accepted&colon. *PROMPT, *LICKEYFILE.
 :EHELP.
 :HELP NAME='ADDLICKEY/PRDID'.Product identifier (PRDID)
-:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:P.A product identifier&colon. seven characters, QS00SS1 for example.
 :PARML.
 :PT.:PV.character-value:EPV.
 :PD.Type up to 7 characters.
@@ -101,7 +101,7 @@ overwritten. *PERM means it never expires.
 product's license information.
 :EHELP.
 :HELP NAME='CHGLICINF/PRDID'.Product identifier (PRDID)
-:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:P.A product identifier&colon. seven characters, QS00SS1 for example.
 :P.A value is required.
 :PARML.
 :PT.:PV.character-value:EPV.
@@ -184,7 +184,7 @@ object sends.
 the license keys added to the system.
 :EHELP.
 :HELP NAME='DSPLICKEY/PRDID'.Product identifier (PRDID)
-:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:P.A product identifier&colon. seven characters, QS00SS1 for example.
 :PARML.
 :PT.:PK DEF.*ALL:EPK.
 :PD.All of them.
@@ -246,7 +246,7 @@ printed for a batch job.
 license keys.
 :EHELP.
 :HELP NAME='RMVLICKEY/PRDID'.Product identifier (PRDID)
-:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:P.A product identifier&colon. seven characters, QS00SS1 for example.
 :P.A value is required.
 :PARML.
 :PT.:PV.character-value:EPV.
@@ -298,7 +298,7 @@ license keys.
 with the license information of products.
 :EHELP.
 :HELP NAME='WRKLICINF/PRDID'.Product identifier (PRDID)
-:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:P.A product identifier&colon. seven characters, QS00SS1 for example.
 :PARML.
 :PT.:PK.*ALL:EPK.
 :PD.All of them.

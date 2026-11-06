@@ -137,6 +137,8 @@ pub fn options(p: &Precompile) -> Vec<(String, String)> {
 /// The report's heading and object.
 #[derive(Clone, Debug)]
 pub struct Heading {
+    /// The product in the page heading (`QS00SS1`).
+    pub product: String,
     /// `VxRyMz`.
     pub release: String,
     /// `LIB/NAME`.
@@ -188,7 +190,7 @@ struct Pages<'a> {
 impl Pages<'_> {
     fn heading(&mut self) {
         self.page += 1;
-        let product = format!("5770SS1 {:<6}       ", self.h.release);
+        let product = format!("{} {:<6}       ", self.h.product, self.h.release);
         let title = "Print SQL information";
         let objword = match self.h.objtype.as_str() {
             "*SRVPGM" => "Service program",

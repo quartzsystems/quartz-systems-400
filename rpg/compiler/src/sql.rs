@@ -305,6 +305,7 @@ pub fn precompile_listing(c: &crate::Compiled, p: &Precompiled, opts: &crate::Op
     let command = opts.sql.clone().unwrap_or_default();
     let object = format!("{}/{}", opts.lib, opts.name);
     let h = rpgsqlpre::listing::Heading {
+        product: release::PRODUCT_ID.into(),
         source_file: format!("{}/{}", opts.src.0, opts.src.1),
         member: if opts.src.2 == opts.name { "*OBJ".into() } else { opts.src.2.clone() },
         objtype: if opts.command == crate::Command::CrtRpgMod { "*MODULE" } else { "*PGM" }.into(),

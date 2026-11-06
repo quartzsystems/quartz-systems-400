@@ -56,7 +56,7 @@ fn prdr0100_of_the_operating_system() {
     )
     .unwrap();
     assert_eq!(got, os_prdr0100("QS00SS1").0);
-    // IBM's ID finds the product and is echoed.
+    // IBM's ID finds the product; the product's own ID comes back.
     let got = qszrtvpr(
         &s,
         &sys(),
@@ -66,7 +66,7 @@ fn prdr0100_of_the_operating_system() {
         None,
     )
     .unwrap();
-    assert_eq!(got, os_prdr0100("5770SS1").0);
+    assert_eq!(got, os_prdr0100("QS00SS1").0);
     // A short receiver: bytes returned is what fits.
     let got = qszrtvpr(
         &s,

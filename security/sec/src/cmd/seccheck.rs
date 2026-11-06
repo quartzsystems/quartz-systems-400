@@ -477,7 +477,7 @@ pub fn counts(findings: &[Finding]) -> (usize, usize, usize) {
 
 /// The printed report: a heading, the column titles, one line per
 /// finding and the totals. `product` is the product and release
-/// (`5770SS1 V1R1M0`).
+/// (`QS00SS1 V1R1M0`).
 #[must_use]
 pub fn report(findings: &[Finding], system: &str, product: &str, now: u64) -> Vec<String> {
     let secs = now % 86_400;

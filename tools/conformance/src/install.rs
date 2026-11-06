@@ -452,7 +452,12 @@ impl Suite {
             }
             // The V1R0M0 table has no *SQLINF (header version 1): SQL
             // still sees a table, reads it, adds to it and builds on it.
-            let checks: [(&str, &[&str]); 14] = [
+            let checks: [(&str, &[&str]); 18] = [
+                // The products V1R0M0 installed, by Quartz's IDs and IBM's.
+                ("dspsfwrsc", &["QS00999", "QS00SS1", "QS00WDS", "V1R1M0"]),
+                ("chkprdopt PRDID(5770SS1)", &["QS00SS1"]),
+                ("chkprdopt PRDID(QS00WDS) OPTION(31)", &["QS00WDS"]),
+                ("dspptf LICPGM(5770SS1)", &["QS00SS1"]),
                 ("svc.dtaara get SLIPUSR/KEEPME", &["kept value"]),
                 ("dsppfm FILE(SLIPUSR/ORDERS)", &["bolts", "nuts"]),
                 ("dspjrn JRN(SLIPUSR/JRN)", &["PT", "ORDERS"]),
@@ -485,7 +490,8 @@ impl Suite {
             ];
             for (line, wants) in checks {
                 let out = s.command(line, CMD)?;
-                if out.contains("CPF") || out.contains("SQLSTATE") {
+                let ibm_id = ["5770999", "5770SS1", "5770WDS"].iter().any(|i| out.contains(i));
+                if out.contains("CPF") || out.contains("SQLSTATE") || ibm_id {
                     return Err(format!("{line}: failed after the upgrade:\n{out}"));
                 }
                 if let Some(w) = wants.iter().find(|w| !out.contains(**w)) {
@@ -514,7 +520,8 @@ impl Suite {
                 .trim()
                 .to_string();
             Ok(format!(
-                "V1R0M0 installed, upgraded to V1R1M0; the data area, the journaled table and \
+                "V1R0M0 installed, upgraded to V1R1M0; its products shown as QS00999, QS00SS1 \
+                 and QS00WDS and found by 5770SS1; the data area, the journaled table and \
                  its entries, the spooled files kept; the V1R0M0 SQL table selected, inserted \
                  into, indexed and viewed; RSTLIB of a V1R0M0 SAVLIB with its SQL table; {last}; {sig}"
             ))

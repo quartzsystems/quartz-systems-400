@@ -62,7 +62,7 @@ const MSG_WIDTH: usize = 56;
 
 /// What the listing needs beyond the run.
 pub struct Listing<'a> {
-    /// The product identifier (`5770SS1`).
+    /// The product identifier (`QS00SS1`).
     pub product: &'a str,
     /// The release (`V1R1M0`).
     pub release: &'a str,

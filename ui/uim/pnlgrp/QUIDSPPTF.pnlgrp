@@ -215,7 +215,7 @@ PTF database holds for one of them.
 :EHELP.
 .* Item, key and option help.
 :HELP NAME='FLD/PRODID'.Product ID
-:P.A product identifier&colon. seven characters, 5770SS1 for example.
+:P.A product identifier&colon. seven characters, QS00SS1 for example.
 :EHELP.
 :HELP NAME='FLD/IPLSRC'.IPL source
 :P.The IPL source shown for what the display is about.

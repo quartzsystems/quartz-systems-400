@@ -129,8 +129,7 @@ pub fn qszpkgpo(
         .parse()
         .map_err(|_| ApiError::new("CPF0C8A").text(&os, 4))?;
     let pid = char_at(info, 4, 7);
-    let product: ProductId = pid
-        .parse()
+    let product = ProductId::input(&pid)
         .map_err(|_| ApiError::new("CPF0CB2").text(&pid, 7))?;
     let rs = char_at(info, 11, 6);
     let release = if rs == "*ONLY" {

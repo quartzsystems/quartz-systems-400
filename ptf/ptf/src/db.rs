@@ -80,7 +80,7 @@ fn parse_refs(s: &str) -> Vec<PtfRef> {
             let (p, prod) = x.split_once(':')?;
             Some(PtfRef {
                 ptf: p.into(),
-                product: prod.into(),
+                product: release::product_id(prod).into(),
             })
         })
         .collect()
@@ -126,7 +126,9 @@ impl PtfDb {
         out
     }
 
-    /// Parse the stored text; lines that do not parse are dropped.
+    /// Parse the stored text; lines that do not parse are dropped. A
+    /// product stored by IBM's ID (V1R0M0 recorded `5770SS1`) reads as
+    /// the Quartz product.
     #[must_use]
     pub fn decode(text: &str) -> Self {
         let mut db = Self::default();
@@ -153,7 +155,7 @@ impl PtfDb {
                 .collect();
             let r = PtfRecord {
                 ptf: f[0].into(),
-                product: f[1].into(),
+                product: release::product_id(f[1]).into(),
                 option: f[2].into(),
                 release: f[3].into(),
                 status,
@@ -185,5 +187,38 @@ impl PtfDb {
     /// The PTFs of a product, in ID order.
     pub fn of_product<'a>(&'a self, product: &'a str) -> impl Iterator<Item = &'a PtfRecord> + 'a {
         self.ptfs.values().filter(move |r| r.product == product)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ibm_product_ids_stored_by_v1r0m0_read_as_quartz() {
+        // V1R0M0 recorded the operating system's PTFs as 5770SS1.
+        let r = PtfRecord {
+            ptf: "QS00001".into(),
+            product: "5770SS1".into(),
+            option: "0000".into(),
+            release: "V1R0M0".into(),
+            status: Status::Loaded,
+            action: Action::None,
+            delayed: false,
+            lic: false,
+            savf: "QGPL/QS00001".into(),
+            superseded_by: String::new(),
+            prereqs: vec![PtfRef { ptf: "QS00000".into(), product: "5770SS1".into() }],
+            coreqs: Vec::new(),
+            replaced: Vec::new(),
+            changed: 7,
+        };
+        let mut old = PtfDb::default();
+        old.ptfs.insert(r.ptf.clone(), r);
+        let db = PtfDb::decode(&old.encode());
+        let r = db.get("QS00001").unwrap();
+        assert_eq!(r.product, "QS00SS1");
+        assert_eq!(r.prereqs[0].product, "QS00SS1");
+        assert_eq!(db.of_product("QS00SS1").count(), 1);
     }
 }

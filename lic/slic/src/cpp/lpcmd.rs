@@ -130,7 +130,7 @@ fn product(s: &str) -> Result<ProductId, String> {
     if let Some(p) = catalog::shipped().product(&s) {
         return Ok(p.definition.product.clone());
     }
-    s.parse()
+    ProductId::input(&s)
         .map_err(|_| format!("{NOT_INSTALLED} product {s} is not valid"))
 }
 
@@ -262,7 +262,7 @@ fn rstlicpgm(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     // The operating system's language objects: the language library
     // from the text the system carries, whatever the device.
     if matches!(objects_of(&parms.text("RSTOBJ")), Objects::Lng)
-        && parms.text("LICPGM").trim().eq_ignore_ascii_case("QS00SS1")
+        && product(&parms.text("LICPGM")).is_ok_and(|p| p.as_str() == release::PRODUCT_ID)
         && parms.text("LNG").trim().parse().ok().and_then(msgf::nls::language).is_some()
     {
         return inslng(system, &parms.text("LNG"), true);
@@ -594,7 +594,7 @@ pub fn sfwrsc_rows(system: &mut System) -> Vec<Vec<String>> {
 pub fn sfwrsc_full(system: &mut System) -> Vec<Vec<String>> {
     let rls = release::RELEASE.to_string();
     let mut rows = vec![
-        ["5770999", "*BASE", "5050", "Licensed Internal Code", "*CODE", "", &rls, "", "", "", "", ""]
+        [release::LIC_ID, "*BASE", "5050", "Licensed Internal Code", "*CODE", "", &rls, "", "", "", "", ""]
             .iter()
             .map(|s| (*s).to_string())
             .collect::<Vec<String>>(),

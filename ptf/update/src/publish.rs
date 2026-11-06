@@ -50,6 +50,7 @@ pub struct Publication<'a> {
 /// A product's text: the operating system's, a licensed program's, or
 /// its ID.
 fn product_text(id: &str) -> String {
+    let id = release::product_id(id);
     if id == release::PRODUCT_ID {
         return release::PRODUCT_TEXT.into();
     }
@@ -74,7 +75,7 @@ pub fn catalog(p: &Publication<'_>) -> Result<Catalog> {
         let ids = |v: &[ptf::PtfRef]| v.iter().map(|r| r.ptf.clone()).collect::<Vec<_>>();
         cat.ptfs.push(CatalogPtf {
             id: h.ptf.clone(),
-            product: h.product.clone(),
+            product: release::product_id(&h.product).into(),
             option: h.option.clone(),
             release: h.release.clone(),
             kind: if h.lic {
@@ -92,13 +93,14 @@ pub fn catalog(p: &Publication<'_>) -> Result<Catalog> {
             sha256: hex::encode(Sha256::digest(bytes)),
             text: cover.lines().next().unwrap_or("").trim().to_string(),
         });
+        let product = release::product_id(&h.product);
         if !cat
             .products
             .iter()
-            .any(|x| x.id == h.product && x.option == h.option && x.release == h.release)
+            .any(|x| x.id == product && x.option == h.option && x.release == h.release)
         {
             cat.products.push(Product {
-                id: h.product.clone(),
+                id: product.into(),
                 option: h.option.clone(),
                 release: h.release.clone(),
                 text: product_text(&h.product),

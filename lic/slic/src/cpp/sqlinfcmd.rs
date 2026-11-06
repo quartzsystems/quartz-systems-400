@@ -108,6 +108,7 @@ fn prtsqlinf(system: &mut System, parms: &Parms) -> CmdReply {
     let stmts: Vec<_> = info.all(tag::STATEMENT).filter_map(|b| db::sqlinf::program::StmtDef::decode(b).ok()).collect();
     let (date, time) = super::rpg::stamp_dashed(crate::stgsvc::perfcol::local_now(system));
     let h = Heading {
+        product: release::PRODUCT_ID.into(),
         release: release::RELEASE.to_string(),
         object: format!("{lname}/{obj}"),
         objtype: objtype.clone(),

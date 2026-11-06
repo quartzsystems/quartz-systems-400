@@ -15,7 +15,7 @@ use store::obj::library::Library;
 use store::obj::{JobHandle, ObjectId, ops, types};
 
 use crate::db::{PtfDb, PtfRecord, Replaced};
-use crate::header::PtfKind;
+use crate::header::{PtfKind, PtfRef};
 use crate::package::Package;
 use crate::status::{Action, Status};
 use crate::{Error, Result};
@@ -79,7 +79,7 @@ pub fn load(db: &mut PtfDb, pkg: &Package, savf: &str, release: &str, now: u64) 
         h.ptf.clone(),
         PtfRecord {
             ptf: h.ptf.clone(),
-            product: h.product.clone(),
+            product: release::product_id(&h.product).into(),
             option: h.option.clone(),
             release: h.release.clone(),
             status: Status::Loaded,
@@ -88,13 +88,23 @@ pub fn load(db: &mut PtfDb, pkg: &Package, savf: &str, release: &str, now: u64) 
             lic: h.lic,
             savf: savf.into(),
             superseded_by: String::new(),
-            prereqs: h.prereqs.clone(),
-            coreqs: h.coreqs.clone(),
+            prereqs: ours(&h.prereqs),
+            coreqs: ours(&h.coreqs),
             replaced: Vec::new(),
             changed: now,
         },
     );
     Ok(())
+}
+
+/// References with an IBM product ID read as the Quartz product.
+fn ours(refs: &[PtfRef]) -> Vec<PtfRef> {
+    refs.iter()
+        .map(|r| PtfRef {
+            ptf: r.ptf.clone(),
+            product: release::product_id(&r.product).into(),
+        })
+        .collect()
 }
 
 fn applied_or_superseded(db: &PtfDb, ptf: &str, batch: &[String]) -> bool {

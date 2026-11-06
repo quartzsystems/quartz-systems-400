@@ -77,11 +77,11 @@ fn make(ptf: &str, obj: &str, value: &str, prereqs: &[&str], kind: PtfKind) -> V
     let k = key();
     let r = |p: &&str| PtfRef {
         ptf: (*p).into(),
-        product: "5770SS1".into(),
+        product: "QS00SS1".into(),
     };
     let header = PtfHeader {
         ptf: ptf.into(),
-        product: "5770SS1".into(),
+        product: "QS00SS1".into(),
         option: "0000".into(),
         release: "V1R0M0".into(),
         load: "5050".into(),

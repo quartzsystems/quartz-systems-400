@@ -419,7 +419,7 @@ conditions.
 :EPARML.
 :EHELP.
 :HELP NAME='DSPPRB/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :P.The value has 3 parts, given in order&colon.
 :H4.Part 1&colon. Program identifier

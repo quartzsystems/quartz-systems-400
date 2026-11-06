@@ -239,7 +239,7 @@ not known `CPF3C3C`.
 `RTVC0100` (*QS/400 reading*): job name 8, user 18, number 28,
 current library 34, user profile 44. `RTMZ0100` (*QS/400 reading*):
 offset minutes `bin4` 8, DST `char(1)` 12, name 13, abbreviation 23,
-text 33. `PRDR0100`: product id `5770SS1` at 12, release level
+text 33. `PRDR0100`: product id `QS00SS1` at 12 (also when asked for by IBM's `5770SS1`), release level
 `VxRyMz` at 19, option `0000` at 25, load id at 29, the remaining
 fields fixed. `QLGCNVCS` request block: type `bin4` (1), CCSID
 `bin4`, direction `bin4` (0 upper, 1 lower), reserved 10.

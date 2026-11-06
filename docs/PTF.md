@@ -216,7 +216,7 @@ manifest (`ptf::manifest`):
 
 ```toml
 ptf = "QS00042"              # required
-product = "5770SS1"          # required
+product = "QS00SS1"          # required (IBM's 5770SS1 is read as QS00SS1)
 option = "0000"              # default *BASE
 release = "V1R0M0"           # default: this system's
 target_release = "V1R0M0"    # default: release

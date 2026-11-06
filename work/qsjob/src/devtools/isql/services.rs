@@ -102,7 +102,7 @@ fn print_session(host: &Host, surface: &mut Surface, s: &Session) -> Option<Resu
             Key::Enter => {
                 let pages = print::session(
                     &session_lines(s),
-                    "5770ST1",
+                    "QS00ST1",
                     &release::RELEASE.to_string(),
                     &stamp(host),
                     60,

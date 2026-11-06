@@ -63,7 +63,7 @@ a media library out of *INSERT into a usable category.
 fixes.
 :EHELP.
 :HELP NAME='APYPTF/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :P.A value is required.
 :PARML.
@@ -614,7 +614,7 @@ and no conversion is done.
 file or a device.
 :EHELP.
 :HELP NAME='CPYPTF/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :P.A value is required.
 :PARML.
@@ -1102,7 +1102,7 @@ when the file has none.
 fixes of a licensed program.
 :EHELP.
 :HELP NAME='DSPPTF/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :PARML.
 :PT.:PK DEF.*ALL:EPK.
@@ -1196,7 +1196,7 @@ when the file has none.
 cover letters of program temporary fixes.
 :EHELP.
 :HELP NAME='DSPPTFCVR/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :PARML.
 :PT.:PK DEF.*ALL:EPK.
@@ -1766,7 +1766,7 @@ and the Q libraries that hold user data (QGPL, QUSRSYS and the like).
 package in requisite order, now or at the next IPL.
 :EHELP.
 :HELP NAME='INSPTF/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :P.Up to 300 values can be given.
 :PARML.
@@ -1906,7 +1906,7 @@ leave it where it is, rewind it, or rewind and unload it.
 from save files or media.
 :EHELP.
 :HELP NAME='LODPTF/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :P.A value is required.
 :PARML.
@@ -2156,7 +2156,7 @@ printed for a batch job.
 fixes.
 :EHELP.
 :HELP NAME='RMVPTF/LICPGM'.Product (LICPGM)
-:P.A licensed program by its seven-character product identifier, 5770SS1
+:P.A licensed program by its seven-character product identifier, QS00SS1
 for example.
 :P.A value is required.
 :PARML.

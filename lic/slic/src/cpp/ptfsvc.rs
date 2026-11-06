@@ -160,7 +160,7 @@ fn items(
             .unwrap_or_else(|| format!("QGPL/{p}"));
         let bytes = ptfcmd::read_ptf(system, &savf)?;
         let Ok((h, _)) = package::peek(&bytes) else { continue };
-        if (!products.is_empty() && !products.contains(&h.product)) || (lic_only && !h.lic) {
+        if (!products.is_empty() && !products.iter().any(|x| x == release::product_id(&h.product))) || (lic_only && !h.lic) {
             continue;
         }
         items.push(Item { savf, bytes });
@@ -179,7 +179,7 @@ fn insptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     }
     let ins = InsType::parse(&parms.text("INSTYPE")).unwrap_or(InsType::DelayAll);
     let lic_only = parms.text("PTFTYPE") == "*HIPERLIC";
-    let products = list(parms, "LICPGM");
+    let products: Vec<String> = list(parms, "LICPGM").iter().map(|p| release::product_id(p).to_string()).collect();
     let omit = list(parms, "OMIT");
     let group = parms.text("PTFGRP").to_ascii_uppercase();
     let mut db = ptfcmd::load_db(system)?;
@@ -259,7 +259,7 @@ fn insptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 
 fn cpyptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require()?;
-    let product = parms.text("LICPGM").to_ascii_uppercase();
+    let product = ptfcmd::licpgm(parms);
     let from = parms.text("FROMDEV").to_ascii_uppercase();
     if !from.is_empty() && from != "*SERVICE" && from != "*SAVF" {
         return Err(format!("CPF9814 device {from}: PTFs are copied from their save files in this release"));

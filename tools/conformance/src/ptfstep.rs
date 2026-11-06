@@ -20,11 +20,12 @@ fn want(out: &str, what: &str, needles: &[&str]) -> Result<(), String> {
     }
 }
 
-/// A PTF replacing `QS81/LEVEL`.
-fn manifest(ptf: &str, kind: &str, prereqs: &[&str]) -> String {
+/// A PTF replacing `QS81/LEVEL`, for the operating system named
+/// `product` (ours or IBM's ID).
+fn manifest(ptf: &str, product: &str, kind: &str, prereqs: &[&str]) -> String {
     let pre: Vec<String> = prereqs.iter().map(|p| format!("\"{p}\"")).collect();
     format!(
-        "ptf = \"{ptf}\"\nproduct = \"QS00SS1\"\nkind = \"{kind}\"\nprereqs = [{}]\n\
+        "ptf = \"{ptf}\"\nproduct = \"{product}\"\nkind = \"{kind}\"\nprereqs = [{}]\n\
          cover = \"{ptf} sets the conformance level.\"\n\n\
          [[object]]\nlibrary = \"QS81\"\nname = \"LEVEL\"\ntype = \"*DTAARA\"\n",
         pre.join(", ")
@@ -58,22 +59,24 @@ impl Suite {
         s.command("crtlib LIB(QS81)", CMD)?;
         s.command("crtdtaara DTAARA(QS81/LEVEL) TYPE(*CHAR) LEN(10) VALUE('level1')", CMD)?;
         // Each PTF is built from the object as it should become.
-        for (ptf, kind, pre, v) in [
-            ("QS08101", "immediate", &[][..], "level1"),
-            ("QS08102", "delayed", &["QS08101"][..], "level2"),
+        // QS08102 names IBM's ID, as a V1R0M0 PTF did: it is the same
+        // product.
+        for (ptf, product, kind, pre, v) in [
+            ("QS08101", "QS00SS1", "immediate", &[][..], "level1"),
+            ("QS08102", "5770SS1", "delayed", &["QS08101"][..], "level2"),
         ] {
             set_level(s, v)?;
             let path = format!("/tmp/{ptf}.toml");
-            put(s, &path, &format!("M{ptf}"), &manifest(ptf, kind, pre))?;
+            put(s, &path, &format!("M{ptf}"), &manifest(ptf, product, kind, pre))?;
             let made = s.command(&format!("qscrtptf MANIFEST('{path}') KEYFILE('/tmp/s81.key')"), CMD)?;
             if made.contains("CPF") || made.contains("CPD") {
                 return Err(format!("QSCRTPTF {ptf}: {made}"));
             }
         }
         set_level(s, "base")?;
-        for ptf in ["QS08101", "QS08102"] {
+        for (ptf, licpgm) in [("QS08101", "QS00SS1"), ("QS08102", "5770SS1")] {
             let loaded = s.command(
-                &format!("lodptf LICPGM(QS00SS1) DEV(*SAVF) SELECT({ptf}) SAVF(QGPL/{ptf})"),
+                &format!("lodptf LICPGM({licpgm}) DEV(*SAVF) SELECT({ptf}) SAVF(QGPL/{ptf})"),
                 CMD,
             )?;
             want(&loaded, "LODPTF", &["CPC3604", ptf])?;
@@ -110,6 +113,12 @@ impl Suite {
             "DSPPTF after the IPL",
             &["QS08102", "Temporarily applied"],
         )?;
+        // IBM's ID finds the same PTFs; ours is what shows.
+        let ibm = s.command("dspptf LICPGM(5770SS1)", CMD)?;
+        want(&ibm, "DSPPTF LICPGM(5770SS1)", &["QS08101", "QS08102", "QS00SS1"])?;
+        if ibm.contains("5770") {
+            return Err(format!("DSPPTF shows an IBM product ID:\n{ibm}"));
+        }
         let perm = s.command("apyptf LICPGM(QS00SS1) SELECT(QS08101) APY(*PERM)", CMD)?;
         want(&perm, "APYPTF *PERM", &["Permanently applied"])?;
         want(

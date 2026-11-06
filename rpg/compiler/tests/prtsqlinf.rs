@@ -39,6 +39,8 @@ fn statements_print_as_pub400() {
     let pre = compiled();
     let stmts = sql::prtsqlinf::entries(&pre.texts);
     let h = sql::prtsqlinf::Heading {
+        // pub400's heading, for the comparison.
+        product: "5770SS1".into(),
         release: "V7R5M0".into(),
         object: "{user}1/QS15SQL".into(),
         objtype: "*PGM".into(),
@@ -95,6 +97,7 @@ fn options_are_the_command_and_set_option() {
     }
     // Rendered one to a line under the command, as pub400 lays them out.
     let h = sql::prtsqlinf::Heading {
+        product: "QS00SS1".into(),
         release: "V1R1M0".into(),
         object: "QGPL/QS15SQL".into(),
         objtype: "*PGM".into(),

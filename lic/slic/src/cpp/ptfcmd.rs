@@ -120,6 +120,11 @@ pub(super) fn store_groups(system: &mut System, g: &ptf::grpdb::GroupDb) -> Resu
     store_space_text(system, GROUPS, "PTF groups", &g.encode())
 }
 
+/// `LICPGM`, upper case, an IBM product ID as the Quartz one.
+pub(super) fn licpgm(parms: &Parms) -> String {
+    release::product_id(&parms.text("LICPGM").trim().to_ascii_uppercase()).to_string()
+}
+
 pub(super) fn list(parms: &Parms, kwd: &str) -> Vec<String> {
     parms
         .list(kwd)
@@ -168,7 +173,7 @@ pub(super) fn msg(id: &str, kind: u8, fields: &[(&str, usize)]) -> CmdMsg {
 
 fn lodptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require()?;
-    let product = parms.text("LICPGM").to_ascii_uppercase();
+    let product = licpgm(parms);
     let dev = parms.text("DEV").to_ascii_uppercase();
     let media = crate::stgsvc::media::stream::is_device(&dev).then(|| crate::stgsvc::media::stream::of(parms, &dev));
     if media.is_none() && dev != "*SAVF" {
@@ -200,7 +205,7 @@ fn lodptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
             None => read_ptf(system, p)?,
         };
         let pkg = package::open(&bytes, &keys).map_err(|e| format!("{} {p}: {e}", e.msgid()))?;
-        if pkg.header.product != product {
+        if release::product_id(&pkg.header.product) != product {
             continue;
         }
         apply::load(&mut db, &pkg, &format!("QGPL/{p}"), &release_text(), now_unix())
@@ -259,7 +264,7 @@ pub(super) fn package_of(system: &mut System, db: &PtfDb, ptf: &str) -> Result<(
 
 fn apyptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require()?;
-    let product = parms.text("LICPGM").to_ascii_uppercase();
+    let product = licpgm(parms);
     let perm = parms.text("APY") == "*PERM";
     let delayed = parms.text("DELAYED") == "*YES";
     let mut db = load_db(system)?;
@@ -313,7 +318,7 @@ fn apyptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 
 fn rmvptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require()?;
-    let product = parms.text("LICPGM").to_ascii_uppercase();
+    let product = licpgm(parms);
     let perm = parms.text("RMV") == "*PERM";
     let mut db = load_db(system)?;
     let batch = chosen(&db, parms, &product, &[Status::TempApplied]);
@@ -346,7 +351,7 @@ fn rmvptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
 }
 
 fn dspptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
-    let product = parms.text("LICPGM").to_ascii_uppercase();
+    let product = licpgm(parms);
     let db = load_db(system)?;
     let sel = list(parms, "SELECT");
     let mut text = format!(
@@ -422,7 +427,7 @@ fn status_wanted(sel: &str, s: Status) -> bool {
 /// `CPF6613` when none does.
 pub(crate) fn cover_letters(system: &mut System, product: &str, select: &[String], cvratr: &[String], status: &str) -> Result<Vec<Cover>, String> {
     let db = load_db(system)?;
-    let product = product.trim().to_ascii_uppercase();
+    let product = release::product_id(&product.trim().to_ascii_uppercase()).to_string();
     let ids: Vec<String> = db
         .ptfs
         .values()

@@ -135,7 +135,7 @@ pub struct Netstat {
 /// An installed product load (`DSPSFWRSC`).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Product {
-    /// `5770SS1`, `QS00SS1` ...
+    /// `QS00SS1`, `QS00WDS` ...
     pub id: String,
     /// `*BASE` or the option number.
     pub option: String,

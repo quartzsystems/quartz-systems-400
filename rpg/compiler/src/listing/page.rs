@@ -79,7 +79,7 @@ impl Out {
         };
         self.lines.push(format!(
             "{cc}{:<64}{:<26}Page {:>5}",
-            format!(" 5770WDS {}  QS/400  RN        QS/400 ILE RPG", release::RELEASE),
+            format!(" {} {}  QS/400  RN        QS/400 ILE RPG", release::DEV_TOOLS_ID, release::RELEASE),
             self.title,
             self.page
         ));

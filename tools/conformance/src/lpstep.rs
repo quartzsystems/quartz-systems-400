@@ -84,6 +84,11 @@ impl Suite {
         if chk.contains("CPF") {
             return Err(format!("CHKPRDOPT before: {chk}"));
         }
+        // IBM's ID is an alias on input; what comes back is ours.
+        let chk = s.command("chkprdopt PRDID(5770WDS)", CMD)?;
+        if chk.contains("CPF") || chk.contains("5770") {
+            return Err(format!("CHKPRDOPT PRDID(5770WDS): {chk}"));
+        }
         s.command("crtsavf FILE(QGPL/S80WDS)", CMD)?;
         let saved = s.command("savlicpgm LICPGM(QS00WDS) DEV(*SAVF) OPTION(*ALL) SAVF(QGPL/S80WDS)", CMD)?;
         if saved.contains("CPF") {
@@ -113,13 +118,17 @@ impl Suite {
         // *BASE first, then the compiler's option, as IBM's RSTLICPGM.
         let rst = s.command("rstlicpgm LICPGM(QS00WDS) DEV(*SAVF) SAVF(QGPL/S80WDS)", CMD)?;
         want(&rst, "RSTLICPGM QS00WDS", &["CPC3D81"])?;
-        let rst = s.command("rstlicpgm LICPGM(QS00WDS) DEV(*SAVF) OPTION(31) SAVF(QGPL/S80WDS)", CMD)?;
+        let rst = s.command("rstlicpgm LICPGM(5770WDS) DEV(*SAVF) OPTION(31) SAVF(QGPL/S80WDS)", CMD)?;
         want(&rst, "RSTLICPGM QS00WDS option 31", &["CPC3D81"])?;
         let again = s.command(rpg, CMD)?;
         if again.contains("CPF0C1F") {
             return Err(format!("CRTBNDRPG after RSTLICPGM: {again}"));
         }
-        want(&s.command("dspsfwrsc", CMD)?, "DSPSFWRSC after RSTLICPGM", &["QS00WDS"])?;
+        let rsf = s.command("dspsfwrsc", CMD)?;
+        want(&rsf, "DSPSFWRSC after RSTLICPGM", &["QS00WDS", "QS00999", "QS00SS1"])?;
+        if rsf.contains("5770") {
+            return Err(format!("DSPSFWRSC shows an IBM product ID:\n{rsf}"));
+        }
         let rst = s.command("rstlicpgm LICPGM(QS00RPG) DEV(*SAVF) SAVF(QGPL/S80RPG)", CMD)?;
         want(&rst, "RSTLICPGM QS00RPG", &["CPC3D81"])?;
 

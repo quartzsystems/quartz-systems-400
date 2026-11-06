@@ -42,6 +42,15 @@ impl ProductId {
         &self.0
     }
 
+    /// A product ID a user or a program gave: IBM's ID of a product
+    /// Quartz ships (`5770SS1`) names the Quartz product (`QS00SS1`).
+    ///
+    /// # Errors
+    /// When the text is not a product ID.
+    pub fn input(s: &str) -> Result<Self, IdError> {
+        release::product_id(s).parse()
+    }
+
     /// Whether the ID is in the Quartz-reserved `QS` range.
     #[must_use]
     pub fn is_quartz(&self) -> bool {
@@ -314,6 +323,9 @@ mod tests {
             assert!(no.parse::<ProductId>().is_err(), "{no}");
         }
         assert!("QS00SS1".parse::<ProductId>().unwrap().is_quartz());
+        assert_eq!(ProductId::input("5770SS1").unwrap().as_str(), ProductId::OS);
+        assert_eq!(ProductId::input("5770WDS").unwrap().as_str(), "QS00WDS");
+        assert_eq!("5770SS1".parse::<ProductId>().unwrap().as_str(), "5770SS1");
     }
 
     #[test]
