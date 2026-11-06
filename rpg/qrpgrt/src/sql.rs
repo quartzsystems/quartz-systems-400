@@ -754,14 +754,25 @@ fn call(job: &mut mi::Job, scope: &str, plan: &sql::exec::routine::CallPlan, var
     r
 }
 
-/// The bytes a value takes in storage of `d`, for a call's argument.
+/// The bytes a value takes in storage of `d`, for a call's argument:
+/// the whole storage, as the called program may fill all of it.
 pub(crate) fn value_image(v: &Value, d: &Desc, extra: i64) -> Result<Vec<u8>, (i32, &'static str)> {
-    image(v, d, extra).map(|(b, _)| b)
+    image(v, d, extra).map(|(b, _)| whole(b, d))
 }
 
-/// The bytes of an empty value of `d`.
+/// The storage of `d` holding an empty value, for a call's argument.
 pub(crate) fn empty_image(d: &Desc, extra: i64) -> Vec<u8> {
-    empty(d, extra)
+    whole(empty(d, extra), d)
+}
+
+/// A varying or LOB image grown to its storage's full size: the callee
+/// writes up to the declared length past the prefix, and the outputs
+/// are read back over the whole storage.
+fn whole(mut b: Vec<u8>, d: &Desc) -> Vec<u8> {
+    if b.len() < d.size() {
+        b.resize(d.size(), 0);
+    }
+    b
 }
 
 /// The value in storage of `d`.
@@ -788,4 +799,20 @@ pub(crate) fn read_sqlca_at(b: &[u8]) -> Sqlca {
         ca.sqlerrd[i] = be(96 + i * 4);
     }
     ca
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A varying argument takes its whole storage, whatever its value:
+    /// an `OUT VARCHAR(10)` procedure writes up to 12 bytes.
+    #[test]
+    fn varying_arguments_take_their_storage() {
+        let d = Desc { kind: Kind::VarChar, len: 10, dec: 0 };
+        assert_eq!(empty_image(&d, 0).len(), 12);
+        let b = value_image(&Value::Str("AB".into()), &d, 0).unwrap();
+        assert_eq!(b.len(), 12);
+        assert_eq!(value_of(&b, &d, 0), Value::Str("AB".into()));
+    }
 }
