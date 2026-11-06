@@ -1008,6 +1008,60 @@ jobs) are in no monitor's care and stay. In the restricted state the
 console signs on to the controlling subsystem's description although
 it is not active; `STRSBS` of it starts the system again.
 
+**Batch restricted state.** `ENDSBS SBS(*ALL) BCHTIMLMT(minutes|*NOMAX)`
+from a batch job of the controlling subsystem (taken from one of its
+job queues) ends every subsystem and keeps that job: its monitor ends
+the others and waits for it, the controlling subsystem "ending to a
+single job". When the job ends, or `BCHTIMLMT` runs out and `QSYSARB5`
+ends it, the controlling subsystem starts again. `BCHTIMLMT` anywhere
+else, and `ENDSBS *ALL` from such a batch job without it, is `CPF1052`,
+as on IBM i. The console's job stays as in every restricted state; DST
+runs only before the operating system starts, and an IPL ends the
+state, so DST option 14 always finds the system out of it. `ENDSYS` has
+no `BCHTIMLMT`, on IBM i neither.
+
+### Storage limits and power (`QSYSARB5`)
+
+`QSYSARB5` has the storage service look, every ten seconds
+(`lic/slic/src/stgsvc/arb.rs`):
+
+- **The ASP threshold** (DST and SST, Work with ASP threshold; the
+  superblock's `threshold`, 90 when unset): at or above it `CPF0907` to
+  `QSYSOPR` and the history log, again each hour while the ASP stays
+  there. `CPI0953` and `CPI0954` are user ASPs' messages; QS/400 has ASP
+  1 only, so they are described and never sent.
+- **`QSTGLOWLMT` and `QSTGLOWACN`**: below the limit (percent
+  available) `CPI099C` to `QSYSMSG` and `QSYSOPR` and the action:
+  `*MSG` nothing more; `*CRITMSG` `CPI099B` to `QSECOFR` (there is no
+  `CHGSRVA`, so `QSECOFR` is the critical message user); `*REGFAC` a job
+  per `QIBM_QWC_QSTGLOWACN` program (`STGL0100`, no parameters), in
+  `QSYSWRK` from `QSYSNOMAX`, `QSYSJOBD`, user `QPGMR`; `*ENDSYS`
+  `ENDSBS *ALL *IMMED`; `*PWRDWNSYS` `PWRDWNSYS *IMMED RESTART(*YES)`.
+  The last three are not taken in the restricted state. The action comes
+  again every 30 minutes while the ASP stays below, at once when either
+  system value changes. While below with `*REGFAC`, `*ENDSYS` or
+  `*PWRDWNSYS` no subsystem starts: `CPI099B` and `CPF1050`, and at the
+  IPL `CPI099D` (the system comes up restricted).
+- **The power supply**: the hypervisor's UPS daemon reports through the
+  guest agent's `qs400-set-power-source` (`lic/guestagent/src/ups.rs`).
+  On battery `CPF1816` goes to `QUPSMSGQ` (and `QSYSOPR`); after
+  `QUPSDLYTIM`'s delay, or at once on a low battery, the system powers
+  down immediately. `*CALC` and `*BASIC` wait 200 seconds, IBM's fixed
+  delay; 0 powers down at once; `*NOMAX` waits for a program or operator,
+  but powers down at once with `CPF1818` when `QUPSMSGQ` does not exist
+  and `CPF1819` when no job allocated it and it is not in `*BREAK` or
+  `*NOTIFY` delivery. Utility power back sends `CPF1817`. The value's
+  second element, the delay in seconds, is the system's to fill in.
+  `BLOCKED(rel)`: a UPS on USB (the HID power device class) is not read;
+  the kernel has no `hidraw` and nothing parses its reports.
+- **`QPWRRSTIPL`** is kept and shown, but whether the machine starts
+  when power returns is the firmware's setting ("restore on AC power
+  loss", or the hypervisor's autostart), which QS/400 can neither read
+  nor set on x86 without IPMI: set the firmware to match.
+- **`QRMTIPL`** takes `0` only (`CPF1076` for `1`): there is no remote
+  power-on line or modem.
+- A running `STRASPBAL TYPE(*CAPACITY)` takes its next step.
+
 ### Job accounting
 
 `QACGLVL` says what is collected: `*JOB` (job resources), `*PRINT`

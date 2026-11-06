@@ -27,7 +27,10 @@
 //!   after the `QUPSDLYTIM` delay the system powers down at once; a low
 //!   battery powers it down at once; `*NOMAX` waits, but powers down at
 //!   once (`CPF1818`, `CPF1819`) when no one can be told. Utility power
-//!   back sends `CPF1817`.
+//!   back sends `CPF1817`. The power supply's state comes from the
+//!   guest agent (`guestagent::ups`). `BLOCKED(rel)`: a UPS on USB (the
+//!   HID power device class) is not read; the kernel is built without
+//!   `hidraw` and nothing parses the reports.
 
 use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};

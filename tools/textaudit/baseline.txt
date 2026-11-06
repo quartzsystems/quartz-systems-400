@@ -1616,37 +1616,9 @@ devtools/seu/src/srctype.rs	Type
 devtools/seu/src/srctype.rs	Type
 devtools/seu/src/srctype.rs	Type
 devtools/seu/src/srctype.rs	Use
-devtools/sst/src/capacity.rs	ASP threshold, %
-devtools/sst/src/capacity.rs	Active jobs
-devtools/sst/src/capacity.rs	Active processors
-devtools/sst/src/capacity.rs	Disk units configured
-devtools/sst/src/capacity.rs	Display Processor Capacity Status
-devtools/sst/src/capacity.rs	Display Storage Capacity
-devtools/sst/src/capacity.rs	Display processor capacity status
-devtools/sst/src/capacity.rs	Display storage capacity
-devtools/sst/src/capacity.rs	Every installed processor is active: this system has no capacity
-devtools/sst/src/capacity.rs	Hardware resources reported
-devtools/sst/src/capacity.rs	Installed processors
-devtools/sst/src/capacity.rs	Installed processors
-devtools/sst/src/capacity.rs	Main storage, MB
-devtools/sst/src/capacity.rs	Mirrored
-devtools/sst/src/capacity.rs	Processor use, %
-devtools/sst/src/capacity.rs	Processors
-devtools/sst/src/capacity.rs	Storage pools
-devtools/sst/src/capacity.rs	System ASP capacity
-devtools/sst/src/capacity.rs	System ASP used, %
-devtools/sst/src/capacity.rs	Unit  ASP    Size (MiB)  Used %  Protection
-devtools/sst/src/capacity.rs	Unprotected
-devtools/sst/src/capacity.rs	Work with System Capacity
-devtools/sst/src/capacity.rs	Work with permanent capacity
-devtools/sst/src/capacity.rs	Work with temporary capacity
-devtools/sst/src/capacity.rs	held in reserve to be activated later.
-devtools/sst/src/menu.rs	Device ID   Status     Description
 devtools/sst/src/menu.rs	F3=Exit   F12=Cancel
 devtools/sst/src/menu.rs	Password has expired and must be changed before SST can be used
-devtools/sst/src/menu.rs	STRSST in a job; there are no LAN service tools devices.
 devtools/sst/src/menu.rs	Service tool                        Started by
-devtools/sst/src/menu.rs	Service tools are reached from the system console and from
 devtools/sst/src/menu.rs	Service tools device IDs
 devtools/sst/src/menu.rs	Service tools user IDs
 devtools/sst/src/menu.rs	Start Service Tools (STRSST) Sign On
@@ -1654,7 +1626,6 @@ devtools/sst/src/menu.rs	Start a service tool
 devtools/sst/src/menu.rs	System Service Tools (SST)
 devtools/sst/src/menu.rs	System service tools (SST)          {}
 devtools/sst/src/menu.rs	Work with Active Service Tools
-devtools/sst/src/menu.rs	Work with Service Tools Device IDs
 devtools/sst/src/menu.rs	Work with Service Tools User IDs and Devices
 devtools/sst/src/menu.rs	Work with active service tools
 devtools/sst/src/menu.rs	Work with disk units
@@ -2767,7 +2738,6 @@ lic/slic/src/stgsvc/ifsvol.rs	the IFS device is not served
 lic/slic/src/stgsvc/ifsvol.rs	the object store is not open
 lic/slic/src/stgsvc/ifsvol.rs	volume in ASP 1: {} MiB in {} extent(s); grows by {} MiB, {} MiB more fit below {}%
 lic/slic/src/stgsvc/isql.rs	Interactive SQL sessions
-lic/slic/src/stgsvc/isql.rs	no user
 lic/slic/src/stgsvc/joblog.rs	Completion
 lic/slic/src/stgsvc/joblog.rs	Information
 lic/slic/src/stgsvc/jobqs.rs	CPD0084 AUTCHK({v}) is not *OWNER or *DTAAUT
@@ -3115,7 +3085,6 @@ lic/slic/src/stgsvc/sst.rs	CPF2275 User {u} may not reset service tools user ID 
 lic/slic/src/stgsvc/sst.rs	No service tools user is signed on in this job
 lic/slic/src/stgsvc/sst.rs	Service tools user ID {user} is no longer signed on
 lic/slic/src/stgsvc/sst.rs	Started              Type Mode    Slot Final SRC  Outcome
-lic/slic/src/stgsvc/sst.rs	Threshold must be a number from 1 to 100
 lic/slic/src/stgsvc/sst.rs	use the system service tools
 lic/slic/src/stgsvc/sst.rs	{other} is not a device parity change
 lic/slic/src/stgsvc/sst.rs	{other} is not a disk change
