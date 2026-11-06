@@ -22,6 +22,8 @@ const HELLO: &str = "\
              DCL        VAR(&WHO) TYPE(*CHAR) LEN(10)
              DCL        VAR(&JOB) TYPE(*CHAR) LEN(10)
              DCL        VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(0)
+             DCL        VAR(&M) TYPE(*CHAR) LEN(20)
+             DCL        VAR(&T) TYPE(*CHAR) LEN(2)
              RTVJOBA    JOB(&JOB)
              DOWHILE    COND(&N *LT 3)
                CHGVAR     VAR(&N) VALUE(&N + 1)
@@ -31,6 +33,9 @@ const HELLO: &str = "\
              CHKOBJ     OBJ(QGPL/NOSUCHOBJ) OBJTYPE(*FILE)
              MONMSG     MSGID(CPF9801) EXEC(SNDPGMMSG MSG('NOSUCHOBJ is missing, as expected') +
                           TOPGMQ(*EXT))
+             SNDPGMMSG  MSG('via the queue') TOMSGQ(QGPL/CLTESTQ)
+             RCVMSG     MSGQ(QGPL/CLTESTQ) MSG(&M) RTNTYPE(&T) WAIT(5)
+             SNDPGMMSG  MSG('Queue said' *BCAT &M *TCAT ',' *BCAT &T) TOPGMQ(*EXT)
              ENDPGM
 ";
 
@@ -124,6 +129,7 @@ impl Suite {
         secofr_command_entry(s)?;
         entry_wait(s, "crtsrcpf FILE(QGPL/QCLSRC)", has(&["QCLSRC", "created"]))?;
         crate::qir::qemu::push(s, "HELLOSRC", HELLO)?;
+        let _ = s.command("CRTMSGQ MSGQ(QGPL/CLTESTQ)", CMD)?;
         let put = s.command(
             "svc.srcput QGPL/QCLSRC HELLO SRCTYPE(CLLE) FROMSTMF(HELLOSRC)",
             CMD,
@@ -141,7 +147,7 @@ impl Suite {
             "call CLTEST/HELLO PARM('Quartz')",
             has(&["Hello from CL, Quartz"]),
         )?;
-        if !called.contains("count 3") || !called.contains("NOSUCHOBJ is missing") {
+        if !called.contains("count 3") || !called.contains("NOSUCHOBJ is missing") || !called.contains("Queue said via the queue, 04") {
             return Err(format!("the program's messages are incomplete:\n{called}"));
         }
         entry_wait(
@@ -168,7 +174,7 @@ impl Suite {
             return Err(format!("RTVCLSRC did not give the source back:\n{back}"));
         }
         let _ = (made, active);
-        Ok("CRTCLPGM compiled HELLO; CALL printed its messages with RTVJOBA, DOWHILE and MONMSG at work; SBMJOB submitted it; WRKACTJOB listed; RTVCLSRC gave the source back".into())
+        Ok("CRTCLPGM compiled HELLO; CALL printed its messages with RTVJOBA, DOWHILE, MONMSG and a named message queue (TOMSGQ, RCVMSG MSGQ RTNTYPE WAIT) at work; SBMJOB submitted it; WRKACTJOB listed; RTVCLSRC gave the source back".into())
     }
 
     /// Step 48: a user with `LMTCPB(*YES)` may not run `CRTLIB`
