@@ -35,7 +35,7 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
-          make flex bison bc perl xz-utils gpg gzip tar git \
+          make flex bison bc perl xz-utils gpg gzip tar git libelf-dev libssl-dev \
           qemu-system-x86 qemu-utils ovmf lsb-release wget software-properties-common gnupg
         wget -qO /tmp/llvm.sh https://apt.llvm.org/llvm.sh
         sudo bash /tmp/llvm.sh 21
@@ -45,6 +45,11 @@ runs:
     - name: Toolchain (rust-toolchain.toml)
       shell: bash
       run: rustup show active-toolchain || rustup toolchain install
+
+    - name: cargo-deny (prebuilt)
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-deny
 
     - name: build doctor
       shell: bash
