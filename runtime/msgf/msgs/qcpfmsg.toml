@@ -8680,3 +8680,132 @@ sev = 40
 text = "System value &1 does not take the value given."
 help = "The value is outside what the system value allows, or this system cannot act on it (QRMTIPL 1: there is no remote power-on line). Display the system value with WRKSYSVAL to see its values."
 vars = ["*CHAR 10"]
+
+# ASP balancing and spool storage (V1R1M0; the primary's identifiers,
+# tools/conformance/oracle/rel5/).
+
+[[msg]]
+id = "CPD18A1"
+sev = 20
+text = "Name an ASP number or an ASP device."
+help = "ENDASPBAL needs ASP or ASPDEV."
+vars = []
+
+[[msg]]
+id = "CPD18A2"
+sev = 20
+text = "Name the balance type."
+help = "STRASPBAL needs TYPE."
+vars = []
+
+[[msg]]
+id = "CPD18A3"
+sev = 20
+text = "Name an ASP number or an ASP device to balance."
+help = "This balance type works on the ASPs ASP or ASPDEV names."
+vars = []
+
+[[msg]]
+id = "CPD18A4"
+sev = 20
+text = "Give no ASP number, ASP device or unit with this balance type."
+help = "TYPE(*MOVDTA) works on the units allocation was ended for."
+vars = []
+
+[[msg]]
+id = "CPD18A5"
+sev = 20
+text = "Name the unit."
+help = "TYPE(*ENDALC) and TYPE(*RSMALC) work on the units UNIT names."
+vars = []
+
+[[msg]]
+id = "CPD18A6"
+sev = 20
+text = "Give a time limit."
+help = "This balance type needs TIMLMT: minutes, or *NOMAX."
+vars = []
+
+[[msg]]
+id = "CPD18A8"
+sev = 20
+text = "Give no unit with this balance type."
+help = "UNIT goes with TYPE(*ENDALC) and TYPE(*RSMALC) only."
+vars = []
+
+[[msg]]
+id = "CPD18AA"
+sev = 30
+text = "Disk balancing cannot run for ASP &2 (&3), reason &1."
+help = "The reasons: 1 tracing has started already; 2 tracing is not active; 3 balancing has started already; 4 balancing is not active; 5 the ASP has one unit only; 6 there is no trace data (TRCASPBAL); 7 the ASP does not have units of two kinds; 8 tracing is running; 9 balancing is running. Choose another ASP or balance type, or wait for the function that runs."
+vars = ["*CHAR 2", "*CHAR 5", "*CHAR 10"]
+
+[[msg]]
+id = "CPD18AC"
+sev = 30
+text = "No ASP matches the ASPs named."
+help = "This system has ASP 1 only and no independent ASPs. Name ASP 1, *ALL or *ALLAVL."
+vars = []
+
+[[msg]]
+id = "CPF18B2"
+sev = 40
+text = "A balance is already running for ASP &1 (&2)."
+help = "End it with ENDASPBAL, or wait until it ends, then try again."
+vars = ["*CHAR 5", "*CHAR 10"]
+
+[[msg]]
+id = "CPF18BB"
+sev = 40
+text = "This function is not allowed here."
+help = "This system does not do what the request asked for: ending and resuming allocation on a unit and moving the data off it are not in this release; remove a unit in SST or DST, which moves its data first."
+vars = []
+
+[[msg]]
+id = "CPC18A5"
+sev = 0
+text = "Disk balancing &3 started for ASP &1 (&2)."
+help = "The balance runs in the system job QSYSARB5 until it is done, its time limit passes or ENDASPBAL ends it."
+vars = ["*CHAR 5", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC18A6"
+sev = 0
+text = "Disk balancing ended for ASP &1 (&2)."
+help = "The balance finished, ran out of time or was ended."
+vars = ["*CHAR 5", "*CHAR 10"]
+
+[[msg]]
+id = "CPI18A5"
+sev = 10
+text = "Balancing &1 runs for ASP &2 (&3)."
+help = "ENDASPBAL ends it."
+vars = ["*CHAR 10", "*CHAR 5", "*CHAR 10"]
+
+[[msg]]
+id = "CPI18A6"
+sev = 10
+text = "No balancing runs for ASP &1 (&2)."
+help = "STRASPBAL starts one."
+vars = ["*CHAR 5", "*CHAR 10"]
+
+[[msg]]
+id = "CPI18A8"
+sev = 10
+text = "No ASP trace runs for ASP &1 (&2)."
+help = "This system gathers no ASP balance trace."
+vars = ["*CHAR 5", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9825"
+sev = 40
+text = "Device &1 cannot be used by this user."
+help = "This system has no independent ASP devices; name *SYSBAS or *ALL."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPFB8E9"
+sev = 40
+text = "Thread &2 has no ASP group &1."
+help = "This system has no independent ASP groups; name *SYSBAS or *ALL."
+vars = ["*CHAR 10", "*CHAR 10"]

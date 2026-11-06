@@ -258,6 +258,10 @@ impl DstEnv for SstEnv {
         self.disk_change("remove", unit, "").map(|_| ())
     }
 
+    fn balance_asp(&mut self) -> Result<usize, String> {
+        self.disk_change("balance", 0, "").map(usize::from)
+    }
+
     fn start_mirror(&mut self, unit: u16, device: &str) -> Result<u16, String> {
         self.disk_change("mirror", unit, device)
     }

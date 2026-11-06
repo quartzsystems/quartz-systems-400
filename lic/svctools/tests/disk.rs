@@ -155,6 +155,13 @@ fn actions_reach_the_environment() {
     assert_eq!(r.top(), "dst-asp-config");
     assert!(r.screen(&mut e).dump().contains("added to ASP 1"));
     assert_eq!(e.actions, vec!["add /dev/vdd"]);
+    // Add and balance: the same displays, then the balance.
+    e.actions.clear();
+    let mut r = walk(&mut e, &["4", "1", "3", "3"], "add-units");
+    r.enter(&f(&["1", ""]), &mut e);
+    r.function(10, &mut e);
+    assert!(r.screen(&mut e).dump().contains("moved to balance it"));
+    assert_eq!(e.actions, vec!["add /dev/vdd", "balance"]);
     // Start mirroring: unit 3 (unprotected, 4096 MiB) pairs with vdd.
     e.actions.clear();
     let mut r = walk(&mut e, &["4", "1", "4", "2"], "mirror-start");

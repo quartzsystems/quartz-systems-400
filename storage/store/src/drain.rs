@@ -30,6 +30,32 @@ pub struct DrainReport {
     pub trees_rebuilt: usize,
 }
 
+/// How far, in percent used, a span may stand above the ASP's average
+/// before balancing by capacity moves objects off it.
+pub const BALANCE_TOLERANCE: f64 = 1.0;
+
+/// Where balancing by capacity is in its pass over the objects.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct BalanceCursor {
+    /// The span being emptied towards the average.
+    pub span: Option<u16>,
+    /// The next object directory entry to look at.
+    pub next: usize,
+    /// Whether this pass moved anything.
+    pub moved_this_pass: bool,
+}
+
+/// What one balancing step did.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct BalanceStep {
+    /// Objects moved off the full span.
+    pub objects_moved: usize,
+    /// Pages copied.
+    pub pages_moved: u64,
+    /// The ASP is balanced, or nothing more can move.
+    pub done: bool,
+}
+
 impl Store {
     /// Move everything off a unit's span and keep the allocator off it.
     /// Afterwards the unit holds nothing and can be removed. On failure
@@ -94,6 +120,105 @@ impl Store {
             report.objects_moved, report.pages_moved, report.trees_rebuilt
         );
         Ok(report)
+    }
+
+    /// Each span's pages in use and its pages that can be used.
+    #[must_use]
+    pub fn span_fill(&self) -> Vec<(u16, u64, u64)> {
+        let a = self.asp().allocator();
+        self.asp()
+            .layout()
+            .spans()
+            .iter()
+            .enumerate()
+            .map(|(i, s)| {
+                let span = u16::try_from(i).expect("at most MAX_UNITS");
+                (span, a.span_used(span), s.pages)
+            })
+            .collect()
+    }
+
+    /// One step of balancing by capacity (`STRASPBAL TYPE(*CAPACITY)`):
+    /// the span fuller than the ASP's average by more than
+    /// [`BALANCE_TOLERANCE`] percent is kept from new allocations while
+    /// up to `objects` objects with pages on it move off, onto the spans
+    /// with the most room, as a drain moves them. `done` once no span is
+    /// that much fuller than the average, there is one span only, or a
+    /// whole pass over the objects moved nothing more.
+    pub fn balance_step(&mut self, cursor: &mut BalanceCursor, objects: usize) -> Result<BalanceStep> {
+        let mut step = BalanceStep::default();
+        let Some(span) = self.fullest_span() else {
+            step.done = true;
+            return Ok(step);
+        };
+        if cursor.span != Some(span) {
+            *cursor = BalanceCursor { span: Some(span), ..BalanceCursor::default() };
+        }
+        let entries = {
+            let mut t = self.begin()?;
+            let e = objdir_entries(&mut t)?;
+            t.abort();
+            e
+        };
+        let unit = self.asp().layout().span(span).primary;
+        self.asp_mut().exclude_unit(unit, true)?;
+        let result = self.balance_objects(span, &entries, cursor, objects, &mut step);
+        let _ = self.asp_mut().exclude_unit(unit, false);
+        result?;
+        if cursor.next >= entries.len() {
+            if !cursor.moved_this_pass {
+                step.done = true;
+            }
+            cursor.next = 0;
+            cursor.moved_this_pass = false;
+        }
+        Ok(step)
+    }
+
+    fn balance_objects(
+        &mut self,
+        span: u16,
+        entries: &[(ObjectId, PageNo)],
+        cursor: &mut BalanceCursor,
+        objects: usize,
+        step: &mut BalanceStep,
+    ) -> Result<()> {
+        let mut report = DrainReport::default();
+        while cursor.next < entries.len() && step.objects_moved < objects {
+            let (id, _) = entries[cursor.next];
+            cursor.next += 1;
+            let mut txn = self.begin()?;
+            if move_object(&mut txn, span, id, &mut report)? {
+                txn.commit()?;
+                step.objects_moved += 1;
+                cursor.moved_this_pass = true;
+                if self.fullest_span() != Some(span) {
+                    break;
+                }
+            } else {
+                txn.abort();
+            }
+        }
+        step.pages_moved = report.pages_moved;
+        Ok(())
+    }
+
+    /// The span fuller than the average by more than the tolerance; the
+    /// fullest when several are.
+    #[allow(clippy::cast_precision_loss)] // page counts far below 2^52
+    fn fullest_span(&self) -> Option<u16> {
+        let fill = self.span_fill();
+        if fill.len() < 2 {
+            return None;
+        }
+        let used: u64 = fill.iter().map(|f| f.1).sum();
+        let pages: u64 = fill.iter().map(|f| f.2).sum();
+        let avg = used as f64 * 100.0 / pages.max(1) as f64;
+        fill.iter()
+            .map(|&(s, u, p)| (s, u as f64 * 100.0 / p.max(1) as f64))
+            .filter(|(_, pct)| pct - avg > BALANCE_TOLERANCE)
+            .max_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(s, _)| s)
     }
 
     /// What still lies on a span: page counts by type and owner, for the

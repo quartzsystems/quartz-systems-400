@@ -595,6 +595,11 @@ system ASP and basic user ASPs, or an independent ASP group.
 :EPARML.
 :P.Also accepted&colon. *.
 :EHELP.
+:HELP NAME=CHKASPBAL.Check ASP Balance (CHKASPBAL)
+:P.Use the Check ASP Balance (CHKASPBAL) command to tell whether a
+balance or a trace runs for the ASPs.
+:P.The command has no parameters.
+:EHELP.
 :HELP NAME=CHKOBJ.Check Object (CHKOBJ)
 :P.Use the Check Object (CHKOBJ) command to check that an object exists
 and that the user holds the authorities named.
@@ -2110,6 +2115,31 @@ when the file has none.
 :PD.The records are added after the member's records.
 :EPARML.
 :EHELP.
+:HELP NAME=ENDASPBAL.End ASP Balance (ENDASPBAL)
+:P.Use the End ASP Balance (ENDASPBAL) command to end the balance
+running for an ASP.
+:EHELP.
+:HELP NAME='ENDASPBAL/ASP'.ASP number (ASP)
+:P.The auxiliary storage pool the object is put in.
+:P.Up to 32 values can be given.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 32.
+:EPARML.
+:EHELP.
+:HELP NAME='ENDASPBAL/ASPDEV'.ASP device (ASPDEV)
+:P.The auxiliary storage pool device the command works in&colon. the
+system ASP and basic user ASPs, or an independent ASP group.
+:P.Up to 32 values can be given.
+:PARML.
+:PT.:PK.*ALLAVL:EPK.
+:PD.Every available ASP device.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
 :HELP NAME=MOVOBJ.Move Object (MOVOBJ)
 :P.Use the Move Object (MOVOBJ) command to move an object to another
 library.
@@ -2636,6 +2666,73 @@ character variable of at least 2000 characters.
 :PT.:PV.character-value:EPV.
 :PD.Type up to 2000 characters.
 :EPARML.
+:EHELP.
+:HELP NAME=STRASPBAL.Start ASP Balance (STRASPBAL)
+:P.Use the Start ASP Balance (STRASPBAL) command to spread the data of
+an ASP over its units.
+:EHELP.
+:HELP NAME='STRASPBAL/TYPE'.Balance type (TYPE)
+:P.The balance type for this command.
+:P.Also accepted&colon. *CAPACITY, *USAGE, *HSM, *MOVDTA, *ENDALC,
+*RSMALC, *MP.
+:EHELP.
+:HELP NAME='STRASPBAL/ASP'.ASP number (ASP)
+:P.The auxiliary storage pool the object is put in.
+:P.Up to 32 values can be given.
+:PARML.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 32.
+:EPARML.
+:EHELP.
+:HELP NAME='STRASPBAL/ASPDEV'.ASP device (ASPDEV)
+:P.The auxiliary storage pool device the command works in&colon. the
+system ASP and basic user ASPs, or an independent ASP group.
+:P.Up to 32 values can be given.
+:PARML.
+:PT.:PK.*ALLAVL:EPK.
+:PD.Every available ASP device.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:EHELP.
+:HELP NAME='STRASPBAL/UNIT'.Storage unit (UNIT)
+:P.The preferred storage unit. The system places objects itself; the
+value is kept.
+:P.Up to 300 values can be given.
+:PARML.
+:PT.:PV.number:EPV.
+:PD.Type a whole number.
+:EPARML.
+:EHELP.
+:HELP NAME='STRASPBAL/TIMLMT'.Time limit (TIMLMT)
+:P.The time limit for this command.
+:PARML.
+:PT.:PK.*NOMAX:EPK.
+:PD.No limit.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 9999.
+:EPARML.
+:EHELP.
+:HELP NAME='STRASPBAL/PRIORITY'.Balance priority (PRIORITY)
+:P.The balance priority for this command.
+:PARML.
+:PT.:PK.*LOW:EPK.
+:PD.Low.
+:PT.:PK DEF.*MEDIUM:EPK.
+:PD.Medium.
+:PT.:PK.*HIGH:EPK.
+:PD.High.
+:EPARML.
+:EHELP.
+:HELP NAME='STRASPBAL/SUBTYPE'.Subtype (SUBTYPE)
+:P.The subtype for this command.
+:PARML.
+:PT.:PK DEF.*CALC:EPK.
+:PD.The system calculates the value.
+:EPARML.
+:P.Also accepted&colon. *HDD, *SSD.
 :EHELP.
 :HELP NAME=WRKF.Work with Files (WRKF)
 :P.Use the Work with Files (WRKF) command to show a list of files and

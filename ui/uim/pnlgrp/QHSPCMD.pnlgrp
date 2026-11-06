@@ -2242,6 +2242,34 @@ own.
 :EPARML.
 :P.Also accepted&colon. *PAGEEND.
 :EHELP.
+:HELP NAME=RCLSPLSTG.Reclaim Spool Storage (RCLSPLSTG)
+:P.Use the Reclaim Spool Storage (RCLSPLSTG) command to free the spool
+storage no spooled file uses.
+:EHELP.
+:HELP NAME='RCLSPLSTG/DAYS'.Days (DAYS)
+:P.The days for this command.
+:P.A value is required.
+:PARML.
+:PT.:PK.*NONE:EPK.
+:PD.None.
+:PT.:PV.number:EPV.
+:PD.Type a whole number. The value must be from 1 to 366.
+:EPARML.
+:EHELP.
+:HELP NAME='RCLSPLSTG/ASPGRP'.ASP group (ASPGRP)
+:P.The ASP group for this command.
+:PARML.
+:PT.:PK DEF.*SYSBAS:EPK.
+:PD.The system ASP and the basic user ASPs.
+:PT.:PK.*ALL:EPK.
+:PD.All of them.
+:PT.:PK.*CURASPGRP:EPK.
+:PD.The ASP group of the job's current thread.
+:PT.:PV.name:EPV.
+:PD.Type a name of up to 10 characters.
+:EPARML.
+:P.Also accepted&colon. *.
+:EHELP.
 :HELP NAME=RLSOUTQ.Release Output Queue (RLSOUTQ)
 :P.Use the Release Output Queue (RLSOUTQ) command to release a held
 output queue.

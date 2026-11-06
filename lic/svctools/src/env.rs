@@ -331,6 +331,10 @@ pub trait DstEnv {
         let _ = device;
         Err("not available".into())
     }
+    /// Balance ASP 1 by capacity to the end; the objects moved.
+    fn balance_asp(&mut self) -> Result<usize, String> {
+        Err("not available".into())
+    }
     /// Remove a unit from ASP 1.
     fn remove_unit(&mut self, unit: u16) -> Result<(), String> {
         let _ = unit;
@@ -821,6 +825,10 @@ impl DstEnv for MemEnv {
     fn add_unit(&mut self, device: &str) -> Result<u16, String> {
         self.actions.push(format!("add {device}"));
         Ok(u16::try_from(self.units.len()).expect("few"))
+    }
+    fn balance_asp(&mut self) -> Result<usize, String> {
+        self.actions.push("balance".into());
+        Ok(2)
     }
     fn remove_unit(&mut self, unit: u16) -> Result<(), String> {
         self.actions.push(format!("remove {unit}"));

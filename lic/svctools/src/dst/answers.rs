@@ -67,10 +67,6 @@ pub const SAVE_STORAGE: &str = "Save and restore storage are not in this release
 /// data from DST needs a page-level copy the store does not have.
 pub const UNIT_DATA: &str = "Saving or copying one unit's data is not in this release";
 
-/// `BLOCKED(rel)`: balancing data over new units needs the page moves
-/// `STRASPBAL` will bring; option 2 adds the units.
-pub const BALANCE: &str = "Balancing data is not in this release; add the units with option 2";
-
 /// `BLOCKED(rel)`: the IPL menu's option 5; SAVSYS saves the Licensed
 /// Internal Code with the system up.
 pub const SAVE_LIC: &str = "Save the Licensed Internal Code with SAVSYS; not from this menu";
@@ -101,7 +97,6 @@ mod tests {
             CONCURRENT,
             SAVE_STORAGE,
             UNIT_DATA,
-            BALANCE,
             SAVE_LIC,
             NEEDS_MEDIA,
         ] {

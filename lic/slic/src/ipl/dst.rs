@@ -633,6 +633,21 @@ impl DstEnv for Env<'_> {
         hw().parity_capable()
     }
 
+    fn balance_asp(&mut self) -> Result<usize, String> {
+        let store = self.store()?;
+        let mut cursor = store::BalanceCursor::default();
+        let mut moved = 0;
+        loop {
+            let step = store
+                .balance_step(&mut cursor, 64)
+                .map_err(refused("Balancing ASP 1"))?;
+            moved += step.objects_moved;
+            if step.done {
+                return Ok(moved);
+            }
+        }
+    }
+
     fn asp_threshold(&mut self) -> u8 {
         self.system
             .storage

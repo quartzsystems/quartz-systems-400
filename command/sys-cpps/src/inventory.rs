@@ -166,6 +166,11 @@ pub const PUBLIC_EXCLUDE: &[&str] = &[
 /// The commands `lic/slic/src/cpp/direct.rs` implements on the library
 /// functions directly (kept in step with its match by hand).
 pub const DIRECT: &[&str] = &[
+    // --- ASP balancing and spool storage (lic/slic/src/cpp/aspcmd.rs)
+    "CHKASPBAL",
+    "ENDASPBAL",
+    "RCLSPLSTG",
+    "STRASPBAL",
     // --- physical file triggers (lic/slic/src/cpp/trgcmd.rs)
     "ADDPFTRG",
     "CHGPFTRG",

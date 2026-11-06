@@ -256,9 +256,13 @@ pub fn asp_configuration() -> Submenu {
             (
                 2,
                 "Add units to ASPs",
-                Some(Box::new(add_units)),
+                Some(Box::new(|env| add_units(env, false))),
             ),
-            (3, "Add units to ASPs and balance data", crate::dst::common::says(crate::dst::answers::BALANCE)),
+            (
+                3,
+                "Add units to ASPs and balance data",
+                Some(Box::new(|env| add_units(env, true))),
+            ),
             (
                 4,
                 "Remove units from configuration",
@@ -273,8 +277,10 @@ pub fn asp_configuration() -> Submenu {
 pub const NO_LOAD_SOURCE: &str =
     "ASP 1 has no load source unit; install the Licensed Internal Code first";
 
-/// Pick non-configured disks to add to ASP 1.
-fn add_units(env: &mut dyn DstEnv) -> Flow {
+/// Pick non-configured disks to add to ASP 1; with `balance`, the ASP's
+/// data is then spread over every unit by capacity, as `STRASPBAL
+/// TYPE(*CAPACITY)` does.
+fn add_units(env: &mut dyn DstEnv, balance: bool) -> Flow {
     if env.disk_units().is_empty() {
         return Flow::Error(NO_LOAD_SOURCE.into());
     }
@@ -308,6 +314,10 @@ fn add_units(env: &mut dyn DstEnv) -> Flow {
                         let mut added = Vec::new();
                         for d in &devices {
                             added.push(env.add_unit(d)? + 1);
+                        }
+                        if balance {
+                            let moved = env.balance_asp()?;
+                            return Ok(format!("Unit(s) {added:?} added to ASP 1; {moved} object(s) moved to balance it"));
                         }
                         Ok(format!("Unit(s) {added:?} added to ASP 1"))
                     }),

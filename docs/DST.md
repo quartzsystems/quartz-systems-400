@@ -159,7 +159,7 @@ the words are Quartz's:
 | Disk units 3 problem recovery, 4 tracing | no IOP or IOA to recover or trace |
 | Disk configuration 6 checksum protection | not supported (gone from IBM i before V7R1) |
 | Disk configuration 7 compression | no unit is capable of compression |
-| ASP configuration 3 add units and balance data | `BLOCKED(rel)`: balancing waits for the page moves `STRASPBAL` brings; option 2 adds units |
+| ASP configuration 3 add units and balance data | option 2's displays, then the ASP balanced by capacity to the end (`Store::balance_step`, as `STRASPBAL TYPE(*CAPACITY)` runs it) |
 | ASP configuration 6 move units between ASPs | only ASP 1 exists |
 | Mirrored protection 4 remote load source mirroring | no remote bus; pairing already prefers another controller |
 | Recovery 1, 2, 9 save, restore and copy disk unit data | `BLOCKED(rel)`: no page-level copy of one unprotected unit |

@@ -161,6 +161,7 @@ pub fn disk_change(
         "replace" => e.replace(unit, device).map(|()| unit),
         "spare-start" => e.start_hot_spare(device).map(|_| unit),
         "spare-stop" => e.stop_hot_spare(device).map(|_| unit),
+        "balance" => e.balance_asp().map(|n| u16::try_from(n).unwrap_or(u16::MAX)),
         "threshold" => u8::try_from(unit)
             .map_err(|_| svctools::dst::disk::reasons::THRESHOLD_RANGE.to_string())
             .and_then(|p| e.set_asp_threshold(p))

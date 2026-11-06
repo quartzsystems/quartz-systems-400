@@ -12,6 +12,7 @@
 //! command, and a command that succeeded sends the completion message
 //! the inventory gives it.
 
+pub(crate) mod aspcmd;
 pub(crate) mod certcmd;
 pub(crate) mod clpgm;
 mod cmncmd;
@@ -89,6 +90,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             &format!("{name} runs in the job, not the service"),
         ),
         Site::Job | Site::Service => tcpcmd::run(system, name, parms)
+            .or_else(|| aspcmd::run(system, name, parms))
             .or_else(|| direct::run(system, name, parms))
             .or_else(|| savcmd::run(system, name, parms))
             .or_else(|| splcpp::run(system, name, parms))

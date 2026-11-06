@@ -22,6 +22,7 @@
 //!   `PWRDWNSYS *IMMED RESTART(*YES)`; the last three not in the
 //!   restricted state. Again every 30 minutes while it stays below, or
 //!   at once when either system value changes.
+//! - A running `STRASPBAL TYPE(*CAPACITY)` takes its next step.
 //! - On battery power `CPF1816` goes to `QUPSMSGQ` (and `QSYSOPR`), and
 //!   after the `QUPSDLYTIM` delay the system powers down at once; a low
 //!   battery powers it down at once; `*NOMAX` waits, but powers down at
@@ -70,6 +71,8 @@ pub fn tick(system: &mut System) -> Vec<String> {
     storage(system, w, &mut cmds);
     power(system, w, Power::read(), &mut cmds);
     batch(system, w, &mut cmds);
+    drop(g);
+    crate::cpp::aspcmd::balance_tick(system);
     cmds
 }
 

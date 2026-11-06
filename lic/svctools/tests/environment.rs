@@ -338,7 +338,9 @@ fn every_option_has_a_panel_or_an_answer() {
     says(&mut e, &["4", "4"], a::NO_IOA);
     says(&mut e, &["4", "1", "6"], a::NO_CHECKSUM);
     says(&mut e, &["4", "1", "7"], a::NO_COMPRESSION);
-    says(&mut e, &["4", "1", "3", "3"], a::BALANCE);
+    // Add units and balance: option 2's path (this system has no load
+    // source to add to), then the balance.
+    says(&mut e, &["4", "1", "3", "3"], svctools::dst::disk::config::NO_LOAD_SOURCE);
     says(&mut e, &["4", "1", "3", "6"], a::ONE_ASP);
     says(&mut e, &["4", "1", "4", "4"], a::NO_REMOTE_BUS);
     for (opt, text) in [("1", a::UNIT_DATA), ("2", a::UNIT_DATA), ("4", a::ASSIGN_MISSING), ("5", a::RECOVER_CONFIG), ("9", a::UNIT_DATA)] {

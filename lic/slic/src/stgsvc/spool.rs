@@ -390,11 +390,75 @@ pub fn find(system: &System, file: &str, job: &str, splnbr: &str) -> Result<u32,
     .ok_or_else(|| format!("CPF3309 no spooled file {file} in job {job}"))
 }
 
-/// `QSPLMAINT`: delete the spooled files whose `EXPDATE` has passed
-/// (`QRCLSPLSTG` reclaims nothing more: a file's storage goes with it);
-/// what was done.
+/// `RCLSPLSTG` and `QRCLSPLSTG`: the spool storage no spooled file
+/// uses. A deleted file's storage is freed with it here, so there are
+/// no empty members kept for reuse as IBM i keeps them; what can be
+/// left is a `*SPLF` object in `QSPL` the spool does not know (a crash
+/// between its creation and its entry) and an output queue entry whose
+/// file is gone. Objects unused for `days` days go (`None`: every one,
+/// `*NONE`); dangling queue entries always. The objects and entries
+/// removed.
+pub fn reclaim(system: &mut System, days: Option<u32>) -> (usize, usize) {
+    let known: std::collections::BTreeSet<ObjectId> = system.spool.files.values().map(|e| e.obj).collect();
+    let ids: std::collections::BTreeSet<u32> = system.spool.files.keys().copied().collect();
+    let cutoff = days.map_or(u64::MAX, |d| now_unix().saturating_sub(u64::from(d) * 86_400));
+    let r = sec::guard::as_system(|| {
+        with_store(system, |txn, qsys| {
+            let qspl = wm::obj::library(txn, qsys, "QSPL").map_err(|e| e.to_string())?;
+            let mut objects = 0;
+            for (_, id) in ops::list(txn, qspl, Some(types::SPLF)).map_err(|e| e.to_string())? {
+                if known.contains(&id) {
+                    continue;
+                }
+                let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+                if h.changed.max(h.created) <= cutoff {
+                    ops::delete(txn, JobHandle(0), id).map_err(|e| e.to_string())?;
+                    objects += 1;
+                }
+            }
+            let mut entries = 0;
+            let libs = ops::list(txn, qsys, Some(types::LIB)).map_err(|e| e.to_string())?;
+            for lib in std::iter::once(qsys).chain(libs.into_iter().map(|(_, l)| l)) {
+                for (_, q) in ops::list(txn, lib, Some(types::OUTQ)).map_err(|e| e.to_string())? {
+                    let Ok(mut oq) = OutQ::decode(&wm::obj::read(txn, q).map_err(|e| e.to_string())?) else {
+                        continue;
+                    };
+                    let before = oq.files.len();
+                    oq.files.retain(|f| ids.contains(f));
+                    if oq.files.len() != before {
+                        entries += before - oq.files.len();
+                        wm::obj::write(txn, q, &oq.encode()).map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+            Ok((objects, entries))
+        })
+    });
+    r.unwrap_or_default()
+}
+
+/// `QSPLMAINT`: delete the spooled files whose `EXPDATE` has passed,
+/// and once a day [`reclaim`] what `QRCLSPLSTG` lets go (`*NOMAX`
+/// keeps it); what was done.
 pub fn maintain(system: &mut System) -> String {
+    static LAST: std::sync::Mutex<u64> = std::sync::Mutex::new(0);
     let logs = super::joblog::serve_pending(system);
+    let today = now_unix() / 86_400;
+    let due = {
+        let mut last = LAST.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        std::mem::replace(&mut *last, today) != today
+    };
+    if due {
+        match super::security::sysval_text(system, "QRCLSPLSTG").trim() {
+            "*NOMAX" => {}
+            "*NONE" => {
+                reclaim(system, None);
+            }
+            n => {
+                reclaim(system, Some(n.parse().unwrap_or(8)));
+            }
+        }
+    }
     let days = i64::try_from(now_unix() / 86_400).unwrap_or(0);
     let (y, m, d) = wm::obj::jobscd::civil_from_days(days);
     let today = u32::try_from(y * 10_000 + i64::from(m) * 100 + i64::from(d)).unwrap_or(0);
