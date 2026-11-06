@@ -85,7 +85,7 @@ impl System for FixtureSystem {
             code: if known { 'P' } else { 'U' },
         });
         Err(if known {
-            Message::new(qsweb::msg::Kind::Error, "CPF22E2", "Password not correct for user profile.")
+            Message::new(qsweb::msg::Kind::Error, "CPF22E2", "The password is not correct for the user profile.")
         } else {
             Message::new(qsweb::msg::Kind::Error, "CPF2204", &format!("User profile {u} not found."))
         })

@@ -415,7 +415,7 @@ const MESSAGES: &[Desc] = &[
     (
         "CPF2702",
         40,
-        "Device description &1 not found.",
+        "There is no device description &1.",
         "No device has that name.",
         "Check the name.",
     ),

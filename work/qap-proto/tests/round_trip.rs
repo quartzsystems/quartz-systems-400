@@ -31,7 +31,7 @@ fn msg() -> ServerMessage {
         id: "CPF1107".into(),
         severity: 40,
         data: vec![0xC1, 0, 0xFF],
-        text: "Password not correct for user profile.".into(),
+        text: "The password is not correct for the user profile.".into(),
         help: "Cause . . . : ...".into(),
     }
 }

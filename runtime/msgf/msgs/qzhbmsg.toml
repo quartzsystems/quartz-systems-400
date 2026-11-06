@@ -9,299 +9,299 @@ text = "HTTP Server Administration messages"
 id = "HTP8000"
 sev = 0
 text = "HTTP server instance &1 starting."
-help = "&N Cause . . . . . :   A request to start instance &1 was accepted. The instance's job is being started in subsystem QHTTPSVR. &N Recovery  . . . :   None. Message HTP8001 follows when the instance is listening."
+help = "&N Reason  . . . :   A request to start instance &1 was accepted. The instance's job is being started in subsystem QHTTPSVR. &N What to do . . :   None. Message HTP8001 follows when the instance is listening."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8001"
 sev = 0
 text = "HTTP server instance &1 started, listening on &2."
-help = "&N Cause . . . . . :   Instance &1 read its configuration and is accepting connections on &2. &N Recovery  . . . :   None."
+help = "&N Reason  . . . :   Instance &1 read its configuration and is accepting connections on &2. &N What to do . . :   None."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8002"
 sev = 0
 text = "HTTP server instance &1 ended."
-help = "&N Cause . . . . . :   Instance &1 was ended by &2. Its job in subsystem QHTTPSVR is no longer active. &N Recovery  . . . :   Start the instance again from the Server instances page or with STRTCPSVR SERVER(*HTTP) HTTPSVR(&1)."
+help = "&N Reason  . . . :   Instance &1 was ended by &2. Its job in subsystem QHTTPSVR is no longer active. &N What to do . . :   Start the instance again from the Server instances page or with STRTCPSVR SERVER(*HTTP) HTTPSVR(&1)."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8010"
 sev = 0
 text = "Certificate &1 loaded for application &2."
-help = "&N Cause . . . . . :   The server presents certificate &1 from the *SYSTEM store on its TLS ports. &N Recovery  . . . :   None."
+help = "&N Reason  . . . :   The server presents certificate &1 from the *SYSTEM store on its TLS ports. &N What to do . . :   None."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8020"
 sev = 0
 text = "HTTP server instance &1 created."
-help = "&N Cause . . . . . :   The server root &2, its configuration file and the registry entry of instance &1 were created. The instance is stopped. &N Recovery  . . . :   Start the instance from the Server instances page."
+help = "&N Reason  . . . :   The server root &2, its configuration file and the registry entry of instance &1 were created. The instance is stopped. &N What to do . . :   Start the instance from the Server instances page."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8021"
 sev = 0
 text = "HTTP server instance &1 deleted."
-help = "&N Cause . . . . . :   The server root &2, the registry entry and the certificate application ID of instance &1 were removed. &N Recovery  . . . :   None."
+help = "&N Reason  . . . :   The server root &2, the registry entry and the certificate application ID of instance &1 were removed. &N What to do . . :   None."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8022"
 sev = 0
 text = "Configuration of HTTP server instance &1 changed."
-help = "&N Cause . . . . . :   The configuration file of instance &1 was replaced. The previous file was kept as httpd.conf.bak in the same directory. &N Recovery  . . . :   A running instance uses the new configuration after it is restarted."
+help = "&N Reason  . . . :   The configuration file of instance &1 was replaced. The previous file was kept as httpd.conf.bak in the same directory. &N What to do . . :   A running instance uses the new configuration after it is restarted."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8023"
 sev = 10
 text = "HTTP server instance &1 deleted; files under &2 remain."
-help = "&N Cause . . . . . :   The registry entry of instance &1 was removed, but its files under &2 could not all be removed: &3 &N Recovery  . . . :   Remove the directory with RMVDIR SUBTREE(*ALL) as a user authorized to it."
+help = "&N Reason  . . . :   The registry entry of instance &1 was removed, but its files under &2 could not all be removed: &3 &N What to do . . :   Remove the directory with RMVDIR SUBTREE(*ALL) as a user authorized to it."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8024"
 sev = 10
 text = "HTTP server instance &1 deleted; certificate application &2 remains."
-help = "&N Cause . . . . . :   Instance &1 was removed, but its certificate application ID &2 could not be removed: &3 &N Recovery  . . . :   Remove the application ID on the Certificate applications page, or leave it for an instance of the same name."
+help = "&N Reason  . . . :   Instance &1 was removed, but its certificate application ID &2 could not be removed: &3 &N What to do . . :   Remove the application ID on the Certificate applications page, or leave it for an instance of the same name."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8100"
 sev = 30
 text = "Configuration error at line &1 column &2: &3"
-help = "&N Cause . . . . . :   The configuration file &4 could not be used. The directive at line &1, column &2 is not valid: &3 &N Recovery  . . . :   Correct the line on the Configuration file page of the instance and validate the file again. The file in use was not changed."
+help = "&N Reason  . . . :   The configuration file &4 could not be used. The directive at line &1, column &2 is not valid: &3 &N What to do . . :   Correct the line on the Configuration file page of the instance and validate the file again. The file in use was not changed."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8101"
 sev = 0
 text = "Configuration file &1 has no errors."
-help = "&N Cause . . . . . :   Every line of the configuration file was read and checked. The file was not changed. &N Recovery  . . . :   None."
+help = "&N Reason  . . . :   Every line of the configuration file was read and checked. The file was not changed. &N What to do . . :   None."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8103"
 sev = 30
 text = "HTTP server instance &1 must be stopped first."
-help = "&N Cause . . . . . :   Instance &1 is running. The request needs the instance to be stopped. &N Recovery  . . . :   Stop the instance from the Server instances page, then try the request again."
+help = "&N Reason  . . . :   Instance &1 is running. The request needs the instance to be stopped. &N What to do . . :   Stop the instance from the Server instances page, then try the request again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8104"
 sev = 30
 text = "HTTP server instance &1 cannot be stopped or restarted from its own administration session."
-help = "&N Cause . . . . . :   Instance &1 serves this administration session. Stopping or restarting it would end the session in which the request was made. &N Recovery  . . . :   End or restart the instance from a 5250 session with ENDTCPSVR SERVER(*HTTP) HTTPSVR(&1) and STRTCPSVR SERVER(*HTTP) HTTPSVR(&1)."
+help = "&N Reason  . . . :   Instance &1 serves this administration session. Stopping or restarting it would end the session in which the request was made. &N What to do . . :   End or restart the instance from a 5250 session with ENDTCPSVR SERVER(*HTTP) HTTPSVR(&1) and STRTCPSVR SERVER(*HTTP) HTTPSVR(&1)."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8105"
 sev = 30
 text = "Port &1 is already used by HTTP server instance &2."
-help = "&N Cause . . . . . :   A Listen directive for port &1 already exists in the configuration of instance &2. &N Recovery  . . . :   Choose another port, or remove the existing Listen entry first."
+help = "&N Reason  . . . :   A Listen directive for port &1 already exists in the configuration of instance &2. &N What to do . . :   Choose another port, or remove the existing Listen entry first."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8106"
 sev = 30
 text = "Files of HTTP server instance &1 could not be used."
-help = "&N Cause . . . . . :   Reading or writing a file of instance &1 failed: &2 &N Recovery  . . . :   Check that the server root of the instance exists and that the administration server can write to it, then try again."
+help = "&N Reason  . . . :   Reading or writing a file of instance &1 failed: &2 &N What to do . . :   Check that the server root of the instance exists and that the administration server can write to it, then try again."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8110"
 sev = 30
 text = "Request not authorized for user &1."
-help = "&N Cause . . . . . :   User &1 does not have the authority the request needs (&2). The attempt was recorded in the audit journal. &N Recovery  . . . :   Ask the security officer for the authority, or sign on as a user who has it."
+help = "&N Reason  . . . :   User &1 does not have the authority the request needs (&2). The attempt was recorded in the audit journal. &N What to do . . :   Ask the security officer for the authority, or sign on as a user who has it."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8111"
 sev = 30
 text = "User &1 is not an administrator of the HTTP server."
-help = "&N Cause . . . . . :   Signing on to HTTP Server Administration needs the *IOSYSCFG special authority or membership in group profile &2. &N Recovery  . . . :   Ask the security officer for the authority, or sign on as a user who has it."
+help = "&N Reason  . . . :   Signing on to HTTP Server Administration needs the *IOSYSCFG special authority or membership in group profile &2. &N What to do . . :   Ask the security officer for the authority, or sign on as a user who has it."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8120"
 sev = 30
 text = "Value &1 is not valid for &2."
-help = "&N Cause . . . . . :   &2 must be &3. &N Recovery  . . . :   Correct the value and try again."
+help = "&N Reason  . . . :   &2 must be &3. &N What to do . . :   Correct the value and try again."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8122"
 sev = 30
 text = "HTTP server instance &1 already exists."
-help = "&N Cause . . . . . :   An instance named &1 is already defined on this system. &N Recovery  . . . :   Choose another name, or manage the existing instance from the Server instances page."
+help = "&N Reason  . . . :   An instance named &1 is already defined on this system. &N What to do . . :   Choose another name, or manage the existing instance from the Server instances page."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8123"
 sev = 30
 text = "No more HTTP server instances can be created."
-help = "&N Cause . . . . . :   The system already has &1 instances, the most Global settings allow. &N Recovery  . . . :   Delete an instance that is no longer needed, or raise the limit in Global settings."
+help = "&N Reason  . . . :   The system already has &1 instances, the most Global settings allow. &N What to do . . :   Delete an instance that is no longer needed, or raise the limit in Global settings."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8124"
 sev = 30
 text = "HTTP server instance &1 has no TLS port."
-help = "&N Cause . . . . . :   TLS is used on the ports marked TLS on the Ports & addresses page. Instance &1 has none, so TLS was not enabled. &N Recovery  . . . :   Add a port with Use TLS checked on the Ports & addresses page, then enable TLS again."
+help = "&N Reason  . . . :   TLS is used on the ports marked TLS on the Ports & addresses page. Instance &1 has none, so TLS was not enabled. &N What to do . . :   Add a port with Use TLS checked on the Ports & addresses page, then enable TLS again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8125"
 sev = 30
 text = "No certificate chosen for application &1."
-help = "&N Cause . . . . . :   Instance &2 presents the certificate assigned to application &1 on its TLS ports. None is assigned or chosen, and store *SYSTEM has no default certificate, so TLS was not enabled. &N Recovery  . . . :   Choose a certificate on the TLS page. If the list is empty, create or import a server certificate in store *SYSTEM on the Certificate stores page."
+help = "&N Reason  . . . :   Instance &2 presents the certificate assigned to application &1 on its TLS ports. None is assigned or chosen, and store *SYSTEM has no default certificate, so TLS was not enabled. &N What to do . . :   Choose a certificate on the TLS page. If the list is empty, create or import a server certificate in store *SYSTEM on the Certificate stores page."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8126"
 sev = 30
 text = "Certificate application &1 could not be registered."
-help = "&N Cause . . . . . :   The server presents the certificate of application &1 on the TLS ports of instance &2. Registering the application ID failed: &3 &N Recovery  . . . :   Apply the TLS page of the instance again; it registers the application ID. If it fails again, check the message's cause."
+help = "&N Reason  . . . :   The server presents the certificate of application &1 on the TLS ports of instance &2. Registering the application ID failed: &3 &N What to do . . :   Apply the TLS page of the instance again; it registers the application ID. If it fails again, check the message's cause."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8201"
 sev = 30
 text = "Server user profile &1 not found or not authorized."
-help = "&N Cause . . . . . :   The user profile &1 given for the instance's server jobs does not exist on this system, or it cannot be used by the server. &N Recovery  . . . :   Create the user profile with CRTUSRPRF, or change the instance to use an existing profile such as QTMHHTTP, then try again."
+help = "&N Reason  . . . :   The user profile &1 given for the instance's server jobs does not exist on this system, or it cannot be used by the server. &N What to do . . :   Create the user profile with CRTUSRPRF, or change the instance to use an existing profile such as QTMHHTTP, then try again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8202"
 sev = 30
 text = "Port &1 needs *IOSYSCFG for server user profile &2."
-help = "&N Cause . . . . . :   Ports below 1024 can only be used by an instance whose server user profile has the *IOSYSCFG special authority. Profile &2 does not. &N Recovery  . . . :   Choose a port of 1024 or above, or give the server user profile the authority."
+help = "&N Reason  . . . :   Ports below 1024 can only be used by an instance whose server user profile has the *IOSYSCFG special authority. Profile &2 does not. &N What to do . . :   Choose a port of 1024 or above, or give the server user profile the authority."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8301"
 sev = 0
 text = "Certificate &1 created in store &2 and signed by &3."
-help = "&N Cause . . . . . :   A new key pair and a certificate labeled &1, signed by &3, were added to certificate store &2. &N Recovery  . . . :   Assign the certificate to an application on the Applications page to use it."
+help = "&N Reason  . . . :   A new key pair and a certificate labeled &1, signed by &3, were added to certificate store &2. &N What to do . . :   Assign the certificate to an application on the Applications page to use it."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8302"
 sev = 0
 text = "Certificate &1 imported into store &2."
-help = "&N Cause . . . . . :   The certificate labeled &1 was added to certificate store &2. &N Recovery  . . . :   Assign the certificate to an application on the Applications page to use it."
+help = "&N Reason  . . . :   The certificate labeled &1 was added to certificate store &2. &N What to do . . :   Assign the certificate to an application on the Applications page to use it."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8310"
 sev = 0
 text = "Certificate &1 assigned to application &2."
-help = "&N Cause . . . . . :   Application &2 presents certificate &1 the next time its server starts. &N Recovery  . . . :   Restart the server that uses application &2 to present the new certificate now."
+help = "&N Reason  . . . :   Application &2 presents certificate &1 the next time its server starts. &N What to do . . :   Restart the server that uses application &2 to present the new certificate now."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8303"
 sev = 0
 text = "Certificate request &1 created in store &2."
-help = "&N Cause . . . . . :   A key pair labeled &1 was added to certificate store &2 with a certificate signing request for it. The entry waits for its certificate. &N Recovery  . . . :   Download the request and send it to a certificate authority. Import the certificate it returns into store &2 with label &1."
+help = "&N Reason  . . . :   A key pair labeled &1 was added to certificate store &2 with a certificate signing request for it. The entry waits for its certificate. &N What to do . . :   Download the request and send it to a certificate authority. Import the certificate it returns into store &2 with label &1."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8304"
 sev = 0
 text = "Certificate &1 removed from store &2."
-help = "&N Cause . . . . . :   The entry labeled &1 was removed from certificate store &2. Applications that were assigned it no longer have a certificate. &N Recovery  . . . :   Assign another certificate to those applications on the Applications page."
+help = "&N Reason  . . . :   The entry labeled &1 was removed from certificate store &2. Applications that were assigned it no longer have a certificate. &N What to do . . :   Assign another certificate to those applications on the Applications page."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8305"
 sev = 0
 text = "Certificate &1 is now the default certificate of store &2."
-help = "&N Cause . . . . . :   Servers that open certificate store &2 without naming a certificate present &1. &N Recovery  . . . :   None."
+help = "&N Reason  . . . :   Servers that open certificate store &2 without naming a certificate present &1. &N What to do . . :   None."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8306"
 sev = 0
 text = "Certificate store &1 created."
-help = "&N Cause . . . . . :   An empty certificate store &1 was created at &2. Its password is stashed so that servers can open it. &N Recovery  . . . :   Create or import certificates into the store from its page."
+help = "&N Reason  . . . :   An empty certificate store &1 was created at &2. Its password is stashed so that servers can open it. &N What to do . . :   Create or import certificates into the store from its page."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8307"
 sev = 0
 text = "Password of certificate store &1 changed."
-help = "&N Cause . . . . . :   Certificate store &1 was sealed again under the new password and its stashed password was replaced. &N Recovery  . . . :   None."
+help = "&N Reason  . . . :   Certificate store &1 was sealed again under the new password and its stashed password was replaced. &N What to do . . :   None."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8308"
 sev = 0
 text = "Certificate store &1 deleted."
-help = "&N Cause . . . . . :   The store file of certificate store &1 and its stashed password were removed. &N Recovery  . . . :   None."
+help = "&N Reason  . . . :   The store file of certificate store &1 and its stashed password were removed. &N What to do . . :   None."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8311"
 sev = 0
 text = "Certificate assignment removed from application &1."
-help = "&N Cause . . . . . :   Application &1 has no certificate assigned. Its server presents the default certificate of the *SYSTEM store, if any, the next time it starts. &N Recovery  . . . :   Assign a certificate to the application on the Applications page."
+help = "&N Reason  . . . :   Application &1 has no certificate assigned. Its server presents the default certificate of the *SYSTEM store, if any, the next time it starts. &N What to do . . :   Assign a certificate to the application on the Applications page."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8309"
 sev = 0
 text = "Certificate &1 copied to store &2."
-help = "&N Cause . . . . . :   Certificate &1 and its private key were copied from certificate store &3 to certificate store &2. &N Recovery  . . . :   Assign the certificate to an application on the Applications page to use it."
+help = "&N Reason  . . . :   Certificate &1 and its private key were copied from certificate store &3 to certificate store &2. &N What to do . . :   Assign the certificate to an application on the Applications page to use it."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8312"
 sev = 10
 text = "No certificate of store *SYSTEM can be assigned."
-help = "&N Cause . . . . . :   Applications present certificates of the *SYSTEM store. It holds no server or client certificate with its private key that stays valid for more than &1 days. &N Recovery  . . . :   Create a certificate in *SYSTEM, or bring one there from another store: open the certificate and press Copy to *SYSTEM, or export it with its private key and import the file into *SYSTEM."
+help = "&N Reason  . . . :   Applications present certificates of the *SYSTEM store. It holds no server or client certificate with its private key that stays valid for more than &1 days. &N What to do . . :   Create a certificate in *SYSTEM, or bring one there from another store: open the certificate and press Copy to *SYSTEM, or export it with its private key and import the file into *SYSTEM."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8313"
 sev = 30
 text = "Certificate store *SYSTEM cannot be used: &1."
-help = "&N Cause . . . . . :   Applications present certificates of the *SYSTEM store, which could not be opened: &1. &N Recovery  . . . :   If the store does not exist, create it on the Certificate stores page with store name *SYSTEM. If its stashed password no longer opens it, change its password there."
+help = "&N Reason  . . . :   Applications present certificates of the *SYSTEM store, which could not be opened: &1. &N What to do . . :   If the store does not exist, create it on the Certificate stores page with store name *SYSTEM. If its stashed password no longer opens it, change its password there."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8314"
 sev = 10
 text = "Certificate &1 is in store &2, not in *SYSTEM."
-help = "&N Cause . . . . . :   Applications present certificates of the *SYSTEM store only. Certificate &1 is in certificate store &2. &N Recovery  . . . :   Press Copy to *SYSTEM to copy the certificate and its private key to *SYSTEM, then assign it."
+help = "&N Reason  . . . :   Applications present certificates of the *SYSTEM store only. Certificate &1 is in certificate store &2. &N What to do . . :   Press Copy to *SYSTEM to copy the certificate and its private key to *SYSTEM, then assign it."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8320"
 sev = 30
 text = "Certificate function not done: &1."
-help = "&N Cause . . . . . :   The certificate manager refused the request: &1. Nothing was changed. &N Recovery  . . . :   Correct the request and try again."
+help = "&N Reason  . . . :   The certificate manager refused the request: &1. Nothing was changed. &N What to do . . :   Correct the request and try again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8321"
 sev = 30
 text = "Password not correct for certificate store &1."
-help = "&N Cause . . . . . :   The password typed does not open certificate store &1. Nothing was changed. &N Recovery  . . . :   Type the store's current password. If it is lost, delete the store and create it again."
+help = "&N Reason  . . . :   The password typed does not open certificate store &1. Nothing was changed. &N What to do . . :   Type the store's current password. If it is lost, delete the store and create it again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8322"
 sev = 30
 text = "Value not valid: &1."
-help = "&N Cause . . . . . :   A value on the page cannot be used: &1. &N Recovery  . . . :   Correct the value and try again."
+help = "&N Reason  . . . :   A value on the page cannot be used: &1. &N What to do . . :   Correct the value and try again."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "HTP8330"
 sev = 0
 text = "Global settings changed."
-help = "&N Cause . . . . . :   The settings were written to &1. A new session timeout applies from each session's next request. &N Recovery  . . . :   None."
+help = "&N Reason  . . . :   The settings were written to &1. A new session timeout applies from each session's next request. &N What to do . . :   None."
 vars = ["*CHAR *VARY 2"]

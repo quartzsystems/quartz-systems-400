@@ -188,7 +188,7 @@ fn job_props() {
     assert!(t.contains("worker") && !t.contains("serve_loop"));
     let t = ok(&mut b, &format!("{ADMIN}/joblog?lvl=Severity+20+and+above"));
     assert!(t.contains("HTP8110") && !t.contains("HTP8001") && t.contains("1 message."));
-    assert!(ok(&mut b, &format!("{ADMIN}/joblog?dsp=1")).contains("Cause . . . . . :"));
+    assert!(ok(&mut b, &format!("{ADMIN}/joblog?dsp=1")).contains("Reason  . . . . :"));
     assert!(ok(&mut b, &format!("{ADMIN}/splf")).contains("123456/QTMHHTTP/ADMIN"));
     assert_eq!(b.get("/job/1/X/Y/general").status, 404);
 }

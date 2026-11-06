@@ -362,9 +362,9 @@ pub fn message(kind: Kind, id: &str, data: &[&str]) -> Message {
 }
 
 /// Where a message file's second-level text starts the recovery.
-const RECOVERY: &str = "&N Recovery  . . . :   ";
+const RECOVERY: &str = "&N What to do . . :   ";
 /// Where it starts the cause.
-const CAUSE: &str = "&N Cause . . . . . :   ";
+const CAUSE: &str = "&N Reason  . . . :   ";
 
 /// A description's second-level text as a message file keeps it, with
 /// the `&N` line breaks `DSPMSGD` shows.

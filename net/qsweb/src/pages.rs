@@ -54,7 +54,7 @@ pub fn second_level(ctx: &Ctx, sl: &SecondLevel, sent: Option<&Sent>, crumb: &st
         esc(&sl.recovery)
     );
     if let Some(s) = sent.filter(|s| !s.technical.is_empty()) {
-        let _ = writeln!(body, "<h2>Technical description</h2>\n<pre class=\"out\">{}</pre>", esc(&s.technical));
+        let _ = writeln!(body, "<h2>Technical details</h2>\n<pre class=\"out\">{}</pre>", esc(&s.technical));
     }
     body.push_str(&form(
         ctx,

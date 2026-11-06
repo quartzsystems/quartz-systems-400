@@ -557,8 +557,8 @@ fn joblog(rq: &Rq<'_>, p: &JobProps) -> Response {
         let _ = writeln!(out, "{id}{}", esc(&line));
         let _ = writeln!(out, "{indent}Message . . . . :   {}", esc(&e.text));
         if second && let Some(sl) = rq.env().system.message(&e.id, &[]) {
-            let _ = writeln!(out, "{indent}Cause . . . . . :   {}", esc(&sl.cause));
-            let _ = writeln!(out, "{indent}Recovery  . . . :   {}", esc(&sl.recovery));
+            let _ = writeln!(out, "{indent}Reason  . . . . :   {}", esc(&sl.cause));
+            let _ = writeln!(out, "{indent}What to do  . . :   {}", esc(&sl.recovery));
         }
     }
     let count = entries.len();
