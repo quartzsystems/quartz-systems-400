@@ -1,0 +1,24 @@
+                             Display Function Usage                             
+                                                                                
+ Function ID  . . . . . . :   QIBM_QINAV_WEB_FUNCTIONS                          
+ Function name  . . . . . :   Manage Server Through Web Interface               
+                                                                                
+ Description  . . . . . . :   This server may be managed by any iSeries Navigato
+r Tasks on the Web application.                                                 
+                                                                                
+ Product  . . . . . . . . :   QIBM_QINAV_NAVIGATOR_WEB                          
+ Group  . . . . . . . . . :   *NONE                                             
+                                                                                
+ Default authority  . . . . . . . . . . . . :   *DENIED                         
+ *ALLOBJ special authority  . . . . . . . . :   *USED                           
+                                                                                
+ User        Type           Usage         User        Type           Usage      
+                                                                                
+   (No user profiles have usage information)                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

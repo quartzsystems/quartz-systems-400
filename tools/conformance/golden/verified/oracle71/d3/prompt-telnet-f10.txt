@@ -1,0 +1,24 @@
+                          Start TCP/IP TELNET (TELNET)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Remote system  . . . . . . . . .                                               
+                                                                                
+                                                                                
+                                                                                
+ Internet address . . . . . . . .                                               
+                                                                                
+ Port . . . . . . . . . . . . . .   *DFT          1-65534, *DFT                 
+ Secure connection  . . . . . . .   *ENVVAR       *ENVVAR, *YES, *NO            
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Control character key  . . . . .   &             Character value, &            
+ Keyboard language type . . . . .   *LCL          *LCL, AGB, AGE, AGI, AGM...   
+ Page Up (Roll Down) key  . . . .   *PA2          *PA2, *PA1, *PA3, *NONE...    
+ Page Down (Roll Up) key  . . . .   *PA1          *PA1, *PA2, *PA3, *NONE...    
+ Cursor Select key  . . . . . . .   *NONE         *NONE, *F1, *F2, *F3, *F4...  
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

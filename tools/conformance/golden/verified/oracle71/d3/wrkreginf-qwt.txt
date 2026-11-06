@@ -1,0 +1,24 @@
+                       Work with Registration Information                       
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display exit point   8=Work with exit programs                             
+                                                                                
+                            Exit                                                
+      Exit                  Point                                               
+ Opt  Point                 Format    Registered  Text                          
+      QIBM_QWT_JOBNOTIFY    NTFY0100     *YES     Job Notification              
+      QIBM_QWT_PREATTNPGMS  ATTN0100     *YES     Preattention program exit poi 
+      QIBM_QWT_SYSREQPGMS   SREQ0100     *YES     Presystem request pgm exit po 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

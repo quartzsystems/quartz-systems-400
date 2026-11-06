@@ -1,0 +1,27 @@
+-- pub400 (V7R5M0), 2026-11-06, through tools/conformance/jtopen/src/SqlProbe.java
+# q4.sql
+> SELECT * FROM QSYS2.EXIT_POINT_INFO WHERE EXIT_POINT_NAME LIKE 'QIBM_QSY%' OR EXIT_POINT_NAME LIKE 'QIBM_QWC%' OR EXIT_POINT_NAME LIKE 'QIBM_QWT%' ORDER BY 1,2
+ cols | EXIT_POINT_NAME VARCHAR(20,0) NN | EXIT_POINT_FORMAT CHAR(8,0) NN | REGISTERED VARCHAR(3,0) NN | ALLOW_DEREGISTRATION VARCHAR(3,0) NN | ALLOW_CHANGE VARCHAR(3,0) NN | EXIT_PROGRAMS INTEGER(10,0) NN | MAXIMUM_EXIT_PROGRAMS INTEGER(10,0) | TEXT_DESCRIPTION VARCHAR(132,0) | ADD_EXIT_PROGRAM_LIBRARY VARCHAR(10,0) | ADD_EXIT_PROGRAM VARCHAR(10,0) | ADD_EXIT_PROGRAM_FORMAT CHAR(8,0) | REMOVE_EXIT_PROGRAM_LIBRARY VARCHAR(10,0) | REMOVE_EXIT_PROGRAM VARCHAR(10,0) | REMOVE_EXIT_PROGRAM_FORMAT CHAR(8,0) | RETRIEVE_EXIT_PROGRAM_LIBRARY VARCHAR(10,0) | RETRIEVE_EXIT_PROGRAM VARCHAR(10,0) | RETRIEVE_EXIT_PROGRAM_FORMAT CHAR(8,0)
+ row | 'QIBM_QSY_CERT_APPS' | 'CERT0100' | 'YES' | 'NO' | 'NO' | '38' | - | 'Applications using certificates' | 'QSYS' | 'QSYPADAP' | 'ADDP0100' | 'QSYS' | 'QSYPRMAP' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QSY_CHG_PROFILE' | 'CHGP0100' | 'YES' | 'NO' | 'NO' | '1' | - | 'Change User Profile - after change' | 'QSYS' | 'QSYPREAD' | 'ADDP0100' | 'QSYS' | 'QSYPRERM' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QSY_CHG_PROFILE' | 'CHGP0200' | 'YES' | 'NO' | 'NO' | '0' | - | 'Change User Profile - before change' | 'QSYS' | 'QSYPREAD' | 'ADDP0100' | 'QSYS' | 'QSYPRERM' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QSY_CHK_PASSWRD' | 'CHKP0100' | 'YES' | 'NO' | 'NO' | '0' | - | 'Check Password' | 'QSYS' | 'QSYPREAD' | 'ADDP0100' | 'QSYS' | 'QSYPRERM' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QSY_CHK_PASSWRD' | 'CHKP0200' | 'YES' | 'NO' | 'NO' | '0' | - | 'Check Password - QSYCHKPR' | 'QSYS' | 'QSYPREAD' | 'ADDP0100' | 'QSYS' | 'QSYPRERM' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QSY_CRT_PROFILE' | 'CRTP0100' | 'YES' | 'NO' | 'NO' | '1' | - | 'Create User Profile' | 'QSYS' | 'QSYPREAD' | 'ADDP0100' | 'QSYS' | 'QSYPRERM' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QSY_DLT_PROFILE' | 'DLTP0100' | 'YES' | 'NO' | 'NO' | '5' | - | 'Delete User Profile - after delete' | 'QSYS' | 'QSYPREAD' | 'ADDP0100' | 'QSYS' | 'QSYPRERM' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QSY_DLT_PROFILE' | 'DLTP0200' | 'YES' | 'NO' | 'NO' | '0' | - | 'Delete User Profile - before delete' | 'QSYS' | 'QSYPREAD' | 'ADDP0100' | 'QSYS' | 'QSYPRERM' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QSY_RST_PROFILE' | 'RSTP0100' | 'YES' | 'NO' | 'NO' | '0' | '20' | 'Restore User Profile' | 'QSYS' | 'QSYPREAD' | 'ADDP0100' | 'QSYS' | 'QSYPRERM' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QSY_VLD_PASSWRD' | 'VLDP0100' | 'YES' | 'NO' | 'NO' | '0' | - | 'Validate Password CHGPWD, QSYCHGPW' | 'QSYS' | 'QSYPREAD' | 'ADDP0100' | 'QSYS' | 'QSYPRERM' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QSY_VLD_PASSWRD' | 'VLDP0200' | 'YES' | 'NO' | 'NO' | '0' | - | 'Validate Password CRTUSRPRF, CHGUSRPRF' | 'QSYS' | 'QSYPREAD' | 'ADDP0100' | 'QSYS' | 'QSYPRERM' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWC_JOBITPPGM' | 'JITP0100' | 'YES' | 'NO' | 'NO' | '0' | - | 'Job interrupt program exit point' | 'QSYS' | 'QWCPDAUT' | 'ADDP0100' | 'QSYS' | 'QWCPDAUT' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWC_PRERESTRICT' | 'PRER0100' | 'YES' | 'NO' | 'NO' | '0' | - | 'ENDSYS ENDSBS *ALL pre restricted state processing exit point' | 'QSYS' | 'QWCPDAUT' | 'ADDP0100' | 'QSYS' | 'QWCPDAUT' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWC_PWRDWNSYS' | 'PWRD0100' | 'YES' | 'NO' | 'NO' | '0' | '1' | 'Prepower down system exit point' | 'QSYS' | 'QWCPDAUT' | 'ADDP0100' | 'QSYS' | 'QWCPDAUT' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWC_PWRDWNSYS' | 'PWRD0200' | 'YES' | 'NO' | 'NO' | '0' | - | 'Prepower down system exit point' | 'QSYS' | 'QWCPDAUT' | 'ADDP0100' | 'QSYS' | 'QWCPDAUT' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWC_QSTGLOWACN' | 'STGL0100' | 'YES' | 'NO' | 'NO' | '0' | - | 'Auxiliary storage lower limit action' | 'QSYS' | 'QWCPDAUT' | 'ADDP0100' | 'QSYS' | 'QWCPDAUT' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWC_RESUME' | 'RSMS0100' | 'YES' | 'NO' | 'NO' | '0' | - | 'Resume system' | 'QSYS' | 'QWCPDAUT' | 'ADDP0100' | 'QSYS' | 'QWCPDAUT' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWC_SUSPEND' | 'SSPS0100' | 'YES' | 'NO' | 'NO' | '0' | - | 'Suspend system' | 'QSYS' | 'QWCPDAUT' | 'ADDP0100' | 'QSYS' | 'QWCPDAUT' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWT_CHGJOB' | 'CHGJ0100' | 'YES' | 'NO' | 'NO' | '0' | - | 'Change job' | 'QSYS' | 'QWCPDAUT' | 'ADDP0100' | 'QSYS' | 'QWCPDAUT' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWT_JOBNOTIFY' | 'NTFY0100' | 'YES' | 'NO' | 'NO' | '0' | - | 'Job Notification' | 'QSYS' | 'QWTARJTN' | 'ADDP0100' | 'QSYS' | 'QWTARJTN' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWT_PREATTNPGMS' | 'ATTN0100' | 'YES' | 'NO' | 'NO' | '0' | '8' | 'Preattention program exit point' | 'QSYS' | 'QWTATNAD' | 'ADDP0100' | 'QSYS' | 'QWTATNAD' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWT_SBMJOB' | 'SBMJ0100' | 'YES' | 'NO' | 'NO' | '0' | - | 'Submit job' | 'QSYS' | 'QWCPDAUT' | 'ADDP0100' | 'QSYS' | 'QWCPDAUT' | 'RMVP0100' | - | - | -
+ row | 'QIBM_QWT_SYSREQPGMS' | 'SREQ0100' | 'YES' | 'NO' | 'NO' | '0' | '8' | 'Presystem request pgm exit point' | 'QSYS' | 'QWTATNAD' | 'ADDP0100' | 'QSYS' | 'QWTATNAD' | 'RMVP0100' | - | - | -

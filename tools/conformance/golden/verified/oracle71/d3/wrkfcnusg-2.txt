@@ -1,0 +1,24 @@
+                            Work with Function Usage                            
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change usage   5=Display usage                                             
+                                                                                
+ Opt  Function ID                     Function Name                             
+      QIBM_SERVICE_THREAD             Thread control                            
+      QIBM_SERVICE_TRACE              Service trace                             
+      QIBM_SERVICE_WATCH              Service watch                             
+      QIBM_QINAV_WEB_CONFIGURE        Configure iSeries Navigator Web Interface 
+      QIBM_QINAV_WEB_FUNCTIONS        Manage Server Through Web Interface       
+      QIBM_QINAV_WEB_INTERFACE        Use of iSeries Navigator Web Interface    
+      QIBM_QSY_SYSTEM_CERT_STORE      *SYSTEM certificate store                 
+      QIBM_QTMF_CLIENT_REQ_0          Initiate Session                          
+      QIBM_QTMF_CLIENT_REQ_10         Clear Command Channel                     
+      QIBM_QTMF_CLIENT_REQ_3          Change Directory                          
+      QIBM_QTMF_CLIENT_REQ_6          Send Files                                
+      QIBM_QTMF_CLIENT_REQ_7          Receive Files                             
+                                                                        More... 
+ Parameters for option 2 or command                                             
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F12=Cancel   F17=Top          
+ F18=Bottom                                                                     
+                                                                                

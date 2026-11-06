@@ -1,0 +1,132 @@
+# D3 and D4 on the primary (V7R1M0, QSECOFR): the displays of DSPSECA,
+# WRKFCNUSG, DSPFCNUSG, WRKJRNRCV, WRKREGINF over the profile, password
+# and work management exit points, and what STRPASTHR and TELNET say
+# with a remote that does not exist. Read-only: lists are left with F3/F12.
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+key eraseinput
+type DSPSECA
+key enter
+settle 3000
+snap dspseca
+key f3
+settle 1500
+key eraseinput
+type WRKFCNUSG
+key enter
+settle 4000
+snap wrkfcnusg-1
+key pgdn
+settle 1500
+snap wrkfcnusg-2
+key pgdn
+settle 1500
+snap wrkfcnusg-3
+key pgdn
+settle 1500
+snap wrkfcnusg-4
+key f3
+settle 1500
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_DB_SQLADM)
+key enter
+settle 3000
+snap dspfcnusg-sqladm
+key pgdn
+settle 1500
+snap dspfcnusg-sqladm-2
+key f3
+settle 1500
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_ACCESS_ALLOBJ_JOBLOG)
+key enter
+settle 3000
+snap dspfcnusg-allobjjoblog
+key f3
+settle 1500
+key eraseinput
+type WRKFCNUSG FCNID(QIBM_DB*)
+key enter
+settle 3000
+snap wrkfcnusg-db
+pick "QIBM_DB_SQLADM" 5
+key enter
+settle 2000
+snap wrkfcnusg-opt5
+key f12
+settle 1500
+pick "QIBM_DB_SQLADM" 2
+key enter
+settle 2000
+snap wrkfcnusg-opt2
+key f12
+settle 1500
+key f3
+settle 1500
+key eraseinput
+type WRKJRNRCV JRNRCV(QSYS/*ALL)
+key enter
+settle 4000
+snap wrkjrnrcv
+key f3
+settle 1500
+key eraseinput
+type WRKREGINF EXITPNT(QIBM_QSY*)
+key enter
+settle 4000
+snap wrkreginf-qsy
+key pgdn
+settle 1500
+snap wrkreginf-qsy-2
+pick "QIBM_QSY_VLD_PASSWRD" 5
+key enter
+settle 2000
+snap wrkreginf-vldp
+key f12
+settle 1500
+key f3
+settle 1500
+key eraseinput
+type WRKREGINF EXITPNT(QIBM_QWC*)
+key enter
+settle 4000
+snap wrkreginf-qwc
+key f3
+settle 1500
+key eraseinput
+type WRKREGINF EXITPNT(QIBM_QWT*)
+key enter
+settle 4000
+snap wrkreginf-qwt
+key f3
+settle 1500
+key eraseinput
+type STRPASTHR RMTLOCNAME(QSNOSUCH)
+key enter
+settle 5000
+snap strpasthr
+key eraseinput
+type TELNET RMTSYS(QSNOSUCH.INVALID)
+key enter
+settle 8000
+snap telnet-nohost
+key eraseinput
+type DSPSYSVAL QPWDVLDPGM
+key enter
+settle 2000
+snap dspsysval-qpwdvldpgm
+key f3
+settle 1500
+key f10
+settle 1500
+snap cmdentry-detailed
+key f3
+settle 1500

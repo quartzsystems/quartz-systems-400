@@ -1,0 +1,24 @@
+                              Display System Value                              
+                                                                                
+ System value . . . . . :   QPWDVLDPGM                                          
+ Description  . . . . . :   Password validation program                         
+                                                                                
+                                                                                
+ Password validation program  :   *NONE          Name, *REGFAC, *NONE           
+   Library  . . . . . . . . . :                  Name                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

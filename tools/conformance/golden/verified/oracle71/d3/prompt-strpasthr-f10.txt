@@ -1,0 +1,24 @@
+                         Start Pass-Through (STRPASTHR)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Remote location  . . . . . . . .                 Name, *CNNDEV                 
+ APPC device  . . . . . . . . . .   *LOC          Name, *LOC                    
+                + for more values                                               
+ Virtual controller . . . . . . .   *NONE         Name, *NONE                   
+ Virtual display device . . . . .   *NONE         Name, *NONE                   
+                + for more values                                               
+ Mode . . . . . . . . . . . . . .   *NETATR       Name, *NETATR                 
+ Local location . . . . . . . . .   *LOC          Name, *LOC, *NETATR           
+ Remote network identifier  . . .   *LOC          Name, *LOC, *NETATR, *NONE    
+ System request program . . . . .   *SRQMNU       Name, *SRQMNU                 
+   Library  . . . . . . . . . . .                 Name, *LIBL, *CURLIB          
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ User profile . . . . . . . . . .   *NONE         Character value, *NONE...     
+ User password  . . . . . . . . .   *NONE         Character value, *NONE        
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

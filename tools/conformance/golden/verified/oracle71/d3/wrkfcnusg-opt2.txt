@@ -1,0 +1,24 @@
+                        Change Function Usage (CHGFCNUSG)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Function ID  . . . . . . . . . . > QIBM_DB_SQLADM                              
+ User . . . . . . . . . . . . . .                 Name                          
+ Usage  . . . . . . . . . . . . .                 *ALLOWED, *DENIED, *NONE      
+ Default authority  . . . . . . .   *DENIED       *SAME, *ALLOWED, *DENIED      
+ *ALLOBJ special authority  . . .   *NOTUSED      *SAME, *USED, *NOTUSED        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

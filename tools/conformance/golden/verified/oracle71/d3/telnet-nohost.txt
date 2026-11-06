@@ -1,0 +1,24 @@
+                                 Command Entry                         S062B175 
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > WRKFCNUSG                                                                 
+    > DSPFCNUSG FCNID(QIBM_DB_SQLADM)                                           
+    > DSPFCNUSG FCNID(QIBM_ACCESS_ALLOBJ_JOBLOG)                                
+    > WRKFCNUSG FCNID(QIBM_DB*)                                                 
+    > WRKJRNRCV JRNRCV(QSYS/*ALL)                                               
+    > WRKREGINF EXITPNT(QIBM_QSY*)                                              
+    > WRKREGINF EXITPNT(QIBM_QWC*)                                              
+    > WRKREGINF EXITPNT(QIBM_QWT*)                                              
+    > STRPASTHR RMTLOCNAME(QSNOSUCH)                                            
+      Route to specified location not found.                                    
+    > TELNET RMTSYS(QSNOSUCH.INVALID)                                           
+      Cannot find host QSNOSUCH.INVALID.                                        
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

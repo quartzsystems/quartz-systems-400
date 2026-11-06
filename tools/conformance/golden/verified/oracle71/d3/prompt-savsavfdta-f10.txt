@@ -1,0 +1,24 @@
+                        Save Save File Data (SAVSAVFDTA)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Save file  . . . . . . . . . . .                 Name                          
+   Library  . . . . . . . . . . .     *LIBL       Name, *LIBL, *CURLIB          
+ Device . . . . . . . . . . . . .                 Name                          
+                + for more values                                               
+ Volume identifier  . . . . . . .   *MOUNTED                                    
+                + for more values                                               
+ Sequence number  . . . . . . . .   *END          1-16777215, *END              
+ End of media option  . . . . . .   *REWIND       *REWIND, *LEAVE, *UNLOAD      
+ Optical file . . . . . . . . . .   '*'                                         
+                                                                                
+ Use optimum block  . . . . . . .   *YES          *YES, *NO                     
+ Clear  . . . . . . . . . . . . .   *NONE         *NONE, *ALL, *AFTER, *REPLACE 
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ File expiration date . . . . . .   *PERM         Date, *PERM                   
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

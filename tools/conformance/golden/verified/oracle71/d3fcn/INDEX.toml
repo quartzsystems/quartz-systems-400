@@ -1,0 +1,304 @@
+[[golden]]
+name = "fcn-qibm_dirsrv_admin"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_access_allobj_joblog"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_allobj_trace_any_user"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_watch_any_job"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_db_sqladm"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_db_sysmon"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qcst_service_clustadmin"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qcst_service_clustoper"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qyas_service_diskmgmt"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_service_disk_watcher"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_service_dump"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_service_job_watcher"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_service_thread"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_service_trace"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_service_watch"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qinav_web_configure"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qinav_web_functions"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qinav_web_interface"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qsy_system_cert_store"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_client_req_0"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_client_req_10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_client_req_3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_client_req_6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_client_req_7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_client_req_9"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_0"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_6"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_7"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_8"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qtmf_server_req_9"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "fcn-qibm_qyps_mgtctrl_super_user"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+
+[[golden]]
+name = "dspfcnusg-print"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-fcnusg71"
+width = 80
+

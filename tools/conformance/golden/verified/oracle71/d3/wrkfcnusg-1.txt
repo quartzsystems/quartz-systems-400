@@ -1,0 +1,24 @@
+                            Work with Function Usage                            
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change usage   5=Display usage                                             
+                                                                                
+ Opt  Function ID                     Function Name                             
+      QIBM_DIRSRV_ADMIN               IBM Tivoli Directory Server Administrator 
+      QIBM_ACCESS_ALLOBJ_JOBLOG       Access job log of *ALLOBJ job             
+      QIBM_ALLOBJ_TRACE_ANY_USER      Trace any user                            
+      QIBM_WATCH_ANY_JOB              Watch any job                             
+      QIBM_DB_SQLADM                  Database Administrator                    
+      QIBM_DB_SYSMON                  Database Information                      
+      QIBM_QCST_SERVICE_CLUSTADMIN    Cluster Administration                    
+      QIBM_QCST_SERVICE_CLUSTOPER     Cluster Operation                         
+      QIBM_QYAS_SERVICE_DISKMGMT      Disk units                                
+      QIBM_SERVICE_DISK_WATCHER       DISK WATCHER                              
+      QIBM_SERVICE_DUMP               Service dump                              
+      QIBM_SERVICE_JOB_WATCHER        JOB WATCHER                               
+                                                                        More... 
+ Parameters for option 2 or command                                             
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F12=Cancel   F17=Top          
+ F18=Bottom                                                                     
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

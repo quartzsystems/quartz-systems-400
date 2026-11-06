@@ -1,0 +1,24 @@
+                             Display Function Usage                             
+                                                                                
+ Function ID  . . . . . . :   QIBM_QTMF_SERVER_REQ_1                            
+ Function name  . . . . . :   Create Directory/Library                          
+                                                                                
+ Description  . . . . . . :   Use of server subcommand MKD to create directories
+.                                                                               
+                                                                                
+ Product  . . . . . . . . :   QIBM_QTM_TCPIP                                    
+ Group  . . . . . . . . . :   QIBM_QTMF_FTP_SERVER_REQ                          
+                                                                                
+ Default authority  . . . . . . . . . . . . :   *ALLOWED                        
+ *ALLOBJ special authority  . . . . . . . . :   *NOTUSED                        
+                                                                                
+ User        Type           Usage         User        Type           Usage      
+                                                                                
+   (No user profiles have usage information)                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

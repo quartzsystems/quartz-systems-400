@@ -1,0 +1,24 @@
+                         Receive Journal Entry (RCVJRNE)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Journal  . . . . . . . . . . . . JRN                                           
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Program to receive entries . . . EXITPGM                                       
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Journaled file:                  FILE                                          
+   File . . . . . . . . . . . . .                                               
+     Library  . . . . . . . . . .                  *LIBL                        
+   Member . . . . . . . . . . . .                *FIRST                         
+                           + for more values                                    
+ Objects:                         OBJ                                           
+   Object . . . . . . . . . . . .                                               
+     Library  . . . . . . . . . .                  *LIBL                        
+   Object type  . . . . . . . . .                                               
+   Member, if data base file  . .                *FIRST                         
+                           + for more values                                    
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter JRN required.                                                      + 

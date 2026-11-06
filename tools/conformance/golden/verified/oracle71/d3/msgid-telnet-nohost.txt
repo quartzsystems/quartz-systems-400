@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ Message ID . . . . . . :   TCP101A                                             
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   Cannot find host QSNOSUCH.INVALID.                         
+                                                                                
+ Cause . . . . . :   The host specified could not be found by the remote name   
+   server or could not be found in the local host database file.                
+ Recovery  . . . :   Enter a valid host name or internet address and then try   
+   the command again.                                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F1=Help   F3=Exit   F6=Print      F9=Display message details                   
+ F10=Display messages in job log   F12=Cancel   F21=Select assistance level     
+                                                                                

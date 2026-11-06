@@ -1,0 +1,24 @@
+                             Display Function Usage                             
+                                                                                
+ Function ID  . . . . . . :   QIBM_DIRSRV_ADMIN                                 
+ Function name  . . . . . :   IBM Tivoli Directory Server Administrator         
+                                                                                
+ Description  . . . . . . :   Bind user profiles as an LDAP administrator       
+                                                                                
+                                                                                
+ Product  . . . . . . . . :   QIBM_BASE_OPERATING_SYSTEM                        
+ Group  . . . . . . . . . :   *NONE                                             
+                                                                                
+ Default authority  . . . . . . . . . . . . :   *DENIED                         
+ *ALLOBJ special authority  . . . . . . . . :   *NOTUSED                        
+                                                                                
+ User        Type           Usage         User        Type           Usage      
+                                                                                
+   (No user profiles have usage information)                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

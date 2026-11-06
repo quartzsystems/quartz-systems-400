@@ -1,0 +1,24 @@
+                             Display Function Usage                             
+                                                                                
+ Function ID  . . . . . . :   QIBM_QSY_SYSTEM_CERT_STORE                        
+ Function name  . . . . . :   *SYSTEM certificate store                         
+                                                                                
+ Description  . . . . . . :   Provide access to the *SYSTEM certificate store.  
+                                                                                
+                                                                                
+ Product  . . . . . . . . :   QIBM_QSY_DIGITAL_CERT_MGR                         
+ Group  . . . . . . . . . :   *NONE                                             
+                                                                                
+ Default authority  . . . . . . . . . . . . :   *DENIED                         
+ *ALLOBJ special authority  . . . . . . . . :   *USED                           
+                                                                                
+ User        Type           Usage         User        Type           Usage      
+ QDIRSRV     User           *ALLOWED                                            
+ QTCP        User           *ALLOWED                                            
+ QYPSJSVR    User           *ALLOWED                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

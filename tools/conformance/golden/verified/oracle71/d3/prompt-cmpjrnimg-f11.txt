@@ -1,0 +1,24 @@
+                       Compare Journal Images (CMPJRNIMG)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File . . . . . . . . . . . . . . FILE                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Member . . . . . . . . . . . . . MBR            *FIRST                         
+ Range of journal receivers:      RCVRNG                                        
+   Starting journal receiver  . .                *CURRENT                       
+     Library  . . . . . . . . . .                                               
+   Ending journal receiver  . . .                                               
+     Library  . . . . . . . . . .                                               
+ Starting large sequence number   FROMENTLRG     *FIRST                         
+ Starting date and time:          FROMTIME                                      
+   Starting date  . . . . . . . .                                               
+   Starting time  . . . . . . . .                                               
+ Ending large sequence number . . TOENTLRG       *LAST                          
+ Ending date and time:            TOTIME                                        
+   Ending date  . . . . . . . . .                                               
+   Ending time  . . . . . . . . .                                               
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,24 @@
+                       Work with Registration Information                       
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display exit point   8=Work with exit programs                             
+                                                                                
+                            Exit                                                
+      Exit                  Point                                               
+ Opt  Point                 Format    Registered  Text                          
+      QIBM_QSY_CERT_APPS    CERT0100     *YES     Applications using certificat 
+      QIBM_QSY_CHG_PROFILE  CHGP0100     *YES     Change User Profile - after c 
+      QIBM_QSY_CHG_PROFILE  CHGP0200     *YES     Change User Profile - before  
+      QIBM_QSY_CHK_PASSWRD  CHKP0100     *YES     Check Password                
+      QIBM_QSY_CRT_PROFILE  CRTP0100     *YES     Create User Profile           
+      QIBM_QSY_DLT_PROFILE  DLTP0100     *YES     Delete User Profile - after d 
+      QIBM_QSY_DLT_PROFILE  DLTP0200     *YES     Delete User Profile - before  
+      QIBM_QSY_HOSTFUNC     FCNR0100     *YES     Host Functions                
+      QIBM_QSY_OPNAVCENTRL  FCNR0200     *YES     Central Navigator Functions   
+      QIBM_QSY_OPNAVCLIENT  FCNR0100     *YES     Local Navigator Functions     
+      QIBM_QSY_OTHERCENTRL  FCNR0200     *YES     Central Other Client Function 
+                                                                        More... 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

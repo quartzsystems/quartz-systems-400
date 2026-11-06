@@ -1,0 +1,24 @@
+                               Display Exit Point                               
+                                                             System:   SYSNAME  
+ Exit point . . . . . . . . . . . . . . :   QIBM_QSY_VLD_PASSWRD                
+ Exit point format  . . . . . . . . . . :   VLDP0100                            
+                                                                                
+ Exit point registered  . . . . . . . . :   *YES                                
+ Allow deregister . . . . . . . . . . . :   *NO                                 
+ Maximum number of exit programs  . . . :   *NOMAX                              
+ Current number of exit programs  . . . :   0                                   
+ Preprocessing for add  . . . . . . . . :   QSYPREAD                            
+   Library  . . . . . . . . . . . . . . :     QSYS                              
+   Format . . . . . . . . . . . . . . . :     ADDP0100                          
+ Preprocessing for remove . . . . . . . :   QSYPRERM                            
+   Library  . . . . . . . . . . . . . . :     QSYS                              
+   Format . . . . . . . . . . . . . . . :     RMVP0100                          
+ Preprocessing for retrieve . . . . . . :   *NONE                               
+   Library  . . . . . . . . . . . . . . :                                       
+   Format . . . . . . . . . . . . . . . :                                       
+ Allow change . . . . . . . . . . . . . :   *NO                                 
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

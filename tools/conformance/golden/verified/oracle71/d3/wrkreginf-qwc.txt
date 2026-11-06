@@ -1,0 +1,24 @@
+                       Work with Registration Information                       
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display exit point   8=Work with exit programs                             
+                                                                                
+                            Exit                                                
+      Exit                  Point                                               
+ Opt  Point                 Format    Registered  Text                          
+      QIBM_QWC_JOBITPPGM    JITP0100     *YES     Job interrupt program exit po 
+      QIBM_QWC_PRERESTRICT  PRER0100     *YES     ENDSYS ENDSBS *ALL pre restri 
+      QIBM_QWC_PWRDWNSYS    PWRD0100     *YES     Prepower down system exit poi 
+      QIBM_QWC_PWRDWNSYS    PWRD0200     *YES     Prepower down system exit poi 
+      QIBM_QWC_QSTGLOWACN   STGL0100     *YES     Auxiliary storage lower limit 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

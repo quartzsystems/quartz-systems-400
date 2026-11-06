@@ -1,0 +1,24 @@
+                                 Command Entry                         S062B175 
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+      Command prompting ended when user pressed F12.                            
+    > CHGFCNUSG                                                                 
+      Command prompting ended when user pressed F12.                            
+    > DSPFCNUSG                                                                 
+      Command prompting ended when user pressed F12.                            
+    > TELNET                                                                    
+      Command prompting ended when user pressed F12.                            
+    > STRPASTHR                                                                 
+      Command prompting ended when user pressed F12.                            
+    > CHGAUDCTL                                                                 
+      Command CHGAUDCTL in library *LIBL not found.                             
+      Error found on CHGAUDCTL command.                                         
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===> CHGAUDCTL                                                                 
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

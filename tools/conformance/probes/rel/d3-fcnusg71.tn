@@ -1,0 +1,277 @@
+# Every function the primary (V7R1M0) lists in WRKFCNUSG, shown with
+# DSPFCNUSG: product, group, default authority, *ALLOBJ use and users.
+# Read-only.
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+continue
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_DIRSRV_ADMIN)
+key enter
+settle 2500
+snap fcn-qibm_dirsrv_admin
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_ACCESS_ALLOBJ_JOBLOG)
+key enter
+settle 2500
+snap fcn-qibm_access_allobj_joblog
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_ALLOBJ_TRACE_ANY_USER)
+key enter
+settle 2500
+snap fcn-qibm_allobj_trace_any_user
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_WATCH_ANY_JOB)
+key enter
+settle 2500
+snap fcn-qibm_watch_any_job
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_DB_SQLADM)
+key enter
+settle 2500
+snap fcn-qibm_db_sqladm
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_DB_SYSMON)
+key enter
+settle 2500
+snap fcn-qibm_db_sysmon
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QCST_SERVICE_CLUSTADMIN)
+key enter
+settle 2500
+snap fcn-qibm_qcst_service_clustadmin
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QCST_SERVICE_CLUSTOPER)
+key enter
+settle 2500
+snap fcn-qibm_qcst_service_clustoper
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QYAS_SERVICE_DISKMGMT)
+key enter
+settle 2500
+snap fcn-qibm_qyas_service_diskmgmt
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_SERVICE_DISK_WATCHER)
+key enter
+settle 2500
+snap fcn-qibm_service_disk_watcher
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_SERVICE_DUMP)
+key enter
+settle 2500
+snap fcn-qibm_service_dump
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_SERVICE_JOB_WATCHER)
+key enter
+settle 2500
+snap fcn-qibm_service_job_watcher
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_SERVICE_THREAD)
+key enter
+settle 2500
+snap fcn-qibm_service_thread
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_SERVICE_TRACE)
+key enter
+settle 2500
+snap fcn-qibm_service_trace
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_SERVICE_WATCH)
+key enter
+settle 2500
+snap fcn-qibm_service_watch
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QINAV_WEB_CONFIGURE)
+key enter
+settle 2500
+snap fcn-qibm_qinav_web_configure
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QINAV_WEB_FUNCTIONS)
+key enter
+settle 2500
+snap fcn-qibm_qinav_web_functions
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QINAV_WEB_INTERFACE)
+key enter
+settle 2500
+snap fcn-qibm_qinav_web_interface
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QSY_SYSTEM_CERT_STORE)
+key enter
+settle 2500
+snap fcn-qibm_qsy_system_cert_store
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_CLIENT_REQ_0)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_client_req_0
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_CLIENT_REQ_10)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_client_req_10
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_CLIENT_REQ_3)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_client_req_3
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_CLIENT_REQ_6)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_client_req_6
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_CLIENT_REQ_7)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_client_req_7
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_CLIENT_REQ_9)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_client_req_9
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_0)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_0
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_1)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_1
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_10)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_10
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_2)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_2
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_3)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_3
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_4)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_4
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_5)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_5
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_6)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_6
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_7)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_7
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_8)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_8
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_9)
+key enter
+settle 2500
+snap fcn-qibm_qtmf_server_req_9
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_QYPS_MGTCTRL_SUPER_USER)
+key enter
+settle 2500
+snap fcn-qibm_qyps_mgtctrl_super_user
+key f3
+settle 1200
+key eraseinput
+type DSPFCNUSG FCNID(QIBM_*) OUTPUT(*PRINT)
+key enter
+settle 3000
+snap dspfcnusg-print

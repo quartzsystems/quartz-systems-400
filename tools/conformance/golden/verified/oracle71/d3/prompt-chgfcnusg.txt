@@ -1,0 +1,24 @@
+                        Change Function Usage (CHGFCNUSG)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Function ID  . . . . . . . . . .                                               
+ User . . . . . . . . . . . . . .                 Name                          
+ Usage  . . . . . . . . . . . . .                 *ALLOWED, *DENIED, *NONE      
+ Default authority  . . . . . . .   *SAME         *SAME, *ALLOWED, *DENIED      
+ *ALLOBJ special authority  . . .   *SAME         *SAME, *USED, *NOTUSED        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

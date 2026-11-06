@@ -1,0 +1,24 @@
+                        Save Save File Data (SAVSAVFDTA)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Save file  . . . . . . . . . . . SAVF                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Device . . . . . . . . . . . . . DEV                                           
+                           + for more values                                    
+ Volume identifier  . . . . . . . VOL            *MOUNTED                       
+                                                                                
+                           + for more values                                    
+                                                                                
+ Sequence number  . . . . . . . . SEQNBR         *END                           
+ End of media option  . . . . . . ENDOPT         *REWIND                        
+ Optical file . . . . . . . . . . OPTFILE        '*'                            
+                                                                                
+ Use optimum block  . . . . . . . USEOPTBLK      *YES                           
+ Clear  . . . . . . . . . . . . . CLEAR          *NONE                          
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter SAVF required.                                                     + 

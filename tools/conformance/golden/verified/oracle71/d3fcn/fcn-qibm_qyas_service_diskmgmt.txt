@@ -1,0 +1,24 @@
+                             Display Function Usage                             
+                                                                                
+ Function ID  . . . . . . :   QIBM_QYAS_SERVICE_DISKMGMT                        
+ Function name  . . . . . :   Disk units                                        
+                                                                                
+ Description  . . . . . . :   Provides support to work with disk units          
+                                                                                
+                                                                                
+ Product  . . . . . . . . :   QIBM_BASE_OPERATING_SYSTEM                        
+ Group  . . . . . . . . . :   QIBM_SERVICE                                      
+                                                                                
+ Default authority  . . . . . . . . . . . . :   *DENIED                         
+ *ALLOBJ special authority  . . . . . . . . :   *NOTUSED                        
+                                                                                
+ User        Type           Usage         User        Type           Usage      
+                                                                                
+   (No user profiles have usage information)                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

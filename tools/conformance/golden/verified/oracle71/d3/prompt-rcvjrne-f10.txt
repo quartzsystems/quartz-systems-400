@@ -1,0 +1,24 @@
+                         Receive Journal Entry (RCVJRNE)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Journal  . . . . . . . . . . . .                 Name                          
+   Library  . . . . . . . . . . .     *LIBL       Name, *LIBL, *CURLIB          
+ Program to receive entries . . .                 Name                          
+   Library  . . . . . . . . . . .     *LIBL       Name, *LIBL, *CURLIB          
+ Journaled file:                                                                
+   File . . . . . . . . . . . . .                 Name, *ALLFILE, *ALL          
+     Library  . . . . . . . . . .     *LIBL       Name, *LIBL, *CURLIB          
+   Member . . . . . . . . . . . .   *FIRST        Name, *FIRST, *ALL, *NONE     
+                + for more values                                               
+ Objects:                                                                       
+   Object . . . . . . . . . . . .                 Name, *ALL                    
+     Library  . . . . . . . . . .     *LIBL       Name, *LIBL, *CURLIB          
+   Object type  . . . . . . . . .                 *FILE, *DTAARA, *DTAQ, *LIB   
+   Member, if data base file  . .   *FIRST        Name, *FIRST, *ALL, *NONE     
+                + for more values                                               
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,24 @@
+                          Display Security Attributes                           
+                                                             System:   SYSNAME  
+ User ID number . . . . . . . . . . . . . . :   109                             
+ Group ID number  . . . . . . . . . . . . . :   102                             
+ Security level . . . . . . . . . . . . . . :   40                              
+ Password level . . . . . . . . . . . . . . :   0                               
+ Allow change of security related system                                        
+   values . . . . . . . . . . . . . . . . . :   *YES                            
+ Allow add of digital certificates  . . . . :   *YES                            
+ Allow service tools user ID with default                                       
+   and expired password to change its own                                       
+   password . . . . . . . . . . . . . . . . :   *NO                             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

@@ -1,0 +1,24 @@
+                         Start Pass-Through (STRPASTHR)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Remote location  . . . . . . . . RMTLOCNAME                                    
+ APPC device  . . . . . . . . . . CNNDEV         *LOC                           
+                           + for more values                                    
+ Virtual controller . . . . . . . VRTCTL         *NONE                          
+ Virtual display device . . . . . VRTDEV         *NONE                          
+                           + for more values                                    
+ Mode . . . . . . . . . . . . . . MODE           *NETATR                        
+ Local location . . . . . . . . . LCLLOCNAME     *LOC                           
+ Remote network identifier  . . . RMTNETID       *LOC                           
+ System request program . . . . . SRQ10PGM       *SRQMNU                        
+   Library  . . . . . . . . . . .                                               
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ User profile . . . . . . . . . . RMTUSER        *NONE                          
+ User password  . . . . . . . . . RMTPWD         *NONE                          
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter RMTLOCNAME required.                                                 

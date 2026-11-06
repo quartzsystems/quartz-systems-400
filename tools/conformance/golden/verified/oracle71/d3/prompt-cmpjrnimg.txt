@@ -1,0 +1,24 @@
+                       Compare Journal Images (CMPJRNIMG)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File . . . . . . . . . . . . . .                 Name                          
+   Library  . . . . . . . . . . .     *LIBL       Name, *LIBL, *CURLIB          
+ Member . . . . . . . . . . . . .   *FIRST        Name, *FIRST                  
+ Range of journal receivers:                                                    
+   Starting journal receiver  . .   *CURRENT      Name, *CURRENT                
+     Library  . . . . . . . . . .                 Name, *LIBL, *CURLIB          
+   Ending journal receiver  . . .                 Name, *CURRENT                
+     Library  . . . . . . . . . .                 Name, *LIBL, *CURLIB          
+ Starting large sequence number     *FIRST                                      
+ Starting date and time:                                                        
+   Starting date  . . . . . . . .                 Date                          
+   Starting time  . . . . . . . .                 Time                          
+ Ending large sequence number . .   *LAST                                       
+ Ending date and time:                                                          
+   Ending date  . . . . . . . . .                 Date                          
+   Ending time  . . . . . . . . .                 Time                          
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

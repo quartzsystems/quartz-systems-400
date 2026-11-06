@@ -1,0 +1,24 @@
+                          Work with Journal Receivers                           
+                                                                                
+ Type options, press Enter.                                                     
+   1=Create   4=Delete   5=Display attributes   13=Change description           
+                                                                                
+      Journal                                                                   
+ Opt  Receiver    Library     Text                                              
+                                                                                
+                                                                                
+   (Cannot find object to match specified name.)                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters for options 1, 5 and 13 or command                                  
+ ===>                                                                           
+ F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display names only     
+ F12=Cancel   F16=Repeat position to   F17=Position to                          
+                                                                                

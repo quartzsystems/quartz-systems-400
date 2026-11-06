@@ -1,0 +1,560 @@
+[[golden]]
+name = "prompt-savsavfdta"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-savsavfdta-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-savsavfdta-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-savsavfdta-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-wrkjrnrcv"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-wrkjrnrcv-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-wrkjrnrcv-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-wrkjrnrcv-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-rcvjrne"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-rcvjrne-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-rcvjrne-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-rcvjrne-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-cmpjrnimg"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-cmpjrnimg-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-cmpjrnimg-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-cmpjrnimg-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgseca"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgseca-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgseca-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgseca-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-dspseca"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-dspseca-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-dspseca-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-dspseca-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-wrkfcnusg"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-wrkfcnusg-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-wrkfcnusg-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-wrkfcnusg-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgfcnusg"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgfcnusg-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgfcnusg-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgfcnusg-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-dspfcnusg"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-dspfcnusg-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-dspfcnusg-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-dspfcnusg-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-telnet"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-telnet-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-telnet-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-telnet-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-strpasthr"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-strpasthr-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-strpasthr-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-strpasthr-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgaudctl"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgaudctl-f10"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgaudctl-f11"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "prompt-chgaudctl-p2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-prompts71"
+width = 80
+
+[[golden]]
+name = "dspseca"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkfcnusg-1"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkfcnusg-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkfcnusg-3"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkfcnusg-4"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "dspfcnusg-sqladm"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "dspfcnusg-sqladm-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "dspfcnusg-allobjjoblog"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkfcnusg-db"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkfcnusg-opt5"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkfcnusg-opt2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkjrnrcv"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkreginf-qsy"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkreginf-qsy-2"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkreginf-vldp"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkreginf-qwc"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "wrkreginf-qwt"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "strpasthr"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "telnet-nohost"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "dspsysval-qpwdvldpgm"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "cmdentry-detailed"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-panels71"
+width = 80
+
+[[golden]]
+name = "msgid-telnet-nohost"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-06"
+script = "d3-msgid71"
+width = 80
+

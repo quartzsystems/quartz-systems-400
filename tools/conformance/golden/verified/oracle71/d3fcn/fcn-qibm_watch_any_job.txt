@@ -1,0 +1,24 @@
+                             Display Function Usage                             
+                                                                                
+ Function ID  . . . . . . :   QIBM_WATCH_ANY_JOB                                
+ Function name  . . . . . :   Watch any job                                     
+                                                                                
+ Description  . . . . . . :   Watch any job functions                           
+                                                                                
+                                                                                
+ Product  . . . . . . . . :   QIBM_BASE_OPERATING_SYSTEM                        
+ Group  . . . . . . . . . :   QIBM_ALLOBJ                                       
+                                                                                
+ Default authority  . . . . . . . . . . . . :   *DENIED                         
+ *ALLOBJ special authority  . . . . . . . . :   *NOTUSED                        
+                                                                                
+ User        Type           Usage         User        Type           Usage      
+                                                                                
+   (No user profiles have usage information)                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2009.                                            

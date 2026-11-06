@@ -1,0 +1,24 @@
+                                 Command Entry                         S062B175 
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+    > DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_1)                                   
+    > DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_10)                                  
+    > DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_2)                                   
+    > DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_3)                                   
+    > DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_4)                                   
+    > DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_5)                                   
+    > DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_6)                                   
+    > DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_7)                                   
+    > DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_8)                                   
+    > DSPFCNUSG FCNID(QIBM_QTMF_SERVER_REQ_9)                                   
+    > DSPFCNUSG FCNID(QIBM_QYPS_MGTCTRL_SUPER_USER)                             
+    > DSPFCNUSG FCNID(QIBM_*) OUTPUT(*PRINT)                                    
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

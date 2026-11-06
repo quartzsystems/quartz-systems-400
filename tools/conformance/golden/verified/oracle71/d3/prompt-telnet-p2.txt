@@ -1,0 +1,24 @@
+                          Start TCP/IP TELNET (TELNET)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Remote system  . . . . . . . . . RMTSYS                                        
+                                                                                
+                                                                                
+                                                                                
+ Internet address . . . . . . . . INTNETADR                                     
+                                                                                
+ Port . . . . . . . . . . . . . . PORT           *DFT                           
+ Secure connection  . . . . . . . SSL            *ENVVAR                        
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Control character key  . . . . . CTLCHAR        &                              
+ Keyboard language type . . . . . KBDTYPE        *LCL                           
+ Page Up (Roll Down) key  . . . . PAGEUP         *PA2                           
+ Page Down (Roll Up) key  . . . . PAGEDOWN       *PA1                           
+ Cursor Select key  . . . . . . . CSRSLT         *NONE                          
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter RMTSYS required.                                                     
