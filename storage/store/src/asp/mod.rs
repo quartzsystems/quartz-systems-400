@@ -12,6 +12,7 @@ pub mod io;
 pub mod layout;
 pub mod mirror;
 pub mod parity;
+pub mod spare;
 pub mod superblock;
 pub mod unit;
 
@@ -102,6 +103,8 @@ pub struct Asp {
     ifs: ifs::Volume,
     /// The pages of its map.
     ifs_map_pages: Vec<PageNo>,
+    /// The hot spares.
+    spares: Vec<spare::SpareDev>,
 }
 
 impl Asp {
@@ -173,6 +176,7 @@ impl Asp {
             parity: parity::ParityTable::default(),
             ifs_map: None,
             ifs_pages: 0,
+            spares: Vec::new(),
         };
         // The WAL of a store that used these units before would replay
         // into this one: its pages carry the sequence numbers this one
@@ -194,6 +198,7 @@ impl Asp {
             parity: parity::ParitySets::default(),
             ifs: ifs::Volume::default(),
             ifs_map_pages: Vec::new(),
+            spares: Vec::new(),
         };
         asp.checkpoint()?;
         info!(
@@ -282,6 +287,7 @@ impl Asp {
                 state: entry.state,
             });
         }
+        let spares = Self::attach_spares(&sb, &mut found);
         for (h, _) in &found {
             warn!(
                 "asp: unit {} is not in the unit table; ignored",
@@ -302,6 +308,7 @@ impl Asp {
             parity,
             ifs: ifs::Volume::default(),
             ifs_map_pages: Vec::new(),
+            spares,
         };
         asp.ifs_load()?;
         debug!(

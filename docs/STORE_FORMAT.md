@@ -154,7 +154,7 @@ At offset 0 of the body.
 | 16 | 16 | unit_uuid | |
 | 32 | 16 | asp_uuid | |
 | 48 | 2 | asp_number | 1 for SYSBAS |
-| 50 | 2 | unit_number | position in the unit table, from 0; the table wins when they differ |
+| 50 | 2 | unit_number | position in the unit table, from 0; the table wins when they differ; 0xFFFF for a hot spare |
 | 52 | 4 | reserved | 0 |
 | 56 | 8 | pages | unit size in pages (the device size) |
 | 64 | 16 | mirror_of | unit UUID of the other half of the pair, zero when unprotected |
@@ -193,6 +193,38 @@ Which chunks are done is a bitmap the caller persists outside the
 store (the LIC partition keeps it, see docs/PHASE1.md) so that a crash
 in the middle continues where it stopped. Writes during a resume go to
 both halves, so a chunk once copied stays current.
+
+### Hot spares
+
+A hot spare is a whole disk the ASP holds outside every span, ready to
+take the place of a unit that fails: half of a mirrored pair or a member
+of a device parity set (§11). IBM's controllers keep hot spares for
+their parity sets and, since V7R1, for mirrored units; the store keeps
+them itself, as it keeps both kinds of protection. An ASP holds at most
+3.
+
+- A spare carries a unit header with `unit_number` 0xFFFF, the ASP's
+  `asp_uuid` and its own `unit_uuid`, and zeroed superblock slots. It is
+  in no span and never in the unit table; the superblock lists it in
+  `spares` (§5). Checkpoints do not write to it.
+- At open, a device whose header UUID the newest superblock lists is
+  the spare, whatever its `unit_number` (a crash after a spare's header
+  was rewritten for a unit, before the checkpoint that records the
+  change, leaves it a spare whose data is recopied when it is used). A
+  listed spare not found is kept in the list, not attached.
+- A unit can use a spare when it is half of a pair that is Missing or
+  Not operational beside an Active partner, or a parity member that is
+  Failed, and the spare has at least the unit's `usable_pages`. The
+  smallest spare that fits is taken: it leaves `spares`, takes the
+  unit's place as a replacement does (a new header, the unit table
+  entry's UUID, size and serial), and one checkpoint records both. A
+  half is then Resuming and copied from its partner in the background;
+  a parity member is Rebuilding (§11).
+- Stopping a spare removes it from `spares`; after that checkpoint its
+  header and superblock slots are zeroed, so it is a blank disk again.
+
+`spares` lies in what version 2 left reserved and zero, so a version 2
+superblock written before hot spares existed reads as having none.
 
 ## 5. Superblock
 
@@ -254,7 +286,9 @@ At offset 0 of the body.
 | 176 | 8 | parity_work_done | blocks of the set done, as of this checkpoint |
 | 184 | 8 | ifs_map | first IFS map page (§12), 0 when the IFS is not in the ASP |
 | 192 | 8 | ifs_pages | pages of the IFS volume: the sum of its extents |
-| 200 | 56 | reserved2 | 0 |
+| 200 | 1 | spare_count | hot spares listed, 0..3 (§4, hot spares) |
+| 201 | 7 | reserved4 | 0 |
+| 208 | 48 | spares | `spare_count` unit UUIDs of the hot spares, 16 bytes each; the rest 0 |
 
 The unit table follows at body offset 256: `unit_count` entries, one
 per unit in unit-number order. Units are added, removed and paired only
@@ -1122,6 +1156,6 @@ From body offset 32, `count` entries, in volume order.
 
 Frozen: the page and its trailer, the unit label, the superblock, the WAL pages and records, B+tree nodes and their key and value codecs, the allocation bitmaps and free log, the parity table and partial-parity log, the IFS map, and the object header with the type codes and the payloads the store itself defines (authority, data areas, data queues, user indexes, system values). The versions are the superblock's and unit's `FORMAT_VERSION` and the object header's `HEADER_VERSION`.
 
-V1R1M0 freezes object header version 2 (with the `sql` link to the object's `*SQLINF`, and the `*SQLINF`/`*SQLUDT` type codes); the superblock and unit stay at version 2. V1R0M0 wrote object header version 1. A V1R1M0 system reads a version 1 header as an object with no SQL information and writes it as version 2 at its next change, so a slip install from V1R0M0 (`INSTALL.md` §4) converts the store in place without a pass of its own.
+V1R1M0 freezes object header version 2 (with the `sql` link to the object's `*SQLINF`, and the `*SQLINF`/`*SQLUDT` type codes); the superblock and unit stay at version 2. The superblock's hot spare list (`spare_count`, `spares`, §5) takes bytes version 2 left reserved: V1R0M0 wrote them as zeros, which read as no spares, so the version does not move and a V1R0M0 ASP opens unchanged. V1R0M0 wrote object header version 1. A V1R1M0 system reads a version 1 header as an object with no SQL information and writes it as version 2 at its next change, so a slip install from V1R0M0 (`INSTALL.md` §4) converts the store in place without a pass of its own.
 
 Changes require a format version bump and a migration: a reader of the old version kept beside the new one, or a conversion run at IPL or on restore, and a row in the release notes. `tools/fmtcheck` holds the frozen definitions (`tools/fmtcheck/formats.toml`) and their hashes (`formats.lock`); `cargo test -p fmtcheck` and `build test` fail when a definition changes and its version does not.

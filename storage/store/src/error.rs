@@ -319,6 +319,12 @@ pub enum Refusal {
     /// The IFS is in its own partition, not in the ASP.
     #[error("the IFS is not in the ASP")]
     IfsNotInAsp,
+    /// The ASP holds the most hot spares it can.
+    #[error("the ASP has the most hot spares it can hold")]
+    SparesFull,
+    /// No hot spare of that identity.
+    #[error("no such hot spare")]
+    NoSuchSpare,
 }
 
 impl StoreError {

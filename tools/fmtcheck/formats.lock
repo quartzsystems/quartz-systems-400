@@ -97,7 +97,7 @@ hash = "93289e038536d1d624770652f25953dee8938b931f54c0513ec636b192464cfa"
 [format.store]
 frozen_at = "V1R1M0"
 version = "2/2/2"
-hash = "b09474183c0979c7798f9c39fa76598c38fa26ad277e3e8aedea69a79a6af72a"
+hash = "99f5d61214288f8e71a25f2ec7a2bdef6bc176e667238404a9453880ce6e79d8"
 
 [format.ui-objects]
 frozen_at = "V1R1M0"

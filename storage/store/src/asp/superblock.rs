@@ -75,6 +75,11 @@ const OFF_WORK_MEMBER: usize = 170;
 const OFF_WORK_DONE: usize = 176;
 const OFF_IFS_MAP: usize = 184;
 const OFF_IFS_PAGES: usize = 192;
+const OFF_SPARE_COUNT: usize = 200;
+const OFF_SPARES: usize = 208;
+
+/// Most hot spares an ASP keeps (§4, hot spares).
+pub const MAX_SPARES: usize = 3;
 
 const ENTRY_UUID: usize = 0;
 const ENTRY_PAGES: usize = 16;
@@ -124,7 +129,9 @@ pub static LAYOUT: Layout = Layout {
         field("parity_work_done", OFF_WORK_DONE, 8),
         field("ifs_map", OFF_IFS_MAP, 8),
         field("ifs_pages", OFF_IFS_PAGES, 8),
-        field("reserved2", 200, 56),
+        field("spare_count", OFF_SPARE_COUNT, 1),
+        field("reserved4", 201, 7),
+        field("spares", OFF_SPARES, 16 * MAX_SPARES),
     ],
 };
 
@@ -273,6 +280,8 @@ pub struct Superblock {
     pub ifs_map: Option<PageNo>,
     /// Pages of the IFS volume.
     pub ifs_pages: u64,
+    /// Unit UUIDs of the hot spares, at most [`MAX_SPARES`].
+    pub spares: Vec<[u8; 16]>,
 }
 
 fn opt(v: u64) -> Option<PageNo> {
@@ -337,6 +346,12 @@ impl Superblock {
         }
         put_u64(body, OFF_IFS_MAP, self.ifs_map.unwrap_or(0));
         put_u64(body, OFF_IFS_PAGES, self.ifs_pages);
+        assert!(self.spares.len() <= MAX_SPARES, "too many hot spares");
+        body[OFF_SPARE_COUNT] = u8::try_from(self.spares.len()).expect("checked");
+        for (i, u) in self.spares.iter().enumerate() {
+            let at = OFF_SPARES + 16 * i;
+            body[at..at + 16].copy_from_slice(u);
+        }
         for (i, u) in self.units.iter().enumerate() {
             let at = HEADER_LEN + i * UNIT_ENTRY_LEN;
             body[at + ENTRY_UUID..at + ENTRY_UUID + 16].copy_from_slice(&u.unit_uuid);
@@ -389,6 +404,16 @@ impl Superblock {
             });
         }
         let parity = decode_parity(body, &units).map_err(corrupt)?;
+        let spare_count = usize::from(body[OFF_SPARE_COUNT]);
+        if spare_count > MAX_SPARES {
+            return Err(corrupt(format!("{spare_count} hot spares")));
+        }
+        let spares = (0..spare_count)
+            .map(|i| {
+                let at = OFF_SPARES + 16 * i;
+                body[at..at + 16].try_into().expect("16")
+            })
+            .collect();
         Ok(Self {
             flags: get_u32(body, OFF_FLAGS),
             generation: get_u64(body, OFF_GENERATION),
@@ -419,6 +444,7 @@ impl Superblock {
             parity,
             ifs_map: opt(get_u64(body, OFF_IFS_MAP)),
             ifs_pages: get_u64(body, OFF_IFS_PAGES),
+            spares,
         })
     }
 }
@@ -526,6 +552,7 @@ mod tests {
             },
             ifs_map: Some(46),
             ifs_pages: 262_144,
+            spares: vec![[9; 16], [10; 16]],
         };
         sb.update_protection();
         assert_eq!(sb.protection, PROTECTION_MIRRORED | PROTECTION_PARITY);
@@ -537,6 +564,11 @@ mod tests {
         assert!(!back.flag(FLAG_NEEDS_RECOVERY));
         assert_eq!(back.units[0].serial_text(), "QM00001");
         assert_eq!(back.units[2].serial_text(), "03".repeat(16));
+        // A version 2 superblock written before hot spares: no spares.
+        body[OFF_SPARE_COUNT..HEADER_LEN].fill(0);
+        assert!(Superblock::decode(&body, 1).unwrap().spares.is_empty());
+        body[OFF_SPARE_COUNT] = 4;
+        assert!(Superblock::decode(&body, 1).is_err());
         put_u16(&mut body, OFF_UNIT_COUNT, 0);
         assert!(matches!(
             Superblock::decode(&body, 1),

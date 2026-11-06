@@ -275,6 +275,66 @@ impl Store {
         self.checkpoint()
     }
 
+    /// The hot spares.
+    #[must_use]
+    pub fn hot_spares(&self) -> Vec<crate::asp::spare::SpareInfo> {
+        self.asp.hot_spares()
+    }
+
+    /// Make a blank disk a hot spare.
+    pub fn start_hot_spare(&mut self, dev: Box<dyn BlockDev>, unit_uuid: [u8; 16]) -> Result<()> {
+        self.check()?;
+        self.asp.start_hot_spare(dev, unit_uuid)?;
+        self.checkpoint()
+    }
+
+    /// Stop holding a hot spare; the device it had, wiped.
+    pub fn stop_hot_spare(&mut self, unit_uuid: &[u8; 16]) -> Result<Option<Box<dyn BlockDev>>> {
+        self.check()?;
+        let dev = self.asp.stop_hot_spare(unit_uuid)?;
+        self.checkpoint()?;
+        if let Some(d) = &dev {
+            crate::asp::wipe_unit(d.as_ref())?;
+        }
+        Ok(dev)
+    }
+
+    /// Put a hot spare in the place of every failed unit one fits: a
+    /// parity member is rebuilt by the parity work, a mirrored half
+    /// comes back resuming and the caller resumes it. `serial_of` names
+    /// a spare's serial number from its UUID (the hardware knows it).
+    pub fn use_hot_spares(
+        &mut self,
+        serial_of: &dyn Fn(&[u8; 16]) -> String,
+    ) -> Result<Vec<crate::asp::spare::SpareUsed>> {
+        let mut used = Vec::new();
+        if self.asp.hot_spares().iter().all(|s| !s.attached) {
+            return Ok(used);
+        }
+        self.check()?;
+        for f in self.asp.failed_units() {
+            let Some((uuid, dev)) = self.asp.take_spare(f.need) else {
+                continue;
+            };
+            let serial = serial_of(&uuid);
+            if f.parity {
+                self.asp.replace_parity_unit(f.unit, dev, uuid, &serial)?;
+            } else {
+                self.asp.replace_unit(f.unit, dev, uuid, &serial)?;
+            }
+            tracing::warn!("asp: hot spare took the place of failed unit {}", f.unit);
+            used.push(crate::asp::spare::SpareUsed {
+                unit: f.unit,
+                unit_uuid: uuid,
+                parity: f.parity,
+            });
+        }
+        if !used.is_empty() {
+            self.checkpoint()?;
+        }
+        Ok(used)
+    }
+
     /// A page of one physical unit, as it is on the device.
     pub fn read_unit_page(&mut self, unit: u16, lba: u64) -> Result<Vec<u8>> {
         if unit >= self.asp.io().unit_count() {
