@@ -219,13 +219,13 @@ apply.
 | `device` | `*MEDIA`, `*OPT`, `*TAP`, `*VRT` | `*MEDIA` | `Install Device Type Selection`; `*MEDIA` takes a `SAVSYS` medium first, else the boot media |
 | `language` | four digits | `2924` | `Select a Language Group` |
 | `system-name` | 1 to 8 letters and digits | the default | `QSYSNAME` |
-| `ip` | `a.b.c.d/n`, `*IP4DHCP` | none | the installed system's first interface: its first IPL adds it as `ADDTCPIFC INTNETADR('a.b.c.d') LIND(line) SUBNETMASK(...)` (or `INTNETADR(*IP4DHCP) LIND(line)`, an address from DHCP) on the first Ethernet line (a line description, else the first port's link, `ETH0`), autostarted with TCP/IP |
+| `ip` | `a.b.c.d/n`, `*IP4DHCP` | none | the installed system's first interface: its first IPL adds it as `ADDTCPIFC INTNETADR('a.b.c.d') LIND(line) SUBNETMASK(...)` (or `INTNETADR(*IP4DHCP) LIND(line)`, an address from DHCP) on the first Ethernet line (a line description, else the first port's link, `ETH0`), autostarted with TCP/IP, `AUTOSTART(*YES)`: QSTRUP's `STRTCP` starts it at the first IPL and every IPL after, and a `*IP4DHCP` interface gets its lease from the DHCP client then |
 | `gateway` | `a.b.c.d` | none | with `ip`, `ADDTCPRTE RTEDEST(*DFTROUTE) NEXTHOP('a.b.c.d')` at the same IPL |
 | `date`, `time` | `YYYY-MM-DD`, `HH:MM:SS`, `*CURRENT` | `*CURRENT` | `IPL Options` |
 | `qsecofr-password` | `*EXPIRED` or a password | `*EXPIRED` | QSECOFR's password: the shipped one expired, or this one, not expired |
 | `licpgm` | `*NONE`, `*ALL`, a list of `PRODUCT[/OPTION]` | `*NONE` | `GO LICPGM` option 1 (`*ALL`) or 11 |
 | `start-print-writers`, `clear-job-queues`, `clear-output-queues`, `clear-job-logs`, `restricted-state` | `Y`, `N` | `Y`, `N`, `N`, `N`, `N` | `IPL Options` |
-| `qstrup` | `LIB/PGM`, `*NONE` | `QSYS/QSTRUP` | `QSTRUPPGM` |
+| `qstrup` | `LIB/PGM`, `*NONE` | `QSYS/QSTRUP` | `QSTRUPPGM`, written as program and library (`QSYS/QSTRUP` is stored as `QSTRUP    QSYS`) |
 | `auto-configure`, `device-naming`, `special-environment` | `Y`/`N`, `*NORMAL`/`*S36`/`*DEVADR`, `*NONE`/`*S36` | `Y`, `*NORMAL`, `*NONE` | `Set Major System Options` |
 
 The harness's two-disk file (`tools/conformance/src/install.rs`):
@@ -263,6 +263,11 @@ Either way the IPL first gives the first Ethernet link an address from
 DHCP (`net/dhcp`, `TCPIP.md` "DHCP client"; `qs400.ip=` overrides it),
 with the lease's router as the default route. The fetched text is used
 as a file on the media would be and kept in the LIC record the same way.
+
+The installed system does not depend on the IPL's own DHCP address: once
+it is installed, an IPL from its disk takes no address itself, and TCP/IP
+brings up the interface the answers configured (`ADDTCPIFC ...
+AUTOSTART(*YES)`), asking DHCP for a `*IP4DHCP` one.
 
 The kernel command line is baked into each UKI
 (`CONFIG_CMDLINE_OVERRIDE`), so a boot loader cannot add `qs400.rsp=`:
@@ -325,10 +330,13 @@ replacement with RSTLICPGM's semantics:
 The current release is V1R1M0. A build claims another release with
 `QS400_RELEASE=VxRyMz` at build time (`lic/release/build.rs`); the
 harness's step 10 installs a `QS400_RELEASE=V1R0M0` build's ISO
-(`QS400_OLD_ISO`) on a blank disk, makes user data (a data area, a
-journaled table with rows, spooled files, a `SAVLIB` in a save file),
-upgrades it with the suite's V1R1M0 media, checks every piece, restores
-the V1R0M0 save with `RSTLIB`, and has the V1R0M0 media refused.
+(`QS400_OLD_ISO`; built from `becee24b`, the last tree with object header
+and save stream version 1) on a blank disk, makes user data (a data area,
+a journaled SQL table with rows, spooled files, a `SAVLIB` holding an SQL
+table in a save file), upgrades it with the suite's V1R1M0 media, checks
+every piece, uses the V1R0M0 table from SQL (`SELECT`, `INSERT`, `CREATE
+INDEX`, `CREATE VIEW`; it has no `*SQLINF`), restores the V1R0M0 save
+with `RSTLIB` and reads its table, and has the V1R0M0 media refused.
 
 ## 5. QEMU
 
@@ -342,11 +350,13 @@ matrix:
 | 3 interactive install | every panel of §2 over serial, `Specify Install Options` included |
 | 8 response file mirrored | a FAT32 copy of the media with `QS400/INSTALL.RSP`: no prompts, two disks mirrored, the answers applied, every licensed program installed, signatures clean |
 | 9 SAVSYS and recovery | `CRTDEVTAP`, `CRTIMGCLG`, `ADDIMGCLGE`, `LODIMGCLG`, then `SAVSYS DEV(TAPVRT01)`, `CHKTAP` (a system save), `SAVLIB LIB(*NONSYS)` and `SAV` after it; the volume copied onto a disk (`svc.vrtout`), the system disk wiped, option 4: LIC and operating system from the tape, RSTUSRPRF, RSTCFG, RSTAUT, then the storage service's RSTLIB, RST and RSTAUT; the profile, the library and the IFS file made before the save are back |
-| 10 slip install V1R1M0 | option 1 with V1R1M0 media over V1R0M0, the upgrade's panels, user data kept, the store at V1R1M0; then V1R0M0 media refused |
+| 10 slip install V1R1M0 | option 1 with V1R1M0 media over V1R0M0 (header and stream version 1), the upgrade's panels, user data kept, the store at V1R1M0; the V1R0M0 SQL table selected, inserted into, indexed and viewed; the V1R0M0 `SAVLIB` restored with its SQL table; then V1R0M0 media refused |
 | 11 power pull mid-install | killed during the LIC install; the reinstall reaches sign-on, `chkstg` clean |
 | 12 four-unit mirror | step 1's disk with three blank disks: added to ASP 1 in DST, `svc.obj fill` puts data on every unit, Start mirrored protection pairs 1 with 4 and 2 with 3 (the data of 3 and 4 moved first), the copies at the re-IPL, the data intact; disk 4 pulled: A6001255, its unit Missing, the IPL completes |
 | 13 device parity RAID 5 | the same four units, RAID 5 started over all of them in DST and synchronized at the IPL; disk 4 pulled: A6001257, `DPY/Failed`, every page read and written through parity; disk 4 back: rebuilt at the IPL, `DPY/Active`, data intact, `chkstg` clean |
 | 14 restore LIC in place | step 1's disk with a user library: the media's option 1 restores the LIC onto the load source with no prompts (a slip install of the same release), the operating system goes in again from DST, then the disk alone IPLs from the new slot with the library intact and `chkstg` clean |
+| 15 network install | PXE boot of the media UKI over QEMU's TFTP, `INSTALL.RSP` beside it, payload from the CD; QSTRUP starts the `*IP4DHCP` interface (`AUTOSTART(*YES)`) and it gets a lease; again after an IPL from the disk alone |
+| 16 hot spare | four units: RAID 5 with a hot spare started in DST (option 7); disk 4 pulled before an IPL: A6001257, the spare takes its place and is rebuilt, `DPY/Active`, data intact, `chkstg` clean |
 
 `--media iso-raw` is the D IPL from the USB image: the hybrid image
 written raw to a disk boots, installs onto a blank disk beside it, and
