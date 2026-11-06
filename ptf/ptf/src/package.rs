@@ -193,7 +193,7 @@ pub fn open(bytes: &[u8], trusted: &[[u8; 32]]) -> Result<Package> {
         let ok = o.signature.is_some_and(|s| {
             trusted
                 .iter()
-                .any(|k| sign::key_id(k) == s.key_id && sign::verify(k, &s.digest, &s.signature))
+                .any(|k| sign::key_id(k) == s.key_id && sign::verify_saved(k, &o.descriptor, &o.parts, &s.digest, &s.signature))
         });
         let what = d.object_name();
         if !ok {

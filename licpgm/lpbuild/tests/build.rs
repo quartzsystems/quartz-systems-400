@@ -96,8 +96,11 @@ fn check(id: &str, stream: &[u8], key: &SigningKey) -> usize {
         assert_ne!(o.descriptor.flags & savfmt::object::flags::SIGNED, 0);
         assert_eq!(sig.key_id, saverst::sign::key_id(&public));
         assert!(
-            saverst::sign::verify(&public, &o.digest, &sig.signature),
-            "{id}: bad signature"
+            saverst::sign::verify_saved(&public, &o.descriptor, &o.parts, &o.digest, &sig.signature),
+            "{id}: {} {} type {:#x}: bad signature",
+            savfmt::text(&o.descriptor.library),
+            savfmt::text(&o.descriptor.name),
+            o.descriptor.type_code
         );
         n += 1;
     }

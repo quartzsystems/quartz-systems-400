@@ -129,8 +129,7 @@ fn sign_all(store: &mut Store, key: &SigningKey) -> Result<usize, BuildError> {
                 system: true,
             });
             ops::write_header(&mut t, page, &h).map_err(store_err)?;
-            let digest = saverst::sign::content_digest(&mut t, id).map_err(store_err)?;
-            let (page, mut h) = ops::read_header(&mut t, id).map_err(store_err)?;
+            let digest = saverst::sign::content_digest(&mut t, id).map_err(store_err)?;            let (page, mut h) = ops::read_header(&mut t, id).map_err(store_err)?;
             h.signature = Some(Signature {
                 bytes: saverst::sign::sign(key, &digest),
                 key_id,

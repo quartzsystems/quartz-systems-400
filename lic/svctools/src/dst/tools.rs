@@ -157,7 +157,7 @@ fn communications_traces(env: &mut dyn DstEnv) -> Notice {
     match env.cmn_traces() {
         Ok(rows) if rows.is_empty() => lines.push("  (No communications traces)".into()),
         Ok(rows) => lines.extend(rows.iter().map(|(o, t, s)| format!("{o:<20}  {t:<7} {s}"))),
-        Err(e) => lines.push(format!("  {e}")),
+        Err(_) => lines.push(format!("  {}", crate::dst::failed("Reading the communications traces"))),
     }
     lines.push(String::new());
     lines.push("STRCMNTRC starts a trace, ENDCMNTRC ends it, PRTCMNTRC prints it".into());

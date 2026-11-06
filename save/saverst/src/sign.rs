@@ -6,7 +6,10 @@
 //! (`docs/SAVE_FORMAT.md` §5). The build signs what it ships; a restore
 //! and `CHKOBJITG` verify.
 
+use std::collections::BTreeMap;
+
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
+use savfmt::Part;
 use sha2::{Digest, Sha256};
 use store::obj::{ObjectId, ops};
 use store::txn::Txn;
@@ -41,6 +44,42 @@ pub fn content_digest(txn: &mut Txn<'_>, id: ObjectId) -> Result<[u8; 32]> {
     let (_, h) = ops::read_header(txn, id)?;
     let d = descriptor(&h, "", &e, 0);
     Ok(savfmt::digest(&d, &e.parts))
+}
+
+/// The content digest of a saved object: the stream's digest with the
+/// references' stream flags cleared, which depend on what else the save
+/// held. It is what [`content_digest`] gave when the object was signed.
+#[must_use]
+pub fn saved_content_digest(d: &savfmt::object::ObjectDescriptor, parts: &BTreeMap<Part, Vec<u8>>) -> [u8; 32] {
+    let Some(b) = parts.get(&Part::REFS) else {
+        return savfmt::digest(d, parts);
+    };
+    let Ok(mut refs) = savfmt::object::decode_refs(b) else {
+        return savfmt::digest(d, parts);
+    };
+    if refs.iter().all(|r| r.flags == 0) {
+        return savfmt::digest(d, parts);
+    }
+    for r in &mut refs {
+        r.flags = 0;
+    }
+    let mut parts = parts.clone();
+    parts.insert(Part::REFS, savfmt::object::encode_refs(&refs));
+    savfmt::digest(d, &parts)
+}
+
+/// Whether a saved object's signature by `public` is good: over the
+/// stream's digest, or over its content digest (see
+/// [`saved_content_digest`]).
+#[must_use]
+pub fn verify_saved(
+    public: &[u8; 32],
+    d: &savfmt::object::ObjectDescriptor,
+    parts: &BTreeMap<Part, Vec<u8>>,
+    stream_digest: &[u8; 32],
+    signature: &[u8; 64],
+) -> bool {
+    verify(public, stream_digest, signature) || verify(public, &saved_content_digest(d, parts), signature)
 }
 
 /// What `CHKOBJITG` finds for one object.
