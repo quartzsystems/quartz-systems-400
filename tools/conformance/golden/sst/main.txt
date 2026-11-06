@@ -1,5 +1,4 @@
-                           System Service Tools (SST)                           
-                                                                 System:  QS400 
+                       System Service Tools (SST)                               
                                                                                 
  Select one of the following:                                                   
                                                                                 
@@ -17,8 +16,9 @@
                                                                                 
                                                                                 
                                                                                 
+                                                                                
  Selection                                                                      
                                                                                 
                                                                                 
- F3=Exit   F12=Cancel                                                           
+ F3=Exit         F12=Cancel                                                     
                                                                                 

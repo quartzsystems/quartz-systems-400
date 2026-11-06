@@ -373,3 +373,43 @@ fn remove_units(env: &mut dyn DstEnv) -> Select {
         }),
     )
 }
+
+/// SST's `Work with Disk Configuration` (the primary, V7R1M0,
+/// golden/verified/oracle71/sst/sst-disk-config): its twelve options,
+/// hot spares at 9 and 10.
+#[must_use]
+pub fn sst_disk_configuration(admin: bool) -> Submenu {
+    use crate::dst::answers;
+    use crate::dst::common::says;
+    Submenu::new(
+        "sst-disk-config",
+        "Work with Disk Configuration",
+        vec![
+            (1, "Display disk configuration", Some(Box::new(|_env| Flow::Push(Box::new(display_menu()))))),
+            (2, "Add units to ASPs", Some(Box::new(move |env| admin_only(admin, || add_units(env, false))))),
+            (
+                3,
+                "Work with ASP threshold",
+                Some(Box::new(move |_env| admin_only(admin, || Flow::Push(Box::new(Threshold))))),
+            ),
+            (
+                4,
+                "Add units to ASPs and balance data",
+                Some(Box::new(move |env| admin_only(admin, || add_units(env, true)))),
+            ),
+            (5, "Enable remote load source mirroring", says(answers::NO_REMOTE_BUS)),
+            (6, "Disable remote load source mirroring", says(answers::NO_REMOTE_BUS)),
+            (7, "Start compression on non-configured units", says(answers::NO_COMPRESSION)),
+            (8, "Work with device parity protection", Some(Box::new(move |env| parity::open_sst(env, admin)))),
+            (9, "Start hot spare", Some(Box::new(move |env| parity::hot_spare(env, admin, true)))),
+            (10, "Stop hot spare", Some(Box::new(move |env| parity::hot_spare(env, admin, false)))),
+            (11, "Work with encryption", says(answers::NO_ENCRYPTION)),
+            (
+                12,
+                "Work with removing units from configuration",
+                Some(Box::new(move |env| admin_only(admin, || Flow::Push(Box::new(remove_units(env)))))),
+            ),
+        ],
+    )
+    .sst(26)
+}

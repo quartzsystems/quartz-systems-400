@@ -72,13 +72,11 @@ impl Panel for SstMenu {
         "sst-main"
     }
 
-    fn render(&self, env: &mut dyn DstEnv) -> Screen {
-        ui::menu(
-            "System Service Tools (SST)",
-            &env.system_name(),
-            &OPTIONS,
-            "F3=Exit   F12=Cancel",
-        )
+    fn render(&self, _env: &mut dyn DstEnv) -> Screen {
+        // The primary (V7R1M0, golden/verified/oracle71/sst/sst-main):
+        // the title from column 24, no system name, the keys spaced.
+        // The body from row 3, one row above DST's.
+        ui::sst_menu("System Service Tools (SST)", 24, &OPTIONS, ui::SST_KEYS)
     }
 
     fn enter(&mut self, fields: &[String], env: &mut dyn DstEnv) -> Flow {
@@ -90,7 +88,7 @@ impl Panel for SstMenu {
             1 => Flow::Push(Box::new(svctools::dst::tools::start_a_service_tool(p))),
             2 => Flow::Push(Box::new(active_tools(env))),
             3 => self.needs(Privilege::DISK_UNITS_OPERATIONS, || {
-                Flow::Push(Box::new(svctools::dst::disk::work_with_disk_units(p)))
+                Flow::Push(Box::new(svctools::dst::disk::sst_work_with_disk_units(p)))
             }),
             6 => Flow::Push(Box::new(svctools::dst::capacity::work_with_system_capacity("sst-capacity"))),
             7 => self.needs(Privilege::SECURITY, || {

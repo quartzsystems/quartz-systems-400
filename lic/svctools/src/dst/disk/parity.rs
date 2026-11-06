@@ -537,6 +537,66 @@ fn exclude(env: &mut dyn DstEnv) -> Flow {
     )))
 }
 
+/// SST's `Work with Device Parity Protection` (the primary, V7R1M0,
+/// golden/verified/oracle71/sst/sst-parity): no stop or exclude, which
+/// are DST's.
+#[must_use]
+pub fn sst_menu(admin: bool) -> Submenu {
+    Submenu::new(
+        "sst-parity",
+        "Work with Device Parity Protection",
+        vec![
+            (
+                1,
+                "Display disk configuration",
+                Some(Box::new(|_env| Flow::Push(Box::new(super::config::display_menu())))),
+            ),
+            (
+                2,
+                "Include unit in device parity protection",
+                Some(Box::new(move |env| admin_only(admin, || include(env)))),
+            ),
+            (
+                3,
+                "Start device parity protection - RAID 5",
+                Some(Box::new(move |env| admin_only(admin, || start(env, 5)))),
+            ),
+            (
+                4,
+                "Start device parity protection - RAID 6",
+                Some(Box::new(move |env| admin_only(admin, || start(env, 6)))),
+            ),
+            (
+                5,
+                "Start device parity protection - RAID 5 with hot spare",
+                Some(Box::new(move |env| admin_only(admin, || start_with_spare(env, 5)))),
+            ),
+            (
+                6,
+                "Start device parity protection - RAID 6 with hot spare",
+                Some(Box::new(move |env| admin_only(admin, || start_with_spare(env, 6)))),
+            ),
+            (7, "Select parity optimization", crate::dst::common::says(crate::dst::answers::NO_PARITY_OPTIMIZATION)),
+        ],
+    )
+    .sst(22)
+}
+
+/// SST's option 8 of `Work with Disk Configuration`: its menu, or the
+/// note when no controller provides parity.
+pub fn open_sst(env: &mut dyn DstEnv, admin: bool) -> Flow {
+    match open(env, admin) {
+        Flow::Push(p) if p.name() == "dst-parity" => Flow::Push(Box::new(sst_menu(admin))),
+        other => other,
+    }
+}
+
+/// `Start hot spare` and `Stop hot spare` from SST's `Work with Disk
+/// Configuration`.
+pub fn hot_spare(env: &mut dyn DstEnv, admin: bool, start: bool) -> Flow {
+    admin_only(admin, || if start { start_spare(env) } else { stop_spare(env) })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -561,3 +621,4 @@ mod tests {
         assert!(row("DPY/Rebuild", Some(42)).ends_with("  42% Rebuilt"));
     }
 }
+

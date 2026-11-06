@@ -170,11 +170,22 @@ the words are Quartz's:
 | IPL or Install the System 2 and 4 without the media | installing needs an IPL from the installation media |
 | IPL or Install the System 5 save Licensed Internal Code | `BLOCKED(rel)`: `SAVSYS` saves it with the system up |
 
-The primary oracle (V7R1M0) shows its `STRSST` sign-on
-(`golden/verified/oracle71/sst/sst-signon.txt`); its panels behind the
-sign-on need a service tools user ID, which the oracle's credentials do
-not include (NEEDS-CODY), so the option numbers and titles above follow
-IBM's documentation.
+The primary oracle (V7R1M0), signed on to SST once with a service tools
+user ID (`probes/rel/sst-menus-primary.tn`), showed the sign-on, the
+SST main menu, `Work with Disk Units`, `Work with Disk Configuration`,
+`Work with Device Parity Protection` and the partitions display
+(`golden/verified/oracle71/sst/`). QS/400's SST sign-on (DST's has the
+same layout), SST main menu and those three menus match them row for
+row but for the system name; SST's menus have no system name, start
+their body on row 3 and space their keys as the primary does
+(`ui::sst_menu`). SST keeps the hot spares where the primary has them,
+options 9 and 10 of `Work with Disk Configuration`, and its parity menu
+has the primary's seven options (no stop or exclude; `Select parity
+optimization` answers that no IOA keeps the sets). The primary's main
+menu leaves out option 6 (it has no capacity on demand) and offers F10
+(Command entry), which QS/400's SST does not. The other SST and DST
+panels were not reached in that one sign-on and follow IBM's
+documentation, as does DST's own parity menu below.
 
 ## Hot spares
 

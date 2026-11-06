@@ -1,13 +1,11 @@
-                     Dedicated Service Tools (DST) Sign On                      
-                                                                 System:  QS400 
+                 Dedicated Service Tools (DST) Sign On                          
                                                                                 
- Service tools user . . . . . . . . . . .                                       
- Service tools password . . . . . . . . .                                       
+                                            SYSTEM: QS400                       
                                                                                 
+ Type choice, press Enter.                                                      
                                                                                 
-                                                                                
-                                                                                
-                                                                                
+   Service tools user ID. . . .                                                 
+   Service tools password . . .                                                 
                                                                                 
                                                                                 
                                                                                 
@@ -19,6 +17,8 @@
                                                                                 
                                                                                 
                                                                                 
+ Note: The password is case-sensitive.                                          
                                                                                 
- F3=Exit   F12=Cancel                                                           
+                                                                                
+ F3=Exit      F9=Change Password         F12=Cancel                             
                                                                                 

@@ -122,3 +122,29 @@ pub fn display(
     lines.extend(units.iter().map(row));
     Notice::new(name, title, lines)
 }
+
+/// SST's `Work with Disk Units` (the primary, V7R1M0,
+/// golden/verified/oracle71/sst/sst-disk).
+#[must_use]
+pub fn sst_work_with_disk_units(privileges: Privilege) -> Submenu {
+    let admin = privileges.has(Privilege::DISK_UNITS_ADMIN);
+    let ops = privileges.has(Privilege::DISK_UNITS_OPERATIONS);
+    Submenu::new(
+        "sst-disk",
+        "Work with Disk Units",
+        vec![
+            (1, "Display disk configuration", Some(Box::new(|_env| Flow::Push(Box::new(config::display_menu()))))),
+            (
+                2,
+                "Work with disk configuration",
+                Some(Box::new(move |_env| Flow::Push(Box::new(config::sst_disk_configuration(admin))))),
+            ),
+            (
+                3,
+                "Work with disk unit recovery",
+                Some(Box::new(move |_env| Flow::Push(Box::new(recovery::work_with_disk_unit_recovery(ops, admin))))),
+            ),
+        ],
+    )
+    .sst(29)
+}

@@ -6,7 +6,7 @@
 //! shows them with its own title and goes on to its main menu; SST
 //! (`STRSST`) gives another title and its own menu.
 
-use console::Screen;
+use console::{Attr, Screen};
 
 use crate::dst::menu::MainMenu;
 use crate::env::DstEnv;
@@ -70,17 +70,35 @@ impl Panel for SignOn {
     }
 
     fn render(&self, env: &mut dyn DstEnv) -> Screen {
-        // Both leaders run to one column and both fields are 10 wide.
-        ui::form_wide(
-            self.tool.title,
-            &env.system_name(),
-            &[
-                FormLine::new("Service tools user", 10, self.user.clone()),
-                FormLine::hidden("Service tools password", 10),
-            ],
-            "F3=Exit   F12=Cancel",
-            40,
-        )
+        // The primary's STRSST sign-on (V7R1M0, golden/verified/
+        // oracle71/sst/sst-signon): the title from column 18, SYSTEM:
+        // at row 3 column 45, dotted labels at column 4 with their
+        // fields at column 33, the case note on row 20, F9 on row 23.
+        let mut s = Screen::new();
+        s.put(1, 18, self.tool.title, Attr::WHITE);
+        s.put(3, 45, &format!("SYSTEM: {}", env.system_name()), Attr::GREEN);
+        s.put(5, 2, "Type choice, press Enter.", Attr::GREEN);
+        s.put(7, 4, "Service tools user ID. . . .", Attr::GREEN);
+        s.field(7, 33, 10, false);
+        if !self.user.is_empty() {
+            s.put(7, 33, &self.user, Attr::INPUT);
+        }
+        s.put(8, 4, "Service tools password . . .", Attr::GREEN);
+        s.field_secret(8, 33, 32, crate::users::PASSWORD_LEN);
+        s.put(20, 2, "Note: The password is case-sensitive.", Attr::GREEN);
+        ui::keys(&mut s, "F3=Exit      F9=Change Password         F12=Cancel");
+        s.cursor = (6, 32);
+        s
+    }
+
+    fn function(&mut self, key: u8, env: &mut dyn DstEnv) -> Flow {
+        let _ = env;
+        match key {
+            3 => Flow::PopAll,
+            9 => Flow::Push(Box::new(ChangePassword::asked(self.tool))),
+            12 => Flow::Pop,
+            _ => Flow::Stay,
+        }
     }
 
     fn enter(&mut self, fields: &[String], env: &mut dyn DstEnv) -> Flow {
@@ -118,6 +136,8 @@ pub fn message(e: &SignOnError) -> String {
 pub struct ChangePassword {
     user: String,
     tool: Tool,
+    /// Forced by an expired password, not asked for with F9.
+    forced: bool,
 }
 
 impl ChangePassword {
@@ -130,7 +150,13 @@ impl ChangePassword {
     /// For `user`, going on to `tool`'s menu.
     #[must_use]
     pub fn for_tool(user: String, tool: Tool) -> Self {
-        Self { user, tool }
+        Self { user, tool, forced: true }
+    }
+
+    /// F9 on the sign-on: the user is typed here.
+    #[must_use]
+    pub fn asked(tool: Tool) -> Self {
+        Self { user: String::new(), tool, forced: false }
     }
 }
 
@@ -151,11 +177,16 @@ impl Panel for ChangePassword {
             ],
             "F3=Exit   F12=Cancel",
         );
-        ui::message(&mut s, self.tool.expired, false);
+        if self.forced {
+            ui::message(&mut s, self.tool.expired, false);
+        }
         s
     }
 
     fn enter(&mut self, fields: &[String], env: &mut dyn DstEnv) -> Flow {
+        if !self.forced {
+            self.user = normalize_name(fields.first().map_or("", String::as_str));
+        }
         let old = fields.get(1).map_or("", String::as_str);
         let new = fields.get(2).map_or("", String::as_str);
         let again = fields.get(3).map_or("", String::as_str);

@@ -1,0 +1,24 @@
+                     Work with Device Parity Protection                         
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display disk configuration                                             
+      2. Include unit in device parity protection                               
+      3. Start device parity protection - RAID 5                                
+      4. Start device parity protection - RAID 6                                
+      5. Start device parity protection - RAID 5 with hot spare                 
+      6. Start device parity protection - RAID 6 with hot spare                 
+      7. Select parity optimization                                             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit         F12=Cancel                                                     
+                                                                                

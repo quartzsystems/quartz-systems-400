@@ -74,6 +74,13 @@ pub const SAVE_LIC: &str = "Save the Licensed Internal Code with SAVSYS; not fro
 /// The installer needs the installation media booted.
 pub const NEEDS_MEDIA: &str = "Installing needs an IPL from the installation media (type D)";
 
+/// SST's `Select parity optimization`: the parity sets are the
+/// system's own, kept by no IOA, so there is nothing to optimize.
+pub const NO_PARITY_OPTIMIZATION: &str = "Parity sets here are kept by the system, not an IOA; nothing to optimize";
+
+/// `Work with encryption`: ASP data is not encrypted in this release.
+pub const NO_ENCRYPTION: &str = "Disk encryption is not in this release; ASP data is not encrypted";
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -104,3 +111,4 @@ mod tests {
         }
     }
 }
+

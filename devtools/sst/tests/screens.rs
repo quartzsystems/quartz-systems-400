@@ -172,13 +172,15 @@ fn shared_screens_are_dsts() {
     same_as_dst("hsm", &walk(&mut e, &["1", "7"]), &mut e);
     same_as_dst("hsm-packaging", &walk(&mut e, &["1", "7", "1"]), &mut e);
     same_as_dst("hsm-failed", &walk(&mut e, &["1", "7", "4"]), &mut e);
-    same_as_dst("disk", &walk(&mut e, &["3"]), &mut e);
-    same_as_dst("disk-config", &walk(&mut e, &["3", "1"]), &mut e);
-    same_as_dst("disk-status", &walk(&mut e, &["3", "1", "1", "1"]), &mut e);
-    same_as_dst("disk-capacity", &walk(&mut e, &["3", "1", "1", "2"]), &mut e);
-    same_as_dst("mirror", &walk(&mut e, &["3", "1", "4"]), &mut e);
-    same_as_dst("disk-recovery", &walk(&mut e, &["3", "2"]), &mut e);
-    same_as_dst("suspend", &walk(&mut e, &["3", "2", "7"]), &mut e);
+    check("disk", &walk(&mut e, &["3"]), &mut e);
+    check("disk-config", &walk(&mut e, &["3", "2"]), &mut e);
+    e.controllers = vec!["QS/400 software parity".into()];
+    check("parity", &walk(&mut e, &["3", "2", "8"]), &mut e);
+    e.controllers.clear();
+    same_as_dst("disk-status", &walk(&mut e, &["3", "1", "1"]), &mut e);
+    same_as_dst("disk-capacity", &walk(&mut e, &["3", "1", "2"]), &mut e);
+    same_as_dst("disk-recovery", &walk(&mut e, &["3", "3"]), &mut e);
+    same_as_dst("suspend", &walk(&mut e, &["3", "3", "7"]), &mut e);
     same_as_dst("security", &walk(&mut e, &["7"]), &mut e);
     same_as_dst("users", &walk(&mut e, &["8", "1"]), &mut e);
     let mut r = walk(&mut e, &["8", "1"]);
@@ -190,7 +192,7 @@ fn shared_screens_are_dsts() {
 fn changes_ask_first() {
     let mut e = env();
     // Suspend: the confirmation, F12 leaves the unit alone, F10 runs it.
-    let mut r = walk(&mut e, &["3", "2", "7"]);
+    let mut r = walk(&mut e, &["3", "3", "7"]);
     r.enter(&f(&["1"]), &mut e);
     assert_eq!(r.top(), "dst-suspend-confirm");
     check("suspend-confirm", &r, &mut e);

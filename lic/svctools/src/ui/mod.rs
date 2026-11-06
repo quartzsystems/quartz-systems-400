@@ -50,6 +50,26 @@ pub fn menu(title: &str, system: &str, options: &[(u8, &str)], fkeys: &str) -> S
     menu_after(title, system, &[], options, fkeys)
 }
 
+/// SST's function key line on the primary.
+pub const SST_KEYS: &str = "F3=Exit         F12=Cancel";
+
+/// A numbered menu as SST shows it on the primary (V7R1M0): the title
+/// from `title_col`, no system name, `Select one of the following:` on
+/// row 3 and the options from row 5.
+pub fn sst_menu(title: &str, title_col: usize, options: &[(u8, &str)], fkeys: &str) -> Screen {
+    let mut s = Screen::new();
+    s.put(1, title_col, title, Attr::WHITE);
+    s.put(3, BODY_COL, "Select one of the following:", Attr::GREEN);
+    for (i, (number, text)) in options.iter().enumerate() {
+        s.put(5 + i, BODY_COL + 4, &format!("{number:>2}. {text}"), Attr::GREEN);
+    }
+    s.put(SELECTION_ROW, BODY_COL, "Selection", Attr::GREEN);
+    s.field(SELECTION_ROW + 1, BODY_COL + 2, 2, false);
+    keys(&mut s, fkeys);
+    s.cursor = (SELECTION_ROW, BODY_COL + 1);
+    s
+}
+
 /// A numbered menu under `lead` lines (a blank line between them).
 pub fn menu_after(
     title: &str,

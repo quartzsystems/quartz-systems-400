@@ -30,6 +30,8 @@ pub struct Submenu {
     fkeys: &'static str,
     key: Option<(u8, Action)>,
     lead: Vec<String>,
+    /// SST's layout: the title's column.
+    sst: Option<usize>,
 }
 
 impl Submenu {
@@ -48,7 +50,16 @@ impl Submenu {
             fkeys: "F3=Exit   F12=Cancel",
             key: None,
             lead: Vec::new(),
+            sst: None,
         }
+    }
+
+    /// In SST's layout ([`ui::sst_menu`]), the title from `col`.
+    #[must_use]
+    pub fn sst(mut self, col: usize) -> Self {
+        self.sst = Some(col);
+        self.fkeys = ui::SST_KEYS;
+        self
     }
 
     /// With these lines above the options.
@@ -74,6 +85,9 @@ impl Panel for Submenu {
 
     fn render(&self, env: &mut dyn DstEnv) -> Screen {
         let options: Vec<(u8, &str)> = self.options.iter().map(|(n, t, _)| (*n, *t)).collect();
+        if let Some(col) = self.sst {
+            return ui::sst_menu(self.title, col, &options, self.fkeys);
+        }
         ui::menu_after(
             self.title,
             &env.system_name(),
