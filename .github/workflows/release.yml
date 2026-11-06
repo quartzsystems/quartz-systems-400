@@ -3,10 +3,10 @@
 # root directory of this project.
 #
 # A tag v<VERSION> publishes a GitHub release: the tag is checked against
-# VERSION and CHANGELOG.md, every check in ci.yml runs (the QEMU suite on
-# the qs400-qemu runner among them), the release is built and signed on
-# that runner with the keys in the `release` environment's secrets (only
-# v* tags may use that environment), and the ISO, the
+# VERSION and CHANGELOG.md, every check in ci.yml runs (the QEMU suites
+# among them), the release is built and signed on a GitHub-hosted runner
+# with the keys in the `release` environment's secrets (only v* tags may
+# use that environment), and the ISO, the
 # UKIs, SHA256SUMS and its signature, the manifest, NOTICES.txt, the
 # source offer, the Secure Boot certificate and CHANGELOG.md's section for
 # the version are published. See docs/releasing.md.
@@ -46,17 +46,18 @@ jobs:
   build:
     name: build and sign ${{ needs.version.outputs.release }}
     needs: [version, ci]
-    runs-on: [self-hosted, qs400-qemu]
+    runs-on: ubuntu-24.04
     # Holds the release keys; its deployment rule admits v* tags only.
     environment: release
-    timeout-minutes: 240
+    timeout-minutes: 360
     env:
-      QS400_TARGET_DIR: /srv/qs400-ci/release-target
-      CARGO_TARGET_DIR: /srv/qs400-ci/release-target
+      QS400_TARGET_DIR: ${{ github.workspace }}/target
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/qs400-host
       # The keys go to a directory only this job's user can read, for the
-      # signing step alone, and are removed whatever happens. Without all
+      # signing step alone, and are removed whatever happens (the runner
+      # itself is discarded after the job). Without all
       # three the release would be signed with the development keys, so
       # the job stops.
       - name: Release keys from the release environment

@@ -293,8 +293,10 @@ An SST sign-on is audited as `SS` (a code of ours).
 ## CI and its runners
 
 `.github/workflows/ci.yml` runs on every push to a branch and every pull
-request; `.github/workflows/release.yml` runs it again for a `v*` tag
-before it builds and publishes the release (`releasing.md`):
+request (the QEMU suites for `main`, tags and on demand);
+`.github/workflows/release.yml` runs it again for a `v*` tag before it
+builds and publishes the release (`releasing.md`). Every job runs on
+GitHub's own Ubuntu runners; there is no self-hosted runner:
 
 | Job | Runner | Runs |
 |---|---|---|
@@ -303,8 +305,8 @@ before it builds and publishes the release (`releasing.md`):
 | `deny` | `ubuntu-24.04` | `ci/version.sh check`, `build deny`, `build notices --check`, `kcbuild notes`, `fmtcheck` |
 | `test` | `ubuntu-24.04` | `cargo test --workspace` (host tests) |
 | `fuzz` | `ubuntu-24.04` | `build fuzz --secs 60 --jobs 4`; crashes kept as an artifact |
-| `qemu` | `[self-hosted, qs400-qemu]` | `build doctor`, `build all`, `build test`, after `clippy`, `deny` and `test` pass |
-| `nightly` | `[self-hosted, qs400-qemu]` | 02:00 UTC: `build all`, `build soak --secs 3600`, `build release` with the development keys; the ISO, `SHA256SUMS`, `MANIFEST.json`, `NOTICES.txt` and `SOURCE-OFFER.txt` uploaded for 14 days |
+| `qemu` | `ubuntu-24.04` with KVM, three at once | `build all`, then `build test` (disk), `build test --media iso` and `build test --media iso --install`, after `clippy`, `deny` and `test` pass; install step 10 skips (no V1R0M0 media there) |
+| `nightly` | `ubuntu-24.04` with KVM | 02:00 UTC: `build all`, `build soak --secs 3600`, `build release` with the development keys; the ISO, `SHA256SUMS`, `MANIFEST.json`, `NOTICES.txt` and `SOURCE-OFFER.txt` uploaded for 14 days |
 
 Every job takes the toolchain from `rust-toolchain.toml` (rustup
 installs the pinned channel, rustfmt, clippy and the musl target on the
@@ -312,25 +314,20 @@ first `cargo`). `QS400_MARKERS=legacy` lets the release notes check pass
 with the older marker forms; it goes once only `BLOCKED(rel)` and
 `NEEDS-CODY` are left.
 
-**The `qs400-qemu` runner** (NEEDS-CODY: register it with the
-repository, label `qs400-qemu`):
+**The build host.** `.github/actions/qs400-host` makes a GitHub-hosted
+`ubuntu-24.04` runner (4 cores, 16 GB, free for a public repository)
+into a QS/400 build host: it removes preinstalled toolchains QS/400 does
+not use (room for the kernel and the images), opens `/dev/kvm` to the
+runner's user, installs LLVM 21 from apt.llvm.org (the kernel's `LLVM=1`
+build), QEMU and OVMF (the Secure Boot check of `INSTALL.md` §6 uses
+`OVMF_CODE_4M.secboot.fd` and `OVMF_VARS_4M.snakeoil.fd`), make, flex,
+bison, bc, perl, xz and the pinned Rust toolchain, then runs `build
+doctor`. A job may run six hours; a suite that outgrows that is split
+with `--only`.
 
-- x86_64 Linux with KVM (`/dev/kvm` readable and writable by the runner's
-  user), 8 cores or more, 16 GB of memory at the least (a QEMU guest of
-  2 GB plus the kernel and LTO builds), 150 GB free on an ext4 or xfs
-  volume at `/srv/qs400-ci/target` (the workflow's `QS400_TARGET_DIR`;
-  never a Windows drive mounted into WSL).
-- rustup with the channel of `rust-toolchain.toml` (1.98.0 today),
-  `cargo-deny`, and what `build doctor` checks: clang, ld.lld and the
-  LLVM binutils (the kernel's `LLVM=1` build), make, flex, bison, bc,
-  perl, tar, xz, gzip, git.
-- QEMU 8.2 or later (`qemu-system-x86_64`; the suite was last run with
-  10.2.1) and OVMF (`/usr/share/OVMF/OVMF_CODE_4M.fd`, or
-  `QS400_OVMF_CODE`; the Secure Boot check of `INSTALL.md` §6 uses
-  `OVMF_CODE_4M.secboot.fd` and `OVMF_VARS_4M.snakeoil.fd` from the same
-  package, edk2 2025.11 here).
-- Network access to cdn.kernel.org for the pinned tarball (or the
-  tarball already under `target/src/`).
+The same list makes a local build host (WSL Ubuntu here): KVM, 8 cores
+or more, 16 GB, the target directory on ext4 or xfs, never a Windows
+drive mounted into WSL.
 
 The nightly release is signed with the development keys only: the
 ed25519 build key generated under `target/keys/` and the checked-in
@@ -338,8 +335,7 @@ Secure Boot development pair. A release for distribution sets
 `QS400_SIGNING_KEY`, `QS400_SB_KEY` and `QS400_SB_CERT`: `release.yml`
 takes them from the secrets of the `release` environment (`v*` tags
 only) and stops when they are not there, or they are set by hand on a
-machine holding the keys (`releasing.md`, "The keys"). The QEMU job
-never runs a fork's pull request on the self-hosted runner.
+machine holding the keys (`releasing.md`, "The keys").
 
 ## Reproducible releases
 

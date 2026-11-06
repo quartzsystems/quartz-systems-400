@@ -2,10 +2,11 @@
 # licensed under the terms of the MIT license which can be found in the
 # root directory of this project.
 #
-# QS/400 CI (docs/TOOLS.md, "CI and its runners"). Host jobs run on
-# GitHub's Ubuntu runners with the toolchain rust-toolchain.toml pins;
-# the QEMU suite, the soak and the release run on the self-hosted runner
-# labelled qs400-qemu (KVM). NEEDS-CODY: register that runner.
+# QS/400 CI (docs/TOOLS.md, "CI and its runners"). Every job runs on
+# GitHub's Ubuntu runners with the toolchain rust-toolchain.toml pins; the
+# QEMU suites, the soak and the release run there too, under KVM, on a
+# runner the qs400-host action makes into a build host. No self-hosted
+# runner: nothing runs on a developer's machine.
 
 name: ci
 
@@ -126,41 +127,50 @@ jobs:
           path: tools/fuzz/crashes/
 
   qemu:
-    name: build test (QEMU)
-    # The self-hosted runner never runs a fork's pull request: on a public
-    # repository that would run anyone's code on it.
+    name: build test (QEMU, ${{ matrix.suite }})
+    # The suites run for main, tags (release.yml) and on demand; a push to
+    # another branch gets the host checks above.
     if: >-
       github.event_name != 'schedule' &&
-      (github.event_name != 'pull_request' ||
-       github.event.pull_request.head.repo.full_name == github.repository)
+      (github.event_name == 'workflow_dispatch' ||
+       github.event_name == 'workflow_call' ||
+       github.ref == 'refs/heads/main' ||
+       startsWith(github.ref, 'refs/tags/'))
     needs: [clippy, deny, test]
-    runs-on: [self-hosted, qs400-qemu]
-    timeout-minutes: 480
-    env:
-      QS400_TARGET_DIR: /srv/qs400-ci/target
-      CARGO_TARGET_DIR: /srv/qs400-ci/target
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: disk
+            args: ""
+          - suite: media
+            args: "--media iso"
+          # Step 10 (the V1R0M0 upgrade) skips without QS400_OLD_ISO.
+          - suite: install
+            args: "--media iso --install"
     steps:
       - uses: actions/checkout@v4
-      - run: cargo run -q -p build -- doctor
+      - uses: ./.github/actions/qs400-host
       - run: cargo run -q -p build -- all
-      - run: cargo run -q -p build -- test
+      - run: cargo run -q -p build -- test ${{ matrix.args }}
       - name: Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qemu-logs
-          path: /srv/qs400-ci/target/logs/
+          name: qemu-logs-${{ matrix.suite }}
+          path: target/logs/
+          if-no-files-found: ignore
 
   nightly:
     name: soak and release (development key)
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: [self-hosted, qs400-qemu]
-    timeout-minutes: 600
-    env:
-      QS400_TARGET_DIR: /srv/qs400-ci/target
-      CARGO_TARGET_DIR: /srv/qs400-ci/target
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/qs400-host
       - run: cargo run -q -p build -- all
       - run: cargo run -q -p build -- soak --secs 3600
       # No QS400_SIGNING_KEY or QS400_SB_KEY here: the development keys.
@@ -169,10 +179,10 @@ jobs:
         with:
           name: qs400-release-dev
           path: |
-            /srv/qs400-ci/target/release/V*/*.iso
-            /srv/qs400-ci/target/release/V*/SHA256SUMS
-            /srv/qs400-ci/target/release/V*/SHA256SUMS.sig
-            /srv/qs400-ci/target/release/V*/MANIFEST.json
-            /srv/qs400-ci/target/release/V*/NOTICES.txt
-            /srv/qs400-ci/target/release/V*/SOURCE-OFFER.txt
+            target/release/V*/*.iso
+            target/release/V*/SHA256SUMS
+            target/release/V*/SHA256SUMS.sig
+            target/release/V*/MANIFEST.json
+            target/release/V*/NOTICES.txt
+            target/release/V*/SOURCE-OFFER.txt
           retention-days: 14

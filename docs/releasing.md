@@ -86,9 +86,8 @@ Pushing the tag runs `.github/workflows/release.yml`:
 
 1. **version**: the tag is `v` followed by `VERSION`, `KNOWN` lists the
    release, and `CHANGELOG.md` has a non-empty section for it.
-2. **ci**: every job of `ci.yml`, the QEMU suite on the `qs400-qemu`
-   runner included.
-3. **build**: on the `qs400-qemu` runner, `build all --release` and
+2. **ci**: every job of `ci.yml`, the three QEMU suites included.
+3. **build**: on a GitHub-hosted runner, `build all --release` and
    `build release`, signed with the `release` environment's keys,
    written to a directory only the job can read and removed when the
    job ends; without all three secrets the job stops rather than publish
