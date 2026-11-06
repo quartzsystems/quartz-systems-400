@@ -66,7 +66,7 @@ fn one(host: &Host, surface: &mut Surface, f: &[(String, String)], users: &Rows)
     for k in ["FCNID", "FCNNAME", "FCNPROD", "FCNGRP", "FCNDFT", "FCNALLOBJ"] {
         d.set(k, &get(f, k));
     }
-    // The description takes two lines of 50.
+    // The description takes up to two lines of 50 (ours are one).
     let desc: Vec<char> = get(f, "FCNDESC").chars().collect();
     let first: String = desc.iter().take(50).collect();
     let rest: String = desc.iter().skip(50).take(50).collect();

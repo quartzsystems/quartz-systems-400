@@ -81,11 +81,11 @@ const AN: (bool, bool) = (true, false);
 /// The functions, in the order `WRKFCNUSG` lists them.
 pub static FUNCTIONS: &[Function] = &[
     f("QIBM_DIRSRV_ADMIN", "Directory server administrator", "Bind as a directory server administrator", (OS, "*NONE"), DN),
-    f("QIBM_ACCESS_ALLOBJ_JOBLOG", "Job log of an *ALLOBJ job", "A *JOBCTL user may see the job log of a job with *ALLOBJ special authority", (OS, "QIBM_ALLOBJ"), DU),
+    f("QIBM_ACCESS_ALLOBJ_JOBLOG", "Job log of an *ALLOBJ job", "*JOBCTL users see the logs of *ALLOBJ jobs", (OS, "QIBM_ALLOBJ"), DU),
     f("QIBM_ALLOBJ_TRACE_ANY_USER", "Trace any user", "Trace jobs of any user", (OS, "QIBM_ALLOBJ"), DU),
     f("QIBM_WATCH_ANY_JOB", "Watch any job", "Start watches over jobs of any user", (OS, "QIBM_ALLOBJ"), DN),
-    f("QIBM_DB_SQLADM", "Database administrator", "Administer the database: plan cache, monitors, statement holds", (OS, "QIBM_DB"), DN),
-    f("QIBM_DB_SYSMON", "Database information", "See database information: plan cache and monitor data", (OS, "QIBM_DB"), DN),
+    f("QIBM_DB_SQLADM", "Database administrator", "Plan cache, monitors and other database tasks", (OS, "QIBM_DB"), DN),
+    f("QIBM_DB_SYSMON", "Database information", "Plan cache and monitor data to look at", (OS, "QIBM_DB"), DN),
     f("QIBM_QCST_SERVICE_CLUSTADMIN", "Cluster administration", "Administer a cluster", (OS, "QIBM_QCST_SERVICE_CLUSTMGMT"), DU),
     f("QIBM_QCST_SERVICE_CLUSTOPER", "Cluster operation", "Operate a cluster", (OS, "QIBM_QCST_SERVICE_CLUSTMGMT"), DU),
     f("QIBM_QYAS_SERVICE_DISKMGMT", "Disk units", "Work with disk units", (OS, "QIBM_SERVICE"), DN),
@@ -99,13 +99,13 @@ pub static FUNCTIONS: &[Function] = &[
     f("QIBM_QINAV_WEB_FUNCTIONS", "Manage through Navigator web", "Manage this system through any web Navigator", (NAV, "*NONE"), DU),
     f("QIBM_QINAV_WEB_INTERFACE", "Use Navigator web", "Use the web Navigator of this system", (NAV, "*NONE"), DU),
     f("QIBM_QSY_SYSTEM_CERT_STORE", "*SYSTEM certificate store", "Use the *SYSTEM certificate store", ("QIBM_QSY_DIGITAL_CERT_MGR", "*NONE"), DU),
-    f("QIBM_QTMF_CLIENT_REQ_0", "FTP client session", "Start an FTP client session; needed for every other client request", (TCP, "QIBM_QTMF_FTP_CLIENT"), AN),
+    f("QIBM_QTMF_CLIENT_REQ_0", "FTP client session", "FTP client sessions; every request needs it", (TCP, "QIBM_QTMF_FTP_CLIENT"), AN),
     f("QIBM_QTMF_CLIENT_REQ_10", "FTP client CCC", "The client subcommand CCC", (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"), AN),
     f("QIBM_QTMF_CLIENT_REQ_3", "FTP client LCD", "The client subcommand LCD", (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"), AN),
     f("QIBM_QTMF_CLIENT_REQ_6", "FTP client sends", "The client subcommands PUT, MPUT and APPEND", (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"), AN),
     f("QIBM_QTMF_CLIENT_REQ_7", "FTP client receives", "The client subcommands GET and MGET", (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"), AN),
     f("QIBM_QTMF_CLIENT_REQ_9", "FTP client SYSCMD", "The client subcommand SYSCMD", (TCP, "QIBM_QTMF_FTP_CLIENT_REQ"), AN),
-    f("QIBM_QTMF_SERVER_REQ_0", "FTP server logon", "Log on to the FTP server; needed for every other server request", (TCP, "QIBM_QTMF_FTP_SERVER"), AN),
+    f("QIBM_QTMF_SERVER_REQ_0", "FTP server logon", "FTP server logon; every request needs it", (TCP, "QIBM_QTMF_FTP_SERVER"), AN),
     f("QIBM_QTMF_SERVER_REQ_1", "FTP server MKD", "The server subcommand MKD", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
     f("QIBM_QTMF_SERVER_REQ_10", "FTP server CCC", "The server subcommand CCC", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), DN),
     f("QIBM_QTMF_SERVER_REQ_2", "FTP server RMD", "The server subcommand RMD", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
@@ -116,7 +116,7 @@ pub static FUNCTIONS: &[Function] = &[
     f("QIBM_QTMF_SERVER_REQ_7", "FTP server STOR", "The server subcommands STOR, STOU and APPE", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
     f("QIBM_QTMF_SERVER_REQ_8", "FTP server rename", "The server subcommands RNFR and RNTO", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
     f("QIBM_QTMF_SERVER_REQ_9", "FTP server RCMD", "The server subcommand RCMD", (TCP, "QIBM_QTMF_FTP_SERVER_REQ"), AN),
-    f("QIBM_QYPS_MGTCTRL_SUPER_USER", "Management Central administration", "Every Management Central task, definition and monitor", ("QIBM_QYPS_MGTCTRL", "*NONE"), DN),
+    f("QIBM_QYPS_MGTCTRL_SUPER_USER", "Management Central administration", "All Management Central tasks and monitors", ("QIBM_QYPS_MGTCTRL", "*NONE"), DN),
 ];
 
 /// The registry: the functions with what was changed.
