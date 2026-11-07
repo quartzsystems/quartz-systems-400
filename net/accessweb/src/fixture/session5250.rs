@@ -5,7 +5,8 @@
 //! The prototype's 5250 sessions: the four saved sessions of
 //! `web/5250-config.html`, the macros of `web/5250-macros.html`, the
 //! keyboard map `CWELLMAN-laptop`, and live sessions showing the screens
-//! the prototype's pictures were drawn from (`screens/`).
+//! the prototype's pictures were drawn from (kept with the goldens,
+//! `tools/conformance/golden/accessweb/`).
 
 use std::collections::BTreeMap;
 use std::sync::{Condvar, Mutex};
@@ -23,9 +24,10 @@ use crate::s5250::screen::{Screen, View};
 use crate::util::secs;
 
 /// Work with Active Jobs, as the prototype's pictures show it.
-pub const WRKACTJOB: &str = include_str!("screens/wrkactjob.txt");
+pub const WRKACTJOB: &str =
+    include_str!("../../../../tools/conformance/golden/accessweb/wrkactjob.txt");
 /// The sign-on display.
-pub const SIGNON: &str = include_str!("screens/signon.txt");
+pub const SIGNON: &str = include_str!("../../../../tools/conformance/golden/accessweb/signon.txt");
 
 /// A local time of the fixture's zone (US Eastern daylight) as seconds.
 fn local(mo: u32, d: u32, h: u32, mi: u32) -> u64 {
