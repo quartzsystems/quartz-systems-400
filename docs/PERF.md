@@ -145,8 +145,11 @@ spare above its minimum (at least 256 KB), never past the taker's
 maximum. A pool whose jobs went ineligible gets a tenth more activity
 levels (at least one); a pool with more than twice its active jobs (at
 least ten) gives a tenth back, never below the level it was defined
-with. `*MACHINE` is never changed. Changes go to the pool table and the
-pool's cgroup `memory.high`; the defined values (`QWCSHRPOOL`, what
+with. `*MACHINE` is never changed. Changes go to the pool table and,
+for a `*SHRPOOLn`, the pool's cgroup `memory.high`; the pools the
+system manages (`*MACHINE`, `*BASE`, `*INTERACT`, `*SPOOL`) stay
+unlimited, as their monitors make them, since a limit there stalls
+their jobs once they use more (nothing pages out); the defined values (`QWCSHRPOOL`, what
 `CHGSHRPOOL` and the IPL set) stay, and a pool changed by anything but
 the adjuster is taken as defined anew.
 

@@ -503,6 +503,13 @@ fn apply(system: &mut System, i: &Interval) {
             .perf
             .adjusted
             .insert(c.name.clone(), (c.size_kb, c.actlvl));
+        // The pools the system manages hold what the others leave and are
+        // not limited (as the monitors make them): a size there is only
+        // the figure the displays show. A limit on *BASE would stall its
+        // jobs once they used more, with nothing to page out.
+        if wm::pools::SHARED.iter().any(|(n, _)| *n == c.name) {
+            continue;
+        }
         let dir = stats::pool_dir(&c.name);
         let _ = std::fs::write(format!("{dir}/memory.high"), (c.size_kb * 1024).to_string());
     }
