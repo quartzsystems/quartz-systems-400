@@ -27,6 +27,10 @@ on:
         description: "Also run the nightly soak and development-key release"
         type: boolean
         default: false
+      front_ends_only:
+        description: "Skip the host tests, fuzz and QEMU (the front-ends, rustfmt, clippy and deny still run)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -90,9 +94,46 @@ jobs:
       - run: cargo run -q -p kcbuild -- notes
       - run: cargo run -q -p fmtcheck
 
+  # The front ends a language server links (docs/QAP.md, Code for
+  # QS/400): each crate alone with --features front, on Windows and musl.
+  front-ends:
+    name: front-ends (${{ matrix.target }})
+    if: github.event_name != 'schedule'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Host packages (clang links the host's build scripts)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang lld
+      - name: Toolchain (rust-toolchain.toml)
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          rustup target add ${{ matrix.target }}
+      - name: Build each front end alone
+        run: |
+          for c in rpgfront cl dds sql cmd; do
+            cargo build --locked -p "$c" --no-default-features --features front --target ${{ matrix.target }}
+          done
+      - name: Their tests
+        run: |
+          for c in rpgfront cl dds sql cmd; do
+            cargo test --locked -p "$c" --no-default-features --features front --target ${{ matrix.target }}
+          done
+
   test:
     name: host tests
-    if: github.event_name != 'schedule'
+    if: github.event_name != 'schedule' && !inputs.front_ends_only
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     steps:
@@ -112,7 +153,7 @@ jobs:
 
   fuzz:
     name: build fuzz (60 s a target)
-    if: github.event_name != 'schedule'
+    if: github.event_name != 'schedule' && !inputs.front_ends_only
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
