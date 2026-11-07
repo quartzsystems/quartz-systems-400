@@ -148,6 +148,10 @@ impl Drop for Pull {
 /// The queue entry of this download: the one `?q=` names, or one
 /// already there for the path that did not finish, or a new one.
 fn entry_for(rq: &Rq<'_>, path: &str, mode: Mode, size: u64) -> u32 {
+    // A HEAD moves nothing: no entry (0 names none).
+    if rq.req.method == "HEAD" {
+        return 0;
+    }
     let q = rq.env().files.queue();
     let user = rq.user();
     let named: Option<u32> = rq.query().str("q").parse().ok();
