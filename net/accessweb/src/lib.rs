@@ -26,6 +26,7 @@ pub mod policy;
 pub mod prefs;
 pub mod routes;
 pub mod s5250;
+pub mod transfer;
 pub mod util;
 
 use std::time::Duration;

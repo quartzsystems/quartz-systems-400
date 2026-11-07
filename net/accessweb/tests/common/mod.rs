@@ -190,6 +190,7 @@ pub fn proto(url: &str) -> Option<String> {
         ["files", "props"] => "file-props".into(),
         ["files", "shares"] => "my-files".into(),
         ["files", "edit"] => "file-edit".into(),
+        ["files", "download" | "open" | "rename" | "mkdir" | "cut" | "copy" | "queue"] => "files".into(),
         // Print.
         ["print"] => "printer-output".into(),
         ["print", "props", _] => "splf-props".into(),

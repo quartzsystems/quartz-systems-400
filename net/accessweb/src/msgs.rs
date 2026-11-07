@@ -105,6 +105,57 @@ pub const TRANSFER_CANCELLED: &str = "QAD7032";
 pub const MISFIT: &str = "QAD7035";
 /// A request file written (the desktop's).
 pub const REQUEST_WRITTEN: &str = "QAD7040";
+// Files and Print (steps 13-15).
+/// File uploaded.
+pub const UPLOADED: &str = "XWA0040";
+/// Nothing selected.
+pub const NONE_SELECTED: &str = "XWA0041";
+/// A file saved from the editor.
+pub const SAVED: &str = "XWA0042";
+/// An entry's authority changed.
+pub const AUTH_CHANGED: &str = "XWA0043";
+/// One spooled file is needed.
+pub const ONE_SPLF: &str = "XWA0045";
+/// Spooled files listed (the desktop's).
+pub const SPLF_COUNT: &str = "QAD6001";
+/// Spooled file held (the desktop's).
+pub const SPLF_HELD: &str = "QAD6002";
+/// Spooled file released (the desktop's).
+pub const SPLF_RELEASED: &str = "QAD6003";
+/// Spooled file deleted (the desktop's).
+pub const SPLF_DELETED: &str = "QAD6004";
+/// Spooled file moved (the desktop's).
+pub const SPLF_MOVED: &str = "QAD6005";
+/// Some spooled file actions failed (the desktop's).
+pub const SPLF_SUMMARY: &str = "QAD6006";
+/// Spooled file still open (the desktop's).
+pub const SPLF_OPEN: &str = "QAD6012";
+/// Spooled file cannot be shown so (the desktop's).
+pub const SPLF_FORMAT: &str = "QAD6013";
+/// Folder created (the desktop's).
+pub const FOLDER_CREATED: &str = "QAD8002";
+/// Renamed or moved (the desktop's).
+pub const RENAMED: &str = "QAD8003";
+/// Deleted (the desktop's).
+pub const DELETED: &str = "QAD8004";
+/// Copied (the desktop's).
+pub const COPIED: &str = "QAD8005";
+/// A delete stopped (the desktop's).
+pub const DELETE_STOPPED: &str = "QAD8006";
+/// The target exists (the desktop's).
+pub const FILE_EXISTS: &str = "QAD8010";
+/// Changed since opened (the desktop's).
+pub const CHANGED_SINCE: &str = "QAD8011";
+/// Too large to edit (the desktop's).
+pub const TOO_LARGE: &str = "QAD8012";
+/// Not text, opened read-only (the desktop's).
+pub const READ_ONLY: &str = "QAD8013";
+/// Transfer complete (the desktop's).
+pub const FILE_TRANSFER_DONE: &str = "QAD8020";
+/// Transfer failed (the desktop's).
+pub const FILE_TRANSFER_FAILED: &str = "QAD8021";
+/// Transfer cancelled (the desktop's).
+pub const FILE_TRANSFER_CANCELLED: &str = "QAD8022";
 
 /// Every message of `QZXWMSG`.
 pub const MESSAGES: &[Desc] = &[
@@ -450,6 +501,175 @@ pub const MESSAGES: &[Desc] = &[
         "Macro &1 recorded with &2 steps.",
         "Recording ended and macro &1 was saved with &2 steps. Text typed into fields that are not displayed, such as passwords, was not recorded; a step that asks for the value when the macro runs takes its place.",
         "None needed. Run the macro from the session's Macro menu, or open it in the Macro editor to change it.",
+    ),
+    // Files and Print (steps 13-15).
+    d(
+        NONE_SELECTED,
+        10,
+        "No entry was selected.",
+        "The action applies to the entries selected in the list, and none was selected. Nothing was done.",
+        "Select one or more entries with their check boxes, then select the action again.",
+    ),
+    d(
+        SAVED,
+        0,
+        "File &1 saved.",
+        "The text was written to file &1 in its own CCSID and line endings, as your user profile.",
+        "None.",
+    ),
+    d(
+        AUTH_CHANGED,
+        0,
+        "Authority of &1 changed.",
+        "The data authority, the public authority or the authorization list of &1 was changed as your user profile.",
+        "None.",
+    ),
+    d(
+        ONE_SPLF,
+        10,
+        "Select one spooled file for &1.",
+        "&1 makes one file from one spooled file, and the selection did not hold exactly one.",
+        "Select one spooled file and select &1 again, or use its PDF and Text links in the list.",
+    ),
+    d(
+        "QAD6001",
+        0,
+        "&1 spooled files on &2.",
+        "The Printer Output list shows the spooled files on system &2 that match the filter: &1 in all, a page at a time. Clicking a column heading sorts the page shown, not the whole list.",
+        "None needed. Change the filter and select Go to list other files. Select Refresh, or set Auto-refresh, to see files that arrived since.",
+    ),
+    d(
+        "QAD6002",
+        0,
+        "Spooled file &1 held.",
+        "Spooled file &1 was held on the system: it is not printed until it is released. A file being printed when it was held stops immediately or at the end of the current page, as chosen.",
+        "To print it, select it and select Release.",
+    ),
+    d(
+        "QAD6003",
+        0,
+        "Spooled file &1 released.",
+        "Spooled file &1 was released: it prints when a writer for its output queue reaches it.",
+        "None needed. If it does not print, check in Output Queues that a writer is attached to its queue and that the queue is not held.",
+    ),
+    d(
+        "QAD6004",
+        0,
+        "Spooled file &1 deleted.",
+        "Spooled file &1 was deleted from the system, with its data.",
+        "None needed. A deleted spooled file cannot be brought back; run the job that made it again to make it again.",
+    ),
+    d(
+        "QAD6005",
+        0,
+        "Spooled file &1 moved to &2.",
+        "Spooled file &1 is now on output queue &2, at the end of the queue or at its top, as chosen. It prints when a writer for that queue reaches it.",
+        "None needed.",
+    ),
+    d(
+        "QAD6006",
+        30,
+        "&1 of &2 actions failed; see the details.",
+        "An action was asked for on &2 spooled files, one request each, and the system refused &1 of them. The summary lists every file, and for each refusal the system's message as it sent it.",
+        "Select a refusal's message ID for its second-level text, correct what it names, refresh the list, then try the action again on those files.",
+    ),
+    d(
+        "QAD6012",
+        20,
+        "Spooled file &1 is still being written.",
+        "Spooled file &1 is still open: the program making it has not closed it, so its pages cannot be read yet. The system sent no message of its own for this.",
+        "Wait for the job that makes the file to close it, select Refresh, and open the file again.",
+    ),
+    d(
+        "QAD6013",
+        20,
+        "Spooled file &1 cannot be shown as &2.",
+        "The system cannot make &2 of spooled file &1 from the kind of data the file holds, and sent no message of its own saying why.",
+        "Look at the file from a 5250 display session (WRKSPLF, option 5), or print it on a printer device that takes its kind of data.",
+    ),
+    d(
+        "QAD8002",
+        0,
+        "Folder &1 created.",
+        "The folder &1 was created on the system, with the authorities its parent folder gives new objects.",
+        "None needed.",
+    ),
+    d(
+        "QAD8003",
+        0,
+        "&1 renamed to &2.",
+        "The system renamed or moved &1 to &2.",
+        "None needed. To undo it, rename &2 back.",
+    ),
+    d(
+        "QAD8004",
+        0,
+        "&1 deleted.",
+        "&1 was deleted on the system. A deleted file cannot be recovered from this program.",
+        "None needed.",
+    ),
+    d(
+        "QAD8005",
+        0,
+        "&1 copied to &2.",
+        "The system copied &1 to &2, keeping its data and CCSID as stored. The data did not pass through this computer.",
+        "None needed.",
+    ),
+    d(
+        "QAD8006",
+        30,
+        "Deleting &1 stopped at &2: &3.",
+        "The folder &1 is deleted from the inside out, one entry at a time. The system refused to delete &2, with the message shown (&3), so the delete stopped there. Entries deleted before it stay deleted; &2, the folders that hold it and anything not reached yet are still there.",
+        "Correct what the system's message describes (for example, a file checked out to another user, or one you are not authorized to delete), then delete &1 again.",
+    ),
+    d(
+        "QAD8010",
+        10,
+        "&1 already exists in &2.",
+        "An entry named &1 is already in the folder &2, so the copy, move, upload or download would replace it.",
+        "Choose Replace to replace it, Skip to leave it as it is, or Keep both (downloads only) to save the new file with a number added to its name.",
+    ),
+    d(
+        "QAD8011",
+        10,
+        "&1 changed on the system since you opened it.",
+        "The file &1 was changed on the system after this editor read it: its change count (on QAP version 6; before it, its last-changed time) is not the one it had when it was opened or last saved. Saving now would replace those changes.",
+        "Choose Overwrite to save your text over the system's file, Reload to read the system's file again and lose your changes, or Cancel to go on editing.",
+    ),
+    d(
+        "QAD8012",
+        20,
+        "&1 is too large to edit here; download it instead.",
+        "The file &1 is larger than 64 MiB, the most the built-in editor opens.",
+        "Download the file, then open it with a program on this computer that edits large files, and upload it again.",
+    ),
+    d(
+        "QAD8013",
+        10,
+        "&1 is not a text file; opened read-only.",
+        "The file &1 is binary (its CCSID is 65535, or its first 8 KiB hold NUL bytes), or it is larger than 8 MiB, so the editor shows it without letting it be changed.",
+        "To change the file, download it, edit it with a program that suits it, and upload it again.",
+    ),
+    d(
+        "QAD8020",
+        0,
+        "Transfer of &1 complete: &2 in &3.",
+        "The file &1 was copied; &2 of data took &3.",
+        "None needed.",
+    ),
+    d(
+        "QAD8021",
+        20,
+        "Transfer of &1 failed: &2.",
+        "The file &1 was not copied completely. The reason given was: &2. A download keeps its partial data in a temporary file beside the target; the target itself is unchanged.",
+        "Correct the cause, then select Retry in the transfer list. A binary transfer, and a text download, resume from the last part the system confirmed; a text upload starts again from the beginning.",
+    ),
+    d(
+        "QAD8022",
+        10,
+        "Transfer of &1 cancelled.",
+        "The transfer of &1 was cancelled before it ended. A download keeps its partial data in a temporary file beside the target; the target itself is unchanged.",
+        "Select Retry in the transfer list to go on from where it stopped, or Remove finished to drop it from the list.",
     ),
 ];
 

@@ -127,6 +127,27 @@ pub const TOPICS: &[Topic] = &[
         title: "Macros",
         body: "<p>A macro replays keys and typing and waits for the screens between them. <b>Record...</b> records in the session's display until you press <b>Stop</b> here; what is typed into a field that does not display is kept as a prompt, never as the text. Edit a macro's steps one a line: <span class=\"mono\">type \"TEXT\"</span>, <span class=\"mono\">key NAME</span>, <span class=\"mono\">wait screen \"TEXT\" at ROW,COL</span>, <span class=\"mono\">wait unlock</span>, <span class=\"mono\">pause MS</span>, <span class=\"mono\">prompt \"LABEL\"</span>; a <span class=\"mono\">;</span> starts a comment. Macro files (<span class=\"mono\">.qsm</span>) are QS/400 Access for Desktop's.</p>",
     },
+    // Files and Print (steps 13-15).
+    Topic {
+        key: "files",
+        title: "Browse files",
+        body: "<p>The integrated file system as your user profile sees it. The tree on the left opens the folders on the way to the one shown; <b>Path</b> and <b>Pattern</b> (<span class=\"mono\">*</span> any run of characters, <span class=\"mono\">?</span> one) choose what the list shows, 500 entries a page. A link shows its target; one whose target is gone is red.</p>\n<p><b>Cut</b> and <b>Copy</b> remember entries; <b>Paste</b> moves or copies them into the folder shown, on the system. <b>Delete</b> asks first and says how many objects go with a folder.</p>\n<h2>Transfers</h2>\n<p><b>Upload</b> takes one or several files from your workstation, as binary or as text converted to the CCSID given. If a file exists, <b>Ask</b> keeps the upload waiting in the transfer queue for Replace or Skip. <b>Download options</b> choose binary, or text converted from the file's CCSID to UTF-8. An interrupted download resumes where it stopped when the browser asks for the rest; the queue's Retry starts it again.</p>",
+    },
+    Topic {
+        key: "file-props",
+        title: "File properties",
+        body: "<p>What the system knows of the entry: its type, size, CCSID, times and change count, its owner and primary group. The owner, or a user with <span class=\"mono\">*ALLOBJ</span>, can change the data authority (owner, group and public, as <span class=\"mono\">rwxr-x---</span>), <span class=\"mono\">*PUBLIC</span>'s authority and the authorization list.</p>",
+    },
+    Topic {
+        key: "file-edit",
+        title: "Edit file",
+        body: "<p>A text file in its own CCSID and line endings. <b>Save</b> writes it back; if it changed on the system since you opened it, you are asked before your text replaces it. <b>Save as...</b> writes it under another name, <b>Reset</b> reads it again. Binary files and files over 8 MB open read-only; files over 64 MB do not open: download them instead.</p>",
+    },
+    Topic {
+        key: "my-files",
+        title: "My files",
+        body: "<p>Your home directory and the shares you are authorized to, each with the space used under it. <b>Browse</b> opens it in Browse files. A policy can limit you to your home directory.</p>",
+    },
 ];
 
 /// The topic of `key` (title, body HTML); the contents for any other.

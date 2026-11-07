@@ -18,6 +18,9 @@ pub enum Body {
     /// `101 Switching Protocols`: what then runs on the connection
     /// ([`crate::ws`]).
     Upgrade(crate::ws::Upgrade),
+    /// A stream of a known length, sent with `Content-Length` (a file
+    /// read a piece at a time); a short stream ends the connection.
+    Sized(u64, Box<dyn Read + Send>),
 }
 
 impl std::fmt::Debug for Body {
@@ -26,6 +29,7 @@ impl std::fmt::Debug for Body {
             Body::Bytes(b) => write!(f, "Bytes({})", b.len()),
             Body::Stream(_) => f.write_str("Stream"),
             Body::Upgrade(_) => f.write_str("Upgrade"),
+            Body::Sized(n, _) => write!(f, "Sized({n})"),
         }
     }
 }
@@ -84,6 +88,13 @@ impl Response {
         }
     }
 
+    /// The same response with a body of `len` bytes read from `from`.
+    #[must_use]
+    pub fn body_sized(mut self, len: u64, from: Box<dyn Read + Send>) -> Self {
+        self.body = Body::Sized(len, from);
+        self
+    }
+
     /// Add a header.
     #[must_use]
     pub fn with(mut self, name: &str, value: &str) -> Self {
@@ -100,7 +111,7 @@ impl Response {
     pub fn bytes(&self) -> &[u8] {
         match &self.body {
             Body::Bytes(b) => b,
-            Body::Stream(_) | Body::Upgrade(_) => &[],
+            Body::Stream(_) | Body::Upgrade(_) | Body::Sized(..) => &[],
         }
     }
 
@@ -150,6 +161,16 @@ impl Response {
                         w.write_all(b"\r\n")?;
                     }
                     w.write_all(b"0\r\n\r\n")?;
+                }
+            }
+            Body::Sized(len, r) => {
+                let _ = write!(head, "Content-Length: {len}\r\n\r\n");
+                w.write_all(head.as_bytes())?;
+                if !head_only {
+                    let sent = io::copy(&mut r.take(len), w)?;
+                    if sent < len {
+                        return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "the body ended early"));
+                    }
                 }
             }
         }
@@ -203,5 +224,12 @@ mod tests {
         let s = String::from_utf8(out).unwrap();
         assert!(s.ends_with("Transfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n"));
         assert!(s.contains("attachment; filename=\"a.log\""));
+        let mut out = Vec::new();
+        Response::new(200, "x/y", Vec::new()).body_sized(3, Box::new(&b"abcdef"[..])).write(&mut out, false, true).unwrap();
+        let s = String::from_utf8(out).unwrap();
+        assert!(s.ends_with("Content-Length: 3\r\n\r\nabc"), "{s}");
+        let mut out = Vec::new();
+        let short = Response::new(200, "x/y", Vec::new()).body_sized(9, Box::new(&b"ab"[..]));
+        assert!(short.write(&mut out, false, true).is_err());
     }
 }

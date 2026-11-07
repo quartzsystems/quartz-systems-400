@@ -68,6 +68,12 @@ const MESSAGES: &[Desc] = &[
     ("SQL7977", 0, "The &1 statement ran.", "The statement ran without an error.", "None."),
     ("SQL7960", 0, "The commit is done.", "The changes of the unit of work are kept.", "None."),
     ("SQL7961", 0, "The rollback is done.", "The changes of the unit of work are undone.", "None."),
+    // Files and Print (steps 13-15).
+    ("CPFA09C", 40, "Not enough authority for &1.", "You do not have the authority the operation needs to the object, or to a directory in its path.", "Ask its owner or your security officer for authority."),
+    ("CPFA0A0", 40, "&1 exists already.", "An object of that name exists in the directory.", "Choose another name, or remove the existing one first."),
+    ("CPFA0A9", 40, "&1 was not found.", "No object has the path name given.", "Check the name with WRKLNK."),
+    ("CPFA0AC", 40, "Directory &1 is not empty.", "A directory must be empty before it is removed, unless the command removes its contents too.", "Remove what it holds first."),
+    ("CPFA0DA", 40, "&1 is a directory.", "The operation needs an object that is not a directory.", "Name a file."),
 ];
 
 /// The text of `id` with `data` substituted.

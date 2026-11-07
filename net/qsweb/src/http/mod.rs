@@ -9,6 +9,7 @@ pub mod date;
 pub mod form;
 pub mod guard;
 pub mod multipart;
+pub mod range;
 pub mod request;
 pub mod response;
 

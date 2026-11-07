@@ -227,6 +227,10 @@ pub struct Fixture {
     pub s5250: Arc<session5250::Fixture5250>,
     /// The database.
     pub db: Arc<db::FixtureDb>,
+    /// The file system.
+    pub files: Arc<files::FixtureFiles>,
+    /// Printer output.
+    pub print: Arc<print::FixturePrint>,
 }
 
 /// The sample system.
@@ -236,14 +240,16 @@ pub fn fixture() -> Fixture {
     let prefs = Arc::new(policy::FixturePrefs::default());
     let s5250 = Arc::new(session5250::Fixture5250::default());
     let db = Arc::new(db::FixtureDb::default());
+    let fs = Arc::new(files::FixtureFiles::default());
+    let prt = Arc::new(print::FixturePrint);
     let env = Env {
         system: system.clone(),
         policy: pol.clone(),
         prefs: prefs.clone(),
         session5250: s5250.clone(),
         db: db.clone(),
-        files: Arc::new(files::FixtureFiles),
-        print: Arc::new(print::FixturePrint),
+        files: fs.clone(),
+        print: prt.clone(),
         msgs: Arc::new(msgs::FixtureMsgs),
         jobs: Arc::new(jobs::FixtureJobs),
         cmd: Arc::new(cmd::FixtureCmd),
@@ -256,5 +262,7 @@ pub fn fixture() -> Fixture {
         prefs,
         s5250,
         db,
+        files: fs,
+        print: prt,
     }
 }
