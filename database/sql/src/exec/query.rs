@@ -1008,6 +1008,7 @@ fn simple_predicates(preds: &[Expr]) -> Vec<(String, CmpOp, Expr)> {
     simple
 }
 
+#[allow(clippy::too_many_lines)]
 fn choose(
     cands: &[Candidate],
     preds: &[Expr],

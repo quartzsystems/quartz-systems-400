@@ -507,7 +507,7 @@ impl Session5250 for Fixture5250 {
                 }
             }
             Input::Cursor(r, c) if r >= 1 && c >= 1 && r <= s.rows && c <= s.cols => {
-                s.cursor = (r, c)
+                s.cursor = (r, c);
             }
             Input::Cursor(..) | Input::Key(_) => {}
         }

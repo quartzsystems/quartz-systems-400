@@ -88,7 +88,7 @@ pub fn page(rq: &Rq<'_>) -> Response {
                 &[data_auth, "Data authority"],
             )),
             _ => {
-                messages.push(rq.message(Kind::Error, msgs::BAD_VALUE, &[f.str("pub"), "*PUBLIC"]))
+                messages.push(rq.message(Kind::Error, msgs::BAD_VALUE, &[f.str("pub"), "*PUBLIC"]));
             }
         }
     }

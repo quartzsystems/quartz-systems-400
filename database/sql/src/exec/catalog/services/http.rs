@@ -112,7 +112,7 @@ fn request(method: &str, url: &str, body: Vec<u8>, options: Option<&str>) -> Res
             "redirect" => {
                 req.redirects = text_of(&v)
                     .parse()
-                    .map_err(|_| failed("redirect is not a number"))?
+                    .map_err(|_| failed("redirect is not a number"))?;
             }
             other => return Err(failed(format!("option {other} is not supported"))),
         }

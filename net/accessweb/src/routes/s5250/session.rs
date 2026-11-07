@@ -282,6 +282,7 @@ fn wide_frame(html: &str, rq: &Rq<'_>, id: u32, p: &Prefs) -> String {
 }
 
 #[allow(clippy::many_single_char_names)]
+#[allow(clippy::too_many_lines)]
 fn body(rq: &Rq<'_>, s: &Saved, l: &Live, p: &Prefs, menu: &str) -> String {
     let id = s.id;
     let url = |r: &str| esc(&rq.ctx.url(r));

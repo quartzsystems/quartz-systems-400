@@ -397,10 +397,10 @@ impl Gen<'_> {
                     self.err(ids::GRAPH_IGNORED, 30, name.to_string());
                     match &args[0] {
                         Expr::Lit(Lit::Char(_), _) => {
-                            self.err(ids::GRAPH_NO_SHIFT, 20, name.to_string())
+                            self.err(ids::GRAPH_NO_SHIFT, 20, name.to_string());
                         }
                         Expr::Lit(Lit::Num(_), _) => {
-                            self.err(ids::GRAPH_PARM, 20, name.to_string())
+                            self.err(ids::GRAPH_PARM, 20, name.to_string());
                         }
                         _ => {}
                     }

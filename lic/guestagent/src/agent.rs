@@ -99,7 +99,7 @@ impl<G: Guest> Agent<G> {
             match p {
                 Piece::Object(text) => out.extend(self.request(&text)),
                 Piece::Junk => {
-                    out.extend(bytes(&error("GenericError", "Invalid JSON syntax"), false))
+                    out.extend(bytes(&error("GenericError", "Invalid JSON syntax"), false));
                 }
             }
         }

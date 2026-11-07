@@ -240,6 +240,7 @@ pub fn start_ifc(c: &mut Ctx<'_>, key: &str) -> Result<Vec<Note>> {
 type Up = (IfcStatus, String, Option<String>, Option<KAddr>);
 
 /// Link, VLAN, MTU and address for an interface.
+#[allow(clippy::too_many_lines)]
 fn bring_up(c: &mut Ctx<'_>, i: &Interface) -> Result<Up> {
     let kerr = |e: crate::net::NetError| Error::new(msg::IFC_FAILED, format!("{e}."));
     let (base, carrier_line) = match &i.line {

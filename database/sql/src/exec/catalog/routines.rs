@@ -310,6 +310,7 @@ fn routine_rows(txn: &mut Txn<'_>, all: &[Found], alias: &str, view: &str) -> Ta
     (Schema { cols }, rows)
 }
 
+#[allow(clippy::too_many_lines)]
 fn parms(_txn: &mut Txn<'_>, all: &[Found], alias: &str) -> Table {
     let cols = vec![
         col(alias, "SPECIFIC_SCHEMA", T::Varchar(128), false),

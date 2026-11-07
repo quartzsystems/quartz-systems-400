@@ -115,6 +115,7 @@ fn pcml(
 }
 
 /// Compile the source, spool the listing, make the object.
+#[allow(clippy::too_many_lines)]
 fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> CmdReply {
     let mut options = req.options(&req.object_name(src), lib_name, src);
     let shape = req.shape;

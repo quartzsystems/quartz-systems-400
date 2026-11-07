@@ -387,6 +387,7 @@ fn put_text(a: &Args<'_>, i: usize, n: usize, b: &[u8]) {
 /// the queue of the call stack entry `entry` names (name, module, bound
 /// program; blank for the program itself) or its caller's. Nothing found
 /// leaves blanks and zeros, as IBM's `RCVMSG` does.
+#[allow(clippy::too_many_lines)]
 fn qclrcvm(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let a = Args(args);
     let rel = a.char(0, 10);

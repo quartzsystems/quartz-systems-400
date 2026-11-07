@@ -256,7 +256,7 @@ impl System for LiveSystem {
     fn audit(&self, entry: Audit) {
         match entry {
             Audit::Password { user, code } => {
-                self.core.audit("PW", user, code.to_string(), String::new())
+                self.core.audit("PW", user, code.to_string(), String::new());
             }
             Audit::Refused { user, object, need } => self.core.audit("AF", user, object, need),
         }

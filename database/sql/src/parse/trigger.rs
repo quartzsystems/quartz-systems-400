@@ -11,6 +11,7 @@ use crate::lex::Tok;
 
 impl Parser {
     /// `CREATE [OR REPLACE] TRIGGER`, after `OR REPLACE`.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn create_trigger(&mut self, replace: bool) -> Result<Statement> {
         self.expect_word("TRIGGER")?;
         let name = self.object_name()?;

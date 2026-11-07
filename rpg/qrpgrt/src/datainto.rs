@@ -259,7 +259,7 @@ pub fn options(text: &str) -> Result<Options, Fail> {
                     .split('/')
                     .filter(|s| !s.is_empty())
                     .map(str::to_string)
-                    .collect()
+                    .collect();
             }
             "case" if matches!(lv.as_str(), "lower" | "upper" | "any" | "convert") => o.case = lv,
             "allowmissing" if yes_no(&lv) => o.allow_missing = lv == "yes",

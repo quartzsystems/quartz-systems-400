@@ -470,6 +470,7 @@ fn shifted(
 /// The frame of row `j`: the first and last positions in the sorted
 /// partition (first above last when empty).
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_lines)]
 fn frame(
     o: &Over,
     p: &[usize],

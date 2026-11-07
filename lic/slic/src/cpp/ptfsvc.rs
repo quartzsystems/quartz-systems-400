@@ -199,6 +199,7 @@ fn items(
     Ok(items)
 }
 
+#[allow(clippy::too_many_lines)]
 fn insptf(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require()?;
     let dev = parms.text("DEV").to_ascii_uppercase();

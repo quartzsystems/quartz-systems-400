@@ -320,6 +320,7 @@ fn hist_day(name: &str) -> Option<u64> {
 }
 
 /// One cleanup: each kind of item past its keeping removed.
+#[allow(clippy::too_many_lines)]
 pub fn run_cleanup(system: &mut System, c: &Cleanup, now: u64) -> Removed {
     let mut r = Removed::default();
     // Job logs and system output.

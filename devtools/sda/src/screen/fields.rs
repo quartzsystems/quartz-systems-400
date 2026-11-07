@@ -103,6 +103,7 @@ impl Row {
 /// (`AT`), and three add lines (`ADDH`, `ADDM`, `ADDP` with
 /// `ADDxLEN`).
 #[must_use]
+#[allow(clippy::too_many_lines)]
 pub fn work_with_fields(
     record: &str,
     rows: &[Row],

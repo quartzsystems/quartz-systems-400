@@ -536,6 +536,7 @@ pub fn change_options(
 }
 
 /// The change panel of one system value.
+#[allow(clippy::too_many_lines)]
 fn chgsysval(
     job: &mut Job,
     host: &Host,

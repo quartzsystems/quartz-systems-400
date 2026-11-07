@@ -69,6 +69,7 @@ fn values() -> Vec<SqlValue> {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn sql_bodies() {
     for c in [
         CommitLevel::None,

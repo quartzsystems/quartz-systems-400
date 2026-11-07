@@ -388,6 +388,7 @@ fn fields(c: &Conf, e: &Entry) -> Fields {
 }
 
 /// `/directory?path=` or `?new=Directory|Alias|ScriptAlias`.
+#[allow(clippy::too_many_lines)]
 pub fn props_page(rq: &Rq<'_>, v: &View) -> Response {
     let q = rq.query();
     let empty = Conf::default();

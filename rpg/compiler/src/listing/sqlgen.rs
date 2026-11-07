@@ -907,7 +907,7 @@ fn calls(g: &mut Gen<'_>, s: &Sql<'_>, shape: &Shape, h: &Header, seq: &str) {
         g.push(
             seq,
             code("          SQLER6 = -4;", &format!("{SQL} {}", s.no)),
-        )
+        );
     };
     match shape {
         Shape::None => return,
@@ -947,7 +947,7 @@ fn calls(g: &mut Gen<'_>, s: &Sql<'_>, shape: &Shape, h: &Header, seq: &str) {
         Shape::Struct(ins, outs) => match st.desc.op {
             Op::Close => close(g, seq, s.no, h, "SQLCLSE_CALL"),
             Op::Exec if matches!(st.verb.as_str(), "COMMIT" | "ROLLBACK") => {
-                close(g, seq, s.no, h, "SQLCMIT_CALL")
+                close(g, seq, s.no, h, "SQLCMIT_CALL");
             }
             Op::Open => {
                 for (k, f) in ins.iter().enumerate() {

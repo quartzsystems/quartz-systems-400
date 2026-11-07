@@ -352,6 +352,7 @@ fn owner_or_group(name: &str, out: &mut Vec<ParmNode>) {
 
 /// `name`'s definition.
 #[must_use]
+#[allow(clippy::too_many_lines)]
 pub fn definition(c: &Cmd) -> CommandDefinition {
     let mut n: Vec<ParmNode> = Vec::new();
     let required = |mut p: ParmNode| {

@@ -55,6 +55,7 @@ fn domain(name: &str) -> SqlError {
 }
 
 /// Calls `name` when this family has it.
+#[allow(clippy::too_many_lines)]
 pub(crate) fn call(name: &str, args: &[Value], _ctx: &SqlContext) -> Option<Result<Value>> {
     let one = |f: fn(f64) -> f64, ok: fn(f64) -> bool| -> Result<Value> {
         arity(name, args, 1, 1)?;

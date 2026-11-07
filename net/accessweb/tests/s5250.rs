@@ -156,6 +156,7 @@ fn common_png(name: &str) -> Vec<u8> {
 
 #[test]
 #[allow(clippy::many_single_char_names)]
+#[allow(clippy::too_many_lines)]
 fn saved_sessions_and_their_files() {
     let mut b = Browser::signed_on();
     // Save the form's session as a new one.

@@ -167,6 +167,7 @@ fn clean(c: &mut Conn) -> Result<(), String> {
 }
 
 /// The step's body, signed on as `USER`.
+#[allow(clippy::too_many_lines)]
 pub fn run(c: &mut Conn) -> Result<String, String> {
     clean(c)?;
     status(

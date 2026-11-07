@@ -190,6 +190,7 @@ fn short(title: &str, lines: usize) -> Vec<u8> {
 }
 
 /// The output queues and files.
+#[allow(clippy::too_many_lines)]
 pub fn install(s: &mut Spool) {
     s.libraries = vec![
         "QSYS".into(),

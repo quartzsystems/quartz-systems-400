@@ -161,6 +161,7 @@ fn shift(text: &str, n: usize, left: bool) -> String {
 
 /// Apply `new` (this screen's commands, top to bottom) after what was
 /// `pending`.
+#[allow(clippy::too_many_lines)]
 pub fn apply(buf: &mut Buffer, pending: Vec<Placed>, new: Vec<Placed>) -> Applied {
     let mut all = pending;
     all.extend(new);

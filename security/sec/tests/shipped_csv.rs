@@ -63,6 +63,7 @@ fn fields(line: &str) -> Vec<String> {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn shipped_profiles_match_the_outfile() {
     let path = capture();
     let Ok(text) = std::fs::read_to_string(&path) else {

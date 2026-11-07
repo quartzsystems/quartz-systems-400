@@ -203,6 +203,7 @@ pub(crate) struct TapAsk<'a> {
 }
 
 /// Read the volume on the device.
+#[allow(clippy::too_many_lines)]
 pub(crate) fn tape_view(system: &mut System, a: &TapAsk<'_>) -> Result<TapView, String> {
     let label = a.label.trim().to_ascii_uppercase();
     let mut job = Dsp {

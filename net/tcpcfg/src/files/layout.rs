@@ -172,7 +172,8 @@ impl Rec {
         let (at, f) = self.span(name);
         match f.bytes() {
             2 => {
-                self.bytes[at..at + 2].copy_from_slice(&i16::try_from(v).unwrap_or(0).to_be_bytes())
+                self.bytes[at..at + 2]
+                    .copy_from_slice(&i16::try_from(v).unwrap_or(0).to_be_bytes());
             }
             4 => {
                 // An address's 32 bits go in whole, as IBM's binary fields hold them.

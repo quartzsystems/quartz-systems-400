@@ -201,6 +201,7 @@ fn require() -> Result<(), String> {
     crate::stgsvc::security::require(sec::profile::SpecialAuth::ALLOBJ, "order PTFs")
 }
 
+#[allow(clippy::too_many_lines)]
 fn sndptford(system: &mut System, parms: &Parms) -> Result<CmdReply, String> {
     require()?;
     let rmt = parms.text("RMTCPNAME").to_ascii_uppercase();

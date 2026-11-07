@@ -452,7 +452,7 @@ fn work(
                     match at.or_else(|| position(names, &to)) {
                         Some(i) => l.top = i,
                         None => {
-                            l.message = Some(crate::display::msgline::say(host, "CPD9B80", &[&to]))
+                            l.message = Some(crate::display::msgline::say(host, "CPD9B80", &[&to]));
                         }
                     }
                     continue;
@@ -515,7 +515,7 @@ fn header_changed(host: &Host, l: &mut List, a: &Answer) -> bool {
                         l.load(host);
                     }
                     None => {
-                        l.message = Some(crate::display::msgline::say(host, "CPF9812", &[&f, &lb]))
+                        l.message = Some(crate::display::msgline::say(host, "CPF9812", &[&f, &lb]));
                     }
                 }
                 return true;
@@ -716,7 +716,7 @@ fn options(
                         last = Some(crate::display::msgline::text_of(
                             host,
                             &crate::display::msgline::of_fail(host, &e),
-                        ))
+                        ));
                     }
                 }
             }
@@ -734,7 +734,7 @@ fn options(
                         last = Some(crate::display::msgline::text_of(
                             host,
                             &crate::display::msgline::of_fail(host, &e),
-                        ))
+                        ));
                     }
                 }
             }

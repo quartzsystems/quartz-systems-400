@@ -32,6 +32,7 @@ struct Level {
 }
 
 /// `WRKLNK` (`work`) or `DSPLNK`.
+#[allow(clippy::too_many_lines)]
 pub fn run(
     job: &mut Job,
     host: &Host,

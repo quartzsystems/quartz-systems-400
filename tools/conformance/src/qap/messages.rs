@@ -93,6 +93,7 @@ fn spooled(e: &Envelope) -> Option<SpooledFileChanged> {
 }
 
 /// Run the step on `a` (`USER`) and `b` (`USER2`), both signed on.
+#[allow(clippy::too_many_lines)]
 pub fn run(s: &mut Session, a: &mut Conn, b: &mut Conn) -> Result<String, String> {
     let mut skipped = 0;
     status(

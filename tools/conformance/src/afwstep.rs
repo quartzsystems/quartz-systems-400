@@ -193,6 +193,7 @@ fn policy(port: u16, sid: &str) -> Result<(), String> {
 
 impl Suite {
     /// Step 153: Access for Web over HTTP and HTTPS.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn access_web(&self, s: &mut Session) -> Result<String, String> {
         secofr_password(s)?;
         product(s)?;

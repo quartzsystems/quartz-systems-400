@@ -211,7 +211,7 @@ impl Site {
                     "maxkeepaliverequests" => self.max_keep_alive = num(d),
                     "timeout" => self.timeout = num(d).max(1),
                     "logformat" if d.args.len() == 2 => {
-                        nicks.push((d.args[1].clone(), d.args[0].clone()))
+                        nicks.push((d.args[1].clone(), d.args[0].clone()));
                     }
                     "customlog" => {
                         if !logs_named {
@@ -308,7 +308,7 @@ fn maints(items: &[Node], root: &str, out: &mut Vec<Maint>) {
     for n in items {
         match n {
             Node::Directive(d) if d.is("LogMaint") => {
-                out.push(Maint::parse(resolve(root, &d.args[0]), &d.args))
+                out.push(Maint::parse(resolve(root, &d.args[0]), &d.args));
             }
             Node::Section(s)
                 if s.name.eq_ignore_ascii_case("VirtualHost")

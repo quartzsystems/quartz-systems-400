@@ -102,7 +102,7 @@ fn print_session(host: &Host, surface: &mut Surface, s: &Session) -> Option<Resu
             Key::F(3 | 12) => return None,
             Key::F(5) => file = "QSYSPRT".into(),
             Key::Enter if file.is_empty() => {
-                msg = Some(crate::display::msgline::say(host, "CPD9BF4", &[]))
+                msg = Some(crate::display::msgline::say(host, "CPD9BF4", &[]));
             }
             Key::Enter => {
                 let pages = print::session(

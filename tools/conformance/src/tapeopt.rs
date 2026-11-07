@@ -30,6 +30,7 @@ impl Suite {
     /// SAVLIB, DSPTAP of the saves, RSTLIB to a new name), a save across
     /// two small volumes and back, and the same save on a virtual optical
     /// device, seen through `/QOPT`.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn tape_optical(&self, s: &mut Session) -> Result<String, String> {
         s.command("crtlib LIB(QS72)", CMD)?;
         s.command(

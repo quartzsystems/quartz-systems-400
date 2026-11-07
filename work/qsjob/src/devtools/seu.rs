@@ -179,7 +179,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
             opened.lib.clone(),
             opened.file.clone(),
             opened.member.clone(),
-        ))
+        ));
     });
     let sysname = crate::display::dds::system_name(host);
     let env = crate::display::dds::env_of(host, &sysname);

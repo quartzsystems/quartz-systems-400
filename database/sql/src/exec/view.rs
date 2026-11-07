@@ -19,6 +19,7 @@ use crate::ast::{CreateView, Ident, Naming, ObjectName, Query, QueryBody, TableR
 use crate::error::{Result, SqlError};
 
 /// `CREATE [OR REPLACE] VIEW`.
+#[allow(clippy::too_many_lines)]
 pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, v: &CreateView) -> Result<()> {
     let library = ctx.library_for(txn, &v.name)?;
     if v.replace

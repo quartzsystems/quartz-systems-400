@@ -49,6 +49,7 @@ struct Cli {
     soak: Option<u64>,
 }
 
+#[allow(clippy::too_many_lines)]
 fn main() -> Result<ExitCode> {
     let cli = Cli::parse();
     let image = cli.image.or_else(|| conformance::default_image().ok());

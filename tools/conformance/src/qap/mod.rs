@@ -611,6 +611,7 @@ const WIDE_ROWS: i64 = 256_000;
 /// An `UPDATE` whose condition has subqueries (on `b`) and a `CREATE
 /// INDEX` over a large table (on `a`), each while the third's command
 /// and catalog lists answer.
+#[allow(clippy::too_many_lines)]
 fn long_changes(a: &mut Conn, b: &mut Conn, c: &mut Conn) -> Result<String, String> {
     let check = CommandText {
         command: "CHKOBJ OBJ(QSYS/QGPL) OBJTYPE(*LIB)".into(),
@@ -999,6 +1000,7 @@ fn library_lists(a: &mut Conn, b: &mut Conn) -> Result<String, String> {
 }
 
 /// The `Sql` service on `c`.
+#[allow(clippy::too_many_lines)]
 fn sql_service(c: &mut Conn) -> Result<String, String> {
     sql::options(c, CommitLevel::None, None)?;
     sql::run_or(c, "CREATE SCHEMA QAPSQL", &["42710", "58004"])?;

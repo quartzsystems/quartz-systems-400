@@ -107,6 +107,7 @@ fn back_to(d: &mut Display, ctx: &mut Context, text: &str) -> Result<(), String>
 
 impl Suite {
     /// Step 85: DSPMSG's queues and an inquiry answered in its field.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn display_messages(&self, s: &mut Session) -> Result<String, String> {
         let port = self.telnet_port().ok_or("the launch has no telnet port")?;
         for (user, extra) in [(OWN, ""), (OPR, "MSGQ(QSYS/QSYSOPR)")] {

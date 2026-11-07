@@ -119,7 +119,7 @@ impl Rq<'_> {
     /// Remove the session values starting with `prefix`.
     pub fn clear(&self, prefix: &str) {
         self.admin.sessions.update(&self.session.id, |s| {
-            s.data.retain(|k, _| !k.starts_with(prefix))
+            s.data.retain(|k, _| !k.starts_with(prefix));
         });
     }
 

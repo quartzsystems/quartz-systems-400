@@ -62,6 +62,7 @@ pub fn app_name(c: Option<&Conf>, name: &str) -> String {
 }
 
 /// `GET` shows the settings; `POST` applies them.
+#[allow(clippy::too_many_lines)]
 pub fn page(rq: &Rq<'_>, v: &View) -> Response {
     if rq.post() {
         return post(rq, v);

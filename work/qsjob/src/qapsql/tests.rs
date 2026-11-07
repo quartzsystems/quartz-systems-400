@@ -131,6 +131,7 @@ fn failed<T: std::fmt::Debug>(r: Result<T, SqlStop<T>>) -> (String, i32, Option<
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn a_query_in_batches_with_its_types() {
     let mut e = engine();
     let mut lane = Lane::default();
@@ -630,6 +631,7 @@ fn the_catalog() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn the_newer_types_both_ways() {
     let mut e = engine();
     let mut lane = Lane::default();

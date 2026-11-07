@@ -120,6 +120,7 @@ fn inner_text(nodes: &[Node], i: usize, element: &str) -> (String, usize) {
 }
 
 /// The first sheet of an XLSX workbook, as rows.
+#[allow(clippy::too_many_lines)]
 pub fn read_xlsx(b: &[u8]) -> Result<Vec<Vec<Val>>, String> {
     let entries = zip::read(b)?;
     let shared: Vec<String> = match part(&entries, "xl/sharedStrings.xml")? {
@@ -333,7 +334,7 @@ pub fn read_ods(b: &[u8]) -> Result<Vec<Vec<Val>>, String> {
                                             paras += 1;
                                         }
                                         Node::Open { name, .. } if name == "text:s" => {
-                                            text.push(' ')
+                                            text.push(' ');
                                         }
                                         Node::Text(t) => text.push_str(t),
                                         _ => {}

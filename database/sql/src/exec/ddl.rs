@@ -182,7 +182,7 @@ pub(super) fn finish_field(f: &mut dds::FieldDef, c: &ColumnDef) -> Result<()> {
     }
     match &c.default {
         Some(ColumnDefault::Value(Expr::Register(r))) => {
-            f.default = Some(dds::DefaultValue::Expr(register_text(*r)?))
+            f.default = Some(dds::DefaultValue::Expr(register_text(*r)?));
         }
         Some(ColumnDefault::Value(e)) if float_constant(e).is_some() => {
             f.default = float_constant(e).map(dds::DefaultValue::Number);

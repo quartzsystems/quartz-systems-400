@@ -595,7 +595,7 @@ fn user_objects(system: &mut System, user: &str, ty: &str) -> Result<Sys2Data, S
                 .to_string();
             match ty.as_str() {
                 "*CMDAUT" if id.type_code == types::CMD => {
-                    cmds.push(vars(&[("CMDNAME", name), ("CMDLIB", lib), ("CMDAUT", aut)]))
+                    cmds.push(vars(&[("CMDNAME", name), ("CMDLIB", lib), ("CMDAUT", aut)]));
                 }
                 "*DEVAUT" if id.type_code == types::DEVD => {
                     devs.push(vars(&[("DEVNAME", name), ("DEVAUT", aut)]));

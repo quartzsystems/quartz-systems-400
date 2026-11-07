@@ -388,7 +388,7 @@ fn lock(j: &mut Job, svc: i32, cmd: i32, p: u128, large: bool) -> R<i64> {
         match c.lock_range(svc, cmd, kind, whence, start, len) {
             // The service never waits: the job does, retrying.
             Err(Errno::EAGAIN) if blocking => {
-                std::thread::sleep(std::time::Duration::from_millis(20))
+                std::thread::sleep(std::time::Duration::from_millis(20));
             }
             other => break other?,
         }

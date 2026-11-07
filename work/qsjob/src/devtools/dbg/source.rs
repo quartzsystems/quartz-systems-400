@@ -293,7 +293,7 @@ pub fn run(job: &mut Job, host: &Host, surface: &mut Surface, st: &mut State) ->
                 }
             }
             Key::F(_) | Key::Other => {
-                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]))
+                message = Some(crate::display::msgline::say(host, "CPD6A60", &[]));
             }
         }
     }

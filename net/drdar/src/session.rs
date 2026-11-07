@@ -374,6 +374,7 @@ fn refused(what: &str) -> Routed {
 }
 
 impl Conn {
+    #[allow(clippy::too_many_lines)]
     fn run(&mut self, scope: &str, req: &Request) -> Routed {
         let d = &req.desc;
         let key = (scope.to_string(), d.name.clone());

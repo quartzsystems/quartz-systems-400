@@ -243,6 +243,7 @@ impl<H: Host> Session<H> {
     }
 
     /// A `NAMEFMT 0` listing.
+    #[allow(clippy::too_many_lines)]
     fn list0(&mut self, arg: &str, nlst: bool) -> Result<Listed, Reply> {
         let cur = self.curlib().unwrap_or_else(|| "QSYS".into());
         let arg = arg.trim();

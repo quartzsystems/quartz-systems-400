@@ -53,6 +53,7 @@ impl Parser {
     }
 
     /// `GRANT ... TO` (`revoke` false) or `REVOKE ... FROM`.
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn grant(&mut self, revoke: bool) -> Result<crate::ast::Statement> {
         use crate::ast::{Grant, GrantObject, Grantee, Privilege, Statement};
         use crate::lex::Tok;

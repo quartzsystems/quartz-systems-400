@@ -217,7 +217,7 @@ fn attrs_of(c: &Compiled, s: &Sym) -> Vec<String> {
         // A parameter passed by reference, when it is used.
         // (when the compile got as far as laying out storage).
         Storage::Param if !is_value_param(c, s) && c.max_severity <= c.ctl.genlvl => {
-            v.push("BASED(_QRNL_PST+)".into())
+            v.push("BASED(_QRNL_PST+)".into());
         }
         _ => {}
     }

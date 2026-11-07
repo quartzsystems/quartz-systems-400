@@ -213,6 +213,7 @@ fn spare_for(disks: &[NonConfigured], largest_mib: u64) -> Option<NonConfigured>
 }
 
 /// Options 2, 3, 7 and 8: pick the units, confirm, start.
+#[allow(clippy::too_many_lines)]
 fn start_set(env: &mut dyn DstEnv, level: u8, with_spare: bool) -> Flow {
     let units = eligible(env);
     let disks = if with_spare {

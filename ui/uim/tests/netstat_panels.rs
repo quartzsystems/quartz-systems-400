@@ -210,6 +210,7 @@ fn netstat_2_rte_5() {
 }
 
 /// pub400's listening sockets as option 3 lists them, every view's values.
+#[allow(clippy::too_many_lines)]
 fn conns() -> ListState {
     let rows: Vec<Vec<(&str, &str)>> = [
         (

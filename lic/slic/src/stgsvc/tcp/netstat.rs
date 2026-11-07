@@ -370,6 +370,7 @@ fn find_conn<'a>(list: &'a [Conn], key: &str) -> Option<&'a Conn> {
 /// The panel data `what` names: `IFC`, `IFC6`, `IFC5 addr`, `RTE`,
 /// `RTE6`, `RTE5 key`, `RTEOF addr` (option 8 on an interface), `CNN`,
 /// `CNN6`, `CNN5 key`, `CNN8 key`, `STS`.
+#[allow(clippy::too_many_lines)]
 pub fn panel(system: &mut System, what: &str, args: &[String]) -> Result<PanelData, String> {
     let (cfg, st) = super::with(system, |_, rt| (rt.cfg.clone(), rt.st.clone()))?;
     let arg = args.first().map_or("", String::as_str);

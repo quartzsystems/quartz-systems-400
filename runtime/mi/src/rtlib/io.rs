@@ -577,6 +577,7 @@ pub extern "sysv64" fn db_close(env: *mut Env, file: i64) -> i32 {
 /// `db_io(env, file, op, rec, rec_desc, key, key_desc, rrn, fmt,
 /// nolock) -> status`.
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_lines)]
 pub extern "sysv64" fn db_io(
     env: *mut Env,
     file: i64,

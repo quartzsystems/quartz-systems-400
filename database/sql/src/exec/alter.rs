@@ -40,7 +40,7 @@ pub fn alter_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, stmt: &AlterTable) -
     for act in &stmt.actions {
         match act {
             AlterAction::DropPrimaryKey { cascade } => {
-                super::cst::drop(txn, ctx, id, None, DropKind::Unique, *cascade)?
+                super::cst::drop(txn, ctx, id, None, DropKind::Unique, *cascade)?;
             }
             AlterAction::DropConstraint {
                 name,

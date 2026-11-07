@@ -354,6 +354,7 @@ impl SysAct {
 /// F10 look again, F11 steps the views, F24 the key sets, F16 orders by
 /// I/O, F19 looks again every five seconds until a key is pressed;
 /// option 5 works with a job, F20 to F23 run the other displays.
+#[allow(clippy::too_many_lines)]
 pub fn wrksysact(job: &mut Job, host: &Host, surface: &mut Surface) -> Result<String, Fail> {
     use crate::display::surface::Waited;
     use crate::display::uim::LineMsg;

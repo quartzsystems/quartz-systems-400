@@ -65,6 +65,7 @@ const GRAPHIC_CCSID: u16 = 1200;
 /// One `DESCRIBE` row (SQLTYPE, SQLLEN, SQLNAME, CCSID, label) as a
 /// column; without a label, the name is the label.
 #[must_use]
+#[allow(clippy::too_many_lines)]
 pub fn described(row: &[Value]) -> Described {
     let num = |i: usize| row.get(i).and_then(|v| v.as_i64().ok()).unwrap_or(0);
     let code = num(0);

@@ -326,6 +326,7 @@ pub fn program() -> Vec<Insn> {
 /// shared memory calls fail with `EPERM`, and so does an `mmap` of a
 /// shared mapping that can be written.
 #[must_use]
+#[allow(clippy::too_many_lines)]
 pub fn program_with(shared_memory: bool) -> Vec<Insn> {
     let allowed: Vec<u32> = ALLOWED
         .iter()

@@ -282,6 +282,7 @@ fn assets() -> Table {
 /// `HLTEST.ALLTYPES`: one column of every type, seven rows; the
 /// `DECFLOAT`s of rows 1 to 6 are `1234.5678`, `1.5E-30`, `Infinity`,
 /// `-Infinity`, `NaN` and `sNaN`; row 7 is null but for its key.
+#[allow(clippy::too_many_lines)]
 fn all_types() -> Table {
     let mut a = table(
         "HLTEST",
@@ -405,6 +406,7 @@ fn id_name(schema: &str, name: &str, text: &str, journaled: bool) -> Table {
 
 /// Every schema and table.
 #[must_use]
+#[allow(clippy::too_many_lines)]
 pub fn tables() -> (Vec<(String, String)>, Vec<Table>) {
     let mut schemas: Vec<(String, String)> = [
         ("HLINV", "Homelab inventory"),

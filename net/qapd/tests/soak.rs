@@ -252,7 +252,7 @@ fn check(conn: u64, e: &Envelope, expect: &Expect, cancelled: bool) {
             assert_eq!(d.pages, *pages, "connection {conn}");
         }
         Expect::Command(status) => {
-            assert_eq!(e.status, *status, "connection {conn}: {:?}", e.message)
+            assert_eq!(e.status, *status, "connection {conn}: {:?}", e.message);
         }
     }
 }

@@ -118,6 +118,7 @@ fn gap(gaps: &str, session: &str, cmd: &str) -> bool {
 }
 
 /// Replay one transcript.
+#[allow(clippy::too_many_lines)]
 pub fn replay(t: &Transcript, fixture_text: &str, gaps: &str) -> Outcome {
     let host = fixture::world(fixture_text, &t.name);
     let mut s = Session::new(host, oracle_config());

@@ -211,11 +211,11 @@ pub(crate) fn parse_timestamp(text: &str, fmt: &str, ctx: &SqlContext) -> Result
             }
             Piece::Elem(e, _) => match e {
                 "YYYY" | "SYYYY" | "RRRR" | "IYYY" => {
-                    year = digits(&s, &mut pos, 4).ok_or_else(bad)?
+                    year = digits(&s, &mut pos, 4).ok_or_else(bad)?;
                 }
                 "YY" | "IY" => {
-                    year =
-                        u32::from(now.year) / 100 * 100 + digits(&s, &mut pos, 2).ok_or_else(bad)?
+                    year = u32::from(now.year) / 100 * 100
+                        + digits(&s, &mut pos, 2).ok_or_else(bad)?;
                 }
                 "RR" => {
                     let y = digits(&s, &mut pos, 2).ok_or_else(bad)?;
@@ -351,6 +351,7 @@ pub(crate) fn parse_timestamp(text: &str, fmt: &str, ctx: &SqlContext) -> Result
 
 /// A number as `VARCHAR_FORMAT` shows it with a number format; without
 /// one, its plain text.
+#[allow(clippy::too_many_lines)]
 pub(crate) fn number_text(v: &Value, fmt: Option<&str>) -> Result<String> {
     let Some(fmt) = fmt else {
         return Ok(v.as_text());

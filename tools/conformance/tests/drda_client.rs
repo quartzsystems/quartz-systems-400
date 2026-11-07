@@ -80,6 +80,7 @@ fn done(r: Routed) -> sql::embed::Reply {
 
 #[test]
 #[ignore = "needs the primary oracle"]
+#[allow(clippy::too_many_lines)]
 fn connect_to_the_primary_and_read_qstest() {
     let e = Env::load().expect("the oracle environment");
     let c = e

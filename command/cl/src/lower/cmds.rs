@@ -1110,7 +1110,7 @@ impl Gen<'_, '_> {
             };
             match (numeric, t) {
                 (true, VarType::Dec | VarType::Int | VarType::Uint) => {
-                    self.ins(&format!("dec.mov {place}, {from}"))
+                    self.ins(&format!("dec.mov {place}, {from}"));
                 }
                 (false, VarType::Char) => self.ins(&format!("mov {place}, {from}")),
                 _ => self.err(

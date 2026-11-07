@@ -18,6 +18,7 @@ use rpg_oracle::case::{Case, DbStep, DdsKind};
 use rpg_oracle::listing;
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn hlinv_compiles_unmodified() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("hlinv/src");
     let Ok(rd) = std::fs::read_dir(&dir) else {

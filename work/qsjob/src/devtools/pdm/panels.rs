@@ -530,7 +530,8 @@ pub fn work_options(job: &mut Job, host: &Host, surface: &mut Surface, s: &mut S
                             }
                         }
                         other => {
-                            message = Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]))
+                            message =
+                                Some(crate::display::msgline::say(host, "CPD6A7C", &[&other]));
                         }
                     }
                 }

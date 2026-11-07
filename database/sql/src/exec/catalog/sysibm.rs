@@ -1028,6 +1028,7 @@ fn foreign_keys(
     Ok((cols, rows))
 }
 
+#[allow(clippy::too_many_lines)]
 fn statistics(
     txn: &mut Txn<'_>,
     ctx: &SqlContext,
@@ -1142,6 +1143,7 @@ fn statistics(
 
 /// `SQLTYPEINFO`: the primary's rows.
 #[allow(clippy::type_complexity, clippy::items_after_statements)] // one tuple per row
+#[allow(clippy::too_many_lines)]
 fn type_rows(alias: &str) -> (Vec<ColInfo>, Vec<Row>) {
     let c = |n: &str, ty: Ty, null: bool| col(alias, n, ty, null);
     let v128 = Ty::Var(128);

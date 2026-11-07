@@ -150,6 +150,7 @@ fn dir() -> PathBuf {
 
 #[test]
 #[ignore = "bench: run by hand with --release"]
+#[allow(clippy::too_many_lines)]
 fn save_and_restore_to_virtual_media() {
     let mib: u64 = std::env::var("QS400_SAVE_BENCH_MIB")
         .ok()

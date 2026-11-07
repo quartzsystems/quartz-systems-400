@@ -391,7 +391,7 @@ pub fn collect_due(txn: &mut Txn<'_>, now: u64) -> Vec<String> {
     for (f, cols) in due {
         match collect(txn, f, &cols, now) {
             Ok(n) if n > 0 => {
-                lines.push(format!("statistics of {n} columns of file {f} collected"))
+                lines.push(format!("statistics of {n} columns of file {f} collected"));
             }
             Ok(_) => forget(Some(f)),
             Err(e) => {

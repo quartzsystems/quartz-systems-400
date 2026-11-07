@@ -247,6 +247,7 @@ fn open_new() -> (Store, ObjectId, ObjectId) {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn a_compiled_member_becomes_a_module_and_a_program() {
     let src = source(&[
         "**FREE",
@@ -519,6 +520,7 @@ fn srcstmf_incdir_and_infostmf_are_parameters() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn an_rpg_program_from_a_stream_file_with_copy_and_incdir() {
     use ifs::client::IfsClient as _;
     let sys = sysapi::ifs::memory::MemIfs::new();

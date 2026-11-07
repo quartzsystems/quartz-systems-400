@@ -110,6 +110,7 @@ pub fn kvm_available() -> bool {
 /// size is asked for, a virtio keyboard,
 /// serial on stdio, no reboot suppression (restart tests need it), QMP on a
 /// Unix socket.
+#[allow(clippy::too_many_lines)]
 pub fn args(l: &Launch) -> Vec<OsString> {
     let mut a: Vec<OsString> = ["-machine", "q35"].iter().map(OsString::from).collect();
     if l.kvm {

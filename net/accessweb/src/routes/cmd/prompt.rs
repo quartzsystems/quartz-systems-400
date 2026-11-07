@@ -155,6 +155,7 @@ fn control(p: &Param, v: &[String], shown: &str, more: usize) -> String {
 
 /// `GET /cmd/prompt?cmd=`; `POST` from Run command opens it for the
 /// typed command, from the page itself Run, Show command string, Save.
+#[allow(clippy::too_many_lines)]
 pub fn page(rq: &Rq<'_>) -> Response {
     if let Err(r) = rq.policy(policy::CMD_PROMPT, CRUMB) {
         return r;
