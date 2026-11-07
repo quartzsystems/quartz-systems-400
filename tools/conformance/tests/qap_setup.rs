@@ -108,9 +108,11 @@ fn hlinv_sets_up_the_test_systems_database() {
         q("SELECT C_SMALLINT || ' ' || C_INTEGER FROM HLTEST.ALLTYPES WHERE ID = 1"),
         "-32767 2147483601"
     );
+    // Concatenation spells a float as CHAR does, 17 digits of a
+    // double (sql/expected/types/FLOATFMT.out, captured on the primary).
     assert_eq!(
         q("SELECT C_DOUBLE || ' ' || C_REAL FROM HLTEST.ALLTYPES WHERE ID = 2"),
-        "1E300 3.4028235E38"
+        "1.0000000000000001E300 3.4028234663852886E38"
     );
     assert_eq!(
         q("SELECT C_DOUBLE FROM HLTEST.ALLTYPES WHERE ID = 3"),
@@ -133,9 +135,18 @@ fn hlinv_sets_up_the_test_systems_database() {
         "1"
     );
     assert_eq!(q("SELECT COUNT(*) FROM HLPAY.SALARIES"), "2");
+    // The 150 tables, beside the catalog views CREATE SCHEMA makes.
     assert_eq!(
-        q("SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'HLMANY'"),
+        q(
+            "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'HLMANY' AND TABLE_TYPE = 'T'"
+        ),
         "150"
+    );
+    assert_eq!(
+        q(
+            "SELECT COUNT(*) FROM QSYS2.SYSTABLES WHERE TABLE_SCHEMA = 'HLMANY' AND TABLE_TYPE <> 'T' AND (TABLE_TYPE <> 'V' OR TABLE_NAME NOT LIKE 'SYS%')"
+        ),
+        "0"
     );
     assert_eq!(
         q("SELECT COUNT(*) FROM QSYS2.SYSSCHEMAS WHERE SCHEMA_NAME LIKE 'ARCH%'"),
