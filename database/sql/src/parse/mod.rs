@@ -11,6 +11,7 @@ mod change;
 mod cte;
 mod ddl;
 mod dml;
+mod each;
 mod expr;
 mod from;
 mod integrity;
@@ -19,6 +20,7 @@ mod olap;
 mod sequence;
 mod variable;
 
+pub use each::Parsed;
 pub use olap::GROUPING_SETS;
 mod json;
 mod pl;
@@ -620,7 +622,7 @@ impl Parser {
                 self.integer()?;
             } else if self.eat_words(&["FOR", "MIXED", "DATA"]) {
                 // The job's CCSID 37 has no mixed form (the primary: SQL0604).
-                return Err(crate::exec::cast::no_mixed());
+                return Err(crate::words::no_mixed());
             } else if self.eat_words(&["FOR", "SBCS", "DATA"]) {
             } else {
                 return Ok(spec);

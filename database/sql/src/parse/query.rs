@@ -142,7 +142,7 @@ impl Parser {
                 expr: Expr::Column(crate::ast::ColumnRef {
                     table: Some(t),
                     column: Ident {
-                        value: crate::exec::ORDER_COLUMN.into(),
+                        value: crate::words::ORDER_COLUMN.into(),
                         delimited: true,
                     },
                 }),

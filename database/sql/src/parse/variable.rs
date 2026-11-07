@@ -107,13 +107,13 @@ impl Parser {
         if self.eat_word("ARRAY") {
             self.expect_sym("[")?;
             let max = if self.eat_sym("]") {
-                crate::exec::array::UNBOUNDED
+                crate::words::UNBOUNDED
             } else {
                 let n = match self.tok().clone() {
                     crate::lex::Tok::Num(n) => n
                         .parse::<u64>()
                         .ok()
-                        .filter(|n| (1..=crate::exec::array::UNBOUNDED).contains(n)),
+                        .filter(|n| (1..=crate::words::UNBOUNDED).contains(n)),
                     _ => None,
                 };
                 let Some(n) = n else {
