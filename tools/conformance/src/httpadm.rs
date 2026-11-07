@@ -115,6 +115,11 @@ pub(crate) fn http_at(
 
 /// A GET of `path` over TLS, the certificate taken as it is.
 pub(crate) fn tls_get(port: u16, path: &str) -> Result<Reply, String> {
+    tls_at(port, "GET", path, None, None)
+}
+
+/// One request over TLS, the certificate taken as it is.
+pub(crate) fn tls_at(port: u16, method: &str, path: &str, cookie: Option<&str>, form: Option<&str>) -> Result<Reply, String> {
     let policy = tls::policy::TlsPolicy::opsys();
     let cfg = tls::config::client_config(
         &policy,
@@ -124,7 +129,7 @@ pub(crate) fn tls_get(port: u16, path: &str) -> Result<Reply, String> {
     )
     .map_err(|e| e.to_string())?;
     let name = tls::config::server_name("qs400").map_err(|e| e.to_string())?;
-    let req = request_bytes("GET", path, None, None);
+    let req = request_bytes(method, path, cookie, form);
     let end = Instant::now() + Duration::from_secs(30);
     loop {
         let r = connect(port).and_then(|c| {

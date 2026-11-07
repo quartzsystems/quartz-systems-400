@@ -643,6 +643,7 @@ impl Suite {
         reports.push(self.step(&mut s, "86 HTTP server instance", Self::http_instance)?);
         reports.push(self.step(&mut s, "87 HTTP administration", Self::http_admin)?);
         reports.push(self.step(&mut s, "88 Navigator", Self::navigator)?);
+        reports.push(self.step(&mut s, "153 Access for Web", Self::access_web)?);
         reports.push(self.step(&mut s, "89 QAP server", Self::qap_server)?);
         reports.push(self.step(&mut s, "90 QAP lanes", Self::qap_lanes)?);
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);
