@@ -547,3 +547,17 @@ fn binder_diagnostics_are_the_report() {
     }
     verdict("CRTPGM/CRTSRVPGM", binds.len(), &bad);
 }
+
+/// The fixture QEMU step 161 compiles through QAP: one error, on line 42.
+#[test]
+fn the_line_42_fixture_reports_one_diagnostic() {
+    let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("qap/COMPILE42.rpgle");
+    let (name, lines) = hlinv::read(&p);
+    let case = Case::parse(&name, &lines.join("\n"));
+    let c = compile(&case, None);
+    let diags = rpgc::report::diagnostics(&c, None, &mut no_help);
+    assert_eq!(diags.len(), 1, "{diags:?}");
+    assert_eq!(diags[0].line, 42);
+    let listed = rpg_listing(&c.listing, &name, &members_of(&member(&case), &[]));
+    assert_eq!(keys(&diags), listed);
+}
