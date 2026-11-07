@@ -1,0 +1,105 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIWRKDDMF: WRKDDMF, the DDM files the name selects with their
+.* options. Options 5 and 6 are DSPFD of the file, F22 every value whole.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=POSCL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=LCLCL BASETYPE='CHAR 21'.
+:ECLASS.
+:CLASS NAME=RMTCL BASETYPE='CHAR 33'.
+:ECLASS.
+:CLASS NAME=LOCCL BASETYPE='CHAR 255'.
+:ECLASS.
+:VAR NAME=POSTO CLASS=POSCL.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=LCLFILE CLASS=LCLCL.
+:VAR NAME=RMTFILE CLASS=RMTCL.
+:VAR NAME=RMTLOC CLASS=LOCCL.
+:LISTDEF NAME=FILES VARS='OPT LCLFILE RMTFILE RMTLOC'.
+:KEYL NAME=KEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F9 ACTION='RETURN 9'.F9=Print list
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F22 ACTION='RETURN 22'.F22=Display entire field
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=WRKDDMF KEYL=KEYS HELP=WRKDDMFH ENTER='RETURN 0' TOPSEP=SPACE.Work with DDM Files
+:DATA DEPTH=2.
+:DATACOL WIDTH=24.
+:DATACOL WIDTH=78.
+:DATAI VAR=POSTO USAGE=INOUT HELP='FLD/POSTO'.Position to
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=FILES SCROLL=YES MAXHEAD=2.(No DDM files)
+:LISTACT OPTION=1 ENTER='CMD ?CRTDDMF' HELP='WRKDDMF/OPTIONS'.1=Create DDM file
+:LISTACT OPTION=2 ENTER='CMD ?CHGDDMF FILE(&LCLFILE.)' HELP='WRKDDMF/OPTIONS'.2=Change DDM file
+:LISTACT OPTION=4 ENTER='CMD DLTF FILE(&LCLFILE.)' HELP='WRKDDMF/OPTIONS'.4=Delete
+:LISTACT OPTION=5 ENTER='CMD DSPFD FILE(&LCLFILE.)' HELP='WRKDDMF/OPTIONS'.5=Display details
+:LISTACT OPTION=6 ENTER='CMD DSPFD FILE(&LCLFILE.) OUTPUT(*PRINT)' HELP='WRKDDMF/OPTIONS'.6=Print details
+:LISTCOL VAR=OPT USAGE=INPUT HELP='WRKDDMF/OPT'.Opt
+:LISTCOL VAR=LCLFILE USAGE=OUTPUT HELP='FLD/LCLFILE'.Local File
+:LISTCOL VAR=RMTFILE USAGE=OUTPUT ATCOL=29 HELP='FLD/RMTFILE'.Remote File
+:LISTCOL VAR=RMTLOC USAGE=OUTPUT ATCOL=63 MAXWIDTH=14 HELP='FLD/RMTLOC'.Remote Location
+:ELIST.
+:EPANEL.
+:HELP NAME=WRKDDMFH.Work with DDM Files - Help
+:P.The DDM files the name selects: for each, the local file a program
+opens and the file and system the requests go to.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F3 and F12 leave, F5 reads the files again, F22 shows each remote
+file and location whole.
+:EHELP.
+.* Item, key and option help.
+:HELP NAME='FLD/POSTO'.Position to
+:P.Type the first characters of a local file name to put that file at
+the top of the list.
+:EHELP.
+:HELP NAME='WRKDDMF/OPT'.Option
+:P.Type the number of an option next to an entry and press Enter. The
+options the list allows are shown above it; F1 on one of them explains
+it.
+:EHELP.
+:HELP NAME='FLD/LCLFILE'.Local File
+:P.The DDM file on this system, with its library.
+:EHELP.
+:HELP NAME='FLD/RMTFILE'.Remote File
+:P.The file on the remote system the DDM file's requests reach.
+:EHELP.
+:HELP NAME='FLD/RMTLOC'.Remote Location
+:P.The system the requests go to: its host name or address, or the
+relational database directory entry that names it.
+:EHELP.
+:HELP NAME='WRKDDMF/OPTIONS'.Options
+:P.Type an option number next to one or more entries and press Enter.
+The option runs for each entry it is typed next to, in order.
+:PARML.
+:PT.1=Create DDM file
+:PD.Type 1 and press Enter to create a DDM file. The Create DDM File
+(CRTDDMF) command is prompted.
+:PT.2=Change DDM file
+:PD.Type 2 next to an entry and press Enter to change it. The Change
+DDM File (CHGDDMF) command is prompted for the entry.
+:PT.4=Delete
+:PD.Type 4 next to an entry and press Enter to delete it. The Delete
+File (DLTF) command runs for the entry.
+:PT.5=Display details
+:PD.Type 5 next to an entry and press Enter to see its attributes. The
+Display File Description (DSPFD) command runs for the entry.
+:PT.6=Print details
+:PD.Type 6 next to an entry and press Enter to print its attributes. The
+Display File Description (DSPFD) command prints them for the entry.
+:EPARML.
+:EHELP.
+:EPNLGRP.
