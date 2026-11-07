@@ -33,6 +33,11 @@ use stg::remote::RemoteIfs;
 use ipc::WireError;
 use ipc::chan::Chan;
 use qap_proto::ops::command::CommandDefinition;
+use qap_proto::ops::develop::{
+    ChangeMember, CopyMember, CreateMember, DescribeObject, Library, LibraryList, ListLibraries,
+    ListMembers, ListObjects, MemberData, MemberEntry, ObjectDescription, ObjectEntry,
+    RenameMember, SetLibraryList,
+};
 use qap_proto::ops::manage::{
     DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType,
     SetSystemValue, Subsystem, SystemValue, SystemValues,
@@ -50,17 +55,17 @@ use qap_proto::ops::sql::{
     Schemas, SetOptions, Tables,
 };
 use qap_proto::ops::system::{Product, SystemInfo};
-use qap_proto::types::ObjectName;
+use qap_proto::types::{MemberName, ObjectName, SourceRecord};
 use qap_proto::{Secret, ServerMessage, Status, Token};
 use qapd::manage::ExitRequest;
 use qapd::sessions::EndedBy;
 use qapd::sql::SqlResult;
-use qapd::{Canceller, Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
+use qapd::{Canceller, Compiled, Ending, Host, Ran, Refusal, SystemId, ThreadHost, Threads};
 use stg::{Client, Link, QapRefused, QapSession, Shared};
 use wm::ctl::{Start, ToJob};
 
-use super::manage;
 use super::sql::{COMMAND, IDLE, LaneDb, Running, SQL, ThreadDb};
+use super::{develop, manage};
 use crate::console::Console;
 use crate::qapsql::{Lane, catalog};
 
@@ -322,6 +327,29 @@ impl Host for JobHost {
 
     fn sql_end(&mut self) {
         self.sql.end(&mut LaneDb(&self.link, &mut self.console));
+    }
+
+    // `Develop` 1, 2 and 15 (version 8): the job's library list and
+    // compiles, in the lane.
+
+    fn library_list(&mut self) -> Result<LibraryList, Refusal> {
+        Ok(develop::library_list(&mut self.link.borrow_mut()))
+    }
+
+    fn set_library_list(&mut self, req: &SetLibraryList) -> Result<LibraryList, Refusal> {
+        develop::set_library_list(&mut self.console, req)?;
+        Ok(develop::library_list(&mut self.link.borrow_mut()))
+    }
+
+    fn compile(
+        &mut self,
+        command: &str,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<Compiled, Refusal> {
+        self.running.store(COMMAND, Ordering::SeqCst);
+        let r = super::compile::run(&self.link, &mut self.console, command, cancelled);
+        self.running.store(IDLE, Ordering::SeqCst);
+        r
     }
 
     fn threads(&mut self) -> Threads {
@@ -699,5 +727,69 @@ impl ThreadHost for JobThread {
         manage::power_down_allowed(&self.cx(), req)?;
         let r = self.link().with(|l| l.qap_mgmt_power(req.clone()));
         r.map_err(|e| self.refusal(&e))
+    }
+
+    // `Develop` 3 to 14 (version 8): `develop.rs`, and the service's
+    // member requests.
+
+    fn list_libraries(&mut self, req: &ListLibraries) -> Result<Vec<Library>, Refusal> {
+        Ok(develop::list_libraries(&self.cx(), req))
+    }
+
+    fn list_objects(&mut self, req: &ListObjects) -> Result<Vec<ObjectEntry>, Refusal> {
+        develop::list_objects(&self.cx(), req)
+    }
+
+    fn describe_object(&mut self, req: &DescribeObject) -> Result<ObjectDescription, Refusal> {
+        develop::describe_object(&self.cx(), req)
+    }
+
+    fn list_members(&mut self, req: &ListMembers) -> Result<Vec<MemberEntry>, Refusal> {
+        develop::list_members(&self.cx(), req)
+    }
+
+    fn read_member(&mut self, member: &MemberName, lock: bool) -> Result<MemberData, Refusal> {
+        let r = self.link().with(|l| l.qap_dev_read(member.clone(), lock));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn write_member(
+        &mut self,
+        member: &MemberName,
+        records: Vec<SourceRecord>,
+        renumber: bool,
+        srctype: Option<&str>,
+        text: Option<&str>,
+    ) -> Result<u32, Refusal> {
+        let (st, tx) = (srctype.map(String::from), text.map(String::from));
+        let r = self
+            .link()
+            .with(|l| l.qap_dev_write(member.clone(), records, renumber, st, tx));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn unlock_member(&mut self, member: &MemberName) -> Result<(), Refusal> {
+        let r = self.link().with(|l| l.qap_dev_unlock(member.clone()));
+        r.map_err(|e| self.refusal(&e))
+    }
+
+    fn create_member(&mut self, req: &CreateMember) -> Result<(), Refusal> {
+        develop::create_member(&self.cx(), req)
+    }
+
+    fn copy_member(&mut self, req: &CopyMember) -> Result<(), Refusal> {
+        develop::copy_member(&self.cx(), req)
+    }
+
+    fn rename_member(&mut self, req: &RenameMember) -> Result<(), Refusal> {
+        develop::rename_member(&self.cx(), req)
+    }
+
+    fn delete_member(&mut self, member: &MemberName) -> Result<(), Refusal> {
+        develop::delete_member(&self.cx(), member)
+    }
+
+    fn change_member(&mut self, req: &ChangeMember) -> Result<(), Refusal> {
+        develop::change_member(&self.cx(), req)
     }
 }

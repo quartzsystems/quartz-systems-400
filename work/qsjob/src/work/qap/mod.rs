@@ -7,7 +7,9 @@
 //! port; role `QAPCNN` is one connection's job in `QUSRWRK`.
 
 pub mod commands;
+pub mod compile;
 pub mod conn;
+pub mod develop;
 pub mod host;
 pub mod listener;
 pub mod manage;
