@@ -137,10 +137,16 @@ impl Suite {
             &["DEPTJOBD"],
         )?;
         let _ = s.command("strsbs QSYS/QBATCH", CMD);
-        s.command(
+        let first = s.command(
             "SBMJOB CMD(DLYJOB DLY(1)) JOB(ACGJOB1) JOBQ(QGPL/QBATCH) ACGCDE(DEPT42)",
             CMD,
         )?;
+        // `Job 000145/QSYS/ACGJOB1 submitted ...`: its name for DSPJOB.
+        let job1 = first
+            .split_whitespace()
+            .find(|w| w.ends_with("/ACGJOB1"))
+            .unwrap_or("ACGJOB1")
+            .to_string();
         s.command(
             "SBMJOB CMD(CHGACGCDE ACGCDE(SECOND)) JOB(ACGJOB2) JOBQ(QGPL/QBATCH) ACGCDE(FIRST)",
             CMD,
@@ -171,7 +177,14 @@ impl Suite {
         }
         if !all.contains("ACGJOB1") || all.matches("ACGJOB2").count() < 2 {
             let mut why = String::new();
-            for cmd in ["wrkjobq QGPL/QBATCH", "wrksbs", "wrkactjob", "svc.txn stats"] {
+            let dspjob = format!("svc.dspjob JOB({job1})");
+            for cmd in [
+                "wrkjobq QGPL/QBATCH",
+                "wrksbs",
+                "wrkactjob",
+                "svc.txn stats",
+                dspjob.as_str(),
+            ] {
                 why.push_str(&s.command(cmd, CMD).unwrap_or_default());
             }
             return Err(format!(

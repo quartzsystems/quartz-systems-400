@@ -299,6 +299,22 @@ fn dspjob(system: &mut System, p: &Params) -> Result<String, String> {
     for (k, v) in rows {
         let _ = writeln!(out, "  {k:<38} {v}");
     }
+    // Where each thread waits in the kernel (the service console's view,
+    // for a job that hangs).
+    if let Ok(tasks) = std::fs::read_dir(format!("/proc/{}/task", j.pid)) {
+        for t in tasks.flatten() {
+            let path = t.path();
+            let wchan = std::fs::read_to_string(path.join("wchan")).unwrap_or_default();
+            let comm = std::fs::read_to_string(path.join("comm")).unwrap_or_default();
+            let _ = writeln!(
+                out,
+                "  thread {} {}: {}",
+                t.file_name().to_string_lossy(),
+                comm.trim(),
+                wchan.trim()
+            );
+        }
+    }
     Ok(out)
 }
 
