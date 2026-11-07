@@ -101,15 +101,19 @@ pub fn compare_in(dir: &Path, golden: &str, screen: &Screen) {
     compare_ours_in(dir, golden, screen, &[]);
 }
 
-/// [`compare_in`] with the capture's IBM sentences replaced by our
-/// wording (`(IBM's, ours)`): the place on the screen is the interface,
-/// the words are ours.
-pub fn compare_ours_in(dir: &Path, golden: &str, screen: &Screen, ours: &[(&str, &str)]) {
+/// [`compare_in`] with rows of the capture that hold IBM's sentences
+/// given our wording (`(row, ours)`, rows from 1): the text starts
+/// where the capture's does, so the place stays the interface.
+pub fn compare_ours_in(dir: &Path, golden: &str, screen: &Screen, ours: &[(usize, &str)]) {
     let want: Vec<String> = golden_rows_in(dir, golden)
         .into_iter()
-        .map(|r| {
-            ours.iter()
-                .fold(r, |r, (theirs, mine)| r.replace(theirs, mine))
+        .enumerate()
+        .map(|(i, r)| match ours.iter().find(|(n, _)| *n == i + 1) {
+            Some((_, mine)) => {
+                let at = r.len() - r.trim_start().len();
+                format!("{}{mine}", &r[..at])
+            }
+            None => r,
         })
         .collect();
     let got = screen.text_rows();

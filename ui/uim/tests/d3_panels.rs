@@ -141,9 +141,6 @@ fn wrkjrnrcv_with_none_found() {
         &d3(),
         "wrkjrnrcv",
         &render(&g, "WRKJRNRCV", &d, &v71(&g)).unwrap(),
-        &[(
-            "(Cannot find object to match specified name.)",
-            "(No journal receivers match the name)",
-        )],
+        &[(10, "(No journal receivers match the name)")],
     );
 }
