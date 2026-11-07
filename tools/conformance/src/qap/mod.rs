@@ -36,10 +36,15 @@
 //! Step 123, the `Manage` service as `QAPTEST` and `QSECOFR`: see
 //! `manage.rs`.
 //!
+//! Step 160, version 8 (`Develop`, `Jobs`, `Sql` 12 and 13) as
+//! `QAPTEST`, the version 7 gates and the member exit test: see
+//! `develop.rs`.
+//!
 //! Step 93, the `Messages` service and the spool watches as `QAPTEST`
 //! and `QAPTEST2`: see `messages.rs`.
 
 mod client;
+mod develop;
 mod ifs;
 mod manage;
 mod messages;
@@ -105,6 +110,25 @@ impl Server {
         }
         Ok(c)
     }
+
+    /// A new connection, hello'd offering versions 1 to `max`.
+    fn open_at(&mut self, max: u16) -> Result<Older, String> {
+        let (mut c, der) = client::connect(self.port, CN, &self.pin)?;
+        if self.pin.is_empty() {
+            self.pin = der;
+        }
+        let h = c.hello_max(max)?;
+        Ok(Older {
+            conn: c,
+            hello_reply: h,
+        })
+    }
+}
+
+/// A connection of an older version and its `Hello`.
+struct Older {
+    conn: Conn,
+    hello_reply: qap_proto::ops::connection::HelloReply,
 }
 
 /// The profile, the certificate and `*QAP` started; the forwarded port.
@@ -428,6 +452,31 @@ impl Suite {
             .map_err(|e| format!("MANAGE: {e}"));
         let _ = a.call(Op::SignOff, &());
         let _ = sec.call(Op::SignOff, &());
+        expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
+        r.map_err(|e| with_history(s, &e))
+    }
+
+    /// Step 160: QAP version 8 as `QAPTEST`: `develop.rs`.
+    pub(crate) fn qap_develop(&self, s: &mut Session) -> Result<String, String> {
+        let mut srv = setup(self, s)?;
+        // What a run before left is fine; the step's QAP calls check.
+        let _ = s.command("CRTLIB LIB(HLINV) TYPE(*TEST) TEXT('QAP step 160')", SLOW);
+        let _ = s.command("CRTSRCPF FILE(HLINV/QRPGLESRC) RCDLEN(112)", SLOW);
+        let mut v7 = srv.open_at(7)?;
+        let h7 = v7.hello_reply.clone();
+        v7.conn.sign_on(USER, PASSWORD)?;
+        let mut a = srv.open()?;
+        let session = a.sign_on(USER, PASSWORD)?;
+        let own = a.job_info()?.job;
+        let mut b = srv.open()?;
+        b.attach(&session.token)?;
+        let r = develop::gates(&mut v7.conn, &h7)
+            .and_then(|g| Ok(format!("{g}; {}", develop::develop(&mut a, &mut b)?)))
+            .and_then(|d| Ok(format!("{d}; {}", develop::jobs(&mut a, &own)?)))
+            .and_then(|d| Ok(format!("{d}; {}", develop::catalog(&mut a)?)))
+            .map_err(|e| format!("DEVELOP: {e}"));
+        let _ = v7.conn.call(Op::SignOff, &());
+        let _ = a.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         r.map_err(|e| with_history(s, &e))
     }
