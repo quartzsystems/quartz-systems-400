@@ -2,8 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `DSPIPLA` (`QUIIPLA`), `WRKMSGD` (`QUIDSPMSGD`'s work panel) and
-//! `WRKRDBDIRE` (`QUIRDBDIR`).
+//! `DSPIPLA` (`QUIIPLA`), `WRKMSGD` (`QUIDSPMSGD`'s work panel),
+//! `WRKRDBDIRE` (`QUIRDBDIR`) and `WRKDDMF` (`QUIWRKDDMF`).
 
 use cmd::Resolved;
 use mi::Job;
@@ -184,6 +184,71 @@ pub fn wrkrdbdire(
             Response::Print | Response::Return(6) => d.error("CPD9B84", &[]),
             Response::Return(22) => {
                 d.info("CPI9B81", &[]);
+            }
+            _ => {}
+        }
+    }
+}
+
+/// `WRKDDMF FILE()`: the DDM files the name selects; options 5 and 6
+/// run `DSPFD`, F22 shows every remote file and location whole.
+pub fn wrkddmf(
+    job: &mut Job,
+    host: &Host,
+    surface: &mut Surface,
+    r: &Resolved,
+) -> Result<String, Fail> {
+    let (name, lib) = qual(r, "FILE");
+    let mut d = dialog(host, "QUIWRKDDMF")?;
+    d.copyright = true;
+    loop {
+        let files = crate::command::ddm::ddm_files(&host.link, &lib, &name);
+        let location = |f: &ddm::objects::DdmFile| {
+            if f.rmtloc == "*RDB" {
+                f.rdb.trim_matches('\'').to_string()
+            } else {
+                f.rmtloc.trim_matches('\'').to_string()
+            }
+        };
+        let rows = files
+            .iter()
+            .map(|(l, f)| {
+                vec![
+                    ("LCLFILE".to_string(), format!("{l}/{}", f.file)),
+                    ("RMTFILE".to_string(), f.rmtfile.clone()),
+                    ("RMTLOC".to_string(), location(f)),
+                ]
+            })
+            .collect();
+        fill(&mut d, "FILES", rows);
+        let pos = d.get("POSTO").trim().to_ascii_uppercase();
+        if !pos.is_empty() {
+            let at = files.iter().position(|(_, f)| f.file >= pos);
+            d.list_mut("FILES").top = at.unwrap_or(0);
+            d.set("POSTO", "");
+        }
+        match show(&mut d, surface, "WRKDDMF")? {
+            Response::Exit | Response::Cancel | Response::Gone => return Ok(String::new()),
+            Response::Options(choices) => act(job, host, &mut d, &choices, &mut |_, _| Ok(()))?,
+            Response::Print | Response::Return(9) => d.error("CPD9B84", &[]),
+            Response::Return(22) => {
+                let body: Vec<String> = files
+                    .iter()
+                    .map(|(l, f)| format!("{l}/{}  {}  {}", f.file, f.rmtfile, location(f)))
+                    .collect();
+                // The report's title is the panel's.
+                let title = d
+                    .group
+                    .panel("WRKDDMF")
+                    .map(|p| uim::model::Span::plain(&p.title))
+                    .unwrap_or_default();
+                crate::panels::system2::view_report(
+                    host,
+                    surface,
+                    &title,
+                    "QSYSPRT",
+                    &body.join("\n"),
+                )?;
             }
             _ => {}
         }
