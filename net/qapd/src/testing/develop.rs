@@ -183,6 +183,7 @@ fn lib(name: &str, kind: LibraryKind, text: &str, only: Option<&'static str>) ->
 impl Develop {
     /// The fixtures.
     #[must_use]
+    #[allow(clippy::too_many_lines)] // the fixtures
     pub fn shipped() -> Self {
         use LibraryKind::{Production, Test};
         let libs = vec![

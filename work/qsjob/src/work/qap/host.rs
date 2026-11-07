@@ -38,6 +38,7 @@ use qap_proto::ops::develop::{
     ListMembers, ListObjects, MemberData, MemberEntry, ObjectDescription, ObjectEntry,
     RenameMember, SetLibraryList,
 };
+use qap_proto::ops::jobs::{EndJob, JobEntry, JobLogEntry, ListJobs};
 use qap_proto::ops::manage::{
     DiskUnits, EndSubsystem, HardwareResources, IplStatus, PowerDown, Ptf, ResourceType,
     SetSystemValue, Subsystem, SystemValue, SystemValues,
@@ -51,11 +52,11 @@ use qap_proto::ops::spool::{
     SpooledFiles,
 };
 use qap_proto::ops::sql::{
-    Columns, Execute, Executed, Fetch, Fetched, ListColumns, ListSchemas, ListTables, Prepared,
-    Schemas, SetOptions, Tables,
+    Columns, Execute, Executed, Fetch, Fetched, Indexes, ListColumns, ListIndexes, ListRoutines,
+    ListSchemas, ListTables, Prepared, Routine, Schemas, SetOptions, Tables,
 };
 use qap_proto::ops::system::{Product, SystemInfo};
-use qap_proto::types::{MemberName, ObjectName, SourceRecord};
+use qap_proto::types::{JobId, MemberName, ObjectName, SourceRecord};
 use qap_proto::{Secret, ServerMessage, Status, Token};
 use qapd::manage::ExitRequest;
 use qapd::sessions::EndedBy;
@@ -65,7 +66,7 @@ use stg::{Client, Link, QapRefused, QapSession, Shared};
 use wm::ctl::{Start, ToJob};
 
 use super::sql::{COMMAND, IDLE, LaneDb, Running, SQL, ThreadDb};
-use super::{develop, manage};
+use super::{develop, jobs, manage};
 use crate::console::Console;
 use crate::qapsql::{Lane, catalog};
 
@@ -791,5 +792,37 @@ impl ThreadHost for JobThread {
 
     fn change_member(&mut self, req: &ChangeMember) -> Result<(), Refusal> {
         develop::change_member(&self.cx(), req)
+    }
+
+    // `Jobs` (version 8): `jobs.rs`.
+
+    fn list_jobs(&mut self, req: &ListJobs) -> Result<Vec<JobEntry>, Refusal> {
+        jobs::list_jobs(&self.cx(), req)
+    }
+
+    fn job_log(&mut self, job: &JobId) -> Result<Vec<JobLogEntry>, Refusal> {
+        jobs::job_log(&self.cx(), job)
+    }
+
+    fn hold_job(&mut self, job: &JobId) -> Result<(), Refusal> {
+        jobs::hold_job(&self.cx(), job, true)
+    }
+
+    fn release_job(&mut self, job: &JobId) -> Result<(), Refusal> {
+        jobs::hold_job(&self.cx(), job, false)
+    }
+
+    fn end_job(&mut self, req: &EndJob) -> Result<(), Refusal> {
+        jobs::end_job(&self.cx(), req)
+    }
+
+    // `Sql` 12 and 13 (version 8): the catalog, as 9 to 11.
+
+    fn list_routines(&mut self, req: &ListRoutines) -> Result<Vec<Routine>, Refusal> {
+        catalog::list_routines(&mut ThreadDb(&mut self.link()), req)
+    }
+
+    fn list_indexes(&mut self, req: &ListIndexes) -> Result<Indexes, Refusal> {
+        catalog::list_indexes(&mut ThreadDb(&mut self.link()), req)
     }
 }

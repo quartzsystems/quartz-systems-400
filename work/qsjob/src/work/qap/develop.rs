@@ -13,6 +13,8 @@
 //! `CPYSRCF`, `RNMM`, `RMVM` and `CHGPFM` analyzed as typed lines and
 //! run in the service, with their authority checks and messages.
 
+use std::fmt::Write as _;
+
 use qap_proto::Status;
 use qap_proto::ops::develop::{
     Attribute, ChangeMember, CopyMember, CreateMember, DescribeObject, Library, LibraryKind,
@@ -40,6 +42,7 @@ fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
 
 /// `CYYMMDDHHMMSS` in local time `offset_min` from UTC, as milliseconds
 /// since 1970; 0 when it is not one.
+#[allow(clippy::many_single_char_names)] // the date's fields
 pub(super) fn ms_of(t: &str, offset_min: i32) -> i64 {
     let t = t.trim();
     let n = |a: usize, b: usize| t.get(a..b).and_then(|x| x.parse::<i64>().ok());
@@ -307,8 +310,8 @@ pub(super) fn describe_object(
         up(&req.object.name),
         up(&req.r#type),
     );
-    let (l, n, t) = (lib.clone(), name.clone(), ty.clone());
-    let Some(o) = cx.shared.borrow_mut().with(|k| k.object(l, n, t)) else {
+    let (l, nm, t) = (lib.clone(), name.clone(), ty.clone());
+    let Some(o) = cx.shared.borrow_mut().with(|k| k.object(l, nm, t)) else {
         return Err(refuse(cx, Status::NotFound, "CPF9801", &[&name, &lib, &ty]));
     };
     let detail = cx
@@ -468,10 +471,10 @@ pub(super) fn change_member(cx: &Ctx<'_>, req: &ChangeMember) -> Result<(), Refu
         } else {
             up(t)
         };
-        line.push_str(&format!(" SRCTYPE({t})"));
+        let _ = write!(line, " SRCTYPE({t})");
     }
     if let Some(t) = &req.text {
-        line.push_str(&format!(" TEXT({})", quoted(t)));
+        let _ = write!(line, " TEXT({})", quoted(t));
     }
     if req.srctype.is_none() && req.text.is_none() {
         // Nothing to change: the member must still be there.
