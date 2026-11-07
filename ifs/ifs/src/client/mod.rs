@@ -634,10 +634,19 @@ pub fn replace(c: &dyn IfsClient, path: &str, data: &[u8], mode: u32) -> Result<
     };
     let tmp = format!("{path}.tmp");
     put(&tmp, O_WRONLY | O_CREAT | O_TRUNC)?;
-    let me = c.dspaut(&tmp).map(|a| a.owner);
-    let swap = match (&own, &me) {
+    // The new file replaces the old only when it has the old one's
+    // owner, group, list and every authority (`*PUBLIC` changed by
+    // `CHGAUT` too); else the old file is written in place.
+    let mine = c.dspaut(&tmp);
+    let swap = match (&own, &mine) {
         (None, _) => true,
-        (Some(a), Ok(me)) => a.owner == *me && a.entries.iter().all(|e| e.role != Role::Private),
+        (Some(a), Ok(t)) => {
+            a.owner == t.owner
+                && a.group == t.group
+                && a.autl == t.autl
+                && a.entries.iter().all(|e| e.role != Role::Private)
+                && a.entries == t.entries
+        }
         (Some(_), Err(_)) => false,
     };
     if swap {
