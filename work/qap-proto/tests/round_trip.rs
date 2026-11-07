@@ -79,7 +79,8 @@ fn enums() {
     }
     assert!(decode::<Status>(&16u16.to_le_bytes()).is_err());
     assert!(decode::<Kind>(&[4]).is_err());
-    assert!(decode::<Service>(&[9]).is_err());
+    let next = u8::try_from(Service::ALL.len()).unwrap();
+    assert!(decode::<Service>(&[next]).is_err());
     for (i, s) in SpoolStatus::ALL.iter().enumerate() {
         same(s);
         assert_eq!(encode(s), [u8::try_from(i).unwrap()]);
@@ -439,7 +440,7 @@ fn values_by_version() {
     assert_eq!(Service::of_version(4), Service::ALL[..6].to_vec());
     assert_eq!(Service::of_version(5), Service::ALL[..7].to_vec());
     assert_eq!(Service::of_version(6), Service::ALL[..8].to_vec());
-    assert_eq!(Service::of_version(7), Service::ALL.to_vec());
+    assert_eq!(Service::of_version(7), Service::ALL[..9].to_vec());
     assert_eq!(encode(&Service::Command), [3]);
     assert_eq!(encode(&Service::Spool), [4]);
     for code in 1..=7 {

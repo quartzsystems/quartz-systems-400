@@ -2477,6 +2477,7 @@ dependencies = [
 name = "qap-proto"
 version = "0.1.0"
 dependencies = [
+ "compdiag",
  "ipc",
  "thiserror",
 ]
