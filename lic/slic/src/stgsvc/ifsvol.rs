@@ -224,8 +224,12 @@ pub const UNMOUNTED: &str = "IFS unmounted";
 pub fn close() -> Option<String> {
     let sv = served().take()?;
     rustix::fs::sync();
-    if plat::mounted(QOPENSYS_EXEC).is_some() {
-        let _ = plat::unmount_xfs(QOPENSYS_EXEC);
+    // Every job has ended: a process still in the IFS (a program a job
+    // started and left) would keep the filesystem alive under a stopped
+    // device, and the stop would wait for it forever.
+    end_holders();
+    if plat::mounted(QOPENSYS_EXEC).is_some() && plat::unmount_xfs(QOPENSYS_EXEC).is_err() {
+        let _ = rustix::mount::unmount(QOPENSYS_EXEC, rustix::mount::UnmountFlags::DETACH);
     }
     super::ifs::shut();
     let line = match plat::unmount_xfs(MOUNT_POINT) {
@@ -265,4 +269,65 @@ pub fn report(system: &System) -> String {
         let _ = writeln!(out, "served as {}", sv.device.block_path().display());
     }
     out
+}
+
+/// The processes with a file, a directory or a mapping in the IFS (its
+/// filesystem's device, whatever namespace they see it from): pid and
+/// command name. Not this process.
+fn holders() -> Vec<(i32, String)> {
+    use std::os::unix::fs::MetadataExt as _;
+    let Ok(dev) = std::fs::metadata(MOUNT_POINT).map(|m| m.dev()) else {
+        return Vec::new();
+    };
+    let (major, minor) = (rustix::fs::major(dev), rustix::fs::minor(dev));
+    let maps_dev = format!("{major:02x}:{minor:02x}");
+    let me = std::process::id();
+    let on = |p: &std::path::Path| std::fs::metadata(p).is_ok_and(|m| m.dev() == dev);
+    let mut out = Vec::new();
+    let Ok(procs) = std::fs::read_dir("/proc") else {
+        return out;
+    };
+    for e in procs.flatten() {
+        let Some(pid) = e.file_name().to_str().and_then(|n| n.parse::<u32>().ok()) else {
+            continue;
+        };
+        if pid == me || pid == 1 {
+            continue;
+        }
+        let p = e.path();
+        let fds = std::fs::read_dir(p.join("fd"))
+            .is_ok_and(|mut d| d.any(|f| f.is_ok_and(|f| on(&f.path()))));
+        let maps = std::fs::read_to_string(p.join("maps")).is_ok_and(|m| {
+            m.lines()
+                .any(|l| l.split_whitespace().nth(3) == Some(maps_dev.as_str()))
+        });
+        if fds || maps || on(&p.join("cwd")) || on(&p.join("root")) || on(&p.join("exe")) {
+            let comm = std::fs::read_to_string(p.join("comm")).unwrap_or_default();
+            out.push((i32::try_from(pid).unwrap_or(0), comm.trim().to_string()));
+        }
+    }
+    out
+}
+
+/// End what still holds the IFS at the close, saying which, and wait
+/// a little for them to let go.
+fn end_holders() {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let mut told = false;
+    loop {
+        let held = holders();
+        if held.is_empty() || Instant::now() > deadline {
+            return;
+        }
+        for (pid, comm) in &held {
+            if !told {
+                eprintln!("qsstg: IFS still held by {pid} ({comm}) at the close: ended");
+            }
+            if let Some(p) = rustix::process::Pid::from_raw(*pid) {
+                let _ = rustix::process::kill_process(p, rustix::process::Signal::KILL);
+            }
+        }
+        told = true;
+        std::thread::sleep(Duration::from_millis(100));
+    }
 }
