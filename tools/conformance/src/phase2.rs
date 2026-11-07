@@ -30,6 +30,7 @@ pub const SYSTEM_LIBRARIES: &[&str] = &[
     "QSPL",
     "QSYS",
     "QSYS2",
+    "QSYS2924",
     "QUSRSYS",
 ];
 
