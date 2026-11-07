@@ -17,14 +17,12 @@ pub const PRODUCTS: &[(&str, &[&str])] =
     &[("QS00DG1", &["QHTTPSVR"]), ("QS00RPG", &["QRPG"]), ("QS00AFW", &["QUSRSYS"])];
 
 /// Access for Web's stores in `QUSRSYS` (`net/accessweb`, docs/ACCESSWEB.md):
-/// name, text. Owned by the profile its server job runs as.
+/// name, text. The system owns them; the product changes them through
+/// the storage service (`web_store`).
 pub const AFW_STORES: &[(&str, &str)] = &[
     ("QZXWPOL", "Access for Web policies"),
     ("QZXWPRF", "Access for Web preferences"),
 ];
-
-/// The owner of [`AFW_STORES`].
-pub const AFW_OWNER: &str = "QTMHHTTP";
 
 /// The stores' key: a profile name (10) and a function or preference
 /// key (20).
@@ -60,7 +58,7 @@ fn afw_stores(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &wm::obj::Stamp) -> Resu
             type_code: types::USRIDX,
             attribute: String::new(),
             text: (*text).into(),
-            owner: AFW_OWNER.into(),
+            owner: stamp.owner.clone(),
             system: stamp.system.clone(),
             now: stamp.now,
             by_system: true,

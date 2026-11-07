@@ -69,8 +69,8 @@ fixture profile, password `QS400`).
   first schema offered. The date and time formats and the zone (System
   or UTC) apply to every date the product shows (`Rq::stamp`).
 - The stores (`QUSRSYS`): policies in user index `QZXWPOL`, preferences
-  in user index `QZXWPRF`, made with the product and owned by
-  `QTMHHTTP` (see The live server).
+  in user index `QZXWPRF`, made with the product, owned by the system
+  and `*PUBLIC *USE` (see The live server).
 - The product's messages are `XWA0001`-`XWA0005`, `XWA0010`, `XWA0020`,
   `XWA0030`, `XWA0040`, `XWA0050`, `XWA0099`; the desktop's `QAD4022`,
   `QAD4023`, `QAD4027`, `QAD4031` in its own text. Area agents add the
@@ -122,9 +122,11 @@ lists it only then.
 `QS00AFW`'s `*BASE` code load is `QUSRSYS/QZXWMSG` (`*MSGF`) and the
 two stores, user indexes `QUSRSYS/QZXWPOL` (policies) and
 `QUSRSYS/QZXWPRF` (preferences), made by `lic/osobjects`' products.rs
-owned by `QTMHHTTP` (variable entries, a 30-byte key: the profile in
-10, the function or preference key in 20; the value after it). The job
-reads and writes them as itself; everything else runs as the
+owned by the system, `*PUBLIC *USE` (variable entries, a 30-byte key: the profile in
+10, the function or preference key in 20; the value after it). Only the
+job `ACCESSWEB` under `QTMHHTTP` reads and changes them, through
+the storage service (`web_store`, `lic/slic/src/stgsvc/afwstore.rs`, as the system: in the QEMU
+run the restored indexes belonged to `QSYS`, so the job could not write them itself); everything else runs as the
 signed-on user, the job swapped to the profile handle taken at
 sign-on (`work/qsjob/src/work/httpafw/`, over `web/` as Navigator).
 `DLTLICPGM` removes the objects (`QUSRSYS` stays), `RSTLICPGM` brings
@@ -133,7 +135,7 @@ them back.
 | Part | Live |
 |---|---|
 | System | `web::system::Core` (name, special authorities, class, groups, audit `PW`/`AF`, message texts: `XWA`/`QAD` from `QUSRSYS/QZXWMSG`); sign-on with the 5250 rules (`sign_on`; an expired password signs on to Change password only, no handle), `QSYGETPH`; `QSYCHGPW` (`sec_api ChangePassword`); `QPWDMINLEN`, `QPWDMAXLEN`, `QPWDRQDDIF`, `QPWDLVL`; the zone from `QTIMZON` (`sysval::tz`); the profile's text and the profiles (`QSYRUSRI`, `QSYLAUTU`, a group as Navigator decides); the counts: `msgq_list QUSRSYS/<user>`, `splf_list <user>`, the user's active jobs |
-| Policy, Prefs | `usridx_find` (range of the profile's keys) and `usridx_add` on the two stores, as the job; the schemas Preferences offers: the libraries the user may list, `QGPL` and those without a `Q` name |
+| Policy, Prefs | `web_store` (the profile's entries, replaced when given) on the two stores; the schemas Preferences offers: the libraries the user may list, `QGPL` and those without a `Q` name |
 | The areas | not built: `httpafw/areas.rs` (`NotYet`); their routes answer `XWA0099` |
 
 - `BLOCKED(rel)`: the password approval program (`QPWDVLDPGM`) is not

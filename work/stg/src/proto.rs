@@ -798,6 +798,11 @@ ipc::rpc! {
     /// The job's own log as the service keeps it, every entry, one
     /// line each as `DSPJOBLOG` shows them.
     1262 => fn web_joblog / WebJoblog () -> Vec<String>;
+    /// Access for Web's stores (`QUSRSYS/QZXWPOL`, `QZXWPRF`;
+    /// stgsvc/afwstore.rs): `who`'s entries (key, value), replaced by
+    /// `put` first when it is given. Only job `ACCESSWEB` running as
+    /// `QTMHHTTP` may send it; the stores are `*PUBLIC *USE`.
+    1263 => fn web_store / WebStore (index: String, who: String, put: Option<Vec<(String, String)>>) -> Result<Vec<(String, String)>, String>;
     // --- TCP/IP (690; crate::tcp)
     /// TCP/IP configuration and operation: one operation and its answer.
     690 => fn tcp / Tcp (op: crate::tcp::TcpOp) -> crate::tcp::TcpReply;

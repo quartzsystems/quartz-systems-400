@@ -3,10 +3,9 @@
 // root directory of this project.
 
 //! The product's stores: user indexes `QUSRSYS/QZXWPOL` (policies) and
-//! `QUSRSYS/QZXWPRF` (preferences), made with `QS00AFW` and owned by
-//! `QTMHHTTP` (`lic/osobjects`' products.rs), read and written as the
-//! job. An entry is the key, a profile name in 10 bytes and a function
-//! or preference key in 20, then the value.
+//! `QUSRSYS/QZXWPRF` (preferences), made with `QS00AFW`, owned by the
+//! system and `*PUBLIC *USE`; the job reads and changes them through
+//! the storage service (`web_store`, which only this job may send).
 
 use accessweb::env::policy::{PolicyStore, Setting};
 use accessweb::env::prefs::PrefStore;
@@ -26,52 +25,17 @@ const WHO: usize = 10;
 /// The whole key.
 const KEY: usize = 30;
 
-fn key(who: &str, what: &str) -> Vec<u8> {
-    format!("{who:<WHO$}{what:<20}").into_bytes()
-}
-
 /// `who`'s entries: key and value.
 fn read(link: &Link, index: &'static str, who: &str) -> Vec<(String, String)> {
-    let lo = key(who, "");
-    let mut hi = format!("{who:<WHO$}").into_bytes();
-    hi.extend(std::iter::repeat_n(b'~', KEY - WHO));
-    link.job(move |m| {
-        m.ask(|l| l.usridx_find(LIB.into(), index.into(), 8, lo, hi, 10_000, false))
-            .unwrap_or_default()
-            .into_iter()
-            .filter(|e| e.len() >= KEY)
-            .map(|e| {
-                let k = String::from_utf8_lossy(&e[WHO..KEY]).trim_end().to_string();
-                (k, String::from_utf8_lossy(&e[KEY..]).into_owned())
-            })
-            .collect()
-    })
-    .unwrap_or_default()
+    let w = who.to_string();
+    link.job(move |m| m.ask(|l| l.web_store(index.into(), w, None)).unwrap_or_default())
+        .unwrap_or_default()
 }
 
 /// Replace `who`'s entries with `values`.
 fn write(link: &Link, index: &'static str, who: &str, values: &[(String, String)]) -> Result<(), Message> {
-    let lo = key(who, "");
-    let mut hi = format!("{who:<WHO$}").into_bytes();
-    hi.extend(std::iter::repeat_n(b'~', KEY - WHO));
-    let entries: Vec<Vec<u8>> = values
-        .iter()
-        .map(|(k, v)| {
-            let mut e = key(who, k);
-            e.extend_from_slice(v.as_bytes());
-            e
-        })
-        .collect();
-    let r = link.job(move |m| {
-        m.ask(|l| l.usridx_find(LIB.into(), index.into(), 8, lo, hi, 10_000, true))
-            .map_err(|e| e.msgid)?;
-        if entries.is_empty() {
-            return Ok(());
-        }
-        m.ask(|l| l.usridx_add(LIB.into(), index.into(), entries, true))
-            .map(|_| ())
-            .map_err(|e| e.msgid)
-    });
+    let (w, v) = (who.to_string(), values.to_vec());
+    let r = link.job(move |m| m.ask(|l| l.web_store(index.into(), w, Some(v))).map(|_| ()));
     r.unwrap_or_else(|| Err("CPF9897".into())).map_err(|id: String| {
         Message::new(Kind::Error, &id, &format!("The Access for Web store {LIB}/{index} could not be changed."))
     })
@@ -149,8 +113,6 @@ mod tests {
 
     #[test]
     fn keys() {
-        assert_eq!(key("WEBUSER", "db.write").len(), KEY);
-        assert_eq!(&key("WEBUSER", "db.write")[..12], b"WEBUSER   db");
         assert!(fits("policies.change") && !fits("a.very.long.preference.key"));
     }
 }

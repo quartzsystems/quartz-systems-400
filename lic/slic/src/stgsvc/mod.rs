@@ -60,6 +60,7 @@ mod units;
 mod work2;
 mod uiapi;
 pub(crate) mod webadm;
+pub(crate) mod afwstore;
 pub(crate) mod wtr;
 
 pub use jobs::chgjob;

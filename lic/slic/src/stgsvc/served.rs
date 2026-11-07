@@ -2426,6 +2426,16 @@ impl Service for Served<'_> {
         wm::joblog::display(&all).lines().map(str::to_string).collect()
     }
 
+    fn web_store(
+        &mut self,
+        index: String,
+        who: String,
+        put: Option<Vec<(String, String)>>,
+    ) -> Result<Vec<(String, String)>, String> {
+        let job = (self.ctx.job.name.clone(), self.ctx.job.user.clone());
+        super::afwstore::store(self.system, (&job.0, &job.1), &index, &who, put)
+    }
+
     fn web_certs(&mut self, call: Vec<u8>) -> Vec<u8> {
         let me = self.ctx.session.borrow().principal.clone();
         super::webadm::certs(self.system, &me, &call)
