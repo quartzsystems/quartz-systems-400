@@ -68,6 +68,25 @@ runs:
         echo "QS_JT400_JAR=$RUNNER_TEMP/jtopen/jt400.jar" >> "$GITHUB_ENV"
         echo "QS_JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
 
+    # The kernel source and build, the crates' downloads and the compiled
+    # dependencies, from the newest run on main (only main saves: see the
+    # workflows' last step). A branch's own crates still rebuild, as their
+    # sources are new to the runner.
+    - name: Build cache (restore)
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/src
+          target/kernel
+          target/x86_64-unknown-linux-musl
+          target/debug
+        key: qs400-build-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml', 'kernel/VERSION', 'kernel/config/**') }}-${{ github.run_id }}
+        restore-keys: |
+          qs400-build-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml', 'kernel/VERSION', 'kernel/config/**') }}-
+          qs400-build-
+
     - name: build doctor
       shell: bash
       run: cargo run -q -p build -- doctor
