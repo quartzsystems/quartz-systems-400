@@ -12,6 +12,9 @@
 
 #![forbid(unsafe_code)]
 
+pub mod front;
+pub mod msgtext;
+
 /// A source member: a source physical file and one of its members.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct MemberName {
