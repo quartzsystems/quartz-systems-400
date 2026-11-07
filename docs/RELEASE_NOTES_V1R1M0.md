@@ -590,7 +590,7 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `work/qsjob/src/command/ftp.rs:344` | no trigger programs called here; a file with |
 | `BLOCKED(rel)` | `work/qsjob/src/command/rcvjrne.rs:89` | RCVJRNE passes *TYPE1 entries one at a time from |
 | `BLOCKED(rel)` | `work/qsjob/src/command/telnet.rs:50` | the TELNET client does not make TLS sessions. |
-| `BLOCKED(rel)` | `work/qsjob/src/command/telnet.rs:173` | a server that will not run 5250 (VT or 3270 |
+| `BLOCKED(rel)` | `work/qsjob/src/command/telnet.rs:162` | a server that will not run 5250 (VT or 3270 |
 | `BLOCKED(rel)` | `work/qsjob/src/console/drda.rs:151` | the requester's query brings no column descriptions |
 | `BLOCKED(rel)` | `work/qsjob/src/console/jobcmd.rs:151` | another job's call stack needs a request the |
 | `BLOCKED(rel)` | `work/qsjob/src/devtools/isql/prompts.rs:347` | F6, F10, F11, F14, F15, F19, F20 and F24 of |

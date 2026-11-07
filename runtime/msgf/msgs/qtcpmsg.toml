@@ -870,14 +870,14 @@ vars = ["*CHAR 10", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "TCP101A"
-sev = 30
+sev = 10
 text = "Host &1 was not found."
 help = "Neither the host table nor the name servers know the remote system's name. Check the name, or give its internet address."
 vars = ["*CHAR 256"]
 
 [[msg]]
 id = "TCP10B0"
-sev = 30
+sev = 10
 text = "Host &1 at address &2 did not take the connection."
 help = "Nothing answered on the port, or the connection was refused. Try again later, or check that the remote system's TELNET server is started."
 vars = ["*CHAR 256", "*CHAR 256"]
