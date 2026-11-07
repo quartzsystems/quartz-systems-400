@@ -577,10 +577,10 @@ Every marker left in the tree, generated from it.
 | `BLOCKED(rel)` | `tools/conformance/rpg/known.txt:28` | in the database's buffer conversion |
 | `BLOCKED(rel)` | `tools/conformance/rpg/known.txt:32` | SQL058 a SENSITIVE cursor is refused with SQL0243: QS/400 reads a cursor's rows when it opens ( |
 | `BLOCKED(rel)` | `tools/conformance/rpg/known.txt:33` | SQL060 LOB file reference variables are refused with SQL0084: the runtime reads and writes no IFS files yet ( |
-| `BLOCKED(rel)` | `tools/conformance/sql/known.txt:13` | integrity/AUDITCOL   # engine: IMPLICITLY HIDDEN refused (SQL0084, |
-| `BLOCKED(rel)` | `tools/conformance/sql/known.txt:29` | ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here |
-| `BLOCKED(rel)` | `tools/conformance/sql/known.txt:32` | in alter) |
-| `BLOCKED(rel)` | `tools/conformance/sql/known.txt:35` | in udt::typing::check) |
+| `BLOCKED(rel)` | `tools/conformance/sql/known.txt:12` | integrity/AUDITCOL   # engine: IMPLICITLY HIDDEN refused (SQL0084, |
+| `BLOCKED(rel)` | `tools/conformance/sql/known.txt:28` | ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here |
+| `BLOCKED(rel)` | `tools/conformance/sql/known.txt:31` | in alter) |
+| `BLOCKED(rel)` | `tools/conformance/sql/known.txt:34` | in udt::typing::check) |
 | `NEEDS-CODY` | `tools/pesign/src/keys/mod.rs:7` | the real one is made with `pesign |
 | `BLOCKED(rel)` | `ui/uim/pnlgrp/QGWCDSKS.pnlgrp:8` | headings and decimal columns sit on a hand grid this renderer does not make (work2_panels::wrkdsksts); it needs a display file with a command line |
 | `BLOCKED(rel)` | `ui/uim/pnlgrp/QGWCPOOL.pnlgrp:8` | the primary's display is a display file on a hand grid this renderer does not make; it needs a display file with a command line |
