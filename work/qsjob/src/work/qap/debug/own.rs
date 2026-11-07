@@ -76,6 +76,9 @@ pub fn apply(job: &mut Job) {
 
 /// The core stopped the connection job: `None` when no `Own` session
 /// is active or the program is not one of its.
+// BLOCKED(rel): stops are breakpoints, steps and entry points only; the
+// core has no stop for an unhandled exception (`StopReason::Exception`)
+// or a step past a program's end (`ProgramEnd`), so neither is sent.
 pub fn stop(job: &mut Job, at: &Stop, host: &Host) -> Option<Resume> {
     let me = JobId {
         name: host.start.name.clone(),
