@@ -8,14 +8,14 @@
 
 mod common;
 
-use qap_proto::ops::command::{CommandReply, CommandText};
+use qap_proto::ops::command::CommandText;
 use qap_proto::ops::connection::HelloReply;
 use qap_proto::ops::develop::{
-    ChangeMember, CopyMember, CreateMember, DescribeObject, Libraries, LibraryKind, LibraryList,
-    ListLibraries, ListMembers, ListObjects, MemberData, MemberRef, Members, ObjectDescription,
-    Objects, ReadMember, RenameMember, SetLibraryList, WriteMember, Written,
+    ChangeMember, CompileReply, CopyMember, CreateMember, DescribeObject, Libraries, LibraryKind,
+    LibraryList, ListLibraries, ListMembers, ListObjects, MemberData, MemberRef, Members,
+    ObjectDescription, Objects, ReadMember, RenameMember, SetLibraryList, WriteMember, Written,
 };
-use qap_proto::types::{MemberName, ObjectName, SourceRecord};
+use qap_proto::types::{MemberName, ObjectName, SourceRecord, Where};
 use qap_proto::{Envelope, Kind, Op, Service, Status};
 use qapd::develop::yymmdd;
 use qapd::testing::develop::{BIG_RECORDS, OTHER_JOB};
@@ -327,7 +327,7 @@ fn list_members() {
         .body_as()
         .unwrap();
     let names: Vec<&str> = m.members.iter().map(|m| m.name.as_str()).collect();
-    assert_eq!(names, ["ASSETS", "BIG", "LOCKED", "STKRPT"]);
+    assert_eq!(names, ["ASSETS", "BAD42", "BIG", "LOCKED", "STKRPT"]);
     assert_eq!(
         (m.members[0].srctype.as_str(), m.members[0].records),
         ("RPGLE", 40)
@@ -654,9 +654,7 @@ fn create_copy_rename_change_and_delete_members() {
 }
 
 #[test]
-fn compile_runs_in_the_lane() {
-    // The test system has no compiler: Compile answers Error with
-    // TCP1A60, in the lane, after the command before it.
+fn compile_runs_in_the_lane_with_its_diagnostics() {
     let mut r = bob();
     let first = r.client.request(
         Op::RunCommand,
@@ -665,18 +663,50 @@ fn compile_runs_in_the_lane() {
         },
     );
     let libl = r.client.request(Op::GetLibraryList, &());
-    let comp = r.client.request(
+    let bad = r.client.request(
         Op::Compile,
         &CommandText {
-            command: "CRTBNDRPG PGM(HLINV/ASSETS)".into(),
+            command: "CRTBNDRPG PGM(QTEMP/BAD42) SRCFILE(HLINV/QRPGLESRC) SRCMBR(BAD42)".into(),
         },
     );
-    let ra = r.client.reply(first);
-    assert_eq!(ra.status, Status::Ok);
-    let _: CommandReply = ra.body_as().unwrap();
-    let rb = r.client.reply(libl);
-    let l: LibraryList = rb.body_as().unwrap();
+    assert_eq!(r.client.reply(first).status, Status::Ok);
+    let l: LibraryList = r.client.reply(libl).body_as().unwrap();
     assert_eq!(l.current.as_deref(), Some("HLINV"));
-    let rc = r.client.reply(comp);
-    assert_eq!((rc.status, id(&rc).as_str()), (Status::Error, "TCP1A60"));
+    // Failed: Error, the body still filled, one diagnostic at line 42.
+    let rb = r.client.reply(bad);
+    assert_eq!((rb.status, id(&rb).as_str()), (Status::Error, "RNS9310"));
+    let c: CompileReply = rb.body_as().unwrap();
+    assert_eq!(c.diagnostics.len(), 1);
+    let d = &c.diagnostics[0];
+    assert_eq!((d.id.as_str(), d.line, d.severity), ("RNF7416", 42, 30));
+    assert_eq!(
+        d.r#where,
+        Where::Member {
+            member: mbr("HLINV", "QRPGLESRC", "BAD42")
+        }
+    );
+    assert!(c.messages.iter().any(|m| m.id == "RNF7416"));
+    // Clean: Ok, no diagnostics; not a compile: its messages alone.
+    let ok = r.client.call(
+        Op::Compile,
+        &CommandText {
+            command: "CRTBNDRPG PGM(QTEMP/ASSETS) SRCFILE(HLINV/QRPGLESRC)".into(),
+        },
+    );
+    assert_eq!(ok.status, Status::Ok);
+    assert!(ok.body_as::<CompileReply>().unwrap().diagnostics.is_empty());
+    let other = r.client.call(
+        Op::Compile,
+        &CommandText {
+            command: "NOSUCHCMD".into(),
+        },
+    );
+    assert_eq!(other.status, Status::NotFound);
+    assert!(
+        other
+            .body_as::<CompileReply>()
+            .unwrap()
+            .diagnostics
+            .is_empty()
+    );
 }

@@ -410,6 +410,51 @@ impl Host for MemHost {
         Ok(l)
     }
 
+    /// `CRTBNDRPG`, `CRTRPGMOD` and `CRTSQLRPGI` of a member of the test
+    /// system ([`super::develop::compile`]); any other command as
+    /// `RunCommand` runs it, with no diagnostics.
+    fn compile(
+        &mut self,
+        command: &str,
+        cancelled: &dyn Fn() -> bool,
+    ) -> Result<crate::Compiled, Refusal> {
+        let (name, parms) = parse(command);
+        if !matches!(name.as_str(), "CRTBNDRPG" | "CRTRPGMOD" | "CRTSQLRPGI") {
+            let ran = self.run_command(command, cancelled);
+            return Ok(crate::Compiled {
+                ran,
+                diagnostics: Vec::new(),
+            });
+        }
+        let get = |k: &str| parms.iter().find(|(p, _)| p == k).map(|(_, v)| v.clone());
+        let me = me(&self.sys, self.job).unwrap_or_default();
+        let r = lock(&self.sys.develop).compile(
+            self.job,
+            &me,
+            get("SRCFILE").as_deref(),
+            get("SRCMBR")
+                .or_else(|| get("PGM"))
+                .or_else(|| get("MODULE")),
+        );
+        Ok(match r {
+            Ok(diagnostics) if diagnostics.is_empty() => crate::Compiled {
+                ran: self.ran(Status::Ok, &[("RNS9304", &[])]),
+                diagnostics,
+            },
+            Ok(diagnostics) => crate::Compiled {
+                ran: self.ran(Status::Error, &[("RNF7416", &[]), ("RNS9310", &[])]),
+                diagnostics,
+            },
+            Err((status, id, data)) => {
+                let data: Vec<&str> = data.iter().map(String::as_str).collect();
+                crate::Compiled {
+                    ran: self.ran(status, &[(id, &data)]),
+                    diagnostics: Vec::new(),
+                }
+            }
+        })
+    }
+
     fn set_library_list(&mut self, req: &SetLibraryList) -> Result<LibraryList, Refusal> {
         let me = me(&self.sys, self.job).unwrap_or_default();
         let r = lock(&self.sys.develop).set_libl(self.job, &me, req);

@@ -14,7 +14,8 @@
 //!   `QUSRSYS`, `QHLPSYS`, and `HLPAY`, which only `ANN` may use (`BOB`
 //!   gets `CPF2182` and never sees it listed);
 //! - source files `HLINV/QRPGLESRC` (data length 100, CCSID 37) with
-//!   `ASSETS` (40 dated records), `STKRPT`, `LOCKED` (held `*SHRNUP` by
+//!   `ASSETS` (40 dated records), `BAD42` (compiles with one `RNF7416`
+//!   at line 42), `STKRPT`, `LOCKED` (held `*SHRNUP` by
 //!   job 4242, so `InUse` with `CPF1002`) and `BIG` (12,000 records, over
 //!   1 MiB, so its `ReadMember` is split with `More`); `HLINV/QDDSSRC`
 //!   (data length 80) with `ASSETS` and `ASSETSL1`; `HLTEST/QBINSRC`,
@@ -39,7 +40,7 @@ use qap_proto::ops::develop::{
     LibraryList, ListMembers, ListObjects, MemberData, MemberEntry, ObjectDescription, ObjectEntry,
     RenameMember, SetLibraryList,
 };
-use qap_proto::types::{MemberName, ObjectName, SourceRecord};
+use qap_proto::types::{Diagnostic, MemberName, ObjectName, SourceRecord, Where};
 
 use super::spool::No;
 use crate::develop::{HELD, NO_CONVERSION, NOT_LOCKED, TOO_LONG, dated, generic};
@@ -126,6 +127,20 @@ fn record(n: u32, date: u32, text: &str) -> SourceRecord {
     }
 }
 
+/// `BAD42`: 43 lines, a character literal assigned to an integer on 42.
+fn bad42() -> Vec<SourceRecord> {
+    let mut v = vec![
+        record(1, 260_101, "**FREE"),
+        record(2, 260_101, "dcl-s n int(10);"),
+    ];
+    for i in 3..=41u32 {
+        v.push(record(i, 260_101, &format!("// line {i}")));
+    }
+    v.push(record(42, 260_101, "n = 'x';"));
+    v.push(record(43, 260_101, "*inlr = *on;"));
+    v
+}
+
 /// `ASSETS`: a small free-form program, its records dated over a month.
 fn assets() -> Vec<SourceRecord> {
     let mut v = vec![
@@ -207,6 +222,7 @@ impl Develop {
                 ccsid: 37,
                 members: vec![
                     member("ASSETS", "RPGLE", "Asset list", assets()),
+                    member("BAD42", "RPGLE", "One error, on line 42", bad42()),
                     member("BIG", "RPGLE", "A member over 1 MiB", big),
                     member(
                         "LOCKED",
@@ -723,6 +739,66 @@ impl Develop {
         }
         self.files[f].members.remove(i);
         Ok(())
+    }
+
+    /// A compile of member `member` of `srcfile` (`LIB/FILE`; by default
+    /// `*LIBL/QRPGLESRC`): its diagnostics. The test system's compiler
+    /// knows one error, a character literal assigned to a number
+    /// (`n = 'x';`): `RNF7416`, severity 30, at its line and column.
+    pub fn compile(
+        &self,
+        job: u32,
+        me: &str,
+        srcfile: Option<&str>,
+        member: Option<String>,
+    ) -> Result<Vec<Diagnostic>, No> {
+        let (lib, file) = match srcfile.map(up) {
+            Some(f) => match f.split_once('/') {
+                Some((l, n)) => (l.to_string(), n.to_string()),
+                None => ("*LIBL".to_string(), f),
+            },
+            None => ("*LIBL".into(), "QRPGLESRC".into()),
+        };
+        let member = member
+            .map(|m| up(m.rsplit('/').next().unwrap_or(&m)))
+            .unwrap_or_default();
+        let name = MemberName {
+            file: ObjectName {
+                library: lib,
+                name: file,
+            },
+            member,
+        };
+        let (f, i) = self.member_index(job, me, &name)?;
+        let src = &self.files[f];
+        let at = MemberName {
+            file: ObjectName {
+                library: src.lib.clone(),
+                name: src.name.clone(),
+            },
+            member: src.members[i].name.clone(),
+        };
+        Ok(src.members[i]
+            .records
+            .iter()
+            .zip(1u32..)
+            .filter_map(|(r, line)| {
+                let col = r.data.find("= 'x';")?;
+                Some(Diagnostic {
+                    r#where: Where::Member { member: at.clone() },
+                    line,
+                    column: u16::try_from(col + 3).unwrap_or(0),
+                    end_line: line,
+                    end_column: u16::try_from(col + 5).unwrap_or(0),
+                    severity: 30,
+                    id: "RNF7416".into(),
+                    text:
+                        "RNF7416 (test system): the value assigned does not suit the target's type."
+                            .into(),
+                    help: "Help for RNF7416.".into(),
+                })
+            })
+            .collect())
     }
 
     /// `CHGPFM`.
