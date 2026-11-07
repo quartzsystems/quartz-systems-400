@@ -16,7 +16,7 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::time::{Duration, Instant};
 
-use crate::httpadm::{Reply, enc, http_at, secofr_password, session_cookie, want};
+use crate::httpadm::{Reply, enc, http_at, secofr_password, session_cookie};
 use crate::phase5::SECOFR_PASSWORD;
 use crate::qemu::session::Session;
 use crate::steps::{CMD, Suite};
@@ -34,6 +34,24 @@ const CSV: &str = "ID,NAME,PRICE\r\n3,WASHER,0.05\r\n4,SCREW,1234567.89\r\n";
 
 fn afw(port: u16, method: &str, path: &str, cookie: Option<&str>, form: Option<&str>) -> Result<Reply, String> {
     http_at(PREFIX, port, method, path, cookie, form)
+}
+
+/// `r` has `status` and every needle; else the page's content (past
+/// the tree) in the error.
+fn want(r: &Reply, status: u16, needles: &[&str], what: &str) -> Result<(), String> {
+    let missing: Vec<&str> = needles.iter().copied().filter(|n| !r.body.contains(n)).collect();
+    if r.status == status && missing.is_empty() {
+        return Ok(());
+    }
+    let content = r.body.find("class=\"content\"").map_or(r.body.as_str(), |i| &r.body[i..]);
+    Err(format!(
+        "{what}: status {} (wanted {status}), missing {missing:?}:
+{}
+{}",
+        r.status,
+        r.head,
+        content.chars().take(6000).collect::<String>()
+    ))
 }
 
 /// The form field every POST carries.

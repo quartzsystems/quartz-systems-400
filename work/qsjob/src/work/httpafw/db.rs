@@ -17,6 +17,7 @@
 #![allow(clippy::many_single_char_names)] // rows, lanes, engines
 
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -264,14 +265,26 @@ fn statement(
     o
 }
 
-/// A catalog query in a lane of its own, as the user: its rows.
+/// A catalog query in a lane of its own, as the user: its rows; `?`
+/// stands for the next of `params`, written as a literal.
 fn catalog(m: &mut Main, sql: &str, params: &[Val]) -> Result<Vec<Vec<Val>>, Message> {
     let mut lane = Lane::default();
     let (link, console) = (&m.link, &mut m.console);
     let mut e = Scoped { inner: LaneDb(link, console), prefix: "AFWCAT".into() };
     let mut cursors = HashMap::new();
-    let p = if params.is_empty() { Vec::new() } else { vec![params.to_vec()] };
-    let o = statement(&mut e, &mut lane, &mut cursors, sql, &p, 100_000, &AtomicBool::new(false));
+    // The values as literals, as the catalog views take them anywhere.
+    let mut text = String::new();
+    let mut vals = params.iter();
+    for c in sql.chars() {
+        match (c, vals.as_slice().first()) {
+            ('?', Some(_)) => {
+                let v = vals.next().map(Val::text).unwrap_or_default();
+                let _ = write!(text, "'{}'", v.replace('\'', "''"));
+            }
+            _ => text.push(c),
+        }
+    }
+    let o = statement(&mut e, &mut lane, &mut cursors, &text, &[], 100_000, &AtomicBool::new(false));
     lane.end(&mut e);
     if o.failed {
         return Err(o.message.unwrap_or_else(|| Message::new(MsgKind::Error, "SQL0901", sql)));
