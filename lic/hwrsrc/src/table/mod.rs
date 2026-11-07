@@ -758,12 +758,9 @@ impl Table {
     /// The storage controller a disk (`sda`) is attached through.
     #[must_use]
     pub fn controller_of(&self, disk: &str) -> Option<&Resource> {
-        let d = self
-            .resources
-            .iter()
-            .find(|r| {
-                matches!(r.kind, Kind::Disk | Kind::Optical) && r.operational() && r.location == disk
-            })?;
+        let d = self.resources.iter().find(|r| {
+            matches!(r.kind, Kind::Disk | Kind::Optical) && r.operational() && r.location == disk
+        })?;
         self.controller_at(&pci::address_in(&d.devpath)?)
     }
 

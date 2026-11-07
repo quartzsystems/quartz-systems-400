@@ -1053,7 +1053,9 @@ impl DstEnv for MemEnv {
             .position(|r| r.name == name)
             .ok_or_else(|| format!("No resource is called {name}"))?;
         if self.hardware[at].status == "Operational" {
-            return Err(format!("{name} reports: only a resource that does not can be removed"));
+            return Err(format!(
+                "{name} reports: only a resource that does not can be removed"
+            ));
         }
         self.hardware.remove(at);
         Ok(())

@@ -146,7 +146,9 @@ impl<'a> Reader<'a> {
     }
 
     fn text(&mut self, n: usize) -> Result<String, FormatError> {
-        Ok(String::from_utf8_lossy(self.take(n)?).trim_end().to_string())
+        Ok(String::from_utf8_lossy(self.take(n)?)
+            .trim_end()
+            .to_string())
     }
 
     fn short(&mut self) -> Result<String, FormatError> {

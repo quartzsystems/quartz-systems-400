@@ -95,7 +95,10 @@ fn a_card_added_before_the_others_takes_the_next_name() {
             ("LIN02".into(), "0000:03:00.0".into())
         ]
     );
-    assert_eq!(t.get("CMN01").unwrap().port.as_ref().unwrap().ifname, "eth0");
+    assert_eq!(
+        t.get("CMN01").unwrap().port.as_ref().unwrap().ifname,
+        "eth0"
+    );
     assert_eq!(t.get("CMN01").unwrap().logical, "LIN01");
     // The same at every IPL after.
     let again = ipl(&root, &mut map);
@@ -125,11 +128,18 @@ fn a_card_removed_keeps_its_name_until_removed() {
     );
     let gone = t.get("CMN01").unwrap();
     assert_eq!(gone.type_model(), ("QN03".into(), "001".into()));
-    assert_eq!((gone.parent.as_str(), gone.logical.as_str()), ("LIN01", "LIN01"));
+    assert_eq!(
+        (gone.parent.as_str(), gone.logical.as_str()),
+        ("LIN01", "LIN01")
+    );
     assert!(gone.port.is_none());
     assert_eq!(t.get("LIN01").unwrap().status, Gone);
     // The list shows it under its adapter, not detected.
-    let rows = crate::view::list(&t, crate::view::spec("*CMN").unwrap(), &mut crate::view::ids);
+    let rows = crate::view::list(
+        &t,
+        crate::view::spec("*CMN").unwrap(),
+        &mut crate::view::ids,
+    );
     let at = rows.iter().position(|r| r.name == "CMN01").unwrap();
     assert_eq!(rows[at].status, "TXT0151");
     assert_eq!(rows[at - 1].name, "LIN01");
@@ -180,7 +190,10 @@ fn a_port_is_known_by_its_permanent_address() {
     card(&root, "0000:02:00.0", "eth0", A);
     let mut map = NameMap::default();
     let _ = ipl(&root, &mut map);
-    assert_eq!(map.entries.iter().find(|e| e.name == "CMN01").unwrap().key, "mac:525400AA0001");
+    assert_eq!(
+        map.entries.iter().find(|e| e.name == "CMN01").unwrap().key,
+        "mac:525400AA0001"
+    );
     // Software set another address (ADPTADR): netlink still tells the
     // card's own, and the port keeps its name even in another slot.
     remove_nic(&root, "0000:02:00.0");
@@ -208,11 +221,21 @@ fn a_card_plugged_back_while_up_is_the_one_it_was() {
     let mut t = ipl(&root, &mut map);
     remove_nic(&root, "0000:02:00.0");
     let changes = t.rescan(&root);
-    assert!(changes.contains(&"CMN01 not detected (/devices/pci0000:00/0000:02:00.0/net/eth0)".to_string()), "{changes:?}");
+    assert!(
+        changes.contains(
+            &"CMN01 not detected (/devices/pci0000:00/0000:02:00.0/net/eth0)".to_string()
+        ),
+        "{changes:?}"
+    );
     // Back in another slot: its own name, detected again.
     card(&root, "0000:07:00.0", "eth0", A);
     let changes = t.rescan(&root);
-    assert!(changes.iter().any(|c| c.starts_with("CMN01 detected again")), "{changes:?}");
+    assert!(
+        changes
+            .iter()
+            .any(|c| c.starts_with("CMN01 detected again")),
+        "{changes:?}"
+    );
     assert_eq!(t.get("CMN01").unwrap().location, "0000:07:00.0");
     assert_eq!(t.get("CMN01").unwrap().status, Up);
     // Another card in a slot a gone one had is new.
@@ -241,7 +264,10 @@ fn the_saved_names_round_trip_and_refuse_damage() {
     let mut bad = bytes.clone();
     bad[4] = 9;
     assert_eq!(NameMap::decode(&bad), Err(FormatError::Version(9)));
-    assert_eq!(NameMap::decode(&bytes[..bytes.len() - 1]), Err(FormatError::Truncated));
+    assert_eq!(
+        NameMap::decode(&bytes[..bytes.len() - 1]),
+        Err(FormatError::Truncated)
+    );
     let mut bad = bytes.clone();
     bad.push(0);
     assert_eq!(NameMap::decode(&bad), Err(FormatError::Trailing));

@@ -41,7 +41,9 @@ pub fn load() -> NameMap {
     };
     match NameMap::decode(bytes) {
         Ok(map) => {
-            *LAST.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(bytes.to_vec());
+            *LAST
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(bytes.to_vec());
             map
         }
         Err(e) => {
@@ -54,7 +56,9 @@ pub fn load() -> NameMap {
 /// Save the table's names when they changed.
 pub fn save(t: &Table) {
     let bytes = NameMap::of(t).encode();
-    let mut last = LAST.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut last = LAST
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if last.as_deref() == Some(bytes.as_slice()) {
         return;
     }
