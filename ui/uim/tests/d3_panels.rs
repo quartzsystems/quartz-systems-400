@@ -10,7 +10,7 @@ mod common;
 
 use std::path::PathBuf;
 
-use common::{compare_in, shipped};
+use common::{compare_in, compare_ours_in, shipped};
 use uim::render::{ListState, MapDialog, Options, render};
 
 fn d3() -> PathBuf {
@@ -136,9 +136,14 @@ fn wrkjrnrcv_with_none_found() {
             total: Some(0),
         },
     );
-    compare_in(
+    // The empty list's sentence is ours, where IBM's is.
+    compare_ours_in(
         &d3(),
         "wrkjrnrcv",
         &render(&g, "WRKJRNRCV", &d, &v71(&g)).unwrap(),
+        &[(
+            "(Cannot find object to match specified name.)",
+            "(No journal receivers match the name)",
+        )],
     );
 }

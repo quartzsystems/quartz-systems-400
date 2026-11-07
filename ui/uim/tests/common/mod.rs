@@ -98,7 +98,20 @@ pub fn compare(golden: &str, screen: &Screen) {
 
 /// [`compare`] against a golden of `dir`.
 pub fn compare_in(dir: &Path, golden: &str, screen: &Screen) {
-    let want = golden_rows_in(dir, golden);
+    compare_ours_in(dir, golden, screen, &[]);
+}
+
+/// [`compare_in`] with the capture's IBM sentences replaced by our
+/// wording (`(IBM's, ours)`): the place on the screen is the interface,
+/// the words are ours.
+pub fn compare_ours_in(dir: &Path, golden: &str, screen: &Screen, ours: &[(&str, &str)]) {
+    let want: Vec<String> = golden_rows_in(dir, golden)
+        .into_iter()
+        .map(|r| {
+            ours.iter()
+                .fold(r, |r, (theirs, mine)| r.replace(theirs, mine))
+        })
+        .collect();
     let got = screen.text_rows();
     let mut diff = String::new();
     for (i, w) in want.iter().enumerate() {
