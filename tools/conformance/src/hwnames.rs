@@ -72,13 +72,16 @@ fn hw_with(s: &mut Session, mac: &str) -> Result<String, String> {
     }
 }
 
-/// A console command whose output holds `want`.
+/// A console command whose output holds `want`. A long answer before it
+/// (`hw`) can still be on the line: then the stream is read on to it.
 fn expect(s: &mut Session, line: &str, want: &str) -> Result<String, String> {
     let out = s.command(line, Duration::from_secs(30))?;
     if out.contains(want) {
-        Ok(out)
-    } else {
-        Err(format!("{line}: no {want} in:\n{out}"))
+        return Ok(out);
+    }
+    match s.expect(want, Duration::from_secs(30)) {
+        Ok(more) => Ok(format!("{out}{more}{want}")),
+        Err(_) => Err(format!("{line}: no {want} in:\n{out}")),
     }
 }
 
