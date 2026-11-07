@@ -445,7 +445,8 @@ fn audit_end_action(system: &mut System) {
     system.audit_full_told = true;
     let msgid = if power { "CPI2284" } else { "CPI2283" };
     let who = ("QSYSARB".to_string(), "QSYS".to_string(), 0);
-    super::hist::system_message(system, msgid, b"QAUDJRN   QSYS      ", "04", who.clone());
+    let data = wm::joblog::data(&[("QAUDJRN", 10), ("QSYS", 10)]);
+    super::hist::system_message(system, msgid, &data, "04", who.clone());
     let m = wm::obj::msgq::QMsg {
         msgid: msgid.into(),
         msgf: ("QCPFMSG".into(), "QSYS".into()),
@@ -520,7 +521,8 @@ fn audit_force(system: &mut System) {
     }
     let _ = crate::ipl::sysvals::save(system);
     let who = ("QSYSARB".to_string(), "QSYS".to_string(), 0);
-    super::hist::system_message(system, "CPI2284", b"QAUDJRN   QSYS      ", "04", who);
+    let data = wm::joblog::data(&[("QAUDJRN", 10), ("QSYS", 10)]);
+    super::hist::system_message(system, "CPI2284", &data, "04", who);
 }
 
 /// Whether `QSYS/QAUDJRN` exists.
