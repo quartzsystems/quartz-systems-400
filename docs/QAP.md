@@ -1309,9 +1309,14 @@ Version 8, as built on 2026-11-07 (draft; decisions made in the build, for Cody 
   index is `unique` when `IS_UNIQUE` is `U` or `V`, its keys in
   `ORDINAL_POSITION` order. `ListIndexes` checks the table as
   `ListColumns` does.
-- `Compile` dispatches to `work/qsjob/src/work/qap/compile.rs`'s `run`,
-  which answers `TCP1A60` until the compilers leave their diagnostics on
-  the job (Part C of the handoff).
+- `Compile` runs `work/qsjob/src/work/qap/compile.rs`'s `compile`: the job's last
+  compile cleared, the command run as `RunCommand` runs it, then the
+  diagnostics the compiler left on the job (`mi::Job::last_compile`),
+  converted from `compdiag`'s. A failed compile is `Error` with its
+  escape message and the body filled. The test system compiles
+  `CRTBNDRPG`, `CRTRPGMOD` and `CRTSQLRPGI` of its members, knowing one
+  error (`n = 'x';`, `RNF7416`; member `HLINV/QRPGLESRC BAD42` has it on
+  line 42). QEMU step 161 compiles `tools/conformance/qap/COMPILE42.rpgle`.
 - The test system (`qapd::testing::develop` and `jobs`): its fixtures
   are in the modules' documentation. QS/400 ships no `CMPPFM`, so QEMU
   step 160 compares the members record by record.
