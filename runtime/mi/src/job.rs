@@ -217,6 +217,8 @@ pub struct Job {
     pub file_binds: Vec<(u32, FileKey, usize)>,
     /// The debugger, while `STRDBG` is in effect.
     pub debug: Option<crate::debug::Debugger>,
+    /// What runs at a stop, kept across `ENDDBG` for the next `STRDBG`.
+    pub parked_hook: Option<crate::debug::Hook>,
     /// Where the native stack stood at the first entry call; the stack
     /// check in `enter` measures from it.
     pub stack_base: usize,
@@ -311,6 +313,7 @@ impl Job {
             file_handles: Vec::new(),
             file_binds: Vec::new(),
             debug: None,
+            parked_hook: None,
             stack_base: 0,
             stack_bytes: 1 << 20,
             ext_msgq: MsgQueue::default(),

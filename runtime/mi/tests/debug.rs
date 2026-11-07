@@ -266,3 +266,24 @@ fn frames_variables_and_step_out() {
     assert_eq!(seen[1].0[0].stmt, 12);
     assert!(j.dbg_variables(0, None).is_err(), "nothing runs now");
 }
+
+#[test]
+fn the_hook_outlives_enddbg() {
+    let mut j = job();
+    let seen = Rc::new(RefCell::new(0));
+    let s = seen.clone();
+    j.set_debug_hook(Box::new(move |_, _| {
+        *s.borrow_mut() += 1;
+        Resume::Go
+    }));
+    j.strdbg("DMAIN", "QGPL").unwrap();
+    j.addbkp("DMAIN", 10);
+    j.call_program("DMAIN", "*LIBL", &[]).unwrap();
+    j.enddbg();
+    assert!(j.debug.is_none());
+    // A second STRDBG stops through the same hook.
+    j.strdbg("DMAIN", "QGPL").unwrap();
+    j.addbkp("DMAIN", 10);
+    j.call_program("DMAIN", "*LIBL", &[]).unwrap();
+    assert_eq!(*seen.borrow(), 2);
+}

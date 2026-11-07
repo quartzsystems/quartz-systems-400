@@ -158,28 +158,42 @@ impl Job {
         {
             return Err(format!("{key} is active on the call stack"));
         }
-        let d = self.debug.get_or_insert_with(Debugger::default);
+        let d = self.debugger();
         if !d.programs.contains(&key) {
             d.programs.push(key.clone());
         }
-        self.act.debug_programs.clone_from(&d.programs);
+        let programs = d.programs.clone();
+        self.act.debug_programs = programs;
         self.act.loaded.remove(&key);
         Ok(key)
     }
 
     /// `ENDDBG`: every program runs its production code again.
     pub fn enddbg(&mut self) {
-        if let Some(d) = self.debug.take() {
+        if let Some(mut d) = self.debug.take() {
             for key in &d.programs {
                 self.act.loaded.remove(key);
+            }
+            // The next STRDBG stops through the same hook.
+            if d.hook.is_some() {
+                self.parked_hook = d.hook.take();
             }
         }
         self.act.debug_programs.clear();
     }
 
+    /// The debug state, made with the hook `ENDDBG` kept.
+    fn debugger(&mut self) -> &mut Debugger {
+        let parked = &mut self.parked_hook;
+        self.debug.get_or_insert_with(|| Debugger {
+            hook: parked.take(),
+            ..Debugger::default()
+        })
+    }
+
     /// `ADDBKP`: a breakpoint at a statement of a program.
     pub fn addbkp(&mut self, program: &str, stmt: u32) {
-        let d = self.debug.get_or_insert_with(Debugger::default);
+        let d = self.debugger();
         if !d
             .breakpoints
             .iter()
@@ -202,7 +216,7 @@ impl Job {
 
     /// What runs at a stop.
     pub fn set_debug_hook(&mut self, hook: Hook) {
-        self.debug.get_or_insert_with(Debugger::default).hook = Some(hook);
+        self.debugger().hook = Some(hook);
     }
 
     /// The variables the running entry registered, with their types.
