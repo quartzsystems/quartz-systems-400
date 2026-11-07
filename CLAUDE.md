@@ -543,20 +543,23 @@ net/          TCP/IP: configuration, sockets, TLS, servers
                 list.rs LISTFMT layouts, src/net/ (tcp, mem) the connections, server.rs,
                 block.rs, src/client/ the FTP command's client, memhost.rs a Host in memory;
                 tests/ sessions in memory and the client against the server over loopback
-docs/         ABI.md, ARCHITECTURE.md, BACKUP.md, CERTS.md, CL.md, CMD.md,
-              CMD_OPEN_QUESTIONS.md, CONSOLE.md, CPP_AUDIT.md, DB_FORMAT.md,
-              DB_OPEN_QUESTIONS.md, DDM.md, DECIMAL.md, DSPF.md, DST.md, FTP.md,
-              HARDWARE_NOTES.md, HOSTSVR.md, HTTPADMIN.md, HTTPADMIN_HANDOFF.md, IFS.md,
-              ILE.md, ILE_OPEN_QUESTIONS.md, INSTALL.md, LICPGM.md, MEDIA.md, MENUS.md,
-              MSGF.md, NAVIGATOR.md, NAVIGATOR_HANDOFF.md, NET_OPEN_QUESTIONS.md, PHASE0.md,
+docs/         ABI.md, ACCESSWEB.md, ACCESSWEB_HANDOFF.md, ARCHITECTURE.md, BACKUP.md,
+              CERTS.md, CL.md, CMD.md, CMD_OPEN_QUESTIONS.md, CONSOLE.md,
+              CPP_AUDIT.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DDM.md, DECIMAL.md,
+              DSPF.md, DST.md, FTP.md, HARDWARE_NOTES.md, HOSTSVR.md, HTTPADMIN.md,
+              HTTPADMIN_HANDOFF.md, IFS.md, ILE.md, ILE_OPEN_QUESTIONS.md, INSTALL.md,
+              LICPGM.md, MEDIA.md, MENUS.md, MSGF.md, NAVIGATOR.md,
+              NAVIGATOR_HANDOFF.md, NET_OPEN_QUESTIONS.md, PERF.md, PHASE0.md,
               PHASE1.md, PHASE10.md, PHASE11.md, PHASE12.md, PHASE2.md, PHASE3.md,
-              PHASE4.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8.md, PHASE9.md, PRINT.md,
-              PTF.md, QAP.md, QIR.md, QSH.md, QUALIFIED_HARDWARE.md, RECOVERY.md, RPG.md,
-              RPG_OPEN_QUESTIONS.md,
-              SAVE_FORMAT.md, SEC_OPEN_QUESTIONS.md, SECURITY.md, SERVERS.md, SERVICE.md,
-              SSHD.md, STORAGE_SERVICE.md, STORE_FORMAT.md, SVC_OPEN_QUESTIONS.md,
-              SYSAPI.md, TCPIP.md, TN5250.md, TOOLS.md, UI_OPEN_QUESTIONS.md, UIM.md,
-              UPDATE_PROTOCOL.md, WEB_STYLE.md, WM_OPEN_QUESTIONS.md, WORKMGMT.md, images/
+              PHASE4.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8.md, PHASE9.md,
+              PRINT.md, PTF.md, QAP.md, QIR.md, QSH.md, QUALIFIED_HARDWARE.md,
+              RECOVERY.md, RELEASE_NOTES_V1R1M0.md, RPG.md, RPG3.md,
+              RPG_OPEN_QUESTIONS.md, SAVE_FORMAT.md, SECURITY.md,
+              SEC_OPEN_QUESTIONS.md, SERVERS.md, SERVICE.md, SQL.md, SSHD.md,
+              STORAGE_SERVICE.md, STORE_FORMAT.md, SVC_OPEN_QUESTIONS.md, SYSAPI.md,
+              TCPIP.md, TN5250.md, TOOLS.md, UIM.md, UI_OPEN_QUESTIONS.md,
+              UPDATE_PROTOCOL.md, WEB_STYLE.md, WM_OPEN_QUESTIONS.md, WORKMGMT.md,
+              releasing.md, images/
 ```
 
 ## Commands
@@ -583,11 +586,16 @@ cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media (carries images/kc and images/ptf-baseline when built)
 cargo run -p build -- kc          # the Knowledge Center (tools/kcbuild) into images/kc
 cargo run -p build -- release     # release build, KC and PTF baseline on the media, target/release/VRM/ with SHA256SUMS(.sig)
-cargo run -p build -- test        # the QEMU suite: Phases 1 to 11, 78 steps (83 hardware resources in a guest of its own)
+cargo run -p build -- test        # the QEMU disk suite: 110 numbered steps (83 hardware resources in a guest of its own)
 cargo run -p conformance -- --only 71,75   # some steps only (the boot step always runs)
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
+cargo run -p build -- notices [--check]   # NOTICES.txt from Cargo.lock (fails on a license outside deny.toml)
+cargo run -p kcbuild -- notes [--update]  # the release notes' SQL refusals and marker inventory, generated from the tree
+ci/version.sh [release|check [TAG]|notes|prepare X.Y.Z]   # VERSION, the release and CHANGELOG.md (docs/releasing.md)
+gh workflow run qemu.yml --ref BRANCH -f suite=disk -f only=153,154   # chosen QEMU steps on GitHub's runners
+gh workflow run release-check.yml --ref main   # a release built from scratch on GitHub; its SHA256SUMS
 cargo run -p fmtcheck [-- update] # the format freeze; update only after a version bump
 cargo run -p build -- fuzz [--target NAME] [--secs N] [--jobs N]   # every fuzz target, instrumented (3 min each, 6 at once)
 cargo run -p build -- soak [--secs N]   # an hour of load under QEMU; leaks, new SRCs, orphaned jobs fail it
