@@ -28,14 +28,37 @@ fn sources(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// Whether a line sends what its literals hold.
-fn sends(line: &str) -> bool {
-    let t = line.trim_start();
-    if line.contains("want(")
+/// Whether a line opens a call whose literals are descriptions or
+/// expected text, not commands.
+fn checks(line: &str) -> bool {
+    line.contains("want(")
         || line.contains("refuse(")
         || line.contains("Err(")
         || line.contains("ok(&")
-    {
+}
+
+/// Parentheses a line opens less those it closes, outside literals.
+fn balance(line: &str) -> i32 {
+    let mut n = 0;
+    let mut quoted = false;
+    let mut escaped = false;
+    for c in line.chars() {
+        match c {
+            _ if escaped => escaped = false,
+            '\\' if quoted => escaped = true,
+            '"' => quoted = !quoted,
+            '(' if !quoted => n += 1,
+            ')' if !quoted => n -= 1,
+            _ => {}
+        }
+    }
+    n
+}
+
+/// Whether a line sends what its literals hold.
+fn sends(line: &str) -> bool {
+    let t = line.trim_start();
+    if checks(line) {
         return false;
     }
     line.contains(".command(")
@@ -94,7 +117,16 @@ fn substituted(s: &str) -> Option<String> {
 fn commands(text: &str) -> Vec<(String, String)> {
     let mut out = Vec::new();
     let lines: Vec<&str> = text.lines().collect();
+    // Open parentheses of a check call spread over several lines.
+    let mut inside = 0;
     for (i, line) in lines.iter().enumerate() {
+        if inside > 0 {
+            inside += balance(line);
+            continue;
+        }
+        if checks(line) {
+            inside = balance(line).max(0);
+        }
         if !sends(line) {
             continue;
         }
