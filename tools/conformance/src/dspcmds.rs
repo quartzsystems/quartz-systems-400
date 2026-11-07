@@ -127,8 +127,8 @@ const SETUP: &[&str] = &[
     "chgneta MAXHOP(16)",
     "crtusrprf USRPRF(Q82GRP) PASSWORD(*NONE) TEXT('Step 82 group')",
     "crtudfs UDFS('/dev/QASP01/q82.udfs')",
-    "crtjrnrcv JRNRCV(QSYS/AUDRCV0)",
-    "crtjrn JRN(QSYS/QAUDJRN) JRNRCV(QSYS/AUDRCV0)",
+    "crtjrnrcv JRNRCV(QSYS/AUDRCV0) AUT(*EXCLUDE)",
+    "crtjrn JRN(QSYS/QAUDJRN) JRNRCV(QSYS/AUDRCV0) AUT(*EXCLUDE)",
     "QSCRTCRTS KEYSTORE(*SYSTEM) PASSWORD('step82pw')",
     // A tape and its catalog.
     "crtdevtap DEVD(Q82TAP) RSRCNAME(*VRT)",

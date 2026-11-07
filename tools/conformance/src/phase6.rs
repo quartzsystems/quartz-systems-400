@@ -194,8 +194,9 @@ impl Suite {
         want(&me, "QSYS", "svc.whoami")?;
         want(&me, "*ALLOBJ", "svc.whoami")?;
         for cmd in [
-            "crtjrnrcv QSYS/AUDRCV0 THRESHOLD(64)",
-            "crtjrn QSYS/QAUDJRN JRNRCV(QSYS/AUDRCV0) MNGRCV(*USER)",
+            // Shipped as IBM advises: *PUBLIC *EXCLUDE (QSSECCHK, step 107).
+            "crtjrnrcv QSYS/AUDRCV0 THRESHOLD(64) AUT(*EXCLUDE)",
+            "crtjrn QSYS/QAUDJRN JRNRCV(QSYS/AUDRCV0) MNGRCV(*USER) AUT(*EXCLUDE)",
             "chgsecaud QAUDCTL(*AUDLVL *OBJAUD) QAUDLVL(*DFTSET)",
         ] {
             let out = s.command(cmd, CMD)?;
@@ -297,6 +298,14 @@ impl Suite {
     pub(crate) fn adopted_authority(&self, s: &mut Session) -> Result<String, String> {
         build(s, "ADOPT", &secret_writer("ADOPT"), "USRPRF(*OWNER)")?;
         build(s, "NOADOPT", &secret_writer("NOADOPT"), "USRPRF(*USER)")?;
+        // Callable, not changeable, by *PUBLIC: an adopting program open
+        // to change is a QSSECCHK failure (step 107).
+        for cmd in [
+            "RVKOBJAUT OBJ(QGPL/ADOPT) OBJTYPE(*PGM) USER(*PUBLIC) AUT(*ALL)",
+            "GRTOBJAUT OBJ(QGPL/ADOPT) OBJTYPE(*PGM) USER(*PUBLIC) AUT(*USE)",
+        ] {
+            s.command(cmd, CMD)?;
+        }
         let shown = s.command("dsppgm QGPL/ADOPT", CMD)?;
         want(&shown, "*OWNER", "dsppgm ADOPT")?;
         sign_on(s, "ANNE")?;
@@ -365,7 +374,7 @@ impl Suite {
     /// the next IPL starts with `QAUDCTL(*NONE)` and `CPI2284` in `QHST`.
     pub(crate) fn audit_end_action(&self, s: &mut Session) -> Result<String, String> {
         for cmd in [
-            "crtjrnrcv QSYS/AUDRCV1 THRESHOLD(1)",
+            "crtjrnrcv QSYS/AUDRCV1 THRESHOLD(1) AUT(*EXCLUDE)",
             "chgjrn QSYS/QAUDJRN JRNRCV(QSYS/AUDRCV1)",
         ] {
             let out = s.command(cmd, CMD)?;
@@ -407,7 +416,7 @@ impl Suite {
         want(&hist, "journal QAUDJRN in QSYS", "CPI2284's text in QHST")?;
         // Auditing back on, with room.
         for cmd in [
-            "crtjrnrcv QSYS/AUDRCV2",
+            "crtjrnrcv QSYS/AUDRCV2 AUT(*EXCLUDE)",
             "chgjrn QSYS/QAUDJRN JRNRCV(QSYS/AUDRCV2)",
             "chgsecaud QAUDCTL(*AUDLVL *OBJAUD)",
             "svc.sysval QAUDENDACN *NOTIFY",
