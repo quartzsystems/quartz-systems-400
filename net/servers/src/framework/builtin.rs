@@ -45,8 +45,10 @@ impl TcpServer for Telnet {
 
 /// `*HTTP` with `HTTPSVR(*ADMIN)`: the administration listener `ADMIN`
 /// in `QHTTPSVR` alone, its ports in the request data with Navigator's
-/// (`NAVPORT`, `NAVTLSPORT`, for the `NAVIGATOR` instance it lists).
-/// Navigator is an instance of its own ([`super::HttpServer`]).
+/// (`NAVPORT`, `NAVTLSPORT`, for the `NAVIGATOR` instance it lists) and
+/// Access for Web's (`AFWPORT`, `AFWTLSPORT`, for `ACCESSWEB`).
+/// Navigator and Access for Web are instances of their own
+/// ([`super::HttpServer`]).
 pub struct HttpAdmin;
 
 impl TcpServer for HttpAdmin {
@@ -57,11 +59,14 @@ impl TcpServer for HttpAdmin {
     fn jobs(&self, req: &Request, attrs: &ServerAttrs) -> Result<Vec<JobStart>, Refusal> {
         check_instance(self.spec(), req)?;
         let nav = HttpAttrs::navigator(&attrs.bag);
+        let afw = HttpAttrs::accessweb(&attrs.bag);
         let rqsdta = format!(
-            "{} NAVPORT({}) NAVTLSPORT({})",
+            "{} NAVPORT({}) NAVTLSPORT({}) AFWPORT({}) AFWTLSPORT({})",
             HttpAttrs::from_bag(&attrs.bag).rqsdta(),
             nav.port,
-            nav.tls_port
+            nav.tls_port,
+            afw.port,
+            afw.tls_port
         );
         Ok(listener_job(self.spec(), rqsdta).into_iter().collect())
     }

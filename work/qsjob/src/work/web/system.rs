@@ -159,6 +159,8 @@ fn file_of(id: &str) -> (&'static str, &'static str) {
         ("QZHBMSG", "QHTTPSVR")
     } else if id.starts_with("TCP") {
         ("QTCPMSG", "QSYS")
+    } else if id.starts_with("XWA") || id.starts_with("QAD") {
+        accessweb::msgs::FILE
     } else if id.starts_with("SQL") {
         ("QSQLMSG", "QSYS")
     } else {

@@ -261,12 +261,12 @@ pub struct Level {
     pub settings: Vec<(String, Setting)>,
 }
 
-/// The levels checked for `subject`: the profile, its groups,
-/// `*PUBLIC`. `*PUBLIC` alone has only itself.
-pub fn levels(env: &Env, subject: &str) -> Vec<Level> {
+/// The levels checked for `subject`: the user profile and its groups,
+/// or the group profile (`is_group`), then `*PUBLIC`; `*PUBLIC` alone
+/// has only itself.
+pub fn levels(env: &Env, subject: &str, is_group: bool) -> Vec<Level> {
     let mut out = Vec::new();
     if subject != PUBLIC {
-        let is_group = env.system.profiles().iter().any(|p| p.name == subject && p.group);
         out.push(Level {
             by: if is_group { SetBy::Group(subject.into()) } else { SetBy::User(subject.into()) },
             settings: env.policy.settings(subject),
@@ -328,7 +328,7 @@ pub fn secadm(env: &Env, user: &str) -> bool {
 /// `policy(user, function)`: what every page asks before it shows or
 /// runs an action.
 pub fn policy(env: &Env, user: &str, function: &str) -> Effective {
-    resolve(&levels(env, user), function, secadm(env, user))
+    resolve(&levels(env, user, false), function, secadm(env, user))
 }
 
 /// Whether `user` may use `function`.

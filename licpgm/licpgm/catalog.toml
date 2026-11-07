@@ -293,21 +293,36 @@ compliance = "*WARNING"
 usage_limit = "*NOMAX"
 
 # ---------------------------------------------------------------------
-# Reserved: IDs registered, nothing shipped.
+# QS00AFW: Access for Web. Its job runs the OS's program; its objects
+# are its message file and its policy and preference stores, in QUSRSYS
+# (lic/osobjects' products.rs); installed, it starts instance ACCESSWEB.
 [[package]]
 [package.product]
 id = "QS00AFW"
 ibm_alias = "5770XH2"
 text = "Quartz Systems/400 Access for Web"
-library = "QAFW"
-status = "reserved"
+library = "QUSRSYS"
+first_copyright = 2026
+current_copyright = 2026
+status = "shipped"
 
 [[package.option]]
 option = "*BASE"
 text = "Quartz Systems/400 Access for Web"
 msgid = "QSZ6000"
+feature = "5001"
 requires = ["QS00SS1:*BASE", "QS00DG1:*BASE"]
+libraries = [{ name = "QUSRSYS" }]
+objects = [
+    { lib = "QUSRSYS", name = "QZXWMSG", type = "*MSGF" },
+    { lib = "QUSRSYS", name = "QZXWPOL", type = "*USRIDX" },
+    { lib = "QUSRSYS", name = "QZXWPRF", type = "*USRIDX" },
+]
+components = ["accessweb (the ACCESSWEB instance)"]
 ibm = "5770XH2 *BASE"
+
+# ---------------------------------------------------------------------
+# Reserved: IDs registered, nothing shipped.
 
 [[package]]
 [package.product]

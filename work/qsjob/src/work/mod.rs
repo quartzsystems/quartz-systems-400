@@ -13,6 +13,7 @@ pub mod consdev;
 pub mod ddm;
 pub mod ftp;
 pub mod httpadm;
+pub mod httpafw;
 pub mod httpnav;
 pub mod hostsvr;
 pub mod httpsvr;

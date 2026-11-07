@@ -185,3 +185,27 @@ fn navigator_is_an_instance_of_its_own() {
     fw.run(&mut env, &["*HTTP".to_string()], &Instance::All, true, false);
     assert!(!env.running.iter().any(|j| j.name == "NAVIGATOR"));
 }
+
+/// `HTTPSVR(ACCESSWEB)` is Access for Web's job, as Navigator's: its
+/// ports from `CHGHTTPA`'s `AFWPORT` and `AFWTLSPORT`.
+#[test]
+fn accessweb_is_an_instance_of_its_own() {
+    let (fw, mut env) = (fw(), env());
+    env.cfg.get_mut("*HTTP").set("AFWPORT", "8003");
+    env.instances.push(HttpInstance { name: "ACCESSWEB".into(), autostart: false, user: "QTMHHTTP".into() });
+    assert_eq!(
+        fw.start(&mut env, &named("accessweb")).unwrap(),
+        "TCP1A07 HTTP server starting: instance ACCESSWEB."
+    );
+    let j = &env.running[0];
+    assert_eq!(
+        (j.name.as_str(), j.user.as_str(), j.subsystem.as_str(), j.role.as_str(), j.rqsdta.as_str()),
+        ("ACCESSWEB", "QTMHHTTP", "QHTTPSVR", "HTTPAFW", "PORT(8003) TLSPORT(2006)")
+    );
+    // Not a user instance: *ALL leaves it alone unless marked autostart.
+    fw.run_with(&mut env, &["*HTTP".to_string()], &Instance::All, false, false, None);
+    assert!(env.running.is_empty());
+    fw.run(&mut env, &["*HTTP".to_string()], &Instance::All, true, false);
+    assert!(!env.running.iter().any(|j| j.name == "ACCESSWEB"));
+    assert_eq!(fw.end(&mut env, &named("ACCESSWEB"), true).unwrap_err().msgid, "TCP1A09");
+}

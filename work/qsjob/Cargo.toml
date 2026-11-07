@@ -66,6 +66,7 @@ ftp = { path = "../../net/ftp", version = "0.1.0" }
 certs = { path = "../../net/certs", version = "0.1.0" }
 httpadmin = { path = "../../net/httpadmin", version = "0.1.0" }
 navigator = { path = "../../net/navigator", version = "0.1.0" }
+accessweb = { path = "../../net/accessweb", version = "0.1.0" }
 qsweb = { path = "../../net/qsweb", version = "0.1.0" }
 sysval = { path = "../../lic/sysval", version = "0.1.0" }
 rustls = { version = "0.23.46", default-features = false, features = ["std", "tls12"] }

@@ -97,7 +97,7 @@ fn http_admin_instance_and_subsystem() {
     assert_eq!(env.subsystems, ["QHTTPSVR"]);
     let j = &env.running[0];
     assert_eq!((j.name.as_str(), j.user.as_str(), j.role.as_str()), ("ADMIN", "QTMHHTTP", "HTTPADM"));
-    assert_eq!(j.rqsdta, "PORT(8001) TLSPORT(2010) NAVPORT(2002) NAVTLSPORT(2005)");
+    assert_eq!(j.rqsdta, "PORT(8001) TLSPORT(2010) NAVPORT(2002) NAVTLSPORT(2005) AFWPORT(2003) AFWTLSPORT(2006)");
     // Navigator is an instance of its own: ADMIN starts alone.
     assert_eq!(env.running.len(), 1);
     let other = Request {

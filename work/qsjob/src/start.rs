@@ -71,6 +71,7 @@ pub fn run() -> ! {
         "CONSOLE" => crate::work::consdev::run(ctl, &link, &start),
         "HTTPADM" => crate::work::httpadm::run(ctl, &link, &start),
         "HTTPNAV" => crate::work::httpnav::run(ctl, &link, &start),
+        "HTTPAFW" => crate::work::httpafw::run(ctl, &link, &start),
         "HOSTSVRD" => crate::work::hostsvr::daemon::run(ctl, &link, &start),
         crate::work::ddm::ROLE => crate::work::ddm::listener::run(ctl, &link, &start),
         servers::framework::HTTP_ROLE => crate::work::httpsvr::run(ctl, &link, &start),

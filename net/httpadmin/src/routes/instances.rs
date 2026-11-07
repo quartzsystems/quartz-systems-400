@@ -55,10 +55,13 @@ fn view(entry: Entry, env: &Env, jobs: &[HttpJob]) -> View {
     View { entry, conf, ports, job }
 }
 
-/// Whether an entry is listed: Navigator's only while its product is
-/// installed.
+/// Whether an entry is listed: Navigator's and Access for Web's only while
+/// their products are installed.
 fn listed(env: &Env, e: &Entry) -> bool {
-    !e.name.eq_ignore_ascii_case(seed::NAVIGATOR) || env.system.product_installed(seed::NAVIGATOR_PRODUCT)
+    seed::PRODUCTS
+        .iter()
+        .find(|(name, _)| e.name.eq_ignore_ascii_case(name))
+        .is_none_or(|(_, product)| env.system.product_installed(product))
 }
 
 /// Every instance, in registry order.

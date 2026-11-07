@@ -5,7 +5,8 @@
 //! The product instances: `ADMIN` in the registry with `/www/admin`,
 //! made the first time the `ADMIN` job starts on a system, and
 //! `NAVIGATOR` with `/www/navigator`, made by the `ADMIN` job once
-//! `QS00NAV` is installed. Each listens on its plain port and, with TLS,
+//! `QS00NAV` is installed, and `ACCESSWEB` with `/www/accessweb` once
+//! `QS00AFW` is. Each listens on its plain port and, with TLS,
 //! on its TLS port; their jobs take the ports from `CHGHTTPA`, the
 //! configuration shows them.
 
@@ -34,6 +35,12 @@ pub const NAVIGATOR: &str = "NAVIGATOR";
 /// The licensed program Navigator is: its instance is listed only while
 /// it is installed.
 pub const NAVIGATOR_PRODUCT: &str = "QS00NAV";
+/// Access for Web's instance.
+pub const ACCESSWEB: &str = "ACCESSWEB";
+/// The licensed program Access for Web is.
+pub const ACCESSWEB_PRODUCT: &str = "QS00AFW";
+/// The products' instances and their licensed programs.
+pub const PRODUCTS: &[(&str, &str)] = &[(NAVIGATOR, NAVIGATOR_PRODUCT), (ACCESSWEB, ACCESSWEB_PRODUCT)];
 
 /// Make `ADMIN`'s registry entry and server root when the registry has
 /// none; whether it was made. `tls_port` 0 leaves TLS out. `stamp` is
@@ -46,6 +53,12 @@ pub fn ensure_admin(files: &dyn Files, port: u16, tls_port: u16, stamp: &str, no
 /// has none, autostart off; whether it was made.
 pub fn ensure_navigator(files: &dyn Files, port: u16, tls_port: u16, stamp: &str, now: u64) -> httpd::Result<bool> {
     ensure(files, NAVIGATOR, "Navigator for QS/400", false, (port, tls_port), stamp, now)
+}
+
+/// Make `ACCESSWEB`'s registry entry and server root when the registry
+/// has none, autostart off; whether it was made.
+pub fn ensure_accessweb(files: &dyn Files, port: u16, tls_port: u16, stamp: &str, now: u64) -> httpd::Result<bool> {
+    ensure(files, ACCESSWEB, "QS/400 Access for Web", false, (port, tls_port), stamp, now)
 }
 
 fn ensure(

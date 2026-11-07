@@ -190,7 +190,12 @@ mod tests {
             .reserved()
             .map(|p| p.definition.product.as_str())
             .collect();
-        assert_eq!(reserved, ["QS00AFW", "QS00PSE"]);
+        assert_eq!(reserved, ["QS00PSE"]);
+        // Access for Web is shipped: its message file and stores in QUSRSYS.
+        let afw = c.product("QS00AFW").unwrap();
+        assert_eq!(afw.status, Status::Shipped);
+        assert_eq!(afw.loads[0].1.libraries[0].installed, "QUSRSYS");
+        assert_eq!(afw.loads[0].1.objects.len(), 3);
         // Navigator is shipped, in QSYS: it has no objects of its own.
         let nav = c.product("QS00NAV").unwrap();
         assert_eq!(nav.status, Status::Shipped);

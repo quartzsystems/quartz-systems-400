@@ -139,8 +139,9 @@ pub trait System: Send + Sync {
     fn groups(&self, user: &str) -> Vec<String>;
     /// The profile's text (`Cody Wellman`).
     fn text(&self, user: &str) -> String;
-    /// The profiles policies are kept for: users and groups.
-    fn profiles(&self) -> Vec<Profile>;
+    /// The profiles policies are kept for, users and groups, as `user`
+    /// may list them.
+    fn profiles(&self, user: &str) -> Vec<Profile>;
     /// What the home page counts for `user`, read as the user.
     fn counts(&self, user: &str) -> Counts;
     /// Write an audit journal entry.

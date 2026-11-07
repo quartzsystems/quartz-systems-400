@@ -95,8 +95,16 @@ pub static SPECS: &[ServerSpec] = &[
         jobs: &[
             job("ADMIN", "QTMHHTTP", "QHTTPSVR", JobKind::Listener, "HTTPADM"),
             job("NAVIGATOR", "QTMHHTTP", "QHTTPSVR", JobKind::Listener, "HTTPNAV"),
+            job("ACCESSWEB", "QTMHHTTP", "QHTTPSVR", JobKind::Listener, "HTTPAFW"),
         ],
-        ports: &[tcp(2001, false), tcp(2010, true), tcp(2002, false), tcp(2005, true)],
+        ports: &[
+            tcp(2001, false),
+            tcp(2010, true),
+            tcp(2002, false),
+            tcp(2005, true),
+            tcp(2003, false),
+            tcp(2006, true),
+        ],
         attrs_cmd: Some("CHGHTTPA"),
         app_id: Some("QS400_HTTP_SERVER_ADMIN"),
         exit_points: &[],

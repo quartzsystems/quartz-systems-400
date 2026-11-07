@@ -27,7 +27,7 @@ const CRUMB: &[&str] = &[GROUP, "Policies"];
 /// The profiles the select offers: users of class `*USER`, then the
 /// groups, then `*PUBLIC`; `shown` first when it is another profile.
 fn subjects(rq: &Rq<'_>, shown: Option<&str>) -> Vec<(String, &'static str)> {
-    let all: Vec<Profile> = rq.env().system.profiles();
+    let all: Vec<Profile> = rq.env().system.profiles(rq.user());
     let mut out: Vec<(String, &'static str)> = Vec::new();
     if let Some(s) = shown.filter(|s| *s != PUBLIC)
         && let Some(p) = all.iter().find(|p| p.name == s)
@@ -54,9 +54,9 @@ fn named(v: &str) -> String {
 
 /// The setting of every function for `subject`, and what it inherits
 /// without its own settings.
-fn view(rq: &Rq<'_>, subject: &str) -> (Vec<Level>, bool) {
+fn view(rq: &Rq<'_>, subject: &str, group: bool) -> (Vec<Level>, bool) {
     let env = rq.env();
-    let lv = policy::levels(env, subject);
+    let lv = policy::levels(env, subject, group);
     let secadm = subject != PUBLIC && policy::secadm(env, subject);
     (lv, secadm)
 }
@@ -90,7 +90,7 @@ fn show(rq: &Rq<'_>, subject: &str) -> Response {
         return rq.not_found(&format!("user profile {subject}"));
     };
     let group = opts[at].1 == "group";
-    let (lv, secadm) = view(rq, subject);
+    let (lv, secadm) = view(rq, subject, group);
     let mut body = String::from(
         "<table class=\"msg\"><tr><td class=\"info\">Policies are checked in this order: user profile, group profiles, *PUBLIC. A Deny at any level denies. The user's object authority on the system still applies.</td></tr></table>",
     );
@@ -155,7 +155,8 @@ fn show(rq: &Rq<'_>, subject: &str) -> Response {
 /// The settings to keep for `subject` from the posted radios: those
 /// that differ from what it inherits.
 fn posted(rq: &Rq<'_>, subject: &str) -> Vec<(String, Setting)> {
-    let (mut lv, secadm) = view(rq, subject);
+    let group = subjects(rq, Some(subject)).iter().any(|o| o.0 == subject && o.1 == "group");
+    let (mut lv, secadm) = view(rq, subject, group);
     if subject == PUBLIC {
         lv.clear();
     } else {

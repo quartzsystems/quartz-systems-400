@@ -17,7 +17,9 @@ mod starter;
 
 pub use builtin::{Ftp, HttpAdmin, Standard, Telnet};
 pub use hostsvr::{HOST_DAEMONS, HostSvr};
-pub use httpsvr::{DEFAULT_DELAY, HTTP_ROLE, HTTP_SUBSYSTEM, HttpServer, NAVIGATOR, NAVIGATOR_PRODUCT};
+pub use httpsvr::{
+    ACCESSWEB, ACCESSWEB_PRODUCT, DEFAULT_DELAY, HTTP_ROLE, HTTP_SUBSYSTEM, HttpServer, NAVIGATOR, NAVIGATOR_PRODUCT,
+};
 pub use small::{Lpd, Ntp};
 pub use starter::Starter;
 

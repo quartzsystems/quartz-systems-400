@@ -44,7 +44,7 @@ const PGM: &str = "QZHBHTTP";
 fn start_listeners(
     bridge: &Bridge,
     env: Env,
-    (a, nav): (HttpAttrs, HttpAttrs),
+    (a, nav, afw): (HttpAttrs, HttpAttrs, HttpAttrs),
     system: String,
 ) -> Result<Vec<Running>, String> {
     let settings = Settings::load(env.files.as_ref());
@@ -65,10 +65,14 @@ fn start_listeners(
         }
     };
     made("ADMIN", httpadmin::seed::ensure_admin(env.files.as_ref(), a.port, tls, &stamp, now));
-    // Navigator's instance, listed once its product is installed.
+    // The products' instances, listed once their products are installed.
     if env.system.product_installed(httpadmin::seed::NAVIGATOR_PRODUCT) {
         let r = httpadmin::seed::ensure_navigator(env.files.as_ref(), nav.port, nav.tls_port, &stamp, now);
         made(httpadmin::seed::NAVIGATOR, r);
+    }
+    if env.system.product_installed(httpadmin::seed::ACCESSWEB_PRODUCT) {
+        let r = httpadmin::seed::ensure_accessweb(env.files.as_ref(), afw.port, afw.tls_port, &stamp, now);
+        made(httpadmin::seed::ACCESSWEB, r);
     }
     let admin = Arc::new(Admin::new(env));
     // Not up until it binds: 2001 serves rather than redirect to it.
@@ -96,12 +100,13 @@ fn start_listeners(
 /// Run the administration server. Never returns.
 pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let a = HttpAttrs::from_rqsdta(&start.rqsdta);
-    // Navigator's ports, for the instance it lists.
-    let bag: Vec<(String, String)> = ["TLSPORT", "NAVPORT", "NAVTLSPORT"]
+    // Navigator's and Access for Web's ports, for the instances it lists.
+    let bag: Vec<(String, String)> = ["TLSPORT", "NAVPORT", "NAVTLSPORT", "AFWPORT", "AFWTLSPORT"]
         .iter()
         .filter_map(|k| servers::attrs::keyword(&start.rqsdta, k).map(|v| ((*k).to_string(), v)))
         .collect();
     let nav = HttpAttrs::navigator(&bag);
+    let afw = HttpAttrs::accessweb(&bag);
     let console = crate::console::Console::new(ctl, link, start);
     let main = Main::new(link, console);
     let (bridge, rx) = Bridge::new();
@@ -115,7 +120,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         certs: Arc::new(Remote(CertLink { bridge: bridge.clone() })),
     };
     let starter = bridge.clone();
-    let setup = std::thread::spawn(move || start_listeners(&starter, env, (a, nav), name));
+    let setup = std::thread::spawn(move || start_listeners(&starter, env, (a, nav, afw), name));
     // `bridge` stays: the job's thread is never without a caller.
     super::web::serve(main, &rx, setup, start.number)
 }

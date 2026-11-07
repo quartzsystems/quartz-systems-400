@@ -2564,6 +2564,7 @@ dependencies = [
 name = "qsjob"
 version = "0.1.0"
 dependencies = [
+ "accessweb",
  "blockdev",
  "ccsid",
  "certs",

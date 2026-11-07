@@ -51,7 +51,7 @@ fn shipped_system_rows() {
     assert_eq!(os[0].0, "*BASE");
     assert!(
         rows.iter()
-            .all(|r| !matches!(r.product.as_str(), "QS00AFW" | "QS00PSE")),
+            .all(|r| r.product.as_str() != "QS00PSE"),
         "reserved products are not installed"
     );
     assert!(

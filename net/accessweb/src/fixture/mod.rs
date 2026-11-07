@@ -182,7 +182,7 @@ impl System for FixtureSystem {
         PROFILES.iter().find(|p| p.name == user).map(|p| p.text.to_string()).unwrap_or_default()
     }
 
-    fn profiles(&self) -> Vec<Profile> {
+    fn profiles(&self, _user: &str) -> Vec<Profile> {
         // The order the prototype's select shows.
         let order = ["CWELLMAN", "QSECOFR", "WEBUSER", "WEBUSERS", "WAREHOUSE", "ADMINS"];
         order

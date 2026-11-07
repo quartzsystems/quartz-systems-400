@@ -126,7 +126,7 @@ fn prdr0100_of_a_reserved_product_is_defined() {
         &sys(),
         200,
         "PRDR0100",
-        &prdi("QS00AFW", "V1R1M0", "0000", "*CODE"),
+        &prdi("QS00PSE", "V1R1M0", "0000", "*CODE"),
         None,
     )
     .unwrap();

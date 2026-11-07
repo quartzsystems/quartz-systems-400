@@ -7,7 +7,8 @@
 //! (IBM's are in the instance's configuration file, which comes with
 //! the full HTTP server); the bag's `PORT` and `TLSPORT` move them, and
 //! `TLSPORT(0)` leaves TLS off. Navigator, started with it, is on 2002
-//! and 2005 (`NAVPORT`, `NAVTLSPORT`).
+//! and 2005 (`NAVPORT`, `NAVTLSPORT`), Access for Web on 2003 and 2006
+//! (`AFWPORT`, `AFWTLSPORT`).
 
 use super::{get, keyword};
 
@@ -19,6 +20,10 @@ pub const TLS_PORT: u16 = 2010;
 pub const NAV_PORT: u16 = 2002;
 /// Navigator's TLS port.
 pub const NAV_TLS_PORT: u16 = 2005;
+/// Access for Web's plain port.
+pub const AFW_PORT: u16 = 2003;
+/// Access for Web's TLS port.
+pub const AFW_TLS_PORT: u16 = 2006;
 
 /// The administration instance's ports.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -62,6 +67,18 @@ impl HttpAttrs {
         }
     }
 
+    /// Access for Web's ports (`ACCESSWEB`, 2003 and 2006): the bag's
+    /// `AFWPORT` and `AFWTLSPORT`; no TLS when the administration
+    /// instance has none.
+    pub fn accessweb(bag: &[(String, String)]) -> Self {
+        let admin = Self::from_bag(bag);
+        let port = |k, d| get(bag, k).and_then(|p| p.trim().parse().ok()).unwrap_or(d);
+        Self {
+            port: port("AFWPORT", AFW_PORT),
+            tls_port: if admin.tls_port == 0 { 0 } else { port("AFWTLSPORT", AFW_TLS_PORT) },
+        }
+    }
+
     /// The listener job's request data.
     pub fn rqsdta(&self) -> String {
         format!("PORT({}) TLSPORT({})", self.port, self.tls_port)
@@ -93,5 +110,7 @@ mod tests {
         assert_eq!(HttpAttrs::from_rqsdta(""), d);
         assert_eq!(HttpAttrs::navigator(&[]).rqsdta(), "PORT(2002) TLSPORT(2005)");
         assert_eq!(HttpAttrs::navigator(&[("TLSPORT".into(), "0".into())]).tls_port, 0);
+        assert_eq!(HttpAttrs::accessweb(&[]).rqsdta(), "PORT(2003) TLSPORT(2006)");
+        assert_eq!(HttpAttrs::accessweb(&[("AFWPORT".into(), "8003".into())]).port, 8003);
     }
 }

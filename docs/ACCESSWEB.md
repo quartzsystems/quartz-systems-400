@@ -113,7 +113,42 @@ and HTTP server instance `ACCESSWEB`, off until started:
 `work/qsjob/src/work/httpafw/`); `ENDTCPSVR ... HTTPSVR(ACCESSWEB)`
 ends it. Without `QS00AFW` the instance does not exist (`TCP1A06`). It
 listens on 2003 and, with TLS, 2006 (the certificate `*SYSTEM` assigns
-`QS400_HTTP_SERVER_ACCESSWEB`, else the system's own).
+`QS400_HTTP_SERVER_ACCESSWEB`, a shipped application ID, else the
+system's own); `CHGHTTPA`'s bag moves them (`AFWPORT`, `AFWTLSPORT`).
+The `ADMIN` job makes its registry entry and `/www/accessweb` once
+`QS00AFW` is installed (autostart off); HTTP Server Administration
+lists it only then.
+
+`QS00AFW`'s `*BASE` code load is `QUSRSYS/QZXWMSG` (`*MSGF`) and the
+two stores, user indexes `QUSRSYS/QZXWPOL` (policies) and
+`QUSRSYS/QZXWPRF` (preferences), made by `lic/osobjects`' products.rs
+owned by `QTMHHTTP` (variable entries, a 30-byte key: the profile in
+10, the function or preference key in 20; the value after it). The job
+reads and writes them as itself; everything else runs as the
+signed-on user, the job swapped to the profile handle taken at
+sign-on (`work/qsjob/src/work/httpafw/`, over `web/` as Navigator).
+`DLTLICPGM` removes the objects (`QUSRSYS` stays), `RSTLICPGM` brings
+them back.
+
+| Part | Live |
+|---|---|
+| System | `web::system::Core` (name, special authorities, class, groups, audit `PW`/`AF`, message texts: `XWA`/`QAD` from `QUSRSYS/QZXWMSG`); sign-on with the 5250 rules (`sign_on`; an expired password signs on to Change password only, no handle), `QSYGETPH`; `QSYCHGPW` (`sec_api ChangePassword`); `QPWDMINLEN`, `QPWDMAXLEN`, `QPWDRQDDIF`, `QPWDLVL`; the zone from `QTIMZON` (`sysval::tz`); the profile's text and the profiles (`QSYRUSRI`, `QSYLAUTU`, a group as Navigator decides); the counts: `msgq_list QUSRSYS/<user>`, `splf_list <user>`, the user's active jobs |
+| Policy, Prefs | `usridx_find` (range of the profile's keys) and `usridx_add` on the two stores, as the job; the schemas Preferences offers: the libraries the user may list, `QGPL` and those without a `Q` name |
+| The areas | not built: `httpafw/areas.rs` (`NotYet`); their routes answer `XWA0099` |
+
+- `BLOCKED(rel)`: the password approval program (`QPWDVLDPGM`) is not
+  called from the web job: Change password is refused with `CPF22D3`
+  while one is set (`httpafw/system.rs`).
+
+QEMU step 153 (`tools/conformance/src/afwstep.rs`) saves `QS00AFW`
+(`SAVLICPGM`), deletes it (`STRTCPSVR ... HTTPSVR(ACCESSWEB)` then
+answers `TCP1A06`), restores it (`RSTLICPGM`, the three objects back),
+starts `HTTPSVR(ACCESSWEB)`, signs on as `QSECOFR` over 2003, checks My
+home page against `DSPNETA`, changes and uses a preference, denies a
+new profile's sign-on with a policy (`XWA0001`) and clears it, refuses
+a POST without the form field, shows Database's `XWA0099`, signs off,
+signs on and loads My home page over TLS on 2006 (the cookie
+`Secure`), and ends the instance.
 
 ## Area ownership
 

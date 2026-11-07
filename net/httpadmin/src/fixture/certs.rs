@@ -217,7 +217,6 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
     // Application IDs: the HTTP instances, the update client, the
     // descriptions and the assignments.
     for (id, kind, text) in [
-        ("QS400_HTTP_SERVER_ACCESSWEB", AppKind::Server, "Access for Web (port 2006)"),
         ("QS400_HTTP_SERVER_WEBSTORE", AppKind::Server, "Instance WEBSTORE"),
         ("QS400_HTTP_SERVER_API", AppKind::Server, "Instance API"),
         ("QS400_HTTP_SERVER_INTRANET", AppKind::Server, "Instance INTRANET"),
@@ -228,6 +227,7 @@ fn build_stores(files: &MemFiles, sealer: &KeySealer) -> Result<(), CertError> {
     for (id, text) in [
         ("QS400_HTTP_SERVER_ADMIN", "HTTP administration (port 2001)"),
         ("QS400_HTTP_SERVER_NAVIGATOR", "Navigator (port 2005)"),
+        ("QS400_HTTP_SERVER_ACCESSWEB", "Access for Web (port 2006)"),
         ("QS400_TELNET_SERVER", "Telnet server (TLS port 992)"),
         ("QS400_FTP_SERVER", "FTP server"),
         ("QS400_DDM_DRDA_SERVER", "DDM/DRDA server"),

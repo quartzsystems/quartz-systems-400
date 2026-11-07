@@ -27,7 +27,7 @@ build pipeline asks.
 | `QS00ST1` | shipped | `5770ST1` | Quartz Systems/400 SQL Database Utilities |
 | `QS00DG1` | shipped | `5770DG1` | Quartz Systems/400 HTTP Server |
 | `QS00NAV` | shipped | | Quartz Systems/400 Navigator |
-| `QS00AFW` | reserved | `5770XH2` | Quartz Systems/400 Access for Web |
+| `QS00AFW` | shipped | `5770XH2` | Quartz Systems/400 Access for Web |
 | `QS00PSE` | reserved | | Quartz Systems/400 PASE Runtime |
 
 A product answers to its IBM alias as well (`QSZRTVPR` with `5770SS1`

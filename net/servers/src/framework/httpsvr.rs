@@ -5,7 +5,9 @@
 //! `*HTTP` with its instances. `HTTPSVR(*ADMIN)` is the administration
 //! instance ([`HttpAdmin`]); `HTTPSVR(NAVIGATOR)` is Navigator's, job
 //! `NAVIGATOR` (role `HTTPNAV`), there only while `QS00NAV` is
-//! installed; any other name is an instance of the registry
+//! installed; `HTTPSVR(ACCESSWEB)` is Access for Web's, job `ACCESSWEB`
+//! (role `HTTPAFW`), there only while `QS00AFW` is installed; any other
+//! name is an instance of the registry
 //! (`/www/instances.json`, read through [`Env::http_instances`]): one
 //! job named after it in `QHTTPSVR` under its `ServerUserID`, role
 //! [`HTTP_ROLE`]. `HTTPSVR(*ALL)` starts the administration instance
@@ -31,8 +33,36 @@ pub const DEFAULT_DELAY: u32 = 30;
 pub const NAVIGATOR: &str = "NAVIGATOR";
 /// The licensed program Navigator is.
 pub const NAVIGATOR_PRODUCT: &str = "QS00NAV";
-/// Navigator's job role (`work/qsjob/src/work/httpnav/`).
-const NAVIGATOR_ROLE: &str = "HTTPNAV";
+/// Access for Web's instance (and job) name, its own as Navigator's.
+pub const ACCESSWEB: &str = "ACCESSWEB";
+/// The licensed program Access for Web is.
+pub const ACCESSWEB_PRODUCT: &str = "QS00AFW";
+
+/// A product's own instance: its name, licensed program, job role
+/// (`work/qsjob/src/work/httpnav/`, `httpafw/`) and its ports from the
+/// bag.
+struct ProductInstance {
+    name: &'static str,
+    product: &'static str,
+    role: &'static str,
+    ports: fn(&[(String, String)]) -> HttpAttrs,
+}
+
+/// The products' instances.
+const PRODUCT_INSTANCES: &[ProductInstance] = &[
+    ProductInstance {
+        name: NAVIGATOR,
+        product: NAVIGATOR_PRODUCT,
+        role: "HTTPNAV",
+        ports: HttpAttrs::navigator,
+    },
+    ProductInstance {
+        name: ACCESSWEB,
+        product: ACCESSWEB_PRODUCT,
+        role: "HTTPAFW",
+        ports: HttpAttrs::accessweb,
+    },
+];
 
 /// `*HTTP`: the administration instance and the registry's instances.
 pub struct HttpServer;
@@ -42,47 +72,48 @@ fn is_admin(name: &str) -> bool {
     name.eq_ignore_ascii_case("*ADMIN") || name.eq_ignore_ascii_case("ADMIN")
 }
 
-/// Whether `name` means Navigator's instance.
-fn is_navigator(name: &str) -> bool {
-    name.trim().eq_ignore_ascii_case(NAVIGATOR)
+/// The product instance `name` means.
+fn product_instance(name: &str) -> Option<&'static ProductInstance> {
+    PRODUCT_INSTANCES.iter().find(|p| name.trim().eq_ignore_ascii_case(p.name))
 }
 
-/// Navigator's job, its ports from `CHGHTTPA`'s `NAVPORT` and
-/// `NAVTLSPORT`.
-fn navigator_job(env: &mut dyn Env) -> JobStart {
+/// A product instance's job, its ports from `CHGHTTPA`'s bag
+/// (`NAVPORT` and `NAVTLSPORT`, `AFWPORT` and `AFWTLSPORT`).
+fn product_job(env: &mut dyn Env, p: &ProductInstance) -> JobStart {
     let spec = registry::lookup("*HTTP").expect("in the registry");
     let bag = env.attrs(spec.special).bag;
-    let job = spec.jobs.iter().find(|j| j.role == NAVIGATOR_ROLE);
+    let job = spec.jobs.iter().find(|j| j.role == p.role);
     JobStart {
-        name: job.map_or(NAVIGATOR, |j| j.name).into(),
+        name: job.map_or(p.name, |j| j.name).into(),
         user: job.map_or("QTMHHTTP", |j| j.user).into(),
         subsystem: HTTP_SUBSYSTEM.into(),
-        role: NAVIGATOR_ROLE.into(),
-        rqsdta: HttpAttrs::navigator(&bag).rqsdta(),
+        role: p.role.into(),
+        rqsdta: (p.ports)(&bag).rqsdta(),
         ..JobStart::default()
     }
 }
 
-/// Start Navigator: refused as an unknown instance while `QS00NAV`
-/// is not installed.
-fn start_navigator(env: &mut dyn Env) -> Result<String, Refusal> {
-    if !env.product_installed(NAVIGATOR_PRODUCT) {
+/// Start a product's instance: refused as an unknown instance while
+/// its product is not installed.
+fn start_product(env: &mut dyn Env, p: &ProductInstance) -> Result<String, Refusal> {
+    let (name, product) = (p.name, p.product);
+    if !env.product_installed(product) {
         return Err(Refusal::new(
             msg::NO_INSTANCE,
-            format!("Server instance {NAVIGATOR} of *HTTP not found: {NAVIGATOR_PRODUCT} is not installed."),
+            format!("Server instance {name} of *HTTP not found: {product} is not installed."),
         ));
     }
-    if env.active(NAVIGATOR) {
-        return Err(Refusal::new(msg::ALREADY, format!("HTTP server instance {NAVIGATOR} already started.")));
+    if env.active(name) {
+        return Err(Refusal::new(msg::ALREADY, format!("HTTP server instance {name} already started.")));
     }
     if let Err(e) = env.start_subsystem(HTTP_SUBSYSTEM) {
         tracing::warn!("*HTTP: subsystem {HTTP_SUBSYSTEM}: {e}");
     }
-    let job = navigator_job(env);
+    let job = product_job(env, p);
     env.start_job(&job).map_err(|e| {
-        Refusal::new(msg::NOT_STARTED, format!("HTTP server instance {NAVIGATOR} could not be started: {e}"))
+        Refusal::new(msg::NOT_STARTED, format!("HTTP server instance {name} could not be started: {e}"))
     })?;
-    Ok(format!("{} HTTP server starting: instance {NAVIGATOR}.", msg::STARTING))
+    Ok(format!("{} HTTP server starting: instance {name}.", msg::STARTING))
 }
 
 fn admin_req(req: &Request) -> Request {
@@ -137,19 +168,19 @@ impl HttpServer {
         Ok(format!("{} HTTP server ending: instance {name}.", msg::ENDING))
     }
 
-    /// Every registry instance (not the administration one or
-    /// Navigator's).
+    /// Every registry instance (not the administration one or a
+    /// product's).
     fn instances(env: &mut dyn Env) -> Vec<HttpInstance> {
         env.http_instances()
             .into_iter()
-            .filter(|i| !is_admin(&i.name) && !is_navigator(&i.name))
+            .filter(|i| !is_admin(&i.name) && product_instance(&i.name).is_none())
             .collect()
     }
 
-    /// Whether Navigator's registry entry is marked autostart (it is
-    /// not when made).
-    fn navigator_autostart(env: &mut dyn Env) -> bool {
-        env.http_instances().iter().any(|i| is_navigator(&i.name) && i.autostart)
+    /// Whether a product instance's registry entry is marked autostart
+    /// (it is not when made).
+    fn product_autostart(env: &mut dyn Env, p: &ProductInstance) -> bool {
+        env.http_instances().iter().any(|i| i.name.trim().eq_ignore_ascii_case(p.name) && i.autostart)
     }
 }
 
@@ -168,7 +199,7 @@ impl TcpServer for HttpServer {
             Instance::Named(n) => env.active(&n.trim().to_ascii_uppercase()),
             _ => {
                 HttpAdmin.active(env, req)
-                    || env.active(NAVIGATOR)
+                    || PRODUCT_INSTANCES.iter().any(|p| env.active(p.name))
                     || Self::instances(env).iter().any(|i| env.active(&i.name))
             }
         }
@@ -177,7 +208,9 @@ impl TcpServer for HttpServer {
     fn start(&self, env: &mut dyn Env, req: &Request) -> Result<String, Refusal> {
         match &req.instance {
             Instance::Named(n) if is_admin(n) => HttpAdmin.start(env, &admin_req(req)),
-            Instance::Named(n) if is_navigator(n) => start_navigator(env),
+            Instance::Named(n) if product_instance(n).is_some() => {
+                start_product(env, product_instance(n).expect("a product's"))
+            }
             Instance::Named(n) => {
                 let i = Self::find(env, n)?;
                 if env.active(&i.name) {
@@ -199,16 +232,15 @@ impl TcpServer for HttpServer {
                     }
                 }
                 let mut started = 0;
-                if Self::navigator_autostart(env)
-                    && !env.active(NAVIGATOR)
-                    && env.product_installed(NAVIGATOR_PRODUCT)
-                {
-                    match start_navigator(env) {
-                        Ok(t) => {
-                            started += 1;
-                            lines.push(t);
+                for p in PRODUCT_INSTANCES {
+                    if Self::product_autostart(env, p) && !env.active(p.name) && env.product_installed(p.product) {
+                        match start_product(env, p) {
+                            Ok(t) => {
+                                started += 1;
+                                lines.push(t);
+                            }
+                            Err(e) => lines.push(e.line()),
                         }
-                        Err(e) => lines.push(e.line()),
                     }
                 }
                 for i in Self::instances(env).into_iter().filter(|i| i.autostart) {
@@ -239,14 +271,12 @@ impl TcpServer for HttpServer {
         let delay = req.delay.unwrap_or(DEFAULT_DELAY);
         match &req.instance {
             Instance::Named(n) if is_admin(n) => HttpAdmin.end(env, &admin_req(req), immediate),
-            Instance::Named(n) if is_navigator(n) => {
-                if !env.active(NAVIGATOR) {
-                    return Err(Refusal::new(
-                        msg::NOT_ACTIVE,
-                        format!("HTTP server instance {NAVIGATOR} not active."),
-                    ));
+            Instance::Named(n) if product_instance(n).is_some() => {
+                let name = product_instance(n).expect("a product's").name;
+                if !env.active(name) {
+                    return Err(Refusal::new(msg::NOT_ACTIVE, format!("HTTP server instance {name} not active.")));
                 }
-                Self::end_one(env, NAVIGATOR, immediate, delay)
+                Self::end_one(env, name, immediate, delay)
             }
             Instance::Named(n) => {
                 let i = Self::find(env, n)?;
@@ -263,8 +293,10 @@ impl TcpServer for HttpServer {
                 if HttpAdmin.active(env, req) {
                     lines.push(HttpAdmin.end(env, req, immediate).unwrap_or_else(|e| e.line()));
                 }
-                if env.active(NAVIGATOR) {
-                    lines.push(Self::end_one(env, NAVIGATOR, immediate, delay).unwrap_or_else(|e| e.line()));
+                for p in PRODUCT_INSTANCES {
+                    if env.active(p.name) {
+                        lines.push(Self::end_one(env, p.name, immediate, delay).unwrap_or_else(|e| e.line()));
+                    }
                 }
                 for i in Self::instances(env) {
                     if env.active(&i.name) {

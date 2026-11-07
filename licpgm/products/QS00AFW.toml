@@ -1,0 +1,29 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# The QSPKGPRD manifest `build lp` packages QS00AFW from (docs/LICPGM.md §6).
+# It matches catalog.toml; a test keeps them equal. The objects are what
+# lic/osobjects' products.rs makes: the message file and the policy and
+# preference stores, in QUSRSYS.
+
+[product]
+id = "QS00AFW"
+ibm_alias = "5770XH2"
+text = "Quartz Systems/400 Access for Web"
+library = "QUSRSYS"
+first_copyright = 2026
+current_copyright = 2026
+
+[[option]]
+option = "*BASE"
+text = "Quartz Systems/400 Access for Web"
+msgid = "QSZ6000"
+feature = "5001"
+requires = ["QS00SS1:*BASE", "QS00DG1:*BASE"]
+libraries = [{ name = "QUSRSYS" }]
+objects = [
+    { lib = "QUSRSYS", name = "QZXWMSG", type = "*MSGF" },
+    { lib = "QUSRSYS", name = "QZXWPOL", type = "*USRIDX" },
+    { lib = "QUSRSYS", name = "QZXWPRF", type = "*USRIDX" },
+]
