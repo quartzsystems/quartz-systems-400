@@ -6,6 +6,7 @@
 //! their own modules, each listed in [`FAMILIES`] and asked first.
 
 pub(crate) mod datetime;
+mod ddmath;
 mod decfloat;
 mod format;
 pub(crate) mod math;

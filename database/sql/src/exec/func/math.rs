@@ -82,7 +82,7 @@ pub(crate) fn call(name: &str, args: &[Value], _ctx: &SqlContext) -> Option<Resu
         "SINH" => one(f64::sinh, any),
         "COSH" => one(f64::cosh, any),
         "TANH" => one(f64::tanh, any),
-        "ATANH" => one(f64::atanh, |x| x > -1.0 && x < 1.0),
+        "ATANH" => one(super::ddmath::atanh, |x| x > -1.0 && x < 1.0),
         "RADIANS" => one(f64::to_radians, any),
         "DEGREES" => one(f64::to_degrees, any),
         "ATAN2" => (|| {
