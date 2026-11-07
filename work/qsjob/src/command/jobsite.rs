@@ -475,6 +475,17 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms, outcome: &mut Outcome) 
             });
         }
     }
+    // A system API run natively has no call stack entry: an escape it
+    // sends (QCMDEXC's CPF0006) lands on the external queue and ends the
+    // CALL as it would on IBM i.
+    let native = (lib == "QSYS" || lib == "*LIBL") && job.natives.contains_key(name.as_str());
+    if native
+        && let Some(m) = job.ext_msgq.msgs.iter().skip(ext_before).rev().find(|m| m.msg_type == qir::MsgType::Escape)
+    {
+        let (msgid, data) = (m.msgid.clone(), m.data.clone());
+        let f = Fail { msgid, data, text: String::new() };
+        return Err(Fail { text: format!("{out}{}", super::shown(job, &f)), ..f });
+    }
     for (i, b) in buffers.iter().enumerate() {
         if b.iter().all(u8::is_ascii_graphic) {
             continue;
