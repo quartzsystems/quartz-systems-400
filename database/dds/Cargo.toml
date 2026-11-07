@@ -6,9 +6,18 @@ edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[features]
+default = ["front", "lower"]
+# The lexer, the compilers and analysis::analyze, with compdiag's
+# diagnostics. DDS needs nothing of the system: CP037 comes from ccsid.
+front = ["dep:compdiag"]
+# The printer file's object payload (prtf::codec).
+lower = ["front"]
+
 [dependencies]
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 qsname = { path = "../../storage/qsname", version = "0.1.0" }
+compdiag = { path = "../../rpg/compdiag", version = "0.1.0", optional = true }
 thiserror.workspace = true
 
 [lints]
