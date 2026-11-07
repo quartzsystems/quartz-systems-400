@@ -15,8 +15,8 @@ Statement  Nesting  Source
                     /* RCVMSG's return variables as the primary fills them               */
                     /* (tools/conformance/oracle/cl/rcvmsg/rcvmsg.txt, lines A1, B1, C1): */
                     /* nothing received blanks them, ALROPT, TXTCCSID, DTACCSID, SENDER,  */
-                    /* and PGMQ naming the program's own entry. CHGVAR of a decimal to  */
-                    /* *CHAR gives 0 where the primary gives 00000 (not this test's).    */
+                    /* and PGMQ naming the program's own entry.                         */
+                    /* (CHGVAR of a decimal into *CHAR: CLFIX.)                         */
         1        0               PGM
         2        0               DCL        VAR(&S) TYPE(*CHAR) LEN(720)
         3        0               DCL        VAR(&ID) TYPE(*CHAR) LEN(7) VALUE('XXXXXXX')

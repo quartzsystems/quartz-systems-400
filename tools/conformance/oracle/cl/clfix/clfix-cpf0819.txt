@@ -1,0 +1,49 @@
+# CHGVAR decimal to character, RMVMSG PGMQ entry, CALL of a missing program
+# primary oracle (V7R1M0), 2026-11-06
+
+> CRTBNDCL PGM(QSTEST/CLFX2) SRCFILE(QSTEST/ZZSRC) SRCMBR(CLFX2)
+  -> ok
+  CPF5813 Diagnostic 40 QDDCPF->QSQRUN4 | File ZZSRC in library QSTEST already exists.
+  CPF7302 Escape 40 QDDCPF->QSQRUN4 | File ZZSRC not created in library QSTEST.
+  CPI2119 Information 00 QLIINSRT->QBNINSOB | AUT and USRPRF parameter values were ignored.
+  CPI2119 Information 00 QLIINSRT->QBNINSOB | AUT and USRPRF parameter values were ignored.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member CLFX2 added to file ZZSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member CLFX2 file ZZSRC in QSTEST cleared.
+  CPC7305 Completion 00 QDDCPFM->QSQRUN4 | Member CLFX1 added to file ZZSRC in QSTEST.
+  CPC3101 Completion 00 QDBCLRPF->QSQRUN4 | Member CLFX1 file ZZSRC in QSTEST cleared.
+  CPC0815 Completion 00 QCLENTR->QSQRUN4 | Program CLFX2 created in library QSTEST.
+
+> CRTBNDCL PGM(QSTEST/CLFX1) SRCFILE(QSTEST/ZZSRC) SRCMBR(CLFX1)
+  -> ok
+  CPC0815 Completion 00 QCLENTR->QSQRUN4 | Program CLFX1 created in library QSTEST.
+
+> CALL PGM(QSTEST/CLFX1)
+  -> FAILED [CEE9901] Application error.  CPF0819 unmonitored by CLFX1 at statement 0000002400, instruction X'0000'.
+  CPF9897 Information 40 CLFX1->*EXT | V1 DEC(5 2) 12.34 to CHAR(8)=[00012.34]
+  CPF9897 Information 40 CLFX1->*EXT | V2 DEC(5 2) -12.34 to CHAR(8)=[-0012.34]
+  CPF9897 Information 40 CLFX1->*EXT | V3 DEC(5 2) 12.34 to CHAR(9)=[000012.34]
+  CPF0819 Escape 40 QCLCNVNC->CLFX1 | Variable or substring of variable too small to hold result.
+  CPA0702 Sender copy 99 QCLXERR->QCLXERR | CPF0819 received by procedure CLFX1. (C D I R)C
+  CEE9901 Escape 30 QLEAWI->QSQRUN4 | Application error.  CPF0819 unmonitored by CLFX1 at statement 0000002400, instruction X'0000'.
+
+> CALL PGM(QSTEST/NOPGM157)
+  -> FAILED [CPF0006] Errors occurred in command.
+  CPD0170 Diagnostic 30 QCACALL->QSQRUN4 | Program NOPGM157 in library QSTEST not found.
+  CPF0001 Escape 30 QCACALL->QCMDEXC | Error found on CALL command.
+  CPF0006 Escape 30 QCMDEXC->QSQRUN4 | Errors occurred in command.
+
+> DLTPGM PGM(QSTEST/CLFX1)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object CLFX1 in QSTEST type *PGM deleted.
+
+> DLTPGM PGM(QSTEST/CLFX2)
+  -> ok
+  CPC2191 Completion 00 QLIDLOBJ->QSQRUN4 | Object CLFX2 in QSTEST type *PGM deleted.
+
+> RMVM FILE(QSTEST/ZZSRC) MBR(CLFX1)
+  -> ok
+  CPC7309 Completion 00 QDDDMBR->QSQRUN4 | Member CLFX1 removed from file ZZSRC in QSTEST.
+
+> RMVM FILE(QSTEST/ZZSRC) MBR(CLFX2)
+  -> ok
+  CPC7309 Completion 00 QDDDMBR->QSQRUN4 | Member CLFX2 removed from file ZZSRC in QSTEST.

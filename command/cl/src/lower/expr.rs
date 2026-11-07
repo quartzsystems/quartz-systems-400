@@ -511,11 +511,61 @@ impl Gen<'_, '_> {
         })
     }
 
+    /// `CHGVAR` of a number into a `*CHAR` variable, as the primary does
+    /// it (tools/conformance/oracle/cl/clfix): right-aligned, zeros on
+    /// the left, the decimal point, a minus sign leftmost; `CPF0819`,
+    /// the variable unchanged, when the digits do not fit.
+    fn assign_num_char(&mut self, v: &Var, e: &Expr, d: u8, sc: u8) -> Result<(), String> {
+        let n = self.num(e)?;
+        let len = v.len.max(1);
+        let a = self.temp(&Ty::Dec(d.max(1), sc));
+        self.ins(&format!("dec.mov {a}, {n}"));
+        let neg = self.reg("b");
+        self.ins(&format!("{neg} = dec.cmp.lt {a}, 0"));
+        let (minus, plus, done) = (self.fresh("CN"), self.fresh("CP"), self.fresh("CD"));
+        self.term(&format!("brif {neg}, {minus}, {plus}"));
+        for (label, sign) in [(&plus, 0u32), (&minus, 1)] {
+            self.label(label);
+            if sign == 1 {
+                self.ins(&format!("dec.neg {a}, {a}"));
+            }
+            // The digits without leading zeros, then whether they fit.
+            let t = self.temp_varying(u32::from(d) + 2);
+            self.ins(&format!("cvt {t}, {a}"));
+            let l = self.reg("i");
+            self.ins(&format!("{l} = str.len {t}"));
+            let over = self.reg("b");
+            self.ins(&format!("{over} = cmp.gt {l}, {}", len.saturating_sub(sign)));
+            let (fits, big) = (self.fresh("CF"), self.fresh("CO"));
+            self.term(&format!("brif {over}, {big}, {fits}"));
+            self.label(&big);
+            self.ins("sndpgmmsg msgid(\"CPF0819\") msgf(\"QCPFMSG\") type(*ESCAPE) to(*SAME)");
+            self.term(&format!("br {done}"));
+            self.label(&fits);
+            let z = self.temp(&Ty::Char(len));
+            self.ins(&format!("mov {z}, {}", qstr(&"0".repeat(len as usize))));
+            let at = self.reg("i");
+            self.ins(&format!("{at} = sub {}, {l}", len + 1));
+            let out = self.temp(&Ty::Char(len));
+            self.ins(&format!("str.replace {out}, {z}, {t}, {at}"));
+            if sign == 1 {
+                self.ins(&format!("str.replace {out}, {out}, \"-\", 1"));
+            }
+            self.ins(&format!("mov {}, {out}", v.place()));
+            self.term(&format!("br {done}"));
+        }
+        self.label(&done);
+        Ok(())
+    }
+
     /// Assign an expression to a whole variable.
     pub(super) fn assign(&mut self, v: &Var, e: &Expr) -> Result<(), String> {
         let place = v.place();
         match v.ty {
             VarType::Char => {
+                if let Ty::Dec(d, sc) = self.ty(e)? {
+                    return self.assign_num_char(v, e, d, sc);
+                }
                 let s = self.chr(e)?;
                 self.ins(&format!("mov {place}, {s}"));
             }

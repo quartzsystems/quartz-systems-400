@@ -5,7 +5,7 @@ pending: none
 replies: 
 dump: no
 ext:
-  CPF9898 counter 41
-  CPF9898 now 42
-  CPF9898 lda [lda text]
-  CPF9898 lda [lda XYZt]
+   counter 41
+   now 42
+   lda [lda text]
+   lda [lda XYZt]

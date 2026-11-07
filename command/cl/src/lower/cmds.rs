@@ -739,10 +739,12 @@ impl Gen<'_, '_> {
     /// `SNDPGMMSG`.
     fn sndpgmmsg(&mut self, s: &Stmt, r: &Resolved) {
         let get = |k: &str| r.get(k).and_then(|b| b.value.clone());
+        // `MSG` without `MSGID` is an immediate message: no identifier
+        // (tools/conformance/oracle/cl/rcvmsg, line C1).
         let msgid = match get("MSGID") {
             Some(Value::Char(id)) => qstr(&id),
             Some(Value::Var(v)) => format!("${v}"),
-            _ => qstr("CPF9898"),
+            _ => qstr("       "),
         };
         let (msgf, msgf_lib) = match get("MSGF") {
             Some(Value::Qual(parts)) => (
@@ -1104,19 +1106,53 @@ impl Gen<'_, '_> {
     /// `RMVMSG`.
     fn rmvmsg(&mut self, r: &Resolved) {
         let get = |k: &str| r.get(k).and_then(|b| b.value.clone());
-        let pgmq = match get("PGMQ") {
-            Some(Value::Elems(items)) => items
-                .first()
-                .cloned()
-                .flatten()
-                .map_or_else(|| "*SAME".into(), |v| v.source()),
-            Some(v) => v.source(),
-            None => "*SAME".into(),
+        let (pgmq, entry) = match get("PGMQ") {
+            Some(Value::Elems(items)) => (
+                items
+                    .first()
+                    .cloned()
+                    .flatten()
+                    .map_or_else(|| "*SAME".into(), |v| v.source()),
+                items.get(1).cloned().flatten(),
+            ),
+            Some(v) => (v.source(), None),
+            None => ("*SAME".into(), None),
         };
         let pgmq = match pgmq.as_str() {
             "*SAME" | "*PRV" | "*EXT" | "*CTLBDY" => pgmq,
             _ => "*SAME".into(),
         };
+        let entry = match entry {
+            Some(Value::Qual(parts)) => parts.first().map(Value::source),
+            Some(v) => Some(v.source()),
+            None => None,
+        };
+        // A call stack entry named in PGMQ: its messages, through
+        // QMHRMVPM (tools/conformance/oracle/cl/clfix, line R1).
+        if let Some(e) = entry.filter(|e| e != "*" && (pgmq == "*SAME" || pgmq == "*PRV")) {
+            let int = |g: &mut Self, v: &str| {
+                g.temps += 1;
+                let name = format!("$_i{}", g.temps);
+                g.decls.push(format!("  auto {name}: i32"));
+                g.ins(&format!("dec.mov {name}, {v}"));
+                name
+            };
+            let e = self.chars(10, &qstr(&e));
+            let counter = int(self, if pgmq == "*PRV" { "1" } else { "0" });
+            let (key, which) = match get("MSGKEY") {
+                Some(Value::Var(k)) => (self.chars(4, &format!("${k}")), self.chars(10, &qstr("*BYKEY"))),
+                _ => {
+                    let clear = match get("CLEAR") {
+                        Some(Value::Char(c)) => c,
+                        _ => "*ALL".into(),
+                    };
+                    (self.chars(4, &qstr("")), self.chars(10, &qstr(&clear)))
+                }
+            };
+            let errc = int(self, "0");
+            self.ins(&format!("call QSYS/QMHRMVPM({e}, {counter}, {key}, {which}, {errc})"));
+            return;
+        }
         match get("MSGKEY") {
             Some(Value::Var(k)) => self.ins(&format!("rmvmsg pgmq({pgmq}) key(${k})")),
             _ => {

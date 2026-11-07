@@ -5,10 +5,10 @@ pending: none
 replies: 
 dump: no
 ext:
-  CPF9898 view fgh
-  CPF9898 moved 5
-  CPF9898 view mno
-  CPF9898 view abc
-  CPF9898 buf abcdefghijklXYZpqrst
-  CPF9898 null read MCH3601
-  CPF9898 null set MCH3601
+   view fgh
+   moved 5
+   view mno
+   view abc
+   buf abcdefghijklXYZpqrst
+   null read MCH3601
+   null set MCH3601

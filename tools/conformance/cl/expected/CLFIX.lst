@@ -1,0 +1,93 @@
+QS/400 ILE CL compiler                  V1R1M0
+
+Program  . . . . . . . . . . . . :   CLFIX
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   CLFIX
+Text . . . . . . . . . . . . . . :   corpus CLFIX
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* CL as the primary runs it (tools/conformance/oracle/cl/clfix):     */
+                    /* CHGVAR of numbers into *CHAR (zeros on the left, CPF0819 when the  */
+                    /* digits do not fit), SNDPGMMSG MSG() with no identifier, RMVMSG of  */
+                    /* an entry PGMQ names, CALL of a program that does not exist.        */
+        1        0               PGM
+        2        0               DCL        VAR(&D1) TYPE(*DEC) LEN(5 2) VALUE(12.34)
+        3        0               DCL        VAR(&D2) TYPE(*DEC) LEN(5 2) VALUE(-12.34)
+        4        0               DCL        VAR(&D3) TYPE(*DEC) LEN(7 0) VALUE(1234567)
+        5        0               DCL        VAR(&D4) TYPE(*DEC) LEN(3 0) VALUE(-5)
+        6        0               DCL        VAR(&D5) TYPE(*DEC) LEN(2 0) VALUE(0)
+        7        0               DCL        VAR(&I) TYPE(*INT) LEN(4) VALUE(65535)
+        8        0               DCL        VAR(&C8) TYPE(*CHAR) LEN(8)
+        9        0               DCL        VAR(&C9) TYPE(*CHAR) LEN(9)
+       10        0               DCL        VAR(&C3) TYPE(*CHAR) LEN(3) VALUE('abc')
+       11        0               DCL        VAR(&C5) TYPE(*CHAR) LEN(5)
+       12        0               DCL        VAR(&C1) TYPE(*CHAR) LEN(1)
+       13        0               DCL        VAR(&M) TYPE(*CHAR) LEN(20)
+       14        0               DCL        VAR(&ID) TYPE(*CHAR) LEN(7)
+       15        0               CHGVAR     VAR(&C8) VALUE(&D1)
+       16        0               SNDPGMMSG  MSG('V1 [' *CAT &C8 *CAT ']') TOPGMQ(*EXT)
+       17        0               CHGVAR     VAR(&C8) VALUE(&D2)
+       18        0               SNDPGMMSG  MSG('V2 [' *CAT &C8 *CAT ']') TOPGMQ(*EXT)
+       19        0               CHGVAR     VAR(&C9) VALUE(&D1)
+       20        0               SNDPGMMSG  MSG('V3 [' *CAT &C9 *CAT ']') TOPGMQ(*EXT)
+       21        0               CHGVAR     VAR(&C3) VALUE(&D3)
+       22        0               MONMSG     MSGID(CPF0819) EXEC(SNDPGMMSG MSG('V4 CPF0819') +
+                                              TOPGMQ(*EXT))
+       23        0               SNDPGMMSG  MSG('V4 [' *CAT &C3 *CAT ']') TOPGMQ(*EXT)
+       24        0               CHGVAR     VAR(&C5) VALUE(&D4)
+       25        0               SNDPGMMSG  MSG('V5 [' *CAT &C5 *CAT ']') TOPGMQ(*EXT)
+       26        0               CHGVAR     VAR(&C1) VALUE(&D5)
+       27        0               SNDPGMMSG  MSG('V6 [' *CAT &C1 *CAT ']') TOPGMQ(*EXT)
+       28        0               CHGVAR     VAR(&C5) VALUE(&D1)
+       29        0               SNDPGMMSG  MSG('V7 [' *CAT &C5 *CAT ']') TOPGMQ(*EXT)
+       30        0               CHGVAR     VAR(&C5) VALUE(12)
+       31        0               SNDPGMMSG  MSG('V8 [' *CAT &C5 *CAT ']') TOPGMQ(*EXT)
+       32        0               CHGVAR     VAR(&C5) VALUE(&I)
+       33        0               SNDPGMMSG  MSG('V9 [' *CAT &C5 *CAT ']') TOPGMQ(*EXT)
+       34        0               SNDPGMMSG  MSG('FOR-CLFIX-A') TOPGMQ(*SAME)
+       35        0               SNDPGMMSG  MSG('FOR-CLFIX-B') TOPGMQ(*SAME)
+       36        0               RMVMSG     PGMQ(*SAME CLFIX) CLEAR(*ALL)
+       37        0               CHGVAR     VAR(&M) VALUE('NONE')
+       38        0               RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) RMV(*YES) MSG(&M) +
+                                              MSGID(&ID)
+       39        0               SNDPGMMSG  MSG('R1 [' *CAT &M *CAT ']') TOPGMQ(*EXT)
+       40        0               SNDPGMMSG  MSG('IMMEDIATE') TOPGMQ(*SAME)
+       41        0               RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) RMV(*YES) MSG(&M) +
+                                              MSGID(&ID)
+       42        0               SNDPGMMSG  MSG('S1 ID=[' *CAT &ID *CAT '] MSG=[' *CAT &M *CAT +
+                                              ']') TOPGMQ(*EXT)
+       43        0               CALL       PGM(QGPL/NOPGM157)
+       44        0               MONMSG     MSGID(CPF0001) EXEC(DO)
+       45        0               RCVMSG     MSGTYPE(*DIAG) RMV(*NO) MSGID(&ID)
+       46        0               SNDPGMMSG  MSG('C1 CPF0001 after [' *CAT &ID *CAT ']') +
+                                              TOPGMQ(*EXT)
+       47        0               ENDDO
+       48        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&C1         *CHAR   1             19  26 27
+&C3         *CHAR   3             17  21 23
+&C5         *CHAR   5             18  24 25 28 29 30 31 32 33
+&C8         *CHAR   8             15  15 16 17 18
+&C9         *CHAR   9             16  19 20
+&D1         *DEC    5 2            9  15 19 28
+&D2         *DEC    5 2           10  17
+&D3         *DEC    7 0           11  21
+&D4         *DEC    3 0           12  24
+&D5         *DEC    2 0           13  26
+&I          *INT    4             14  14 32 38 41 42 45 46
+&ID         *CHAR   7             21  38 41 42 45 46
+&M          *CHAR   20            20  37 38 39 41 42
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program CLFIX created.
+End of compilation.

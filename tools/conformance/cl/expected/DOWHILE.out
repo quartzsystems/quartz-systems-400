@@ -5,8 +5,8 @@ pending: none
 replies: 
 dump: no
 ext:
-  CPF9898 i=1
-  CPF9898 i=2
-  CPF9898 i=4
-  CPF9898 i=5
-  CPF9898 end 6
+   i=1
+   i=2
+   i=4
+   i=5
+   end 6

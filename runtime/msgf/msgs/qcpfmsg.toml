@@ -411,6 +411,19 @@ help = "Your profile has no authority to the command object. Ask the security of
 vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
+id = "CPD0170"
+sev = 30
+text = "Program &2 in library &3 not found."
+help = "No program of that name is in the library named, or in the library list when none was named. The CALL did not run."
+vars = ["*CHAR 4", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF0819"
+sev = 40
+text = "The variable or substring is too small for the result."
+help = "The value has more significant digits than the character variable or substring that is to hold it. The variable was not changed."
+
+[[msg]]
 id = "CPD0171"
 sev = 30
 text = "You may not call program &1 in library &2."

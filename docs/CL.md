@@ -39,6 +39,14 @@ user at the primary's positions, the rest blank. `SNDPGMMSG TOUSR` sends
 to a profile's queue in `QUSRSYS`, to `QSYSOPR` (`*SYSOPR`), to the
 requester (`*REQUESTER`: an interactive job's external queue, a batch
 job's `QSYSOPR`) or to every user signed on at a display (`*ALLACT`).
+`SNDPGMMSG MSG()` without `MSGID` sends an immediate message (no
+identifier). `RMVMSG PGMQ(*SAME|*PRV entry)` removes the messages of
+that call stack entry, through `QMHRMVPM`. `CHGVAR` of a number into
+a `*CHAR` variable puts it right-aligned with zeros on the left, the
+decimal point and a leftmost minus sign (`-0012.34`); when the digits
+do not fit it is `CPF0819` and the variable is unchanged. `CALL` of a
+program that does not exist is `CPD0170`, then the escape `CPF0001`
+(`tools/conformance/oracle/cl/clfix/`).
 `CHGDTAARA` of a substring takes a start and length in
 variables. Nothing the compiler accepts is left without effect
 (`CPD0790`, which said so, is gone).

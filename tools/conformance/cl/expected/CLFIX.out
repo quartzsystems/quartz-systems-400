@@ -1,0 +1,20 @@
+console:
+raised: CPF0819 CPF0001
+handled: CPF0819 CPF0001
+pending: none
+replies: 
+dump: no
+ext:
+   V1 [00012.34]
+   V2 [-0012.34]
+   V3 [000012.34]
+   V4 CPF0819
+   V4 [abc]
+   V5 [-0005]
+   V6 [0]
+   V7 [12.34]
+   V8 [00012]
+   V9 [65535]
+   R1 [                    ]
+   S1 ID=[       ] MSG=[IMMEDIATE           ]
+   C1 CPF0001 after [CPD0170]

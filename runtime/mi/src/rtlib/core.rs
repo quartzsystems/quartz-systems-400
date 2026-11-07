@@ -293,7 +293,9 @@ fn args_at(argc: i64, argv: i64) -> Vec<u64> {
 /// A dynamic call that failed with `c`. A CL program's `CALL` of a
 /// program it may not call gets what IBM's CL gives (pub400 V7R5M0,
 /// `tools/conformance/oracle/sec/call-authority.md`): `CPD0171`, then
-/// the escape `CPF0001`; other callers get the condition.
+/// the escape `CPF0001`; one that does not exist `CPD0170`, then
+/// `CPF0001` (the primary V7R1M0, `tools/conformance/oracle/cl/clfix`);
+/// other callers get the condition.
 fn call_failed(j: &mut Job, c: Cond, name: &str, lib: &str) {
     let from_cl = j
         .act
@@ -304,7 +306,12 @@ fn call_failed(j: &mut Job, c: Cond, name: &str, lib: &str) {
             !p.object.modules.is_empty()
                 && p.object.modules.iter().all(|m| m.module.ir.lang == qir::module::Lang::Clle)
         });
-    if c != Cond::Mch1001 || !from_cl {
+    // Not found: the program itself, not a service program it binds.
+    let missing = c == Cond::Mch3401
+        && from_cl
+        && j.act.source.program(name, lib, ile::PgmKind::Pgm).is_none()
+        && j.act.source.refusal().is_none();
+    if (c != Cond::Mch1001 || !from_cl) && !missing {
         raise_on(j, c);
         return;
     }
@@ -313,9 +320,17 @@ fn call_failed(j: &mut Job, c: Cond, name: &str, lib: &str) {
         b.resize(10, 0x40);
         b
     };
-    let mut data = field(name);
+    let mut data = Vec::new();
+    let diag = if missing {
+        // The primary's data puts four bytes before the names.
+        data.extend_from_slice(&[0x40; 4]);
+        "CPD0170"
+    } else {
+        "CPD0171"
+    };
+    data.extend(field(name));
     data.extend(field(lib));
-    let _ = j.send_message("CPD0171", "QCPFMSG", "QSYS", data, qir::MsgType::Diag, crate::msg::QueueRef::Same);
+    let _ = j.send_message(diag, "QCPFMSG", "QSYS", data, qir::MsgType::Diag, crate::msg::QueueRef::Same);
     let _ = j.send_message("CPF0001", "QCPFMSG", "QSYS", field("CALL"), qir::MsgType::Escape, crate::msg::QueueRef::Same);
 }
 

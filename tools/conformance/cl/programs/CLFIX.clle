@@ -1,0 +1,60 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* CL as the primary runs it (tools/conformance/oracle/cl/clfix):     */
+/* CHGVAR of numbers into *CHAR (zeros on the left, CPF0819 when the  */
+/* digits do not fit), SNDPGMMSG MSG() with no identifier, RMVMSG of  */
+/* an entry PGMQ names, CALL of a program that does not exist.        */
+             PGM
+             DCL        VAR(&D1) TYPE(*DEC) LEN(5 2) VALUE(12.34)
+             DCL        VAR(&D2) TYPE(*DEC) LEN(5 2) VALUE(-12.34)
+             DCL        VAR(&D3) TYPE(*DEC) LEN(7 0) VALUE(1234567)
+             DCL        VAR(&D4) TYPE(*DEC) LEN(3 0) VALUE(-5)
+             DCL        VAR(&D5) TYPE(*DEC) LEN(2 0) VALUE(0)
+             DCL        VAR(&I) TYPE(*INT) LEN(4) VALUE(65535)
+             DCL        VAR(&C8) TYPE(*CHAR) LEN(8)
+             DCL        VAR(&C9) TYPE(*CHAR) LEN(9)
+             DCL        VAR(&C3) TYPE(*CHAR) LEN(3) VALUE('abc')
+             DCL        VAR(&C5) TYPE(*CHAR) LEN(5)
+             DCL        VAR(&C1) TYPE(*CHAR) LEN(1)
+             DCL        VAR(&M) TYPE(*CHAR) LEN(20)
+             DCL        VAR(&ID) TYPE(*CHAR) LEN(7)
+             CHGVAR     VAR(&C8) VALUE(&D1)
+             SNDPGMMSG  MSG('V1 [' *CAT &C8 *CAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&C8) VALUE(&D2)
+             SNDPGMMSG  MSG('V2 [' *CAT &C8 *CAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&C9) VALUE(&D1)
+             SNDPGMMSG  MSG('V3 [' *CAT &C9 *CAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&C3) VALUE(&D3)
+             MONMSG     MSGID(CPF0819) EXEC(SNDPGMMSG MSG('V4 CPF0819') +
+                          TOPGMQ(*EXT))
+             SNDPGMMSG  MSG('V4 [' *CAT &C3 *CAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&C5) VALUE(&D4)
+             SNDPGMMSG  MSG('V5 [' *CAT &C5 *CAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&C1) VALUE(&D5)
+             SNDPGMMSG  MSG('V6 [' *CAT &C1 *CAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&C5) VALUE(&D1)
+             SNDPGMMSG  MSG('V7 [' *CAT &C5 *CAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&C5) VALUE(12)
+             SNDPGMMSG  MSG('V8 [' *CAT &C5 *CAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&C5) VALUE(&I)
+             SNDPGMMSG  MSG('V9 [' *CAT &C5 *CAT ']') TOPGMQ(*EXT)
+             SNDPGMMSG  MSG('FOR-CLFIX-A') TOPGMQ(*SAME)
+             SNDPGMMSG  MSG('FOR-CLFIX-B') TOPGMQ(*SAME)
+             RMVMSG     PGMQ(*SAME CLFIX) CLEAR(*ALL)
+             CHGVAR     VAR(&M) VALUE('NONE')
+             RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) RMV(*YES) MSG(&M) +
+                          MSGID(&ID)
+             SNDPGMMSG  MSG('R1 [' *CAT &M *CAT ']') TOPGMQ(*EXT)
+             SNDPGMMSG  MSG('IMMEDIATE') TOPGMQ(*SAME)
+             RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) RMV(*YES) MSG(&M) +
+                          MSGID(&ID)
+             SNDPGMMSG  MSG('S1 ID=[' *CAT &ID *CAT '] MSG=[' *CAT &M *CAT +
+                          ']') TOPGMQ(*EXT)
+             CALL       PGM(QGPL/NOPGM157)
+             MONMSG     MSGID(CPF0001) EXEC(DO)
+             RCVMSG     MSGTYPE(*DIAG) RMV(*NO) MSGID(&ID)
+             SNDPGMMSG  MSG('C1 CPF0001 after [' *CAT &ID *CAT ']') +
+                          TOPGMQ(*EXT)
+             ENDDO
+             ENDPGM
