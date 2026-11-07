@@ -90,7 +90,12 @@ pub fn chgpfm(
             member: member.to_string(),
         })?;
     if let Some(t) = text {
-        ops::change_text(txn, desc.members[at].object, t, now)?;
+        // A member's authority is its file's, checked above; the member
+        // object is not checked again (as `ADDPFM` and `RNMM` do not).
+        let (page, mut h) = ops::read_header(txn, desc.members[at].object)?;
+        h.text = store::obj::header::text(t)?;
+        h.changed = now;
+        ops::write_header(txn, page, &h)?;
     }
     if let Some(st) = srctype {
         desc.members[at].srctype = st;
