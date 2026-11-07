@@ -304,24 +304,57 @@ fn cpysrcf(system: &mut System, parms: &Parms) -> Result<String, String> {
         let t = file(txn, qsys, names, &to)?;
         let fdesc = db::file::describe(txn, f).map_err(|e| e.to_string())?;
         let entry = db::util::member_of(&fdesc, from_mbr).map_err(|e| e.to_string())?;
-        let text = db::source::srcget(txn, f, MemberSpec::Name(entry.name))
-            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
+        let fail = |e: db::DbError| format!("{} {e}", e.msgid().unwrap_or("CPF3204"));
+        db::auth::check(txn, "file.open-input", f).map_err(fail)?;
+        let mut lines = db::source::records(txn, f, MemberSpec::Name(entry.name)).map_err(fail)?;
         let target = to_mbr.unwrap_or(entry.name);
         let tdesc = db::file::describe(txn, t).map_err(|e| e.to_string())?;
-        if !tdesc.members.iter().any(|m| m.name == target) {
-            db::file::add_member(txn, t, target, "", entry.srctype, now)
-                .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
+        if tdesc.members.iter().any(|m| m.name == target) {
+            if parms.name("MBROPT") == "*ADD" {
+                let mut old =
+                    db::source::records(txn, t, MemberSpec::Name(target)).map_err(fail)?;
+                old.append(&mut lines);
+                lines = old;
+            }
+        } else {
+            db::file::add_member(txn, t, target, "", entry.srctype, now).map_err(fail)?;
         }
-        let n = db::source::srcput(
-            txn,
-            job,
-            t,
-            MemberSpec::Name(target),
-            &text,
-            entry.srctype,
-            now,
-        )
-        .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
+        // SRCOPT(*SAME) keeps each record's number and date, as IBM's
+        // does; *SEQNBR renumbers from SRCSEQ, *DATE clears the dates.
+        let opts: Vec<String> = parms
+            .list("SRCOPT")
+            .iter()
+            .map(|v| v.source().to_ascii_uppercase())
+            .collect();
+        if opts.iter().any(|o| o == "*SEQNBR") {
+            let seq: Vec<Option<String>> = parms
+                .elems("SRCSEQ")
+                .iter()
+                .map(|v| v.map(|v| v.source()))
+                .collect();
+            let hundredths = |v: Option<&String>, d: u32| {
+                v.and_then(|v| qdecimal::Decimal::parse(v).ok())
+                    .and_then(|d| d.rescale(2, qdecimal::Rounding::Truncate).ok())
+                    .and_then(|d| d.mantissa_i128())
+                    .and_then(|n| u32::try_from(n).ok())
+                    .unwrap_or(d)
+            };
+            let (start, step) = (
+                hundredths(seq.first().and_then(Option::as_ref), 100),
+                hundredths(seq.get(1).and_then(Option::as_ref), 100),
+            );
+            for (i, l) in lines.iter_mut().enumerate() {
+                l.0 = start + step * u32::try_from(i).unwrap_or(0);
+            }
+        }
+        if opts.iter().any(|o| o == "*DATE") {
+            for l in &mut lines {
+                l.1 = 0;
+            }
+        }
+        let n =
+            db::source::write_records(txn, job, t, target, &lines, Some(entry.srctype), None, now)
+                .map_err(fail)?;
         Ok(format!(
             "{n} record(s) copied from member {} of {} to member {target} of {}.\n",
             entry.name, from.0, to.0
