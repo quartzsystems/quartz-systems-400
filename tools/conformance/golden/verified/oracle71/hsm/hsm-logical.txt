@@ -1,0 +1,24 @@
+                           Logical Hardware Resources                           
+                                                                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. System bus resources                                                   
+      2. Processor resources                                                    
+      3. Main storage resources                                                 
+      4. High-speed link resources                                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit      F6=Print configuration      F12=Cancel                            
+                                                                                

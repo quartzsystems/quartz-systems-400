@@ -1,0 +1,24 @@
+                           Hardware Service Manager                             
+                                                                                
+ Attention:  This utility is provided for service representative use only.      
+                                                                                
+    System unit . . . . . . . :   8203-E4A 06-2B175                             
+    Release . . . . . . . . . :   V7R1M0                                        
+                                                                                
+ Select one of the following:                                                   
+    1.  Packaging hardware resources (systems, frames, cards,...)               
+    2.  Logical hardware resources (buses, IOPs, controllers,...)               
+    3.  Locate resource by resource name                                        
+    4.  Failed and non-reporting hardware resources                             
+    5.  System power control network (SPCN)                                     
+    6.  Work with service action log                                            
+    7.  Display label location work sheet                                       
+    8.  Device Concurrent Maintenance                                           
+    9.  Work with resources containing cache battery packs                      
+                                                                        More... 
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit      F6=Print configuration      F9=Display card gap information       
+ F10=Display resources requiring attention      F12=Cancel                      
+                                                                                

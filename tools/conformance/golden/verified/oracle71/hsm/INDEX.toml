@@ -1,0 +1,32 @@
+[[golden]]
+name = "sst-start-tool"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-07"
+script = "hsm-primary"
+width = 80
+
+[[golden]]
+name = "hsm-menu"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-07"
+script = "hsm-primary"
+width = 80
+
+[[golden]]
+name = "hsm-failed"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-07"
+script = "hsm-primary"
+width = 80
+
+[[golden]]
+name = "hsm-logical"
+source = "oracle"
+release = "V7R1M0"
+date = "2026-11-07"
+script = "hsm-primary"
+width = 80
+

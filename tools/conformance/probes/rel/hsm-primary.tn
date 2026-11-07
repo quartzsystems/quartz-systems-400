@@ -1,0 +1,60 @@
+# The hardware service manager on the primary (V7R1M0), read only, as
+# the service tools user QS_SST_ID names (sst-menus-primary.tn's). What
+# IBM shows of a non-reporting resource and how one is removed: the HSM
+# menu, its failed and non-reporting list and the logical resources menu.
+# Menu selections and function keys only; no list option is typed,
+# nothing is removed. 2026-11-07: QS_SST_USER lacks the privilege to
+# start SST, QS_SST_USER_ALT signs on.
+wait "Sign On"
+signon
+settle 3000
+timeout 30000
+key enter
+settle 2000
+type call qcmd
+key enter
+wait "Command Entry"
+type STRSST
+key enter
+wait "Start Service Tools (STRSST) Sign On"
+settle 1500
+type {env:QS_SST_ID}
+key fieldexit
+type {env:QS_SST_PASS}
+key enter
+wait "System Service Tools (SST)"
+settle 1500
+choose "Start a service tool"
+key enter
+wait "Start a Service Tool"
+settle 1500
+snap sst-start-tool
+choose "Hardware service manager"
+key enter
+wait "Hardware Service Manager"
+settle 2000
+snap hsm-menu
+continue
+# The HSM menu numbers its options "4.  TEXT", which `choose` does not
+# read: the number is typed once the text is on the screen.
+expect "4.  Failed and non-reporting hardware resources"
+type 4
+key enter
+settle 8000
+snap hsm-failed
+show
+key f12
+wait "Hardware Service Manager"
+settle 2000
+expect "2.  Logical hardware resources"
+type 2
+key enter
+settle 4000
+snap hsm-logical
+show
+key f12
+settle 3000
+show
+key f12
+settle 3000
+show
