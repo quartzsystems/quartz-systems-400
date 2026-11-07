@@ -20,6 +20,8 @@
     clippy::struct_excessive_bools
 )]
 
+#[cfg(feature = "front")]
+pub mod analysis;
 pub mod ast;
 pub mod diag;
 pub mod lex;
@@ -27,6 +29,8 @@ pub mod parse;
 pub mod reader;
 pub mod source;
 
+#[cfg(feature = "front")]
+pub use analysis::analyze;
 pub use ast::Module;
 pub use diag::Diag;
 pub use source::{Includes, MemIncludes, Member, NoIncludes};
