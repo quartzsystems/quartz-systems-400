@@ -11,6 +11,7 @@
 //! - [`partials`]: message rows, lists, paging, properties, wizards.
 //! - [`pages`]: second-level text, Not authorized, confirmations.
 //! - [`golden`]: a served page against its golden rendering; links.
+//! - [`ws`]: WebSocket, for the one page with script (the 5250 display).
 //!
 //! Server-rendered HTML only: no script, one stylesheet ([`CSS`]).
 
@@ -22,6 +23,7 @@ pub mod msg;
 pub mod pages;
 pub mod partials;
 pub mod session;
+pub mod ws;
 
 /// `shared/qs400.css`, byte for byte.
 pub const CSS: &[u8] = include_bytes!("../assets/qs400.css");

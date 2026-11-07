@@ -12,9 +12,11 @@ pub mod multipart;
 pub mod request;
 pub mod response;
 
+use std::fmt::Write as _;
 use std::io::{Read, Write};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 
 pub use form::Form;
 pub use request::{ReadError, Request};
@@ -41,14 +43,26 @@ pub trait Handler: Send + Sync {
 /// Serve requests on `conn` until the client closes, asks to close, or
 /// errs. The caller sets the read timeout and closes the socket.
 pub fn serve<C: Read + Write>(conn: &mut C, peer: &Peer, handler: &dyn Handler) {
-    serve_with(conn, &mut |req| (handler.handle(&req, peer), true));
+    serve_with(conn, &|_| {}, &mut |req| (handler.handle(&req, peer), true));
 }
 
 /// [`serve`], each request on a thread of its own ([`guard`]): a panic
 /// answers that request with an error page, closes the connection and
 /// leaves the process running.
 pub fn serve_guarded<C: Read + Write>(conn: &mut C, peer: &Peer, handler: &Arc<dyn Handler>) {
-    serve_with(conn, &mut |req| {
+    serve_guarded_timed(conn, peer, handler, &|_| {});
+}
+
+/// [`serve_guarded`] with `timeout` setting the connection's read
+/// timeout, for a WebSocket the connection is upgraded to
+/// ([`crate::ws`]).
+pub fn serve_guarded_timed<C: Read + Write>(
+    conn: &mut C,
+    peer: &Peer,
+    handler: &Arc<dyn Handler>,
+    timeout: &dyn Fn(Option<Duration>),
+) {
+    serve_with(conn, timeout, &mut |req| {
         let (method, path) = (req.method.clone(), req.path.clone());
         match guard::handle(handler, req, *peer) {
             Ok(r) => (r, true),
@@ -62,7 +76,11 @@ pub fn serve_guarded<C: Read + Write>(conn: &mut C, peer: &Peer, handler: &Arc<d
 
 /// The loop: `respond` answers a request and says whether the
 /// connection may carry another.
-fn serve_with<C: Read + Write>(conn: &mut C, respond: &mut dyn FnMut(Request) -> (Response, bool)) {
+fn serve_with<C: Read + Write>(
+    conn: &mut C,
+    timeout: &dyn Fn(Option<Duration>),
+    respond: &mut dyn FnMut(Request) -> (Response, bool),
+) {
     let mut pending = Vec::new();
     for n in 1..=MAX_REQUESTS {
         let req = match request::read_request(conn, &mut pending) {
@@ -84,11 +102,58 @@ fn serve_with<C: Read + Write>(conn: &mut C, respond: &mut dyn FnMut(Request) ->
         }
         let keep = req.keep_alive() && n < MAX_REQUESTS;
         let head_only = req.method == "HEAD";
-        let (resp, more) = respond(req);
+        let (mut resp, more) = respond(req);
+        if let response::Body::Upgrade(_) = resp.body {
+            let response::Body::Upgrade(run) = std::mem::replace(&mut resp.body, Body::Bytes(Vec::new())) else {
+                return;
+            };
+            let mut head = format!("HTTP/1.1 101 {}\r\n", response::reason(101));
+            for (k, v) in &resp.headers {
+                let _ = write!(head, "{k}: {v}\r\n");
+            }
+            head.push_str("Connection: Upgrade\r\n\r\n");
+            if conn.write_all(head.as_bytes()).and_then(|()| conn.flush()).is_ok() {
+                // Bytes read past the request are the protocol's.
+                let mut c = Rewind {
+                    pre: std::mem::take(&mut pending),
+                    inner: conn,
+                };
+                run(&mut c, timeout);
+            }
+            return;
+        }
         let keep = keep && more;
         if resp.write(conn, head_only, keep).is_err() || !keep {
             return;
         }
+    }
+}
+
+/// A connection with bytes already read put back in front.
+struct Rewind<'a, C> {
+    pre: Vec<u8>,
+    inner: &'a mut C,
+}
+
+impl<C: Read> Read for Rewind<'_, C> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if self.pre.is_empty() {
+            return self.inner.read(buf);
+        }
+        let n = buf.len().min(self.pre.len());
+        buf[..n].copy_from_slice(&self.pre[..n]);
+        self.pre.drain(..n);
+        Ok(n)
+    }
+}
+
+impl<C: Write> Write for Rewind<'_, C> {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.inner.write(buf)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.inner.flush()
     }
 }
 

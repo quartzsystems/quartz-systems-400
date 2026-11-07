@@ -15,6 +15,9 @@ pub enum Body {
     Bytes(Vec<u8>),
     /// A stream sent chunked (a complete log file).
     Stream(Box<dyn Read + Send>),
+    /// `101 Switching Protocols`: what then runs on the connection
+    /// ([`crate::ws`]).
+    Upgrade(crate::ws::Upgrade),
 }
 
 impl std::fmt::Debug for Body {
@@ -22,6 +25,7 @@ impl std::fmt::Debug for Body {
         match self {
             Body::Bytes(b) => write!(f, "Bytes({})", b.len()),
             Body::Stream(_) => f.write_str("Stream"),
+            Body::Upgrade(_) => f.write_str("Upgrade"),
         }
     }
 }
@@ -96,7 +100,7 @@ impl Response {
     pub fn bytes(&self) -> &[u8] {
         match &self.body {
             Body::Bytes(b) => b,
-            Body::Stream(_) => &[],
+            Body::Stream(_) | Body::Upgrade(_) => &[],
         }
     }
 
@@ -120,6 +124,10 @@ impl Response {
         }
         let _ = write!(head, "Connection: {}\r\n", if keep { "keep-alive" } else { "close" });
         match self.body {
+            Body::Upgrade(_) => {
+                head.push_str("\r\n");
+                w.write_all(head.as_bytes())?;
+            }
             Body::Bytes(b) => {
                 let _ = write!(head, "Content-Length: {}\r\n\r\n", b.len());
                 w.write_all(head.as_bytes())?;
@@ -152,6 +160,7 @@ impl Response {
 /// The reason phrase of `status`.
 pub fn reason(status: u16) -> &'static str {
     match status {
+        101 => "Switching Protocols",
         200 => "OK",
         206 => "Partial Content",
         301 => "Moved Permanently",

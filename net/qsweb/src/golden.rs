@@ -188,7 +188,8 @@ pub fn tokens(html: &str) -> Vec<Tok> {
             }
             continue;
         }
-        let end = rest[1..].find('<').map_or(rest.len(), |e| e + 1);
+        let first = rest.chars().next().map_or(1, char::len_utf8);
+        let end = rest[first..].find('<').map_or(rest.len(), |e| e + first);
         let raw = &rest[..end];
         rest = &rest[end..];
         let text = if verbatim > 0 {

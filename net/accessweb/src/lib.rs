@@ -14,6 +14,7 @@
 //! - [`prefs`]: the per-user settings.
 //! - [`msgs`]: the product's messages (`QUSRSYS/QZXWMSG`).
 //! - [`fixture`]: the prototype's sample system, for tests and the demo.
+//! - [`s5250`]: the 5250 session's screen, its look and the desktop's files.
 
 pub mod env;
 pub mod fixture;
@@ -22,6 +23,7 @@ pub mod msgs;
 pub mod policy;
 pub mod prefs;
 pub mod routes;
+pub mod s5250;
 pub mod util;
 
 use std::time::Duration;

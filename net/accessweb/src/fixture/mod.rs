@@ -223,6 +223,8 @@ pub struct Fixture {
     pub policy: Arc<policy::FixturePolicy>,
     /// Preferences.
     pub prefs: Arc<policy::FixturePrefs>,
+    /// 5250 sessions.
+    pub s5250: Arc<session5250::Fixture5250>,
 }
 
 /// The sample system.
@@ -230,11 +232,12 @@ pub fn fixture() -> Fixture {
     let system = Arc::new(FixtureSystem::default());
     let pol = Arc::new(policy::FixturePolicy::default());
     let prefs = Arc::new(policy::FixturePrefs::default());
+    let s5250 = Arc::new(session5250::Fixture5250::default());
     let env = Env {
         system: system.clone(),
         policy: pol.clone(),
         prefs: prefs.clone(),
-        session5250: Arc::new(session5250::Fixture5250),
+        session5250: s5250.clone(),
         db: Arc::new(db::FixtureDb),
         files: Arc::new(files::FixtureFiles),
         print: Arc::new(print::FixturePrint),
@@ -248,5 +251,6 @@ pub fn fixture() -> Fixture {
         system,
         policy: pol,
         prefs,
+        s5250,
     }
 }

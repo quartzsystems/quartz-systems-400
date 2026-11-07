@@ -9,6 +9,9 @@ dependencies = [
  "msgf",
  "qsweb",
  "release",
+ "serde",
+ "thiserror",
+ "toml",
 ]
 
 [[package]]
@@ -2636,6 +2639,7 @@ dependencies = [
  "thiserror",
  "tls",
  "tn5250",
+ "toml",
  "tracing-subscriber",
  "uim",
  "wm",
@@ -2658,6 +2662,7 @@ dependencies = [
  "graviola",
  "hex",
  "release",
+ "sha1",
  "thiserror",
 ]
 

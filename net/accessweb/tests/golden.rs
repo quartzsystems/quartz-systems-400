@@ -189,3 +189,193 @@ fn preferences() {
         &[HEADER_USER],
     );
 }
+
+// Group 2: the 5250 session (handoff steps 5-6b).
+
+/// Start 5250 display's one form, not two nested, and its three
+/// buttons told apart.
+const CONFIG_FIXES: &[(&str, &str)] = &[
+    HEADER_USER,
+    (
+        "enctype=\"multipart/form-data\"><form method=\"post\"><table class=\"props\"",
+        "enctype=\"multipart/form-data\"><table class=\"props\"",
+    ),
+    (
+        "</table></form><div class=\"buttons\"><input type=\"submit\" value=\"Start session\">",
+        "</table><div class=\"buttons\"><input type=\"submit\" value=\"Start session\">",
+    ),
+    (
+        "<input type=\"submit\" value=\"Start session\"><input type=\"submit\" value=\"Save session\"><input type=\"submit\" value=\"Verify connection...\"",
+        "<input type=\"submit\" name=\"start\" value=\"Start session\"><input type=\"submit\" name=\"save\" value=\"Save session\"><input type=\"submit\" name=\"verify\" value=\"Verify connection...\"",
+    ),
+];
+
+#[test]
+fn s5250_config() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/5250");
+    assert_eq!(r.status, 200, "{}", r.text());
+    assert_golden(&r.text(), "web/5250-config.html", CONFIG_FIXES);
+}
+
+#[test]
+fn s5250_properties() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/5250/1/properties");
+    assert_eq!(r.status, 200, "{}", r.text());
+    assert_golden(&r.text(), "web/5250-properties.html", &[HEADER_USER]);
+}
+
+#[test]
+fn s5250_verify() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/5250/verify");
+    assert_eq!(r.status, 200, "{}", r.text());
+    assert_golden(
+        &r.text(),
+        "web/5250-verify.html",
+        &[HEADER_USER, ("<form method=\"post\"><form method=\"post\">", "<form method=\"post\">"), ("</form></form>", "</form>")],
+    );
+}
+
+/// Where the prototype's comment says the page's one script goes.
+const SCRIPT_AT: &str = "<link rel=\"stylesheet\" type=\"text/css\" href=\"../shared/qs400.css\" />";
+
+fn session_fixes(scale: &str, scheme: &str) -> Vec<(String, String)> {
+    let script = format!("<script src=\"5250-session.js\" data-session=\"1\" data-scale=\"{scale}\" data-scheme=\"{scheme}\"></script>");
+    vec![
+        (HEADER_USER.0.to_string(), HEADER_USER.1.to_string()),
+        (SCRIPT_AT.to_string(), format!("{SCRIPT_AT}{script}")),
+    ]
+}
+
+fn golden_owned(served: &str, file: &str, fixes: &[(String, String)]) {
+    let f: Vec<(&str, &str)> = fixes.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
+    assert_golden(served, file, &f);
+}
+
+#[test]
+fn s5250_session() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/5250/session/1");
+    assert_eq!(r.status, 200, "{}", r.text());
+    golden_owned(&r.text(), "web/5250-session.html", &session_fixes("1", "console"));
+}
+
+#[test]
+fn s5250_session_x2() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/5250/session/1?scale=2");
+    assert_eq!(r.status, 200, "{}", r.text());
+    let mut fixes = session_fixes("2", "console");
+    // The page at 2x says so in its scale switch.
+    fixes.push((
+        "Scale: <b>1x</b> <a href=\"5250-session-x2.html\">2x</a>".into(),
+        "Scale: <a href=\"5250-session.html\">1x</a> <b>2x</b>".into(),
+    ));
+    golden_owned(&r.text(), "web/5250-session-x2.html", &fixes);
+}
+
+#[test]
+fn s5250_session_states() {
+    // Black on white: the same session, its colour map changed. The
+    // picture is the same route; its bytes are checked by s5250_look.
+    let mut b = Browser::signed_on();
+    b.post("/5250/session/1", &[("tb", "Colour map")]);
+    let r = b.get("/5250/session/1");
+    let mut fixes = session_fixes("1", "bw");
+    fixes.push(("5250-24x80-white.png".into(), "5250-24x80.png".into()));
+    golden_owned(&r.text(), "web/5250-session-white.html", &fixes);
+    // 27 x 132.
+    let mut b = Browser::signed_on();
+    b.fx.s5250.set_live(1, |l| l.view.screen = accessweb::fixture::session5250::wrkactjob(27, 132));
+    let r = b.get("/5250/session/1");
+    let mut fixes = session_fixes("1", "console");
+    fixes.push(("5250-27x132.png".into(), "5250-24x80.png".into()));
+    golden_owned(&r.text(), "web/5250-session-wide.html", &fixes);
+}
+
+/// `QSHQ400 default` with its addresses as the operator session's, to
+/// compare with the prototype, whose links all name one page.
+fn default_session(b: &mut Browser) -> String {
+    // The keypad shown, as the prototype shows it.
+    if b.get("/5250/session/2").text().contains("class=\"keypad\"") {
+    } else {
+        b.post("/5250/session/2", &[("tb", "Keypad")]);
+    }
+    let t = b.get("/5250/session/2").text();
+    t.replace("/5250/session/2", "/5250/session/1")
+        .replace("/5250/2/", "/5250/1/")
+        .replace("data-session=\"2\"", "data-session=\"1\"")
+        .replace("close=2", "close=1")
+}
+
+#[test]
+fn s5250_session_disconnected_and_wait() {
+    let mut b = Browser::signed_on();
+    // The session's own colour map, black on white, is the script's.
+    let mut fixes = session_fixes("1", "bw");
+    fixes.push(("5250-24x80-off.png".into(), "5250-24x80.png".into()));
+    // The desktop's message for a session the system ended, in its words.
+    fixes.push((
+        "QAD1004</a> - The connection to QSHQ400 was closed by the system at 10/29/26 14:40:12.".into(),
+        "QAD1005</a> - Session to QSHQ400 ended by the system.".into(),
+    ));
+    golden_owned(&default_session(&mut b), "web/5250-session-disconnected.html", &fixes);
+    b.fx.s5250.set_live(2, |l| {
+        l.state = accessweb::env::session5250::State::SigningOn;
+        l.view.connected = true;
+        l.view.screen.keyboard = accessweb::s5250::look::render::Keyboard::System;
+        l.message = None;
+    });
+    let mut fixes = session_fixes("1", "bw");
+    fixes.push(("5250-wait.png".into(), "5250-24x80.png".into()));
+    // The status bar's cursor is the sign-on display's.
+    fixes.push(("TLS &nbsp; 24/006".into(), "TLS &nbsp; 06/049".into()));
+    golden_owned(&default_session(&mut b), "web/5250-session-wait.html", &fixes);
+}
+
+#[test]
+fn s5250_keymap() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/5250/1/keymap");
+    assert_eq!(r.status, 200, "{}", r.text());
+    let page = golden("web/5250-keymap.html");
+    // A select with nothing selected posts its first choice: the grouped
+    // rows are changed a key at a time, with Add a key.
+    let mut fixes: Vec<(String, String)> = vec![(HEADER_USER.0.into(), HEADER_USER.1.into())];
+    for m in ["m4", "m5", "m16"] {
+        let start = page.find(&format!("<select name=\"{m}\">")).unwrap();
+        let end = start + page[start..].find("</select>").unwrap() + "</select>".len();
+        fixes.push((page[start..end].to_string(), String::new()));
+    }
+    // The upload needs a multipart form; the form's buttons have names.
+    fixes.push((
+        "<form method=\"post\"><table class=\"list\"".into(),
+        "<form method=\"post\" enctype=\"multipart/form-data\"><table class=\"list\"".into(),
+    ));
+    for (v, n) in [("Add", "add"), ("Load", "load"), ("Export keyboard map (.qkm)", "export")] {
+        fixes.push((format!("<input type=\"submit\" value=\"{v}\">"), format!("<input type=\"submit\" name=\"{n}\" value=\"{v}\">")));
+    }
+    golden_owned(&r.text(), "web/5250-keymap.html", &fixes);
+}
+
+#[test]
+fn s5250_macros() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/5250/1/macros");
+    assert_eq!(r.status, 200, "{}", r.text());
+    assert_golden(
+        &r.text(),
+        "web/5250-macros.html",
+        &[
+            HEADER_USER,
+            // Data: the macro being edited has the six steps the editor shows.
+            ("<td>4</td>", "<td>6</td>"),
+            // One form, not two nested; Record has a name.
+            ("enctype=\"multipart/form-data\"><form method=\"post\">", "enctype=\"multipart/form-data\">"),
+            ("</form></form>", "</form>"),
+            ("<input type=\"submit\" value=\"Record...\">", "<input type=\"submit\" name=\"record\" value=\"Record...\">"),
+        ],
+    );
+}

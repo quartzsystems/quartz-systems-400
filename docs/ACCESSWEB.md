@@ -103,6 +103,76 @@ are real defects of the golden page, or data:
 | `web/change-password.html` | one `<form>`, not two nested | a form inside a form is not valid HTML |
 | `web/policies.html` | a `Sign on` section with "Sign on to Access for Web" ahead of 5250 (two rows: the stripes stay) | the handoff's step 1 names the policy; the page had no row for it |
 | `web/policies.html` | Apply, OK, Cancel, Copy policies from... get names `apply`, `ok`, `cancel`, `copy` | four nameless buttons in one form cannot be told apart |
+| `web/5250-config.html` | one `<form>` (multipart, to `/5250/session/new`), not two nested; the buttons get names `start`, `save`, `verify` | a form inside a form is not valid HTML; three nameless buttons cannot be told apart |
+| `web/5250-verify.html` | one `<form>`, not two nested | not valid HTML |
+| `web/5250-session*.html` | the page's one `<script src=".../5250/script.js" data-session data-scale data-scheme>` where the prototype's comment says it goes | the handoff's script; the comment is its placeholder |
+| `web/5250-session-x2.html` | `Scale: <a>1x</a> <b>2x</b>` | the 2x page showed 1x as current |
+| `web/5250-session-white.html`, `-wide`, `-disconnected`, `-wait` | the picture's file name is `screen.png` of the one route | data: one route draws every state; each picture's bytes are checked against its own PNG (`tests/s5250_look.rs`) |
+| `web/5250-session-disconnected.html` | `QAD1004 - The connection to QSHQ400 was closed by the system at ...` → `QAD1005 - Session to QSHQ400 ended by the system.` | `QAD1004` is the desktop's time-out; a session the system ends is its `QAD1005`, in its words |
+| `web/5250-session-wait.html` | status bar cursor `24/006` → `06/049` | data: the cursor of the sign-on display the picture shows |
+| `web/5250-keymap.html` | the grouped rows (F1 ... F12, Shift+F1 ... Shift+F12, the arrows) have no select; the form is multipart; Add, Load, Export get names | a select with nothing selected posts its first choice (Enter) and would remap twelve keys at once; an upload needs multipart; nameless buttons |
+| `web/5250-macros.html` | SIGNON-DEV `4` steps → `6`; one `<form>`, not two nested; Record gets name `record` | data: the editor shows six steps; not valid HTML; nameless button |
+| `shared/img/*.png` | none: byte for byte | the encoder is a zlib-ng-compatible greedy deflate (good 4, insert 6, nice 32, chain 32, memory level 9; `s5250/look/deflate.rs`) with the usual PNG filter heuristic, found by comparing the prototype's streams with zlib-rs at every setting |
+
+## 5250 session (steps 5-6b)
+
+- `s5250/look/`: the console's font (`lic/console/font/qs400-9x16.txt`,
+  compiled in), the palette and cell rules ported from the desktop's
+  `qsa-ui/src/console.rs` (`render.rs`), the PNG writer and its deflate,
+  and Print Screen (`pdf.rs`: one A4 landscape page, each run of lit
+  pixels a filled rectangle). `s5250/screen.rs`: the screen the pages
+  draw, its status row (`TLS`, `X SYSTEM`, `Not connected`, `RR/CCC`).
+- `s5250/files/`: the desktop's `.qsd`, `.qkm` and `.qsm` ported from
+  `qsa-config` (TOML over `toml`, unknown keys kept), so a file downloaded
+  here opens in the desktop and back. The macro editor shows a macro's
+  steps one a line (`type "X"`, `key NAME`, `wait screen "X" at R,C`,
+  `wait unlock`, `pause MS`, `prompt "L"`, `; comment` kept as the step's
+  `comment` key).
+- Pages: `/5250` (saved sessions, Start 5250 display, a `.qsd` opened,
+  Download, Delete after asking), `/5250/<n>/properties`, `/5250/verify`
+  (`?sys=`), `/5250/session/<n>` (`?menu=`, `?scale=`, `?play=`, `?save=1`;
+  `screen.png`, `screen.txt`, `print`, `copy`, `paste`, `key`),
+  `/5250/ws/<n>`, `/5250/<n>/keymap` (`/export`, `/json`),
+  `/5250/<n>/macros` (`/<m>/download`, `/<m>/delete/confirm`),
+  `/5250/script.js`. Number 0 is a session started without saving, kept
+  for the sign-on only.
+- Without script: the toolbar and keypad post; Edit > Paste types at the
+  cursor, Copy shows the screen's text; the picture is the server's PNG.
+  Macros record (keys, typing, a `wait unlock` after each key that goes to
+  the system; typing into a nondisplay field is kept as a prompt) and play
+  on the server; a prompt step needs the script.
+- With script (`assets/s5250.js`, the one script of the web products):
+  the picture becomes a canvas of its size drawn with the same font and
+  rules; keys go through the session's keyboard map; hotspots, selection,
+  Copy and Paste. The WebSocket (`qsweb::ws`) carries the whole screen,
+  then the rows that changed, one style letter a cell; a nondisplay
+  field's characters never go out; no password crosses it.
+- Policies: `5250.start` for the area, `5250.save` for every change,
+  `5250.autosignon` (the box disabled, a start without the ticket),
+  `5250.print` for Print Screen.
+- Messages: `XWA0010` session saved, `XWA0011` deleted, `XWA0013` macro
+  saved, `XWA0014` deleted; the desktop's `QAD1002`-`QAD1006`, `QAD1010`,
+  `QAD1011`, `QAD1020`, `QAD1021`, `QAD2001`, `QAD2002`, `QAD2010`,
+  `QAD2020`, `QAD2021` in its words.
+- Live (`work/qsjob/src/work/httpafw/s5250.rs`): saved sessions are kept by
+  the job under `/www/accessweb/sessions/<USER>/<n>.qsd` (the web's last
+  use and macros in an `[accessweb]` table, left out of downloads),
+  keyboard maps in `keymaps/<name>.qkm`. A display is a TN5250E client
+  (`ui/tn5250`) of the local Telnet server on 23, or 992 with TLS (the
+  chain to `*SYSTEM`'s CAs checked); automatic sign-on takes a one-time
+  QAP ticket as the signed-on user (the storage service accepts the
+  `ACCESSWEB` job running as its user) and sends it as the RFC 4777
+  password variable with an empty seed (`Config::ticket`). Verify
+  Connection checks the local ports.
+- `BLOCKED(rel)`: a session to another system is refused with `QAD1002`
+  (`httpafw/s5250.rs`); the display shows and types CCSID 37, the
+  session's CCSID goes to the server as `CODEPAGE` only.
+
+QEMU step 154 (`tools/conformance/src/afw5250.rs`) signs a new profile on
+over 2003, saves a session, downloads its `.qsd`, starts it (the sign-on
+display in `screen.txt` and `screen.png`, the WebSocket's first screen),
+signs on at that display through Paste, Field Exit and Enter to the Main
+Menu, prints the screen, disconnects (`QAD1006`), deletes (`XWA0011`).
 
 ## The live server
 
@@ -174,7 +244,7 @@ routes not built yet, by area, and each step removes its own.
 | Steps | Area | State |
 |---|---|---|
 | 1-4 | Frame, sign-on, change password, policies, home, preferences | done (golden-clean; live) |
-| 5-6b | 5250 session | not built (`XWA0099`) |
+| 5-6b | 5250 session | done (golden-clean, PNGs byte for byte; live; QEMU step 154) |
 | 7-12 | Database | not built (`XWA0099`) |
 | 13-14 | Files | not built (`XWA0099`) |
 | 15-17 | Print, messages, jobs | not built (`XWA0099`) |

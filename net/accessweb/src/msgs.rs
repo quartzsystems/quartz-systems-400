@@ -51,6 +51,14 @@ pub const BAD_VALUE: &str = "XWA0004";
 pub const PREFS_RESET: &str = "XWA0005";
 /// A function is not available yet.
 pub const NOT_AVAILABLE: &str = "XWA0099";
+/// A 5250 session saved.
+pub const SESSION_SAVED: &str = "XWA0010";
+/// A saved 5250 session deleted.
+pub const SESSION_DELETED: &str = "XWA0011";
+/// A macro saved.
+pub const MACRO_SAVED: &str = "XWA0013";
+/// A macro deleted.
+pub const MACRO_DELETED: &str = "XWA0014";
 /// The password has expired (the desktop's).
 pub const PASSWORD_EXPIRED: &str = "QAD4022";
 /// Password changed (the desktop's).
@@ -98,10 +106,31 @@ pub const MESSAGES: &[Desc] = &[
         "None.",
     ),
     d(
-        "XWA0010",
+        SESSION_SAVED,
         0,
         "Session &1 saved.",
         "The settings of 5250 session &1 were saved with your Access for Web sessions.",
+        "None.",
+    ),
+    d(
+        SESSION_DELETED,
+        0,
+        "Session &1 deleted.",
+        "The saved 5250 session &1, its keyboard map and its macros were removed from your Access for Web sessions.",
+        "None.",
+    ),
+    d(
+        MACRO_SAVED,
+        0,
+        "Macro &1 saved.",
+        "The steps of macro &1 were saved with its 5250 session.",
+        "None.",
+    ),
+    d(
+        MACRO_DELETED,
+        0,
+        "Macro &1 deleted.",
+        "Macro &1 was removed from its 5250 session.",
         "None.",
     ),
     d(
@@ -166,6 +195,104 @@ pub const MESSAGES: &[Desc] = &[
         "Password for &1 on &2 expires in &3 days.",
         "The password of user profile &1 on system &2 expires in &3 days, within the system's password expiration warning period (system value QPWDEXPWRN). It is counted on the system's clock from the password's last change and its expiration interval. This warning is shown once per session.",
         "Select Change Password... to change it now, or change it later with Actions > Change Password... before it expires. Once it has expired, sign-on asks for a new one.",
+    ),
+    d(
+        "QAD1002",
+        30,
+        "Connection to &1 refused.",
+        "System &1 answered, but nothing accepted the connection on the port used. The Telnet server may not be started, or the port in the system configuration may be wrong, or TLS may be selected for a system with no TLS listener.",
+        "Check that the Telnet server is started on &1, and check the Telnet ports on the Ports tab of the system's properties and the TLS setting on its Security tab. Then select Reconnect.",
+    ),
+    d(
+        "QAD1003",
+        30,
+        "Host &1 not found.",
+        "The name &1 could not be turned into an address. The name may be misspelt, or the name server may not know it.",
+        "Correct the system name in System Configurations, or give a fixed IP address on the Connection tab. Then start the session again.",
+    ),
+    d(
+        "QAD1004",
+        30,
+        "Connection to &1 timed out.",
+        "No answer came from system &1 within 15 seconds. The system may be down, or a firewall may be dropping the connection.",
+        "Check that &1 is running and can be reached from this computer, then select Reconnect.",
+    ),
+    d(
+        "QAD1005",
+        20,
+        "Session to &1 ended by the system.",
+        "System &1 closed the connection. This happens when the job ends after sign-off, when the device is varied off, or when the connection is lost.",
+        "Select Reconnect to start a new session. The last screen stays visible until then.",
+    ),
+    d(
+        "QAD1006",
+        0,
+        "Session to &1 disconnected.",
+        "The session to system &1 was disconnected at your request. What the job does now depends on the device recovery action of the system: it may end, or wait for you to sign on again.",
+        "Select Reconnect to start a new session. The last screen stays visible until then.",
+    ),
+    d(
+        "QAD1010",
+        30,
+        "TLS handshake with &1 failed: &2.",
+        "A TLS session could not be set up with system &1. The reason given was: &2",
+        "Check that the port on the Ports tab is the system's TLS Telnet port and that the system's TLS configuration is complete. If the system offers no TLS, clear TLS on the Security tab.",
+    ),
+    d(
+        "QAD1011",
+        30,
+        "Certificate for &1 is not trusted.",
+        "System &1 presented a certificate that does not chain to a certificate authority this computer trusts, or that is not valid for the name &1. The reason given was: &2",
+        "Compare the certificate's SHA-256 fingerprint with the one shown on the system itself. If they match and you trust the system, select Trust for this system; the certificate is added to this system's CA list. Otherwise do not connect.",
+    ),
+    d(
+        "QAD1020",
+        30,
+        "Device name &1 is in use.",
+        "The system could not give this session the display device &1: the device is in use by another session or is not available (start-up response code &2).",
+        "Select Retry without device name to let the system choose a device, or change the device name and start the session again.",
+    ),
+    d(
+        "QAD1021",
+        30,
+        "Device name &1 is not valid.",
+        "The system refused display device name &1 for this session (start-up response code &2: &3).",
+        "Select Retry without device name to let the system choose a device, or give a device name of 1 to 10 letters, digits, #, $ or @, starting with a letter.",
+    ),
+    d(
+        "QAD2001",
+        30,
+        "Session file &1 could not be read: &2.",
+        "The file &1 could not be opened, or it is not a valid session, keyboard map or macro file. The reason given was: &2",
+        "Correct the file, or open another one. These files are TOML text whose first table is [qsaccess], giving the kind of file and its format version.",
+    ),
+    d(
+        "QAD2002",
+        30,
+        "Session file &1 was made by a newer version (&2).",
+        "The file &1 is format version &2, which is newer than this release of QS/400 Access for Desktop can read. The file was not opened and has not been changed.",
+        "Open the file with the release that made it, or install a newer release of QS/400 Access for Desktop.",
+    ),
+    d(
+        "QAD2010",
+        0,
+        "Keyboard map loaded from &1.",
+        "The keyboard map in the file &1 was copied. Later changes to the file do not affect the copy.",
+        "None needed. Save the session to keep the map with it.",
+    ),
+    d(
+        "QAD2020",
+        30,
+        "Macro &1 stopped at step &2: &3.",
+        "Macro &1 could not carry out step &2 and was stopped. The reason was: &3. The steps after it were not run.",
+        "Check that the session shows the screen the macro expects at step &2, then run the macro again. To change the step, open the macro in the Macro editor.",
+    ),
+    d(
+        "QAD2021",
+        0,
+        "Macro &1 recorded with &2 steps.",
+        "Recording ended and macro &1 was saved with &2 steps. Text typed into fields that are not displayed, such as passwords, was not recorded; a step that asks for the value when the macro runs takes its place.",
+        "None needed. Run the macro from the session's Macro menu, or open it in the Macro editor to change it.",
     ),
 ];
 

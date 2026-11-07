@@ -9,6 +9,9 @@ publish.workspace = true
 [dependencies]
 qsweb = { path = "../qsweb", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
+serde.workspace = true
+thiserror.workspace = true
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde", "display"] }
 
 [dev-dependencies]
 msgf = { path = "../../runtime/msgf", version = "0.1.0" }

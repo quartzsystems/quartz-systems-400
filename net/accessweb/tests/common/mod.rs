@@ -166,10 +166,16 @@ pub fn proto(url: &str) -> Option<String> {
         // 5250.
         ["5250"] => "5250-config".into(),
         ["5250", "verify"] => "5250-verify".into(),
+        ["5250", "script.js"] => return Some("web/5250-session.js".into()),
+        ["5250", "session", _, "screen.png"] if q.get("scale") == Some("2") => return Some("shared/img/5250-24x80-x2.png".into()),
         ["5250", "session", _, "screen.png"] => return Some("shared/img/5250-24x80.png".into()),
+        ["5250", "ws", _] => "5250-session".into(),
+        ["5250", _, "download"] => "5250-config".into(),
+        ["5250", _, "keymap", _] => "5250-keymap".into(),
+        ["5250", _, "macros", ..] => "5250-macros".into(),
         ["5250", "session", _] if q.get("scale") == Some("2") => "5250-session-x2".into(),
         ["5250", "session", ..] => "5250-session".into(),
-        ["5250", _, tab @ ("properties" | "keymap" | "macros")] => format!("5250-{tab}"),
+        ["5250", _, tab @ ("properties" | "keymap")] => format!("5250-{tab}"),
         // Database.
         ["db", "tables"] => "tables".into(),
         ["db", "copy", "to"] => "copy-import".into(),
