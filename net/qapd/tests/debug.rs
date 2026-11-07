@@ -278,8 +278,8 @@ fn breakpoints_and_programs_refused() {
     d.refused(
         Op::AddProgram,
         &AddProgram::default(),
-        Status::NotFound,
-        "CPF9801",
+        Status::Error,
+        "TCP1A71",
     );
     d.start(DebugTarget::Own);
     d.refused(

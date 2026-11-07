@@ -472,6 +472,7 @@ impl DebugHost for MemThread {
     }
 
     fn add_program(&mut self, req: &AddProgram) -> Result<ProgramAdded, Refusal> {
+        self.with_session(|_| Ok(()))?;
         let k = key(&req.program);
         let ty = req.r#type.trim().to_ascii_uppercase();
         if !(ty.is_empty() || ty == "*PGM" || ty == "*SRVPGM") {
