@@ -873,14 +873,14 @@ id = "TCP101A"
 sev = 30
 text = "Host &1 was not found."
 help = "Neither the host table nor the name servers know the remote system's name. Check the name, or give its internet address."
-vars = ["*CHAR *VARY 2"]
+vars = ["*CHAR 256"]
 
 [[msg]]
 id = "TCP10B0"
 sev = 30
 text = "Host &1 at address &2 did not take the connection."
 help = "Nothing answered on the port, or the connection was refused. Try again later, or check that the remote system's TELNET server is started."
-vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+vars = ["*CHAR 256", "*CHAR 256"]
 
 [[msg]]
 id = "TCP2504"
@@ -936,4 +936,4 @@ id = "TCP2590"
 sev = 40
 text = "The TELNET client failed. Reason &1."
 help = "The client could not go on with the connection; the reason says why."
-vars = ["*CHAR *VARY 2"]
+vars = ["*BIN 4"]

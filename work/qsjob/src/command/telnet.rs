@@ -69,28 +69,16 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
         .map(Iterator::collect)
         .unwrap_or_default();
     if addrs.is_empty() {
-        let mut f = Fail::msg("TCP101A", &[]);
-        f.data = vary(&target);
-        return Err(f);
+        return Err(Fail::msg("TCP101A", &[(&target, 256)]));
     }
     let stream = addrs
         .iter()
         .find_map(|a| TcpStream::connect_timeout(a, wait.min(Duration::from_secs(30))).ok())
         .ok_or_else(|| {
-            let mut f = Fail::msg("TCP10B0", &[]);
-            f.data = vary(&target);
-            f.data.extend(vary(&addrs[0].ip().to_string()));
-            f
+            let ip = addrs[0].ip().to_string();
+            Fail::msg("TCP10B0", &[(&target, 256), (&ip, 256)])
         })?;
     session(job, host, r, stream, wait)
-}
-
-/// A `*CHAR *VARY 2` substitution value.
-fn vary(s: &str) -> Vec<u8> {
-    let b = ccsid::to_ebcdic(s).unwrap_or_default();
-    let mut out = u16::try_from(b.len()).unwrap_or(0).to_be_bytes().to_vec();
-    out.extend(b);
-    out
 }
 
 fn config(host: &Host, r: &Resolved) -> Config {
@@ -132,8 +120,9 @@ fn session(
     wait: Duration,
 ) -> Result<String, Fail> {
     let mut out = stream.try_clone().map_err(|e| {
+        // The reason code is a `*BIN 4`: the errno.
         let mut f = Fail::msg("TCP2590", &[]);
-        f.data = vary(&e.raw_os_error().unwrap_or(0).to_string());
+        f.data = e.raw_os_error().unwrap_or(0).to_be_bytes().to_vec();
         f
     })?;
     let mut reader = stream;
