@@ -183,8 +183,10 @@ impl Suite {
                 "RSTDHOLD does not hold the data area:\n{held}\n{active}"
             ));
         }
-        // A telnet session at Command Entry.
+        // A telnet session at Command Entry; after step 142, QSTRUP
+        // starts TCP/IP again on its own time.
         let port = self.telnet_port().ok_or("the launch has no telnet port")?;
+        crate::tcp::telnet_answers(port)?;
         let mut d = connect(port, "QSECOFR", SECOFR_PASSWORD)?;
         let c = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
         let options = ScriptOptions::default();
