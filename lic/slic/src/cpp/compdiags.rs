@@ -50,10 +50,15 @@ pub fn wire(diags: Vec<Diagnostic>) -> Vec<CompileDiag> {
     diags.into_iter().map(CompileDiag::from).collect()
 }
 
-/// A source member, as a diagnostic points into it.
+/// A source member, as a diagnostic points into it (`*LIBL` when no
+/// library is given).
 pub fn member(library: &str, file: &str, member: &str) -> Where {
     Where::Member(MemberName {
-        library: library.to_string(),
+        library: if library.is_empty() {
+            "*LIBL".to_string()
+        } else {
+            library.to_string()
+        },
         file: file.to_string(),
         member: member.to_string(),
     })
