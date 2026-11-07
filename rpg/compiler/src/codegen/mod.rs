@@ -491,10 +491,14 @@ pub fn module(
         mangle(&opts.name),
         if ctl.dftactgrp { " dftactgrp" } else { "" },
         if ctl.nomain { " nomain" } else { "" },
-        if opts.dbgview == "*NONE" {
-            "*NONE"
-        } else {
-            "*STMT"
+        // The view the debugger offers; `*COPY` is the source with its
+        // copy members, a source view.
+        match opts.dbgview.as_str() {
+            "*NONE" => "*NONE",
+            "*SOURCE" | "*COPY" => "*SOURCE",
+            "*LIST" => "*LIST",
+            "*ALL" => "*ALL",
+            _ => "*STMT",
         },
     );
     for ty in struct_types(g.t) {
