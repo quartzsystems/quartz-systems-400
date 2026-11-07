@@ -20,6 +20,18 @@ on-disk and on-wire formats frozen. The full notes are
   journals, spooled files and SQL tables kept; V1R0M0 saves restore.
 - Install media for UEFI systems (CD, USB, BMC virtual media, PXE), with a
   response file for unattended and network installs.
+- SQL at the Db2 for i 7.5 level: DDL, queries, SQL PL and triggers, types,
+  embedded and dynamic SQL, the call level interface, DRDA, the `QSYS2`
+  catalogs and services, `STRSQL`; what is not implemented is refused with
+  IBM's SQLCODE.
+- Licensed programs on the media: the operating system (QS00SS1), the
+  application development tools (QS00WDS), the HTTP Server with its
+  administration (QS00DG1), Navigator for QS/400 (QS00NAV) and QS/400 Access
+  for Web (QS00AFW: a 5250 session, database, files, printer output,
+  messages, jobs and commands in the browser).
+- Hot spare disks, storage thresholds and the lower-limit actions, UPS power,
+  time zones from tzdata, more CCSIDs, function usage, the `QIBM_QSY_*` and
+  work-management exit points.
 - The UKIs are Secure Boot signed with the QS/400 key; enrol
   `QS400/EFI/keys/qs400-db.cer` or turn Secure Boot off (`INSTALL.md` §6).
 - `NOTICES.txt` lists every third-party component and its license; the
