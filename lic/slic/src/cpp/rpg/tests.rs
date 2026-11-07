@@ -699,11 +699,10 @@ fn an_rpg3_member_becomes_a_program() {
         &o,
     );
     assert!(c.created, "{:?}", c.diags);
-    // N is set and never used: RPG/400's unreferenced name.
+    // N is set by the calculation that defines it and never used:
+    // RPG/400 does not call it unreferenced (H in pub400's R3015.lst).
     assert!(
-        c.diags
-            .iter()
-            .any(|d| d.msgid == "QRG7031" && d.stmt == 200),
+        !c.diags.iter().any(|d| d.msgid == "QRG7031"),
         "{:?}",
         c.diags
     );
