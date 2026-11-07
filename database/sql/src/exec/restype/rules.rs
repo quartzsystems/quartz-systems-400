@@ -72,12 +72,7 @@ pub fn byte_size(t: &SqlType) -> u32 {
 fn is_varying(t: &SqlType) -> bool {
     matches!(
         t.kind(),
-        Kind::Varchar
-            | Kind::Vargraphic
-            | Kind::Varbinary
-            | Kind::Clob
-            | Kind::Blob
-            | Kind::Dbclob
+        Kind::Varchar | Kind::Vargraphic | Kind::Varbinary | Kind::Clob | Kind::Blob | Kind::Dbclob
     )
 }
 
