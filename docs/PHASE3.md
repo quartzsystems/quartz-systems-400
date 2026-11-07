@@ -163,7 +163,7 @@ open, slic rolls back every cycle any journal left open and reports
 `C1001082` with the count (`db::journal::recover_all`).
 
 **SQL.** The lexer and recursive-descent parser produce an AST of the
-DB2 for i subset below. `SqlContext` carries the job, the naming mode
+Db2 for i subset below. `SqlContext` carries the job, the naming mode
 (`*SYS` or `*SQL`), the current schema and the session. The planner
 scores the access paths of a table against the predicates and the
 `ORDER BY` and picks a keyed scan, a range or a full scan; joins are

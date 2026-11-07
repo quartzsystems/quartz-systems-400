@@ -6,7 +6,7 @@
 //! `HASH_SHA256`, `HASH_SHA512` and `HASH` over the string's bytes in
 //! its CCSID, `GENERATE_UNIQUE`, `HEXTORAW`, `VARCHAR_BIT_FORMAT`,
 //! `VARCHAR_FORMAT_BINARY`, `BLOB`; the encryption functions refused; and the
-//! names DB2 for i does not have, refused as it refuses them.
+//! names Db2 for i does not have, refused as it refuses them.
 
 #![allow(clippy::many_single_char_names)]
 
@@ -21,7 +21,7 @@ use super::arity;
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
-/// Names DB2 for i 7.5 has no function for (pub400 answers `SQL0204`).
+/// Names Db2 for i 7.5 has no function for (pub400 answers `SQL0204`).
 const NOT_FUNCTIONS: &[&str] = &[
     "ASINH",
     "ACOSH",
@@ -140,7 +140,7 @@ pub(crate) fn call(name: &str, args: &[Value], ctx: &SqlContext) -> Option<Resul
         | "DECRYPT_BIT" | "DECRYPT_BINARY" | "DECRYPT_CHAR" | "DECRYPT_DB" | "GETHINT" => {
             Err(SqlError::Unsupported {
                 what: format!(
-                    "{name}: DB2 for i's encrypted value layout is its own and not published, so no value made here could be read there"
+                    "{name}: Db2 for i's encrypted value layout is its own and not published, so no value made here could be read there"
                 ),
             })
         }

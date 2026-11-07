@@ -22,7 +22,7 @@ fn double(x: f64) -> Value {
 }
 
 /// The population or sample variance in decimal, kept to 16 significant
-/// digits as DB2 for i gives it; `None` when it has no value.
+/// digits as Db2 for i gives it; `None` when it has no value.
 fn variance_decimal(values: &[Value], sample: bool) -> Result<Option<f64>> {
     let n = values.len();
     if n == 0 || (sample && n < 2) {
@@ -114,7 +114,7 @@ pub(super) fn pairs(name: &str, rows: &[Input]) -> Result<Value> {
         ys.iter().zip(&xs).map(|(y, x)| y * x).sum::<f64>(),
     );
     let sxy = qxy - sy * sx / nf;
-    // The n-scaled sums, as DB2 for i forms the slope, intercept and correlation.
+    // The n-scaled sums, as Db2 for i forms the slope, intercept and correlation.
     let (nxx, nyy, nxy) = (nf * qxx - sx * sx, nf * qyy - sy * sy, nf * qxy - sx * sy);
     let v = match name {
         "COVARIANCE" | "COVAR_POP" | "COVAR" => nxy / (nf * nf),

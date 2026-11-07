@@ -332,7 +332,7 @@ pub enum SqlError {
         what: String,
     },
 
-    /// A recursive common table expression of a form DB2 for i does not
+    /// A recursive common table expression of a form Db2 for i does not
     /// allow: `UNION` without `ALL`, an ordering or limit (`SQL0342`), no
     /// column list (`SQL0343`), no initial rows (`SQL0346`).
     #[error("recursive common table expression {name}: {what}")]

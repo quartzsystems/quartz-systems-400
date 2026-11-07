@@ -599,7 +599,7 @@ fn data_changes_as_tables() {
         db.rows("select id from new table (insert into q3u values (10, 1000))"),
         v(&["10"])
     );
-    // DB2 for i 7.5: FINAL and NEW TABLE of an INSERT only (pub400).
+    // Db2 for i 7.5: FINAL and NEW TABLE of an INSERT only (pub400).
     assert_eq!(
         db.code("select id, w from final table (update q3u set w = w + 1 where id >= 8)"),
         -199

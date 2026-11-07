@@ -400,7 +400,7 @@ fn naming_modes() {
 
 #[test]
 fn errors() {
-    // A reserved word out of place is SQL0199, as on DB2 for i.
+    // A reserved word out of place is SQL0199, as on Db2 for i.
     let e = parse("SELECT FROM", Naming::Sys).unwrap_err();
     let SqlError::Keyword { line, col, word } = &e else {
         panic!("{e}")
@@ -511,7 +511,7 @@ fn intersect_binds_tighter_than_union_and_except() {
             ..
         }
     ));
-    // ALL is UNION's only: SQL0104, as DB2 for i 7.1.
+    // ALL is UNION's only: SQL0104, as Db2 for i 7.1.
     for text in [
         "SELECT A FROM T EXCEPT ALL SELECT A FROM U",
         "SELECT A FROM T INTERSECT ALL SELECT A FROM U",

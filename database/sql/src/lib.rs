@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! SQL for QS/400: the DB2 for i dialect subset parsed into an AST, then
+//! SQL for QS/400: the Db2 for i SQL dialect, 7.5 level, parsed into an AST, then
 //! planned and run over the database crate. Statement syntax, SQLCODEs,
 //! SQLSTATEs and catalog column names are IBM's; every message is ours.
 

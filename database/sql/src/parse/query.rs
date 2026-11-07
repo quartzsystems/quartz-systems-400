@@ -157,7 +157,7 @@ impl Parser {
             self.eat_word("ASC");
             false
         };
-        // DB2 for i has no NULLS FIRST or NULLS LAST.
+        // Db2 for i has no NULLS FIRST or NULLS LAST.
         if self.is_word("NULLS") {
             return Err(self.keyword());
         }
@@ -170,7 +170,7 @@ impl Parser {
     }
 
     /// `UNION` and `EXCEPT` left to right over `INTERSECT` terms, which
-    /// bind tighter (DB2 for i's order).
+    /// bind tighter (Db2 for i's order).
     fn union_body(&mut self) -> Result<QueryBody> {
         let mut left = self.intersect_body()?;
         loop {
@@ -208,7 +208,7 @@ impl Parser {
     }
 
     /// `ALL` or `DISTINCT` after a set operator: `EXCEPT ALL` and
-    /// `INTERSECT ALL` are not DB2 for i 7.1's (SQL0104 there too).
+    /// `INTERSECT ALL` are not Db2 for i 7.1's (SQL0104 there too).
     fn set_quantifier(&mut self, op: SetOp) -> Result<bool> {
         if self.is_word("ALL") && op != SetOp::Union {
             let t = &self.toks[self.at.min(self.toks.len() - 1)];

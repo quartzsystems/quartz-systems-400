@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Date, time and timestamp arithmetic as DB2 for i does it: the
+//! Date, time and timestamp arithmetic as Db2 for i does it: the
 //! subtractions give durations (`yyyymmdd`, `hhmmss`,
 //! `yyyymmddhhmmss.f`) by IBM's borrowing rules, a labeled duration is
 //! truncated to a whole number except `SECONDS` on a timestamp, and a

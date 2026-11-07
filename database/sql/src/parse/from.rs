@@ -24,7 +24,7 @@ impl Parser {
 
     /// One of the keyword table references, or `None`.
     pub(crate) fn special_table(&mut self) -> Result<Option<TableRef>> {
-        // DB2 for i 7.5 has FINAL and NEW TABLE of an INSERT only.
+        // Db2 for i 7.5 has FINAL and NEW TABLE of an INSERT only.
         for (word, kind) in [("FINAL", ChangeRows::Final), ("NEW", ChangeRows::New)] {
             if self.is_word(word) && self.is_word_at(1, "TABLE") && self.is_sym_at(2, "(") {
                 self.advance();

@@ -1,6 +1,6 @@
 [package]
 name = "sql"
-description = "QS/400 SQL: the DB2 for i dialect subset, planner and executor over the database"
+description = "QS/400 SQL: the Db2 for i SQL dialect, planner and executor over the database"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

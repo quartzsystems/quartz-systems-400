@@ -2,17 +2,31 @@
 
 V1R1M0 is the first release of QS/400 meant for use outside
 development. It is the system Phases 0 to 11 built, with the gaps those
-phases carried closed, the on-disk and on-wire formats frozen, and the
-operational pieces a release needs added in Phase 12 (`PHASE12.md`).
+phases carried closed and the operational pieces a release needs added in
+Phase 12 (`PHASE12.md`); the SQL engine taken to the Db2 for i SQL
+dialect, 7.5 level (`SQL.md`); and the pre-release work that made the
+tree releasable: one product ID family, every accepted-but-ignored clause
+implemented or refused, the release media signed for Secure Boot with
+their notices and source offer, and the functional gaps below closed. The
+on-disk and on-wire formats are frozen at V1R1M0.
 
 ## Upgrading
 
 - A V1R0M0 system upgrades in place: boot the V1R1M0 media, choose
   Install Licensed Internal Code, option 1 (slip install). User
-  libraries, the IFS, journals and spooled files are kept; every shipped
-  object is replaced and its signature checked (`INSTALL.md` §4).
-- A `SAVLIB` made on V1R0M0 restores on V1R1M0 (`RSTLIB`); the save
-  format did not change.
+  libraries, the IFS, journals, spooled files and SQL tables are kept;
+  every shipped object is replaced and its signature checked
+  (`INSTALL.md` §4). Install step 10 proves it end to end on V1R0M0
+  media.
+- Two formats changed since V1R0M0, and both are migrated by the slip
+  install without a pass of its own: the store's object header is at
+  version 2 (a link to the object's SQL information; a version 1 header
+  reads as an object with none and is written as version 2 at its next
+  change), and the save stream is at version 2 (SQL information parts).
+  A `SAVLIB` made on V1R0M0 restores on V1R1M0 (`RSTLIB`); SQL tables
+  created on V1R0M0 work with SQL unchanged.
+- IBM's product IDs are accepted on input (`5770SS1` finds `QS00SS1`);
+  PTF records a V1R0M0 system kept under `5770SS1` list under `QS00SS1`.
 - V1R0M0 media is refused over a V1R1M0 system (no downgrade).
 - The formats frozen at V1R1M0 are listed in `tools/fmtcheck/formats.toml`
   and in each format document's "Frozen at V1R1M0" section. A later
@@ -20,29 +34,98 @@ operational pieces a release needs added in Phase 12 (`PHASE12.md`).
 
 ## What is new in V1R1M0
 
+**SQL: the Db2 for i SQL dialect, 7.5 level.** `SQL.md` is the feature
+matrix: every statement, clause, function, type, catalog and service
+with its status and the oracle that settled it. DDL with long names,
+constraints, identity columns, sequences, aliases, `VOLATILE` and the
+table and index options IBM accepts; queries with common table
+expressions (recursive, `CYCLE`), OLAP functions and frames, `LATERAL`
+and table functions, `MERGE`, `TRUNCATE`; SQL PL procedures, functions
+and triggers, external RPG, CL and program routines, global variables,
+distinct types, arrays; `DECFLOAT`, LOBs, JSON; dynamic and embedded SQL
+(`CRTSQLRPGI`), the `QSQCLI` call level interface with server mode,
+`*SQLPKG` packages, the DRDA application requester and server; the
+`QSYS2` and `SYSIBM` catalogs and about 80 `QSYS2` services; `STRSQL`,
+`RUNSQL`, `RUNSQLSTM`, `PRTSQLINF`, the database monitor; a plan cache and
+statistics. What is not implemented is refused with IBM's SQLCODE and a
+message saying so; the list is "Refused in SQL" below.
+
+**Storage, power and system values.** The system ASP's threshold sends
+`CPF0907`; below `QSTGLOWLMT` the system sends `CPI099C` and takes the
+`QSTGLOWACN` action (`*MSG`, `*CRITMSG`, `*REGFAC` with the
+`QIBM_QWC_QSTGLOWACN` exit point, `*ENDSYS`, `*PWRDWNSYS`).
+`STRASPBAL TYPE(*CAPACITY)`, `ENDASPBAL`, `CHKASPBAL`, `RCLSPLSTG`.
+UPS power through the guest agent with `QUPSDLYTIM` and `QUPSMSGQ`
+(`CPF1816`-`CPF1819`). The batch restricted state (`ENDSBS *ALL
+BCHTIMLMT`). System values `QMLTTHDACN`, `QCFGMSGQ`, `QBOOKPATH`,
+`QSVRAUTITV`; `QFRCCVNRST`, `QLIBLCKLVL`, `QSFWERRLOG`, `QSRVDMP` and
+`QSHRMEMCTL` take effect.
+
+**Time zones and CCSIDs.** `*TIMZON` objects with IBM's 93 time zone
+descriptions, their daylight saving rules generated at build time from
+the IANA tzdata release vendored in the tree; `CRTTIMZON`, `CHGTIMZON`,
+`DLTTIMZON`, `WRKTIMZON`; `QTIMZON` names a `*TIMZON` and a change takes
+effect without an IPL (`QUTCOFFSET`, `QTIME`, SQL `CURRENT TIMEZONE`).
+CCSIDs 1142 to 1149 (the euro SBCS), 870, 875, 1025, 1026, 420 and 424
+(converted one character at a time, without bidirectional layout) and
+61952, each table checked against the primary oracle's own conversion.
+
+**Commands, function usage and exit points.** `WRKFCNUSG`, `CHGFCNUSG`
+and `DSPFCNUSG` with IBM's function IDs, checked by the plan cache
+services, another job's job log, the communications trace and FTP;
+`CHGSECA`, `DSPSECA`; `WRKJRNRCV`, `RCVJRNE`, `CMPJRNIMG`; `SAVSAVFDTA`;
+the `TELNET` client (5250). The `QIBM_QSY_*` profile and password exit
+points, `QIBM_QWC_PRERESTRICT`, `QIBM_QWC_PWRDWNSYS`,
+`QIBM_QWT_JOBNOTIFY` and `QIBM_QWT_PREATTNPGMS` are called;
+`QPWDVLDPGM(*REGFAC)` is honoured. A program call needs `*OBJOPR` and
+`*EXECUTE` (and `*EXECUTE` to its library) on every call path.
+
+**QS/400 Access for Web (QS00AFW).** The end-user web interface on ports
+2003 and 2006 (instance `ACCESSWEB`): a 5250 session in the browser (the
+console's font and colours, the desktop's session, keyboard map and macro
+files, usable without script), database (tables, rows, Run SQL, saved
+requests, copy data in and out), files (the integrated file system,
+transfers that resume, the text editor), printer output, messages, jobs,
+commands with the web prompt, and downloads; every action under the
+signed-on user's profile, gated by per-user and per-group policies
+(`ACCESSWEB.md`).
+
+**Disks and service tools.** Hot spares for mirrored and device parity
+sets (up to three per ASP; DST/SST device parity options 7 and 8 start
+RAID 5 or 6 with a spare, 9 and 10 start and stop one); a failed unit is
+replaced by the spare while running or at IPL and rebuilt. DST options
+that were "not available" now open panels: save and restore storage,
+remote service support, system partitions, system capacity, service tools
+device IDs, communications traces, the service action log and the label
+work sheet, and "Add units to ASPs and balance data"; options whose
+function does not apply to QS/400 say why.
+
 **Languages and compilers.** ILE RPG `LIKEFILE` on procedure
 parameters, `DATA-INTO` and `DATA-GEN` with shipped JSON and XML parsers
 and generators (and QS/400's own `QOAR` interface members), Open Access
 handlers, `DUMP(A)` into `QPPGMDMP`. RPG III: the QS00RPG licensed
 program with `CRTRPGPGM` and `CVTRPGSRC` (`RPG3.md`). CL `%OFFSET` as a
-value and a `CHGVAR` target. PCML for `CRTBNDRPG`/`CRTRPGMOD`
-`INFOSTMF`.
+value and a `CHGVAR` target; `SNDPGMMSG` to named message queues and
+call-stack entries, `RCVMSG` with every parameter. PCML for
+`CRTBNDRPG`/`CRTRPGMOD` `INFOSTMF`.
 
-**Network.** A DHCPv4 client for `*IP4DHCP` interfaces; the install
-response file over HTTP, HTTPS and TFTP, and beside a PXE boot file;
-telnet automatic sign-on (`INIT0100`, RFC 4777 substitutes, `QRMTSIGN`);
-spooled-file data from the print host server; SMTP relay credentials
-(`ADDSMTPLE TYPE(*HOSTAUTH)`); the DDM/DRDA server on 446, DDM files and
-record-level access to a remote file, server authentication entries;
-`*WSCST` objects with IBM's tag language and the shipped objects; QAP
-protocol version 7 (draft), the `Manage` service.
+**Network and install.** A DHCPv4 client for `*IP4DHCP` interfaces; the
+install response file over HTTP, HTTPS and TFTP, and beside a PXE boot
+file; the network install's interface configured `AUTOSTART(*YES)` and
+started at every IPL. Telnet automatic sign-on (`INIT0100`, RFC 4777
+substitutes, `QRMTSIGN`); spooled-file data from the print host server;
+SMTP relay credentials (`ADDSMTPLE TYPE(*HOSTAUTH)`); the DDM/DRDA server
+on 446, DDM files and record-level access to a remote file, server
+authentication entries; `*WSCST` objects with IBM's tag language and the
+shipped objects; QAP protocol version 7 (draft), the `Manage` service.
 
 **Work management and performance.** `ENDSBS *ALL` ends every job but
 the console's and reaches the restricted state; `SAVSYS` needs it.
 Collection Services (`STRPFRCOL`, `ENDPFRCOL`, `CFGPFRCOL`,
 `CHKPFRCOL`, `CRTPFRDTA`), `*MGTCOL` objects and the `QAPM*` files;
 `WRKSYSACT` under QS00PT1; `QPFRADJ`; job accounting (`QACGLVL`,
-`ACGCDE`, `CHGACGCDE`, `QACGJRN`).
+`ACGCDE`, `CHGACGCDE`, `QACGJRN`). A startup program that fails ends the
+startup job abnormally with `CPI0915` to QSYSOPR.
 
 **Help and national language support.** Help for every panel, display
 file, command, parameter and message (`tools/helpaudit` at 100%); F1, F2
@@ -55,78 +138,154 @@ the job's formats through one path.
 **Hardware and virtualization.** More drivers in the kernel (Intel igc,
 Broadcom tg3/bnxt, Realtek r8169, vmxnet3, virtio-scsi, Hyper-V, vsock,
 TPM, USB UAS); `QSHWQUAL`, a hardware qualification report from the
-install media or the system; a guest agent speaking the QEMU guest agent
+install media or the system (it warns when Secure Boot is on and names a
+RAID volume's controller); a guest agent speaking the QEMU guest agent
 protocol (Proxmox and libvirt see it), shown in `WRKHDWRSC *CMN`;
 `QUALIFIED_HARDWARE.md`.
 
 **Security and service.** `QSSECCHK`, a security check report;
 `*PUBLIC *EXCLUDE` kept on the commands and system objects that ship
-with it; problem reports sent to the update service
+with it; QAP resolves commands and objects with exactly the caller's
+authority; problem reports sent to the update service
 (`SNDSRVRQS ACTION(*REPORT)`).
 
+**Release media.** The UKIs are signed for UEFI Secure Boot with the
+QS/400 key: enrol `QS400/EFI/keys/qs400-db.cer` (or `.esl`) in the
+firmware's `db`, or turn Secure Boot off (`INSTALL.md` §6). `NOTICES.txt`
+at the root of the media, and at `/QQS/ProdData/Notices/NOTICES.txt` on
+an installed system (`DSPSFWRSC` F19 names it), lists every third-party
+crate with its license and each license's text. The Linux kernel's
+complete source offer is `QS400/SRC/` (the kernel.org tarball's URL and
+SHA-256, the configuration, the build instructions and the GPL-2.0
+text) and `SOURCE-OFFER.txt` beside the release. Two `build release`
+runs from the same checkout give byte-identical media; `MANIFEST.json`
+records the toolchain, kernel and lock-file hashes.
+
+**Product identity.** The operating system is `QS00SS1`, the
+application development tools `QS00WDS`, the Licensed Internal Code
+`QS00999`; IBM's `5770` IDs are accepted on input everywhere a product ID
+is taken (`DSPSFWRSC`, `CHKPRDOPT`, `RSTLICPGM`, `QSZRTVPR`, `DSPPTF`,
+...), and `QSZRTVPR` returns the Quartz ID.
+
 **Web.** The HTTP Server (QS00DG1) with HTTP Server Administration on
-port 2001, and Navigator for QS/400 (QS00NAV) on 2002 and 2005, ship as
-licensed programs on the media (`HTTPADMIN.md`, `NAVIGATOR.md`); both were
-checked again on the frozen V1R1M0 tree (QEMU steps 64, 70, 86 to 88).
+port 2001, Navigator for QS/400 (QS00NAV) on 2002 and 2005, and Access for
+Web (QS00AFW) on 2003 and 2006, ship as licensed programs on the media
+(`HTTPADMIN.md`, `NAVIGATOR.md`, `ACCESSWEB.md`).
 
 **Tools.** `tools/fmtcheck` (the format freeze), `tools/fuzz` (a
-coverage-guided fuzzer in Rust over 18 parsers), `tools/helpaudit`,
-`tools/textaudit`, `tools/kcbuild` (the Knowledge Center, on the install
-media), `build soak`, `build release`.
+coverage-guided fuzzer in Rust), `tools/helpaudit`, `tools/textaudit`,
+`tools/kcbuild` (the Knowledge Center, on the install media, with these
+notes), `tools/pesign` (Secure Boot signing), `build soak`, `build
+release`, `build notices`; CI on GitHub (`TOOLS.md`) and releases from a
+`v` tag (`releasing.md`).
 
 ## Deliberately not in V1R1M0
 
-- An SMTP server (the SMTP client sends mail).
-- BIOS boot: the media and the system boot under UEFI only (the kernel
-  is an EFI-stub UKI, `ARCHITECTURE.md` §5).
+Each has its own handoff document for a later release.
+
+- NetServer (SMB file and print sharing): the IFS is reached over SFTP
+  and with ACS's integrated file system support.
+- NFS server and client: `*UDFS` mounts only.
+- LDAP server and client: user profiles are the directory.
+- An SNMP agent: the definitions only.
+- DNS, DHCP, BOOTP and TFTP servers: DHCP and DNS clients exist.
+- POP3 and SMTP servers: the SMTP client sends mail (`SNDSMTPEMM`).
+- RouteD (RIP): static routes only.
+- DBCS display: SBCS and Unicode CCSIDs only.
+- AFP and IPDS rendering: `*AFPDS` spooled files are stored, not
+  rendered; PDF and the host print transform exist.
+- Remote journaling: local journals only.
+- Query/400 and Query Manager (`WRKQRY`, `RUNQRY`, QS00QU1): `STRSQL`,
+  `RUNSQL` and `OPNQRYF` exist.
+- The RDi/RSE server and the debug server: Code for IBM i-style use over
+  SSH works as far as QSH and the `QSYS2` services allow.
+- Virtual optical from HTTP or NFS: image catalogs on the IFS only.
+- SNA, APPC and pass-through (`STRPASTHR` is refused): TCP/IP only.
+- BRMS, save while active, parallel saves, optical media libraries:
+  `SAVLIB`, `SAVSYS`, `SAV` and `GO SAVE` to tape, optical images and
+  save files.
+- Independent ASPs: the system ASP only.
+- Kerberos and EIM: password and RFC 4777 sign-on, SSH keys.
+- PASE for AIX programs and Java: QSH and Linux-native PASE programs.
+- BIOS boot: UEFI only (the kernel is an EFI-stub UKI, `ARCHITECTURE.md`
+  §5).
 - Native GPU drivers: the console uses the firmware's framebuffer
   (`CONSOLE.md`).
 - A diskless network install: the response file comes over the network,
   the payload from a CD, a USB stick or BMC virtual media.
-- Access for Web (QS00AFW, reserved) and the Knowledge Center served over
-  HTTP from `/QQS/ProdData/KnowledgeCenter`: after V1R1M0. The
-  Knowledge Center is on the install media (`QS400/KC/`).
-- BRMS, save while active, parallel saves, optical media libraries,
-  remote journaling, IASPs (`PHASE11.md` Deferred).
+- The Knowledge Center served over HTTP from
+  `/QQS/ProdData/KnowledgeCenter`: it is on the install media
+  (`QS400/KC/`).
 
-## Known limits (`BLOCKED(phase12)`)
+## Defined, no effect in V1R1M0
 
-| Item | Where |
+These system values exist with IBM's values and validation, and change
+nothing:
+
+| System value | Why |
 |---|---|
-| 3,785 text literals on display paths still to move into message files and panel sources; the count can only go down (`tools/textaudit/baseline.txt`) | developer tools, service listings, job panels |
-| Output fields that run past column 80 into the next row (`DSPSRVPGM` signature, `DSPMSGD` list) | `ui/uim` renderer |
-| `WRKSYSSTS`, `WRKSHRPOOL`, `WRKDSKSTS` screens: IBM's are display files on a hand grid; ours are UIM panels with the same data | `ui/uim/pnlgrp/QGWC*` |
-| Another job's call stack in `WRKJOB` | `work/qsjob/src/console/jobcmd.rs` |
-| A `*USA` time field's record buffer holds `hh:mm:ss`; IBM i holds `hh:mm AM` | the database's buffer conversion |
-| IFS directories in product save streams (`SAVLICPGM`/`RSTLICPGM`) | `licpgm/lpstore/src/savfile.rs` |
-| The call ABI: a pointer to a by-reference parameter, and by-reference against `* value` through a procedure pointer | `ABI.md` §3; a module format bump |
-| HTTPAPI over TLS: no ILE binding of `QSOSSLSR` (`gsk_*`); IBM's `QSYSINC` headers are not shipped | `PHASE9.md` |
-| DDM files: CHAIN by record number, READP/READE and SETLL by key end with CPF5149; compilers do not fetch a remote record format | `DDM.md` |
-| Open Access: the indicator and feedback areas are not passed; `DUMP(A)` has no file sections | `RPG.md` |
-| The prompter shows long parameters on one row (IBM wraps them over several) | `command/cmd` prompter |
+| `QSCANFS`, `QSCANFSCTL` | no scan exit points |
+| `QIGC` | no DBCS support |
+| `QCHRID` | displays always use CCSID 37 |
+| `QMLTTHDACN` | no user program runs in a secondary thread |
+| `QBOOKPATH` | no BookManager |
+| `QSVRAUTITV` | IBM no longer uses it either |
+| `QDBRCVYWT` | database recovery always completes during the IPL, which is what its value 1 asks for |
+| `QPWRRSTIPL` | automatic IPL after a power loss is a firmware or hypervisor setting QS/400 can neither read nor set (`WORKMGMT.md`) |
+
+## Known limits
+
+Every `BLOCKED(rel)` and `NEEDS-CODY` marker in the tree is in the
+generated "Marker inventory" below, with its place and reason; the SQL
+refusals are "Refused in SQL". The ones a user meets first:
+
+| Limit | What happens |
+|---|---|
+| 3,731 text literals on display paths are not yet in message files or panel sources (`tools/textaudit/baseline.txt`; the count may only go down) | they show Quartz's text, not translatable |
+| Output fields that run past column 80 into the next row (`DSPSRVPGM` signature, `DSPMSGD` list) | shown on one row |
+| `WRKSYSSTS`, `WRKSHRPOOL`, `WRKDSKSTS` are UIM panels, where IBM's are display files on a hand grid | same data, not the same pixel layout |
+| Another job's call stack in `WRKJOB` | refused |
+| A `*USA` time field's record buffer holds `hh:mm:ss`; IBM i holds `hh:mm AM` | as stated |
+| IFS directories in product save streams (`SAVLICPGM`/`RSTLICPGM`) | not saved or restored |
+| The call ABI: a pointer to a by-reference parameter, and by-reference against `* value` through a procedure pointer (`ABI.md` §3) | not interchangeable |
+| HTTPAPI over TLS: no ILE binding of `gsk_*`; IBM's `QSYSINC` headers are not shipped (`SIIOF`/`SIIMF` need them) | refused at compile |
+| DDM files: CHAIN by record number, READP/READE and SETLL by key | CPF5149 |
+| Open Access: the indicator and feedback areas; `DUMP(A)` file sections | not passed / not written |
+| The prompter shows long parameters on one row | IBM wraps them |
+| DST: save and restore storage, one unit's data, Save LIC | refused with the reason; `SAVSYS` instead |
+| `STRASPBAL` `*ENDALC`, `*RSMALC`, `*MOVDTA`; a USB HID UPS | CPF18BB; the guest agent reports UPS power |
+| `RCVJRNE` beyond `*TYPE1` and the current receiver; `CMPJRNIMG` entry selection; `SAVSAVFDTA` `OUTPUT` and `USEOPTBLK(*NO)`; `TELNET` over TLS or to VT/3270 | refused with IBM's message |
+| `QWCRTVTZ` in a job knows the shipped time zones only | a zone made with `CRTTIMZON` answers as `*CURRENT` |
+| Embedded SQL reading a procedure's result sets (`ASSOCIATE LOCATORS`); LOB locators of a table's columns over the database server; `STRSQL` queries at a remote server | SQL0084 |
+| HTTP Server: CGI programs; validation lists (`*VLDL`) | 501 / 403, logged |
+| Access for Web: a 5250 session to another system; CCSIDs other than 37 in the 5250 page; copying from an IFS file into a table; Move to top of an output queue; a command running past 120 s; the sender of a typed message is the job's user; Change password while `QPWDVLDPGM` is set | refused with the reason |
 
 ## Known differences from IBM i
 
 The deviations each phase records stand (`PHASE1.md` to `PHASE12.md`,
-the `*_OPEN_QUESTIONS.md` files). The main ones: the product ID of the
-operating system is `QS00SS1` (with `5770SS1` as an alias); save files
-are their own object type `*SAVF`; the help, message and report text is
-Quartz's own (IBM's layouts, not its words); `INSLNG` is QS/400's front
-end to `RSTLICPGM RSTOBJ(*LNG)`; the `QSYS2931` Spanish library is a
-scaffold with machine-translated first-level text for 90 messages; the
-install media's LIC menu has a fourth option, `QSHWQUAL`; Collection
-Services messages `CPIB920`-`924` and `CPFB993`-`995` are QS/400's own
-identifiers.
+the `*_OPEN_QUESTIONS.md` files). The main ones: the product IDs are
+`QS00*` (IBM's `5770*` accepted on input); save files are their own
+object type `*SAVF`; the help, message and report text is Quartz's own
+(IBM's layouts, not its words); `INSLNG` is QS/400's front end to
+`RSTLICPGM RSTOBJ(*LNG)`; the `QSYS2931` Spanish library is a scaffold
+with machine-translated first-level text for 90 messages; the install
+media's LIC menu has a fourth option, `QSHWQUAL`; Collection Services
+messages `CPIB920`-`924` and `CPFB993`-`995` are QS/400's own
+identifiers; `QSTGLOWLMT` is kept in whole percent.
 
 All RPG conformance was measured against pub400.com (IBM i V7R5M0): the
 primary oracle (IBM i V7R1M0) has no RPG compiler.
 
 ## Before shipping (Cody)
 
-The `NEEDS-CODY` list in `PHASE12.md`: sign the release with the real
-key (`QS400_SIGNING_KEY`), the ACS checklist, the hypervisor and Dell
-qualification runs, physical tape, the oracle commands that need a
-configuration change, and the tag.
+The `NEEDS-CODY` items of `PHASE12.md` § Release gate: the ACS
+checklist (host servers and Run SQL Scripts), the hypervisor and Dell
+`QSHWQUAL` runs, physical tape, the oracle questions that need a
+configuration change on the primary (and `DLTDEVD QSRELDEV1` there), the
+SST and DST panels the oracle's service tools user cannot reach, then
+`ci/version.sh prepare 1.1.0`, the `v1.1.0` tag and its push: the release
+workflow builds and signs the media with the release keys of the
+`release` environment.
 
 ## Refused in SQL
 

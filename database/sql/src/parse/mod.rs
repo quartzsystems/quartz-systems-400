@@ -89,7 +89,7 @@ pub(crate) const RESERVED: &[&str] = &[
     "WITH",
 ];
 
-/// The clause words DB2 for i answers `SQL0199` for where they cannot be
+/// The clause words Db2 for i answers `SQL0199` for where they cannot be
 /// (pub400); any other token out of place is `SQL0104`.
 const KEYWORDS: &[&str] = &["FROM", "GROUP", "HAVING", "INTO", "NULLS", "WHERE"];
 
@@ -153,7 +153,7 @@ impl Parser {
     /// The error for the current token.
     fn expected(&self, what: &str) -> SqlError {
         let t = &self.toks[self.at.min(self.toks.len() - 1)];
-        // A reserved word where it cannot be is SQL0199, as on DB2 for i.
+        // A reserved word where it cannot be is SQL0199, as on Db2 for i.
         if let Tok::Word(w) = &t.tok
             && KEYWORDS.contains(&w.as_str())
         {

@@ -4,7 +4,7 @@
 
 //! The ordered-set aggregates: `MEDIAN`, `PERCENTILE_CONT`,
 //! `PERCENTILE_DISC` (as `DECFLOAT`, by the values in ascending order,
-//! as DB2 for i computes them whatever the direction asked) and
+//! as Db2 for i computes them whatever the direction asked) and
 //! `LISTAGG` with its separator and `ON OVERFLOW`.
 
 use std::cmp::Ordering;

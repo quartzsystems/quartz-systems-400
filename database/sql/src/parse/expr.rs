@@ -103,7 +103,7 @@ impl Parser {
                 return self.is_json(left, not);
             }
             if self.eat_words(&["DISTINCT", "FROM"]) {
-                // DB2 for i reads NULL here as a name.
+                // Db2 for i reads NULL here as a name.
                 if self.is_word("NULL") {
                     return Err(crate::error::SqlError::ColumnNotFound {
                         name: "NULL".into(),
@@ -582,7 +582,7 @@ impl Parser {
                 f.args.push(self.expr()?);
             }
         }
-        // DB2 for i takes no USING OCTETS or CODEUNITS here.
+        // Db2 for i takes no USING OCTETS or CODEUNITS here.
         if self.is_word("USING") {
             return Err(self.keyword());
         }

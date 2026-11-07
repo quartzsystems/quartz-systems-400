@@ -288,7 +288,7 @@ fn tables_inserts_and_selects() {
         db.rows("SELECT cusno FROM cust ORDER BY since DESC, cusno"),
         [row(&["3"]), row(&["4"]), row(&["1"]), row(&["2"])]
     );
-    // DB2 for i has no NULLS FIRST or NULLS LAST (pub400: SQL0199).
+    // Db2 for i has no NULLS FIRST or NULLS LAST (pub400: SQL0199).
     assert_eq!(
         db.run("SELECT cusno FROM cust ORDER BY since NULLS LAST, cusno")
             .unwrap_err()

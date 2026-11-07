@@ -9,7 +9,7 @@
 //! its depth and its ancestors are known: `SEARCH DEPTH|BREADTH FIRST`
 //! numbers the rows in that order (the `SET` column) and `CYCLE` marks a
 //! row whose cycle columns repeat an ancestor's and does not expand it.
-//! The `SET` columns are not part of `*`, as on DB2 for i.
+//! The `SET` columns are not part of `*`, as on Db2 for i.
 
 use std::rc::Rc;
 

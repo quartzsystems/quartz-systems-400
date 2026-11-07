@@ -346,7 +346,7 @@ pub fn server_class() -> String {
 }
 
 /// `PRDID`: a product prefix, version, release, modification. QS/400
-/// does not claim `QSQ` (DB2 for i).
+/// does not claim `QSQ` (Db2 for i).
 pub fn product_id() -> String {
     "QSD01000".into()
 }

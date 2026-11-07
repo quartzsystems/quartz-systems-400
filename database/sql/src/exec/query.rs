@@ -359,7 +359,7 @@ fn body(
             let (ls, mut left_rows) = body(txn, ctx, params, left, outer, q, explain_only)?;
             let (rs, right_rows) = body(txn, ctx, params, right, outer, q, explain_only)?;
             if visible_count(&ls) != visible_count(&rs) {
-                // SQL0421, as DB2 for i.
+                // SQL0421, as Db2 for i.
                 return Err(SqlError::Coded {
                     code: -421,
                     state: "42826",
@@ -437,7 +437,7 @@ fn body(
 }
 
 /// A set operation's `ORDER BY` names its result columns: a name it
-/// does not have is SQL0208, as DB2 for i.
+/// does not have is SQL0208, as Db2 for i.
 fn set_order_error(q: &Query, e: SqlError) -> SqlError {
     match e {
         SqlError::ColumnNotFound { name }
