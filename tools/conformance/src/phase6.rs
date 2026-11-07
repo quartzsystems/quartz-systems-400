@@ -404,6 +404,7 @@ impl Suite {
         want(&ctl, "*NONE", "QAUDCTL after the forced power down")?;
         let hist = s.command("dsplog MSGID(CPI2284)", CMD)?;
         want(&hist, "CPI2284", "QHST")?;
+        want(&hist, "journal QAUDJRN in QSYS", "CPI2284's text in QHST")?;
         // Auditing back on, with room.
         for cmd in [
             "crtjrnrcv QSYS/AUDRCV2",
