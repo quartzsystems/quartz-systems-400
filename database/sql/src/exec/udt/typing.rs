@@ -296,7 +296,7 @@ pub enum Mixed {
 
 /// The comparisons, `LIKE`s and operators of a condition (`WHERE`,
 /// `HAVING`) checked against these rules before its rows are kept.
-/// BLOCKED(sql): a quantified or `IN` subquery's column is not typed
+/// BLOCKED(rel): a quantified or `IN` subquery's column is not typed
 /// here, so a distinct type compared with another type's column of a
 /// subquery is not refused.
 #[allow(clippy::many_single_char_names)]

@@ -71,7 +71,7 @@ pub fn generate_sql_objects(txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args
 /// library `lib`.
 fn find(txn: &mut Txn<'_>, ctx: &mut SqlContext, name: &str, lib: &str, ty: &str, out: &mut Vec<objects::Object>) -> Result<()> {
     if NOT_YET.contains(&ty) {
-        // BLOCKED(sql): routines, triggers, types, variables, schemas,
+        // BLOCKED(rel): routines, triggers, types, variables, schemas,
         // constraints alone, masks and permissions are not generated
         // yet.
         return Err(SqlError::Coded { code: -84, state: "42612", what: format!("GENERATE_SQL of a {ty} is not supported yet") });

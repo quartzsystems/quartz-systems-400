@@ -13,7 +13,7 @@
 //! later change can keep a member's LOB ID instead and read pieces with
 //! `SUBSTR` on demand without changing the handles.
 //!
-//! BLOCKED(sql): locator host variables (`SQL TYPE IS CLOB_LOCATOR`),
+//! BLOCKED(rel): locator host variables (`SQL TYPE IS CLOB_LOCATOR`),
 //! `FREE LOCATOR` and `HOLD LOCATOR` statements and DRDA's locator
 //! flows belong to the embedded-SQL and DRDA wave; this is the table
 //! they use.

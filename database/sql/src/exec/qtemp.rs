@@ -345,7 +345,7 @@ pub fn find_library(txn: &mut Txn<'_>, ctx: &SqlContext, n: Name) -> Option<Obje
 /// `SQL0084`: `QTEMP` holds no SQL objects of this kind yet.
 pub fn unsupported_in_qtemp(name: &ObjectName, what: &str) -> Result<()> {
     if qualifier(name).is_some() {
-        // BLOCKED(sql): routines, types and triggers in QTEMP need their
+        // BLOCKED(rel): routines, types and triggers in QTEMP need their
         // programs and catalog entries kept per job.
         return Err(SqlError::Unsupported { what: format!("{what} in QTEMP") });
     }

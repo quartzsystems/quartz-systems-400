@@ -27,7 +27,7 @@ kernel is the only inherited component; every process above it is ours.
 
 Code waiting for later work is marked `BLOCKED(rel): reason`;
 `NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
-marker form is allowed (the earlier `BLOCKED(phaseN)`, `BLOCKED(sql)`,
+marker form is allowed (the earlier `BLOCKED(phaseN)`, `BLOCKED(rel)`,
 `MIGRATE(...)` and `TODO(...)` forms were all retired before V1R1M0).
 The release notes' marker inventory is generated from the tree (`cargo
 run -p kcbuild -- notes --update`), and the Knowledge Center build fails

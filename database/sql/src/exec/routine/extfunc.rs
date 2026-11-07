@@ -49,7 +49,7 @@ fn unsupported(what: &str) -> SqlError {
 pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, f: &Found, args: &[Value]) -> Result<Value> {
     let d = &f.routine.def;
     if matches!(d.style, 2 | 3) {
-        // BLOCKED(sql): PARAMETER STYLE GENERAL gives the result as the
+        // BLOCKED(rel): PARAMETER STYLE GENERAL gives the result as the
         // procedure's return value, which the runtime's by-reference call
         // does not read.
         return Err(unsupported("an external function of PARAMETER STYLE GENERAL"));
@@ -67,7 +67,7 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, f: &Found, args: &[Value]) 
         parms.push(PlanParm { mode: 1, desc: h.desc, extra: h.extra, value: cast(a, &ty)?, marker: None });
     }
     let Some(ret) = f.routine.parms.iter().find(|p| p.role == 2) else {
-        // BLOCKED(sql): an external table function is called once per row
+        // BLOCKED(rel): an external table function is called once per row
         // to fetch with open and close calls around.
         return Err(unsupported("an external table function"));
     };
@@ -127,12 +127,12 @@ pub fn finish(txn: &mut Txn<'_>, ctx: &mut SqlContext) {
 /// One call: the statement suspended, the job's answer read.
 fn make(txn: &mut Txn<'_>, ctx: &mut SqlContext, plan: &CallPlan, ret: &crate::ast::TypeSpec) -> Result<(Value, Option<Vec<u8>>)> {
     let Some(mid) = ctx.midcall.clone() else {
-        // BLOCKED(sql): a statement run where no program can be called
+        // BLOCKED(rel): a statement run where no program can be called
         // (the service console, a statement not on a fiber).
         return Err(unsupported(&format!("calling external function {} from this interface: it cannot run the program", plan.routine)));
     };
     if ctx.holds_open() {
-        // BLOCKED(sql): a scan holding the store open cannot give it back.
+        // BLOCKED(rel): a scan holding the store open cannot give it back.
         return Err(unsupported(&format!("external function {} where the statement reads a table's rows in place", plan.routine)));
     }
     txn.commit_part()?;

@@ -23,7 +23,7 @@ pub const JOURNAL: &str = "QSQJRN";
 pub const RECEIVER: &str = "QSQJRN0001";
 
 /// The catalog views a schema holds over its own objects, with the
-/// column each filters on. BLOCKED(sql): IBM's SYSCHKCST, SYSCSTDEP,
+/// column each filters on. BLOCKED(rel): IBM's SYSCHKCST, SYSCSTDEP,
 /// SYSFIELDS, SYSPACKAGE, SYSTABLEDEP and the SYSTRIG* views are not
 /// made in a schema yet; QSYS2 has those it answers.
 pub const CATALOG_VIEWS: &[(&str, &str)] = &[

@@ -347,7 +347,7 @@ fn msgd_header(d: &mut MapDialog) {
 }
 
 #[test]
-#[ignore = "BLOCKED(phase12): the golden runs the message text through column 80 into column 1 of the next row; output fields do not wrap rows yet"]
+#[ignore = "BLOCKED(rel): the golden runs the message text through column 80 into column 1 of the next row; output fields do not wrap rows yet"]
 fn dspmsgd_list() {
     let g = shipped("QUIDSPMSGD");
     let mut d = MapDialog::new();

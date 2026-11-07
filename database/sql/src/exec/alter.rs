@@ -289,7 +289,7 @@ fn reformat(txn: &mut Txn<'_>, ctx: &mut SqlContext, table: &TableInfo, mut rf: 
     match db::chg::chgpf_srcfile_paused(txn, job, table.id, &def, &mut |t| ctx.pause(t)) {
         Err(db::DbError::Definition { what }) if what.contains("dependent logical files") => Err(SqlError::Unsupported {
             what: format!(
-                "an ALTER TABLE that changes the columns of {}, which has indexes or views over it; BLOCKED(sql): dependent files are not rebuilt",
+                "an ALTER TABLE that changes the columns of {}, which has indexes or views over it; BLOCKED(rel): dependent files are not rebuilt",
                 table.desc.name()
             ),
         }),

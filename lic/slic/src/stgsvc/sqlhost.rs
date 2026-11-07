@@ -113,7 +113,7 @@ impl SystemHost for SqlHost {
     }
 
     fn http(&self, req: &HttpRequest) -> Option<Result<HttpResponse, String>> {
-        // BLOCKED(sql): the request holds the service until it answers
+        // BLOCKED(rel): the request holds the service until it answers
         // (at most its timeout); it does not yet take turns.
         let r = httpc::send(&httpc::Request {
             method: req.method.clone(),
@@ -249,7 +249,7 @@ impl SystemHost for SqlHost {
     }
 
     fn command(&self, cmd: &str) -> Option<Result<(), (String, String)>> {
-        // BLOCKED(sql): commands whose processing program runs in the
+        // BLOCKED(rel): commands whose processing program runs in the
         // job (CALL, the job's own commands) need the job and are
         // refused CPF0006 here; the reply's messages do not reach the
         // job log.
@@ -385,7 +385,7 @@ impl SystemHost for SqlHost {
     }
 
     fn environment_variables(&self) -> Option<Vec<host::EnvVar>> {
-        // BLOCKED(sql): the job's own variables live in the job; the
+        // BLOCKED(rel): the job's own variables live in the job; the
         // service reaches the system-level ones only.
         with_system(|system| {
             Some(
@@ -454,7 +454,7 @@ impl SystemHost for SqlHost {
     fn dns_lookup(&self, name: &str, _server: Option<&str>) -> Option<Result<Vec<std::net::IpAddr>, String>> {
         use std::net::ToSocketAddrs as _;
         // DOMAIN_SERVER is refused before the host is asked.
-        // BLOCKED(sql): the lookup holds the service until the resolver
+        // BLOCKED(rel): the lookup holds the service until the resolver
         // answers; it does not yet take turns.
         Some(match (name, 0u16).to_socket_addrs() {
             Ok(addrs) => {

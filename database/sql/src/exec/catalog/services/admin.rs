@@ -49,7 +49,7 @@ fn command(args: &Args) -> Result<String> {
     }
     let action = args.word("P_SPECIAL_AUTHORITY_ACTION").unwrap_or_else(|| "*SAME".into());
     if action != "*SAME" {
-        // BLOCKED(sql): adding or removing one special authority needs
+        // BLOCKED(rel): adding or removing one special authority needs
         // the profile's current list; only a whole list is given here.
         return Err(SqlError::Coded {
             code: -84,
@@ -103,7 +103,7 @@ pub fn set_pase_shell_info(_txn: &mut Txn<'_>, _ctx: &mut SqlContext, _args: &Ar
 /// `SYSTOOLS.LPRINTF`: the job log is the job's, not the storage
 /// service's.
 pub fn lprintf(_txn: &mut Txn<'_>, _ctx: &mut SqlContext, _args: &Args) -> Result<Vec<Value>> {
-    // BLOCKED(sql): a statement runs in the storage service, which
+    // BLOCKED(rel): a statement runs in the storage service, which
     // cannot write the asking job's log.
     Err(refused("SYSTOOLS.LPRINTF: writing the job log from a statement is not supported"))
 }

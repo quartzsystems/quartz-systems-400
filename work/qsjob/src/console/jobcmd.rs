@@ -146,7 +146,7 @@ fn wrkjob(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
             }
             Ok(out)
         }
-        // BLOCKED(phase12): another job's call stack needs a request the
+        // BLOCKED(rel): another job's call stack needs a request the
         // job answers while it waits; none reaches it there yet.
         "*PGMSTK" => Err(format!("CPF1343 {option} of another job is not shown yet")),
         "*SELECT" => Ok(format!(

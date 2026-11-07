@@ -62,7 +62,7 @@ fn scope(system: &System, parms: &Parms) -> Result<(Scope, String), String> {
         return Ok((Scope::All, "*ALL".into()));
     }
     if quals.iter().any(|q| q.ends_with('*') && q != "*") || part(1) == "*ALL" || part(2) == "*ALL" {
-        // BLOCKED(sql): a monitor watches one job or every job.
+        // BLOCKED(rel): a monitor watches one job or every job.
         return Err(generic_job());
     }
     let n = super::svccmd::job_number_of(system, job)?.unwrap_or(system.current_job);
@@ -239,11 +239,11 @@ fn chgqrya(system: &mut System, parms: &Parms) -> CmdReply {
                 return Err(job_not_found(&name, &user, &number));
             }
         }
-        // BLOCKED(sql): the planner makes no time or storage estimate a
+        // BLOCKED(rel): the planner makes no time or storage estimate a
         // governor could hold a query to.
         only_default(parms, "QRYTIMLMT", &["*SAME", "*NOMAX", "*SYSVAL", "-1", "-2", "-3", ""], Why::TimeLimit)?;
         only_default(parms, "QRYSTGLMT", &["*SAME", "*NOMAX", "-1", "-2", ""], Why::StorageLimit)?;
-        // BLOCKED(sql): query options come from OVERRIDE_QAQQINI, not a
+        // BLOCKED(rel): query options come from OVERRIDE_QAQQINI, not a
         // QAQQINI file in a library.
         only_default(parms, "QRYOPTLIB", &["*SAME", ""], Why::OptionsLibrary)?;
         let degree = parms.name("DEGREE");

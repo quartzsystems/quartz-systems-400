@@ -314,7 +314,7 @@ fn column_list(
                 Ok(()) => return Some(values),
                 Err(e) => msg = Some(error_text(surface, &e)),
             },
-            // BLOCKED(sql): F6, F10, F11, F14, F15, F19, F20 and F24 of
+            // BLOCKED(rel): F6, F10, F11, F14, F15, F19, F20 and F24 of
             // these lists are not captured past their key lines.
             _ => msg = Some(crate::display::msgline::say(surface.host(), "CPD6A60", &[])),
         }
@@ -390,7 +390,7 @@ fn statement(host: &Host, surface: &mut Surface, s: &Session, kind: Kind, start:
             let (names, vals) = columns::insert_values(&cols, &more);
             let set: Vec<String> = names.iter().zip(&vals).map(|(n, val)| format!("{n} = {val}")).collect();
             v1.insert("SET".into(), set.join(", "));
-            // BLOCKED(sql): the WHERE display after this one is not
+            // BLOCKED(rel): the WHERE display after this one is not
             // captured; the statement ends in WHERE for the input lines
             // to finish, so it does not run over every row as it is.
             return assemble::build(kind, &v1, sql).ok().map(|t| format!("{t} WHERE "));

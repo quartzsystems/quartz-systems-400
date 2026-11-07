@@ -663,7 +663,7 @@ impl Odp {
 
     /// Whether this path may read: one that cannot call trigger programs
     /// may not read a file with read triggers, nor a logical path over
-    /// one; nor (BLOCKED(sql)) a logical path over more than one member
+    /// one; nor (BLOCKED(rel)) a logical path over more than one member
     /// with them, whose records are no one member's.
     fn may_read(&self) -> Result<()> {
         if self.member.is_logical() {

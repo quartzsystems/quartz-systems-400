@@ -193,7 +193,7 @@ fn read_triggers_fire_for_the_rows_a_scan_keeps() {
     assert_eq!(fired(&mut db, "SELECT V FROM QSTEST.RDT WHERE K = 2"), 1);
     assert_eq!(fired(&mut db, "SELECT COUNT(*) FROM QSTEST.RDT"), 3);
     // The primary fires 4: the inner table's rows only as the join reads
-    // them (BLOCKED(sql) in exec::reads); every row its scan keeps here.
+    // them (BLOCKED(rel) in exec::reads); every row its scan keeps here.
     assert_eq!(fired(&mut db, "SELECT A.K FROM QSTEST.RDT A JOIN QSTEST.RDT B ON A.K = B.K WHERE A.K < 3 ORDER BY 1"), 5);
     db.ok("CREATE INDEX QSTEST.RDTIX ON QSTEST.RDT (K)");
     assert_eq!(fired(&mut db, "SELECT V FROM QSTEST.RDT WHERE K = 3"), 1);

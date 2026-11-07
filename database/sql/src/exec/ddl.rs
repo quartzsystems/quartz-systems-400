@@ -478,7 +478,7 @@ pub(super) fn compile_table(lines: &[String]) -> Result<dds::PfDefinition> {
 /// A column's field, compiled on its own.
 pub(super) fn field_of(c: &ColumnDef) -> Result<dds::FieldDef> {
     if c.type_spec.udt.is_some() {
-        // BLOCKED(sql): ALTER TABLE keeps no COLTYPE entries yet.
+        // BLOCKED(rel): ALTER TABLE keeps no COLTYPE entries yet.
         return Err(SqlError::Unsupported { what: "ALTER TABLE with a column of a distinct type".into() });
     }
     let mut lines = vec![dds("R", "ALTERED", "", "", "", "")];

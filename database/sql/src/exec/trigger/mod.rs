@@ -85,7 +85,7 @@ fn mode(ctx: &mut SqlContext, t: &CreateTrigger) -> Result<bool> {
         if t.time == TriggerTime::Before || t.db2sql == Some(false) {
             return Err(coded(-628, "42613", "FOR EACH STATEMENT with BEFORE or MODE DB2ROW".into()));
         }
-        // BLOCKED(sql): a statement trigger is called once per statement
+        // BLOCKED(rel): a statement trigger is called once per statement
         // with its transition tables, which the trigger buffer has no
         // room for.
         return Err(unsupported("FOR EACH STATEMENT triggers"));
@@ -117,7 +117,7 @@ fn check_referencing(t: &CreateTrigger, db2sql: bool) -> Result<()> {
         if t.time == TriggerTime::Before || !db2sql {
             return Err(bad_correlation(tb, 3));
         }
-        // BLOCKED(sql): transition tables of a row trigger.
+        // BLOCKED(rel): transition tables of a row trigger.
         return Err(unsupported("OLD TABLE and NEW TABLE (transition tables)"));
     }
     Ok(())
@@ -130,7 +130,7 @@ fn subject(txn: &mut Txn<'_>, ctx: &SqlContext, t: &CreateTrigger) -> Result<Tab
     let not_type = |code| coded(code, "42809", format!("{} is not of the type the trigger needs", t.table.name.value));
     match t.time {
         TriggerTime::InsteadOf if view => {
-            // BLOCKED(sql): an insert, update or delete of a view runs its
+            // BLOCKED(rel): an insert, update or delete of a view runs its
             // INSTEAD OF triggers in place of the change.
             Err(unsupported("INSTEAD OF triggers"))
         }
@@ -197,7 +197,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTrigger) -> Res
     for u in &used {
         let Some(c) = cols.iter().find(|c| c.names.iter().any(|n| n == u)) else { continue };
         if c.ty.is_none() {
-            // BLOCKED(sql): a column whose storage is not a routine variable's.
+            // BLOCKED(rel): a column whose storage is not a routine variable's.
             return Err(unsupported(&format!("transition variable {u} of type {} in a trigger", c.sql_type)));
         }
     }

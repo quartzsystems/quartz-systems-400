@@ -52,14 +52,14 @@ pub fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, g: &Grant, revoke: bool) -> 
             return super::grant_obj::run(txn, ctx, g, kind, names, revoke);
         }
         GrantObject::Other { kind, .. } => {
-            // BLOCKED(sql): routines, sequences, schemas and packages as
+            // BLOCKED(rel): routines, sequences, schemas and packages as
             // objects come with SQL-2 and Section 3; the statement is
             // parsed for them.
             return Err(SqlError::Unsupported { what: format!("GRANT and REVOKE on a {kind}") });
         }
     };
     if let Some(p) = g.privileges.iter().find(|p| !p.columns.is_empty()) {
-        // BLOCKED(sql): the store keeps no column authorities.
+        // BLOCKED(rel): the store keeps no column authorities.
         return Err(SqlError::Unsupported { what: format!("the column privilege {}: authorities by column", p.name) });
     }
     if let Some(p) = g.privileges.iter().find(|p| bits_of(&p.name).is_none()) {

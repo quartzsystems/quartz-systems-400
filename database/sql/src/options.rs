@@ -84,7 +84,7 @@ pub fn check(name: &str, value: &str) -> Check {
         ("COMPILEOPT", c) if c.trim_matches('\'').trim_start_matches('*').eq_ignore_ascii_case("NONE") => Check::Ok,
         ("COMPILEOPT", _) => refuse("no options are passed to the compiler"),
         ("EVENTF", _) => refuse("no event file is written"),
-        // BLOCKED(sql): the job's connections follow the distributed unit
+        // BLOCKED(rel): the job's connections follow the distributed unit
         // of work rules; a program does not carry its own.
         ("RDBCNNMTH", "DUW") => Check::Ok,
         ("RDBCNNMTH", _) => refuse("connections follow the distributed unit of work rules"),

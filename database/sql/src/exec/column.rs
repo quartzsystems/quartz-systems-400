@@ -67,7 +67,7 @@ pub fn attrs(id: &ast::Identity, range: (i128, i128), what: &str) -> Result<SeqA
     // The counter is eight bytes: a DECIMAL identity past them waits.
     if !sequence && (i64::try_from(min).is_err() || i64::try_from(max).is_err()) {
         return Err(SqlError::Unsupported {
-            what: format!("an identity or sequence range past 19 digits ({what}); BLOCKED(sql): an 8-byte counter"),
+            what: format!("an identity or sequence range past 19 digits ({what}); BLOCKED(rel): an 8-byte counter"),
         });
     }
     if id.order == Some(true) {
@@ -89,7 +89,7 @@ pub fn attrs(id: &ast::Identity, range: (i128, i128), what: &str) -> Result<SeqA
 pub fn check_generated(c: &ast::ColumnDef) -> Result<()> {
     if c.hidden {
         return Err(SqlError::Unsupported {
-            what: "IMPLICITLY HIDDEN columns; BLOCKED(sql): queries have no implicitly hidden column yet".into(),
+            what: "IMPLICITLY HIDDEN columns; BLOCKED(rel): queries have no implicitly hidden column yet".into(),
         });
     }
     match &c.generated {

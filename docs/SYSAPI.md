@@ -565,5 +565,5 @@ attributes other than those above (`HYC00`), C types other than
 datetime character forms and the binary forms (`HY003`), row sets of
 more than one row, a procedure's result sets past the first (the first
 is the statement's cursor), connections to other databases
-(BLOCKED(sql): the DRDA requester), and a CLI call made by a procedure
+(BLOCKED(rel): the DRDA requester), and a CLI call made by a procedure
 the CLI called (it fails).

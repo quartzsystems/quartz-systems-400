@@ -96,7 +96,7 @@ fn row(t: &Trigger, (file, lib, attr): (&str, &str, &str), system: &str, now: &s
 /// [OUTMBR(*FIRST *REPLACE|*ADD)]`.
 pub fn outfile(system: &mut System, p: &Params) -> Result<String, String> {
     if p.upper("TYPE").as_deref() != Some("*TRG") {
-        // BLOCKED(sql): the other DSPFD outfile formats (QAFDBASI, QAFDMBR,
+        // BLOCKED(rel): the other DSPFD outfile formats (QAFDBASI, QAFDMBR,
         // QAFDACCP, QAFDCSTD, ...) are not built.
         return Err("CPD0084 OUTPUT(*OUTFILE) is supported with TYPE(*TRG) only.".into());
     }

@@ -168,7 +168,7 @@ response time from the same counters.
 primary's are display files on hand grids the UIM renderer does not
 make (as `WRKACTJOB`'s, `ui/uim/tests/wm_panels.rs`). Their captures
 are under `tools/conformance/golden/phase12/perf/`; each panel group
-carries a `BLOCKED(phase12)` marker. On the primary `WRKSYSSTS` at the
+carries a `BLOCKED(rel)` marker. On the primary `WRKSYSSTS` at the
 basic assistance level is "Display System Status"; QS/400 shows the
 intermediate panel.
 

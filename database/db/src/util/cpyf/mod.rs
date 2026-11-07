@@ -511,7 +511,7 @@ fn put(
             .next();
         if let Some(k) = hit {
             if to_m.trgs.as_ref().is_some_and(|a| a.any(Event::Update)) {
-                // BLOCKED(sql): an update by *UPDADD does not fire update
+                // BLOCKED(rel): an update by *UPDADD does not fire update
                 // triggers yet; refused rather than not fired.
                 return Err(DbError::TriggerNotCallable { file: to_m.file.name().to_string() });
             }

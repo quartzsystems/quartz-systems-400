@@ -28,7 +28,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, v: &CreateView) -> Result
             return Err(SqlError::Exists { name: v.name.name.value.clone(), kind: "*FILE" });
         }
         if !dependents(txn, ctx, old)?.is_empty() {
-            // BLOCKED(sql): IBM keeps views over a replaced view when
+            // BLOCKED(rel): IBM keeps views over a replaced view when
             // they still fit; that waits on view revalidation.
             return Err(SqlError::Unsupported { what: "CREATE OR REPLACE VIEW of a view other views depend on".into() });
         }
@@ -98,7 +98,7 @@ pub fn create(txn: &mut Txn<'_>, ctx: &mut SqlContext, v: &CreateView) -> Result
         columns,
     };
     if v.check_option && !logical {
-        // BLOCKED(sql): a view that is not a logical file is read only, so
+        // BLOCKED(rel): a view that is not a logical file is read only, so
         // its check option could never act; IBM's updatable forms of it
         // (expressions over one table) wait on updates through them.
         file::delete_file(txn, ctx.job, id)?;
@@ -178,7 +178,7 @@ fn shell(
         if sql_names.contains(&sql) {
             return Err(SqlError::ColumnListRequired);
         }
-        // BLOCKED(sql): an expression column has no type until the
+        // BLOCKED(rel): an expression column has no type until the
         // executor types expressions (SQL-3, SQL-4); the catalog shows it
         // as VARCHAR(256) meanwhile. Its values are right.
         let mut f = c.field.clone().unwrap_or_else(|| {

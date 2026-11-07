@@ -266,7 +266,7 @@ impl Refused<'_> {
 fn keep_sql(system: &mut System, compiled: &rpgc::Compiled, shape: Shape, (lib_name, name): (&str, &str), src: &Source, stmf: bool, text: &str) -> Result<(), String> {
     let Some(pre) = &compiled.precompiled else { return Ok(()) };
     if shape == Shape::Module {
-        // BLOCKED(sql): CRTPGM does not carry a module's statements.
+        // BLOCKED(rel): CRTPGM does not carry a module's statements.
         return Ok(());
     }
     let p = sql::prtsqlinf::Precompile {

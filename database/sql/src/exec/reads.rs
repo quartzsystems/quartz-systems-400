@@ -12,7 +12,7 @@
 //! scan is over, in the order the rows were read, each record read again
 //! by its number; a call suspends the statement as a trigger of a change
 //! does (`routine::midcall`).
-//! BLOCKED(sql): the primary reads a join's inner table by the join's
+//! BLOCKED(rel): the primary reads a join's inner table by the join's
 //! condition, so its rows fire only as they match; here the inner scan
 //! keeps what its own predicates keep and each of those fires once. A
 //! scalar `VALUES (subquery)` over such a table is `SQL0255` there and
@@ -37,7 +37,7 @@ fn not_callable(t: &TableInfo, why: &str) -> SqlError {
 /// Whether a query here may read `t`, whose reads fire triggers.
 pub fn callable(ctx: &SqlContext, t: &TableInfo) -> Result<()> {
     if ctx.trigger_caller().is_none() && !quiet(t.id) {
-        // BLOCKED(sql): a context with no job (the service console, the
+        // BLOCKED(rel): a context with no job (the service console, the
         // kit) has nothing to call a program with.
         return Err(not_callable(t, "no trigger program can be called from this statement"));
     }
@@ -52,7 +52,7 @@ fn physical(txn: &mut Txn<'_>, t: &TableInfo) -> Result<Member> {
         return Ok(m);
     }
     let [base] = m.bases.as_slice() else {
-        // BLOCKED(sql): a join or multi-format logical file's rows are
+        // BLOCKED(rel): a join or multi-format logical file's rows are
         // not one member's records.
         return Err(not_callable(t, "it is a logical file over more than one member"));
     };

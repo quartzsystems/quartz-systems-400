@@ -33,9 +33,6 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: "0"
-  # Until the BLOCKED(rel) rename lands, the release notes check accepts
-  # the older marker forms; drop this line after it.
-  QS400_MARKERS: legacy
 
 jobs:
   fmt:

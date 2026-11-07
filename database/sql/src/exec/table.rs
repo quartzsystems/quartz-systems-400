@@ -246,7 +246,7 @@ fn replace_old(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) -> Resu
     }
     let old = table_info(txn, id)?;
     if !old.desc.dependents.is_empty() {
-        // BLOCKED(sql): IBM keeps the views and indexes over a replaced
+        // BLOCKED(rel): IBM keeps the views and indexes over a replaced
         // table; rebuilding them waits on ALTER TABLE's (SQL-2).
         return Err(SqlError::Unsupported { what: "CREATE OR REPLACE TABLE of a table with views or indexes over it".into() });
     }

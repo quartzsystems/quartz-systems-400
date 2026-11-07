@@ -281,7 +281,7 @@ IPL asks again). The boot file's directory then holds `INSTALL.RSP`.
 
 The payload (the LIC, the operating system, the licensed programs)
 still comes from install media the system can read: a CD, a stick, the
-image a BMC presents as virtual media. `BLOCKED(phase12)`: a diskless
+image a BMC presents as virtual media. `BLOCKED(rel)`: a diskless
 install with the payload over the network needs the ISO fetched into
 memory and attached as a block device (a loop device: an ioctl outside
 the `unsafe` sites) or a payload-carrying netboot UKI.

@@ -300,7 +300,7 @@ impl FtpHost for JobSide<'_> {
 fn overridden(host: &Host, file: &str, usage: qir::FileUsage) -> Option<(String, String, String)> {
     let mut io = RemoteIo::new(host.link.clone());
     let spec = OpenSpec {
-        // BLOCKED(sql): no trigger programs called here; a file with
+        // BLOCKED(rel): no trigger programs called here; a file with
         // triggers refuses the change.
         triggers: false,
         file: file.into(),

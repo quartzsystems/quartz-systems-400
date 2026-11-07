@@ -32,7 +32,7 @@ pub fn run(txn: &mut Txn<'_>, ctx: &mut SqlContext, r: &Rename) -> Result<()> {
     let kind = names::kind_of(txn, id).unwrap_or(if r.index { Kind::Index } else { Kind::Table });
     let old_sql = names::sql_name(txn, id);
     if !super::view::dependents(txn, ctx, id)?.is_empty() {
-        // BLOCKED(sql): the views over it keep its name in their query.
+        // BLOCKED(rel): the views over it keep its name in their query.
         return Err(SqlError::Unsupported { what: "RENAME of a table or view other views read".into() });
     }
     let (new_sys, new_sql): (Name, Option<String>) = match (&r.to, &r.system_name) {

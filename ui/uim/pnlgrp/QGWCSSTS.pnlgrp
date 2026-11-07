@@ -7,7 +7,7 @@
 .* first look or F10. Size and activity level of a shared pool may be
 .* typed over. Captured on the primary (tools/conformance/golden/
 .* phase12/perf/wrksyssts-i*.txt).
-.* BLOCKED(phase12): the primary's display is a display file on a hand grid this renderer does not make (as WRKACTJOB's); it needs a display file with a command line
+.* BLOCKED(rel): the primary's display is a display file on a hand grid this renderer does not make (as WRKACTJOB's); it needs a display file with a command line
 :PNLGRP.
 :CLASS NAME=NUMCL BASETYPE='CHAR 10'.
 :ECLASS.

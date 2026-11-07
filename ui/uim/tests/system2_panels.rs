@@ -263,7 +263,7 @@ fn srv_dialog(pos: &str, detail: &str) -> MapDialog {
 }
 
 #[test]
-#[ignore = "BLOCKED(phase12): the golden runs the 32-character signature past column 80 into column 1 of row 18; output fields do not wrap rows yet"]
+#[ignore = "BLOCKED(rel): the golden runs the 32-character signature past column 80 into column 1 of row 18; output fields do not wrap rows yet"]
 fn dspsrvpgm() {
     let g = shipped("QUIDSPPGM");
     let d = srv_dialog("Display 1 of 10", "*BASIC");

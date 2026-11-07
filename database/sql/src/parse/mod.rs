@@ -519,13 +519,13 @@ impl Parser {
             "CLOB" => DataType::Clob(self.lob_length()?),
             "DBCLOB" => DataType::Dbclob(self.lob_length()?),
             "NCHAR" | "NVARCHAR" | "NCLOB" | "NATIONAL" => return self.national_type(&w),
-            // BLOCKED(sql): an XML column needs a stored field type (DB_FORMAT
+            // BLOCKED(rel): an XML column needs a stored field type (DB_FORMAT
             // has none); ROWID needs the generated values of SQL-2's generated
             // columns; DATALINK needs file links the IFS does not keep.
             "XML" => return Err(Self::unsupported("the XML data type for a column or a CAST (XMLPARSE and XMLSERIALIZE take XML text)")),
             "ROWID" => return Err(Self::unsupported("ROWID columns (generated row identifiers)")),
             "DATALINK" => return Err(Self::unsupported("the DATALINK data type")),
-            // BLOCKED(sql): a distinct type is a column's or a CAST's
+            // BLOCKED(rel): a distinct type is a column's or a CAST's
             // (`type_spec_or_udt`); a variable, parameter, sequence or
             // source type of one needs SQL PL values to carry it.
             _ if self.is_sym(".") => return Err(Self::unsupported("a distinct type here (only columns and CAST take one)")),

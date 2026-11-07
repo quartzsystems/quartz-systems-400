@@ -1306,7 +1306,7 @@ impl From<db::DbError> for SqlError {
                 state: "38501",
                 what: format!("{} {}", failure.msgid, failure.text),
             },
-            // BLOCKED(sql): statements run where no trigger program can
+            // BLOCKED(rel): statements run where no trigger program can
             // be called (the service console, a statement not on a fiber).
             D::TriggerNotCallable { file } => Self::Unsupported {
                 what: format!("a change of {file} here: it has triggers, and trigger programs cannot be called by this statement"),

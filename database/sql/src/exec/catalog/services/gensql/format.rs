@@ -47,7 +47,7 @@ impl Options {
     /// The options of a call. Options that change only what QS/400
     /// cannot vary are checked and refused when set otherwise.
     pub fn of(args: &Args) -> Result<Self> {
-        // BLOCKED(sql): the standards, obfuscation, temporal, additional
+        // BLOCKED(rel): the standards, obfuscation, temporal, additional
         // index and index-instead-of-view forms are not generated.
         for (name, shipped) in [
             ("STANDARDS_OPTION", "0"),

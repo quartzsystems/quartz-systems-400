@@ -11,7 +11,7 @@
 //! in its field and its link to the type in a `COLTYPE` entry ([`column`]);
 //! statements see the types through [`registry`] and are typed by
 //! [`typing`]'s rules.
-//! BLOCKED(sql): a variable, routine parameter or result, sequence or
+//! BLOCKED(rel): a variable, routine parameter or result, sequence or
 //! `ALTER COLUMN ... SET DATA TYPE` of a distinct type is refused with
 //! `SQL0084` (SQL PL values carry only their source type); `WITH
 //! COMPARISONS` is accepted and changes nothing, as on the primary.

@@ -110,7 +110,7 @@ pub(crate) fn qcmdexc_scalar(name: &str, args: &[Value], ctx: &SqlContext) -> Op
             return Err(SqlError::Coded { code: -440, state: "42884", what: format!("QSYS2.QCMDEXC with {} arguments", args.len()) });
         }
         if args.get(1).is_some_and(|p| !p.is_null() && !p.as_text().trim().eq_ignore_ascii_case("NONE")) {
-            // BLOCKED(sql): PRINT => 'PRINT' writes a spooled file of the
+            // BLOCKED(rel): PRINT => 'PRINT' writes a spooled file of the
             // command's messages; not done yet.
             return Err(SqlError::Coded { code: -171, state: "42815", what: "argument 2 of QCMDEXC: only 'NONE' is supported".into() });
         }

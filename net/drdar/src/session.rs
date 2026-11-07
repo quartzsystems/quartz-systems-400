@@ -323,7 +323,7 @@ impl Conn {
     fn run(&mut self, scope: &str, req: &Request) -> Routed {
         let d = &req.desc;
         let key = (scope.to_string(), d.name.clone());
-        // BLOCKED(sql): the client sends no input values (SQLDTA) yet.
+        // BLOCKED(rel): the client sends no input values (SQLDTA) yet.
         let no_inputs = |n: usize| req.inputs.len() <= n;
         match d.op {
             Op::Query => {

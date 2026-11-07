@@ -280,7 +280,7 @@ the record buffer of a `*USA` field was settled on pub400 in Phase 12
 program-described read drops the seconds, and an externally described
 field reads as that time with seconds 0 (`%CHAR(t : *ISO)` is
 `13.45.00`, `%SUBDT(t : *SECONDS)` 0). QS/400's buffer still carries
-`hh:mm:ss` (`known.txt` names `USA001`); BLOCKED(phase12): the database
+`hh:mm:ss` (`known.txt` names `USA001`); BLOCKED(rel): the database
 has to convert a `*USA` time field to `hh:mm AM` at the record buffer
 (read) and back with seconds 0 (write), not done in this item.
 

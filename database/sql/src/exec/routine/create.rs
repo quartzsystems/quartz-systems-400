@@ -425,7 +425,7 @@ impl Catalog for Cat<'_, '_> {
     fn array_type(&mut self, name: &ObjectName) -> Result<Option<(TypeSpec, u64)>> {
         let Some((_, u)) = crate::exec::udt::find(self.txn, self.ctx, name)? else { return Ok(None) };
         if u.metatype != b'A' {
-            // BLOCKED(sql): distinct types need strong typing in the engine.
+            // BLOCKED(rel): distinct types need strong typing in the engine.
             return Err(unsupported(&format!("a variable of distinct type {name}")));
         }
         Ok(Some((crate::pl::types::parse_type(&u.source)?, u.cardinality)))
@@ -519,7 +519,7 @@ pub(super) fn remove(txn: &mut Txn<'_>, ctx: &mut SqlContext, f: &Found) -> Resu
 /// programs in the job called in the middle of the statement (`extfunc`).
 fn check_function(r: &CreateRoutine) -> Result<()> {
     match (&r.returns, &r.body) {
-        // BLOCKED(sql): an external table function is called for each row
+        // BLOCKED(rel): an external table function is called for each row
         // to fetch, with open and close calls around them.
         (Some(Returns::Table(_)), RoutineBody::External) => Err(unsupported("external table functions")),
         (_, RoutineBody::External) if matches!(r.options.style, Some(ParmStyle::General | ParmStyle::GeneralNulls)) => {

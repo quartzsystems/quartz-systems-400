@@ -218,7 +218,7 @@ pub fn active(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -
 /// `JOB_INFO(JOB_STATUS_FILTER, JOB_TYPE_FILTER, JOB_SUBSYSTEM_FILTER,
 /// JOB_USER_FILTER, JOB_SUBMITTER_FILTER, JOB_NAME_FILTER)`: the active
 /// jobs; jobs on job queues and jobs with output only are not in the
-/// job table the service keeps (BLOCKED(sql): no table of ended jobs).
+/// job table the service keeps (BLOCKED(rel): no table of ended jobs).
 #[allow(clippy::many_single_char_names)]
 pub fn job_info(txn: &mut Txn<'_>, ctx: &SqlContext, args: &Args, out: &mut Out) -> Result<()> {
     let status = args.word("JOB_STATUS_FILTER").unwrap_or_else(|| "*ALL".into());

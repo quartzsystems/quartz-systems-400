@@ -10,7 +10,7 @@ types/XML1      # engine: XMLPARSE describes as XML on the primary (QS/400 has n
 types/BOOL1   # engine: no 01004; predicates in a select list described nullable here; NOT of a null BOOLEAN column is true on pub400; a CHAR result VARCHAR here
 types/LOB1   # engine: function result types (LENGTH of a LOB, CAST of a DBCLOB); no 01004; ROWID and XML columns refused SQL0084 (the primary makes them); INLINE LENGTH accepted (SQL0104 on 7.1)
 integrity/SEQUENCE   # engine: a column named ORDER in a select list (SQL0104 here)
-integrity/AUDITCOL   # engine: IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(sql))
+integrity/AUDITCOL   # engine: IMPLICITLY HIDDEN refused (SQL0084, BLOCKED(rel))
 query/JOINS   # engine: ORDER BY an unqualified USING column is SQL0203 on DB2 for i, resolved here
 query/DTFUNCS   # engine: TIMESTAMP_FORMAT('bad') SQL0302 here, SQ20448 there
 query/STRFUNCS   # engine (by choice): DECODE is SQL0204 on pub400 but in the brief's must-have list
@@ -26,13 +26,13 @@ sysibm/SYSIBMLS   # engine: QSYS2.SYSTABLES and SYSROUTINES do not list the comp
 sysibm/SYSIBMCOL   # engine: QSYS2.SYSCOLUMNS does not list the columns of computed views
 sysibm/SYSIBMPRM   # engine: QSYS2.SYSPARMS does not list the SYSIBM routines' parameters
 services/GENSQL    # engine: QTEMP/Q_GENSQL is not written (the result set is); oracle: pub400 CCSID 273; engine: generated constraint names differ
-sqlpl/ARRAYS   # engine: array parameters and array arguments in CALL refused SQL0084 (BLOCKED(sql)); ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here
+sqlpl/ARRAYS   # engine: array parameters and array arguments in CALL refused SQL0084 (BLOCKED(rel)); ARRAY_EXISTS is 7.2+ (SQL0199 on 7.1); an array parameter of a function is SQ20441 there, SQL0084 here; UNNEST of a constructor is SQL0104 there, SQ20441 here
 sqlpl/ARRAYERR   # engine: the primary cannot see a one-column UNNEST correlation's column (SQL0206), QS/400 can
 sqlpl/PLTYPES   # engine: HEX of CCSID-tagged strings; a character DEFAULT for a VARGRAPHIC variable is SQL0408 there, converted here; 1E400 into DECFLOAT(16) is SQL0304 there, SQL0302 here
-ddl/DGTTCLS   # engine: ALTER TABLE of a table with an index or view over it refused (SQL0084, BLOCKED(sql) in alter)
+ddl/DGTTCLS   # engine: ALTER TABLE of a table with an index or view over it refused (SQL0084, BLOCKED(rel) in alter)
 trigger/DLTFTRG   # kit: the in-memory store runs no commands (QSYS.QCMDEXC is SQL0204 there); DLTF's dropping of SQL trigger programs runs in the service (svc/db/files.rs)
 objects2/GRANTUDT   # kit: the in-memory store runs no commands (DSPOBJAUT through QSYS.QCMDEXC); the authorities are checked in sql::objects grant_on_types_and_variables_as_the_primary
-objects2/TYPES3   # a distinct type compared with a quantified subquery's column of another type is not refused (SQL0401 there; BLOCKED(sql) in udt::typing::check)
+objects2/TYPES3   # a distinct type compared with a quantified subquery's column of another type is not refused (SQL0401 there; BLOCKED(rel) in udt::typing::check)
 ddl/QTEMPCL   # the kit's in-memory store runs no commands (QCMDEXC); one QTEMP for CL and SQL is tested in sql tests/qtemp_job.rs and in the service
 perf/DECORR   # a scalar subquery's result column described VARCHAR(32767) here (its type is not inferred); the primary describes a statement it fails at fetch (SQL0811) before the error
 ddl/SHOPCUS1   # engine: a failed INSERT gives its identity value back here, IBM keeps it used

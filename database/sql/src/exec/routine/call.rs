@@ -152,7 +152,7 @@ pub fn call(txn: &mut Txn<'_>, ctx: &mut SqlContext, c: &Call, params: &[Value])
         }
     };
     if !ctx.routine.can_call {
-        // BLOCKED(sql): this interface runs statements in the database
+        // BLOCKED(rel): this interface runs statements in the database
         // only; calling a program needs the job's runtime (embedded SQL
         // and SQL routines have it).
         return Err(SqlError::Unsupported { what: format!("CALL {} from this interface: it cannot run the program", c.name) });

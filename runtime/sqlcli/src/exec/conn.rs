@@ -43,7 +43,7 @@ impl Cli {
             }
         }
         if !name.is_empty() && name != "*LOCAL" && name != self.register(host, hdbc, "CURRENT SERVER") {
-            // BLOCKED(sql): a connection to another relational database
+            // BLOCKED(rel): a connection to another relational database
             // needs the DRDA requester (handoff Section 6).
             self.close_server(hdbc);
             let text = format!("Relational database {name} is not this system's; connections to other databases are not supported.");

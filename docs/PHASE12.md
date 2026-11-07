@@ -92,12 +92,12 @@ updated as rows close.
 | `runtime/sysapi/src/ifs/names.rs:72` | a link's own owner (`lchown`) | §1 MIGRATE: `lchown` | closed |
 | `runtime/sysapi/src/ifs/refs.rs:135` | byte-range locks across jobs | §1 MIGRATE: byte-range locks | closed |
 | `lic/slic/src/cpp/lpcmd.rs:326` | product directories not removed by `DLTLICPGM` | §1 MIGRATE: product directories | closed |
-| `licpgm/lpstore/src/savfile.rs:156` | IFS directories in product streams | §1 MIGRATE: product stream directories | BLOCKED(phase12): SAVLICPGM writes no IFS records, RSTLICPGM restores none |
+| `licpgm/lpstore/src/savfile.rs:156` | IFS directories in product streams | §1 MIGRATE: product stream directories | BLOCKED(rel): SAVLICPGM writes no IFS records, RSTLICPGM restores none |
 | `licpgm/licpgm/src/api/crtpl.rs:191` | the directory list `SDIR0100` | §1 MIGRATE: `SDIR0100` | closed |
 | `work/qsjob/src/command/ftp.rs:12` | the `FTP` client's own session display | §1 MIGRATE: the FTP client display | closed |
 | `lic/slic/src/stgsvc/prtf.rs:84` | the printer device's queue as a printer file's default | §1 MIGRATE (phase 10 leftover) | closed |
 | `runtime/mi/src/job.rs:160` | a job's display (phase 8 leftover) | §1 MIGRATE: resolve or re-word | closed |
-| `work/qsjob/src/console/jobcmd.rs:113` | job commands shown through the service (phase 8) | §1 MIGRATE | closed (reworded); another job's call stack is BLOCKED(phase12) at jobcmd.rs:153 |
+| `work/qsjob/src/console/jobcmd.rs:113` | job commands shown through the service (phase 8) | §1 MIGRATE | closed (reworded); another job's call stack is BLOCKED(rel) at jobcmd.rs:153 |
 | `work/qsjob/src/display/surface.rs:7` | the console as a TN5250 client (phase 8) | §1 MIGRATE | closed |
 | `work/qsjob/src/work/inter.rs:9` | `*MENU` objects in Command Entry (phase 8) | §1 MIGRATE | closed |
 | `work/qsjob/src/work/sysjob.rs:14` | device arbitration, communications (phases 6, 10) | §1 MIGRATE | closed |
@@ -118,7 +118,7 @@ updated as rows close.
 | `lic/slic/src/cpp/medcmd.rs:320` | images from an optical device | §1 triage | closed |
 | `lic/slic/src/cpp/tcpcmd.rs:613,659` | `MRGTCPHT FROMOBJ`/`TOOBJ` stream files | §1 triage (stream files exist since Phase 10) | closed |
 | `lic/slic/src/stgsvc/svcop.rs:161`, `lic/svctools/src/env.rs:592` | copying a dump to media | §1 triage (media exist since Phase 11) | closed |
-| `lic/svctools/src/dst/mod.rs:22` | DST options not built (`DST.md`) | §1 triage per option | stays, BLOCKED(phase12): the DST options DST.md lists (save/restore storage, disk unit data, remote service, LIC fixes, partitions, ASP moves); their reasons in DST.md name earlier phases and are not re-checked |
+| `lic/svctools/src/dst/mod.rs:22` | DST options not built (`DST.md`) | §1 triage per option | stays, BLOCKED(rel): the DST options DST.md lists (save/restore storage, disk unit data, remote service, LIC fixes, partitions, ASP moves); their reasons in DST.md name earlier phases and are not re-checked |
 | `runtime/msgf/msgs/qcpfmsg.toml`, `ui/menus/src/unavailable.rs` | the messages themselves (`CPD9D60`, `CPD9D61`...) | stays: the mechanism | stays: the mechanism |
 
 ### Markers in documents
@@ -131,13 +131,13 @@ updated as rows close.
 | `DDM.md:264` | DDM deviations `BLOCKED(phase10)` | §1 DDM | closed |
 | `INSTALL.md:188`, `LICPGM.md:492` | `qs400.rsp=` URL; `MIGRATE(phase11)` | §1 | closed |
 | `PHASE5.md`, `PHASE6.md`, `PHASE8.md`, `WORKMGMT.md`, `TOOLS.md` | historical markers in phase records | §1: annotated "closed in Phase N" | closed |
-| `PHASE9.md:199,218,260,268` | `DATA-INTO`; HTTPAPI over TLS (`QSOSSLSR`); pointer to a by-reference parameter; by-reference vs `* value` through a procedure pointer | §1 RPG; the last two are ABI changes, see below | closed: DATA-INTO in Phase 12; TLS, headers and the ABI items re-tagged BLOCKED(phase12) (b855a775) |
+| `PHASE9.md:199,218,260,268` | `DATA-INTO`; HTTPAPI over TLS (`QSOSSLSR`); pointer to a by-reference parameter; by-reference vs `* value` through a procedure pointer | §1 RPG; the last two are ABI changes, see below | closed: DATA-INTO in Phase 12; TLS, headers and the ABI items re-tagged BLOCKED(rel) (b855a775) |
 
 The two ABI items from `PHASE9.md` (a pointer taken to a by-reference
 parameter dying with the entry; by-reference and `* value` not
 interchangeable through a procedure pointer) are changes of the call
 ABI (`ABI.md` §3). They are triaged in §1; if the change does not fit
-before the freeze they stay as `BLOCKED(phase12)` with that reason,
+before the freeze they stay as `BLOCKED(rel)` with that reason,
 since §2 freezes the module format the ABI lives in.
 
 ### Tests ignored for want of a golden
@@ -162,7 +162,7 @@ ones pub400 refused can be captured there (V7R1M0).
 
 | Document | Question | Closes / stays | State |
 |---|---|---|---|
-| `DB_OPEN_QUESTIONS.md` (Utilities) | what an RPG program sees in a `*USA` time field's buffer | §1: an RPG program on pub400 | settled on pub400; the buffer form BLOCKED(phase12) |
+| `DB_OPEN_QUESTIONS.md` (Utilities) | what an RPG program sees in a `*USA` time field's buffer | §1: an RPG program on pub400 | settled on pub400; the buffer form BLOCKED(rel) |
 | `DB_OPEN_QUESTIONS.md` (Commitment control) | `ENDCMTCTL` with files open (the test on the machine) | §1: CL on the primary | closed |
 | `NET_OPEN_QUESTIONS.md` (IFS 8) | a binary read after a binary write to a member; QSH writes to a data member | §1: the primary | QSH half closed; the binary read NEEDS-CODY (a JTOpen probe) |
 | `NET_OPEN_QUESTIONS.md` (hwrsrc 1, 2) | `DSPHDWRSC` panels; the detail area below the location | §1: the primary as `QSECOFR` | 1 closed (DSPHDWRSC panels); 2 stays open |
@@ -284,7 +284,7 @@ QEMU on the merged tree (agents N and O, 2026-11-04): disk suite steps
 1, 64, 68, 70, 80, 86 to 89, 100, 101, 103 to 108, 114 to 117, 120 to
 123 pass; install suite steps 1, 8, 9 and 10 pass; install step 15
 (the network install) fails after its install: the installed system
-never gets a DHCP lease (`BLOCKED(phase12)`).
+never gets a DHCP lease (`BLOCKED(rel)`).
 
 ## Exit review
 
@@ -293,7 +293,7 @@ never gets a DHCP lease (`BLOCKED(phase12)`).
 | 0, 1 | stands | the kernel config: more drivers, the image compressed once with xz (`ARCHITECTURE.md` §6) |
 | 2, 2.5 | stands | the store's frozen layouts; the page cache sized from `QMCHPOOL` after the system values load (it had kept every page) |
 | 3 | stands | `ENDCMTCTL` with files open is `CPF8355`; SQL nested past 64 levels is `SQL0101` (found by the fuzzer) |
-| 4 | stands | the IR and object formats frozen; the call ABI items stay `BLOCKED(phase12)` |
+| 4 | stands | the IR and object formats frozen; the call ABI items stay `BLOCKED(rel)` |
 | 5 | stands | `ENDSBS *ALL` reaches the restricted state; Collection Services; job accounting; the prestart idle count (a descriptor leak under load) |
 | 6 | stands | `*PUBLIC *EXCLUDE` had been widened at the first IPL; `QSSECCHK` found it and system data areas changeable by any user |
 | 7 | stands | `%OFFSET`; `CRTBNDCL` with default options; the wrapped command line did not reproduce |

@@ -69,7 +69,7 @@ fn run(name: &str, args: &[Value]) -> Result<Value> {
         "BASE64_DECODE" => base64_decode(&args[0].as_text()).map(Value::Bin).ok_or_else(|| failed("the text is not base64")),
         "URL_ENCODE" => {
             if args.get(1).is_some_and(|m| !m.is_null()) {
-                // BLOCKED(sql): the encoding modes pub400 accepts are not
+                // BLOCKED(rel): the encoding modes pub400 accepts are not
                 // yet settled; every mode it was given was SQL0171.
                 return Err(SqlError::Coded { code: -171, state: "42815", what: "argument 2 of URL_ENCODE".into() });
             }

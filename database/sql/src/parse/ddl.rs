@@ -286,7 +286,7 @@ impl Parser {
         loop {
             // A key is a column; an expression key is a derived-key index.
             if !matches!(self.tok_at(1), Tok::Sym("," | ")") | Tok::Word(_)) || self.is_word_at(1, "AS") {
-                // BLOCKED(sql): derived keys need key expressions in the
+                // BLOCKED(rel): derived keys need key expressions in the
                 // database's access paths.
                 return Err(Self::unsupported("an expression as an index key (derived-key indexes)"));
             }

@@ -81,7 +81,7 @@ pub(super) fn prepare_file(txn: &mut Txn<'_>, ctx: &mut SqlContext, spec: &Start
             if let Some(m) = &member
                 && t.desc.members.first().is_some_and(|e| e.name.to_string() != *m)
             {
-                // BLOCKED(sql): records are written with INSERT, which
+                // BLOCKED(rel): records are written with INSERT, which
                 // reaches the file's first member only.
                 return Err(err("CPF9898", format!("Member {m} is not the first member of {}: records go to the first member.", spec.file)));
             }

@@ -302,7 +302,7 @@ impl Lane {
             });
         }
         if s.outputs {
-            // BLOCKED(sql): QAP's Executed has no output values (a later
+            // BLOCKED(rel): QAP's Executed has no output values (a later
             // protocol version); refused rather than dropped.
             let ca = Sqlca {
                 sqlcode: -84,
@@ -348,7 +348,7 @@ impl Lane {
     }
 
     /// The first result set a `CALL` left (`RS#1`) as a cursor.
-    /// BLOCKED(sql): `Executed` names one cursor, so a second set is not
+    /// BLOCKED(rel): `Executed` names one cursor, so a second set is not
     /// reachable through QAP.
     fn result_set(&mut self, e: &mut dyn Engine, called: &Reply) -> SqlResult<Executed> {
         let name = called.rows.first().and_then(|r| r.first()).map_or_else(|| "RS#1".to_string(), Value::as_text);

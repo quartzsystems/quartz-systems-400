@@ -392,7 +392,7 @@ makes its calls through its trigger mode (`db::trg::Mode`):
   for is refused before anything changes (`CPF502B`; SQL `SQL0084`).
   Functions that run wholly in the service use it: the service console,
   `FTP`, `CPYF` and a statement not on a fiber or from a job that does
-  not make calls (QAP) (BLOCKED(sql) until each can reach its job). DFU
+  not make calls (QAP) (BLOCKED(rel) until each can reach its job). DFU
   and the DDM server's record operations open with `triggers` and call
   the programs in the job as record I/O does; `CPYF` taking turns from a
   job's `run_cmd_calling` fires the to-file's insert triggers through the
@@ -444,7 +444,7 @@ makes its calls through its trigger mode (`db::trg::Mode`):
   answer. A statement run where there is no fiber or no job to call
   (the service console, QAP's commands, a command run at once) still
   refuses a change of a table with triggers and a `CALL` with `SQL0084`
-  (BLOCKED(sql): the service console has no job runtime). `MODE DB2SQL` after
+  (BLOCKED(rel): the service console has no job runtime). `MODE DB2SQL` after
   triggers are deferred by the engine and called when the statement has
   changed every row. An SQL trigger's program (`CREATE TRIGGER`,
   `sql::exec::trigger`) is a trigger program like any other: record I/O
@@ -455,8 +455,8 @@ queries, once for each row a table's scan keeps (`sql::exec::reads`),
 a view's or one-member logical file's rows as their table's. A query
 from a context with no job to call a program in (the service console)
 and a read through a logical file over more than one member are refused
-(BLOCKED(sql)). `ALWREPCHG(*NO)` on an after trigger does not yet
-refuse the program's own change of the same record (BLOCKED(sql)).
+(BLOCKED(rel)). `ALWREPCHG(*NO)` on an after trigger does not yet
+refuse the program's own change of the same record (BLOCKED(rel)).
 
 ## The service console
 

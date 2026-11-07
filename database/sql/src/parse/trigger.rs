@@ -40,7 +40,7 @@ impl Parser {
             return Err(self.expected("INSERT, DELETE or UPDATE"));
         };
         if self.is_word("OR") {
-            // BLOCKED(sql): one trigger for several events, with the
+            // BLOCKED(rel): one trigger for several events, with the
             // INSERTING, UPDATING and DELETING predicates (7.2).
             return Err(Self::unsupported("a trigger for more than one event (INSERT OR UPDATE ...)"));
         }

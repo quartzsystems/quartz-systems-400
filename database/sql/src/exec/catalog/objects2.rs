@@ -10,11 +10,11 @@
 //! definition (`db::trg::SqlDef`) gives its condition and statement, its
 //! correlation names, the columns it uses (`SYSTRIGCOL`) and the tables
 //! it names (`SYSTRIGDEP`); `SYSTRIGUPD` is any trigger's `UPDATE OF`
-//! columns. `SYSVARIABLEDEP` is empty (BLOCKED(sql): variables record no
+//! columns. `SYSVARIABLEDEP` is empty (BLOCKED(rel): variables record no
 //! dependencies); the Java views are empty, as QS/400 has no Java
 //! routines. IBM's LOB columns (`DEFAULT`, `ACTION_STATEMENT`, ...) are
 //! `VARGRAPHIC(2000)` here: computed views have no LOB columns
-//! (BLOCKED(sql)).
+//! (BLOCKED(rel)).
 
 use store::obj::{ObjectId, ops, types};
 use store::txn::Txn;

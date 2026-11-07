@@ -25,9 +25,9 @@ ERR362 a group child named like an operation code (RNF3556): IBM's follow-on dia
 ERR367 a group child named like an operation code (RNF3556): IBM's follow-on diagnostics of the line read as a calculation differ (PHASE9.md, Checks not yet made)
 ERR369 a group child named like an operation code (RNF3556): IBM's follow-on diagnostics of the line read as a calculation differ (PHASE9.md, Checks not yet made)
 ERR370 a group child named like an operation code (RNF3556): IBM's follow-on diagnostics of the line read as a calculation differ (PHASE9.md, Checks not yet made)
-USA001 a *USA time field's record buffer is hh:mm AM on IBM i and hh:mm:ss here (DB_OPEN_QUESTIONS.md, TIMFMT(*USA)); BLOCKED(phase12) in the database's buffer conversion
+USA001 a *USA time field's record buffer is hh:mm AM on IBM i and hh:mm:ss here (DB_OPEN_QUESTIONS.md, TIMFMT(*USA)); BLOCKED(rel) in the database's buffer conversion
 R3021 the INFDS's *RECORD names the file's own format (CUSTR) where RPG/400 gives the RENAME name (CREC), and keeps it after a CHAIN finds nothing where RPG/400 blanks it: the IR's file declaration carries no RPG names for formats (docs/RPG3.md)
 SQL056 DESCRIBE gives dates and times the job's CCSID: 273 on pub400, 37 here
 SQL057 the job's CCSID (273 on pub400, 37 here) in the entries of dates and markers; IBM leaves earlier bytes in an extended entry's reserved area
-SQL058 a SENSITIVE cursor is refused with SQL0243: QS/400 reads a cursor's rows when it opens (BLOCKED(sql))
-SQL060 LOB file reference variables are refused with SQL0084: the runtime reads and writes no IFS files yet (BLOCKED(sql))
+SQL058 a SENSITIVE cursor is refused with SQL0243: QS/400 reads a cursor's rows when it opens (BLOCKED(rel))
+SQL060 LOB file reference variables are refused with SQL0084: the runtime reads and writes no IFS files yet (BLOCKED(rel))

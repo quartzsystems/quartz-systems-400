@@ -106,7 +106,7 @@ pub fn override_qaqqini(_txn: &mut Txn<'_>, ctx: &mut SqlContext, args: &Args) -
                 return Err(invalid(format!("{value} is not a value of {name}")));
             }
             if *effect == Effect::NotYet && value != "*DEFAULT" {
-                // BLOCKED(sql): these options change results or messages
+                // BLOCKED(rel): these options change results or messages
                 // and the engine does not honour them yet.
                 return Err(SqlError::Coded { code: -84, state: "42612", what: format!("query option {name} other than *DEFAULT is not supported") });
             }

@@ -45,7 +45,7 @@ struct Pending {
     rows_in: Vec<Out>,
     /// The SQLDA a `DESCRIBE` or `PREPARE INTO` fills.
     da: Option<u64>,
-    /// A file reference variable is named: BLOCKED(sql), the runtime has
+    /// A file reference variable is named: BLOCKED(rel), the runtime has
     /// no IFS of its own to read or write the file with.
     file_ref: bool,
 }

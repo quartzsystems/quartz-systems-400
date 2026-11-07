@@ -557,7 +557,7 @@ impl Gen<'_> {
                 self.uncast = false;
                 let r = r?;
                 if r.vars.iter().any(|&k| self.vars[k].array.is_some()) {
-                    // BLOCKED(sql): a CALL passes values, and an array
+                    // BLOCKED(rel): a CALL passes values, and an array
                     // lives in the database behind its handle.
                     return Err(unsupported("an array argument in CALL"));
                 }
