@@ -73,6 +73,8 @@ members = [
     "devtools/qshterm",
     # ILE RPG: the spec tables, the compiler, its runtime.
     "rpg/specs",
+    # Compiler diagnostics every compiler reports (QAP Develop.Compile).
+    "rpg/compdiag",
     "rpg/front",
     "rpg/compiler",
     "rpg/qrpgrt",

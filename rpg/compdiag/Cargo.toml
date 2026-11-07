@@ -1,0 +1,10 @@
+[package]
+name = "compdiag"
+description = "QS/400 compiler diagnostics: what every compiler reports, for the job, QAP's Compile and the language servers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
