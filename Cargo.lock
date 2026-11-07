@@ -390,6 +390,7 @@ version = "0.1.0"
 dependencies = [
  "ccsid",
  "cmd",
+ "compdiag",
  "qdecimal",
  "qir",
  "release",
@@ -443,6 +444,7 @@ version = "0.1.0"
 dependencies = [
  "blockdev",
  "ccsid",
+ "compdiag",
  "ipc",
  "qdecimal",
  "qsname",
@@ -897,6 +899,7 @@ name = "dds"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "compdiag",
  "qsname",
  "thiserror",
 ]
@@ -2912,6 +2915,7 @@ dependencies = [
 name = "rpgfront"
 version = "0.1.0"
 dependencies = [
+ "compdiag",
  "rpgspecs",
 ]
 
@@ -3489,6 +3493,7 @@ version = "0.1.0"
 dependencies = [
  "blockdev",
  "ccsid",
+ "compdiag",
  "db",
  "dds",
  "ile",
