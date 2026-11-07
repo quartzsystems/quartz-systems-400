@@ -112,7 +112,7 @@ option = 31
 text = "ILE RPG compiler"
 msgid = "QSZ1031"
 feature = "5102"
-components = ["rpg/front", "rpg/compiler"]
+components = ["rpg/front", "rpg/compiler", "rpg/extdesc"]
 ibm = "5770WDS option 31, Compiler - ILE RPG"
 
 [[package.option]]

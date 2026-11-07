@@ -56,6 +56,7 @@ drdar = { path = "../../net/drdar", version = "0.1.0" }
 rpg-oracle = { path = "../rpg-oracle", version = "0.1.0" }
 rpgfront = { path = "../../rpg/front", version = "0.1.0" }
 rpgc = { path = "../../rpg/compiler", version = "0.1.0" }
+rpgextdesc = { path = "../../rpg/extdesc", version = "0.1.0" }
 rpg3 = { path = "../../rpg/rpg3", version = "0.1.0" }
 qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
 tls = { path = "../../net/tls", version = "0.1.0" }

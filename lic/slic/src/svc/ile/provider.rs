@@ -35,6 +35,18 @@ impl StoreProvider {
         }
     }
 
+    /// A database file's full description and the library it was found
+    /// in (`QTEMP` too); `None` when it is not found or not a database
+    /// file.
+    pub fn file_desc(&self, lib: &str, name: &str) -> Option<(String, db::file::FileDesc)> {
+        let (_, found, _) = find_object(&self.shared, name, lib, types::FILE)?;
+        self.run(name, lib, types::FILE, |txn, id| {
+            db::file::describe(txn, id).map_err(|e| e.to_string())
+        })
+        .ok()
+        .map(|d| (found, d))
+    }
+
     fn run<T>(
         &self,
         name: &str,
