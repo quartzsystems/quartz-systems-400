@@ -90,15 +90,16 @@ fn status_kb(pid: u32, field: &str) -> u64 {
 
 /// A descriptor's kind: `socket`, `pipe`, `anon:NAME`, or its path.
 fn kind(target: &str) -> String {
+    // `anon_inode:[eventfd]` has the `socket:[N]` shape too: first.
+    if let Some(a) = target.strip_prefix("anon_inode:") {
+        return format!("anon:{}", a.trim_start_matches('[').trim_end_matches(']'));
+    }
     if let Some(k) = target
         .strip_suffix(']')
         .and_then(|t| t.split_once(":["))
         .map(|p| p.0)
     {
         return k.to_string();
-    }
-    if let Some(a) = target.strip_prefix("anon_inode:") {
-        return format!("anon:{}", a.trim_start_matches('[').trim_end_matches(']'));
     }
     target.to_string()
 }
