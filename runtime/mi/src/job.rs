@@ -756,6 +756,9 @@ impl Job {
         msg_type: MsgType,
         to: QueueRef,
     ) -> Result<u32, Cond> {
+        // With no entry (a system API called at a command line) a
+        // message to the current entry goes to the job itself.
+        let to = if matches!(to, QueueRef::Same) && self.act.frames.is_empty() { QueueRef::Ext } else { to };
         let target = self.queue_target(to)?;
         Ok(self.send_message_to(target, msgid, msgf, lib, data, msg_type))
     }

@@ -483,6 +483,15 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms, outcome: &mut Outcome) 
         && let Some(m) = job.ext_msgq.msgs.iter().skip(ext_before).rev().find(|m| m.msg_type == qir::MsgType::Escape)
     {
         let (msgid, data) = (m.msgid.clone(), m.data.clone());
+        // The first diagnostic before it is what a message line shows
+        // (CPD0171 for a program the user may not call).
+        outcome.diag = job
+            .ext_msgq
+            .msgs
+            .iter()
+            .skip(ext_before)
+            .find(|m| m.msg_type == qir::MsgType::Diag)
+            .map(|d| Fail { msgid: d.msgid.clone(), data: d.data.clone(), text: String::new() });
         let f = Fail { msgid, data, text: String::new() };
         return Err(Fail { text: format!("{out}{}", super::shown(job, &f)), ..f });
     }
