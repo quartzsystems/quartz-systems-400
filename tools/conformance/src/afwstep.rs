@@ -48,6 +48,15 @@ fn system_in(body: &str) -> Option<String> {
     (!n.is_empty()).then(|| n.to_string())
 }
 
+/// A page's message rows, as text.
+fn message_row(body: &str) -> String {
+    let Some(at) = body.find("<table class=\"msg\">") else {
+        return "no message row".into();
+    };
+    let end = body[at..].find("</table>").map_or(body.len(), |e| at + e);
+    body[at..end].to_string()
+}
+
 /// Sign on as `user`: the session cookie.
 fn sign_on(port: u16, user: &str, password: &str) -> Result<String, String> {
     let form = format!("user={user}&password={}", enc(password));
@@ -94,11 +103,14 @@ fn product(s: &mut Session) -> Result<(), String> {
 }
 
 /// A preference changed through the store, then used and set back.
-fn preference(port: u16, sid: &str) -> Result<(), String> {
+fn preference(s: &mut Session, port: u16, sid: &str) -> Result<(), String> {
     let t = token(port, "/preferences?tab=home", sid)?;
     let form = format!("csrf={}&hl=compact&apply=Apply", enc(&t));
     let r = afw(port, "POST", "/preferences?tab=home", Some(sid), Some(&form))?;
-    want(&r, 303, &[], "Preferences' Apply")?;
+    if r.status != 303 {
+        let aut = s.command("dspobjaut OBJ(QUSRSYS/QZXWPRF) OBJTYPE(*USRIDX)", CMD)?;
+        return Err(format!("Preferences' Apply: {}\nthe store's authority:\n{aut}", message_row(&r.body)));
+    }
     let back = afw(port, "GET", "/preferences?tab=home", Some(sid), None)?;
     want(&back, 200, &["XWA0003", "value=\"compact\" checked"], "the preference kept")?;
     let home = afw(port, "GET", "/home", Some(sid), None)?;
@@ -163,7 +175,7 @@ impl Suite {
         if !neta.contains(&name) {
             return Err(format!("My home page names {name}; DSPNETA:\n{neta}"));
         }
-        preference(plain, &sid)?;
+        preference(s, plain, &sid)?;
         policy(plain, &sid)?;
         let forged = afw(plain, "POST", "/preferences", Some(&sid), Some("apply=Apply"))?;
         want(&forged, 403, &["out of date"], "a POST without the form field")?;
