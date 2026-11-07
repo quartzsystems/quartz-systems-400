@@ -357,7 +357,7 @@ pub fn txn_stats(system: &mut System) -> String {
     };
     let st = s.store.stats();
     format!(
-        "commits {} aborts {} checkpoints {}\nWAL pages {} images {} patches {}\ncache hits {} misses {} evictions {} held {} of {} pages\n",
+        "commits {} aborts {} checkpoints {}\nWAL pages {} images {} patches {}\ncache hits {} misses {} evictions {} held {} of {} pages\n{}\n",
         st.commits,
         st.aborts,
         st.checkpoints,
@@ -368,7 +368,8 @@ pub fn txn_stats(system: &mut System) -> String {
         st.cache.misses,
         st.cache.evictions,
         st.cache.held,
-        st.cache.capacity
+        st.cache.capacity,
+        crate::stgsvc::turns::load()
     )
 }
 
