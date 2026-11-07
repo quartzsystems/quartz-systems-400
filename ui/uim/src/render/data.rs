@@ -502,7 +502,7 @@ fn walk<'a>(
             if !rows.is_empty() {
                 match g.grpsep {
                     Separator::Space | Separator::SysName | Separator::DateTime => {
-                        rows.push(Row::Blank)
+                        rows.push(Row::Blank);
                     }
                     Separator::Rule => rows.push(Row::Rule),
                     Separator::None => {}
