@@ -39,6 +39,8 @@ mod hostsvr;
 mod httpadm;
 mod httpsvr;
 #[cfg(unix)]
+mod hwnames;
+#[cfg(unix)]
 mod hwrsrc;
 mod ifs;
 pub mod ifsapi;

@@ -187,6 +187,8 @@ impl Suite {
                 tpm: None,
                 usb_stick: None,
                 sata_disks: Vec::new(),
+                nic_slot: None,
+                nics: Vec::new(),
             },
             media,
             install: false,
@@ -745,6 +747,8 @@ impl Suite {
         reports.extend(self.display_steps()?);
         #[cfg(unix)]
         reports.extend(self.hw_steps()?);
+        #[cfg(unix)]
+        reports.extend(self.hw_name_steps()?);
         #[cfg(unix)]
         reports.extend(self.guest_steps()?);
         #[cfg(unix)]

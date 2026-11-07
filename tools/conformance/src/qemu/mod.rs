@@ -74,6 +74,24 @@ pub struct Launch {
     pub usb_stick: Option<PathBuf>,
     /// Disks on the q35 AHCI controller (SATA), beside the virtio ones.
     pub sata_disks: Vec<PathBuf>,
+    /// The PCI slot of the telnet NIC (`n0`) on the root bus, QEMU's
+    /// choice when `None`.
+    pub nic_slot: Option<u8>,
+    /// More virtio NICs, each on a user network of its own (step 159).
+    pub nics: Vec<Nic>,
+}
+
+/// A further virtio NIC.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Nic {
+    /// Its QEMU netdev and device id.
+    pub id: String,
+    /// Its PCI slot on the root bus.
+    pub slot: u8,
+    /// Its MAC address.
+    pub mac: String,
+    /// Its user network, `10.0.3.0/24`.
+    pub net: String,
 }
 
 /// Find the system emulator: the override variable, else `PATH`.
@@ -209,14 +227,26 @@ pub fn args(l: &Launch) -> Vec<OsString> {
                 ))
         )));
         a.push(OsString::from("-device"));
+        let slot = l
+            .nic_slot
+            .map_or_else(String::new, |s| format!(",bus=pcie.0,addr=0x{s:02x}"));
         a.push(OsString::from(if l.tftp.is_some() {
-            "virtio-net-pci,netdev=n0,bootindex=0"
+            format!("virtio-net-pci,netdev=n0,bootindex=0{slot}")
         } else {
-            "virtio-net-pci,netdev=n0"
+            format!("virtio-net-pci,netdev=n0{slot}")
         }));
     } else {
         a.push(OsString::from("-nic"));
         a.push(OsString::from("none"));
+    }
+    for n in &l.nics {
+        a.push(OsString::from("-netdev"));
+        a.push(OsString::from(format!("user,id={},net={}", n.id, n.net)));
+        a.push(OsString::from("-device"));
+        a.push(OsString::from(format!(
+            "virtio-net-pci,netdev={},mac={},bus=pcie.0,addr=0x{:02x}",
+            n.id, n.mac, n.slot
+        )));
     }
     a
 }
