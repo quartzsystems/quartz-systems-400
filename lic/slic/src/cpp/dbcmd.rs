@@ -330,7 +330,7 @@ fn cpysrcf(system: &mut System, parms: &Parms) -> Result<String, String> {
             let seq: Vec<Option<String>> = parms
                 .elems("SRCSEQ")
                 .iter()
-                .map(|v| v.map(|v| v.source()))
+                .map(|v| v.map(cmd::Value::source))
                 .collect();
             let hundredths = |v: Option<&String>, d: u32| {
                 v.and_then(|v| qdecimal::Decimal::parse(v).ok())
