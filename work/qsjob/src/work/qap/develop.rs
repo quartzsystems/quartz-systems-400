@@ -274,6 +274,31 @@ pub(super) fn list_objects(cx: &Ctx<'_>, req: &ListObjects) -> Result<Vec<Object
     Ok(out)
 }
 
+/// The library of `name` (type `ty`) that `library` names, through the
+/// job's own list for `*LIBL` and `*CURLIB` (the provider's requests do
+/// not see the job's list); the name as given when none has it.
+fn library_of(cx: &Ctx<'_>, library: &str, name: &str, ty: &str) -> String {
+    let lib = up(library);
+    if !matches!(lib.as_str(), "" | "*LIBL" | "*CURLIB" | "*USRLIBL") {
+        return lib;
+    }
+    let Ok(libs) = search(cx, &lib) else {
+        return lib;
+    };
+    for l in libs {
+        let (ll, n, t) = (l.clone(), name.to_string(), ty.to_string());
+        if cx
+            .shared
+            .borrow_mut()
+            .with(|k| k.object(ll, n, t))
+            .is_some()
+        {
+            return l;
+        }
+    }
+    if lib.is_empty() { "*LIBL".into() } else { lib }
+}
+
 /// What `DSPOBJD DETAIL(*FULL)`'s fields are called here.
 fn label(field: &str) -> &str {
     match field {
@@ -310,6 +335,7 @@ pub(super) fn describe_object(
         up(&req.object.name),
         up(&req.r#type),
     );
+    let lib = library_of(cx, &lib, &name, &ty);
     let (l, nm, t) = (lib.clone(), name.clone(), ty.clone());
     let Some(o) = cx.shared.borrow_mut().with(|k| k.object(l, nm, t)) else {
         return Err(refuse(cx, Status::NotFound, "CPF9801", &[&name, &lib, &ty]));
@@ -350,6 +376,7 @@ pub(super) fn list_members(cx: &Ctx<'_>, req: &ListMembers) -> Result<Vec<Member
         up(&req.file.library)
     };
     let file = up(&req.file.name);
+    let lib = library_of(cx, &lib, &file, "*FILE");
     let (l, f) = (lib.clone(), file.clone());
     if cx.shared.borrow_mut().with(|k| k.file(l, f)).is_none() {
         return Err(refuse(cx, Status::NotFound, "CPF9812", &[&file, &lib]));
@@ -400,6 +427,7 @@ fn exists(cx: &Ctx<'_>, m: &MemberName) -> bool {
         },
         up(&m.file.name),
     );
+    let lib = library_of(cx, &lib, &file, "*FILE");
     let name = up(&m.member);
     cx.shared
         .borrow_mut()

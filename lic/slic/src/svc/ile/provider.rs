@@ -145,6 +145,8 @@ impl Provider for StoreProvider {
                             .map(|h| (h.name.to_string(), *id))
                     })
                     .collect(),
+                // QSYS holds the libraries; it is not in itself.
+                l if l.eq_ignore_ascii_case("QSYS") => vec![("QSYS".to_string(), qsys)],
                 l => {
                     let n = Name::parse(l).map_err(|e| e.to_string())?;
                     vec![(
@@ -167,7 +169,11 @@ impl Provider for StoreProvider {
                     if !hit {
                         continue;
                     }
-                    let h = ops::describe(txn, id).map_err(|e| e.to_string())?;
+                    // An object the actor may not describe is not listed, as
+                    // QUSLOBJ and WRKOBJ leave it out.
+                    let Ok(h) = ops::describe(txn, id) else {
+                        continue;
+                    };
                     out.push(ObjInfo {
                         name: n,
                         lib: lname.clone(),
