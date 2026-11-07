@@ -143,6 +143,31 @@ fn saved_from(entries: &[(String, String)], prefix: &str) -> Vec<(String, Saved)
     out
 }
 
+/// A command's output text as messages, one a line; a leading
+/// message ID (`CPC1221 ...`) is the line's.
+fn text_lines(text: &str) -> Vec<LogMessage> {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(0));
+    text.lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(|l| {
+            let (first, rest) = l.split_once(' ').unwrap_or((l, ""));
+            let is_id = first.len() == 7
+                && first.chars().take(3).all(|c| c.is_ascii_uppercase())
+                && first.chars().skip(3).all(|c| c.is_ascii_hexdigit());
+            LogMessage {
+                severity: 0,
+                id: if is_id { first.to_string() } else { String::new() },
+                text: if is_id { rest.to_string() } else { l.to_string() },
+                program: String::new(),
+                sent_ms: now,
+            }
+        })
+        .collect()
+}
+
 /// A job log entry as Run command lists it.
 fn log_of(e: &wm::joblog::Entry) -> LogMessage {
     LogMessage {
@@ -167,7 +192,7 @@ fn run_here(m: &mut Main, command: &str, check: bool) -> Ran {
         let j = m.console.job();
         format!("{}/{}/{}", j.ident.number, j.ident.user, j.ident.name)
     };
-    let messages: Vec<LogMessage> = m
+    let mut messages: Vec<LogMessage> = m
         .console
         .job()
         .joblog
@@ -176,6 +201,10 @@ fn run_here(m: &mut Main, command: &str, check: bool) -> Ran {
         .filter(|e| e.kind != "Request")
         .map(log_of)
         .collect();
+    // A command that answered with text only (SBMJOB's completion): its lines.
+    if messages.is_empty() {
+        messages = text_lines(&o.text);
+    }
     let mut ids: Vec<String> = Vec::new();
     if let Some(f) = &o.escape {
         ids.push(f.msgid.clone());
@@ -410,5 +439,8 @@ mod tests {
         assert_eq!(saved_from(&e, "_cs"), [("00".to_string(), s)]);
         assert_eq!(joined(&pieces("_cr.03", long), "_cr.03"), long);
         assert_eq!(chunks(""), [""]);
+        let t = text_lines("CPC1221 Job 000057/QSECOFR/QDFTJOBD submitted.\nplain line\n");
+        assert_eq!((t[0].id.as_str(), t[0].text.as_str()), ("CPC1221", "Job 000057/QSECOFR/QDFTJOBD submitted."));
+        assert_eq!((t[1].id.as_str(), t[1].text.as_str()), ("", "plain line"));
     }
 }

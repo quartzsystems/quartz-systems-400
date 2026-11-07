@@ -124,10 +124,21 @@ fn sbm_user(r: &SbmJob, me: &str) -> String {
 }
 
 /// `SBMJOB`: the job's number and the message to the submitter.
-#[allow(clippy::too_many_lines)] // one request, start to queue
 pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String), String> {
+    sbmjob_as(system, me, r, None)
+}
+
+/// [`sbmjob`] from a job running under `current`'s profile (a web job
+/// swapped to its signed-on user): `USER(*CURRENT)` is that profile,
+/// as IBM's current user profile, not the job's own.
+#[allow(clippy::too_many_lines)] // one request, start to queue
+pub fn sbmjob_as(system: &mut System, me: u32, r: &SbmJob, current: Option<&str>) -> Result<(u32, String), String> {
     let mine = system.attrs.get(&me).cloned().unwrap_or_default();
-    let me_info = system.jobs.get(me).cloned().unwrap_or_default();
+    let mut me_info = system.jobs.get(me).cloned().unwrap_or_default();
+    let job_user = me_info.user.clone();
+    if let Some(c) = current.filter(|c| !c.is_empty()) {
+        me_info.user = c.to_string();
+    }
     let jobd = if r.jobd.is_empty() {
         "QGPL/QDFTJOBD".to_string()
     } else {
@@ -197,7 +208,7 @@ pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String),
         scheduled: r.scheduled,
         jobd,
         msgq,
-        submitter: (me_info.name.clone(), me_info.user.clone(), me),
+        submitter: (me_info.name.clone(), job_user, me),
         rtgdta: if r.rtgdta.is_empty() {
             "QCMDB".into()
         } else {

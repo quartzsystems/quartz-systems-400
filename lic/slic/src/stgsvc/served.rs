@@ -1212,7 +1212,9 @@ impl Service for Served<'_> {
 
     fn sbmjob(&mut self, req: wm::obj::jobq::SbmJob) -> Result<(u32, String), String> {
         self.own_libl();
-        let r = super::jobqs::sbmjob(self.system, self.ctx.job.number, &req);
+        // USER(*CURRENT) is the profile the job runs under now.
+        let current = self.ctx.session.borrow().principal.user.clone();
+        let r = super::jobqs::sbmjob_as(self.system, self.ctx.job.number, &req, Some(&current));
         ile::set_libl(None);
         r
     }
