@@ -66,6 +66,10 @@ release verification.
 
 ## Carried items
 
+The SQL refusals are not repeated here: `SQL.md` §10 is their one list, and the
+release notes import it ("Refused in SQL"), so the two cannot diverge. The
+live marker inventory is the release notes' generated "Marker inventory".
+
 One row per `BLOCKED`, `MIGRATE` and `TODO` marker, per "not available
 in this release" site, per test ignored for want of a golden and per
 open question, as found at `93c6350f`. "Closes" names the Phase 12 item
@@ -118,7 +122,7 @@ updated as rows close.
 | `lic/slic/src/cpp/medcmd.rs:320` | images from an optical device | §1 triage | closed |
 | `lic/slic/src/cpp/tcpcmd.rs:613,659` | `MRGTCPHT FROMOBJ`/`TOOBJ` stream files | §1 triage (stream files exist since Phase 10) | closed |
 | `lic/slic/src/stgsvc/svcop.rs:161`, `lic/svctools/src/env.rs:592` | copying a dump to media | §1 triage (media exist since Phase 11) | closed |
-| `lic/svctools/src/dst/mod.rs:22` | DST options not built (`DST.md`) | §1 triage per option | stays, BLOCKED(rel): the DST options DST.md lists (save/restore storage, disk unit data, remote service, LIC fixes, partitions, ASP moves); their reasons in DST.md name earlier phases and are not re-checked |
+| `lic/svctools/src/dst/mod.rs:22` | DST options not built (`DST.md`) | §1 triage per option | closed in the pre-release round: every option opens a panel or says why it does not apply; save/restore storage, one unit's data and Save LIC stay `BLOCKED(rel)` (`lic/svctools/src/dst/answers.rs`) |
 | `runtime/msgf/msgs/qcpfmsg.toml`, `ui/menus/src/unavailable.rs` | the messages themselves (`CPD9D60`, `CPD9D61`...) | stays: the mechanism | stays: the mechanism |
 
 ### Markers in documents
@@ -221,6 +225,9 @@ records a bump.
 ## Deviations
 
 - **Adding an object type is not a format change.** A new type code in `storage/store/src/obj/types.rs` (`*MGTCOL`, 0x002C) moves the frozen `store` hash; existing stores read the same, and a V1R0M0 system never opens a V1R1M0 store (the release rule refuses the downgrade). Such additions are recorded with `fmtcheck update --force` and named here; a change to an existing layout still needs the version bump.
+- **Pre-release format records (`fmtcheck update --force`).** None changes a stored layout an existing system reads differently: the superblock's reserved bytes 200..256 hold the hot spares (`spare_count`, `spares`) and byte 201 the ASP threshold, zero meaning none and 90% (every store written so far has zeros there); `sql-info` gained entry tag 19 `TABLE` (`VOLATILE`; a reader skips tags it does not know); `*TIMZON` is a new object type (0x002E) with a new payload, `timzon` version 1 in `wm-objects`.
+- **The V1R1M0 reformat.** The whole tree was formatted once with rustfmt after the last merge (`rustfmt` gates CI since). rustfmt reorders `use` lists and adds trailing commas, which moves fmtcheck's token hashes without changing a layout; the ten formats it moved were re-locked in the same commit, after checking that the tree before it passed.
+- **fmtcheck reads LF.** A Windows checkout holds CR LF, which a string literal spanning lines carries into its token: the lock written on Windows disagreed with Linux for `update-protocol`. fmtcheck now hashes every source with LF line ends.
 - **The release image is UEFI only and compressed once with xz.** The kernel is an EFI-stub UKI (`ARCHITECTURE.md` §5), so there is no BIOS boot; the initramfs is embedded uncompressed and the whole image is xz, so the media UKI (25.8 MiB) fits the 32 MiB an El Torito boot image can name.
 - **The page cache follows `QMCHPOOL`.** The cache was sized before the system values were loaded and kept every page it touched up to 256 MiB; it now takes `QMCHPOOL` (20,000 KB shipped) once they are loaded.
 - **`textaudit` ships with a baseline.** 3,791 literals on display paths remain (developer tools, service listings, job panels); the count may only go down (Cody's choice, 2026-11-04).
@@ -319,3 +326,43 @@ RPG compiler. Screen goldens added in Phase 12 come from the primary
 | Dependency audit | `build deny` clean (332 crates, no C linkage); cargo-deny's advisories stand in for cargo-audit (same RustSec database) |
 | Media UKI | 25.8 MiB (27,018,240 bytes), boot image 31 MiB |
 | V1R1M0 ISO | `QS400-V1R1M0-c35f266c792f.iso`, 148,516,864 bytes, SHA-256 `b00008946fe2df8ac04818ed10c59581389f4b898be528ec0e857a9ceca6e9ed` (development key; PTF baseline `C26001110`) |
+
+## Release gate
+
+The pre-release handoff's acceptance list (2026-11-06/07). QEMU runs are
+GitHub-hosted (`qemu.yml`) unless they say WSL; run IDs are GitHub Actions
+runs.
+
+| Criterion | State |
+|---|---|
+| `fmtcheck` passes with every frozen format at V1R1M0 and no V1R2M0 anywhere | Met: `sql-info` and `sql-package` frozen at V1R1M0 (018b721f); no `V1R2M0` in the tree; fmtcheck clean, hashing LF on every host |
+| Slip-install V1R0M0 → V1R1M0 preserves data and old saves restore | Met: install step 10 (WSL, clean build) with V1R0M0 media from `becee24b` (object header and save stream version 1): data area, journaled SQL table and entries, spooled files kept; the V1R0M0 table used by SQL (SELECT, INSERT, index, view); a V1R0M0 `SAVLIB` restored; V1R0M0 media refused; after the product ID change `DSPSFWRSC` shows QS00 IDs and `CHKPRDOPT 5770SS1` works |
+| One product ID family in code, tests, manifests and notes | Met: `QS00SS1`, `QS00WDS`, `QS00999` everywhere a product ID is shown; `5770*` accepted on input (`release::IBM_ALIASES`) and in stored V1R0M0 PTF records; oracle captures keep IBM's IDs; QEMU 80, 81 |
+| Zero `CPD0790` sites; zero accepted-no-effect clauses outside the documented IBM no-ops | Met: `CPD0790` deleted with its six CL sites implemented; `VOLATILE` acts, `IN`/`UNIT`/`PAGESIZE` as Db2 for i; CGI and `*VLDL` refused (501/403); `BCHTIMLMT`, `SNDPGMMSG TOUSR`, `RCVMSG`'s ignored parameters and `SBMJOB USER(*CURRENT)` implemented; the system values with no effect are listed in the notes |
+| QAP `*EXCLUDE` test passes; `QSSECCHK` clean on a fresh install | Met: `osobjects` `tests/exclude.rs` (command, program, library, after one and two IPLs); QEMU 123 (the refusals, a program without `*EXECUTE`, the QCMDEXC and CL paths) and 107 (0 failures, 6 warnings: IBM's shipped values) |
+| QEMU steps 130+ exist, run, and the `SQL.md` step table is written | Met: steps 130 to 139 pass (runs 42316635829, 42316642611, 42316646039, 42323304005, 42323333123), 139 between two guests; `SQL.md` § QEMU |
+| Install step 15 passes with an active interface and lease; DST options and hot spare built | Met: install step 15 (WSL) with a lease after the first IPL and again after an IPL from the disk alone (the cause was `QSTRUPPGM` stored as `QSYS/QSTRUP`); every DST option a panel or a reason; hot spares for mirror and parity sets, install step 16 |
+| CI workflow present and green on the host-side jobs | `.github/workflows/ci.yml` (rustfmt, clippy `-D warnings`, deny/notices/notes/fmtcheck, host tests, fuzz 60 s, the three QEMU suites), `qemu.yml`, `release.yml`, `release-check.yml`; every job on GitHub-hosted runners, none self-hosted; the last main run's state is in the final report |
+| `NOTICES.txt`, `QS400/SRC/` kernel source offer, `SOURCE-OFFER.txt` on the media | Met: `build notices` (289 crates, ten license kinds; fails on one outside `deny.toml`), `/QQS/ProdData/Notices/NOTICES.txt` on a system (`DSPSFWRSC` F19, `CPI9B83`), `QS400/SRC/` with the URL, SHA-256, configuration, build instructions and GPL-2.0, `SOURCE-OFFER.txt` naming cwellman@quartz.systems; QEMU 59 |
+| UKI signed with the development Secure Boot key; `qs400-db.cer` and enrolment path shipped; `QSHWQUAL` and `INSTALL.md` say the right thing; two `build release` runs reproducible | Met: `tools/pesign` (Authenticode, RSA-2048); OVMF Secure Boot: unsigned refused, signed boots once `qs400-db.cer` is in `db`; `INSTALL.md` §6 enrolment steps; `QSHWQUAL` warns as the handoff words it; two WSL `build release` runs gave ISO `8580c9c3...e8bd6` both times; the release keys are secrets of the `release` environment (`v*` tags only) |
+| Storage thresholds and `QSTGLOWACN` fire under QEMU; `*TIMZON` commands and tzdata-derived rules; `SAVSAVFDTA`, `WRKJRNRCV`, `RCVJRNE`, `WRKFCNUSG`, `TELNET`, `CHGSECA`/`DSPSECA` present; `QIBM_QSY_*` exit points called; euro CCSIDs added; power system values honoured or listed | Met: QEMU 140 (threshold, lower limit, every action, the exit point), 141 (UPS), 142 (batch restricted state), 143 to 145 (time zones from tzdata 2026f, CCSIDs against the primary's conversion), 146 to 148 (exit points, function usage, journal and save file commands); `QPWRRSTIPL` listed as a firmware setting |
+| Release notes complete per §A5 and §E; `CLAUDE.md` and `ARCHITECTURE.md` current | Met: `RELEASE_NOTES_V1R1M0.md` rewritten (SQL at the 7.5 level with §10 imported, both format changes and their migration, every `BLOCKED(rel)` in the generated inventory, the §E list, the defined-but-inert system values, the textaudit count matching `baseline.txt` at 3,731); `CLAUDE.md`, `ARCHITECTURE.md` §10 |
+| Marker inventory: only `BLOCKED(rel)` and `NEEDS-CODY`, every one listed in the notes | Met: 159 `BLOCKED(rel)`, 23 `NEEDS-CODY`; `kcbuild notes` fails on any other form and on a stale inventory |
+
+Beyond the handoff, in the same round: QS/400 Access for Web (QS00AFW,
+`ACCESSWEB.md`), every area golden-clean and live, QEMU 153 to 157 (153 to
+156 together on main, run 42343131336; 157 with 153, run 42345432339);
+program calls need `*OBJOPR` and `*EXECUTE`; the SST sign-on and disk
+menus match the primary.
+
+### NEEDS-CODY
+
+| # | Item |
+|---|---|
+| 1 | ACS checklists: the host servers (`PHASE10.md`) and Run SQL Scripts (`SQL.md`) |
+| 2 | `QSHWQUAL` on the Dell with the PERC H330 and the hypervisors (`QUALIFIED_HARDWARE.md`); booting the ISO on real firmware with Secure Boot and the QS/400 key enrolled |
+| 3 | Physical tape acceptance (`MEDIA.md`) |
+| 4 | Oracle changes on the primary: a `QAUDJRN` for the `DSPAUDJRNE` golden, a test profile for the special-authority IDs, a printer device, the JTOpen binary-read probe, a library for CREATE/DROP SCHEMA captures; delete `QSRELDEV1`, the device description a telnet capture created |
+| 5 | The SST panels the oracle's service tools user cannot reach, and all of DST (no console access to the oracle) |
+| 6 | The two `QSSECCHK` judgement calls (NEEDS-CODY 11 above) |
+| 7 | The cut: `ci/version.sh prepare 1.1.0`, commit, `git tag v1.1.0`, push the tag (`releasing.md`) |
