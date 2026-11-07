@@ -778,15 +778,7 @@ pub fn hardware_service_manager() -> Submenu {
             (
                 4,
                 "Failed and non-reporting hardware resources",
-                Some(Box::new(|env| {
-                    Flow::Push(Box::new(resources(
-                        env,
-                        "dst-hsm-failed",
-                        "Failed and Non-Reporting Hardware Resources",
-                        |r| r.status != "Operational",
-                        false,
-                    )))
-                })),
+                Some(Box::new(|env| Flow::Push(Box::new(failed_resources(env))))),
             ),
             (
                 6,
@@ -900,6 +892,79 @@ fn locate() -> Form {
                 true,
             )))
         }),
+    )
+}
+
+/// The status the hardware service manager shows: IBM's `Unknown` for a
+/// resource that does not report.
+fn hsm_status(status: &str) -> &str {
+    match status {
+        "NotDetected" => "Unknown",
+        s => s,
+    }
+}
+
+/// `Failed and Non-Reporting Logical Hardware Resources`: every resource
+/// that does not report, with option 4 to remove one, so its name is no
+/// longer kept for it (IBM's option of the same number; the primary's
+/// capture is `golden/verified/oracle71/hsm/hsm-failed.txt`).
+fn failed_resources(env: &mut dyn DstEnv) -> Options {
+    let gone: Vec<ResourceRow> = env
+        .resources()
+        .into_iter()
+        .filter(|r| r.status != "Operational")
+        .collect();
+    let rows = gone
+        .iter()
+        .map(|r| {
+            format!(
+                "{:<9} {:<9} {:<13} {}",
+                r.name,
+                r.kind,
+                hsm_status(&r.status),
+                r.description
+            )
+        })
+        .collect();
+    let names: Vec<String> = gone.into_iter().map(|r| r.name).collect();
+    Options::new(
+        "dst-hsm-failed",
+        "Failed and Non-Reporting Logical Hardware Resources",
+        "Type options, press Enter.  4=Remove",
+        "Opt  Resource  Type      Status        Description",
+        rows,
+        &[4],
+        "F3=Exit   F12=Cancel",
+        Box::new(move |chosen: &[(usize, u8)], _env: &mut dyn DstEnv| {
+            let picked: Vec<String> = chosen
+                .iter()
+                .filter_map(|&(row, _)| names.get(row).cloned())
+                .collect();
+            if picked.is_empty() {
+                return Flow::Stay;
+            }
+            let mut lines = vec![
+                "Press F10 to remove these resources; their names are then".to_string(),
+                "free of them. Press F12 to keep them.".to_string(),
+                String::new(),
+            ];
+            lines.extend(picked.iter().map(|n| format!("  {n}")));
+            Flow::Push(Box::new(
+                Confirm::new(
+                    "dst-hsm-remove",
+                    "Confirm Remove of Hardware Resources",
+                    lines,
+                    Box::new(move |env| {
+                        for n in &picked {
+                            env.remove_resource(n)?;
+                        }
+                        Ok(format!("{} resource(s) removed", picked.len()))
+                    }),
+                )
+                .unwinding(2),
+            ))
+        }),
+        None,
     )
 }
 

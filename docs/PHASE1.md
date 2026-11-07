@@ -169,7 +169,8 @@ attributes (`licpart::ipla`, `KEYWORD=VALUE` lines: `CHGIPLA`,
 `slic` rereads it before its own writes too. `0x0108` holds the
 response file of an automatic install from the LIC install to the end
 of the operating system's, `0x0109` the slot an upgrade's LIC is copied
-into once the operating system is installed (docs/INSTALL.md).
+into once the operating system is installed (docs/INSTALL.md). `0x010A`
+holds the hardware resource names (below).
 
 The IPL attributes the operating system's start honours (the service's
 `iplcmd::at_ipl`): `CLRJOBQ(*YES)` clears every job queue,
@@ -184,6 +185,50 @@ and `SPLFRCY` are kept and shown with no effect yet.
 
 First boot: both copies invalid, `init` writes the defaults with
 `install_time`. A partition with one valid copy is never reinitialized.
+
+### Hardware resource names
+
+TLV `0x010A` holds the hardware resource names (`hwrsrc::names`,
+docs/HARDWARE_NOTES.md "Names that last"), so a device keeps its name
+from one IPL to the next and a new one does not move the others. It
+lives here, not in the store, because the hardware resource service
+names the resources first thing in the LIC phase, before the object
+store opens and long before TCP/IP varies a line on by its `CMNnn`.
+The service (`lic/slic/src/hwsvc/names.rs`) reads it before its first
+walk and writes it, rereading the record first, when a name is given, a
+resource stops reporting or one is removed. A media IPL with no LIC
+partition names afresh in walk order, as does a record without the TLV
+(an upgrade from V1R0M0, whose names were already in walk order).
+
+Frozen at V1R1M0, version 1 (`lic/hwrsrc/src/names/format.rs`),
+little-endian:
+
+```
+0   magic "QSHN"     4
+4   version  u16     2   1
+6   count    u16     2
+8   entries, each:
+    0   kind     u8      0 bridge, 1 network function, 2 storage controller,
+                         3 disk, 4 optical, 5 serial port, 6 Ethernet port,
+                         7 keyboard, 8 other, 9 tape, 10 media changer,
+                         11 processor, 12 main storage, 13 virtual channel
+    1   reserved u8      0
+    2   name     10      ASCII, blank-padded (CMN04)
+    12  parent   10      packaging parent then, blank when none
+    22  logical  10      logical parent then, blank when none
+    32  type     4       type it last reported, blank when none
+    36  model    3       its model, blank when none
+    39  key_len  u8
+    40  key              what identifies the device, at most 200 bytes
+    ..  loc_len  u8
+    ..  location         PCI address or device name it was last seen at
+```
+
+Present resources come first, then those not detected; the data stops
+at 24 KiB, past which the last entries (those not detected) are left off.
+A version other than 1, a bad magic, a short or long body or an unknown
+kind is refused, and the service names afresh, saying so on the serial
+line.
 
 ## System values
 

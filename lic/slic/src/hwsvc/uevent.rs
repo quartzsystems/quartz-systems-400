@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The hotplug listener: kernel uevents applied to the table, each
-//! change written to the serial line.
+//! change written to the serial line and the names saved.
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -36,8 +36,13 @@ pub fn spawn(table: Arc<Mutex<Table>>) -> bool {
                         continue;
                     };
                     let Ok(mut t) = table.lock() else { break };
-                    for line in t.apply_uevent(Path::new(super::SYS), &ev) {
+                    let perm = super::names::perm_macs();
+                    let changes = t.apply_uevent_with(Path::new(super::SYS), &ev, &perm);
+                    for line in &changes {
                         println!("hwrsrc: {line}");
+                    }
+                    if !changes.is_empty() {
+                        super::names::save(&t);
                     }
                 }
                 Err(rustix::io::Errno::INTR) => {}

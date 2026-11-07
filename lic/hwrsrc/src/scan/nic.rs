@@ -6,6 +6,7 @@
 //! with a QS/400 type and model per driver family (docs/TCPIP.md,
 //! "Hardware resources").
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -111,6 +112,9 @@ pub struct NetPort {
     pub dev_port: u32,
     /// MAC address as sysfs prints it.
     pub mac: String,
+    /// The permanent MAC address, the one the card was made with; empty
+    /// when neither netlink nor sysfs tells it (a random address).
+    pub perm_mac: String,
     /// Carrier; `None` while the interface is down.
     pub carrier: Option<bool>,
     /// Speed in Mb/s, when the link reports one.
@@ -162,10 +166,24 @@ fn speed(net: &Path) -> Option<u32> {
         .filter(|s| *s > 0)
 }
 
+/// Permanent MAC addresses by interface name, as netlink reports them
+/// (`IFLA_PERM_ADDRESS`): what sysfs does not show.
+pub type PermMacs = BTreeMap<String, String>;
+
+/// The permanent address from sysfs alone: the current one while the
+/// kernel says it is the card's own (`addr_assign_type` 0, or no such
+/// attribute), else none.
+fn sysfs_perm_mac(net: &Path, mac: &str) -> String {
+    match read_trim(&net.join("addr_assign_type")).as_str() {
+        "" | "0" => mac.to_string(),
+        _ => String::new(),
+    }
+}
+
 /// One interface under `root` (`/sys`). `None` for virtual interfaces
 /// (no `device`) and non-Ethernet links.
 #[must_use]
-pub fn scan_one(root: &Path, ifname: &str) -> Option<NetPort> {
+pub fn scan_one(root: &Path, ifname: &str, perm_macs: &PermMacs) -> Option<NetPort> {
     let net = root.join("class/net").join(ifname);
     let dev = fs::canonicalize(net.join("device")).ok()?;
     if read_trim(&net.join("type")) != "1" {
@@ -188,6 +206,12 @@ pub fn scan_one(root: &Path, ifname: &str) -> Option<NetPort> {
     };
     let netpath = fs::canonicalize(&net).ok()?;
     let netrel = netpath.strip_prefix(&real_root).ok()?;
+    let mac = read_trim(&net.join("address"));
+    let perm = perm_macs
+        .get(ifname)
+        .filter(|m| !m.is_empty())
+        .cloned()
+        .unwrap_or_else(|| sysfs_perm_mac(&net, &mac));
     Some(NetPort {
         ifname: ifname.to_string(),
         family: family(&driver),
@@ -195,7 +219,8 @@ pub fn scan_one(root: &Path, ifname: &str) -> Option<NetPort> {
         pci: addr,
         ids,
         dev_port: read_trim(&net.join("dev_port")).parse().unwrap_or(0),
-        mac: read_trim(&net.join("address")),
+        mac,
+        perm_mac: perm,
         carrier: carrier(&net),
         speed: speed(&net),
         devpath: format!("/{}", netrel.to_string_lossy()),
@@ -206,7 +231,7 @@ pub fn scan_one(root: &Path, ifname: &str) -> Option<NetPort> {
 /// so names stay the same from boot to boot whatever the kernel calls
 /// the interfaces.
 #[must_use]
-pub fn scan(root: &Path) -> Vec<NetPort> {
+pub fn scan(root: &Path, perm_macs: &PermMacs) -> Vec<NetPort> {
     let mut names: Vec<String> = fs::read_dir(root.join("class/net"))
         .map(|rd| {
             rd.filter_map(Result::ok)
@@ -215,7 +240,10 @@ pub fn scan(root: &Path) -> Vec<NetPort> {
         })
         .unwrap_or_default();
     names.sort();
-    let mut ports: Vec<NetPort> = names.iter().filter_map(|n| scan_one(root, n)).collect();
+    let mut ports: Vec<NetPort> = names
+        .iter()
+        .filter_map(|n| scan_one(root, n, perm_macs))
+        .collect();
     sort(&mut ports);
     ports
 }
@@ -249,29 +277,16 @@ pub mod tests {
         fs::create_dir_all(root.join("class/net")).unwrap();
         fs::create_dir_all(root.join("bus/pci/devices")).unwrap();
         for (i, (addr, driver, ifname, dev_port, sub)) in nics.iter().enumerate() {
-            let func = root.join("devices/pci0000:00").join(addr);
-            fs::create_dir_all(&func).unwrap();
-            fs::write(func.join("vendor"), "0x8086\n").unwrap();
-            fs::write(func.join("device"), format!("0x15{i:02x}\n")).unwrap();
-            fs::write(func.join("class"), "0x020000\n").unwrap();
-            let pci_link = root.join("bus/pci/devices").join(addr);
-            if !pci_link.exists() {
-                symlink(&func, pci_link).unwrap();
-            }
-            let dev = sub.map_or(func.clone(), |s| func.join(s));
-            fs::create_dir_all(&dev).unwrap();
-            let drv = root.join("bus/pci/drivers").join(driver);
-            fs::create_dir_all(&drv).unwrap();
-            let _ = symlink(&drv, dev.join("driver"));
-            let net = dev.join("net").join(ifname);
-            fs::create_dir_all(&net).unwrap();
-            fs::write(net.join("type"), "1\n").unwrap();
-            fs::write(net.join("address"), format!("52:54:00:00:00:{i:02x}\n")).unwrap();
-            fs::write(net.join("dev_port"), format!("{dev_port}\n")).unwrap();
-            fs::write(net.join("carrier"), "1\n").unwrap();
-            fs::write(net.join("speed"), "1000\n").unwrap();
-            symlink(&dev, net.join("device")).unwrap();
-            symlink(&net, root.join("class/net").join(ifname)).unwrap();
+            let nic = Nic {
+                addr,
+                driver,
+                ifname,
+                dev_port: *dev_port,
+                sub: *sub,
+                mac: &format!("52:54:00:00:00:{i:02x}"),
+                device: &format!("15{i:02x}"),
+            };
+            add_nic(&root, &nic);
         }
         // A virtual interface: no device link.
         let lo = root.join("devices/virtual/net/lo");
@@ -279,6 +294,67 @@ pub mod tests {
         fs::write(lo.join("type"), "772\n").unwrap();
         symlink(&lo, root.join("class/net/lo")).unwrap();
         root
+    }
+
+    /// One NIC port for [`add_nic`].
+    pub struct Nic<'a> {
+        /// PCI address of the function.
+        pub addr: &'a str,
+        /// Driver.
+        pub driver: &'a str,
+        /// Interface name.
+        pub ifname: &'a str,
+        /// Port number on the function.
+        pub dev_port: u32,
+        /// A bus device between function and interface (`virtio0`).
+        pub sub: Option<&'a str>,
+        /// MAC address.
+        pub mac: &'a str,
+        /// PCI device ID, four hexadecimal digits.
+        pub device: &'a str,
+    }
+
+    /// Add a NIC port under `root`: its PCI function (made if missing)
+    /// and its interface.
+    pub fn add_nic(root: &Path, n: &Nic<'_>) {
+        fs::create_dir_all(root.join("class/net")).unwrap();
+        fs::create_dir_all(root.join("bus/pci/devices")).unwrap();
+        let func = root.join("devices/pci0000:00").join(n.addr);
+        fs::create_dir_all(&func).unwrap();
+        fs::write(func.join("vendor"), "0x8086\n").unwrap();
+        fs::write(func.join("device"), format!("0x{}\n", n.device)).unwrap();
+        fs::write(func.join("class"), "0x020000\n").unwrap();
+        let pci_link = root.join("bus/pci/devices").join(n.addr);
+        if !pci_link.exists() {
+            symlink(&func, pci_link).unwrap();
+        }
+        let dev = n.sub.map_or(func.clone(), |s| func.join(s));
+        fs::create_dir_all(&dev).unwrap();
+        let drv = root.join("bus/pci/drivers").join(n.driver);
+        fs::create_dir_all(&drv).unwrap();
+        let _ = symlink(&drv, dev.join("driver"));
+        let net = dev.join("net").join(n.ifname);
+        fs::create_dir_all(&net).unwrap();
+        fs::write(net.join("type"), "1\n").unwrap();
+        fs::write(net.join("address"), format!("{}\n", n.mac)).unwrap();
+        fs::write(net.join("dev_port"), format!("{}\n", n.dev_port)).unwrap();
+        fs::write(net.join("carrier"), "1\n").unwrap();
+        fs::write(net.join("speed"), "1000\n").unwrap();
+        symlink(&dev, net.join("device")).unwrap();
+        symlink(&net, root.join("class/net").join(n.ifname)).unwrap();
+    }
+
+    /// Take a NIC's function and interfaces out of `root`, as a card pulled.
+    pub fn remove_nic(root: &Path, addr: &str) {
+        let func = root.join("devices/pci0000:00").join(addr);
+        for name in crate::scan::sorted_dir(&root.join("class/net")) {
+            let link = root.join("class/net").join(&name);
+            if fs::read_link(&link).is_ok_and(|t| t.starts_with(&func)) {
+                fs::remove_file(link).unwrap();
+            }
+        }
+        let _ = fs::remove_file(root.join("bus/pci/devices").join(addr));
+        fs::remove_dir_all(func).unwrap();
     }
 
     #[test]
@@ -292,7 +368,7 @@ pub mod tests {
                 ("0000:02:00.1", "igb", "enp2s0f0", 0, None),
             ],
         );
-        let ports = scan(&root);
+        let ports = scan(&root, &PermMacs::new());
         let names: Vec<&str> = ports.iter().map(|p| p.ifname.as_str()).collect();
         assert_eq!(names, ["eth1", "enp2s0f1", "enp2s0f0", "eth0"]);
         assert_eq!(ports[0].family.type_code, "QN01");
@@ -329,6 +405,7 @@ pub mod tests {
             ids: "8086:10d3".into(),
             dev_port: 0,
             mac: "52:54:00:12:34:56".into(),
+            perm_mac: "52:54:00:12:34:56".into(),
             carrier: Some(true),
             speed: Some(1000),
             devpath: String::new(),

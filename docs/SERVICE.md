@@ -197,7 +197,9 @@ option 2 shows the IPL history; `svc.liclog [MAJOR]` prints the entries.
    3 copy to media (the dump list, where 6 copies)
 7. Hardware service manager: 1 packaging, 2 logical (1 all, 2 `*CMN`,
    3 `*STG`, 4 `*TAP`), 3 locate by resource name (a trailing `*` is
-   generic), 4 failed and non-reporting, 6 to 8 not available, F6 print
+   generic), 4 failed and non-reporting (option 4 removes a resource that
+   does not report, on F10, as the primary's list offers; captured in
+   `golden/verified/oracle71/hsm/`), 6 to 8 not available, F6 print
    configuration
 
 Resource classes: `Lan`, `Comm`, `Port` are `*CMN`; `Storage`, `Disk`

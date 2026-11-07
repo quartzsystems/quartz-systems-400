@@ -721,6 +721,8 @@ ipc::rpc! {
     /// or 6 over `units`), `stop` (`set`), `include` (`units[0]` in
     /// `set`), `exclude` (`units[0]`); the line the message line shows.
     434 => fn sst_parity_change / SstParityChange (op: String, level: u8, set: u8, units: Vec<u16>) -> Result<String, String>;
+    /// SST: remove a hardware resource that does not report.
+    435 => fn sst_remove_resource / SstRemoveResource (name: String) -> Result<(), String>;
     // --- the integrated file system (440-459)
     /// One IFS operation for the job (`crate::ifs`): descriptors,
     /// directory streams and locks are the connection's and end with it.

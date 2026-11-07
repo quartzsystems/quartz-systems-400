@@ -20,7 +20,7 @@ use crate::scan::{devpath_in, nic, pci, read_trim, serial_of, sorted_dir, storag
 use crate::uevent::Uevent;
 
 /// Resource class. Decides the name prefix.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {
     /// PCI bridge or root: `CMBnn`.
     Bridge,
@@ -166,6 +166,30 @@ impl Status {
     }
 }
 
+/// What a removal did.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Removal {
+    /// Gone from the table, its name free of it.
+    Removed,
+    /// No resource has the name.
+    NotFound,
+    /// The resource is present: only a non-reporting one can go.
+    Reporting,
+}
+
+impl Removal {
+    /// As the hardware service manager reports it.
+    pub fn result(self, name: &str) -> Result<(), String> {
+        match self {
+            Removal::Removed => Ok(()),
+            Removal::NotFound => Err(format!("No resource is called {name}")),
+            Removal::Reporting => Err(format!(
+                "{name} reports: only a resource that does not can be removed"
+            )),
+        }
+    }
+}
+
 /// One row of the table.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Resource {
@@ -191,6 +215,9 @@ pub struct Resource {
     pub parent: String,
     /// The resource that drives it (logical tree), empty at the top.
     pub logical: String,
+    /// What identifies the device across IPLs and moves (`names::key`):
+    /// `mac:`, `sn:`, `pci:`, `dev:` and the like; empty until known.
+    pub key: String,
 }
 
 impl Resource {
@@ -215,6 +242,7 @@ impl Resource {
             serial: String::new(),
             parent: String::new(),
             logical: String::new(),
+            key: String::new(),
         }
     }
 
@@ -253,18 +281,24 @@ impl Table {
     /// names are stable from boot to boot.
     #[must_use]
     pub fn scan(root: &Path) -> Self {
-        let mut t = Self::walk(root);
+        Self::scan_with(root, &nic::PermMacs::new())
+    }
+
+    /// [`Table::scan`] with the ports' permanent addresses from netlink.
+    #[must_use]
+    pub fn scan_with(root: &Path, perm: &nic::PermMacs) -> Self {
+        let mut t = Self::walk(root, perm);
         t.link();
         t
     }
 
-    /// The walk, without the parents.
-    fn walk(root: &Path) -> Self {
+    /// The walk, without the parents: names in walk order, keys set.
+    pub(crate) fn walk(root: &Path, perm: &nic::PermMacs) -> Self {
         let mut t = Self::default();
         t.add_processors(root);
         t.add_pci(root);
         t.add_blocks(root);
-        t.add_ports(root);
+        t.add_ports_with(root, perm);
         for name in sorted_dir(&root.join("class/net")) {
             t.attach_net(root, &name);
         }
@@ -276,41 +310,55 @@ impl Table {
             t.add_input(root, &name);
         }
         t.add_tapes(root);
+        crate::names::identify(&mut t);
         t
     }
 
     /// Walk sysfs again and merge: a resource seen before keeps its name
-    /// (matched by device path), a new one takes the next free name of
-    /// its kind, one no longer there is not detected. One line per
-    /// change.
+    /// (matched by device path, else by its key, so a card moved or
+    /// plugged back is the one it was), a new one takes the next free
+    /// name of its kind, one no longer there is not detected. One line
+    /// per change.
     pub fn rescan(&mut self, root: &Path) -> Vec<String> {
-        let fresh = Self::walk(root);
-        let seen: Vec<String> = fresh.resources.iter().map(|r| r.devpath.clone()).collect();
+        self.rescan_with(root, &nic::PermMacs::new())
+    }
+
+    /// [`Table::rescan`] with the ports' permanent addresses.
+    pub fn rescan_with(&mut self, root: &Path, perm: &nic::PermMacs) -> Vec<String> {
+        let fresh = Self::walk(root, perm);
+        let mut seen = vec![false; self.resources.len()];
         let mut changes = Vec::new();
         for mut r in fresh.resources {
-            if let Some(old) = self
-                .resources
-                .iter_mut()
-                .find(|o| o.devpath == r.devpath && o.kind == r.kind)
-            {
+            let at = self.matching(&r, &seen);
+            if let Some(i) = at {
+                seen[i] = true;
+                let old = &mut self.resources[i];
                 if old.status == Status::NotDetected {
-                    changes.push(format!("{} detected again ({})", old.name, old.devpath));
+                    changes.push(format!("{} detected again ({})", old.name, r.devpath));
                 }
                 old.status = Status::Operational;
                 old.location = r.location;
                 old.description = r.description;
+                old.devpath = r.devpath;
                 old.type_model = r.type_model;
                 old.port = r.port;
                 old.serial = r.serial;
+                // A port whose address software changed reads no
+                // permanent one now: it keeps the key it was named by.
+                if crate::names::strong(&r.key) || !crate::names::strong(&old.key) {
+                    old.key = r.key;
+                }
             } else {
                 r.name = self.next_name(r.kind);
                 changes.push(format!("added {} ({})", r.name, r.devpath));
                 self.resources.push(r);
+                seen.push(true);
             }
         }
-        for r in &mut self.resources {
-            if r.status == Status::Operational && !seen.contains(&r.devpath) {
+        for (r, seen) in self.resources.iter_mut().zip(seen) {
+            if r.status == Status::Operational && !seen {
                 r.status = Status::NotDetected;
+                r.port = None;
                 changes.push(format!("{} not detected ({})", r.name, r.devpath));
             }
         }
@@ -318,9 +366,56 @@ impl Table {
         changes
     }
 
+    /// The row a freshly walked resource is: the operational one at its
+    /// device path (unless both carry hardware identities that differ:
+    /// another card in the slot), else any of its kind with its key.
+    fn matching(&self, r: &Resource, taken: &[bool]) -> Option<usize> {
+        let free = |i: usize| !taken.get(i).copied().unwrap_or(false);
+        let at_path = self.resources.iter().enumerate().position(|(i, o)| {
+            free(i)
+                && o.kind == r.kind
+                && o.status == Status::Operational
+                && !o.devpath.is_empty()
+                && o.devpath == r.devpath
+                && crate::names::same_device(&o.key, &r.key)
+        });
+        at_path.or_else(|| {
+            self.resources.iter().enumerate().position(|(i, o)| {
+                free(i) && o.kind == r.kind && !r.key.is_empty() && o.key == r.key
+            })
+        })
+    }
+
+    /// Remove a resource that is not detected (the hardware service
+    /// manager's Remove), so its name is no longer kept for it.
+    pub fn remove(&mut self, name: &str) -> Removal {
+        let Some(i) = self
+            .resources
+            .iter()
+            .position(|r| r.name.eq_ignore_ascii_case(name))
+        else {
+            return Removal::NotFound;
+        };
+        if self.resources[i].operational() {
+            return Removal::Reporting;
+        }
+        self.resources.remove(i);
+        Removal::Removed
+    }
+
     /// Apply a hotplug event: a rescan for the subsystems that make
     /// resources. The changes, one line each.
     pub fn apply_uevent(&mut self, root: &Path, ev: &Uevent) -> Vec<String> {
+        self.apply_uevent_with(root, ev, &nic::PermMacs::new())
+    }
+
+    /// [`Table::apply_uevent`] with the ports' permanent addresses.
+    pub fn apply_uevent_with(
+        &mut self,
+        root: &Path,
+        ev: &Uevent,
+        perm: &nic::PermMacs,
+    ) -> Vec<String> {
         let relevant = matches!(ev.action.as_str(), "add" | "remove" | "change")
             && matches!(
                 ev.subsystem.as_str(),
@@ -336,7 +431,7 @@ impl Table {
                     | "virtio-ports"
             );
         if relevant {
-            self.rescan(root)
+            self.rescan_with(root, perm)
         } else {
             Vec::new()
         }
@@ -371,8 +466,9 @@ impl Table {
         s
     }
 
-    /// The next free name of a kind: one past the highest in use.
-    fn next_name(&self, kind: Kind) -> String {
+    /// The next free name of a kind: one past the highest in use, a
+    /// non-reporting resource's included.
+    pub(crate) fn next_name(&self, kind: Kind) -> String {
         let n = self
             .resources
             .iter()
@@ -426,6 +522,12 @@ impl Table {
         };
         let mut links = Vec::new();
         for r in &self.resources {
+            // A resource known only from the saved names keeps the
+            // parents it was saved with.
+            if r.devpath.is_empty() {
+                links.push((r.parent.clone(), r.logical.clone()));
+                continue;
+            }
             let parent = parent_of(&r.devpath);
             let logical = match r.kind {
                 Kind::Port => r
@@ -665,7 +767,12 @@ impl Table {
 
     /// Every Ethernet port under `root`, as `CMNnn` in PCI order.
     pub fn add_ports(&mut self, root: &Path) {
-        for p in nic::scan(root) {
+        self.add_ports_with(root, &nic::PermMacs::new());
+    }
+
+    /// [`Table::add_ports`] with the permanent addresses netlink gave.
+    pub fn add_ports_with(&mut self, root: &Path, perm: &nic::PermMacs) {
+        for p in nic::scan(root, perm) {
             self.push_port(p);
         }
     }

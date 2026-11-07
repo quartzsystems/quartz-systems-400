@@ -594,6 +594,12 @@ pub trait DstEnv {
     fn resources(&mut self) -> Vec<ResourceRow> {
         Vec::new()
     }
+    /// Remove a resource that does not report, so its name is no longer
+    /// kept for it.
+    fn remove_resource(&mut self, name: &str) -> Result<(), String> {
+        let _ = name;
+        Err("not available".into())
+    }
     /// `Work with System Capacity`'s figures, label and value.
     fn capacity(&mut self) -> Vec<(String, String)> {
         Vec::new()
@@ -1039,6 +1045,18 @@ impl DstEnv for MemEnv {
     }
     fn resources(&mut self) -> Vec<ResourceRow> {
         self.hardware.clone()
+    }
+    fn remove_resource(&mut self, name: &str) -> Result<(), String> {
+        let at = self
+            .hardware
+            .iter()
+            .position(|r| r.name == name)
+            .ok_or_else(|| format!("No resource is called {name}"))?;
+        if self.hardware[at].status == "Operational" {
+            return Err(format!("{name} reports: only a resource that does not can be removed"));
+        }
+        self.hardware.remove(at);
+        Ok(())
     }
     fn security_flags(&mut self) -> SecurityFlags {
         self.flags

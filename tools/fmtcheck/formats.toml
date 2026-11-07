@@ -57,6 +57,15 @@ files = [
     "lic/licpart/src/format/tlv.rs",
 ]
 
+# The hardware resource names kept from one IPL to the next: LIC record
+# TLV 0x010A (docs/PHASE1.md, "Hardware resource names").
+[[format]]
+name = "hw-names"
+frozen_at = "V1R1M0"
+doc = "docs/PHASE1.md"
+version = ["lic/hwrsrc/src/names/format.rs::VERSION"]
+files = ["lic/hwrsrc/src/names/format.rs"]
+
 # --- The database and journals ---
 
 # SQL information (*SQLINF), the library SQL name index and the trigger

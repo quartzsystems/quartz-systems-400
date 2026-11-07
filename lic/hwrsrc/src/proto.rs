@@ -3,13 +3,13 @@
 // root directory of this project.
 
 //! What the hardware resource service answers, over its socket: the
-//! table (with the trees in each resource's parents), one resource, and
-//! a rescan on demand.
+//! table (with the trees in each resource's parents), one resource, a
+//! rescan on demand and the removal of a resource no longer there.
 
 use ipc::{Dec, Wire, WireError, wire_enum, wire_struct};
 
 use crate::scan::nic::{Family, NetPort, family};
-use crate::table::{Kind, Resource, Status, Table};
+use crate::table::{Kind, Removal, Resource, Status, Table};
 
 wire_enum!(Kind {
     0 => Bridge,
@@ -26,6 +26,12 @@ wire_enum!(Kind {
     11 => Processor,
     12 => Memory,
     13 => Channel,
+});
+
+wire_enum!(Removal {
+    0 => Removed,
+    1 => NotFound,
+    2 => Reporting,
 });
 
 wire_enum!(Status {
@@ -51,6 +57,7 @@ wire_struct!(NetPort {
     ids,
     dev_port,
     mac,
+    perm_mac,
     carrier,
     speed,
     devpath,
@@ -68,6 +75,7 @@ wire_struct!(Resource {
     serial,
     parent,
     logical,
+    key,
 });
 
 wire_struct!(Table { resources });
@@ -80,6 +88,8 @@ ipc::rpc! {
     1 => fn resource / Resource (name: String) -> Option<Resource>;
     /// Walk sysfs again now; the changes, one line each.
     2 => fn rescan / Rescan () -> Vec<String>;
+    /// Remove a resource that is not detected, its name no longer kept.
+    3 => fn remove / Remove (name: String) -> Removal;
 }
 
 #[cfg(test)]
@@ -103,6 +113,7 @@ mod tests {
             ids: "1af4:1041".into(),
             dev_port: 0,
             mac: "52:54:00:12:34:56".into(),
+            perm_mac: String::new(),
             carrier: Some(true),
             speed: None,
             devpath: "/x/net/eth0".into(),

@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 use hwrsrc::proto::{Service, dispatch};
-use hwrsrc::{Resource, Table};
+use hwrsrc::{Removal, Resource, Table};
 use ipc::WireError;
 use ipc::chan::Chan;
 
@@ -86,6 +86,23 @@ impl Service for Svc<'_> {
     }
 
     fn rescan(&mut self) -> Vec<String> {
-        self.with(|t| t.rescan(Path::new(super::SYS)))
+        self.with(|t| {
+            let changes = t.rescan_with(Path::new(super::SYS), &super::names::perm_macs());
+            if !changes.is_empty() {
+                super::names::save(t);
+            }
+            changes
+        })
+    }
+
+    fn remove(&mut self, name: String) -> Removal {
+        self.with(|t| {
+            let done = t.remove(&name);
+            if done == Removal::Removed {
+                println!("hwrsrc: {} removed", name.to_ascii_uppercase());
+                super::names::save(t);
+            }
+            done
+        })
     }
 }

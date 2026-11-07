@@ -1187,6 +1187,15 @@ impl DstEnv for Env<'_> {
             })
             .collect()
     }
+
+    fn remove_resource(&mut self, name: &str) -> Result<(), String> {
+        let done = hwrsrc::client::remove(name).map_err(|e| e.to_string())?;
+        done.result(name)?;
+        self.system
+            .out
+            .serial(&format!("slic: hardware resource {name} removed\n"));
+        Ok(())
+    }
 }
 
 /// Open a device node for a new unit, with its serial from sysfs.

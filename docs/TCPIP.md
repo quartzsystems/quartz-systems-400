@@ -574,9 +574,13 @@ One process walks sysfs: the hardware resource service (`/init qshwr`,
 `lic/slic/src/hwsvc/`, the table in `lic/hwrsrc`), which `slic` starts
 first in the LIC phase. It names the resources once, follows
 `NETLINK_KOBJECT_UEVENT` (an event of a subsystem that makes resources
-walks sysfs again; a resource seen before keeps its name by device path,
-a new one takes the next free name of its kind, one gone is *Not
-detected*), and answers on `/run/qs400/hwrsrc.sock`. `slic` (DST, the
+walks sysfs again; a resource seen before keeps its name by device path
+or key, a new one takes the next free name of its kind, one gone is *Not
+detected*), and answers on `/run/qs400/hwrsrc.sock`. Names last across
+IPLs and hardware changes: each is saved in the LIC partition with what
+identifies the device, an Ethernet port by its permanent MAC
+(docs/HARDWARE_NOTES.md "Names that last"), so a new card does not move
+the `CMNnn` a line description names. `slic` (DST, the
 installer, `svc.hw`), the storage service and, through its `hw_table`
 request, every job (WRKHDWRSC, DSPHDWRSC, `QGYRHRL`, `QGYRHRI`) ask it.
 Each resource carries its packaging parent (the nearest resource above
@@ -585,9 +589,10 @@ port's network function, a unit's storage controller). Processors are
 `PNnn` and main storage `MS01` (`*PRC`).
 
 Every Ethernet port with a device behind it (`/sys/class/net/*/device`)
-is a `CMNnn` resource, numbered in PCI address order, then port number
-(`dev_port`), then interface name, so names do not move when the
-kernel renames interfaces. Ports are named before serial ports, which
+is a `CMNnn` resource, numbered at a system's first IPL in PCI address
+order, then port number (`dev_port`), then interface name, so names do
+not move when the kernel renames interfaces; a port added later takes
+the next free `CMN` name wherever it sits. Ports are named before serial ports, which
 share the `CMN` numbering. The PCI function stays `LINnn`; it takes the
 type and model of its ports. Each port records its driver, PCI address
 and ids, MAC, carrier and speed; the `hw` console word re-reads carrier

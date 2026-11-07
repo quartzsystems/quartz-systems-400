@@ -2477,6 +2477,10 @@ impl Service for Served<'_> {
         super::sst::resources(self.system, self.ctx.job.number)
     }
 
+    fn sst_remove_resource(&mut self, name: String) -> Result<(), String> {
+        super::sst::remove_resource(self.system, self.ctx.job.number, &name)
+    }
+
     fn sst_storage(&mut self, unit: u16, page: u64, id: String) -> Result<Vec<u8>, String> {
         super::sst::storage(self.system, self.ctx.job.number, unit, page, &id)
     }

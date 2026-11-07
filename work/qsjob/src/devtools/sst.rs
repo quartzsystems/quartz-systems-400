@@ -431,6 +431,14 @@ impl DstEnv for SstEnv {
             .unwrap_or_default()
     }
 
+    fn remove_resource(&mut self, name: &str) -> Result<(), String> {
+        let name = name.to_string();
+        self.host
+            .link
+            .borrow_mut()
+            .with(|l| l.sst_remove_resource(name))
+    }
+
     fn capacity(&mut self) -> Vec<(String, String)> {
         self.op("capacity", &[])
             .unwrap_or_default()
