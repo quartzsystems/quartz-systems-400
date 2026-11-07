@@ -454,6 +454,21 @@ impl Suite {
                     long_changes(&mut a, &mut b, &mut third)?
                 ))
             });
+        // What the system was doing when a request waited too long.
+        let r = r.map_err(|e| {
+            let mut why = e;
+            for cmd in [
+                "wrkactjob",
+                "WRKOBJLCK OBJ(QAPLANEX/WIDE) OBJTYPE(*FILE)",
+                "WRKOBJLCK OBJ(QAPLANEX/WIDECPY) OBJTYPE(*FILE)",
+                "svc.txn stats",
+            ] {
+                use std::fmt::Write as _;
+                let out = s.command(cmd, CMD).unwrap_or_default();
+                let _ = write!(why, "\n--- {cmd}\n{out}");
+            }
+            why
+        });
         let _ = a.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         r
