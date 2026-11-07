@@ -23,6 +23,8 @@ pub enum Body {
     RemoteCommand(rmtcmd::Template),
     /// The database server.
     Database(database::Template),
+    /// The native database functions on the database server's connection.
+    NativeDatabase(database::Template),
     /// The data queue server.
     DataQueue(dtaq::Template),
     /// The file server.
@@ -38,6 +40,9 @@ impl Body {
     pub fn decode(dir: Dir, server: u16, id: u16, b: &[u8]) -> Self {
         if common::Template::knows(dir, id) {
             return Self::Common(common::Template::decode(dir, id, b));
+        }
+        if server == database::native::SERVER {
+            return Self::NativeDatabase(database::Template::decode_native(dir, id, b));
         }
         match ServerId::from_id(server) {
             Some(ServerId::Signon) => Self::Signon(signon::Template::decode(dir, id, b)),
@@ -60,7 +65,7 @@ impl Body {
             Self::Signon(t) => t.encode(),
             Self::Central(t) => t.encode(),
             Self::RemoteCommand(t) => t.encode(),
-            Self::Database(t) => t.encode(),
+            Self::Database(t) | Self::NativeDatabase(t) => t.encode(),
             Self::DataQueue(t) => t.encode(),
             Self::File(t) => t.encode(),
             Self::NetPrint(t) => t.encode(),
@@ -75,7 +80,7 @@ impl Body {
             Self::Signon(t) => t.is_typed(),
             Self::Central(t) => t.is_typed(),
             Self::RemoteCommand(t) => t.is_typed(),
-            Self::Database(t) => t.is_typed(),
+            Self::Database(t) | Self::NativeDatabase(t) => t.is_typed(),
             Self::DataQueue(t) => t.is_typed(),
             Self::File(t) => t.is_typed(),
             Self::NetPrint(t) => t.is_typed(),
@@ -138,12 +143,16 @@ impl Message {
             Body::Central(_) => central::id::ALL,
             Body::RemoteCommand(_) => rmtcmd::id::ALL,
             Body::Database(_) => database::id::ALL,
+            Body::NativeDatabase(_) => database::native::id::ALL,
             Body::DataQueue(_) => dtaq::id::ALL,
             Body::File(_) => file::id::ALL,
             Body::NetPrint(_) => netprt::id::ALL,
             Body::Unknown(_) => &[],
         };
-        let server = self.server().map_or("unknown", ServerId::name);
+        let server = match self.body {
+            Body::NativeDatabase(_) => "database.native",
+            _ => self.server().map_or("unknown", ServerId::name),
+        };
         let lookup = if matches!(self.body, Body::NetPrint(_)) {
             id & 0x7FFF
         } else {

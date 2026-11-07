@@ -99,6 +99,23 @@ pub mod id {
     }
 }
 
+/// The native database functions: server ID `0xE005` on the database
+/// server's connection, the same templates, function IDs of their own.
+pub mod native {
+    /// Their header server ID.
+    pub const SERVER: u16 = 0xE005;
+
+    /// Request IDs (functions), and the one reply ID.
+    pub mod id {
+        crate::consts! {
+            /// Add libraries to the library list.
+            ADD_LIBRARY_LIST = 0x180C,
+            /// Every reply.
+            REPLY = 0x2800,
+        }
+    }
+}
+
 /// Operation result set (ORS) bitmap bits: what the client wants back.
 pub mod ors {
     crate::consts32! {
@@ -273,9 +290,19 @@ pub enum Template {
 impl Template {
     /// Decode by direction and ID.
     pub fn decode(dir: crate::Dir, id: u16, b: &[u8]) -> Self {
+        Self::decode_in(REQUEST_IDS, dir, id, b)
+    }
+
+    /// Decode a native database function's template (server
+    /// [`native::SERVER`]).
+    pub fn decode_native(dir: crate::Dir, id: u16, b: &[u8]) -> Self {
+        Self::decode_in(&[native::id::ADD_LIBRARY_LIST], dir, id, b)
+    }
+
+    fn decode_in(requests: &[u16], dir: crate::Dir, id: u16, b: &[u8]) -> Self {
         use crate::template::Template as _;
         if dir == crate::Dir::Request
-            && REQUEST_IDS.contains(&id)
+            && requests.contains(&id)
             && let Some(t) = RequestTemplate::decode(b)
         {
             return Self::Request {

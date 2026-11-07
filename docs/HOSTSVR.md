@@ -35,8 +35,16 @@ tables are printed by `cargo test -p hostsvr --test spec -- --ignored
 | Sign-on | `0xE009` | `as-signon` | 8476 | 9476 |
 
 The database server also answers native database (`0xE005`) and
-catalog (`0xE006`) server IDs in JTOpen's code; the traces only show
-`0xE004`.
+catalog (`0xE006`) server IDs in JTOpen's code; the traces show
+`0xE004`, and `0xE005` only for add library list (`0x180C`, JTOpen's
+`libraries` property), with the same 20-byte templates:
+
+<!-- consts: database::native::id -->
+
+| Value | Name |
+|---|---|
+| `0x180C` | `ADD_LIBRARY_LIST` |
+| `0x2800` | `REPLY` |
 
 ### Frames
 
@@ -60,7 +68,7 @@ template and whole parameters, with nothing left over; the database and
 network print servers nest further LL/CP lists inside some parameters.
 
 A client sends a request and reads its reply, except end job (`0x7006`,
-`0x1004`, `0x1FFF`), which closes without a reply, and database requests
+`0x1004`, `0x1400`, `0x1FFF`), which closes without a reply, and database requests
 whose ORS bitmap does not ask for a reply: in the JDBC traces create
 RPB (`0x1D00`), change and delete descriptor (`0x1E00`, `0x1E01`) and
 delete results (`0x1F01`) are sent without waiting, while delete RPB
@@ -343,6 +351,7 @@ layouts come from JTOpen's reading of them and are not trace-checked.
 | `0x1003` | `RETRIEVE_LICENSE_INFO` |
 | `0x1201` | `CONVERSION_TABLE` |
 | `0x1301` | `EXCHANGE_ATTRIBUTES` |
+| `0x1400` | `END_JOB` |
 
 <!-- consts: cp::central -->
 

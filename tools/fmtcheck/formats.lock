@@ -17,7 +17,7 @@ hash = "15cbd197154a3983210b5090f49919c032722b35b7ea551018950c968967318f"
 [format.host-servers]
 frozen_at = "V1R1M0"
 version = "1"
-hash = "660552b12c20e818acfa941d1fe5338525ffbded5d7365527c5bee8dafd07ddf"
+hash = "3685beafce649fc1aeb58344e2b988046e22e5fd2c2f1301b944e9c6efe5c078"
 
 [format.ifs-meta]
 frozen_at = "V1R1M0"

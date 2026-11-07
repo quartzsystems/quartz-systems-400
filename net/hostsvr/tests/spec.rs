@@ -43,6 +43,7 @@ fn consts() -> BTreeMap<&'static str, Vec<(String, u64)>> {
         ("central::id", w(central::id::ALL)),
         ("rmtcmd::id", w(rmtcmd::id::ALL)),
         ("database::id", w(database::id::ALL)),
+        ("database::native::id", w(database::native::id::ALL)),
         ("database::ors", w32(database::ors::ALL)),
         ("dtaq::id", w(dtaq::id::ALL)),
         ("file::id", w(file::id::ALL)),

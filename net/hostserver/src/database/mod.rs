@@ -25,7 +25,7 @@ use std::collections::HashMap;
 
 use hostsvr::cp::{db_reply, db_request};
 use hostsvr::database::param::{DbString, expanded, statement_text};
-use hostsvr::database::{id, ors};
+use hostsvr::database::{id, native, ors};
 use hostsvr::frame::{Frame, Header, Param};
 use regfac::ExitRequest;
 use regfac::formats::host::{Sql, func, zdai0100, zdaq0100, zdaq0200};
@@ -733,7 +733,7 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
     /// The native database functions (server `0xE005`): only the library
     /// list `JTOpen`'s `libraries` property sends; the others SQL0084.
     fn native(&mut self, f: &Frame, r: &Req, params: &[Param]) -> Outcome {
-        let a = if r.function == ADD_LIBRARY_LIST {
+        let a = if r.function == native::id::ADD_LIBRARY_LIST {
             self.library_list(r, params)
         } else {
             self.finish(r, code(-84, "42612"), Vec::new())
@@ -1014,7 +1014,7 @@ impl<A: Auth, E: Embedded, X: Exits> Database<A, E, X> {
     fn request(&mut self, f: &Frame) -> Outcome {
         let r = Req::of(f);
         let params = expanded(&f.params).unwrap_or_else(|_| f.params.clone());
-        if f.header.server_id == NATIVE_DB {
+        if f.header.server_id == native::SERVER {
             return self.native(f, &r, &params);
         }
         let ans = match r.function {
@@ -1145,10 +1145,6 @@ fn is_call(text: &str) -> bool {
         .is_some_and(|w| w.eq_ignore_ascii_case("CALL ") || w.eq_ignore_ascii_case("CALL	"))
 }
 
-/// The native database server.
-const NATIVE_DB: u16 = 0xE005;
-/// Its add library list function.
-const ADD_LIBRARY_LIST: u16 = 0x180C;
 /// Its library list parameter.
 const LIBRARY_LIST: u16 = 0x3813;
 

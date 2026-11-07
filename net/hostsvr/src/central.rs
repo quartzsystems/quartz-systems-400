@@ -29,6 +29,8 @@ pub mod id {
         CONVERSION_TABLE = 0x1201,
         /// NLS exchange attributes.
         EXCHANGE_ATTRIBUTES = 0x1301,
+        /// End the server job (sent before close; no reply).
+        END_JOB = 0x1400,
     }
 }
 
@@ -127,6 +129,8 @@ templates! {
         ConversionTable(ConversionTable) = Request id::CONVERSION_TABLE,
         /// `0x1201` reply.
         ConversionTableReply(ConversionTableReply) = Reply id::CONVERSION_TABLE,
+        /// `0x1400`.
+        EndJob(crate::common::Empty) = Request id::END_JOB,
     }
 }
 
