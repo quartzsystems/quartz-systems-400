@@ -1616,7 +1616,6 @@ devtools/seu/src/srctype.rs	Type
 devtools/seu/src/srctype.rs	Type
 devtools/seu/src/srctype.rs	Type
 devtools/seu/src/srctype.rs	Use
-devtools/sst/src/menu.rs	F3=Exit   F12=Cancel
 devtools/sst/src/menu.rs	Password has expired and must be changed before SST can be used
 devtools/sst/src/menu.rs	Service tool                        Started by
 devtools/sst/src/menu.rs	Service tools device IDs
@@ -2992,7 +2991,6 @@ lic/slic/src/stgsvc/sbs.rs	{n} subsystem(s) ending; the system goes to the restr
 lic/slic/src/stgsvc/security.rs	CPF1337 {kw}({n}) is beyond the priority limit {} of user {}
 lic/slic/src/stgsvc/security.rs	CPF1343 {} is not authorized to control job {job}; *JOBCTL special authority is needed
 lic/slic/src/stgsvc/security.rs	CPF1343 {} may not read the log of job {job}; *JOBCTL special authority is needed
-lic/slic/src/stgsvc/security.rs	CPF22C6 The password validation program was not run.
 lic/slic/src/stgsvc/security.rs	No password is associated with user profile {user}.
 lic/slic/src/stgsvc/security.rs	Not authorized to user profile {user}.
 lic/slic/src/stgsvc/security.rs	The audit journal cannot be written; audit entries are being lost.
