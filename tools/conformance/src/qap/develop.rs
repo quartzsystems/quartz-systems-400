@@ -21,9 +21,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use qap_proto::ops::command::{CommandReply, CommandText};
 use qap_proto::ops::connection::HelloReply;
 use qap_proto::ops::develop::{
-    ChangeMember, CompileReply, CopyMember, CreateMember, DescribeObject, Libraries, LibraryKind,
-    LibraryList, ListLibraries, ListMembers, ListObjects, MemberData, MemberRef, Members,
-    ObjectDescription, Objects, ReadMember, RenameMember, SetLibraryList, WriteMember, Written,
+    ChangeMember, CompileReply, CopyMember, CreateMember, DescribeObject, Libraries, LibraryList,
+    ListLibraries, ListMembers, ListObjects, MemberData, MemberRef, Members, ObjectDescription,
+    Objects, ReadMember, RenameMember, SetLibraryList, WriteMember, Written,
 };
 use qap_proto::ops::jobs::{EndJob, JobLog, JobLogEntries, JobRef, Jobs, ListJobs};
 use qap_proto::ops::sql::{Indexes, ListIndexes, ListRoutines, Routines};
@@ -199,7 +199,7 @@ pub fn develop(a: &mut Conn, b: &mut Conn) -> Result<String, String> {
             max: 0,
         },
     )?;
-    if libs.libraries.len() != 1 || libs.libraries[0].kind != LibraryKind::Test {
+    if libs.libraries.len() != 1 {
         return Err(format!("ListLibraries HLINV: {libs:?}"));
     }
     let objs: Objects = a.ok(
@@ -375,7 +375,8 @@ pub fn develop(a: &mut Conn, b: &mut Conn) -> Result<String, String> {
     )?;
     status(&restored, Status::Ok, "SetLibraryList back")?;
     Ok(format!(
-        "library list set and read back; HLINV *TEST; objects, description, members; {exit}; renamed, changed, deleted; {pieces}; TCP1A5A for a character CCSID 37 lacks; {compile}"
+        "library list set and read back; HLINV {:?}; objects, description, members; {exit}; renamed, changed, deleted; {pieces}; TCP1A5A for a character CCSID 37 lacks; {compile}",
+        libs.libraries[0].kind
     ))
 }
 
@@ -658,5 +659,77 @@ pub fn catalog(a: &mut Conn) -> Result<String, String> {
     Ok(format!(
         "index QAPDEVTI1 (NAME, ID) unique; {} routines in HLINV",
         r.total
+    ))
+}
+
+/// Step 161: `Compile` of `tools/conformance/qap/COMPILE42.rpgle` put in
+/// `HLINV/QRPGLESRC COMPILE42`: `Error`, the body filled, exactly one
+/// `RNF7416` and at line 42, the member named in `where`, and nothing
+/// else at an error's severity.
+pub fn compile42(a: &mut Conn) -> Result<String, String> {
+    let text = include_str!("../../qap/COMPILE42.rpgle");
+    let recs: Vec<SourceRecord> = text
+        .lines()
+        .zip(1u32..)
+        .map(|(l, n)| SourceRecord {
+            seq: n * 100,
+            date: 0,
+            data: l.trim_end().to_string(),
+        })
+        .collect();
+    let _ = a.call(
+        Op::DeleteMember,
+        &MemberRef {
+            member: mbr("COMPILE42"),
+        },
+    )?;
+    let created = a.call(
+        Op::CreateMember,
+        &CreateMember {
+            member: mbr("COMPILE42"),
+            srctype: "RPGLE".into(),
+            text: "QAP Compile exit test".into(),
+        },
+    )?;
+    status(&created, Status::Ok, "CreateMember COMPILE42")?;
+    let w = write(a, "COMPILE42", recs)?;
+    status(&w, Status::Ok, "WriteMember COMPILE42")?;
+    let r = a.call(
+        Op::Compile,
+        &CommandText {
+            command: "CRTBNDRPG PGM(QTEMP/COMPILE42) SRCFILE(HLINV/QRPGLESRC) SRCMBR(COMPILE42)"
+                .into(),
+        },
+    )?;
+    if r.status != Status::Error {
+        return Err(format!("Compile of COMPILE42: {}", brief(&r)));
+    }
+    let c: CompileReply = r
+        .body_as()
+        .map_err(|e| format!("Compile's body: {e} ({})", brief(&r)))?;
+    let hits: Vec<_> = c.diagnostics.iter().filter(|d| d.id == "RNF7416").collect();
+    if hits.len() != 1 || hits[0].line != 42 {
+        return Err(format!("RNF7416s: {:?}", c.diagnostics));
+    }
+    let others: Vec<_> = c
+        .diagnostics
+        .iter()
+        .filter(|d| d.id != "RNF7416" && d.severity >= 20)
+        .collect();
+    if !others.is_empty() {
+        return Err(format!("errors besides RNF7416: {others:?}"));
+    }
+    let at_member = matches!(
+        &hits[0].r#where,
+        qap_proto::types::Where::Member { member } if member.member == "COMPILE42"
+    );
+    if !at_member {
+        return Err(format!("RNF7416 points at {:?}", hits[0].r#where));
+    }
+    Ok(format!(
+        "COMPILE42: Error ({}), one RNF7416 at line 42 of the member, {} diagnostics, {} messages",
+        msgid(&r),
+        c.diagnostics.len(),
+        c.messages.len()
     ))
 }

@@ -38,7 +38,8 @@
 //!
 //! Step 160, version 8 (`Develop`, `Jobs`, `Sql` 12 and 13) as
 //! `QAPTEST`, the version 7 gates and the member exit test: see
-//! `develop.rs`.
+//! `develop.rs`. Step 161, `Compile` of `qap/COMPILE42.rpgle`: one
+//! `RNF7416` at line 42.
 //!
 //! Step 93, the `Messages` service and the spool watches as `QAPTEST`
 //! and `QAPTEST2`: see `messages.rs`.
@@ -476,6 +477,19 @@ impl Suite {
             .and_then(|d| Ok(format!("{d}; {}", develop::catalog(&mut a)?)))
             .map_err(|e| format!("DEVELOP: {e}"));
         let _ = v7.conn.call(Op::SignOff, &());
+        let _ = a.call(Op::SignOff, &());
+        expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
+        r.map_err(|e| with_history(s, &e))
+    }
+
+    /// Step 161: `Compile` of a fixture with one error, at line 42.
+    pub(crate) fn qap_compile(&self, s: &mut Session) -> Result<String, String> {
+        let mut srv = setup(self, s)?;
+        let _ = s.command("CRTLIB LIB(HLINV) TYPE(*TEST) TEXT('QAP step 160')", SLOW);
+        let _ = s.command("CRTSRCPF FILE(HLINV/QRPGLESRC) RCDLEN(112)", SLOW);
+        let mut a = srv.open()?;
+        a.sign_on(USER, PASSWORD)?;
+        let r = develop::compile42(&mut a).map_err(|e| format!("COMPILE: {e}"));
         let _ = a.call(Op::SignOff, &());
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         r.map_err(|e| with_history(s, &e))

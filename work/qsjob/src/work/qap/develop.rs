@@ -175,11 +175,13 @@ pub(super) fn list_libraries(cx: &Ctx<'_>, req: &ListLibraries) -> Vec<Library> 
         let detail = cx
             .shared
             .borrow_mut()
-            .with(|l| l.obj_detail("QSYS".into(), o.name.clone(), "*LIB".into()));
+            // Libraries resolve through the list's QSYS, not as QSYS/name.
+            .with(|l| l.obj_detail("*LIBL".into(), o.name.clone(), "*LIB".into()));
         let test = detail
             .unwrap_or_default()
             .iter()
-            .any(|(k, v)| k == "LIBTYPE" && v == "TEST");
+            .any(|(k, v)| k == "LIBTYPE" && v == "TEST")
+            || o.attr.trim() == "TEST";
         out.push(Library {
             name: o.name,
             kind: if test {
