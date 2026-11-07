@@ -24,6 +24,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/qs400-host
+      # A fixed, public test key: without one each build makes a random
+      # development key, whose public half is in the image (the trust
+      # anchor) and which signs the PTF baseline, so no two runs could
+      # agree. This key signs nothing that ships.
+      - name: The check's fixed signing key
+        run: |
+          printf '%s' "$(printf 'qs400 release-check, not a release key' | sha256sum | cut -c1-64)" > "$RUNNER_TEMP/check.ed25519"
+          echo "QS400_SIGNING_KEY=$RUNNER_TEMP/check.ed25519" >> "$GITHUB_ENV"
       - run: cargo run -q -p build -- all --release
       - run: cargo run -q -p build -- release
       - name: Sums
