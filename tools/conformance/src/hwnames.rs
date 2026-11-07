@@ -137,6 +137,8 @@ impl Suite {
     fn resource_names(&self, s: &mut Session) -> Result<String, String> {
         s.expect(crate::steps::SRC_IPL_COMPLETE, 4 * self.boot_timeout)?;
         s.expect("Service console ready", 4 * self.boot_timeout)?;
+        // The prompt after it, so each answer is its own command's.
+        s.expect(crate::PROMPT, CMD)?;
         let mut report = String::new();
         let hw = hw_with(s, MAC1)?;
         let (cmn0, _) = port_of(&hw, MAC0).ok_or_else(|| format!("no port {MAC0}:\n{hw}"))?;
@@ -194,6 +196,8 @@ impl Suite {
     ) -> Result<String, String> {
         t.expect(crate::steps::SRC_IPL_COMPLETE, 4 * self.boot_timeout)?;
         t.expect("Service console ready", 4 * self.boot_timeout)?;
+        // The prompt after it, so each answer is its own command's.
+        t.expect(crate::PROMPT, CMD)?;
         let hw = hw_with(t, MAC2)?;
         let _ = write!(report, "--- second IPL\n{hw}");
         let now0 = port_of(&hw, MAC0).map(|p| p.0);
