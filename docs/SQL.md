@@ -160,7 +160,7 @@ stands.
 | Item | Status | Oracle | Test |
 |---|---|---|---|
 | Column types | see §7 | | |
-| `PRIMARY KEY`, `UNIQUE` (table and column level), IBM's generated names | supported; tables are arrival sequence, keys are constraints | primary | `integrity/CSTBASIC` |
+| `PRIMARY KEY`, `UNIQUE` (table and column level), IBM's generated names | supported; keys are constraints, and the primary key is also the table's keyed access path (DSPFD: keyed, as `oracle/sql-admin/sqlobj-displays.txt` shows), so RPG reads it by key; BLOCKED(rel): DROP PRIMARY KEY leaves the path, ALTER TABLE ADD PRIMARY KEY does not make one | primary | `integrity/CSTBASIC` |
 | `CHECK` | supported: comparisons, `AND/OR/NOT`, `IS NULL`, `BETWEEN`, `IN`, `LIKE`, arithmetic, concatenation, `UPPER LOWER LENGTH SUBSTR TRIM LTRIM RTRIM ABS MOD COALESCE`; other functions refused SQL0084 | primary | `integrity/CSTALTER` |
 | `FOREIGN KEY`: `ON DELETE NO ACTION/RESTRICT/CASCADE/SET NULL/SET DEFAULT`, `ON UPDATE NO ACTION/RESTRICT` | supported; parent changes needing a journal on unjournaled files SQL7008/CPF4328 (RPG and RLA too); no key over the referenced columns SQL0573; `ON UPDATE CASCADE` SQL0104 as IBM; cascaded rows take no record locks yet | primary | `integrity/CSTREF`, `ddl/SHOPAP1`, `ddl/SHOPCST2` |
 | Constraints enforced for RPG, RLA and SQL writes alike (CPF502D, CPF502F, CPF503A, CPF523B, RPG status 01022) | supported | primary | `db::cst` |

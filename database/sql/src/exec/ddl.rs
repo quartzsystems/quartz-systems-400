@@ -373,6 +373,36 @@ pub(crate) fn column_lines_as(c: &ColumnDef, name: Name) -> Result<Vec<String>> 
     Ok(lines)
 }
 
+/// The fields of `t`'s primary key, when it can be the file's keyed
+/// access path. A key the constraint refuses (a second primary key, a
+/// missing, repeated, null-capable or LOB column) gives `None`, and
+/// `cst::add` reports it as before.
+fn primary_path(rf: &dds::RecordFormat, t: &CreateTable) -> Option<Vec<Name>> {
+    let mut pks = t
+        .columns
+        .iter()
+        .flat_map(|c| &c.constraints)
+        .chain(&t.constraints)
+        .filter_map(|c| match c {
+            crate::ast::Constraint::PrimaryKey { columns, .. } => Some(columns),
+            _ => None,
+        });
+    let columns = pks.next()?;
+    if pks.next().is_some() || columns.is_empty() {
+        return None;
+    }
+    let mut keys: Vec<Name> = Vec::new();
+    for c in columns {
+        let n = super::cst::field_name(rf, c).ok()?;
+        let (_, f) = rf.field(&n)?;
+        if keys.contains(&n) || f.allow_null || f.data_type.is_lob() {
+            return None;
+        }
+        keys.push(n);
+    }
+    Some(keys)
+}
+
 /// `CREATE TABLE` of columns: a physical file from the generated DDS,
 /// its SQL names kept. `AS`, `LIKE` and `OR REPLACE` are `table`'s.
 pub fn create_table_def(
@@ -390,17 +420,29 @@ pub fn create_table_def(
         // IBM names the format after the table.
         None => super::names::format_name(name),
     };
-    // The table is arrival sequence; its keys are constraints.
+    // Keys are constraints; the primary key is also the table's own
+    // access path, as on the primary (DSPFD: keyed), so a program can
+    // read it by key. The path allows duplicates: the constraint checks
+    // the key. BLOCKED(rel): DROP PRIMARY KEY leaves the path keyed and
+    // ALTER TABLE ADD PRIMARY KEY does not make it so.
     let mut lines = Vec::new();
     lines.push(dds("R", &rcdfmt.to_string(), "", "", "", ""));
     for (c, n) in cols.iter().zip(&col_names) {
         lines.extend(column_lines_as(c, *n)?);
     }
-    let mut def = compile_table(&lines)?;
-    for (f, c) in def.format.fields.iter_mut().zip(cols.iter()) {
-        finish_field(f, c)?;
+    let finish = |lines: &[String]| -> Result<dds::PfDefinition> {
+        let mut def = compile_table(lines)?;
+        for (f, c) in def.format.fields.iter_mut().zip(cols.iter()) {
+            finish_field(f, c)?;
+        }
+        def.format.lay_out();
+        Ok(def)
+    };
+    let mut def = finish(&lines)?;
+    if let Some(keys) = primary_path(&def.format, t) {
+        lines.extend(keys.iter().map(|k| dds("K", &k.to_string(), "", "", "", "")));
+        def = finish(&lines)?;
     }
-    def.format.lay_out();
     no_lob_keys(&def.format, def.format.keys.iter().map(|k| k.field))?;
     let id = file::create_pf(
         txn,

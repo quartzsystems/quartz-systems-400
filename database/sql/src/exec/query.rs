@@ -754,6 +754,21 @@ fn in_build(txn: &mut Txn<'_>, file: ObjectId) -> bool {
         .any(|h| h.state == LockState::Exclusive)
 }
 
+/// A primary key over the file's own key is one access path, read
+/// and named as the constraint: the own key (first) goes.
+fn drop_own_key(out: &mut Vec<Candidate>, a: &db::cst::Active, own: &FormatDef) {
+    let names = |f: &FormatDef| -> Vec<(qsname::Name, bool)> {
+        f.format.keys.iter().map(|k| (k.name, k.descend)).collect()
+    };
+    if own.key_len > 0
+        && a.keys.iter().any(|k| {
+            a.csts[k.index].kind == db::cst::Kind::PrimaryKey && names(&k.format) == names(own)
+        })
+    {
+        out.remove(0);
+    }
+}
+
 fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
     let mut out = Vec::new();
     let key_names = |fmt: &FormatDef| -> Vec<(String, bool)> {
@@ -806,6 +821,7 @@ fn candidates(txn: &mut Txn<'_>, t: &TableInfo) -> Vec<Candidate> {
                 ix: (table_name(t), Some(c.name.clone())),
             });
         }
+        drop_own_key(&mut out, &a, &t.format);
     }
     for d in &t.desc.dependents {
         if d.base_member != t.member.object || in_build(txn, d.lf_file) {
