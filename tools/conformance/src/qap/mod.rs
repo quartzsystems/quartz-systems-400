@@ -38,8 +38,12 @@
 //!
 //! Step 93, the `Messages` service and the spool watches as `QAPTEST`
 //! and `QAPTEST2`: see `messages.rs`.
+//!
+//! Steps 162 and 163, the `Debug` service (version 9) in the connection
+//! job and in a 5250 session's job: see `debug.rs`.
 
 mod client;
+mod debug;
 mod ifs;
 mod manage;
 mod messages;
@@ -432,6 +436,34 @@ impl Suite {
         r.map_err(|e| with_history(s, &e))
     }
 
+    /// Step 162: `Debug` in the connection job (`debug.rs`).
+    pub(crate) fn qap_debug(&self, s: &mut Session) -> Result<String, String> {
+        let mut srv = setup(self, s)?;
+        assets(s)?;
+        let mut a = srv.open()?;
+        a.sign_on(USER, PASSWORD)?;
+        let (mut old, _) = client::connect(srv.port, CN, &srv.pin)?;
+        let r = debug::own(&mut a, &mut old).map_err(|e| format!("DEBUG: {e}"));
+        let _ = a.call(Op::SignOff, &());
+        let _ = old.call(Op::SignOff, &());
+        expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
+        r.map_err(|e| with_history(s, &e))
+    }
+
+    /// Step 163: a service entry point stops a 5250 session's job; the
+    /// QAP session gets the stop (`debug.rs`).
+    pub(crate) fn qap_debug_entry(&self, s: &mut Session) -> Result<String, String> {
+        let port = self.telnet_port().ok_or("the launch has no telnet port")?;
+        let mut srv = setup(self, s)?;
+        assets(s)?;
+        let mut a = srv.open()?;
+        a.sign_on(USER, PASSWORD)?;
+        let r = debug_entry(&mut a, port).map_err(|e| format!("DEBUG ENTRY: {e}"));
+        let _ = a.call(Op::SignOff, &());
+        expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
+        r.map_err(|e| with_history(s, &e))
+    }
+
     /// Step 90: no statement holds up another job. While an aggregate
     /// over `EXISTS` runs on one connection and a slow select on a
     /// second, a third's command, catalog lists and query answer
@@ -458,6 +490,81 @@ impl Suite {
         expect(s, "ENDTCPSVR SERVER(*QAP)", &["TCP1A0A"])?;
         r
     }
+}
+
+/// `HLINV/ASSETS` compiled `DBGVIEW(*SOURCE)` from `debug::ASSETS`,
+/// whatever an earlier run left.
+fn assets(s: &mut Session) -> Result<(), String> {
+    expect(s, "CRTLIB LIB(HLINV)", &["HLINV", "CPF2111"])?;
+    expect(
+        s,
+        "CRTSRCPF FILE(HLINV/QRPGLESRC) RCDLEN(112)",
+        &["QRPGLESRC", "CPF5813", "CPF7302"],
+    )?;
+    crate::qir::qemu::push(s, "ASSETSSRC", debug::ASSETS)?;
+    let r = s.command(
+        "svc.srcput HLINV/QRPGLESRC ASSETS SRCTYPE(RPGLE) FROMSTMF(ASSETSSRC)",
+        crate::steps::CMD,
+    )?;
+    if !r.contains("written") {
+        return Err(format!("srcput ASSETS: {r}"));
+    }
+    expect(
+        s,
+        "CRTBNDRPG PGM(HLINV/ASSETS) SRCFILE(HLINV/QRPGLESRC) DBGVIEW(*SOURCE) REPLACE(*YES)",
+        &["Program ASSETS created"],
+    )?;
+    Ok(())
+}
+
+/// Step 163's display: `QAPTEST` signs on, calls the program and is
+/// held while the QAP session looks at its stops.
+fn debug_entry(a: &mut Conn, port: u16) -> Result<String, String> {
+    use tn5250_driver::script::Context;
+    use tn5250_driver::{Connect, ScriptOptions};
+    debug::set_entry(a)?;
+    let c = Connect::qs400(port, USER, PASSWORD);
+    let options = ScriptOptions {
+        golden: None,
+        update: false,
+        release: String::new(),
+        timeout_ms: 30000,
+    };
+    let mut ctx = Context::new(&c, &options);
+    let mut d = crate::phase8::connect(port, USER, PASSWORD)?;
+    crate::phase8::run(&mut d, &mut ctx, "wait \"Sign On\"\nsignon\nsettle 1500\n")?;
+    if d.term.contains("Sign-on Information") {
+        crate::phase8::run(&mut d, &mut ctx, "key enter\nsettle 1000\n")?;
+    }
+    crate::phase8::run(
+        &mut d,
+        &mut ctx,
+        "wait \"Main Menu\"\ntype call HLINV/ASSETS\nkey enter\n",
+    )?;
+    let stop = debug::entry_stops(a)?;
+    // The display job is held: its keyboard stays locked.
+    let free = d
+        .wait_for(Duration::from_secs(3), |t| !t.is_locked())
+        .map_err(|e| format!("{e:#}"))?;
+    if free {
+        return Err("the display came back while its job was stopped".into());
+    }
+    debug::finish(a)?;
+    let back = d
+        .wait_unlocked(Duration::from_secs(90))
+        .map_err(|e| format!("{e:#}"))?;
+    let screen = d.term.text();
+    let _ = crate::phase8::run(&mut d, &mut ctx, "key f3\nsettle 1000\n");
+    d.disconnect();
+    if !back {
+        return Err(format!(
+            "the display did not come back after Resume:\n{screen}"
+        ));
+    }
+    Ok(format!(
+        "job {}/{}/{} stopped at line 9 by the entry point and at 13 by a breakpoint, its display locked meanwhile; it went on after Resume",
+        stop.job.number, stop.job.user, stop.job.name
+    ))
 }
 
 /// The longest any request of step 90 may wait for another job's

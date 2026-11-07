@@ -115,8 +115,23 @@ fn qap(data: &[u8]) {
         let _ = ipc::decode::<qap_proto::ops::ifs::PathRef>(b);
         let _ = ipc::decode::<qap_proto::ops::ifs::ReadFile>(b);
         let _ = ipc::decode::<qap_proto::ops::ifs::FromTo>(b);
+        debug_bodies(b);
     }
     let _ = ipc::decode::<qap_proto::Envelope>(data);
+}
+
+/// The `Debug` service's bodies (QAP version 9).
+fn debug_bodies(b: &[u8]) {
+    use qap_proto::ops::debug as d;
+    let _ = ipc::decode::<d::Start>(b);
+    let _ = ipc::decode::<d::AddProgram>(b);
+    let _ = ipc::decode::<d::SetBreakpoints>(b);
+    let _ = ipc::decode::<d::Resume>(b);
+    let _ = ipc::decode::<d::Variables>(b);
+    let _ = ipc::decode::<d::Eval>(b);
+    let _ = ipc::decode::<d::SetServiceEntry>(b);
+    let _ = ipc::decode::<d::Stopped>(b);
+    let _ = ipc::decode::<d::DebugEnded>(b);
 }
 
 fn hostsvr(data: &[u8]) {
