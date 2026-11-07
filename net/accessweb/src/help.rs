@@ -168,6 +168,36 @@ pub const TOPICS: &[Topic] = &[
         title: "Printers",
         body: "<p>The printers of the system, whether their writers are started, and their output queues. <b>Print to</b> opens Printer output ready to move files to the printer's queue; <b>Output</b> lists the files waiting on it.</p>",
     },
+    Topic {
+        key: "messages",
+        title: "Messages",
+        body: "<p>The messages on your own message queue, on <span class=\"mono\">QSYSOPR</span> or on another queue you may read, newest first. Inquiries waiting for a reply are in bold. <b>Reply</b> answers an inquiry; an empty reply sends its default. <b>Remove</b> takes a message off the queue; removing an inquiry nobody answered asks twice, because its sender then gets no reply. <b>Send</b> puts a message on a user's or a queue's message queue; an inquiry's reply comes to your own queue.</p>\n<h2>Watching</h2>\n<p>The queues chosen under Watch are looked at on every page: <b>Messages waiting</b> in the header counts what arrived since you last looked, and the next page you ask for opens Message Arrived for the first message the Arrived option names. <b>Later</b> leaves it on the queue.</p>",
+    },
+    Topic {
+        key: "jobs",
+        title: "Jobs",
+        body: "<p><b>My jobs</b> lists the jobs of your user profile: running, waiting on a job queue, and ended with printer output still on the system. <b>Hold</b> and <b>Release</b> ask first, then run the command as your user profile. Job log, Properties and End open the job's pages in Navigator for QS/400.</p>\n<p><b>Server jobs</b> are the jobs that run Access for Web and serve your session. Ending one needs the End server jobs policy and special authority <span class=\"mono\">*JOBCTL</span>.</p>",
+    },
+    Topic {
+        key: "cmd",
+        title: "Run command",
+        body: "<p>Type a CL command and press <b>Run</b>. It runs as your user profile, with your library list, and the page waits for it; in batch it is submitted to the job queue chosen. <b>Check</b> checks the parameters without running it. <b>Prompt</b> shows its parameters. The results list each command's messages as the system sent them; a message ID links to its full text. <b>Clear</b> empties the results; the recent commands stay.</p>",
+    },
+    Topic {
+        key: "prompt",
+        title: "Prompt",
+        body: "<p>The command's parameters as its definition gives them: the keyword, what it is, the value and the values it accepts. A list parameter has a field per value; <b>+</b> adds one. <b>Show command string</b> builds the command from the fields; <b>Run</b> runs it; <b>Save to My commands</b> keeps it. The system checks the command when it runs.</p>",
+    },
+    Topic {
+        key: "mycmds",
+        title: "My commands",
+        body: "<p>Commands you saved, with how they run. <b>Run</b> and <b>Prompt</b> put the command on Run command; <b>Edit</b> changes it; <b>Share</b> renames it or shares it with one of your groups or <span class=\"mono\">*PUBLIC</span>, who see it under Shared with you. A shared command still runs as the user who runs it.</p>",
+    },
+    Topic {
+        key: "download",
+        title: "Download",
+        body: "<p>Files for the computers that use this system: printer drivers, the terminal font, certificates, documentation and connection details. They are read from the directory named on the page as your user profile.</p>",
+    },
 ];
 
 /// The topic of `key` (title, body HTML); the contents for any other.

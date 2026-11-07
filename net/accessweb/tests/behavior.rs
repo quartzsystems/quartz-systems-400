@@ -11,6 +11,7 @@ use std::collections::{BTreeSet, VecDeque};
 
 use accessweb::PRODUCT;
 use accessweb::env::Audit;
+use accessweb::env::cmd::Cmd as _;
 use accessweb::env::policy::{PolicyStore, Setting};
 use accessweb::fixture::PASSWORD;
 use accessweb::policy;
@@ -225,10 +226,6 @@ fn areas_not_built_say_so() {
 
 /// Routes not built yet, by area: each area's agent removes its own.
 const PENDING: &[(&str, &[&str])] = &[
-    ("msgs", &["/messages"]),
-    ("jobs", &["/jobs"]),
-    ("cmd", &["/cmd"]),
-    ("download", &["/download"]),
 ];
 
 /// Every link and form on every reachable page resolves to a page of
@@ -253,6 +250,10 @@ fn crawl() {
             && let Some(to) = r.header("Location").filter(|l| l.starts_with(PRODUCT.prefix))
         {
             queue.push_back(to.to_string());
+            continue;
+        }
+        // Ending a server job goes on to Navigator's confirmation.
+        if r.status == 303 && r.header("Location").is_some_and(|l| l.contains("/qs400/navigator/")) {
             continue;
         }
         if r.status != 200 {
@@ -330,4 +331,279 @@ fn walk(d: &std::path::Path) -> Vec<std::path::PathBuf> {
         }
     }
     out
+}
+
+// Messages, jobs, commands, download (handoff steps 16-21).
+
+fn ran(v: &std::sync::Mutex<Vec<String>>) -> Vec<String> {
+    v.lock().unwrap().clone()
+}
+
+#[test]
+fn messages_reply_send_remove() {
+    let mut b = Browser::signed_on();
+    // An empty reply sends the inquiry's default, as the user.
+    let r = b.post("/messages", &[("key", "00000003"), ("r", ""), ("reply", "Reply")]);
+    assert_eq!(r.header("Location"), Some("/qs400/accessweb/messages"));
+    assert_eq!(
+        ran(&b.fx.msgs.ran),
+        ["CWELLMAN: SNDRPYMSG MSGKEY(00000003) MSGQ(QUSRSYS/CWELLMAN) RPY(*DFT) RMV(*NO)"]
+    );
+    let t = b.get("/messages").text();
+    assert!(t.contains("QAD9002</a> - Reply sent to CPA0702."), "{t}");
+    assert!(t.contains("Reply: C</span>") && !t.contains("<b>CPF0001 received"), "{t}");
+    // Send to a user; an inquiry's reply comes to the user's queue.
+    b.post("/messages", &[("to", "user"), ("tou", "cwellman"), ("m", "It's done"), ("i", "yes"), ("send", "Send")]);
+    assert_eq!(
+        ran(&b.fx.msgs.ran)[1],
+        "CWELLMAN: SNDMSG MSG('It''s done') TOUSR(CWELLMAN) MSGTYPE(*INQ) RPYMSGQ(QUSRSYS/CWELLMAN)"
+    );
+    assert!(b.get("/messages").text().contains("QAD9004</a> - Message sent to CWELLMAN."));
+    // Remove of an informational message asks once, on the page.
+    let t = b.get("/messages?remove=00000002").text();
+    assert!(t.contains("name=\"remove\" value=\"00000002\""), "{t}");
+    b.post("/messages", &[("remove", "00000002"), ("ok", "Remove")]);
+    assert_eq!(ran(&b.fx.msgs.ran)[2], "CWELLMAN: RMVMSG MSGQ(QUSRSYS/CWELLMAN) MSGKEY(00000002)");
+    assert!(b.get("/messages").text().contains("QAD9003</a> - 1 messages removed from QUSRSYS/CWELLMAN."));
+}
+
+#[test]
+fn removing_an_unanswered_inquiry_asks_twice() {
+    let mut b = Browser::signed_on();
+    let t = b.get("/messages").text();
+    assert!(t.contains("/qs400/accessweb/messages/00000003/confirm"), "{t}");
+    assert!(b.get("/messages/00000003/confirm").text().contains("Press OK to remove the inquiry"));
+    // The first OK asks again; nothing is removed.
+    let t = b.post("/messages/00000003/confirm", &[("ok", "OK")]).text();
+    assert!(t.contains("Press OK again") && t.contains("name=\"again\""), "{t}");
+    assert!(ran(&b.fx.msgs.ran).is_empty());
+    // A Remove posted from the list goes to the same two questions.
+    let r = b.post("/messages", &[("remove", "00000003"), ("ok", "Remove")]);
+    assert_eq!(r.header("Location"), Some("/qs400/accessweb/messages/00000003/confirm"));
+    let r = b.post("/messages/00000003/confirm", &[("again", "1"), ("ok", "OK")]);
+    assert_eq!(r.header("Location"), Some("/qs400/accessweb/messages"));
+    assert_eq!(ran(&b.fx.msgs.ran), ["CWELLMAN: RMVMSG MSGQ(QUSRSYS/CWELLMAN) MSGKEY(00000003)"]);
+}
+
+#[test]
+fn messages_follow_policies() {
+    let mut b = Browser::as_user("WEBUSER");
+    b.fx.policy.put("WEBUSERS", &[(policy::MSGS_SEND.into(), Setting::Deny)]).unwrap();
+    let t = b.get("/messages").text();
+    assert!(!t.contains("name=\"send\""), "{t}");
+    let r = b.post("/messages", &[("to", "user"), ("tou", "QSECOFR"), ("m", "hi"), ("send", "Send")]);
+    assert_eq!(r.status, 403);
+    assert!(r.text().contains("XWA0001"));
+    assert!(ran(&b.fx.msgs.ran).is_empty());
+    assert_eq!(b.get("/messages/send").status, 403);
+    b.fx.policy.put("WEBUSERS", &[(policy::MSGS_DISPLAY.into(), Setting::Deny)]).unwrap();
+    assert_eq!(b.get("/messages").status, 403);
+}
+
+#[test]
+fn a_message_arriving_is_watched() {
+    let mut b = Browser::signed_on();
+    assert!(!b.get("/home").text().contains("Messages waiting:"));
+    // Another job sends an inquiry to CWELLMAN.
+    let key = b.fx.msgs.arrive(
+        "QUSRSYS/CWELLMAN",
+        accessweb::env::msgs::QueuedMessage {
+            id: "CPA5305".into(),
+            severity: 99,
+            inquiry: true,
+            sent: accessweb::fixture::now(),
+            text: "Record 12 of member ASSETS is in use. (C I)".into(),
+            job: "123540/CWELLMAN/INVLOAD2".into(),
+            user: "CWELLMAN".into(),
+            default: "C".into(),
+            ..Default::default()
+        },
+    );
+    // The next page asked for is Message Arrived, back to it after.
+    let r = b.get("/home");
+    assert_eq!(r.header("Location"), Some("/qs400/accessweb/messages/arrived?back=/qs400/accessweb/home"));
+    let t = b.get("/messages/arrived?back=%2Fqs400%2Faccessweb%2Fhome").text();
+    assert!(t.contains("CPA5305</a> - Inquiry message from job 123540/CWELLMAN/INVLOAD2 arrived at 14:03:40."), "{t}");
+    assert!(t.contains("Messages waiting: <b>1</b>"), "{t}");
+    // Later: back where the user was, still waiting in the header.
+    let r = b.post(
+        "/messages/arrived?back=%2Fqs400%2Faccessweb%2Fhome",
+        &[("key", &key), ("queue", "QUSRSYS/CWELLMAN"), ("later", "Later")],
+    );
+    assert_eq!(r.header("Location"), Some("/qs400/accessweb/home"));
+    let r = b.get("/home");
+    assert_eq!(r.status, 200);
+    assert!(r.text().contains("Messages waiting: <b>1</b>"), "{}", r.text());
+    // Looking at the queue clears it.
+    b.get("/messages");
+    assert!(!b.get("/home").text().contains("Messages waiting:"));
+    // Watch Off: nothing more is watched.
+    b.get("/messages?w=Off");
+    b.fx.msgs.arrive(
+        "QUSRSYS/CWELLMAN",
+        accessweb::env::msgs::QueuedMessage {
+            inquiry: true,
+            text: "x".into(),
+            ..Default::default()
+        },
+    );
+    assert_eq!(b.get("/home").status, 200);
+}
+
+#[test]
+fn jobs_hold_release_end() {
+    let mut b = Browser::signed_on();
+    let t = b.get("/jobs?hold=123488/CWELLMAN/QPADEV0003").text();
+    assert!(t.contains("HLDJOB JOB(123488/CWELLMAN/QPADEV0003)"), "{t}");
+    assert!(ran(&b.fx.jobs.ran).is_empty());
+    let r = b.post("/jobs", &[("job", "123488/CWELLMAN/QPADEV0003"), ("op", "hold"), ("ok", "Hold")]);
+    assert_eq!(r.header("Location"), Some("/qs400/accessweb/jobs"));
+    b.post("/jobs", &[("job", "123402/CWELLMAN/INVBATCH"), ("op", "release"), ("ok", "Release")]);
+    assert_eq!(
+        ran(&b.fx.jobs.ran),
+        ["CWELLMAN: HLDJOB JOB(123488/CWELLMAN/QPADEV0003)", "CWELLMAN: RLSJOB JOB(123402/CWELLMAN/INVBATCH)"]
+    );
+    assert!(b.get("/jobs").text().contains("QAD5010</a> - Command RLSJOB completed."));
+    // The Status filter.
+    let t = b.get("/jobs?s=Completed+(output)").text();
+    assert!(!t.contains("123488") && t.contains("123311"), "{t}");
+    // End of a server job: *JOBCTL first, then Navigator's confirmation.
+    let r = b.get("/jobs/server/123420/QUSER/QZRCSRVS/end");
+    assert_eq!(r.header("Location"), Some("/qs400/navigator/job/123420/QUSER/QZRCSRVS/end"));
+    let mut w = Browser::as_user("WEBUSER");
+    // WEBUSERS denies it by default: allowed, the special authority still decides.
+    w.fx.policy.put("WEBUSERS", &[]).unwrap();
+    let r = w.get("/jobs/server/123420/QUSER/QZRCSRVS/end");
+    assert_eq!(r.status, 403);
+    assert!(r.text().contains("CPF2207") && r.text().contains("*JOBCTL"));
+    w.fx.policy.put("WEBUSERS", &[(policy::JOBS_END_SERVER.into(), Setting::Deny)]).unwrap();
+    assert!(!w.get("/jobs/server").text().contains(">End</a>"));
+    assert!(w.get("/jobs/server/123420/QUSER/QZRCSRVS/end").text().contains("XWA0001"));
+    w.fx.policy.put("WEBUSERS", &[(policy::JOBS_END.into(), Setting::Deny)]).unwrap();
+    assert!(!w.get("/jobs").text().contains(">End</a>"));
+}
+
+#[test]
+fn navigator_links_follow_the_host() {
+    let mut b = Browser::signed_on();
+    let mut req = qsweb::http::Request::new("GET", "/qs400/accessweb/jobs");
+    req.headers.push(("host".into(), "qshq400.example:2003".into()));
+    let t = b.send(req).text();
+    assert!(t.contains("http://qshq400.example:2002/qs400/navigator/job/123488/CWELLMAN/QPADEV0003/joblog"), "{t}");
+}
+
+#[test]
+fn commands_run_check_submit() {
+    let mut b = Browser::signed_on();
+    let r = b.post("/cmd", &[("cmd", "WRKACTJOB SBS(QINTER)"), ("how", "int"), ("run", "Run")]);
+    assert_eq!(r.header("Location"), Some("/qs400/accessweb/cmd?c=WRKACTJOB%20SBS%28QINTER%29&how=int"));
+    assert_eq!(ran(&b.fx.cmd.ran), ["CWELLMAN: WRKACTJOB SBS(QINTER)"]);
+    let t = b.get("/cmd?c=WRKACTJOB+SBS%28QINTER%29&how=int").text();
+    assert!(t.contains("QAD5010</a> - Command WRKACTJOB completed.") && t.contains("value=\"WRKACTJOB SBS(QINTER)\""), "{t}");
+    // Newest first in the recent commands.
+    assert_eq!(b.fx.cmd.recent("CWELLMAN")[0], "WRKACTJOB SBS(QINTER)");
+    // Batch: SBMJOB to the queue chosen; the job it made.
+    b.post("/cmd", &[("cmd", "DSPMSG QSYSOPR"), ("how", "batch"), ("jobq", "QGPL/QPGMR"), ("run", "Run")]);
+    assert_eq!(ran(&b.fx.cmd.ran)[1], "CWELLMAN: SBMJOB CMD(DSPMSG QSYSOPR) JOBQ(QGPL/QPGMR)");
+    let t = b.get("/cmd").text();
+    assert!(t.contains("XWA0050</a> - Command submitted to job queue QGPL/QPGMR as job 123540/CWELLMAN/QDFTJOBD."), "{t}");
+    // Check, and a command that is not there.
+    b.post("/cmd", &[("cmd", "DSPMSG"), ("check", "Check")]);
+    b.post("/cmd", &[("cmd", "NOSUCH X"), ("run", "Run")]);
+    let t = b.get("/cmd").text();
+    assert!(t.contains("XWA0051</a> - Command DSPMSG checked; no errors found."), "{t}");
+    assert!(t.contains("QAD5013</a> - Command NOSUCH not found.") && t.contains("CPD0030"), "{t}");
+    // Clear empties the results; the recent commands stay.
+    b.post("/cmd", &[("clear", "Clear")]);
+    let t = b.get("/cmd").text();
+    assert!(!t.contains("<h2>Results</h2>") && t.contains("Recent commands"), "{t}");
+    // Denied: refused on POST with XWA0001.
+    let mut w = Browser::as_user("WEBUSER");
+    w.fx.policy.put("WEBUSERS", &[(policy::CMD_RUN.into(), Setting::Deny)]).unwrap();
+    let r = w.post("/cmd", &[("cmd", "DSPMSG"), ("run", "Run")]);
+    assert_eq!(r.status, 403);
+    assert!(r.text().contains("XWA0001") && ran(&w.fx.cmd.ran).is_empty());
+}
+
+#[test]
+fn prompt_builds_and_runs() {
+    let mut b = Browser::signed_on();
+    // Prompt from Run command: the page for the typed string.
+    let r = b.post("/cmd/prompt", &[("cmd", "WRKACTJOB SBS(QHTTPSVR QBATCH)"), ("prompt", "Prompt")]);
+    assert_eq!(r.header("Location"), Some("/qs400/accessweb/cmd/prompt?cmd=WRKACTJOB%20SBS%28QHTTPSVR%20QBATCH%29"));
+    let t = b.get("/cmd/prompt?cmd=WRKACTJOB+SBS%28QHTTPSVR+QBATCH%29").text();
+    assert!(t.contains("name=\"sbs2\" value=\"QBATCH\"") && t.contains("name=\"sbs3\" value=\"\""), "{t}");
+    // + adds a field.
+    assert!(b.get("/cmd/prompt?cmd=WRKACTJOB&n.SBS=4").text().contains("name=\"sbs4\""));
+    // Show command string from the fields.
+    let at = "/cmd/prompt?cmd=WRKACTJOB";
+    let fields = [
+        ("output", "*PRINT"),
+        ("reset", "*NO"),
+        ("sbs1", "QINTER"),
+        ("sbs2", ""),
+        ("cpupctlmt", "*NONE"),
+        ("rsplmt", ""),
+        ("seq", "*JOB"),
+        ("job", "QPADEV*"),
+        ("interval", ""),
+    ];
+    let mut f = fields.to_vec();
+    f.push(("show", "Show command string"));
+    let t = b.post(at, &f).text();
+    assert!(t.contains("WRKACTJOB OUTPUT(*PRINT) RESET(*NO) SBS(QINTER) CPUPCTLMT(*NONE) SEQ(*JOB) JOB(QPADEV*)"), "{t}");
+    assert!(t.contains("<option selected>*JOB</option>"), "{t}");
+    // Run it.
+    let mut f = fields.to_vec();
+    f.push(("run", "Run"));
+    b.post(at, &f);
+    assert_eq!(
+        ran(&b.fx.cmd.ran),
+        ["CWELLMAN: WRKACTJOB OUTPUT(*PRINT) RESET(*NO) SBS(QINTER) CPUPCTLMT(*NONE) SEQ(*JOB) JOB(QPADEV*)"]
+    );
+    // A command that is not there.
+    let r = b.get("/cmd/prompt?cmd=NOSUCH");
+    assert_eq!(r.status, 303);
+    assert!(b.get("/cmd?c=NOSUCH").text().contains("CPD0030"));
+}
+
+#[test]
+fn my_commands_save_share_delete() {
+    let mut b = Browser::signed_on();
+    let r = b.post("/cmd", &[("cmd", "DSPJOBLOG"), ("how", "int"), ("save", "Save to My commands")]);
+    assert_eq!(r.header("Location"), Some("/qs400/accessweb/cmd/saved"));
+    let t = b.get("/cmd/saved").text();
+    assert!(t.contains("XWA0052</a> - Command DSPJOBLOG saved in My commands.") && t.contains(">DSPJOBLOG</span>"), "{t}");
+    // Edit replaces the command it was opened for.
+    assert!(b.get("/cmd?edit=0").text().contains("value=\"WRKACTJOB SBS(QHTTPSVR)\""));
+    b.post("/cmd?edit=0", &[("cmd", "WRKACTJOB SBS(QINTER)"), ("how", "int"), ("save", "Save to My commands")]);
+    assert_eq!(b.fx.cmd.saved("CWELLMAN")[0].command, "WRKACTJOB SBS(QINTER)");
+    // Share with one of the user's groups only.
+    assert!(b.get("/cmd/saved?share=5").text().contains("<option>ADMINS</option>"));
+    let r = b.post("/cmd/saved", &[("n", "5"), ("name", "Job log"), ("to", "WAREHOUSE"), ("ok", "Share")]);
+    assert_eq!(r.status, 303);
+    assert!(b.get("/cmd/saved").text().contains("XWA0004"));
+    b.post("/cmd/saved", &[("n", "5"), ("name", "Job log"), ("to", "ADMINS"), ("ok", "Share")]);
+    let kept = b.fx.cmd.saved("CWELLMAN")[5].clone();
+    assert_eq!((kept.name.as_str(), kept.share.as_str()), ("Job log", "ADMINS"));
+    // Another user sees what is shared with *PUBLIC.
+    let mut w = Browser::as_user("WEBUSER");
+    w.fx.cmd.put_saved("CWELLMAN", &b.fx.cmd.saved("CWELLMAN")).unwrap();
+    let t = w.get("/cmd/saved").text();
+    assert!(t.contains("Shared with you") && t.contains("DSPMSG MSGQ(QSYSOPR)") && !t.contains("Job log"), "{t}");
+    // Delete asks first.
+    assert!(b.get("/cmd/saved/5/confirm").text().contains("Press OK to delete the saved command"));
+    b.post("/cmd/saved/5/confirm", &[("ok", "OK")]);
+    assert_eq!(b.fx.cmd.saved("CWELLMAN").len(), 5);
+}
+
+#[test]
+fn download_sends_files() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/download/connection.txt");
+    assert_eq!(r.status, 200);
+    assert_eq!(r.header("Content-Type"), Some("text/plain; charset=utf-8"));
+    assert!(r.text().contains("ODBC / JDBC connection details"));
+    assert_eq!(b.get("/download/nothing.bin").status, 303);
+    assert_eq!(b.get("/download/..").status, 404);
 }

@@ -147,6 +147,81 @@ fixture profile, password `QS400`).
   Printer output with the printer's queue chosen for Move, Output lists
   its queue's files.
 
+### Messages, jobs, commands, download (steps 16-21)
+
+- Messages (`routes/msgs/`): the user's own queue (the profile's
+  `MSGQ`), `QSYSOPR` or any other (`?q=Other:&ql=&qnm=`), 100 a page,
+  newest first (`?sort=id` by ID), inquiries waiting in bold, a message
+  a user typed as `From USER: text` with the user as From. Reply is
+  `SNDRPYMSG MSGKEY() MSGQ() RPY() RMV(*NO)` (empty = `RPY(*DFT)`),
+  Send `SNDMSG TOUSR()|TOMSGQ()` (an inquiry `MSGTYPE(*INQ)
+  RPYMSGQ(own queue)`), Remove `RMVMSG MSGQ() MSGKEY()`, all through
+  `Msgs::run` as the user; completions are the desktop's `QAD9002`,
+  `QAD9003`, `QAD9004`, refusals the command's escape. Remove asks once
+  on the page (`?remove=KEY`, a POST) for an informational message or
+  an answered inquiry, and twice for an inquiry still waiting
+  (`/messages/<key>/confirm`, then the same page with `again`). Policies:
+  `msgs.display` for every page, `msgs.reply`, `msgs.send`,
+  `msgs.inquiry` for an inquiry.
+- Watching (`routes/msgs/watch.rs`, no push without script): Watch (My
+  queue, My queue and QSYSOPR, Off) and Arrived page for (Inquiries
+  only, All, None) are the session's. The watched queues are read on
+  every page; the marks are the highest message key seen, set at the
+  session's first request. `Messages waiting: N` (a link to Messages) is
+  in the header of every page when N messages arrived since the queue
+  was last shown, through `qsweb::frame::render_with` (Navigator and
+  HTTP Server Administration render without it). The first arrival the
+  Arrived option names turns the next GET into Message Arrived
+  (`/messages/arrived?back=`), Reply or Later, then back.
+- Jobs (`routes/jobs/`): My jobs is `WRKUSRJOB` of the user: active,
+  on a job queue, ended with spooled output (Status filter `?s=`, sort
+  `n`, `s`, `e`). Hold and Release confirm on the page
+  (`?hold=|release=`, a POST) and run `HLDJOB`/`RLSJOB` as the user.
+  Job log, Properties and End are Navigator's pages on port 2002 (2005
+  with TLS) of the host the browser used (a path when no `Host`); End
+  shows only when `jobs.end` allows. Server jobs (`jobs.server`) are the
+  `ACCESSWEB` jobs and the Telnet server's: the remote command, database
+  and sign-on host server jobs do not serve this product (it runs in its
+  own job as the user). Their End (`/jobs/server/<n>/<u>/<j>/end`) needs
+  `jobs.endserver` (hidden when denied) and `*JOBCTL` (the Not
+  authorized page, `CPF2207`), then goes on to Navigator's End Job
+  confirmation.
+- Run command (`routes/cmd/`): the command runs in the `ACCESSWEB` job
+  swapped to the user's profile, through the analyzer (`Cmd::run`), and
+  the page waits; In batch is `SBMJOB CMD() JOBQ()` (`XWA0050` with the
+  job from its completion). Check is the analyzer's check
+  (`XWA0051`/`QAD5020`). A result line says `QAD5010`, `QAD5011`,
+  `QAD5012` (Cancel), `QAD5013` in the desktop's words with the command
+  named; the list holds every result's job log messages (sort `?sort=id`)
+  until Clear. Recent commands: 50 kept, 5 shown, a link puts one on the
+  line (`?c=`). Policies `cmd.run`, `cmd.prompt`, `cmd.save`,
+  `cmd.saved`.
+- The web F4 (`/cmd/prompt?cmd=STRING`): the definition as the 5250
+  prompter has it (the analyzer's choices text and field width,
+  restricted values as a select, the rest typed in CL form; qualified
+  names and element lists are one field), filled from the string by
+  keyword and position. A list has a field per element plus one, `+`
+  (`&n.KW=`) one more, to its `MAX`. Fields are named by keyword (a list
+  `kw1`, `kw2`...). Show command string makes every parameter with a
+  value into `KEYWORD(value)`; Run and Save post the string the fields
+  make; the analyzer checks it when it runs. Additional parameters show
+  after `?more=1`. Prompt from Run command posts the line, then the
+  prompt follows by redirect.
+- My commands (`/cmd/saved`): Run (`/cmd?c=&how=`), Prompt, Edit
+  (`/cmd?edit=N`, Save replaces it), Delete (confirmed), Share (name,
+  and one of the user's groups or `*PUBLIC`); commands others shared
+  with the user's groups or `*PUBLIC` show under Shared with you. Last
+  run is set when the same string runs. Kept with the preferences in
+  `QUSRSYS/QZXWPRF` (keys `_cs.NN` and `_cs.NN.KK` for the string in
+  90-byte pieces, recent commands `_cr.NN.KK`); a shared one is copied
+  under the group or `*PUBLIC` as `_sh.<owner>.NN`.
+- Download: the files of `/QQS/ProdData/Access/Web/download`, described
+  by its `INDEX.txt` (section, file, label, note; tab-separated), others
+  under Other files; the storage service keeps the shipped pieces there
+  (`osobjects::afwdl`: the terminal font source and the index). The
+  connection details are made on the spot (`connection.txt`) unless a
+  file of that name is there. Export a table as CSV goes to Tables.
+
 ## Golden comparison
 
 `tests/common` drives the handler with a browser in memory over the
@@ -326,6 +401,17 @@ Menu, prints the screen, disconnects (`QAD1006`), deletes (`XWA0011`).
 | `nav/spooled-view.html` (served as `/print/view/<id>`, content compared) | crumb `Access for Web > Print > Printer output > INVRPT`, `Back to Printer output` | Navigator's page in this product's frame |
 | `nav/spooled-view.html` | `< Previous` grey on page 1, `Next >`, View as PDF and Download text real links | the golden's `#` links lead nowhere |
 | `nav/spooled-view.html` | Hold and Release links, Delete a link to the confirmation | submit buttons in a GET form cannot hold a file; deleting is confirmed |
+| `web/messages.html` | Reply and Send get names `reply`, `send`; a hidden `key` names the inquiry | two nameless buttons in one form; the reply must say which inquiry it answers |
+| `web/messages.html` | the Send textarea starts empty | data: the text the user is to type |
+| `web/message-arrived.html` | hidden `key` and `queue` in the form | the reply must say which message it answers |
+| `web/run-command.html` | `QAD5010 - Command completed.` → `Command CHGDEVDSP completed.`; `QAD5011 - Command ended with an error; ...` → `Command CALL ended with an error.` | the desktop's text, its `&1` the command |
+| `web/command-prompt.html` | fields `cpu`, `rsp`, `int` → `cpupctlmt`, `rsplmt`, `interval` (with `class="cmd"`) | every field is named by its keyword |
+| `web/command-prompt.html` | Run, Show command string, Save to My commands get names `run`, `show`, `save` | three nameless buttons in one form |
+| `web/command-prompt.html` | the command string also holds `CPUPCTLMT(*NONE) RSPLMT(*NONE)` | the string holds every parameter with a value; the golden left out two of them |
+| `web/command-prompt.html` | the route is `?cmd=WRKACTJOB SBS(QHTTPSVR)` | data: the page prompts the string its Command line shows |
+| `web/download.html` | `/QS400/ProdData/...` → `/QQS/ProdData/...` | QS/400's own product data directory (the brief) |
+| `web/download.html` | links `#` → the files (`/download/<file>`), Export a table as CSV → Tables | the links went nowhere; no one table is the one to export |
+| `web/server-jobs.html` | End (`../shared/notauth.html`) is `/jobs/server/<job>/end` | data: the route refuses with the Not authorized page without `*JOBCTL`, else goes on to Navigator's End Job |
 
 ## The live server
 
@@ -365,6 +451,10 @@ them back.
 | Policy, Prefs | `usridx_find` (range of the profile's keys) and `usridx_add` on the two stores, as the job; the schemas Preferences offers: the libraries the user may list, `QGPL` and those without a `Q` name |
 | Files | `httpafw/files.rs` (`LiveFiles`): the storage service's IFS (`stg::remote::RemoteIfs`) with the job swapped to the user for each call, so its authority checks are the user's, as the file host server's are; errors the `errno`'s `CPFA0xx` message. The home directory is the profile's `HOMEDIR`. A file is written in place when it exists, else made with `O_CCSID` and the CCSID given. My files is the home directory alone (QS/400 serves no file shares) with the bytes under it (a walk of at most 20,000 entries) |
 | Print | `httpafw/print.rs` (`LivePrint`): `splf_list` as the user (another user's files with `*SPLCTL`, `*JOBCTL` or `*ALLOBJ`), `splf_fetch` (`DSPSPLF`'s check and `SF` entry) decoded by work/spool (text, PDF), the actions as `HLDSPLF ... OPTION(*IMMED\|*PAGEEND)`, `RLSSPLF`, `DLTSPLF`, `CHGSPLFA ... OUTQ()` run as the user; the queues `Move to` offers are the `*OUTQ` objects the user may list; Printers are `WRKWTR`'s writers |
+| Messages | `httpafw/msgs.rs`: the profile's `MSGQ` (`QSYRUSRI`), `msgq_list` as the user (replies left out), the changes as commands (`Link::run`) |
+| Jobs | `httpafw/jobs.rs`: `active_jobs`, the `*JOBQ` entries (`wm_object`), the jobs of the user's spooled files that ended; server jobs `ACCESSWEB` in `QHTTPSVR` and `QTVTELNET` |
+| Commands | `httpafw/cmd.rs`: the analyzer in the job as the user (`Console::run`, `RunMode::Run`/`Check`), the job log entries the run added; Cancel ends the user's running command (`keys::end_from_outside`); definitions from the `*CMD` the user's library list finds (`layout::choices`, `field_width`); recent and saved commands in `QZXWPRF` |
+| Download | `httpafw/download.rs`: the directory and `INDEX.txt` read as the user over `RemoteIfs`; `connection.txt` made from the system name and ports |
 | The other areas | not built: `httpafw/areas.rs` (`NotYet`); their routes answer `XWA0099` |
 
 - `BLOCKED(rel)`: the password approval program (`QPWDVLDPGM`) is not
@@ -375,6 +465,10 @@ them back.
   file at the top of a queue (QAP's move does, on its connection job
   only); refused with `XWA0099` before anything moves
   (`httpafw/print.rs`). The fixture moves it.
+- `BLOCKED(rel)`: a command run from Run command waits for the job's
+  thread at most 120 seconds (`web::bridge`'s `WAIT`); one that runs
+  longer goes on, and the page says `CPF9897`. Submit long commands in
+  batch (`httpafw/cmd.rs`).
 
 QEMU step 153 (`tools/conformance/src/afwstep.rs`) saves `QS00AFW`
 (`SAVLICPGM`), deletes it (`STRTCPSVR ... HTTPSVR(ACCESSWEB)` then
@@ -404,6 +498,15 @@ owns (not `QTMHHTTP`), the download gives it back whole and from byte 6
 printer output, opens a spooled file in the viewer, holds it
 (`QAD6002`, `WRKSPLF` shows `HLD`), deletes it after the confirmation
 (`QAD6004`), and the instance ends.
+QEMU step 157 (`tools/conformance/src/afwcmdstep.rs`) starts
+`HTTPSVR(ACCESSWEB)`, signs on as `QSECOFR` over 2003, runs `SNDMSG`
+and `CRTDTAARA` on Run command (`QAD5010`; the data area's owner is
+`QSECOFR`, not `QTMHHTTP`) and a missing command (`QAD5013`), finds
+the message on Messages, sends an inquiry, sends another that opens
+Message Arrived on the next page and replies to it (`QAD9002`),
+submits `DLYJOB` to `QBATCH` (`XWA0050`) and finds the job in My
+jobs, lists Server jobs, prompts `WRKACTJOB`, runs `DLTDTAARA` from
+its prompt (the data area gone), signs off and ends the instance.
 
 ## Area ownership
 
@@ -437,3 +540,6 @@ routes not built yet, by area, and each step removes its own.
 | 15 | Print: Printer output, properties, the viewer, Printers | done (golden-clean; live; QEMU 156) |
 | 16-17 | Messages, jobs | not built (`XWA0099`) |
 | 18-21 | Commands, download | not built (`XWA0099`) |
+| 15 | Print | not built (`XWA0099`) |
+| 16-17 | Messages, jobs | done (golden-clean; live; QEMU step 157) |
+| 18-21 | Commands, download | done (golden-clean; live; QEMU step 157) |

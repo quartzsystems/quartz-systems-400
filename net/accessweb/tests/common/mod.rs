@@ -204,11 +204,14 @@ pub fn proto(url: &str) -> Option<String> {
         // Jobs.
         ["jobs"] => "my-jobs".into(),
         ["jobs", "server"] => "server-jobs".into(),
+        // Ending a server job: the Not authorized page when refused.
+        ["jobs", "server", _, _, _, "end"] => return Some("shared/notauth.html".into()),
         // Commands and download.
         ["cmd"] => "run-command".into(),
         ["cmd", "prompt"] => "command-prompt".into(),
         ["cmd", "saved"] => "my-commands".into(),
         ["download"] => "download".into(),
+        ["download", _] => "download".into(),
         _ => return None,
     };
     Some(format!("web/{file}.html"))

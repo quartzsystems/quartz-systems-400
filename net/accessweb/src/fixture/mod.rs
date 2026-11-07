@@ -231,6 +231,12 @@ pub struct Fixture {
     pub files: Arc<files::FixtureFiles>,
     /// Printer output.
     pub print: Arc<print::FixturePrint>,
+    /// Message queues.
+    pub msgs: Arc<msgs::FixtureMsgs>,
+    /// Jobs.
+    pub jobs: Arc<jobs::FixtureJobs>,
+    /// Commands.
+    pub cmd: Arc<cmd::FixtureCmd>,
 }
 
 /// The sample system.
@@ -242,6 +248,9 @@ pub fn fixture() -> Fixture {
     let db = Arc::new(db::FixtureDb::default());
     let fs = Arc::new(files::FixtureFiles::default());
     let prt = Arc::new(print::FixturePrint::default());
+    let msgs = Arc::new(msgs::FixtureMsgs::default());
+    let jobs = Arc::new(jobs::FixtureJobs::default());
+    let cmd = Arc::new(cmd::FixtureCmd::default());
     let env = Env {
         system: system.clone(),
         policy: pol.clone(),
@@ -250,9 +259,9 @@ pub fn fixture() -> Fixture {
         db: db.clone(),
         files: fs.clone(),
         print: prt.clone(),
-        msgs: Arc::new(msgs::FixtureMsgs),
-        jobs: Arc::new(jobs::FixtureJobs),
-        cmd: Arc::new(cmd::FixtureCmd),
+        msgs: msgs.clone(),
+        jobs: jobs.clone(),
+        cmd: cmd.clone(),
         download: Arc::new(download::FixtureDownload),
     };
     Fixture {
@@ -264,5 +273,8 @@ pub fn fixture() -> Fixture {
         db,
         files: fs,
         print: prt,
+        msgs,
+        jobs,
+        cmd,
     }
 }

@@ -12,7 +12,7 @@
   <table width="100%" cellspacing="0" cellpadding="0"><tr>
     <td class="wordmark">{{ wordmark }}</td>
     <td class="hdrright">{{ system_label }}: <b>{{ system }}</b> &nbsp;&nbsp; User: <b>{{ user }}</b> &nbsp;&nbsp;
-      <a href="{{ signoff }}">Sign off</a> &nbsp;&nbsp; <a href="{{ help }}" target="_blank">Help</a></td>
+      {% if let Some(n) = note %}{{ n|safe }} &nbsp;&nbsp; {% endif %}<a href="{{ signoff }}">Sign off</a> &nbsp;&nbsp; <a href="{{ help }}" target="_blank">Help</a></td>
   </tr></table>
 </td></tr>
 <tr>

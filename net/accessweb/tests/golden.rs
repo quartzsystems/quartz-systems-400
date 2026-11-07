@@ -54,7 +54,7 @@ const ROUTES: &[(&str, &str)] = &[
     ("/jobs/server", "web/server-jobs.html"),
     // Group 6.
     ("/cmd", "web/run-command.html"),
-    ("/cmd/prompt?cmd=WRKACTJOB", "web/command-prompt.html"),
+    ("/cmd/prompt?cmd=WRKACTJOB+SBS(QHTTPSVR)", "web/command-prompt.html"),
     ("/cmd/saved", "web/my-commands.html"),
     ("/download", "web/download.html"),
     // Pages of the other products it links to.
@@ -376,6 +376,146 @@ fn s5250_macros() {
             ("enctype=\"multipart/form-data\"><form method=\"post\">", "enctype=\"multipart/form-data\">"),
             ("</form></form>", "</form>"),
             ("<input type=\"submit\" value=\"Record...\">", "<input type=\"submit\" name=\"record\" value=\"Record...\">"),
+        ],
+    );
+}
+
+// Group 5 (messages, jobs) and group 6 (commands, download).
+
+/// Two nameless buttons in one form cannot be told apart; the reply
+/// names its inquiry; the text a user is to type starts empty (data).
+const MESSAGES_FIXES: &[(&str, &str)] = &[
+    HEADER_USER,
+    ("<input type=\"submit\" value=\"Reply\">", "<input type=\"submit\" name=\"reply\" value=\"Reply\">"),
+    ("<input type=\"submit\" value=\"Send\">", "<input type=\"submit\" name=\"send\" value=\"Send\">"),
+    (
+        "<h3>Reply to inquiry CPA0702</h3>Reply:",
+        "<h3>Reply to inquiry CPA0702</h3><input type=\"hidden\" name=\"key\" value=\"00000003\">Reply:",
+    ),
+    ("Thanks - release INVLABEL when PRT02 is reloaded.</textarea>", "</textarea>"),
+];
+
+#[test]
+fn messages() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/messages");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "web/messages.html", MESSAGES_FIXES);
+}
+
+#[test]
+fn message_arrived() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/messages/arrived");
+    assert_eq!(r.status, 200);
+    assert_golden(
+        &r.text(),
+        "web/message-arrived.html",
+        &[
+            HEADER_USER,
+            // The form names the message it answers.
+            (
+                "<form method=\"post\"><table class=\"props\"",
+                "<form method=\"post\"><input type=\"hidden\" name=\"key\" value=\"00000003\"><input type=\"hidden\" name=\"queue\" value=\"QUSRSYS/CWELLMAN\"><table class=\"props\"",
+            ),
+        ],
+    );
+}
+
+#[test]
+fn send_message() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/messages/send");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "web/send-message.html", &[HEADER_USER]);
+}
+
+#[test]
+fn my_jobs() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/jobs");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "web/my-jobs.html", &[HEADER_USER]);
+}
+
+#[test]
+fn server_jobs() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/jobs/server");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "web/server-jobs.html", &[HEADER_USER]);
+}
+
+#[test]
+fn run_command() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/cmd");
+    assert_eq!(r.status, 200);
+    assert_golden(
+        &r.text(),
+        "web/run-command.html",
+        &[
+            HEADER_USER,
+            // The desktop's texts, the command named.
+            ("QAD5010</a> - Command completed.", "QAD5010</a> - Command CHGDEVDSP completed."),
+            (
+                "QAD5011</a> - Command ended with an error; the escape message is the last one listed.",
+                "QAD5011</a> - Command CALL ended with an error.",
+            ),
+        ],
+    );
+}
+
+#[test]
+fn command_prompt() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/cmd/prompt?cmd=WRKACTJOB+SBS(QHTTPSVR)");
+    assert_eq!(r.status, 200);
+    assert_golden(
+        &r.text(),
+        "web/command-prompt.html",
+        &[
+            HEADER_USER,
+            // Fields are named by their keywords.
+            ("name=\"cpu\"", "name=\"cpupctlmt\""),
+            ("name=\"rsp\"", "name=\"rsplmt\""),
+            ("<input type=\"text\" name=\"int\" value=\"\" size=\"4\">", "<input type=\"text\" name=\"interval\" value=\"\" size=\"4\" class=\"cmd\">"),
+            // Three nameless buttons in one form cannot be told apart.
+            ("<input type=\"submit\" value=\"Run\">", "<input type=\"submit\" name=\"run\" value=\"Run\">"),
+            ("<input type=\"submit\" value=\"Show command string\">", "<input type=\"submit\" name=\"show\" value=\"Show command string\">"),
+            ("<input type=\"submit\" value=\"Save to My commands\">", "<input type=\"submit\" name=\"save\" value=\"Save to My commands\">"),
+            // The string holds every parameter with a value.
+            (
+                "WRKACTJOB OUTPUT(*) RESET(*NO) SBS(QHTTPSVR) SEQ(*SBS) JOB(*ALL)</span>",
+                "WRKACTJOB OUTPUT(*) RESET(*NO) SBS(QHTTPSVR) CPUPCTLMT(*NONE) RSPLMT(*NONE) SEQ(*SBS) JOB(*ALL)</span>",
+            ),
+        ],
+    );
+}
+
+#[test]
+fn my_commands() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/cmd/saved");
+    assert_eq!(r.status, 200);
+    assert_golden(&r.text(), "web/my-commands.html", &[HEADER_USER]);
+}
+
+#[test]
+fn download() {
+    let mut b = Browser::signed_on();
+    let r = b.get("/download");
+    assert_eq!(r.status, 200);
+    assert_golden(
+        &r.text(),
+        "web/download.html",
+        &[
+            HEADER_USER,
+            // QS/400's own product data directory (the brief).
+            ("/QS400/ProdData/Access/Web/download", "/QQS/ProdData/Access/Web/download"),
+            // The links went nowhere.
+            ("<a href=\"#\">", "<a href=\"download.html\">"),
+            ("<a href=\"table-view.html\">Export a table as CSV</a>", "<a href=\"tables.html\">Export a table as CSV</a>"),
         ],
     );
 }

@@ -164,6 +164,7 @@ struct FrameT<'a> {
     body: &'a str,
     footer: String,
     refresh: Option<u32>,
+    note: Option<&'a str>,
 }
 
 /// The URL of `req` (path and query), as [`Ctx::here`].
@@ -189,6 +190,12 @@ pub fn footer() -> String {
 
 /// Render `page` in the frame.
 pub fn render(ctx: &Ctx, page: &Page) -> String {
+    render_with(ctx, page, None)
+}
+
+/// [`render`] with `note`, HTML, in the header band before Sign off
+/// (Access for Web's `Messages waiting: N`).
+pub fn render_with(ctx: &Ctx, page: &Page, note: Option<&str>) -> String {
     let p = ctx.product;
     let wordmark = if page.generic { "QS/400" } else { p.wordmark };
     let nav = p
@@ -258,6 +265,7 @@ pub fn render(ctx: &Ctx, page: &Page) -> String {
         body: &page.body,
         footer: footer(),
         refresh: page.refresh,
+        note,
     }
     .render()
     .expect("frame renders")

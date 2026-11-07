@@ -20,7 +20,7 @@ pub mod s5250;
 pub mod shared;
 pub mod signon;
 
-use qsweb::frame::{Ctx, Page, render};
+use qsweb::frame::{Ctx, Page, render, render_with};
 use qsweb::html::esc;
 use qsweb::http::{Form, Peer, Request, Response};
 use qsweb::msg::{Kind, Message};
@@ -95,7 +95,8 @@ impl Rq<'_> {
         if let Some((group, _)) = page.nav {
             ctx.open = Some(session::nav_visit(&self.app.sessions, &self.session.id, group));
         }
-        Response::html(status, render(&ctx, &page))
+        let note = msgs::watch::note(self);
+        Response::html(status, render_with(&ctx, &page, note.as_deref()))
     }
 
     /// Leave `m` for the next page.
@@ -292,6 +293,10 @@ pub fn dispatch(app: &AccessWeb, req: &Request, peer: &Peer) -> Response {
         ctx,
     };
     let segs: Vec<&str> = r.trim_matches('/').split('/').collect();
+    // A message that arrived on a watched queue opens Message Arrived.
+    if let Some(r) = msgs::watch::arrived(&rq, &segs) {
+        return r;
+    }
     match segs.as_slice() {
         ["password"] => customize::password::page(&rq),
         ["help", key] => shared::help(&rq, key),

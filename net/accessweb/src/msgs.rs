@@ -156,6 +156,30 @@ pub const FILE_TRANSFER_DONE: &str = "QAD8020";
 pub const FILE_TRANSFER_FAILED: &str = "QAD8021";
 /// Transfer cancelled (the desktop's).
 pub const FILE_TRANSFER_CANCELLED: &str = "QAD8022";
+/// A command submitted to a job queue.
+pub const SUBMITTED: &str = "XWA0050";
+/// A command checked without errors.
+pub const CMD_CHECKED: &str = "XWA0051";
+/// A command saved to My commands.
+pub const CMD_SAVED: &str = "XWA0052";
+/// A saved command deleted.
+pub const CMD_DELETED: &str = "XWA0053";
+/// A command completed (the desktop's).
+pub const CMD_COMPLETED: &str = "QAD5010";
+/// A command ended with an error (the desktop's).
+pub const CMD_FAILED: &str = "QAD5011";
+/// A command was cancelled (the desktop's).
+pub const CMD_CANCELLED: &str = "QAD5012";
+/// No such command (the desktop's).
+pub const CMD_NOT_FOUND: &str = "QAD5013";
+/// A checked command has errors (the desktop's).
+pub const CMD_ERRORS: &str = "QAD5020";
+/// A reply sent (the desktop's).
+pub const REPLY_SENT: &str = "QAD9002";
+/// Messages removed (the desktop's).
+pub const REMOVED: &str = "QAD9003";
+/// A message sent (the desktop's).
+pub const SENT: &str = "QAD9004";
 
 /// Every message of `QZXWMSG`.
 pub const MESSAGES: &[Desc] = &[
@@ -670,6 +694,83 @@ pub const MESSAGES: &[Desc] = &[
         "Transfer of &1 cancelled.",
         "The transfer of &1 was cancelled before it ended. A download keeps its partial data in a temporary file beside the target; the target itself is unchanged.",
         "Select Retry in the transfer list to go on from where it stopped, or Remove finished to drop it from the list.",
+    ),
+    d(
+        CMD_CHECKED,
+        0,
+        "Command &1 checked; no errors found.",
+        "The system checked command &1 without running it and found nothing wrong with its parameters.",
+        "None. Select Run to run it.",
+    ),
+    d(
+        CMD_SAVED,
+        0,
+        "Command &1 saved in My commands.",
+        "Command &1 was saved with your Access for Web commands, with the way it runs and whom it is shared with.",
+        "None.",
+    ),
+    d(
+        CMD_DELETED,
+        0,
+        "Command &1 deleted from My commands.",
+        "Command &1 was removed from your saved commands. Users it was shared with no longer see it.",
+        "None.",
+    ),
+    d(
+        CMD_COMPLETED,
+        0,
+        "Command &1 completed.",
+        "The system ran command &1 and it ended normally. Its messages are listed in Run Command's results, as the system sent them.",
+        "None needed.",
+    ),
+    d(
+        CMD_FAILED,
+        30,
+        "Command &1 ended with an error.",
+        "Command &1 ended with an escape message, the last of its messages in Run Command's results. A command that can run only interactively ends this way too: QAP runs commands in a batch connection job.",
+        "Select the escape message's ID to see its second-level text, correct the command and run it again. Run a command that can run only interactively from a 5250 display session.",
+    ),
+    d(
+        CMD_CANCELLED,
+        10,
+        "Command &1 was cancelled.",
+        "Cancel was selected while command &1 ran, and the system ended it. A command the system carries out in one piece finishes before it ends, so what it did may be done.",
+        "Check whether the command's work was done before running it again.",
+    ),
+    d(
+        CMD_NOT_FOUND,
+        30,
+        "Command &1 not found.",
+        "The system found no command &1 in the library list of the signed-on profile's job, or in the library named with it.",
+        "Check the command's name and library. Commands run with the library list of the signed-on profile's job description.",
+    ),
+    d(
+        CMD_ERRORS,
+        30,
+        "Command &1 has errors; see the messages.",
+        "The system checked command &1 without running it and found errors. Its messages are listed as the system sent them.",
+        "Correct the parameters the messages name, then check or run the command again. Select a message's ID for its second-level text.",
+    ),
+    d(
+        REPLY_SENT,
+        0,
+        "Reply sent to &1.",
+        "The reply was sent to the inquiry &1, and the system took it. The program that sent the inquiry receives it and goes on.",
+        "None needed.",
+    ),
+    d(
+        REMOVED,
+        0,
+        "&1 messages removed from &2.",
+        "The system removed &1 messages from the message queue &2. An inquiry removed before it was answered gets no reply: its sender waits until it ends some other way.",
+        "None needed.",
+    ),
+    d(
+        SENT,
+        0,
+        "Message sent to &1.",
+        "The system put the message on the message queue of &1. For an inquiry, the reply comes to your own message queue.",
+        "None needed. For an inquiry, keep Send Message open to see the reply, or look for it in Messages.",
     ),
 ];
 
