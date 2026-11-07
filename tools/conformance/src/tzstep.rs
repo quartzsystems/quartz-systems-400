@@ -133,20 +133,26 @@ impl Suite {
             ],
         )?;
         // The euro sign into 1148 and 1142, alpha into 875, alef into
-        // 424; 1148's 9F back to UTF-8.
-        let cases = [
-            ("\\342\\202\\254", "UTF-8", "IBM-1148", "9f"),
-            ("\\342\\202\\254", "UTF-8", "IBM-1142", "5a"),
-            ("\\316\\261", "UTF-8", "IBM-875", "8a"),
-            ("\\327\\220", "UTF-8", "IBM-424", "41"),
-            ("\\237", "IBM-1148", "UTF-8", "e2 82 ac"),
+        // 424; 1148's 9F back to UTF-8. The input bytes go into a stream
+        // file first (qsh's printf writes characters, not bytes).
+        let cases: [(&[u8], &str, &str, &str); 5] = [
+            (&[0xE2, 0x82, 0xAC], "UTF-8", "IBM-1148", "9f"),
+            (&[0xE2, 0x82, 0xAC], "UTF-8", "IBM-1142", "5a"),
+            (&[0xCE, 0xB1], "UTF-8", "IBM-875", "8a"),
+            (&[0xD7, 0x90], "UTF-8", "IBM-424", "41"),
+            (&[0x9F], "IBM-1148", "UTF-8", "e2 82 ac"),
         ];
         let mut seen = Vec::new();
-        for (bytes, from, to, hex) in cases {
-            let r = s.command(&format!("qsh CMD('printf ''{bytes}'' | iconv -f {from} -t {to} | od -An -tx1')"), wait)?;
+        for (i, (bytes, from, to, hex)) in cases.iter().enumerate() {
+            let path = format!("/QOpenSys/tmp/ccsid{i}.bin");
+            crate::qsh::push_hex(s, "CCSIDIN", bytes)?;
+            let put = s.command(&format!("svc.ifs putx {path} CCSIDIN 644"), CMD)?;
+            want(&put, "svc.ifs putx", &[&format!("{} bytes", bytes.len())])?;
+            let r = s.command(&format!("qsh CMD('iconv -f {from} -t {to} {path} | od -An -tx1')"), wait)?;
             want(&r, &format!("{from} to {to}"), &[hex])?;
             seen.push(format!("{to} {hex}"));
         }
+        s.command("svc.xfer rm CCSIDIN", CMD).ok();
         s.command("rmvenvvar ENVVAR(QIBM_QSH_CMD_OUTPUT) LEVEL(*SYS)", CMD).ok();
         Ok(format!("iconv lists the new CCSIDs; {}", seen.join(", ")))
     }
