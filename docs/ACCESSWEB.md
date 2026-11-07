@@ -223,8 +223,9 @@ Menu, prints the screen, disconnects (`QAD1006`), deletes (`XWA0011`).
   result is on `/sql`, the other queries' on `/sql/result/<n>`.
   Recent `.sql` files are the session's.
 - Requests and the history are kept per user (the running system:
-  user index `QUSRSYS/QZXWPRF`, keys `_q...` and `_h...` of the
-  profile). Run of a request that only reads runs it; Edit opens it;
+  user index `QUSRSYS/QZXWPRF` through the service's `web_store`,
+  keys `_q...` and `_h...` of the profile, the shared ones listed
+  under `*SHARED`). Run of a request that only reads runs it; Edit opens it;
   Download gives `.sql` or the desktop's `.qdx` (`data/qdx.rs`, its
   version 2, read and written the same way); Share lists it for a
   group or `*PUBLIC` (policy `db.share`), only the owner changes it.
