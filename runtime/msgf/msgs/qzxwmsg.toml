@@ -49,10 +49,78 @@ help = "&N Cause . . . . . :   The settings of 5250 session &1 were saved with y
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
+id = "XWA0011"
+sev = 0
+text = "Session &1 deleted."
+help = "&N Cause . . . . . :   The saved 5250 session &1, its keyboard map and its macros were removed from your Access for Web sessions. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0013"
+sev = 0
+text = "Macro &1 saved."
+help = "&N Cause . . . . . :   The steps of macro &1 were saved with its 5250 session. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0014"
+sev = 0
+text = "Macro &1 deleted."
+help = "&N Cause . . . . . :   Macro &1 was removed from its 5250 session. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
 id = "XWA0020"
 sev = 0
 text = "Request &1 saved."
 help = "&N Cause . . . . . :   Request &1 was saved with your Access for Web requests. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0021"
+sev = 30
+text = "Select the statements to run."
+help = "&N Cause . . . . . :   Run selected runs the statements of the part of the script that is selected, and the page sent no selection. A browser running the page without script cannot select part of the script. &N Recovery  . . . :   Use Run statement or Run all, or leave only the statements to run in the script."
+
+[[msg]]
+id = "XWA0022"
+sev = 30
+text = "There is no statement to run."
+help = "&N Cause . . . . . :   The part of the script to run holds no SQL statement: it is empty, or only blanks and comments. &N Recovery  . . . :   Type a statement, or open a .sql file or a saved request, and run it again."
+
+[[msg]]
+id = "XWA0023"
+sev = 0
+text = "Request &1 deleted."
+help = "&N Cause . . . . . :   Request &1 was removed from your Access for Web requests. Users it was shared with no longer see it. &N Recovery  . . . :   None."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0024"
+sev = 0
+text = "Request &1 shared with &2."
+help = "&N Cause . . . . . :   Request &1 is listed for &2 under My requests, to run or copy. Only you can change or delete it. &N Recovery  . . . :   None. Share it with nobody to keep it to yourself again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0025"
+sev = 30
+text = "File &1 could not be read: &2."
+help = "&N Cause . . . . . :   The file &1 sent with the page is not a file of the format chosen, or it is damaged: &2. Nothing was changed on the system. &N Recovery  . . . :   Check the file and the format and code page chosen, then send the file again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0026"
+sev = 30
+text = "File &1 is not a request this page can open: &2."
+help = "&N Cause . . . . . :   The file &1 is not a .qdx or .sql file this page takes: &2. &N Recovery  . . . :   Open a table transfer request from QS/400 Access for Desktop or Access for Web, or a .sql script."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "XWA0027"
+sev = 30
+text = "Result &1 has no rows to download."
+help = "&N Cause . . . . . :   Download as writes the rows of the result shown, and result &1 is not a query's. &N Recovery  . . . :   Choose the tab of a query's result, or run a query, then download it."
 vars = ["*CHAR *VARY 2"]
 
 [[msg]]
@@ -75,6 +143,76 @@ sev = 0
 text = "Command submitted to job queue &1 as job &2."
 help = "&N Cause . . . . . :   The command runs in batch job &2 from job queue &1, as your user profile. &N Recovery  . . . :   Look at the job from My jobs; its job log holds the command's messages."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD7003"
+sev = 30
+text = "No more connections allowed to &1. Close a window and try again."
+help = "&N Cause . . . . . :   A session on system &1 may have at most 16 connections, the shared one included, and it has them all: the system refused another (TCP1A59). Each Run SQL and Run Command window and each Data Transfer run has one. &N Recovery  . . . :   Close a Run SQL, Run Command or Data Transfer window, or wait for a transfer to end, then try again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD7010"
+sev = 30
+text = "The connection to &1 was lost; the statement must be run again."
+help = "&N Cause . . . . . :   The window's connection to system &1 closed while a statement ran or before its result was read. Its job ended with it, and with the job its statements, cursors and uncommitted changes, which the system rolled back. The statement was not run again by this program. &N Recovery  . . . :   Check what the statement did, if it changes data, and run it again. The next run attaches a new connection; the rows already shown stay, marked incomplete."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD7011"
+sev = 10
+text = "Result is incomplete: &1."
+help = "&N Cause . . . . . :   Not every row of the result was read: &1. The rows shown are those the system sent before that. &N Recovery  . . . :   Run the statement again for the whole result. The rows shown can still be copied or exported, marked incomplete."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD7020"
+sev = 0
+text = "&1 rows changed."
+help = "&N Cause . . . . . :   The statement changed &1 rows. Under commitment control the changes are not committed until Commit. &N Recovery  . . . :   None needed. Under a commit level other than None, select Commit to keep the changes or Rollback to undo them."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD7021"
+sev = 10
+text = "Uncommitted changes in &1. Commit, roll back, or cancel."
+help = "&N Cause . . . . . :   Statements in &1 changed data under commitment control, and the changes are neither committed nor rolled back. Closing the connection, or changing the commit level or naming, needs them settled first: a connection that closes rolls them back. &N Recovery  . . . :   Select Commit to keep the changes, Roll Back to undo them, or Cancel to go back to the window."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD7030"
+sev = 0
+text = "Transfer &1 complete: &2 rows in &3."
+help = "&N Cause . . . . . :   Every row of transfer &1 was transferred: &2 rows, in &3. &N Recovery  . . . :   None needed."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD7031"
+sev = 30
+text = "Transfer &1 failed at row &2 (line &3 of &4): &5."
+help = "&N Cause . . . . . :   The system refused row &2 of transfer &1, from line &3 of &4, with: &5. What was kept depends on the transfer's commitment options; the report says how many rows were committed. &N Recovery  . . . :   Correct the row in &4, or the column mapping, and run the transfer again; when rows were committed, resume from the row the report gives."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD7032"
+sev = 10
+text = "Transfer &1 was cancelled; nothing was kept."
+help = "&N Cause . . . . . :   Transfer &1 was cancelled before it ended. A download's partial output file was deleted; an upload's uncommitted rows were rolled back. &N Recovery  . . . :   Run the transfer again when you are ready."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD7035"
+sev = 20
+text = "Column &1: value &2 does not fit &3."
+help = "&N Cause . . . . . :   In the preview, value &2 for column &1 cannot be stored in its type &3: it is too long, has too many digits, or is not of that type. Only the first such value of each column is shown. &N Recovery  . . . :   Correct the value in the source file, or map the column to another target column, before running the transfer."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD7040"
+sev = 0
+text = "Request saved to &1."
+help = "&N Cause . . . . . :   The transfer request was saved to &1. It holds everything needed to run the transfer again except passwords, which are never saved. &N Recovery  . . . :   None needed. Open &1, or run it with qsaccess run, to transfer again."
+vars = ["*CHAR *VARY 2"]
 
 [[msg]]
 id = "XWA0099"
@@ -109,6 +247,104 @@ sev = 10
 text = "Password for &1 on &2 expires in &3 days."
 help = "&N Cause . . . . . :   The password of user profile &1 on system &2 expires in &3 days, within the system's password expiration warning period (system value QPWDEXPWRN). It is counted on the system's clock from the password's last change and its expiration interval. This warning is shown once per session. &N Recovery  . . . :   Select Change Password... to change it now, or change it later with Actions > Change Password... before it expires. Once it has expired, sign-on asks for a new one."
 vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD1002"
+sev = 30
+text = "Connection to &1 refused."
+help = "&N Cause . . . . . :   System &1 answered, but nothing accepted the connection on the port used. The Telnet server may not be started, or the port in the system configuration may be wrong, or TLS may be selected for a system with no TLS listener. &N Recovery  . . . :   Check that the Telnet server is started on &1, and check the Telnet ports on the Ports tab of the system's properties and the TLS setting on its Security tab. Then select Reconnect."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD1003"
+sev = 30
+text = "Host &1 not found."
+help = "&N Cause . . . . . :   The name &1 could not be turned into an address. The name may be misspelt, or the name server may not know it. &N Recovery  . . . :   Correct the system name in System Configurations, or give a fixed IP address on the Connection tab. Then start the session again."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD1004"
+sev = 30
+text = "Connection to &1 timed out."
+help = "&N Cause . . . . . :   No answer came from system &1 within 15 seconds. The system may be down, or a firewall may be dropping the connection. &N Recovery  . . . :   Check that &1 is running and can be reached from this computer, then select Reconnect."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD1005"
+sev = 20
+text = "Session to &1 ended by the system."
+help = "&N Cause . . . . . :   System &1 closed the connection. This happens when the job ends after sign-off, when the device is varied off, or when the connection is lost. &N Recovery  . . . :   Select Reconnect to start a new session. The last screen stays visible until then."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD1006"
+sev = 0
+text = "Session to &1 disconnected."
+help = "&N Cause . . . . . :   The session to system &1 was disconnected at your request. What the job does now depends on the device recovery action of the system: it may end, or wait for you to sign on again. &N Recovery  . . . :   Select Reconnect to start a new session. The last screen stays visible until then."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD1010"
+sev = 30
+text = "TLS handshake with &1 failed: &2."
+help = "&N Cause . . . . . :   A TLS session could not be set up with system &1. The reason given was: &2 &N Recovery  . . . :   Check that the port on the Ports tab is the system's TLS Telnet port and that the system's TLS configuration is complete. If the system offers no TLS, clear TLS on the Security tab."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD1011"
+sev = 30
+text = "Certificate for &1 is not trusted."
+help = "&N Cause . . . . . :   System &1 presented a certificate that does not chain to a certificate authority this computer trusts, or that is not valid for the name &1. The reason given was: &2 &N Recovery  . . . :   Compare the certificate's SHA-256 fingerprint with the one shown on the system itself. If they match and you trust the system, select Trust for this system; the certificate is added to this system's CA list. Otherwise do not connect."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD1020"
+sev = 30
+text = "Device name &1 is in use."
+help = "&N Cause . . . . . :   The system could not give this session the display device &1: the device is in use by another session or is not available (start-up response code &2). &N Recovery  . . . :   Select Retry without device name to let the system choose a device, or change the device name and start the session again."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD1021"
+sev = 30
+text = "Device name &1 is not valid."
+help = "&N Cause . . . . . :   The system refused display device name &1 for this session (start-up response code &2: &3). &N Recovery  . . . :   Select Retry without device name to let the system choose a device, or give a device name of 1 to 10 letters, digits, #, $ or @, starting with a letter."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD2001"
+sev = 30
+text = "Session file &1 could not be read: &2."
+help = "&N Cause . . . . . :   The file &1 could not be opened, or it is not a valid session, keyboard map or macro file. The reason given was: &2 &N Recovery  . . . :   Correct the file, or open another one. These files are TOML text whose first table is [qsaccess], giving the kind of file and its format version."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD2002"
+sev = 30
+text = "Session file &1 was made by a newer version (&2)."
+help = "&N Cause . . . . . :   The file &1 is format version &2, which is newer than this release of QS/400 Access for Desktop can read. The file was not opened and has not been changed. &N Recovery  . . . :   Open the file with the release that made it, or install a newer release of QS/400 Access for Desktop."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD2010"
+sev = 0
+text = "Keyboard map loaded from &1."
+help = "&N Cause . . . . . :   The keyboard map in the file &1 was copied. Later changes to the file do not affect the copy. &N Recovery  . . . :   None needed. Save the session to keep the map with it."
+vars = ["*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD2020"
+sev = 30
+text = "Macro &1 stopped at step &2: &3."
+help = "&N Cause . . . . . :   Macro &1 could not carry out step &2 and was stopped. The reason was: &3. The steps after it were not run. &N Recovery  . . . :   Check that the session shows the screen the macro expects at step &2, then run the macro again. To change the step, open the macro in the Macro editor."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "QAD2021"
+sev = 0
+text = "Macro &1 recorded with &2 steps."
+help = "&N Cause . . . . . :   Recording ended and macro &1 was saved with &2 steps. Text typed into fields that are not displayed, such as passwords, was not recorded; a step that asks for the value when the macro runs takes its place. &N Recovery  . . . :   None needed. Run the macro from the session's Macro menu, or open it in the Macro editor to change it."
+vars = ["*CHAR *VARY 2", "*CHAR *VARY 2"]
 
 [[msg]]
 id = "XWA0041"
