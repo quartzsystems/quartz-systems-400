@@ -53,7 +53,14 @@ impl Service for Web {
             addr: peer,
             secure: conn.secure(),
         };
-        qsweb::http::serve_guarded(&mut conn, &p, &self.handler);
+        // A WebSocket (the 5250 page) sets its own read timeouts on the
+        // socket; a clone shares it, TLS or not.
+        match conn.tcp().try_clone() {
+            Ok(sock) => qsweb::http::serve_guarded_timed(&mut conn, &p, &self.handler, &|t| {
+                let _ = sock.set_read_timeout(t);
+            }),
+            Err(_) => qsweb::http::serve_guarded(&mut conn, &p, &self.handler),
+        }
         conn.close();
     }
 }
