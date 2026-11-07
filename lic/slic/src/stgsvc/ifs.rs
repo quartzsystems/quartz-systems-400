@@ -128,8 +128,37 @@ pub fn start(system: &mut System) -> String {
     if get().is_some() {
         keep_registry(system);
         keep_notices(system);
+        keep_downloads(system);
     }
     line
+}
+
+/// Access for Web's client pieces (`osobjects::afwdl`), rewritten when
+/// they differ.
+fn keep_downloads(system: &mut System) {
+    let p = Principal {
+        user: "QSYS".into(),
+        spcaut: sec::profile::SpecialAuth::ALL.0,
+        qsecurity: 40,
+        objaud: "*NONE".into(),
+        ..Principal::default()
+    };
+    with_client(system, 0, console_owner(0), &p, 37, |c| {
+        for (name, data) in osobjects::afwdl::FILES {
+            let path = format!("{}/{name}", osobjects::afwdl::DIR);
+            let same = c
+                .open(&path, ifs::ops::OpenArgs::new(ifs::ops::flags::O_RDONLY))
+                .and_then(|fd| {
+                    let r = ifs::client::read_all(c, fd);
+                    let _ = c.close(fd);
+                    r
+                })
+                .is_ok_and(|old| old == *data);
+            if !same && let Err(e) = ifs::client::replace(c, &path, data, 0o644) {
+                eprintln!("qsstg: {path}: {}", e.text());
+            }
+        }
+    });
 }
 
 /// The third-party notices this release ships, at
@@ -197,6 +226,10 @@ fn build(system: &mut System) -> Result<Ifs<LinuxBackend>, String> {
         // The HTTP server's instances: the `ADMIN` job writes there.
         // The third-party notices' directory (`keep_notices`).
         for dir in ["/QQS", "/QQS/ProdData", osobjects::notices::DIR] {
+            ifs.ensure_dir(&env, dir, "QSYS", "*RX")?;
+        }
+        // Access for Web's downloads (`keep_downloads`).
+        for dir in osobjects::afwdl::DIRS {
             ifs.ensure_dir(&env, dir, "QSYS", "*RX")?;
         }
         ifs.ensure_dir(&env, WWW, WWW_OWNER, WWW_PUBLIC)

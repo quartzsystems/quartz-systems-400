@@ -36,6 +36,7 @@ mod afw5250;
 mod afwdbstep;
 mod afwstep;
 mod afwfiles;
+mod afwcmdstep;
 pub mod ftp;
 mod ftpsrv;
 #[cfg(unix)]

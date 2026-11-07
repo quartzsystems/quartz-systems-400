@@ -13,11 +13,14 @@
 //! preference stores are the product's own (`QUSRSYS/QZXWPOL`,
 //! `QZXWPRF`), read and written as the job.
 
-mod areas;
 mod s5250;
 mod db;
 mod files;
 mod print;
+mod cmd;
+mod download;
+mod jobs;
+mod msgs;
 mod store;
 mod system;
 
@@ -62,7 +65,6 @@ impl Link {
 
     /// Run CL `command` through the analyzer as `user`: the completion
     /// or escape message.
-    #[allow(dead_code)] // the areas' changes run through it as they land
     pub fn run(&self, user: &str, command: &str) -> Result<Message, Message> {
         let (u, line) = (user.to_string(), command.to_string());
         self.bridge
@@ -106,7 +108,6 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let core = Core::new(bridge.clone(), dates.clone(), name.clone());
     let print_core = Arc::new(Core::new(bridge.clone(), dates.clone(), name.clone()));
     let l = Link { bridge: bridge.clone() };
-    let none = Arc::new(areas::NotYet);
     let env = Env {
         system: Arc::new(system::LiveSystem { core, dates, link: l.clone() }),
         policy: Arc::new(store::LivePolicy { link: l.clone() }),
@@ -115,10 +116,10 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         db: Arc::new(db::LiveDb::new(l.clone(), start.number)),
         files: Arc::new(files::LiveFiles::new(l.clone())),
         print: Arc::new(print::LivePrint { link: l.clone(), core: print_core }),
-        msgs: none.clone(),
-        jobs: none.clone(),
-        cmd: none.clone(),
-        download: none,
+        msgs: Arc::new(msgs::LiveMsgs { link: l.clone() }),
+        jobs: Arc::new(jobs::LiveJobs { link: l.clone() }),
+        cmd: Arc::new(cmd::LiveCmd::new(l.clone())),
+        download: Arc::new(download::LiveDownload { link: l.clone(), system: name.clone() }),
     };
     let app = Arc::new(AccessWeb::new(env));
     let starter = bridge.clone();
@@ -133,12 +134,15 @@ mod tests {
     #[test]
     fn the_link_only_through_ask() {
         let sources = [
-            ("areas.rs", include_str!("areas.rs")),
             ("db.rs", include_str!("db.rs")),
             ("files.rs", include_str!("files.rs")),
             ("print.rs", include_str!("print.rs")),
             ("store.rs", include_str!("store.rs")),
             ("system.rs", include_str!("system.rs")),
+            ("msgs.rs", include_str!("msgs.rs")),
+            ("jobs.rs", include_str!("jobs.rs")),
+            ("cmd.rs", include_str!("cmd.rs")),
+            ("download.rs", include_str!("download.rs")),
         ];
         for (name, src) in sources {
             for (n, line) in src.lines().enumerate() {

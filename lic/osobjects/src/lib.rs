@@ -12,6 +12,7 @@
 
 #![deny(missing_docs)]
 
+pub mod afwdl;
 pub mod display;
 pub mod nls;
 pub mod notices;
