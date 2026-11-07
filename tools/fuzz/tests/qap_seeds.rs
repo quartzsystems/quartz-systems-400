@@ -45,6 +45,7 @@ fn job() -> JobId {
 }
 
 /// One framed request per version 8 body.
+#[allow(clippy::too_many_lines)] // one of each
 fn seeds() -> Vec<Vec<u8>> {
     let rec = SourceRecord {
         seq: 100,
