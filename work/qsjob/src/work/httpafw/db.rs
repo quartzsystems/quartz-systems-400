@@ -10,8 +10,9 @@
 //! (`*SQLAFWn`), are its own; it lives until the page closes it or the
 //! session ends. The catalog is queries over the `QSYS2` views. Saved
 //! requests and the history are kept with the preferences, in user
-//! index `QUSRSYS/QZXWPRF`, as the job: keys `_q<id>.<part>` and
-//! `_h.<part>` of the profile.
+//! index `QUSRSYS/QZXWPRF`, through the service's `web_store`: keys
+//! `_q<id>.<part>` and `_h.<part>` of the profile, and the shared ones
+//! listed under `*SHARED`.
 
 #![allow(clippy::many_single_char_names)] // rows, lanes, engines
 
@@ -388,31 +389,35 @@ fn columns(m: &mut Main, schema: &str, table: &str) -> Result<Vec<Column>, Messa
         .collect())
 }
 
-/// The store's key: the profile in 10, the key in 20.
-fn key(who: &str, what: &str) -> Vec<u8> {
-    format!("{who:<10}{what:<20}").into_bytes()
+/// The profile the shared requests are listed under: key
+/// `_s<owner>.<id>`, the group or `*PUBLIC` as the value.
+const SHARED: &str = "*SHARED";
+
+/// `who`'s entries in the store: key and value.
+fn entries(m: &Main, who: &str) -> Vec<(String, String)> {
+    let w = who.to_string();
+    m.ask(|l| l.web_store(INDEX.into(), w, None)).unwrap_or_default()
 }
 
-/// Entries of `who` whose keys start with `what` (every profile's for
-/// an empty `who`): key and value.
-fn find(m: &Main, who: &str, what: &str, remove: bool) -> Vec<(String, String, String)> {
-    let (lo, hi) = if who.is_empty() {
-        (vec![b' '; 30], vec![b'~'; 30])
-    } else {
-        let mut hi = format!("{who:<10}{what}").into_bytes();
-        hi.resize(30, b'~');
-        (key(who, what), hi)
-    };
-    m.ask(|l| l.usridx_find(LIB.into(), INDEX.into(), 8, lo, hi, 100_000, remove))
-        .unwrap_or_default()
+/// Replace `who`'s entries whose keys start with `what.` by `value` in
+/// parts (none: removed); every other entry stays.
+fn put(m: &Main, who: &str, what: &str, value: Option<&str>) -> Result<(), String> {
+    let mut all = entries(m, who);
+    let head = format!("{what}.");
+    all.retain(|(k, _)| !k.starts_with(&head));
+    if let Some(v) = value {
+        all.extend(parts(v).into_iter().enumerate().map(|(i, p)| (format!("{what}.{i:03}"), p)));
+    }
+    let w = who.to_string();
+    m.ask(|l| l.web_store(INDEX.into(), w, Some(all))).map(|_| ())
+}
+
+/// `who`'s entries whose keys start with `what`, as (owner, key, value).
+fn find(m: &Main, who: &str, what: &str) -> Vec<(String, String, String)> {
+    entries(m, who)
         .into_iter()
-        .filter(|e| e.len() >= 30)
-        .map(|e| {
-            let who = String::from_utf8_lossy(&e[..10]).trim_end().to_string();
-            let k = String::from_utf8_lossy(&e[10..30]).trim_end().to_string();
-            (who, k, String::from_utf8_lossy(&e[30..]).into_owned())
-        })
-        .filter(|(_, k, _)| k.starts_with(what))
+        .filter(|(k, _)| k.starts_with(what))
+        .map(|(k, v)| (who.to_string(), k, v))
         .collect()
 }
 
@@ -432,20 +437,21 @@ fn parts(s: &str) -> Vec<String> {
     out
 }
 
-/// Replace `who`'s blob `what` (`_q0003`, `_h`) with `value`.
-fn put(m: &Main, who: &str, what: &str, value: Option<&str>) -> Result<(), String> {
-    let _ = find(m, who, &format!("{what}."), true);
-    let Some(v) = value else { return Ok(()) };
-    let entries: Vec<Vec<u8>> = parts(v)
-        .iter()
-        .enumerate()
-        .map(|(i, p)| {
-            let mut e = key(who, &format!("{what}.{i:03}"));
-            e.extend_from_slice(p.as_bytes());
-            e
-        })
-        .collect();
-    m.ask(|l| l.usridx_add(LIB.into(), INDEX.into(), entries, true)).map(|_| ()).map_err(|e| e.msgid)
+/// `owner`'s request `id`, if it has one.
+fn request_of(m: &Main, owner: &str, id: u32) -> Option<Request> {
+    let name = format!("_q{id:04}");
+    blobs(find(m, owner, &format!("{name}."))).into_iter().find(|(_, n, _)| *n == name).and_then(|(_, _, b)| of_blob(owner, id, &b))
+}
+
+/// List (or stop listing) `owner`'s request `id` as shared with `with`.
+fn share(m: &Main, owner: &str, id: u32, with: &str) -> Result<(), String> {
+    let mut all = entries(m, SHARED);
+    let k = format!("_s{owner}.{id:04}");
+    all.retain(|(x, _)| *x != k);
+    if !with.is_empty() {
+        all.push((k, with.to_string()));
+    }
+    m.ask(|l| l.web_store(INDEX.into(), SHARED.into(), Some(all))).map(|_| ())
 }
 
 /// Blobs by owner and name, their parts in order.
@@ -692,14 +698,20 @@ impl Db for LiveDb {
         let (u, g) = (user.to_string(), groups.to_vec());
         self.link
             .job(move |m| {
-                blobs(find(m, "", "_q", false))
+                let mut out: Vec<Request> = blobs(find(m, &u, "_q"))
                     .into_iter()
-                    .filter_map(|(who, name, b)| {
-                        let id = name.strip_prefix("_q")?.parse().ok()?;
-                        of_blob(&who, id, &b)
-                    })
-                    .filter(|r| r.owner == u || r.shared == "*PUBLIC" || (!r.shared.is_empty() && g.contains(&r.shared)))
-                    .collect()
+                    .filter_map(|(who, name, b)| of_blob(&who, name.strip_prefix("_q")?.parse().ok()?, &b))
+                    .collect();
+                for (k, with) in entries(m, SHARED) {
+                    let Some((owner, id)) = k.strip_prefix("_s").and_then(|r| r.split_once('.')) else { continue };
+                    if owner == u || !(with == "*PUBLIC" || g.contains(&with)) {
+                        continue;
+                    }
+                    if let Some(r) = id.parse().ok().and_then(|id| request_of(m, owner, id)) {
+                        out.push(r);
+                    }
+                }
+                out
             })
             .unwrap_or_default()
     }
@@ -708,7 +720,7 @@ impl Db for LiveDb {
         let (u, mut r) = (user.to_string(), r.clone());
         r.owner.clone_from(&u);
         let res = self.link.job(move |m| {
-            let mine = blobs(find(m, &u, "_q", false));
+            let mine = blobs(find(m, &u, "_q"));
             let id = if r.id == 0 {
                 mine.iter().filter_map(|(_, n, _)| n.strip_prefix("_q")?.parse::<u32>().ok()).max().unwrap_or(0) + 1
             } else if mine.iter().any(|(_, n, _)| *n == format!("_q{:04}", r.id)) {
@@ -717,7 +729,8 @@ impl Db for LiveDb {
                 return Err("CPF9801".to_string());
             };
             r.id = id;
-            put(m, &u, &format!("_q{id:04}"), Some(&to_blob(&r))).map(|()| id)
+            put(m, &u, &format!("_q{id:04}"), Some(&to_blob(&r)))?;
+            share(m, &u, id, &r.shared).map(|()| id)
         });
         res.unwrap_or_else(|| Err("CPF9897".into()))
             .map_err(|id| Message::new(MsgKind::Error, &id, &format!("The request could not be kept in {LIB}/{INDEX}.")))
@@ -726,8 +739,9 @@ impl Db for LiveDb {
     fn delete_request(&self, user: &str, id: u32) -> Result<(), Message> {
         let u = user.to_string();
         let r = self.link.job(move |m| {
-            let had = !find(m, &u, &format!("_q{id:04}."), false).is_empty();
+            let had = request_of(m, &u, id).is_some();
             put(m, &u, &format!("_q{id:04}"), None)?;
+            share(m, &u, id, "")?;
             if had { Ok(()) } else { Err("CPF9801".to_string()) }
         });
         r.unwrap_or_else(|| Err("CPF9897".into()))
@@ -738,7 +752,7 @@ impl Db for LiveDb {
         let u = user.to_string();
         self.link
             .job(move |m| {
-                blobs(find(m, &u, "_h", false))
+                blobs(find(m, &u, "_h"))
                     .into_iter()
                     .flat_map(|(_, _, b)| b.lines().map(dec).collect::<Vec<_>>())
                     .filter(|s| !s.is_empty())
