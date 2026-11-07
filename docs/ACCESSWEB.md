@@ -19,6 +19,7 @@ and the golden pages under `net/accessweb/tests/golden/`.
 | `routes/` | `dispatch` (session, CSRF, the expired-password gate, the `/nav` tree toggle), `Rq` (with `Rq::policy` and `Rq::allowed`), sign-on, home, the generic pages, `customize/` (Preferences, Change password, Policies), then one folder per area. |
 | `fixture/` | The prototype's sample system: `QSHQ400`, US Eastern time, clock 10/29/26 14:03:40, user `CWELLMAN` (Cody Wellman, `*SECOFR`, group `ADMINS`), `WEBUSER` in group `WEBUSERS`, groups `WAREHOUSE` and `ADMINS`; one module per area with its data (`HLINV.ASSETS`' 12 rows, `/home/CWELLMAN`, 8 spooled files, 3 messages with one inquiry, 4 saved sessions), `text.rs` the system message texts. |
 | `help.rs` | Help topics. |
+| `transfer.rs` | The transfer queue of Browse files, per user (steps 13-14). |
 
 `cargo run -p accessweb --bin accessweb-demo [PORT]` serves the product
 over the fixture at `http://127.0.0.1:2003/qs400/accessweb/` (any
@@ -81,6 +82,70 @@ fixture profile, password `QS400`).
   the golden pages show.
 - Areas not built answer `501` with `XWA0099` (Not available) in their
   tree group: `BLOCKED(rel)` in each `routes/<area>/mod.rs`.
+- Files (steps 13-14): every page needs policy `files.browse`; a path
+  outside the home directory `files.outside` (My files then lists the
+  home directory only); Download and Open `files.download`, the editor
+  `files.edit`, Delete `files.delete`, the upload `files.upload`.
+  Browse files shows 500 entries a page (the rows select offers 10 to
+  100), directories first then by name; `..` counts as an entry. Cut
+  and Copy keep their paths in the session; Paste renames (cut) or
+  copies on the system (`QAD8003`, `QAD8005`). Delete is confirmed
+  with the count of objects a folder takes with it, and deletes from
+  the inside out (`QAD8004`, or `QAD8006` where it stopped). The links
+  that change something (Cut, Copy, the queue's Cancel, Retry,
+  Replace, Skip) carry the session's form token as `?t=`.
+- Transfers: the queue is per user, the 50 newest kept. Downloads are
+  read a piece of 256 KiB at a time as the user and answer `Range`
+  (one range, `If-Range` against the `ETag`), so a browser resumes an
+  interrupted download; one that stops shows Failed with the reason
+  (`QAD8021`) and Retry, which fetches it again. A text download
+  converts from the file's CCSID to UTF-8 with CR LF or LF; a file
+  tagged 65535 or with a NUL in its first 8 KiB is always binary.
+  Open serves PDF, images and text inline (`Content-Security-Policy:
+  sandbox`, `nosniff`), anything else as a download. Several files
+  selected for Download wait in the queue, each fetched from its row.
+- Uploads: the browser's multiple-file upload (qsweb's multipart, a
+  request of at most 8 MiB, `BODY_MAX`). Binary keeps the bytes (a new
+  file is tagged 1208 when they are UTF-8, else 65535); Text converts
+  UTF-8 to the CCSID given with LF line endings (an unknown CCSID is
+  `XWA0004`, nothing written). An existing file: Ask leaves the upload
+  in the queue as `QAD8010` with Replace and Skip (its data kept),
+  Skip skips it, Replace and Replace if newer replace it (an upload
+  carries no time of its own, so it is newer). Done: `XWA0040`; a
+  failed write stays in the queue with its data for Retry. The
+  Download options are sent with the upload form and kept for the
+  session; their default is the "Transfer files as" preference.
+- The editor: text in the file's CCSID and its own line endings; Save
+  writes it in place (owner, authority and CCSID kept), `XWA0042`; a
+  file changed since it was opened (its time or size) asks Overwrite,
+  Reload or Cancel (`QAD8011`); Save as... carries the text to a new
+  path. A file tagged 65535, with a NUL in its first 8 KiB or over
+  8 MiB opens read-only (`QAD8013`); over 64 MiB it is refused
+  (`QAD8012`).
+- Printer output (step 15): the page needs `print.text` or
+  `print.pdf`; Hold, Release, Delete `print.own`; Move `print.move`;
+  another user's files (`*ALL`, another user, their actions)
+  `print.others`, then the system's own check (`*SPLCTL`, `*JOBCTL`).
+  The list is newest first, a page of the preference's rows; a column
+  heading sorts the page shown, as the desktop's does. A spooled file's
+  id is `number-user-job-file-splnbr` (system names hold no `-`). One
+  file's action answers its message (`QAD6002`-`QAD6005`); several
+  files' answer `QAD6006` when any was refused, with each file's
+  result in a table under it. Save as PDF and Save as text need one
+  file (`XWA0045`). `OPN` files are `QAD6012`; a device type other than
+  `*SCS` or `*LINE` is `QAD6013`.
+- The viewer: Navigator's spooled file viewer page, served in this
+  product at `/print/view/<id>` (`/pdf`, `/text`, `?save=1` to save),
+  so it runs as the Access for Web user and under its policies whether
+  or not Navigator is installed. Text pages are apart by form feeds.
+- Files and Print add `XWA0041` (nothing selected), `XWA0042` (file
+  saved), `XWA0043` (authority changed), `XWA0045` (one spooled file
+  needed) and the desktop's `QAD6001`-`QAD6006`, `QAD6012`, `QAD6013`,
+  `QAD8002`-`QAD8006`, `QAD8010`-`QAD8013`, `QAD8020`-`QAD8022` in its
+  own text. `QAD8040` (the desktop's private link) has no use on the web.
+- Printers: the writers, their state and output queue; Print to opens
+  Printer output with the printer's queue chosen for Move, Output lists
+  its queue's files.
 
 ## Golden comparison
 
@@ -245,6 +310,22 @@ Menu, prints the screen, disconnects (`QAD1006`), deletes (`XWA0011`).
 - The product's messages added: `XWA0021`-`XWA0027`; the desktop's
   `QAD7003`, `QAD7010`, `QAD7011`, `QAD7020`, `QAD7021`, `QAD7030`-
   `QAD7032`, `QAD7035`, `QAD7040` in its own text.
+| `web/files.html` | the Path line is a `<form method="post">` of its own; Go and Paste get names `go`, `paste` | its fields and buttons sat in no form: nothing could be sent without script |
+| `web/files.html` | each checkbox `name="s"` gets `value="<entry name>"` | a checkbox without a value does not say what it selects |
+| `web/files.html` | the `..` row has no checkbox and only Open and Properties | renaming, cutting, copying or deleting the parent through its `..` row is not an action on this folder |
+| `web/files.html` | `old-link`'s row before `reports`' (the stripes stay) | data: entries sort directories first, then by name |
+| `web/files.html`, `web/file-edit.html` | `invload.clle` is `2,033` bytes, not `1,844` | data: the size of the text the editor's golden shows |
+| `web/files.html` | Download, Cut, Copy, Delete..., New folder... get names `download`, `cut`, `copy`, `delete`, `mkdir` | nameless buttons in one form cannot be told apart |
+| `web/files.html` | `Failed - QAD8021 not authorized`: the ID a link | message IDs are links everywhere |
+| `web/files.html` | Text, not Binary, checked for the upload and for downloads | data: the fixture user's preference "Transfer files as" is Text (its default) |
+| `web/file-edit.html` | Files open in the tree, Browse files current | the editor is part of Browse files, as Properties is; the tree marked none |
+| `web/file-edit.html` | Save, Save as..., Reset, Cancel get names `save`, `saveas`, `reset`, `cancel` | nameless buttons in one form cannot be told apart |
+| `web/printer-output.html` | each checkbox `name="sN"` gets `value="<spooled file id>"` | a row's number names another file once the list has changed |
+| `web/printer-output.html` | Auto-refresh `30` not selected | data: Auto-refresh is off until chosen; `?auto=30` selects it and the page carries `<meta http-equiv="refresh" content="30" />` |
+| `web/printer-output.html` | Hold, Release, Delete..., Move, Save as PDF, Save as text get names `hold`, `release`, `delete`, `move`, `pdf`, `text` | nameless buttons in one form cannot be told apart |
+| `nav/spooled-view.html` (served as `/print/view/<id>`, content compared) | crumb `Access for Web > Print > Printer output > INVRPT`, `Back to Printer output` | Navigator's page in this product's frame |
+| `nav/spooled-view.html` | `< Previous` grey on page 1, `Next >`, View as PDF and Download text real links | the golden's `#` links lead nowhere |
+| `nav/spooled-view.html` | Hold and Release links, Delete a link to the confirmation | submit buttons in a GET form cannot hold a file; deleting is confirmed |
 
 ## The live server
 
@@ -281,11 +362,19 @@ them back.
 | The areas | not built: `httpafw/areas.rs` (`NotYet`); their routes answer `XWA0099` |
 | Policy, Prefs | `usridx_find` (range of the profile's keys) and `usridx_add` on the two stores, as the job; the schemas Preferences offers: the libraries the user may list, `QGPL` and those without a `Q` name |
 | Database | `httpafw/db.rs` (`LiveDb`): every statement through QAP's `Sql` lane (`qapsql::Lane`) with the job swapped to the user's profile, a lane per connection whose embedded scopes and commitment definition (`*SQLAFWn`) are its own; the catalog from `QSYS2` (`SYSSCHEMAS`, `SYSTABLES`, `SYSTABLESTAT`, `SYSCOLUMNS`, `SYSCST`, `SYSKEYCST`); Cancel asks the engine to end the running statement (`qap::sql::ask_cancel`); requests and the history in `QUSRSYS/QZXWPRF` through `web_store` (keys `_q<id>.<n>`, `_h.<n>`; shared ones listed under `*SHARED` as `_s<owner>.<id>`); columns have no choices (check constraints are not read) |
+| Policy, Prefs | `usridx_find` (range of the profile's keys) and `usridx_add` on the two stores, as the job; the schemas Preferences offers: the libraries the user may list, `QGPL` and those without a `Q` name |
+| Files | `httpafw/files.rs` (`LiveFiles`): the storage service's IFS (`stg::remote::RemoteIfs`) with the job swapped to the user for each call, so its authority checks are the user's, as the file host server's are; errors the `errno`'s `CPFA0xx` message. The home directory is the profile's `HOMEDIR`. A file is written in place when it exists, else made with `O_CCSID` and the CCSID given. My files is the home directory alone (QS/400 serves no file shares) with the bytes under it (a walk of at most 20,000 entries) |
+| Print | `httpafw/print.rs` (`LivePrint`): `splf_list` as the user (another user's files with `*SPLCTL`, `*JOBCTL` or `*ALLOBJ`), `splf_fetch` (`DSPSPLF`'s check and `SF` entry) decoded by work/spool (text, PDF), the actions as `HLDSPLF ... OPTION(*IMMED\|*PAGEEND)`, `RLSSPLF`, `DLTSPLF`, `CHGSPLFA ... OUTQ()` run as the user; the queues `Move to` offers are the `*OUTQ` objects the user may list; Printers are `WRKWTR`'s writers |
 | The other areas | not built: `httpafw/areas.rs` (`NotYet`); their routes answer `XWA0099` |
 
 - `BLOCKED(rel)`: the password approval program (`QPWDVLDPGM`) is not
   called from the web job: Change password is refused with `CPF22D3`
   while one is set (`httpafw/system.rs`).
+- `BLOCKED(rel)`: Move with "top of queue" on the live system: no
+  command or storage service request a web job may use puts a spooled
+  file at the top of a queue (QAP's move does, on its connection job
+  only); refused with `XWA0099` before anything moves
+  (`httpafw/print.rs`). The fixture moves it.
 
 QEMU step 153 (`tools/conformance/src/afwstep.rs`) saves `QS00AFW`
 (`SAVLICPGM`), deletes it (`STRTCPSVR ... HTTPSVR(ACCESSWEB)` then
@@ -306,6 +395,15 @@ out again as CSV with exact decimals, then signs on as a profile
 without authority to the table and gets the database's `SQL0551` for
 the same query (statements run as the user, not `QTMHHTTP`), and ends
 the instance. Step 153 checks Not available on Files now.
+QEMU step 156 (`tools/conformance/src/afwfiles.rs`) starts
+`HTTPSVR(ACCESSWEB)`; profile `AFW156` with home directory
+`/home/AFW156` signs on over 2003, Browse files lists its home
+directory, a multipart upload writes a file `DSPAUT` says `AFW156`
+owns (not `QTMHHTTP`), the download gives it back whole and from byte 6
+(`206`, `Content-Range`), the editor opens it; then `QSECOFR` lists
+printer output, opens a spooled file in the viewer, holds it
+(`QAD6002`, `WRKSPLF` shows `HLD`), deletes it after the confirmation
+(`QAD6004`), and the instance ends.
 
 ## Area ownership
 
@@ -335,4 +433,7 @@ routes not built yet, by area, and each step removes its own.
 | 7-12 | Database | golden-clean over the fixture (`tests/db.rs`) |
 | 13-14 | Files | not built (`XWA0099`) |
 | 15-17 | Print, messages, jobs | not built (`XWA0099`) |
+| 13-14 | Files: Browse files, properties, My files, the editor, transfers | done (golden-clean; live; QEMU 156) |
+| 15 | Print: Printer output, properties, the viewer, Printers | done (golden-clean; live; QEMU 156) |
+| 16-17 | Messages, jobs | not built (`XWA0099`) |
 | 18-21 | Commands, download | not built (`XWA0099`) |

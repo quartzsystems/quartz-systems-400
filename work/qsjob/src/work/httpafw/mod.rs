@@ -16,6 +16,8 @@
 mod areas;
 mod s5250;
 mod db;
+mod files;
+mod print;
 mod store;
 mod system;
 
@@ -102,6 +104,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let name = system_name(&main);
     let dates = Dates::of(&main);
     let core = Core::new(bridge.clone(), dates.clone(), name.clone());
+    let print_core = Arc::new(Core::new(bridge.clone(), dates.clone(), name.clone()));
     let l = Link { bridge: bridge.clone() };
     let none = Arc::new(areas::NotYet);
     let env = Env {
@@ -110,8 +113,8 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         prefs: Arc::new(store::LivePrefs { link: l.clone() }),
         session5250: Arc::new(s5250::LiveS5250::new(l.clone())),
         db: Arc::new(db::LiveDb::new(l.clone(), start.number)),
-        files: none.clone(),
-        print: none.clone(),
+        files: Arc::new(files::LiveFiles::new(l.clone())),
+        print: Arc::new(print::LivePrint { link: l.clone(), core: print_core }),
         msgs: none.clone(),
         jobs: none.clone(),
         cmd: none.clone(),
@@ -132,6 +135,8 @@ mod tests {
         let sources = [
             ("areas.rs", include_str!("areas.rs")),
             ("db.rs", include_str!("db.rs")),
+            ("files.rs", include_str!("files.rs")),
+            ("print.rs", include_str!("print.rs")),
             ("store.rs", include_str!("store.rs")),
             ("system.rs", include_str!("system.rs")),
         ];

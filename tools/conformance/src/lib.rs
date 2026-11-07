@@ -35,6 +35,7 @@ mod navstep;
 mod afw5250;
 mod afwdbstep;
 mod afwstep;
+mod afwfiles;
 pub mod ftp;
 mod ftpsrv;
 #[cfg(unix)]

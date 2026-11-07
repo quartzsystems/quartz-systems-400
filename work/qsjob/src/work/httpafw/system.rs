@@ -141,7 +141,7 @@ impl System for LiveSystem {
 
     fn zone_label(&self) -> String {
         let z = self.dates.zone.trim().to_string();
-        sysval::tz::find(&z).map_or(z, |t| t.text.to_string())
+        sysval::tz::find(&z).map_or(z, |t| t.text.clone())
     }
 
     fn sign_on(&self, user: &str, password: &str, _from: &str) -> Result<SignOn, Message> {

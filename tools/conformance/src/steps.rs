@@ -646,6 +646,7 @@ impl Suite {
         reports.push(self.step(&mut s, "153 Access for Web", Self::access_web)?);
         reports.push(self.step(&mut s, "154 Access for Web 5250 session", Self::access_web_5250)?);
         reports.push(self.step(&mut s, "155 Access for Web database", Self::access_web_db)?);
+        reports.push(self.step(&mut s, "156 Access for Web files and print", Self::access_web_files)?);
         reports.push(self.step(&mut s, "89 QAP server", Self::qap_server)?);
         reports.push(self.step(&mut s, "90 QAP lanes", Self::qap_lanes)?);
         reports.push(self.step(&mut s, "91 QAP SQL authority", Self::qap_sql_authority)?);
