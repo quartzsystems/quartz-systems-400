@@ -93,6 +93,7 @@ pub fn short_stamp(rq: &Rq<'_>, secs: u64) -> String {
 
 /// A page under Navigator for QS/400 on this host (its port: 2002, or
 /// 2005 over TLS), as the handoff has the product link to it.
+// BLOCKED(rel): without QS00NAV installed the link has no page; the handoff's Columns page embedded in this product is not built.
 pub fn navigator(rq: &Rq<'_>, route: &str) -> String {
     let host = rq.req.header("host").unwrap_or("localhost");
     let name = if host.starts_with('[') {
