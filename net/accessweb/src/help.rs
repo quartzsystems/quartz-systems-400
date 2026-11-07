@@ -62,6 +62,37 @@ pub const TOPICS: &[Topic] = &[
         body: "<p>A confirmation names what the command acts on and shows the command itself. <b>OK</b> runs it with your authority; <b>Cancel</b> returns without running it.</p>",
     },
     Topic {
+        key: "db-tables",
+        title: "Tables",
+        body: "<p>The tables, views, aliases and files of a schema, as the catalog describes them. Type a schema pattern (<span class=\"mono\">%</span> and <span class=\"mono\">_</span> as in SQL, or a name ending in <span class=\"mono\">*</span>), choose the schema and the kind of object, and press <b>Go</b>. From each one you can view its rows, see its columns, insert a record, copy its rows to a file or a file into it, and show its qualified name to copy. The filter stays while you are signed on.</p>",
+    },
+    Topic {
+        key: "db-view",
+        title: "Viewing a table",
+        body: "<p>The rows of a table, 25 a page, at most the maximum rows your preferences set. <b>Find</b> shows the rows whose column holds the text, in any case; <b>Sort by</b> or a column heading orders them. <b>Edit</b> and <b>Delete</b> change one row, as your user profile, when the table has a key. <b>Output</b> other than HTML downloads every row the page selects as a file.</p>",
+    },
+    Topic {
+        key: "db-record",
+        title: "Inserting and editing records",
+        body: "<p>One field per column, its type in grey. A red <span class=\"req\">*</span> marks a column that must have a value. Tick <b>NULL</b> to leave a value out; a long text left empty is NULL when the column allows it. Dates are typed in the date format of your preferences. Values the system makes, such as a change timestamp, are left to it. The system checks every value and answers with its own message when it refuses one.</p>",
+    },
+    Topic {
+        key: "db-sql",
+        title: "Run SQL",
+        body: "<p>A script of SQL statements separated by <span class=\"mono\">;</span>, run in a connection of the page's own as your user profile. <b>Run statement</b> runs the one at the cursor, <b>Run all</b> every one, stopping at the first error when <b>Stop at first error</b> is ticked. Under a commit level other than None, changes stay uncommitted until <b>Commit</b> or <b>Rollback</b>, and the options cannot change meanwhile.</p>
+<p>Each result has a tab; a query shows the first rows up to your maximum, and <b>Fetch more</b> or <b>Fetch all</b> reads the rest. <b>Download as</b> writes every row of the result shown. <b>Open .sql</b> and <b>Save as .sql</b> read and write script files; the history keeps your last 100 statements.</p>",
+    },
+    Topic {
+        key: "db-requests",
+        title: "My requests",
+        body: "<p>Saved SQL scripts and copy requests. <b>Run</b> runs a script that only reads at once, and opens any other for you to run; a copy request opens its copy page. <b>Download</b> gives the <span class=\"mono\">.sql</span> or <span class=\"mono\">.qdx</span> file, which QS/400 Access for Desktop opens too, and a file of either kind can be imported. <b>Share</b> lists a request for a group or everyone; only its owner can change it.</p>",
+    },
+    Topic {
+        key: "db-copy",
+        title: "Copying data",
+        body: "<p><b>Copy data to table</b> reads a CSV, TSV, XLSX, ODS or fixed-width file and writes its rows to a table: added to it, replacing every row, or updating the rows whose keys match. Map each column of the file to a column of the table, or skip it; <b>Preview 10 rows</b> shows the values as the table takes them. <b>Copy data from table</b> writes a table's or a query's rows to a file. Decimals are moved exactly. A copy runs as your user profile in a connection of its own, with a progress page and <b>Cancel</b>; a <span class=\"mono\">.qdx</span> request keeps it to run again here or in QS/400 Access for Desktop.</p>",
+    },
+    Topic {
         key: "notavail",
         title: "Not available",
         body: "<p>This part of Access for Web is not available on this system yet. Use a 5250 display or QS/400 Access for Desktop for it.</p>",

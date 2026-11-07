@@ -67,6 +67,44 @@ pub const PASSWORD_CHANGED: &str = "QAD4023";
 pub const PASSWORD_MISMATCH: &str = "QAD4027";
 /// The password expires soon (the desktop's).
 pub const PASSWORD_EXPIRES: &str = "QAD4031";
+/// A request saved.
+pub const REQUEST_SAVED: &str = "XWA0020";
+/// Run selected without a selection.
+pub const SELECT_STATEMENTS: &str = "XWA0021";
+/// A script without statements.
+pub const NO_STATEMENT: &str = "XWA0022";
+/// A request deleted.
+pub const REQUEST_DELETED: &str = "XWA0023";
+/// A request shared.
+pub const REQUEST_SHARED: &str = "XWA0024";
+/// A file that could not be read.
+pub const FILE_UNREADABLE: &str = "XWA0025";
+/// A copy request the page cannot take.
+pub const NOT_A_REQUEST: &str = "XWA0026";
+/// A result without rows to download.
+pub const NO_RESULT: &str = "XWA0027";
+/// A copy completed.
+pub const COPY_DONE: &str = "XWA0030";
+/// No more connections (the desktop's).
+pub const NO_CONNECTIONS: &str = "QAD7003";
+/// The connection was lost (the desktop's).
+pub const CONNECTION_LOST: &str = "QAD7010";
+/// A result cut short (the desktop's).
+pub const INCOMPLETE: &str = "QAD7011";
+/// Rows changed (the desktop's).
+pub const ROWS_CHANGED: &str = "QAD7020";
+/// Uncommitted changes (the desktop's).
+pub const UNCOMMITTED: &str = "QAD7021";
+/// A transfer complete (the desktop's).
+pub const TRANSFER_DONE: &str = "QAD7030";
+/// A transfer failed (the desktop's).
+pub const TRANSFER_FAILED: &str = "QAD7031";
+/// A transfer cancelled (the desktop's).
+pub const TRANSFER_CANCELLED: &str = "QAD7032";
+/// A preview value that does not fit (the desktop's).
+pub const MISFIT: &str = "QAD7035";
+/// A request file written (the desktop's).
+pub const REQUEST_WRITTEN: &str = "QAD7040";
 
 /// Every message of `QZXWMSG`.
 pub const MESSAGES: &[Desc] = &[
@@ -134,14 +172,63 @@ pub const MESSAGES: &[Desc] = &[
         "None.",
     ),
     d(
-        "XWA0020",
+        REQUEST_SAVED,
         0,
         "Request &1 saved.",
         "Request &1 was saved with your Access for Web requests.",
         "None.",
     ),
     d(
-        "XWA0030",
+        SELECT_STATEMENTS,
+        30,
+        "Select the statements to run.",
+        "Run selected runs the statements of the part of the script that is selected, and the page sent no selection. A browser running the page without script cannot select part of the script.",
+        "Use Run statement or Run all, or leave only the statements to run in the script.",
+    ),
+    d(
+        NO_STATEMENT,
+        30,
+        "There is no statement to run.",
+        "The part of the script to run holds no SQL statement: it is empty, or only blanks and comments.",
+        "Type a statement, or open a .sql file or a saved request, and run it again.",
+    ),
+    d(
+        REQUEST_DELETED,
+        0,
+        "Request &1 deleted.",
+        "Request &1 was removed from your Access for Web requests. Users it was shared with no longer see it.",
+        "None.",
+    ),
+    d(
+        REQUEST_SHARED,
+        0,
+        "Request &1 shared with &2.",
+        "Request &1 is listed for &2 under My requests, to run or copy. Only you can change or delete it.",
+        "None. Share it with nobody to keep it to yourself again.",
+    ),
+    d(
+        FILE_UNREADABLE,
+        30,
+        "File &1 could not be read: &2.",
+        "The file &1 sent with the page is not a file of the format chosen, or it is damaged: &2. Nothing was changed on the system.",
+        "Check the file and the format and code page chosen, then send the file again.",
+    ),
+    d(
+        NOT_A_REQUEST,
+        30,
+        "File &1 is not a request this page can open: &2.",
+        "The file &1 is not a .qdx or .sql file this page takes: &2.",
+        "Open a table transfer request from QS/400 Access for Desktop or Access for Web, or a .sql script.",
+    ),
+    d(
+        NO_RESULT,
+        30,
+        "Result &1 has no rows to download.",
+        "Download as writes the rows of the result shown, and result &1 is not a query's.",
+        "Choose the tab of a query's result, or run a query, then download it.",
+    ),
+    d(
+        COPY_DONE,
         0,
         "Copy completed: &1 rows copied, &2 errors.",
         "The copy wrote &1 rows. &2 rows could not be written; the messages of the copy name them.",
@@ -160,6 +247,76 @@ pub const MESSAGES: &[Desc] = &[
         "Command submitted to job queue &1 as job &2.",
         "The command runs in batch job &2 from job queue &1, as your user profile.",
         "Look at the job from My jobs; its job log holds the command's messages.",
+    ),
+    d(
+        NO_CONNECTIONS,
+        30,
+        "No more connections allowed to &1. Close a window and try again.",
+        "A session on system &1 may have at most 16 connections, the shared one included, and it has them all: the system refused another (TCP1A59). Each Run SQL and Run Command window and each Data Transfer run has one.",
+        "Close a Run SQL, Run Command or Data Transfer window, or wait for a transfer to end, then try again.",
+    ),
+    d(
+        CONNECTION_LOST,
+        30,
+        "The connection to &1 was lost; the statement must be run again.",
+        "The window's connection to system &1 closed while a statement ran or before its result was read. Its job ended with it, and with the job its statements, cursors and uncommitted changes, which the system rolled back. The statement was not run again by this program.",
+        "Check what the statement did, if it changes data, and run it again. The next run attaches a new connection; the rows already shown stay, marked incomplete.",
+    ),
+    d(
+        INCOMPLETE,
+        10,
+        "Result is incomplete: &1.",
+        "Not every row of the result was read: &1. The rows shown are those the system sent before that.",
+        "Run the statement again for the whole result. The rows shown can still be copied or exported, marked incomplete.",
+    ),
+    d(
+        ROWS_CHANGED,
+        0,
+        "&1 rows changed.",
+        "The statement changed &1 rows. Under commitment control the changes are not committed until Commit.",
+        "None needed. Under a commit level other than None, select Commit to keep the changes or Rollback to undo them.",
+    ),
+    d(
+        UNCOMMITTED,
+        10,
+        "Uncommitted changes in &1. Commit, roll back, or cancel.",
+        "Statements in &1 changed data under commitment control, and the changes are neither committed nor rolled back. Closing the connection, or changing the commit level or naming, needs them settled first: a connection that closes rolls them back.",
+        "Select Commit to keep the changes, Roll Back to undo them, or Cancel to go back to the window.",
+    ),
+    d(
+        TRANSFER_DONE,
+        0,
+        "Transfer &1 complete: &2 rows in &3.",
+        "Every row of transfer &1 was transferred: &2 rows, in &3.",
+        "None needed.",
+    ),
+    d(
+        TRANSFER_FAILED,
+        30,
+        "Transfer &1 failed at row &2 (line &3 of &4): &5.",
+        "The system refused row &2 of transfer &1, from line &3 of &4, with: &5. What was kept depends on the transfer's commitment options; the report says how many rows were committed.",
+        "Correct the row in &4, or the column mapping, and run the transfer again; when rows were committed, resume from the row the report gives.",
+    ),
+    d(
+        TRANSFER_CANCELLED,
+        10,
+        "Transfer &1 was cancelled; nothing was kept.",
+        "Transfer &1 was cancelled before it ended. A download's partial output file was deleted; an upload's uncommitted rows were rolled back.",
+        "Run the transfer again when you are ready.",
+    ),
+    d(
+        MISFIT,
+        20,
+        "Column &1: value &2 does not fit &3.",
+        "In the preview, value &2 for column &1 cannot be stored in its type &3: it is too long, has too many digits, or is not of that type. Only the first such value of each column is shown.",
+        "Correct the value in the source file, or map the column to another target column, before running the transfer.",
+    ),
+    d(
+        REQUEST_WRITTEN,
+        0,
+        "Request saved to &1.",
+        "The transfer request was saved to &1. It holds everything needed to run the transfer again except passwords, which are never saved.",
+        "None needed. Open &1, or run it with qsaccess run, to transfer again.",
     ),
     d(
         NOT_AVAILABLE,

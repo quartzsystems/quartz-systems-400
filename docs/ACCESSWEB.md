@@ -173,6 +173,77 @@ over 2003, saves a session, downloads its `.qsd`, starts it (the sign-on
 display in `screen.txt` and `screen.png`, the WebSocket's first screen),
 signs on at that display through Paste, Field Exit and Enter to the Main
 Menu, prints the screen, disconnects (`QAD1006`), deletes (`XWA0011`).
+| `web/tables.html` | the Objects select says `All` | the page lists every kind; `Tables` would list tables only |
+| `web/tables.html` | `ASSETS`, `ASSETS_BY_LOC`, `ASSETLF1` have 12 rows, not 412 | data: the handoff's `ASSETS` has 12 rows, and the view and logical file are over it |
+| `web/table-view.html` | the Output select and Go inside `<form method="get">` | a select outside a form sends nothing |
+| `web/table-view.html` | the columns `COST`, `RACK_U`, `NOTES`, `CHANGED_TS` in the header, the rows and the Find and Sort by selects | data: `ASSETS` has twelve columns (`web/table-insert.html`, `nav/table-columns.html`) |
+| `web/table-view.html` | `Page 1 of 1`, no Next link, `12 entries` | data: twelve rows are one page |
+| `web/run-sql.html` | `12 rows fetched.` → `12 rows fetched in 0.041 seconds.` (and the 4 rows) | the system's own `SQL7958` text (`QSQLMSG`) |
+| `web/run-sql.html` | the UPDATE's `SQL7956` → `SQL7957`, `1 row updated in ...` → `1 rows were updated in ...` | `SQL7956` is an insert's; the text is `SQL7957`'s |
+| `web/run-sql.html` | Fetch more and Fetch all in a `<form method="post">`, named `fetch` and `fetchall` | buttons outside a form post nothing |
+| `web/run-sql-result-2.html` | sort keys `?sort=l` → `?sort=location` | the result pages sort by the column's name, as page 1 does |
+| `web/my-requests.html` | Run and Edit of the copy requests → `copy-import.html`, `copy-export.html` | a copy request opens its copy page, not Run SQL |
+| `web/copy-import.html` | `Or file on this system` empty; Browse... named `browse` | data: the file came from this computer; a nameless button cannot be told apart |
+| `web/copy-import.html`, `web/copy-export.html` | the Table select lists `HLINV`'s six tables | data: the schema's tables (`web/tables.html`) |
+| `web/copy-import.html` | Copy, Preview 10 rows, Save request (.qdx), Cancel named `copy`, `preview`, `save`, `cancel` | four nameless buttons in one form cannot be told apart |
+| `web/copy-export.html` | one `<form>`, the buttons inside it, named `copy`, `save`, `cancel` | a form inside a form is not valid HTML; the buttons were outside both |
+
+## Database (steps 7-12)
+
+- `env/db.rs` is the database as the user: the catalog (schemas,
+  tables and the like, columns with key, default and choices),
+  connections of a page's own (at most 16, `QAD7003`), one statement
+  run with parameter rows, Fetch, Commit and Rollback, Cancel, and the
+  saved requests and history. Values are text (`Val`): decimals are
+  never floating point, NULL is its own value, binary data is hex.
+- The table pages make their SQL in `data/sqltext.rs` with delimited
+  names and parameter markers; nothing typed becomes SQL text.
+- Tables: the filter (`sp`, `s`, `t`, `n`, `sort`) stays with the
+  session, so paging keeps it; 100 a page; Columns links to
+  Navigator's page on 2002 (2005 over TLS); Copy name shows the
+  qualified name to copy.
+- A table's rows: 25 a page (the user's rows per page), at most the
+  user's maximum rows (`QAD7011` says so); Edit and Delete per row only
+  for a table with a key; another output downloads every row selected
+  (CSV, PDF, the Excel-compatible XML spreadsheet).
+- Insert and Edit: required = NOT NULL without a default; a NULL box
+  for nullable columns, ticked at first for those that are not text; a
+  text column over 100 long is a text area, NULL when left empty;
+  values the system makes (`CURRENT TIMESTAMP`, identities) are left
+  out; dates in the user's date format; a single character key ending
+  in digits suggests the next one; today's date for dates.
+- Run SQL keeps its connection, options, script and results with the
+  session (closed, its changes rolled back, once the session ends).
+  Run statement runs the one at the posted cursor (`pos`, 0 without
+  script); Run selected needs a selection (`sel0`, `sel1`), else
+  `XWA0021`. A statement that only reads (`SELECT`, `VALUES`, `WITH`)
+  needs policy `db.select`, any other `db.sql`; a script is refused
+  whole before anything runs. Under a commit level the options cannot
+  change while changes are pending (`SQL0752`, `QAD7021`). The first
+  result is on `/sql`, the other queries' on `/sql/result/<n>`.
+  Recent `.sql` files are the session's.
+- Requests and the history are kept per user (the running system:
+  user index `QUSRSYS/QZXWPRF`, keys `_q...` and `_h...` of the
+  profile). Run of a request that only reads runs it; Edit opens it;
+  Download gives `.sql` or the desktop's `.qdx` (`data/qdx.rs`, its
+  version 2, read and written the same way); Share lists it for a
+  group or `*PUBLIC` (policy `db.share`), only the owner changes it.
+- Copies run off the request in a connection of their own: a progress
+  page (`?job=`, refreshed) with Cancel, then `QAD7030` and `XWA0030`,
+  `QAD7031` (the row and line) or `QAD7032`. Upload: one unit of work
+  under Read committed (without commitment control, `QAD7034`, when the
+  table cannot use it), batches of 100; Stop rolls everything back,
+  Skip keeps the others and names the first ten. The mapping is by
+  name, then each source column to the next target column whose type
+  takes its sample value. Update matching keys updates by the key and
+  inserts the rest; it has no `.qdx` form (the desktop's requests have
+  append and replace only), so saving it is `XWA0004`.
+- `BLOCKED(rel)`: Copy data to table from a file on this system (the
+  IFS) waits for the Files area's trait; refused with `XWA0099`
+  (`routes/db/copy.rs`).
+- The product's messages added: `XWA0021`-`XWA0027`; the desktop's
+  `QAD7003`, `QAD7010`, `QAD7011`, `QAD7020`, `QAD7021`, `QAD7030`-
+  `QAD7032`, `QAD7035`, `QAD7040` in its own text.
 
 ## The live server
 
@@ -246,6 +317,8 @@ routes not built yet, by area, and each step removes its own.
 | 1-4 | Frame, sign-on, change password, policies, home, preferences | done (golden-clean; live) |
 | 5-6b | 5250 session | done (golden-clean, PNGs byte for byte; live; QEMU step 154) |
 | 7-12 | Database | not built (`XWA0099`) |
+| 5-6b | 5250 session | not built (`XWA0099`) |
+| 7-12 | Database | golden-clean over the fixture (`tests/db.rs`) |
 | 13-14 | Files | not built (`XWA0099`) |
 | 15-17 | Print, messages, jobs | not built (`XWA0099`) |
 | 18-21 | Commands, download | not built (`XWA0099`) |

@@ -13,9 +13,11 @@
 //! - [`policy`]: the functions, their policies and the effective view.
 //! - [`prefs`]: the per-user settings.
 //! - [`msgs`]: the product's messages (`QUSRSYS/QZXWMSG`).
+//! - [`data`]: SQL scripts, transfer files and `.qdx` requests.
 //! - [`fixture`]: the prototype's sample system, for tests and the demo.
 //! - [`s5250`]: the 5250 session's screen, its look and the desktop's files.
 
+pub mod data;
 pub mod env;
 pub mod fixture;
 pub mod help;

@@ -216,14 +216,15 @@ fn messages_and_help_resolve() {
 #[test]
 fn areas_not_built_say_so() {
     let mut b = Browser::signed_on();
-    let r = b.get("/db/tables");
+    // The first area still to come.
+    let Some(route) = PENDING.first().map(|p| p.1[0]) else { return };
+    let r = b.get(route);
     assert_eq!(r.status, 501);
     assert!(r.text().contains("XWA0099"), "{}", r.text());
 }
 
 /// Routes not built yet, by area: each area's agent removes its own.
 const PENDING: &[(&str, &[&str])] = &[
-    ("db", &["/db", "/sql", "/requests"]),
     ("files", &["/files"]),
     ("print", &["/print"]),
     ("msgs", &["/messages"]),
