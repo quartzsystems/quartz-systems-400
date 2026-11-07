@@ -1254,6 +1254,68 @@ Version 7, as built on 2026-11-04 (draft; decisions made in the build, for Cody 
 - QEMU step 123 runs the service end to end as a user without special
   authority and as `QSECOFR`.
 
+Version 8, as built on 2026-11-07 (draft; decisions made in the build, for Cody to review):
+
+- `qap-proto` speaks 1 to 8 (`VERSION` 8; `tools/fmtcheck`'s `qap` lock
+  bumped with it, `develop.rs` and `jobs.rs` registered as the draft
+  format `qap-v8`). The server accepts 1 to 8. Version 9 (`Debug`)
+  appends `Service::Debug` = 11 with `since` 9, its operations in `Op`
+  with `since` 9, and raises `VERSION` to 9; nothing else changes, and
+  `Hello` then lists service 11 only at 9. `EndHow` is
+  `qap_proto::types::EndHow`, re-exported from `ops::manage`.
+- `qap_proto::types::{MemberName, Where, Diagnostic}` convert to and from
+  `rpg/compdiag`'s (`From`), `MemberName`'s library and file becoming
+  the `ObjectName`. The Rust fields `where` and `type` are `r#where` and
+  `r#type`.
+- The rules shared by every host live in `net/qapd/src/develop.rs` and
+  `jobs.rs`: decoding, paging, `WriteMember`'s pieces (kept per
+  connection in `Shared`, by member, until `last`), the sequence-number
+  checks, the date rule (`develop::dated`) and `EndJob` of the
+  connection's own job (`InvalidRequest`). A host without `Develop` or
+  `Jobs` answers `Error` with `TCP1A60`; `TCP1A61` (`UnlockMember` of a
+  member not held) and `TCP1A62` (a record too long) are in `QTCPMSG`
+  beside it; a CCSID that cannot hold the data is version 5's `TCP1A5A`,
+  a member another job holds `CPF1002`.
+- The connection job (`work/qsjob/src/work/qap/develop.rs`, `jobs.rs`):
+  `GetLibraryList` reads the job's attributes, `SetLibraryList` runs
+  `CHGLIBL LIBL() CURLIB()` in the job's runtime, so the next
+  `RunCommand` and `Compile` see it. `ListLibraries` lists the `*LIB`
+  objects of `QSYS` with their `TYPE`; `ListObjects` the library's
+  objects with their sizes (`obj_sizes`); `DescribeObject` the object
+  and `DSPOBJD DETAIL(*FULL)`'s fields under readable labels;
+  `ListMembers` the file's members. `CreateMember`, `CopyMember`,
+  `RenameMember`, `DeleteMember` and `ChangeMember` are `ADDPFM`,
+  `CPYSRCF`, `RNMM`, `RMVM` and `CHGPFM` analyzed as typed lines and run
+  in the service; `HoldJob`, `ReleaseJob` and `EndJob` likewise
+  `HLDJOB`, `RLSJOB` and `ENDJOB`. `CPYSRCF` now keeps each record's
+  sequence number and date (`SRCOPT(*SAME)`, as IBM's does; `*SEQNBR`
+  renumbers from `SRCSEQ`, `*DATE` clears the dates) and takes
+  `MBROPT(*ADD)`; it used to renumber and redate every record.
+- `ReadMember`, `WriteMember` and `UnlockMember` are the service's
+  requests 780 to 782 (`stgsvc/qap/develop.rs`), as the job's user under
+  the store's guard, over `db::source` (`records`, `read_member` and the
+  new `write_records`). The lock is the store's `*SHRNUP`, held by the
+  connection job, so the job's end releases it. A write takes the member
+  `*EXCL` for the moment it writes, as SEU's save does, and ends the
+  connection's `*SHRNUP`. Today's date is the UTC date, as SEU's.
+- `ListJobs` reads what `WRKUSRJOB` reads (the active job table, the job
+  queues, the jobs with spooled files); its `type` is `INTER`, `BATCH`,
+  `AUTO` or the `WRKACTJOB` code. `JobLog` of an active job is the
+  service's copy (`joblog_of`); of an ended one its last spooled
+  `QPJOBLOG`, read back with `wm::joblog::parse_printed`. A request is
+  `Informational` (service 7 has no request type).
+- `ListRoutines` and `ListIndexes` read `QSYS2.SYSROUTINES`,
+  `SYSINDEXES` and `SYSKEYS` on the thread's link as 9 to 11 do; an
+  index is `unique` when `IS_UNIQUE` is `U` or `V`, its keys in
+  `ORDINAL_POSITION` order. `ListIndexes` checks the table as
+  `ListColumns` does.
+- `Compile` dispatches to `work/qsjob/src/work/qap/compile.rs`'s `run`,
+  which answers `TCP1A60` until the compilers leave their diagnostics on
+  the job (Part C of the handoff).
+- The test system (`qapd::testing::develop` and `jobs`): its fixtures
+  are in the modules' documentation. QS/400 ships no `CMPPFM`, so QEMU
+  step 160 compares the members record by record.
+
 ## Frozen at V1R1M0
 
 Frozen: the envelope and versions 1 to 6 as specified above, the `qap-proto` crate's types for them, and the rules under "Compatibility of new values". A new operation, service, status or event is a new protocol version; nothing in versions 1 to 6 changes meaning. Draft: anything added after version 6 (the management API of Phase 12 Section 7 is specified in its own section and is draft until QS/400 ships it); the "Later phases" inventory describes what was planned and is history, not specification.
