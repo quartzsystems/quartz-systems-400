@@ -100,9 +100,17 @@ fn golden_text_stays_in_the_golden_directory() {
                 for l in text.lines() {
                     let t = l.trim();
                     // Screen furniture every system shares is not IBM's text.
-                    // A column ruler (`....+....1`) is a scale, not text.
-                    let ruler = t.chars().all(|c| c == '.' || c == '+' || c.is_ascii_digit());
-                    if t.len() > 20 && !t.starts_with("F3=") && !t.contains("===>") && !ruler {
+                    // A column ruler (`....+....1`) is a scale, not text;
+                    // a line of `=` or `-` is a rule (NOTICES.txt has them
+                    // between its license texts).
+                    let ruler = t
+                        .chars()
+                        .all(|c| matches!(c, '.' | '+' | '=' | '-') || c.is_ascii_digit());
+                    // The db2 utility's row count trailer is interface
+                    // scripts parse (phase10_hygiene's INTERFACE), used
+                    // as-is by qsh-utils and its corpus.
+                    let interface = t.ends_with("RECORD(S) SELECTED.");
+                    if t.len() > 20 && !t.starts_with("F3=") && !t.contains("===>") && !ruler && !interface {
                         lines.insert(t.to_string());
                     }
                 }
