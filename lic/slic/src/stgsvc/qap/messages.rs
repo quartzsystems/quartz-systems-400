@@ -232,6 +232,6 @@ pub fn send(
     }
     let own = queue_of(system, &me(ctx))?;
     msgs::send_inquiry(system, &lib, &name, m, (&own.0, &own.1))
-        .map(Some)
+        .map(|(_, reply)| Some(reply))
         .map_err(|e| failed(&Refused::of(&e), &lib, &name))
 }
