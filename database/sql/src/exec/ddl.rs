@@ -440,7 +440,10 @@ pub fn create_table_def(
     };
     let mut def = finish(&lines)?;
     if let Some(keys) = primary_path(&def.format, t) {
-        lines.extend(keys.iter().map(|k| dds("K", &k.to_string(), "", "", "", "")));
+        lines.extend(
+            keys.iter()
+                .map(|k| dds("K", &k.to_string(), "", "", "", "")),
+        );
         def = finish(&lines)?;
     }
     no_lob_keys(&def.format, def.format.keys.iter().map(|k| k.field))?;
