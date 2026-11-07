@@ -21,12 +21,18 @@ kernel is the only inherited component; every process above it is ours.
 | 10 | the IFS on xfs with `/QSYS.LIB`, TCP/IP and communications objects, sockets, TLS and certificates, telnet, FTP, SSH, NTP, LPD, DDM/DRDA, the host servers, network printers, QSH and PASE | `PHASE10.md` |
 | 11 | save and restore, tape and optical (virtual, physical code ready), image catalogs, licensed programs and `GO LICPGM`, PTFs and the update service, the problem log and service tools, install media and recovery, cleanup and backup | `PHASE11.md` |
 | after 11 | QAP, the Quartz Access Protocol (`work/qap-proto`, `net/qapd`), versions 1 to 6; the web licensed programs (`net/qsweb`, `net/httpd`, `net/httpadmin`, `net/navigator`) | `QAP.md`, `HTTPADMIN.md`, `NAVIGATOR.md` |
-| 12 | release engineering for V1R1M0 (in progress) | `PHASE12.md` |
+| 12 | release engineering for V1R1M0: the carried gaps, the format freeze, Collection Services, help everywhere, the text audit and NLS, hardware qualification, the guest agent, RPG III, hardening, the Knowledge Center (complete) | `PHASE12.md` |
+| SQL | the SQL engine to the Db2 for i SQL dialect, 7.5 level: DDL, queries, SQL PL and triggers, types, dynamic and embedded SQL, `QSQCLI`, DRDA, the `QSYS2` services, the plan cache, `STRSQL` | `SQL.md` |
+| pre-release | V1R1M0 made releasable: QS00 product IDs, every accepted-and-ignored clause implemented or refused, hot spares and the DST options, storage thresholds, power and system values, time zones, CCSIDs, function usage, the `QIBM_QSY_*` exit points, CI and releases from a tag, Secure Boot signing, `NOTICES.txt`, the kernel source offer, reproducible media; QS/400 Access for Web (`net/accessweb`, QS00AFW) | `PHASE12.md` Release gate, `RELEASE_NOTES_V1R1M0.md`, `releasing.md`, `ACCESSWEB.md` |
 
-Code waiting for later work is marked `BLOCKED(phaseN)` (with the
-reason), `MIGRATE(phaseN)` or `TODO(phaseN)`; `NEEDS-CODY` marks what
-needs Cody's hardware or sign-off. `PHASE12.md` § Carried items lists
-every one.
+Code waiting for later work is marked `BLOCKED(rel): reason`;
+`NEEDS-CODY` marks what needs Cody's hardware or sign-off. No other
+marker form is allowed (the earlier `BLOCKED(phaseN)`, `BLOCKED(sql)`,
+`MIGRATE(...)` and `TODO(...)` forms were all retired before V1R1M0).
+The release notes' marker inventory is generated from the tree (`cargo
+run -p kcbuild -- notes --update`), and the Knowledge Center build fails
+when it is stale; the SQL refusals are `SQL.md` §10, imported the same
+way.
 
 ## How it fits together
 
@@ -118,7 +124,8 @@ See `docs/ARCHITECTURE.md`. Short form:
 - Kernel 6.18.y, LTS, built with `LLVM=1`, monolithic (`MODULES=n`), EFI stub,
   initramfs embedded. The bzImage is the UKI. Two ESP slots, A and B.
 - Pin lives in `kernel/VERSION` and `kernel/SHA256`. Bumps are their own commit.
-- Release identity is `V1R0M0` from the `release` crate; see ARCHITECTURE.md.
+- Release identity is `V1R1M0` from the `release` crate, which reads `VERSION`
+  (`1.1.0`); see ARCHITECTURE.md and `docs/releasing.md`.
 - Command line is baked: `console=ttyS0,115200 console=tty0 panic=-1 quiet`.
 - Reproducible: fixed `SOURCE_DATE_EPOCH`/`KBUILD_BUILD_*`, deterministic cpio,
   deterministic GPT/FAT, signed content-hash manifest.
@@ -129,10 +136,13 @@ See `docs/ARCHITECTURE.md`. Short form:
 kernel/       VERSION, SHA256, config/qs400.config
 tools/        host-side tools
   build/        orchestrator: cargo run -p build -- <cmd>
-    src/host/     cmd, paths, hash, doctor, deny, testrun
+    src/host/     cmd, paths, hash, doctor, deny, testrun, bench, fuzz, soak
     src/kernel/   fetch, config, build (slot A and B UKIs)
     src/userland/ slic build + ELF check
-    src/image/    cpio, initramfs, disk (via diskimg), iso (ISO 9660), media, manifest
+    src/image/    cpio, initramfs, disk (via diskimg), iso (ISO 9660), media, manifest,
+                  lp (product loads), release (signed media and release directory),
+                  srcoffer (the kernel source offer)
+    src/notices/  NOTICES.txt from Cargo.lock and deny.toml's licenses
   conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs;
                 src/db/ the database kit (kit, local run, compare, oracle RPG, QEMU steps);
                 db/ the QSTEST kit: dds/, data/, rla/, sql/, oracle/, expected/
@@ -150,6 +160,12 @@ tools/        host-side tools
                 constants, formats.lock their hashes; build test runs it
   fuzz/         qsfuzz, the Rust fuzzer: cov.rs SanitizerCoverage counters, mutate.rs,
                 engine.rs the loop, targets.rs every parser of outside bytes; corpus/, crashes/
+  helpaudit/    help coverage of every panel, command, parameter and message; `gen` writes
+                the command help groups
+  textaudit/    literals on display paths not in a message file or panel; baseline.txt
+  kcbuild/      the Knowledge Center (on the media) and the release notes' generated blocks
+  pesign/       Authenticode signing of the UKIs with the Secure Boot db key, keygen, ESL and
+                OVMF variable stores; keys/ holds the development pair only
 lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   slic/         PID 1, as `/init qsstg` the storage service and as `/init qshwr` the hardware
                 resource service (src/hwsvc/: the one sysfs walk, uevents, its socket): src/ipl/,
@@ -282,13 +298,18 @@ database/     DDS, decimal, files, journals, SQL
                 compilers, src/listing/
   jrn/          journaling: *JRN (src/journal/) and *JRNRCV (src/rcv/) objects, the entry
                 layout (src/entry/), DSPJRN filters and the receiver chain cursor (src/dsp/)
-  sql/          SQL: src/lex/ tokens, src/ast/ statements (ddl, query, expr), src/parse/
-                recursive descent (ddl, dml, query, expr); src/value/ runtime values;
-                src/exec/ context and name resolution (mod.rs), expressions (eval.rs),
-                scalar functions (func.rs), queries with path choice (query.rs), INSERT/
-                UPDATE/DELETE/MERGE through the ODP (dml.rs), CREATE TABLE/INDEX/VIEW and
-                labels as DDS (ddl.rs), cursors (cursor.rs), QSYS2 catalog views computed
-                from the store (catalog.rs); src/sqlca.rs the SQLCA; src/run.rs RUNSQLSTM
+  sql/          SQL, the Db2 for i dialect at the 7.5 level (docs/SQL.md): src/lex/, src/ast/,
+                src/parse/ (one module per statement family); src/value/; src/exec/ the
+                engine: mod.rs context and names, eval.rs, func/ scalar function families,
+                agg/, olap.rs, cte.rs, join/, query/ and plan/ (access path choice, statistics,
+                the plan cache), dml.rs through the ODP, ddl.rs, table.rs, view.rs, index.rs,
+                alter.rs, cst.rs, seq.rs, alias.rs, schema.rs, grant.rs, routine/ (SQL and
+                external procedures and functions), trigger/, udt/, cast/, json/, xml.rs,
+                restype/, cursor.rs, dynamic.rs, locator.rs, qtemp.rs, registers.rs,
+                catalog/ the QSYS2 and SYSIBM views and services/ the QSYS2 services;
+                src/pl/ the SQL PL compiler; src/embed/ embedded SQL and packages;
+                src/dbmon/ the database monitor; src/options.rs SET OPTION and the
+                precompile options; src/prtsqlinf.rs; src/sqlca.rs; src/run.rs RUNSQLSTM
   qdecimal/     Decimal (63 digits), IBM intermediate precision rules (src/arith/),
                 packed, zoned, binary, integer and float encodings (src/encode/),
                 edit codes and words (src/edit/), the IBM i oracle kit (src/fuzz/,
@@ -319,6 +340,8 @@ runtime/      ILE: IR, code generator, runtime, objects, APIs, messages
                 native-output codec; src/binder/ the binder, binder language, signatures;
                 src/dsp/ DSPPGM, DSPSRVPGM, DSPMOD, DSPPGMREF, DSPBNDDIR text; src/store/
                 CRTMOD/CRTPGM/CRTSRVPGM/UPDPGM/CRTBNDDIR against the store; src/spec.rs
+  sqlcli/       the SQL call level interface: QSQCLI's exports over a Host, the C-linkage face,
+                server mode in QSQSRVR prestart jobs (docs/SYSAPI.md §13)
   sysapi/       system APIs as natives of QSYS and QLEAWI procedures: src/param.rs parameter
                 and receiver conventions, ERRC0100/ERRC0200; src/provider.rs the Provider trait
                 (objects, data queues and areas, user indexes, files, system values, commands,
@@ -367,7 +390,8 @@ work/         work management: jobs, spooling, process messages
                 frame.rs length-prefixed frames, rpc.rs the rpc! macro, chan.rs Unix sockets
   stg/          storage service protocol: proto.rs the requests (rpc!), link.rs a job's link,
                 src/remote/ the runtime's source traits answered by the service
-  qap-proto/    QAP, the Quartz Access Protocol (docs/QAP.md), versions 1 to 6: the
+  qap-proto/    QAP, the Quartz Access Protocol (docs/QAP.md), versions 1 to 6 frozen, 7 (Manage)
+                a draft: the
                 envelope, services and operations, types, the sign-on secret
 security/     users, authorities, auditing
   sec/          security: src/profile/ the *USRPRF payload, special authorities, the profile
@@ -416,6 +440,8 @@ rpg/          ILE RPG (docs/RPG.md, PHASE9.md)
                 RNF diagnostics
   compiler/     CRTRPGMOD, CRTBNDRPG, CRTSQLRPGI: declarations with IBM's layouts, files,
                 control options, codegen/ to the IR, the listing
+  rpg3/         RPG III: CVTRPGSRC (cvt, report) and CRTRPGPGM (crt) over the ILE compiler
+                (docs/RPG3.md)
   qrpgrt/       the RPG runtime: `_QRNX_*` bound procedures (moves, strings, dates, arrays,
                 exceptions, XML, SQL)
   sqlpre/       the SQL precompiler: EXEC SQL statements, host variables, its listing.
@@ -454,6 +480,9 @@ net/          TCP/IP: configuration, sockets, TLS, servers
   hostsvr/      the host server datastream codec (docs/HOSTSVR.md), traces
   hostserver/   the host servers' request loops over backend traits the job implements
                 (work/qsjob/src/work/hostsvr/)
+  drdar/        the DRDA application requester's SQL connections: CONNECT, SET CONNECTION,
+                RELEASE, DISCONNECT, statements sent to the current server over ddm's client
+  httpc/        an HTTP/1.1 client (http and https) for the QSYS2.HTTP_* functions
   ddm/          DDM and DRDA (docs/DDM.md): DSS, code points, FD:OCA, security, the
                 application server and requester, *RDB directory, *DDMF
   qapd/         the QAP server's connections (docs/QAP.md) over a Host the job implements
@@ -477,6 +506,11 @@ net/          TCP/IP: configuration, sockets, TLS, servers
   navigator/    Navigator for QS/400 on 2002/2005 (docs/NAVIGATOR.md): src/env/ System and one
                 trait per area, src/routes/ by area, src/fixture/ the sample QSHQ400;
                 tests/golden/ the approved pages, golden.rs, behavior.rs (crawler, PENDING)
+  accessweb/    QS/400 Access for Web (QS00AFW) on 2003/2006 (docs/ACCESSWEB.md): src/env/ System,
+                policies, preferences and one trait per area, src/routes/ by area (s5250, db,
+                files, print, msgs, jobs, cmd, download, customize), src/s5250/ the 5250
+                renderer (PNG, PDF), the desktop's .qsd/.qkm/.qsm formats, src/fixture/;
+                tests/golden/ the approved pages; the live job is work/qsjob/src/work/httpafw/
   ntp/          SNTP: src/packet/ the header and timestamps, client.rs one exchange,
                 adjust.rs MINADJ/ADJTHLD/MAXADJ, poll.rs a poll over RMTSYS, server.rs the
                 answer and the UDP loop, clock.rs the Clock trait (MemClock for tests)
