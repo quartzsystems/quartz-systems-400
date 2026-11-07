@@ -292,14 +292,15 @@ pub fn reply(
 
 /// Send the inquiry `m` to `lib/name`, its reply going to `reply_to`
 /// (library, name): when that is another queue, a sender's copy goes
-/// there. The key the reply will answer: the copy's, else the inquiry's.
+/// there. The inquiry's key on `lib/name`, and the key the reply will
+/// answer: the copy's, else the inquiry's.
 pub fn send_inquiry(
     system: &mut System,
     lib: &str,
     name: &str,
     mut m: QMsg,
     reply_to: (&str, &str),
-) -> Result<u32, String> {
+) -> Result<(u32, u32), String> {
     m.kind = MsgKind::Inq;
     m.reply_to = (reply_to.1.to_string(), reply_to.0.to_string());
     // The copy is sent when the inquiry is.
@@ -314,7 +315,7 @@ pub fn send_inquiry(
     };
     let key = send(system, lib, name, m)?;
     if reply_to == (lib, name) {
-        return Ok(key);
+        return Ok((key, key));
     }
     let copy = QMsg {
         reply_key: key,
@@ -326,7 +327,7 @@ pub fn send_inquiry(
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2460")))?;
         Ok((k, true))
     }) {
-        Ok(k) => Ok(k),
+        Ok(k) => Ok((key, k)),
         Err(e) => {
             // No copy, no inquiry: its reply would go nowhere.
             let _ = sec::guard::as_system(|| {

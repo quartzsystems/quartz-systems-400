@@ -199,7 +199,8 @@ fn sndmsg(system: &mut System, p: &Params, brk: bool) -> Result<String, String> 
     let (lib, name) = queue_name(&to);
     let key = if kind == MsgKind::Inq {
         let (rl, rn) = queue_name(&p.upper("RPYMSGQ").unwrap_or_else(|| "*SYSOPR".into()));
-        msgs::send_inquiry(system, &lib, &name, m, (&rl, &rn))?
+        // The key on the queue named, which SNDRPYMSG MSGQ() takes.
+        msgs::send_inquiry(system, &lib, &name, m, (&rl, &rn))?.0
     } else {
         msgs::send(system, &lib, &name, m)?
     };
