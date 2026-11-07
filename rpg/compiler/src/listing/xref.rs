@@ -1040,6 +1040,46 @@ pub(crate) type ExtField = (String, String, String);
 /// imported fields, exported fields.
 pub(crate) type Externals = (Vec<(String, Vec<String>)>, Vec<ExtField>, Vec<ExtField>);
 
+/// The line a free-form statement starting at `line` ends on (its
+/// `;`): IBM's external references give a call there.
+fn stmt_end(c: &Compiled, line: u32) -> u32 {
+    use rpgfront::reader::Class;
+    if line & (GEN | super::refs::LATE) != 0 {
+        return line;
+    }
+    let lines = &c.read.lines;
+    let Some(i) = lines.iter().position(|l| l.no == line) else {
+        return line;
+    };
+    if lines[i].class != Class::Free {
+        return line;
+    }
+    for l in &lines[i..] {
+        match l.class {
+            Class::Free if ends_statement(&l.text) => return l.no,
+            Class::Free | Class::Comment | Class::Blank => {}
+            _ => break,
+        }
+    }
+    line
+}
+
+/// Whether free-form text has a `;` outside literals and comments.
+fn ends_statement(text: &str) -> bool {
+    let mut quoted = false;
+    let mut prev = ' ';
+    for ch in text.chars() {
+        match ch {
+            '\'' => quoted = !quoted,
+            '/' if !quoted && prev == '/' => return false,
+            ';' if !quoted => return true,
+            _ => {}
+        }
+        prev = ch;
+    }
+    false
+}
+
 pub(crate) fn externals(c: &Compiled) -> Externals {
     let w = super::refs::collect(c);
     let mut procs = Vec::new();
@@ -1087,12 +1127,15 @@ pub(crate) fn externals(c: &Compiled) -> Externals {
                 .get(&id)
                 .into_iter()
                 .flatten()
-                .map(|(l, _)| (*l, ' ')),
+                .map(|(l, _)| (stmt_end(c, *l), ' ')),
         );
         sort_refs(c, &mut refs);
         let slots: Vec<String> = refs.iter().map(|r| slot(c, *r)).collect();
         procs.push((name, slots));
     }
+    // IBM lists the shorter names first, each length in the order
+    // defined (the CLI members' forty prototypes show it).
+    procs.sort_by_key(|(n, _)| n.len());
     // CALLB of a literal binds the procedure it names.
     let calcs = c
         .module
