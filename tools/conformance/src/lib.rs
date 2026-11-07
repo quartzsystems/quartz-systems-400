@@ -32,6 +32,7 @@ mod hostsvr;
 mod httpsvr;
 mod httpadm;
 mod navstep;
+mod afw5250;
 mod afwstep;
 pub mod ftp;
 mod ftpsrv;

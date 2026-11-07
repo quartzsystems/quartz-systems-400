@@ -61,6 +61,8 @@ fn tickets() -> &'static Mutex<Tickets> {
 
 /// The Telnet server's jobs.
 const TELNET: &str = "QTVTELNET";
+/// The Access for Web instance's job.
+const ACCESSWEB: &str = "ACCESSWEB";
 /// `Automatic sign-on is not allowed for user profile &1.`
 const NO_AUTO_SIGNON: &str = "TCP1A55";
 
@@ -368,7 +370,11 @@ pub fn pwd_status(system: &mut System, ctx: &JobCtx) -> (Option<i64>, u16) {
 /// sign-on or the profile could not sign on (disabled, `*NONE`
 /// password, password expired).
 pub fn ticket(system: &mut System, ctx: &JobCtx) -> Result<(Vec<u8>, u32), QapRefused> {
-    connection_job(ctx)?;
+    // A QAP connection job, or Access for Web's job running as the user
+    // who signed on to it with a password (its 5250 auto sign-on).
+    if ctx.job.name != ACCESSWEB {
+        connection_job(ctx)?;
+    }
     let user = signed_on(ctx).ok_or_else(|| refused(3, "CPF9898", "Not signed on.", &[]))?;
     let no = || refused(NOT_AUTHORIZED, NO_AUTO_SIGNON, "", &[&user]);
     if !remote_signon_allowed(system) {

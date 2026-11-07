@@ -14,6 +14,7 @@
 //! `QZXWPRF`), read and written as the job.
 
 mod areas;
+mod s5250;
 mod store;
 mod system;
 
@@ -106,7 +107,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         system: Arc::new(system::LiveSystem { core, dates, link: l.clone() }),
         policy: Arc::new(store::LivePolicy { link: l.clone() }),
         prefs: Arc::new(store::LivePrefs { link: l.clone() }),
-        session5250: none.clone(),
+        session5250: Arc::new(s5250::LiveS5250::new(l.clone())),
         db: none.clone(),
         files: none.clone(),
         print: none.clone(),

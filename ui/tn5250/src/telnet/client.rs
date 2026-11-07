@@ -44,6 +44,10 @@ pub struct Config {
     pub charset: String,
     /// The client's seed.
     pub client_seed: [u8; 8],
+    /// A one-time QAP ticket (64 hex characters) for automatic sign-on
+    /// instead of a password: sent as the password variable with an
+    /// empty seed.
+    pub ticket: Option<String>,
 }
 
 impl Default for Config {
@@ -58,6 +62,7 @@ impl Default for Config {
             codepage: "37".into(),
             charset: "697".into(),
             client_seed: [0x51, 0x53, 0x34, 0x30, 0x30, 0x01, 0x02, 0x03],
+            ticket: None,
         }
     }
 }
@@ -206,7 +211,11 @@ impl Client {
     /// The variables of the `IS`.
     fn environment(&self) -> Vec<Var> {
         let mut vars = Vec::new();
-        if let (Some(user), Some(seed)) = (&self.cfg.user, self.server_seed) {
+        if let (Some(user), Some(ticket)) = (&self.cfg.user, &self.cfg.ticket) {
+            vars.push(Var::known("USER", &user.to_ascii_uppercase()));
+            vars.push(Var::user_bytes("IBMRSEED", &[]));
+            vars.push(Var::user_bytes("IBMSUBSPW", ticket.as_bytes()));
+        } else if let (Some(user), Some(seed)) = (&self.cfg.user, self.server_seed) {
             vars.push(Var::known("USER", &user.to_ascii_uppercase()));
             vars.push(Var::user_bytes("IBMRSEED", &self.cfg.client_seed));
             if let Some(pw) = &self.cfg.password {
