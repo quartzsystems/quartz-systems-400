@@ -111,3 +111,16 @@ OA003 listing: IBM's cross-reference of a HANDLER printer's OFLIND indicator and
 OA004 listing: the /COPY box shows the member's text; QS/400's QOAR members have texts of their own
 OA005 listing: the /COPY box shows the member's text; QS/400's QOAR members have texts of their own
 USA001 listing: the cross-reference shows a *USA time field's external format as *ISO
+CLI001 listing: IBM lists statically bound procedures in its own order, not by first reference, and a call continued on a second line is referenced at that line
+CLI002 listing: IBM lists statically bound procedures in its own order, not by first reference, and a call continued on a second line is referenced at that line
+CLI003 listing: IBM lists statically bound procedures in its own order, not by first reference, and a call continued on a second line is referenced at that line
+CLI004 listing: IBM lists statically bound procedures in its own order, not by first reference, and a call continued on a second line is referenced at that line
+CLI005 listing: IBM lists statically bound procedures in its own order, not by first reference, and a call continued on a second line is referenced at that line
+SQL056 listing: the SQL cross-reference does not qualify a subprocedure's host variables IN RPG PROCEDURE
+SQL057 listing: the SQL cross-reference does not qualify a subprocedure's host variables IN RPG PROCEDURE
+SQL060 listing: the SQL cross-reference shows BINARY and LOB host variables and columns as CHARACTER
+SQL061 listing: the SQL cross-reference shows an *ISO date host variable as DATE(8)
+SQL062 listing: the precompiler's SET OPTION diagnostics are not in IBM's order
+SQL063 listing: the SQL cross-reference takes the columns of a DECLARE TABLE as references and the table as a cursor
+SQL064 listing: the SQL cross-reference keeps the references of a statement the precompiler refuses; SQL5066 not given for FETCH ABSOLUTE
+SQL065 listing: the SQL cross-reference shows LOB columns as CHARACTER and LOB locators as DECIMAL(10,0)
