@@ -463,6 +463,15 @@ impl Suite {
         // What a run before left is fine; the step's QAP calls check.
         let _ = s.command("CRTLIB LIB(HLINV) TYPE(*TEST) TEXT('QAP step 160')", SLOW);
         let _ = s.command("CRTSRCPF FILE(HLINV/QRPGLESRC) RCDLEN(112)", SLOW);
+        // ADDPFM, RNMM and RMVM need more than the public *CHANGE.
+        let _ = s.command(
+            "GRTOBJAUT OBJ(HLINV/QRPGLESRC) OBJTYPE(*FILE) USER(QAPTEST) AUT(*ALL)",
+            SLOW,
+        );
+        let _ = s.command(
+            "GRTOBJAUT OBJ(HLINV) OBJTYPE(*LIB) USER(QAPTEST) AUT(*ALL)",
+            SLOW,
+        );
         let mut v7 = srv.open_at(7)?;
         let h7 = v7.hello_reply.clone();
         v7.conn.sign_on(USER, PASSWORD)?;
@@ -487,6 +496,15 @@ impl Suite {
         let mut srv = setup(self, s)?;
         let _ = s.command("CRTLIB LIB(HLINV) TYPE(*TEST) TEXT('QAP step 160')", SLOW);
         let _ = s.command("CRTSRCPF FILE(HLINV/QRPGLESRC) RCDLEN(112)", SLOW);
+        // ADDPFM, RNMM and RMVM need more than the public *CHANGE.
+        let _ = s.command(
+            "GRTOBJAUT OBJ(HLINV/QRPGLESRC) OBJTYPE(*FILE) USER(QAPTEST) AUT(*ALL)",
+            SLOW,
+        );
+        let _ = s.command(
+            "GRTOBJAUT OBJ(HLINV) OBJTYPE(*LIB) USER(QAPTEST) AUT(*ALL)",
+            SLOW,
+        );
         let mut a = srv.open()?;
         a.sign_on(USER, PASSWORD)?;
         let r = develop::compile42(&mut a).map_err(|e| format!("COMPILE: {e}"));
