@@ -114,22 +114,27 @@ in the image.
 ## 10. Release identity
 
 QS/400 uses IBM-style version identifiers: `VxRyMz` (version, release,
-modification). The current development stream is **V1R0M0**. Rules:
+modification). The current release is **V1R1M0**, the first meant for use
+outside development; V1R0M0 was the development release. `VERSION` at the
+repository root holds it as `MAJOR.MINOR.PATCH` (`1.1.0`), and `lic/release`
+reads it at build time (`docs/releasing.md`). Rules:
 
 - `V` changes only for a new generation of the OS.
 - `R` changes for a release that adds function (new commands, formats,
-  on-disk changes). R0 is the initial development release; the first
-  release intended for use outside development will be V1R1M0.
+  on-disk changes). R0 was the development release; V1R1M0 is the first
+  release for use outside development.
 - `M` changes for maintenance releases with no new function.
 - Pre-release builds carry the stream identifier plus a build ID:
-  `V1R0M0 build <git-short-rev>[-dirty]`. No "alpha/beta/rc" words anywhere.
-- PTFs (later) are named `QS` + 5 digits (`QS00001`); cumulative packages
+  `V1R1M0 build <git-short-rev>[-dirty]`. No "alpha/beta/rc" words anywhere.
+- PTFs are named `QS` + 5 digits (`QS00001`); cumulative packages
   `C` + `yyddd` (Julian) + `110`.
 
 Same V and R means a compatible on-disk format; M never changes formats.
 While on R0, on-disk formats may change without an R bump; the store
 records the creating release in its superblock and refuses to open a
-store from a different V/R (CPF3294, fatal B1001050 at IPL). The `release` crate is the one source of
+store from a different V/R (CPF3294, fatal B1001050 at IPL), except an
+older release's store that a slip install is upgrading (`INSTALL.md` §4;
+V1R0M0 to V1R1M0 is proven by install step 10). The `release` crate is the one source of
 truth; every crate that prints a version uses it, DSPSFWRSC, GO LICPGM
 option 10, DSPPTF and API QSZRTVPR among them (built in Phase 11).
 
