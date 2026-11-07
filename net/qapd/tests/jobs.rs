@@ -67,9 +67,9 @@ fn list_jobs() {
     );
     let e = list(&mut bob, "*ALL", None);
     assert_eq!(e.status, Status::NotAuthorized);
-    let e = list(&mut bob, "NOBODY", None);
-    assert_eq!((e.status, id(&e).as_str()), (Status::NotFound, "CPF2204"));
     let mut oper = signed_on("OPER", "OPERPW1");
+    let e = list(&mut oper, "NOBODY", None);
+    assert_eq!((e.status, id(&e).as_str()), (Status::NotFound, "CPF2204"));
     let all: Jobs = list(&mut oper, "*ALL", None).body_as().unwrap();
     assert_eq!(all.total, 5);
     let page: Jobs = oper
@@ -171,6 +171,8 @@ fn end_job() {
     let own = job("QAPCNN", "QUSER", &format!("{:06}", bob.job));
     assert_eq!(end(&mut bob, own).status, Status::InvalidRequest);
     let mut oper = signed_on("OPER", "OPERPW1");
+    let e = list(&mut oper, "NOBODY", None);
+    assert_eq!((e.status, id(&e).as_str()), (Status::NotFound, "CPF2204"));
     assert_eq!(
         end(&mut oper, job("PAYRUN", "ANN", "000300")).status,
         Status::Ok

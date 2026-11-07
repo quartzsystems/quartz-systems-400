@@ -151,12 +151,6 @@ pub(super) fn list_jobs(cx: &Ctx<'_>, req: &ListJobs) -> Result<Vec<JobEntry>, R
         "" | "*CURRENT" => me.user.clone(),
         u => u.to_string(),
     };
-    if user != "*ALL" {
-        let u = user.clone();
-        if cx.shared.borrow_mut().with(|l| l.user_info(u)).is_none() {
-            return Err(refuse(cx, Status::NotFound, "CPF2204", &[&user]));
-        }
-    }
     if user != me.user && !me.has(SpecialAuth::JOBCTL) {
         return Err(refuse(
             cx,
@@ -164,6 +158,13 @@ pub(super) fn list_jobs(cx: &Ctx<'_>, req: &ListJobs) -> Result<Vec<JobEntry>, R
             "CPF1343",
             &[&me.user, &user],
         ));
+    }
+    // The profile itself needs no looking up.
+    if user != "*ALL" && user != me.user {
+        let u = user.clone();
+        if cx.shared.borrow_mut().with(|l| l.user_info(u)).is_none() {
+            return Err(refuse(cx, Status::NotFound, "CPF2204", &[&user]));
+        }
     }
     let all = jobs_of(cx, (user != "*ALL").then_some(user.as_str()));
     Ok(all

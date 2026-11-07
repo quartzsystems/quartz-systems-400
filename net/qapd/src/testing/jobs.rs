@@ -9,7 +9,8 @@
 //!   queue `QBATCH`, `BUILD` ended with a spooled job log, `OLDJOB`
 //!   ended without one (`JobLog` is `NotFound`, `CPF1321`); `ANN`'s
 //!   `PAYRUN` active in `QBATCH`. Another user's job needs `*JOBCTL`
-//!   (`CPF1343`), as `*ALL` does; an unknown profile is `CPF2204`.
+//!   (`CPF1343`), as `*ALL` does, checked first; an unknown profile is
+//!   `CPF2204`.
 //! - `HLDJOB` and `RLSJOB` of an ended job, and `ENDJOB` of one, are
 //!   `CPF1362`; an ended job leaves the list it was in for the output
 //!   queue's.
@@ -195,11 +196,11 @@ impl Jobs {
         } else {
             user
         };
-        if user != "*ALL" && !known(&user) {
-            return Err(no(Status::NotFound, "CPF2204", &[&user]));
-        }
         if user != me && !jobctl {
             return Err(no(Status::NotAuthorized, "CPF1343", &[me, &user]));
+        }
+        if user != "*ALL" && !known(&user) {
+            return Err(no(Status::NotFound, "CPF2204", &[&user]));
         }
         let mut v: Vec<JobEntry> = self
             .jobs
