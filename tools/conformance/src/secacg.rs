@@ -171,7 +171,7 @@ impl Suite {
         }
         if !all.contains("ACGJOB1") || all.matches("ACGJOB2").count() < 2 {
             let mut why = String::new();
-            for cmd in ["wrkjobq QGPL/QBATCH", "wrksbs", "wrkactjob"] {
+            for cmd in ["wrkjobq QGPL/QBATCH", "wrksbs", "wrkactjob", "svc.txn stats"] {
                 why.push_str(&s.command(cmd, CMD).unwrap_or_default());
             }
             return Err(format!(

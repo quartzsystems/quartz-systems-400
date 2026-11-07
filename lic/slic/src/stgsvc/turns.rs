@@ -22,6 +22,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
+use std::fmt::Write as _;
 use std::os::unix::net::UnixListener;
 use std::rc::Rc;
 use std::time::Duration;
@@ -70,6 +71,32 @@ pub struct Svc {
 thread_local! {
     /// The service while a fiber runs.
     static PARKED: RefCell<Option<Box<Svc>>> = const { RefCell::new(None) };
+    /// What [`load`] reports, as of the last pass of the loop.
+    static LOAD: RefCell<String> = const { RefCell::new(String::new()) };
+}
+
+/// The statements in progress (by job, `W` when waiting for its job)
+/// and those queued, as of the last pass (`txn stats`).
+pub fn load() -> String {
+    LOAD.with(|l| l.borrow().clone())
+}
+
+fn note_load(svc: &Svc) {
+    let job = |id: u64| {
+        svc.index(id)
+            .and_then(|i| svc.conns[i].ctx.as_ref())
+            .map_or(0, |c| c.job.number)
+    };
+    let mut s = format!(
+        "statements in progress {} of {MAX_FIBERS}, queued {}:",
+        svc.fibers.len(),
+        svc.queued.len()
+    );
+    for (t, _) in &svc.fibers {
+        let w = if t.waiting.get() { "W" } else { "" };
+        let _ = write!(s, " {:06}{w}", job(t.id));
+    }
+    LOAD.with(|l| *l.borrow_mut() = s);
 }
 
 fn park(svc: Box<Svc>) {
@@ -267,6 +294,7 @@ pub fn round(mut svc: Box<Svc>, wait: Duration) -> Box<Svc> {
     {
         svc = start(svc, id, req);
     }
+    note_load(&svc);
     turns(svc)
 }
 
