@@ -229,7 +229,7 @@ fn take(rq: &Rq<'_>, g: Grp, f: &Form, v: &mut Prefs) -> Result<(), qsweb::msg::
             p::TIME => p::TIME_FORMATS.contains(&value.as_str()),
             p::LANG => p::LANGUAGES.contains(&value.as_str()),
             p::HELP => ["win", "same"].contains(&value.as_str()),
-            p::SCHEMA => v.schemas.contains(&value),
+            p::SCHEMA => v.schemas.contains(&value) || (v.schemas.is_empty() && value.is_empty()),
             p::NAMING => ["sql", "sys"].contains(&value.as_str()),
             p::OUTPUT => p::OUTPUTS.contains(&value.as_str()),
             p::MAX_ROWS => value.parse::<u32>().is_ok_and(|n| (1..=100_000).contains(&n)),
